@@ -1,0 +1,21 @@
+/* Fix for list structure accessibility issues */
+ul, ol {
+  font-size: 0;  /* Collapse whitespace between list items */
+}
+
+li {
+  font-size: 1rem;  /* Restore font size for list items */
+}
+
+ul *, ol * {
+  font-size: 1rem;  /* Restore font size for nested elements */
+}
+
+/* Fix for Bootstrap components */
+.navbar-nav, .dropdown-menu {
+  font-size: 0;
+}
+
+.navbar-nav *, .dropdown-menu * {
+  font-size: 1rem;
+}

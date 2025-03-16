@@ -1,4 +1,5 @@
-from django.shortcuts import redirectfrom django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
+from django.shortcuts import redirect
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from turmas.models import Turma
@@ -9,6 +10,7 @@ class AtividadeAcademicaListView(ListView):
     model = AtividadeAcademica
     template_name = 'atividades/atividade_academica_list.html'
     context_object_name = 'atividades_academicas'
+
 class AtividadeAcademicaCreateView(CreateView):
     model = AtividadeAcademica
     form_class = AtividadeAcademicaForm
@@ -73,7 +75,7 @@ class AtividadeRitualisticaDeleteView(DeleteView):
     model = AtividadeRitualistica
     template_name = 'atividades/atividade_ritualistica_confirm_delete.html'
     success_url = reverse_lazy('atividades:atividade_ritualistica_list')
-# Add this to your existing views.py file
 
+# Add this to your existing views.py file
 def cadastrar_turma_view(request):
     return redirect('turmas:turma_create')  # Adjust to the correct URL pattern
