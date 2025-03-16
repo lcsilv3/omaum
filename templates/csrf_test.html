@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSRF Test</title>
+</head>
+<body>
+    <h1>CSRF Test</h1>
+    <form method="post">
+        {% csrf_token %}
+        <input type="submit" value="Test CSRF">
+    </form>
+    <script>
+        console.log("CSRF cookie:", document.cookie.split(';').find(cookie => cookie.trim().startsWith('csrftoken=')));
+    </script>
+</body>
+</html>
+

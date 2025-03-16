@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Registro</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Registrar</button>
+</form>
+
+<a href="javascript:history.back()" class="back-button">Voltar</a>
+
+<style>
+    .back-button {
+        margin-top: 20px;
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        text-decoration: none;
+        color: #333;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}

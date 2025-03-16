@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Lista de Cargos Administrativos</h1>
+<div class="cargos-list">
+    {% for cargo in cargos %}
+    <div class="cargo-item">
+        <h2>{{ cargo.nome }}</h2>
+        <p>Código: {{ cargo.codigo_cargo }}</p>
+        <p>{{ cargo.descricao }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

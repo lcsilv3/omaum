@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Dashboard de Alunos</h1>
+
+    <div class="row">
+        <!-- Cartão de Total de Alunos -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Alunos</h5>
+                    <p class="card-text display-4">{{ total_alunos }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cartão de Alunos Ativos -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos Ativos</h5>
+                    <p class="card-text display-4">{{ alunos_ativos }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cartão de Alunos por Curso -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Cursos</h5>
+                    <p class="card-text display-4">{{ total_cursos }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cartão de Atividades Recentes -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Atividades Recentes</h5>
+                    <p class="card-text display-4">{{ atividades_recentes }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Gráfico de Alunos por Curso -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos por Curso</h5>
+                    <canvas id="alunosPorCursoChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Alunos Recentes -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos Recentemente Adicionados</h5>
+                    <ul class="list-group">
+                        {% for aluno in alunos_recentes %}
+                            <li class="list-group-item">
+                                {{ aluno.nome }} - {{ aluno.curso }}
+                                <a href="{% url 'alunos:detalhes' aluno.cpf %}" class="btn btn-sm btn-info float-right">Detalhes</a>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">Nenhum aluno recente.</li>
+                        {% endfor %}
+                    </ul>
+
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Ações Rápidas -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Ações Rápidas</h5>
+                    <a href="{% url 'alunos:cadastrar' %}" class="btn btn-primary mr-2">Cadastrar Novo Aluno</a>
+                    <a href="{% url 'alunos:listar' %}" class="btn btn-secondary mr-2">Listar Todos os Alunos</a>
+                    <a href="{% url 'alunos:exportar' %}" class="btn btn-success mr-2">Exportar Dados</a>
+                    <a href="{% url 'alunos:importar' %}" class="btn btn-info">Importar Dados</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+data: {
+    labels: JSON.parse('{{ cursos_labels|safe }}'),
+    datasets: [{
+        label: 'Número de Alunos',
+        data: JSON.parse('{{ alunos_por_curso_data|safe }}'),
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+    }]
+},
+{% endblock %}

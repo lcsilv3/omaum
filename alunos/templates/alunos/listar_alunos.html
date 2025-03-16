@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Alunos{% endblock %}
+{% block content %}
+    <h1>Lista de Alunos</h1>
+    <ul>
+        {% for aluno in alunos %}
+            <li>{{ aluno.nome }} - {{ aluno.matricula }}</li>
+        {% empty %}
+            <li>Nenhum aluno cadastrado.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
