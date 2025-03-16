@@ -56,7 +56,7 @@ class AtividadeRitualisticaCreateView(CreateView):
         if not Turma.objects.exists():
             messages.warning(request, "Atividades só podem ser inseridas se houver Turmas cadastradas, por favor cadastre uma turma")
             # Use the namespace when redirecting
-            return redirect('core:cadastrar_turma')
+            return redirect('atividades:cadastrar_turma')
         return super().get(request, *args, **kwargs)
 
 class AtividadeRitualisticaDetailView(DetailView):
