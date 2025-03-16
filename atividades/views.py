@@ -1,5 +1,4 @@
-from django.shortcuts import render, redirect
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
+from django.shortcuts import redirectfrom django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from turmas.models import Turma
@@ -77,6 +76,4 @@ class AtividadeRitualisticaDeleteView(DeleteView):
 # Add this to your existing views.py file
 
 def cadastrar_turma_view(request):
-    # Your view logic here
-    # This is just a placeholder - implement according to your needs
-    return render(request, 'atividades/cadastrar_turma.html', {})
+    return redirect('turmas:turma_create')  # Adjust to the correct URL pattern
