@@ -2,8 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q, Avg
-from core.models import Aluno, Curso, Turma, AtividadeAcademica, AtividadeRitualistica
-from core.forms import AlunoForm, CursoForm, TurmaForm, AlunoTurmaForm, AtividadeAcademicaForm, AtividadeRitualisticaForm
+from core.models import Aluno, Curso, Turma
+from core.forms import AlunoForm, CursoForm, TurmaForm, AlunoTurmaForm
 from django.contrib.auth import login, authenticate
 from .forms import RegistroForm
 
@@ -105,54 +105,6 @@ def turma_delete(request, pk):
         return redirect('core:listar_turmas')
     return render(request, 'core/turma_confirm_delete.html', {'turma': turma})
 
-# Atividade Acadêmica views
-@login_required
-def atividade_academica_list(request):
-    atividades = AtividadeAcademica.objects.all()
-    return render(request, 'core/atividade_academica_list.html', {'atividades': atividades})
-
-@login_required
-def atividade_academica_create(request):
-    if request.method == 'POST':
-        form = AtividadeAcademicaForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('core:listar_atividades_academicas')
-    else:
-        form = AtividadeAcademicaForm()
-    return render(request, 'core/atividade_academica_form.html', {'form': form})
-
-@login_required
-def atividade_academica_detail(request, pk):
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
-    return render(request, 'core/atividade_academica_detail.html', {'atividade': atividade})
-
-@login_required
-def atividade_academica_update(request, pk):
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
-    if request.method == 'POST':
-        form = AtividadeAcademicaForm(request.POST, instance=atividade)
-        if form.is_valid():
-            form.save()
-            return redirect('core:listar_atividades_academicas')
-    else:
-        form = AtividadeAcademicaForm(instance=atividade)
-    return render(request, 'core/atividade_academica_form.html', {'form': form})
-
-@login_required
-def atividade_academica_delete(request, pk):
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
-    if request.method == 'POST':
-        atividade.delete()
-        return redirect('core:listar_atividades_academicas')
-    return render(request, 'core/atividade_academica_confirm_delete.html', {'atividade': atividade})
-
-# Atividade Ritualística views
-@login_required
-def listar_atividades_ritualisticas(request):
-    atividades = AtividadeRitualistica.objects.all()
-    return render(request, 'core/atividade_ritualistica_list.html', {'atividades': atividades})
-
 # Presença views
 @login_required
 def listar_presencas_academicas(request):
@@ -182,7 +134,6 @@ def listar_punicoes(request):
 def listar_iniciacoes(request):
     # Adicione a lógica para listar iniciações
     pass
-from django.contrib.auth.views import LoginView
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token

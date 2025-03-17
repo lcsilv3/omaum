@@ -1,8 +1,6 @@
-from django.shortcuts import redirect
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
-from django.urls import reverse_lazy
-from django.contrib import messages
-from turmas.models import Turma
 from .models import AtividadeAcademica, AtividadeRitualistica
 from .forms import AtividadeAcademicaForm, AtividadeRitualisticaForm
 
@@ -10,72 +8,34 @@ class AtividadeAcademicaListView(ListView):
     model = AtividadeAcademica
     template_name = 'atividades/atividade_academica_list.html'
     context_object_name = 'atividades_academicas'
-
-class AtividadeAcademicaCreateView(CreateView):
-    model = AtividadeAcademica
-    form_class = AtividadeAcademicaForm
-    template_name = 'atividades/atividade_academica_form.html'
-    success_url = reverse_lazy('atividades:atividade_academica_list')
-
-    def get(self, request, *args, **kwargs):
-        if not Turma.objects.exists():
-            messages.warning(request, "Atividades só podem ser inseridas se houver Turmas cadastradas, por favor cadastre uma turma")
-            # If core has a namespace, use it like this:
-            return redirect('atividades:cadastrar_turma')
-            # If core doesn't have a namespace, you can try:
-            # return redirect('cadastrar_turma')
-        return super().get(request, *args, **kwargs)
-
-class AtividadeAcademicaDetailView(DetailView):
-    model = AtividadeAcademica
-    template_name = 'atividades/atividade_academica_detail.html'
-    context_object_name = 'atividade'
-
-class AtividadeAcademicaUpdateView(UpdateView):
-    model = AtividadeAcademica
-    form_class = AtividadeAcademicaForm
-    template_name = 'atividades/atividade_academica_form.html'
-    success_url = reverse_lazy('atividades:atividade_academica_list')
-
-class AtividadeAcademicaDeleteView(DeleteView):
-    model = AtividadeAcademica
-    template_name = 'atividades/atividade_academica_confirm_delete.html'
-    success_url = reverse_lazy('atividades:atividade_academica_list')
+    paginate_by = 10
 
 class AtividadeRitualisticaListView(ListView):
     model = AtividadeRitualistica
     template_name = 'atividades/atividade_ritualistica_list.html'
     context_object_name = 'atividades_ritualisticas'
+    paginate_by = 10
 
-class AtividadeRitualisticaCreateView(CreateView):
-    model = AtividadeRitualistica
-    form_class = AtividadeRitualisticaForm
-    template_name = 'atividades/atividade_ritualistica_form.html'
-    success_url = reverse_lazy('atividades:atividade_ritualistica_list')
+@login_required
+def atividade_academica_create(request):
+    if request.method == 'POST':
+        form = AtividadeAcademicaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('atividades:atividade_academica_list')
+    else:
+        form = AtividadeAcademicaForm()
+    return render(request, 'atividades/atividade_academica_form.html', {'form': form})
 
-    def get(self, request, *args, **kwargs):
-        if not Turma.objects.exists():
-            messages.warning(request, "Atividades só podem ser inseridas se houver Turmas cadastradas, por favor cadastre uma turma")
-            # Use the namespace when redirecting
-            return redirect('atividades:cadastrar_turma')
-        return super().get(request, *args, **kwargs)
+@login_required
+def atividade_ritualistica_create(request):
+    if request.method == 'POST':
+        form = AtividadeRitualisticaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('atividades:atividade_ritualistica_list')
+    else:
+        form = AtividadeRitualisticaForm()
+    return render(request, 'atividades/atividade_ritualistica_form.html', {'form': form})
 
-class AtividadeRitualisticaDetailView(DetailView):
-    model = AtividadeRitualistica
-    template_name = 'atividades/atividade_ritualistica_detail.html'
-    context_object_name = 'atividade'
-
-class AtividadeRitualisticaUpdateView(UpdateView):
-    model = AtividadeRitualistica
-    form_class = AtividadeRitualisticaForm
-    template_name = 'atividades/atividade_ritualistica_form.html'
-    success_url = reverse_lazy('atividades:atividade_ritualistica_list')
-
-class AtividadeRitualisticaDeleteView(DeleteView):
-    model = AtividadeRitualistica
-    template_name = 'atividades/atividade_ritualistica_confirm_delete.html'
-    success_url = reverse_lazy('atividades:atividade_ritualistica_list')
-
-# Add this to your existing views.py file
-def cadastrar_turma_view(request):
-    return redirect('turmas:turma_create')  # Adjust to the correct URL pattern
+# Adicione outras views conforme necessário (update, delete, detail)

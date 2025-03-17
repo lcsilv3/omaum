@@ -1,25 +1,31 @@
 from django.db import models
-from django.utils.translation import gettext_lazy as _
-from django.utils import timezone
+from turmas.models import Turma
+from core.models import Aluno
 
 class AtividadeAcademica(models.Model):
-    codigo_atividade = models.CharField(max_length=20, primary_key=True)
-    nome = models.CharField(max_length=100)
-    descricao = models.TextField()
-    data_inicio = models.DateField(_('Data Início'), default=timezone.now)
-    data_fim = models.DateField(_('Data Fim'), null=True, blank=True)
-    turma = models.ForeignKey('turmas.Turma', on_delete=models.CASCADE)
+    nome = models.CharField(max_length=255, verbose_name="Nome")
+    descricao = models.TextField(verbose_name="Descrição")
+    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, verbose_name="Turma")
+    data_inicio = models.DateField(verbose_name="Data de Início")
+    data_fim = models.DateField(verbose_name="Data de Fim")
 
     def __str__(self):
         return self.nome
 
+    class Meta:
+        verbose_name = "Atividade Acadêmica"
+        verbose_name_plural = "Atividades Acadêmicas"
 class AtividadeRitualistica(models.Model):
-    codigo_atividade = models.CharField(max_length=20, primary_key=True)
-    nome = models.CharField(max_length=100)
-    descricao = models.TextField()
-    data_inicio = models.DateField(_('Data Início'), default=timezone.now)
-    data_fim = models.DateField(_('Data Fim'), null=True, blank=True)
-    turma = models.ForeignKey('turmas.Turma', on_delete=models.CASCADE)
+    nome = models.CharField(max_length=255, verbose_name="Nome")
+    descricao = models.TextField(verbose_name="Descrição")
+    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, verbose_name="Turma")
+    data_inicio = models.DateField(verbose_name="Data de Início")
+    data_fim = models.DateField(verbose_name="Data de Fim")
+    alunos = models.ManyToManyField(Aluno, blank=True, verbose_name="Alunos", related_name="atividades_ritualisticas")
 
     def __str__(self):
         return self.nome
+
+    class Meta:
+        verbose_name = "Atividade Ritualística"
+        verbose_name_plural = "Atividades Ritualísticas"

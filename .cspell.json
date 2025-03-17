@@ -2,18 +2,19 @@
     "version": "0.2",
     "language": "en,pt",
     "words": [
-        "atividade",
-        "atividades",
-        "ritualistica",
-        "ritualisticas",
-        "descricao",
-        "turma",
+        "Academica",
+        "ações",
         "aluno",
         "alunos",
-        "ações",
+        "atividade",
+        "atividades",
         "criar",
+        "deletar",
+        "descricao",
         "detalhes",
         "editar",
-        "deletar"
+        "ritualistica",
+        "ritualisticas",
+        "turma"
     ]
 }

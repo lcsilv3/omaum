@@ -60,14 +60,15 @@ class AtividadeAcademica(AtividadeBase):
         verbose_name = "Atividade Acadêmica"
         verbose_name_plural = "Atividades Acadêmicas"
 
-class AtividadeRitualistica(models.Model):
-    nome = models.CharField(max_length=100)
-    descricao = models.TextField()
-    turma = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, blank=True)
-    alunos = models.ManyToManyField(Aluno, blank=True)
+class AtividadeRitualistica(AtividadeBase):
+    alunos = models.ManyToManyField(Aluno, blank=True, related_name="core_atividades_ritualisticas")
 
     def __str__(self):
-        return self.nome
+        return f"{self.nome} - {self.turma}"
+
+    class Meta:
+        verbose_name = "Atividade Ritualística"
+        verbose_name_plural = "Atividades Ritualísticas"
 
 class PresencaBase(models.Model):
     aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, verbose_name="Aluno")

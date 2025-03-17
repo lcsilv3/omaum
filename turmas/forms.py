@@ -1,12 +1,13 @@
 from django import forms
-from .models import Curso, Turma
+from cursos.models import Curso
+from .models import Turma
 
 class CursoForm(forms.ModelForm):
     class Meta:
         model = Curso
-        fields = ['codigo_curso', 'nome', 'descricao']
+        fields = ['nome', 'descricao']  # Adjust fields as needed
 
 class TurmaForm(forms.ModelForm):
     class Meta:
         model = Turma
-        fields = ['curso', 'nome', 'descricao', 'data_inicio', 'data_fim']
+        fields = ['nome', 'curso', 'data_inicio', 'data_fim']  # Adjust fields as needed
