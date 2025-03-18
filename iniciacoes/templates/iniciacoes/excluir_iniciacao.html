@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Excluir Iniciação</h1>
+<p>Tem certeza que deseja excluir a iniciação de {{ iniciacao.aluno.nome }} no curso {{ iniciacao.nome_curso }}?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+    <a href="{% url 'listar_iniciacoes' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

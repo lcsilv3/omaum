@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Excluir Punição</h1>
+<p>Tem certeza que deseja excluir a punição de {{ punicao.aluno.nome }} do tipo {{ punicao.tipo_punicao }}?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+    <a href="{% url 'listar_punicoes' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

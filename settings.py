@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django_extensions',  # Certifique-se de que está aqui
     # Third-party apps
     'crispy_forms',
+    'widget_tweaks',
     # Your apps
     'core',
     'alunos',

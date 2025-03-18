@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Editar Iniciação</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a href="{% url 'listar_iniciacoes' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

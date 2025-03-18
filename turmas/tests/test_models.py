@@ -1,30 +1,26 @@
 from django.test import TestCase
 from turmas.models import Turma
-from usuarios.models import Usuario
-from cargos.models import CargoAdministrativo
+from cursos.models import Curso
 from datetime import date
 
 class TurmaModelTest(TestCase):
     def setUp(self):
-        self.instrutor = Usuario.objects.create(
-            cpf='12345678901',
-            nome='Professor João',
-            email='joao@escola.com',
-            senha='senha123',
-            cargo='Professor'
+        self.curso = Curso.objects.create(
+            nome='Curso de Teste',
+            descricao='Descrição do curso de teste'
         )
 
     def test_criar_turma(self):
         turma = Turma.objects.create(
-            codigo_turma='TURMA001',
-            codigo_ordem_servico='OS001',
-            nome_curso='Curso de Iniciação',
-            cpf_instrutor=self.instrutor,
-            data_aula_inaugural=date(2023, 10, 1)
+            nome='Turma de Teste',
+            curso=self.curso,
+            data_inicio=date(2023, 10, 1),
+            data_fim=date(2023, 12, 31)
         )
 
-        self.assertEqual(turma.codigo_turma, 'TURMA001')
-        self.assertEqual(turma.nome_curso, 'Curso de Iniciação')
+        self.assertEqual(turma.nome, 'Turma de Teste')
+        self.assertEqual(turma.curso, self.curso)
+        self.assertEqual(str(turma), 'Turma de Teste - Curso de Teste')
 
 class CargoAdministrativoTest(TestCase):
     def test_criar_cargo(self):

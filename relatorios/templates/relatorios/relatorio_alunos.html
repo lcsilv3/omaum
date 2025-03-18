@@ -2,11 +2,13 @@
 
 {% block content %}
 <h1>Relatório de Alunos</h1>
-<table>
+<a href="{% url 'relatorio_alunos_pdf' %}" class="btn btn-primary">Download PDF</a>
+<table class="table table-striped">
     <thead>
         <tr>
             <th>Nome</th>
-            <th>Matrícula</th>
+            <th>CPF</th>
+            <th>Email</th>
             <!-- Adicione mais colunas conforme necessário -->
         </tr>
     </thead>
@@ -14,7 +16,8 @@
         {% for aluno in alunos %}
         <tr>
             <td>{{ aluno.nome }}</td>
-            <td>{{ aluno.matricula }}</td>
+            <td>{{ aluno.cpf }}</td>
+            <td>{{ aluno.email }}</td>
             <!-- Adicione mais campos conforme necessário -->
         </tr>
         {% endfor %}

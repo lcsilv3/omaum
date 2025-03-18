@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Lista de Iniciações</h1>
+<a href="{% url 'criar_iniciacao' %}" class="btn btn-primary">Nova Iniciação</a>
+<table class="table mt-3">
+    <thead>
+        <tr>
+            <th>Aluno</th>
+            <th>Curso</th>
+            <th>Data</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for iniciacao in iniciacoes %}
+        <tr>
+            <td>{{ iniciacao.aluno.nome }}</td>
+            <td>{{ iniciacao.nome_curso }}</td>
+            <td>{{ iniciacao.data_iniciacao }}</td>
+            <td>
+                <a href="{% url 'detalhe_iniciacao' iniciacao.id %}" class="btn btn-sm btn-info">Detalhes</a>
+                <a href="{% url 'editar_iniciacao' iniciacao.id %}" class="btn btn-sm btn-warning">Editar</a>
+                <a href="{% url 'excluir_iniciacao' iniciacao.id %}" class="btn btn-sm btn-danger">Excluir</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">Nenhuma iniciação encontrada.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,412 @@
+
+
+File: .\core\admin.py
+```py
+from django.contrib import admin
+from .models import Aluno, Curso, Turma, AtividadeAcademica, AtividadeRitualistica
+from django.utils.translation import gettext_lazy as _
+from django.utils.safestring import mark_safe
+admin.site.site_header = mark_safe(_("Painel de Administração - <b><u> SISTEMA DE GESTÃO DE INICIADOS </u></b>"))
+admin.site.site_title = mark_safe(_("<b><u>Administração da Gestão de Iniciados</u></b>"))
+admin.site.index_title = mark_safe(_("<b><u>Bem-vindo ao painel de administração</u></b>"))
+
+from .models import Aluno, Curso, Turma, AtividadeAcademica, AtividadeRitualistica
+
+admin.site.register(Aluno)
+admin.site.register(Curso)
+admin.site.register(Turma)
+admin.site.register(AtividadeAcademica)
+admin.site.register(AtividadeRitualistica)
+```
+
+
+File: .\core\apps.py
+```py
+from django.apps import AppConfig
+
+
+class CoreConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'core'
+
+```
+
+
+File: .\core\forms.py
+```py
+from django import forms
+from core.models import Aluno, Curso, Turma, AtividadeAcademica, AtividadeRitualistica
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+
+class AlunoForm(forms.ModelForm):
+    class Meta:
+        model = Aluno
+        fields = ('nome', 'matricula', 'curso')
+
+class CursoForm(forms.ModelForm):
+    class Meta:
+        model = Curso
+        fields = ('nome', 'descricao')
+
+class TurmaForm(forms.ModelForm):
+    class Meta:
+        model = Turma
+        fields = ('nome', 'curso', 'data_inicio', 'data_fim', 'vagas')
+
+class AtividadeAcademicaForm(forms.ModelForm):
+    class Meta:
+        model = AtividadeAcademica
+        fields = ('nome', 'descricao', 'data', 'turma')
+
+class AtividadeRitualisticaForm(forms.ModelForm):
+    class Meta:
+        model = AtividadeRitualistica
+        fields = ['nome', 'descricao', 'turma', 'alunos']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['turma'].queryset = Turma.objects.all()
+        self.fields['alunos'].queryset = Aluno.objects.all()
+        self.fields['alunos'].widget = forms.CheckboxSelectMultiple()
+
+class AlunoTurmaForm(forms.Form):
+    aluno = forms.ModelChoiceField(queryset=Aluno.objects.all(), label="Aluno")
+
+    def __init__(self, *args, **kwargs):
+        turma = kwargs.pop('turma', None)
+        super().__init__(*args, **kwargs)
+        if turma:
+            self.fields['aluno'].queryset = Aluno.objects.exclude(turmas=turma)
+
+class RegistroForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2')
+
+    def save(self, commit=True):
+        user = super(RegistroForm, self).save(commit=False)
+        user.email = self.cleaned_data['email']
+        if commit:
+            user.save()
+        return user
+```
+
+
+File: .\core\models.py
+```py
+from django.db import models
+from django.utils import timezone
+
+class Curso(models.Model):
+    nome = models.CharField(max_length=255, unique=True, verbose_name="Nome")
+    descricao = models.TextField(verbose_name="Descrição")
+    duracao = models.PositiveIntegerField(verbose_name="Duração (meses)")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+
+    def __str__(self):
+        return self.nome
+
+    class Meta:
+        verbose_name = "Curso"
+        verbose_name_plural = "Cursos"
+        ordering = ['nome']
+
+class Aluno(models.Model):
+    nome = models.CharField(max_length=100)
+    matricula = models.CharField(max_length=20)
+    curso = models.ForeignKey(Curso, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return self.nome
+
+class Turma(models.Model):
+    nome = models.CharField(max_length=255, verbose_name="Nome")
+    curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name='turmas', verbose_name="Curso")
+    data_inicio = models.DateField(default=timezone.now)
+    data_fim = models.DateField(verbose_name="Data de Término")
+    vagas = models.PositiveIntegerField(verbose_name="Número de Vagas")
+
+    def __str__(self):
+        return f"{self.nome} - {self.curso.nome}"
+
+    class Meta:
+        ordering = ['-data_inicio', 'nome']
+
+class AtividadeBase(models.Model):
+    nome = models.CharField(max_length=255, verbose_name="Nome")
+    descricao = models.TextField(verbose_name="Descrição")
+    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, verbose_name="Turma")
+    data = models.DateTimeField(verbose_name="Data e Hora")
+    duracao = models.DurationField(verbose_name="Duração")
+
+    class Meta:
+        abstract = True
+
+class AtividadeAcademica(AtividadeBase):
+    tipo = models.CharField(max_length=50, choices=[
+        ('aula', 'Aula'),
+        ('prova', 'Prova'),
+        ('seminario', 'Seminário'),
+    ], verbose_name="Tipo")
+
+    def __str__(self):
+        return f"{self.nome} ({self.get_tipo_display()}) - {self.turma}"
+
+    class Meta:
+        verbose_name = "Atividade Acadêmica"
+        verbose_name_plural = "Atividades Acadêmicas"
+
+class AtividadeRitualistica(AtividadeBase):
+    alunos = models.ManyToManyField(Aluno, blank=True, related_name="core_atividades_ritualisticas")
+
+    def __str__(self):
+        return f"{self.nome} - {self.turma}"
+
+    class Meta:
+        verbose_name = "Atividade Ritualística"
+        verbose_name_plural = "Atividades Ritualísticas"
+
+class PresencaBase(models.Model):
+    aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, verbose_name="Aluno")
+    presente = models.BooleanField(default=False, verbose_name="Presente")
+    data_registro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Registro")
+
+    class Meta:
+        abstract = True
+
+class PresencaAcademica(PresencaBase):
+    atividade_academica = models.ForeignKey(AtividadeAcademica, on_delete=models.CASCADE, verbose_name="Atividade Acadêmica")
+
+    def __str__(self):
+        return f"{self.aluno} - {self.atividade_academica}"
+
+    class Meta:
+        verbose_name = "Presença Acadêmica"
+        verbose_name_plural = "Presenças Acadêmicas"
+        unique_together = ['aluno', 'atividade_academica']
+
+class PresencaRitualistica(PresencaBase):
+    atividade_ritualistica = models.ForeignKey(AtividadeRitualistica, on_delete=models.CASCADE, verbose_name="Atividade Ritualística")
+
+    def __str__(self):
+        return f"{self.aluno} - {self.atividade_ritualistica}"
+
+    class Meta:
+        verbose_name = "Presença Ritualística"
+        verbose_name_plural = "Presenças Ritualísticas"
+        unique_together = ['aluno', 'atividade_ritualistica']
+```
+
+
+File: .\core\tests.py
+```py
+from django.test import TestCase
+
+# Create your tests here.
+
+```
+
+
+File: .\core\urls.py
+```py
+from django.urls import path
+from . import views
+
+app_name = 'core'
+
+urlpatterns = [
+    path('', views.home, name='home'),
+    path('alunos/', views.aluno_list, name='listar_alunos'),
+    path('alunos/create/', views.aluno_create, name='cadastrar_aluno'),
+    path('alunos/<int:pk>/', views.aluno_detail, name='detalhes_aluno'),
+    path('alunos/<int:pk>/update/', views.aluno_update, name='editar_aluno'),
+    path('alunos/<int:pk>/delete/', views.aluno_delete, name='excluir_aluno'),
+    path('turmas/', views.turma_list, name='listar_turmas'),
+    path('turmas/create/', views.turma_create, name='cadastrar_turma'),
+    path('turmas/<int:pk>/', views.turma_detail, name='detalhes_turma'),
+    path('turmas/<int:pk>/update/', views.turma_update, name='editar_turma'),
+    path('turmas/<int:pk>/delete/', views.turma_delete, name='excluir_turma'),
+    path('registro/', views.registro, name='registro'),
+]
+```
+
+
+File: .\core\views.py
+```py
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Q, Avg
+from core.models import Aluno, Curso, Turma
+from core.forms import AlunoForm, CursoForm, TurmaForm, AlunoTurmaForm
+from django.contrib.auth import login, authenticate
+from .forms import RegistroForm
+
+def home(request):
+    return render(request, 'core/home.html')
+
+def registro(request):
+    if request.method == 'POST':
+        form = RegistroForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('core:home')
+    else:
+        form = RegistroForm()
+    return render(request, 'core/registro.html', {'form': form})
+
+# Aluno views
+@login_required
+def aluno_list(request):
+    alunos = Aluno.objects.all()
+    return render(request, 'core/listar_alunos.html', {'alunos': alunos})
+
+@login_required
+def aluno_create(request):
+    if request.method == 'POST':
+        form = AlunoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('core:listar_alunos')
+    else:
+        form = AlunoForm()
+    return render(request, 'core/aluno_form.html', {'form': form})
+
+@login_required
+def aluno_detail(request, pk):
+    aluno = get_object_or_404(Aluno, pk=pk)
+    return render(request, 'core/aluno_detail.html', {'aluno': aluno})
+
+@login_required
+def aluno_update(request, pk):
+    aluno = get_object_or_404(Aluno, pk=pk)
+    if request.method == 'POST':
+        form = AlunoForm(request.POST, instance=aluno)
+        if form.is_valid():
+            form.save()
+            return redirect('core:listar_alunos')
+    else:
+        form = AlunoForm(instance=aluno)
+    return render(request, 'core/aluno_form.html', {'form': form})
+
+@login_required
+def aluno_delete(request, pk):
+    aluno = get_object_or_404(Aluno, pk=pk)
+    if request.method == 'POST':
+        aluno.delete()
+        return redirect('core:listar_alunos')
+    return render(request, 'core/aluno_confirm_delete.html', {'aluno': aluno})
+
+# Turma views
+@login_required
+def turma_list(request):
+    turmas = Turma.objects.all()
+    return render(request, 'core/turma_list.html', {'turmas': turmas})
+
+@login_required
+def turma_create(request):
+    if request.method == 'POST':
+        form = TurmaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('core:listar_turmas')
+    else:
+        form = TurmaForm()
+    return render(request, 'core/turma_form.html', {'form': form})
+
+@login_required
+def turma_detail(request, pk):
+    turma = get_object_or_404(Turma, pk=pk)
+    return render(request, 'core/turma_detail.html', {'turma': turma})
+
+@login_required
+def turma_update(request, pk):
+    turma = get_object_or_404(Turma, pk=pk)
+    if request.method == 'POST':
+        form = TurmaForm(request.POST, instance=turma)
+        if form.is_valid():
+            form.save()
+            return redirect('core:listar_turmas')
+    else:
+        form = TurmaForm(instance=turma)
+    return render(request, 'core/turma_form.html', {'form': form})
+
+@login_required
+def turma_delete(request, pk):
+    turma = get_object_or_404(Turma, pk=pk)
+    if request.method == 'POST':
+        turma.delete()
+        return redirect('core:listar_turmas')
+    return render(request, 'core/turma_confirm_delete.html', {'turma': turma})
+
+# Presença views
+@login_required
+def listar_presencas_academicas(request):
+    # Adicione a lógica para listar presenças acadêmicas
+    pass
+
+# Cargo views
+@login_required
+def listar_cargos_administrativos(request):
+    # Adicione a lógica para listar cargos administrativos
+    pass
+
+# Relatório views
+@login_required
+def relatorio_alunos(request):
+    # Adicione a lógica para gerar relatórios de alunos
+    pass
+
+# Punição views
+@login_required
+def listar_punicoes(request):
+    # Adicione a lógica para listar punições
+    pass
+
+# Iniciação views
+@login_required
+def listar_iniciacoes(request):
+    # Adicione a lógica para listar iniciações
+    pass
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.middleware.csrf import get_token
+from django.http import HttpResponse
+import logging
+
+logger = logging.getLogger(__name__)
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class CustomLoginView(LoginView):
+    template_name = 'registration/login.html'
+
+    def get(self, request, *args, **kwargs):
+        # Forçar a geração do token CSRF
+        csrf_token = get_token(request)
+
+        logger.info(f"GET CSRF cookie: {request.META.get('CSRF_COOKIE')}")
+        logger.info(f"GET CSRF token: {csrf_token}")
+        response = super().get(request, *args, **kwargs)
+        response.set_cookie('csrftoken', csrf_token, httponly=False, samesite='Lax')
+        return response
+
+    def post(self, request, *args, **kwargs):
+        logger.info(f"POST CSRF cookie: {request.META.get('CSRF_COOKIE')}")
+        logger.info(f"POST CSRF token: {request.POST.get('csrfmiddlewaretoken')}")
+        return super().post(request, *args, **kwargs)
+
+def test_csrf(request):
+    csrf_token = get_token(request)
+    return HttpResponse(f"CSRF Token: {csrf_token}")
+
+```
+
+
+File: .\core\__init__.py
+```py
+
+```
