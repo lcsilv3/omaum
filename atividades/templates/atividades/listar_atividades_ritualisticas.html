@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Atividades Ritualísticas</h1>
+<a href="{% url 'atividades:atividade_ritualistica_create' %}">Criar Nova Atividade Ritualística</a>
+<ul>{% for atividade in object_list %}<li>
+    {{ atividade.nome }} - {{ atividade.turma }}
+    <a href="{% url 'atividades:atividade_ritualistica_update' atividade.pk %}">Editar</a>
+</li>{% empty %}<li>Nenhuma atividade ritualística encontrada.</li>{% endfor %}</ul>
+{% endblock %}

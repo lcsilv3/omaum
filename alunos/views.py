@@ -24,19 +24,19 @@ def listar_alunos(request):
     
     return render(request, 'alunos/listar_alunos.html', {'page_obj': page_obj, 'query': query})
 
-@login_required
+from django.shortcuts import render, redirect
+from .forms import AlunoForm
+from django.contrib import messages
 def cadastrar_aluno(request):
     if request.method == 'POST':
-        form = AlunoForm(request.POST, request.FILES)
+        form = AlunoForm(request.POST)
         if form.is_valid():
-            aluno = form.save()
-            messages.success(request, _('Aluno cadastrado com sucesso!'))
-            return redirect('alunos:detalhes', cpf=aluno.cpf)
-        else:
-            messages.error(request, _('Erro ao cadastrar aluno. Por favor, verifique os dados.'))
+            form.save()
+            messages.success(request, 'Aluno cadastrado com sucesso!')
+            return redirect('listar_alunos')
     else:
         form = AlunoForm()
-    return render(request, 'alunos/form_aluno.html', {'form': form})
+    return render(request, 'alunos/aluno_form.html', {'form': form})
 
 @login_required
 def editar_aluno(request, cpf):

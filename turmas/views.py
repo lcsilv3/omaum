@@ -1,50 +1,93 @@
-from django.shortcuts import render, redirect
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from .models import Turma
 from cursos.models import Curso
-from .forms import CursoForm, TurmaForm
+from .forms import TurmaForm, CursoForm
 
-# Views for Curso
-class CursoListView(ListView):
-    model = Curso
-    template_name = 'turmas/curso_list.html'
+# Views para Turmas
+def listar_turmas(request):
+    turmas = Turma.objects.all()
+    return render(request, 'turmas/listar_turmas.html', {'turmas': turmas})
 
-class CursoCreateView(CreateView):
-    model = Curso
-    form_class = CursoForm
-    template_name = 'turmas/curso_form.html'
-    success_url = reverse_lazy('turmas:curso_list')
+def criar_turma(request):
+    if request.method == 'POST':
+        form = TurmaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Turma criada com sucesso!')
+            return redirect('turmas:listar_turmas')
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    else:
+        form = TurmaForm()
+    return render(request, 'turmas/criar_turma.html', {'form': form})
 
-class CursoUpdateView(UpdateView):
-    model = Curso
-    form_class = CursoForm
-    template_name = 'turmas/curso_form.html'
-    success_url = reverse_lazy('turmas:curso_list')
+def detalhar_turma(request, id):
+    turma = get_object_or_404(Turma, id=id)
+    return render(request, 'turmas/detalhar_turma.html', {'turma': turma})
 
-class CursoDeleteView(DeleteView):
-    model = Curso
-    template_name = 'turmas/curso_confirm_delete.html'
-    success_url = reverse_lazy('turmas:curso_list')
+def editar_turma(request, id):
+    turma = get_object_or_404(Turma, id=id)
+    if request.method == 'POST':
+        form = TurmaForm(request.POST, instance=turma)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Turma atualizada com sucesso!')
+            return redirect('turmas:listar_turmas')
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    else:
+        form = TurmaForm(instance=turma)
+    return render(request, 'turmas/editar_turma.html', {'form': form, 'turma': turma})
 
-# Views for Turma
-class TurmaListView(ListView):
-    model = Turma
-    template_name = 'turmas/turma_list.html'
+def excluir_turma(request, id):
+    turma = get_object_or_404(Turma, id=id)
+    if request.method == 'POST':
+        turma.delete()
+        messages.success(request, 'Turma excluída com sucesso!')
+        return redirect('turmas:listar_turmas')
+    return render(request, 'turmas/excluir_turma.html', {'turma': turma})
 
-class TurmaCreateView(CreateView):
-    model = Turma
-    form_class = TurmaForm
-    template_name = 'turmas/turma_form.html'
-    success_url = reverse_lazy('turmas:turma_list')
+# Views para Cursos
+def listar_cursos(request):
+    cursos = Curso.objects.all()
+    return render(request, 'turmas/listar_cursos.html', {'cursos': cursos})
 
-class TurmaUpdateView(UpdateView):
-    model = Turma
-    form_class = TurmaForm
-    template_name = 'turmas/turma_form.html'
-    success_url = reverse_lazy('turmas:turma_list')
+def criar_curso(request):
+    if request.method == 'POST':
+        form = CursoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Curso criado com sucesso!')
+            return redirect('turmas:listar_cursos')
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    else:
+        form = CursoForm()
+    return render(request, 'turmas/criar_curso.html', {'form': form})
 
-class TurmaDeleteView(DeleteView):
-    model = Turma
-    template_name = 'turmas/turma_confirm_delete.html'
-    success_url = reverse_lazy('turmas:turma_list')
+def detalhar_curso(request, id):
+    curso = get_object_or_404(Curso, id=id)
+    return render(request, 'turmas/detalhar_curso.html', {'curso': curso})
+
+def editar_curso(request, id):
+    curso = get_object_or_404(Curso, id=id)
+    if request.method == 'POST':
+        form = CursoForm(request.POST, instance=curso)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Curso atualizado com sucesso!')
+            return redirect('turmas:listar_cursos')
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    else:
+        form = CursoForm(instance=curso)
+    return render(request, 'turmas/editar_curso.html', {'form': form, 'curso': curso})
+
+def excluir_curso(request, id):
+    curso = get_object_or_404(Curso, id=id)
+    if request.method == 'POST':
+        curso.delete()
+        messages.success(request, 'Curso excluído com sucesso!')
+        return redirect('turmas:listar_cursos')
+    return render(request, 'turmas/excluir_curso.html', {'curso': curso})

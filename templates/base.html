@@ -21,18 +21,18 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'atividades:atividade_academica_list' %}">OMAUM</a>
+            <a class="navbar-brand" href="{% url 'home' %}">OMAUM</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'atividades:atividade_academica_list' %}">Home</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Início</a>
                     </li>
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="atividadesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle {% if 'atividades' in request.resolver_match.namespace %}active{% endif %}" href="#" id="atividadesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Atividades
                             </a>
                             <ul class="dropdown-menu">
@@ -40,24 +40,34 @@
                                 <li><a class="dropdown-item" href="{% url 'atividades:atividade_ritualistica_list' %}">Ritualísticas</a></li>
                             </ul>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'alunos' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'alunos:listar' %}">Alunos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'turmas' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'turmas:turma_list' %}">Turmas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'cursos' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'turmas:curso_list' %}">Cursos</a>
+                        </li>
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {{ user.username }}
+                                <i class="fas fa-user"></i> {{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 {% if user.is_staff %}
-                                    <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fas fa-cogs"></i> Admin</a></li>
                                 {% endif %}
-                                <li><a class="dropdown-item" href="{% url 'logout' %}">Sair</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                            <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Entrar</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -68,12 +78,9 @@
     <!-- Main Content -->
     <main>
         {% if messages %}
-        <div class="container mt-3">
+        <div class="messages">
             {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-            </div>
+            <div{% if message.tags %} class="alert alert-{{ message.tags }}"{% endif %}>{{ message }}</div>
             {% endfor %}
         </div>
         {% endif %}

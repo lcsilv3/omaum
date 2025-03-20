@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Criar Novo Curso</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
+        {% for field in form %}
+            {% include 'includes/form_field.html' %}
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Criar Curso</button>
+        <a href="{% url 'listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

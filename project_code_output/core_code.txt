@@ -402,6 +402,14 @@ class CustomLoginView(LoginView):
 def test_csrf(request):
     csrf_token = get_token(request)
     return HttpResponse(f"CSRF Token: {csrf_token}")
+from django.contrib.auth.forms import UserCreationForm
+from django.urls import reverse_lazy
+from django.views.generic.edit import CreateView
+
+class RegisterView(CreateView):
+    form_class = UserCreationForm
+    success_url = reverse_lazy('login')
+    template_name = 'registration/registro.html'
 
 ```
 

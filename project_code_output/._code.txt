@@ -18,6 +18,46 @@ File: .\alunostests__init__.py
 ```
 
 
+File: .\collect_atividade_ritualistica_code.py
+```py
+import os
+root_dir = "C:\\projetos\\omaum\\punicoes"
+def collect_code(root_dir, output_file):
+    files_to_check = [
+        ('atividades/models.py', 'AtividadeRitualistica Model'),
+        ('atividades/forms.py', 'AtividadeRitualisticaForm'),
+        ('atividades/views.py', 'AtividadeRitualistica Views'),
+        ('atividades/urls.py', 'AtividadeRitualistica URLs'),
+        ('atividades/templates/atividades/criar_atividade_ritualistica.html', 'Create AtividadeRitualistica Template'),
+        ('atividades/templates/atividades/editar_atividade_ritualistica.html', 'Edit AtividadeRitualistica Template'),
+        ('atividades/templates/atividades/listar_atividades_ritualisticas.html', 'List AtividadeRitualistica Template'),
+    ]
+
+    with open(output_file, 'w', encoding='utf-8') as md_file:
+        md_file.write("# AtividadeRitualistica Code Review\n\n")
+
+        for file_path, section_title in files_to_check:
+            full_path = os.path.join(root_dir, file_path)
+            if os.path.exists(full_path):
+                md_file.write(f"## {section_title}\n\n")
+                md_file.write(f"**File: {file_path}**\n\n")
+                md_file.write("```python\n")
+                with open(full_path, 'r', encoding='utf-8') as code_file:
+                    md_file.write(code_file.read())
+                md_file.write("```\n\n")
+            else:
+                md_file.write(f"## {section_title}\n\n")
+                md_file.write(f"**File: {file_path}**\n\n")
+                md_file.write("File not found.\n\n")
+
+if __name__ == "__main__":
+    project_root = "C:/projetos/omaum"  # Update this to your project root
+    output_file = "atividade_ritualistica_code_review.md"
+    collect_code(project_root, output_file)
+    print(f"Code review file generated: {output_file}")
+```
+
+
 File: .\collect_code.py
 ```py
 import os
@@ -62,6 +102,56 @@ if __name__ == "__main__":
     collect_code(project_root, output_dir)
     print(f"Coleta de código concluída. Arquivos salvos em {output_dir}")
 
+```
+
+
+File: .\import_os.py
+```py
+import os
+
+def collect_files(project_root):
+    relevant_files = {
+        'forms.py': [],
+        'views.py': [],
+        'urls.py': [],
+        'models.py': [],
+        'templates': []
+    }
+
+    for root, dirs, files in os.walk(project_root):
+        for file in files:
+            if file in relevant_files:
+                relevant_files[file].append(os.path.join(root, file))
+            elif file.endswith('.html'):
+                relevant_files['templates'].append(os.path.join(root, file))
+
+    return relevant_files
+
+def write_file_contents(output_file, filepath):
+    with open(filepath, 'r', encoding='utf-8') as file:
+        output_file.write(f"\n\nFile: {filepath}\n")
+        output_file.write("```python\n")
+        output_file.write(file.read())
+        output_file.write("\n```\n")
+
+def main():
+    project_root = input("Enter the root directory of your Django project: ")
+    output_filename = "project_files_for_review.md"
+
+    relevant_files = collect_files(project_root)
+
+    with open(output_filename, 'w', encoding='utf-8') as output_file:
+        output_file.write("# Django Project Files for Review\n")
+
+        for file_type, file_paths in relevant_files.items():
+            output_file.write(f"\n## {file_type.capitalize()} Files:\n")
+            for filepath in file_paths:
+                write_file_contents(output_file, filepath)
+
+    print(f"File contents have been written to {output_filename}")
+
+if __name__ == "__main__":
+    main()
 ```
 
 
@@ -374,6 +464,7 @@ INSTALLED_APPS = [
     'django_extensions',  # Certifique-se de que está aqui
     # Third-party apps
     'crispy_forms',
+    'widget_tweaks',
     # Your apps
     'core',
     'alunos',
@@ -470,11 +561,15 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'home'
+LOGIN_URL = 'login'  # Adjust this if your login URL name is different
 
 # Specifies the directory paths for localization (translation) files in the Django project
 LOCALE_PATHS = (
     BASE_DIR / 'locale',
 )
+
 ```
 
 
@@ -510,6 +605,12 @@ urlpatterns = [
 urlpatterns += [
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+]
+from django.urls import path
+from .views import RegisterView
+
+urlpatterns += [
+    path('accounts/registro/', RegisterView.as_view(), name='registro'),
 ]
 
 ```

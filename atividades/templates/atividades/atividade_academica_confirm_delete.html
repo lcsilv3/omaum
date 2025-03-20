@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Atividade Acadêmica{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Excluir Atividade Acadêmica</h4>
+                </div>
+                <div class="card-body">
+                    <p>Você tem certeza que deseja excluir a atividade acadêmica "{{ object.nome }}"?</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                            <a href="{% url 'atividades:atividade_academica_list' %}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

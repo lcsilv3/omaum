@@ -4,12 +4,17 @@ from . import views
 app_name = 'turmas'
 
 urlpatterns = [
-    path('cursos/', views.CursoListView.as_view(), name='curso_list'),
-    path('cursos/create/', views.CursoCreateView.as_view(), name='curso_create'),
-    path('cursos/<int:pk>/update/', views.CursoUpdateView.as_view(), name='curso_update'),
-    path('cursos/<int:pk>/delete/', views.CursoDeleteView.as_view(), name='curso_delete'),
-    path('', views.TurmaListView.as_view(), name='turma_list'),
-    path('create/', views.TurmaCreateView.as_view(), name='turma_create'),
-    path('<int:pk>/update/', views.TurmaUpdateView.as_view(), name='turma_update'),
-    path('<int:pk>/delete/', views.TurmaDeleteView.as_view(), name='turma_delete'),
+    # URLs para Cursos
+    path('cursos/', views.listar_cursos, name='listar_cursos'),
+    path('cursos/criar/', views.criar_curso, name='criar_curso'),
+    path('cursos/<int:id>/editar/', views.editar_curso, name='editar_curso'),
+    path('cursos/<int:id>/excluir/', views.excluir_curso, name='excluir_curso'),
+    path('cursos/<int:id>/', views.detalhar_curso, name='detalhar_curso'),
+    
+    # URLs para Turmas
+    path('', views.listar_turmas, name='listar_turmas'),
+    path('criar/', views.criar_turma, name='criar_turma'),
+    path('<int:id>/editar/', views.editar_turma, name='editar_turma'),
+    path('<int:id>/excluir/', views.excluir_turma, name='excluir_turma'),
+    path('<int:id>/', views.detalhar_turma, name='detalhar_turma'),
 ]

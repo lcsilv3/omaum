@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container">
-  <h1>Criar Novo Aluno</h1>
+  <h1>Cadastrar Novo Aluno</h1>
   <form method="post" class="aluno-form">
     {% csrf_token %}
     {% if form.non_field_errors %}
@@ -28,8 +28,8 @@
         {% endif %}
       </div>
     {% endfor %}
-    <button type="submit" class="btn btn-primary">Criar Aluno</button>
-    <a href="{% url 'listar_alunos' %}" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-primary">Cadastrar Aluno</button>
   </form>
 </div>
 {% endblock %}
+

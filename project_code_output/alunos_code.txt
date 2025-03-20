@@ -26,11 +26,23 @@ File: .\alunos\forms.py
 ```py
 from django import forms
 from core.models import Aluno
+from django.core.exceptions import ValidationError
 
 class AlunoForm(forms.ModelForm):
     class Meta:
         model = Aluno
-        fields = ['nome']  # Add other fields that exist in your Aluno model
+        fields = ['nome', 'matricula', 'curso']  # Add other fields as needed
+
+    def clean_matricula(self):
+        matricula = self.cleaned_data.get('matricula')
+        if len(matricula) != 8:
+            raise ValidationError("A matrícula deve ter 8 dígitos.")
+        return matricula
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Add any cross-field validations here
+        return cleaned_data
 
 class ImportForm(forms.Form):
     file = forms.FileField()
@@ -548,19 +560,19 @@ def listar_alunos(request):
     
     return render(request, 'alunos/listar_alunos.html', {'page_obj': page_obj, 'query': query})
 
-@login_required
+from django.shortcuts import render, redirect
+from .forms import AlunoForm
+from django.contrib import messages
 def cadastrar_aluno(request):
     if request.method == 'POST':
-        form = AlunoForm(request.POST, request.FILES)
+        form = AlunoForm(request.POST)
         if form.is_valid():
-            aluno = form.save()
-            messages.success(request, _('Aluno cadastrado com sucesso!'))
-            return redirect('alunos:detalhes', cpf=aluno.cpf)
-        else:
-            messages.error(request, _('Erro ao cadastrar aluno. Por favor, verifique os dados.'))
+            form.save()
+            messages.success(request, 'Aluno cadastrado com sucesso!')
+            return redirect('listar_alunos')
     else:
         form = AlunoForm()
-    return render(request, 'alunos/form_aluno.html', {'form': form})
+    return render(request, 'alunos/aluno_form.html', {'form': form})
 
 @login_required
 def editar_aluno(request, cpf):
@@ -679,7 +691,7 @@ File: .\alunos\templates\alunos\aluno_form.html
 
 {% block content %}
 <div class="container">
-  <h1>Criar Novo Aluno</h1>
+  <h1>Cadastrar Novo Aluno</h1>
   <form method="post" class="aluno-form">
     {% csrf_token %}
     {% if form.non_field_errors %}
@@ -705,11 +717,11 @@ File: .\alunos\templates\alunos\aluno_form.html
         {% endif %}
       </div>
     {% endfor %}
-    <button type="submit" class="btn btn-primary">Criar Aluno</button>
-    <a href="{% url 'listar_alunos' %}" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-primary">Cadastrar Aluno</button>
   </form>
 </div>
 {% endblock %}
+
 
 ```
 
