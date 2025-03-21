@@ -3,5 +3,5 @@ from .models import Curso
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'duracao', 'descricao')  # Make sure 'duracao' is included only if it exists in the model
+    list_display = ['nome']  # Ajuste conforme os campos do seu modelo
     search_fields = ('nome',)

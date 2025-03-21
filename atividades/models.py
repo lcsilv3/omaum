@@ -1,6 +1,6 @@
 from django.db import models
 from turmas.models import Turma
-from core.models import Aluno
+from alunos.models import Aluno
 
 class AtividadeAcademica(models.Model):
     nome = models.CharField(max_length=255, verbose_name="Nome")
@@ -17,7 +17,7 @@ class AtividadeAcademica(models.Model):
         verbose_name_plural = "Atividades Acadêmicas"
 from django.db import models
 from turmas.models import Turma
-from core.models import Aluno
+from alunos.models import Aluno
 class AtividadeRitualistica(models.Model):
     nome = models.CharField(max_length=255, verbose_name="Nome")
     descricao = models.TextField(verbose_name="Descrição")

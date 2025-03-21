@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import Turma
 
-# Register your models here.
+@admin.register(Turma)
+class TurmaAdmin(admin.ModelAdmin):
+    list_display = ['nome']  # Ajuste conforme os campos do seu modelo

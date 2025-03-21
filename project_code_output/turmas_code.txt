@@ -3,8 +3,15 @@
 File: .\turmas\admin.py
 ```py
 from django.contrib import admin
+from .models import Turma, Curso  # Ajuste conforme a localização real do modelo Curso
 
-# Register your models here.
+@admin.register(Turma)
+class TurmaAdmin(admin.ModelAdmin):
+    list_display = ['nome']  # Ajuste conforme os campos do seu modelo
+
+@admin.register(Curso)
+class CursoAdmin(admin.ModelAdmin):
+    list_display = ['nome']  # Ajuste conforme os campos do seu modelo
 
 ```
 
@@ -25,12 +32,17 @@ File: .\turmas\forms.py
 ```py
 from django import forms
 from .models import Turma
+from cursos.models import Curso
 from django.core.exceptions import ValidationError
 
 class TurmaForm(forms.ModelForm):
     class Meta:
         model = Turma
         fields = ['nome', 'curso', 'data_inicio', 'data_fim']
+        widgets = {
+            'data_inicio': forms.DateInput(attrs={'type': 'date'}),
+            'data_fim': forms.DateInput(attrs={'type': 'date'}),
+        }
 
     def clean_nome(self):
         nome = self.cleaned_data.get('nome')
@@ -45,6 +57,17 @@ class TurmaForm(forms.ModelForm):
         if data_inicio and data_fim and data_inicio >= data_fim:
             raise ValidationError("A data de início deve ser anterior à data de fim.")
         return cleaned_data
+
+class CursoForm(forms.ModelForm):
+    class Meta:
+        model = Curso
+        fields = ['nome', 'descricao', 'duracao']
+
+    def clean_nome(self):
+        nome = self.cleaned_data.get('nome')
+        if len(nome) < 3:
+            raise ValidationError("O nome do curso deve ter pelo menos 3 caracteres.")
+        return nome
 ```
 
 
@@ -85,14 +108,19 @@ from . import views
 app_name = 'turmas'
 
 urlpatterns = [
-    path('cursos/', views.CursoListView.as_view(), name='curso_list'),
-    path('cursos/create/', views.CursoCreateView.as_view(), name='curso_create'),
-    path('cursos/<int:pk>/update/', views.CursoUpdateView.as_view(), name='curso_update'),
-    path('cursos/<int:pk>/delete/', views.CursoDeleteView.as_view(), name='curso_delete'),
-    path('', views.TurmaListView.as_view(), name='turma_list'),
-    path('create/', views.TurmaCreateView.as_view(), name='turma_create'),
-    path('<int:pk>/update/', views.TurmaUpdateView.as_view(), name='turma_update'),
-    path('<int:pk>/delete/', views.TurmaDeleteView.as_view(), name='turma_delete'),
+    # URLs para Cursos
+    path('cursos/', views.listar_cursos, name='listar_cursos'),
+    path('cursos/criar/', views.criar_curso, name='criar_curso'),
+    path('cursos/<int:id>/editar/', views.editar_curso, name='editar_curso'),
+    path('cursos/<int:id>/excluir/', views.excluir_curso, name='excluir_curso'),
+    path('cursos/<int:id>/', views.detalhar_curso, name='detalhar_curso'),
+    
+    # URLs para Turmas
+    path('', views.listar_turmas, name='listar_turmas'),
+    path('criar/', views.criar_turma, name='criar_turma'),
+    path('<int:id>/editar/', views.editar_turma, name='editar_turma'),
+    path('<int:id>/excluir/', views.excluir_turma, name='excluir_turma'),
+    path('<int:id>/', views.detalhar_turma, name='detalhar_turma'),
 ]
 ```
 
@@ -102,7 +130,13 @@ File: .\turmas\views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import Turma
-from .forms import TurmaForm
+from cursos.models import Curso
+from .forms import TurmaForm, CursoForm
+
+# Views para Turmas
+def listar_turmas(request):
+    turmas = Turma.objects.all()
+    return render(request, 'turmas/listar_turmas.html', {'turmas': turmas})
 
 def criar_turma(request):
     if request.method == 'POST':
@@ -110,12 +144,16 @@ def criar_turma(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Turma criada com sucesso!')
-            return redirect('listar_turmas')
+            return redirect('turmas:listar_turmas')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = TurmaForm()
     return render(request, 'turmas/criar_turma.html', {'form': form})
+
+def detalhar_turma(request, id):
+    turma = get_object_or_404(Turma, id=id)
+    return render(request, 'turmas/detalhar_turma.html', {'turma': turma})
 
 def editar_turma(request, id):
     turma = get_object_or_404(Turma, id=id)
@@ -124,12 +162,64 @@ def editar_turma(request, id):
         if form.is_valid():
             form.save()
             messages.success(request, 'Turma atualizada com sucesso!')
-            return redirect('listar_turmas')
+            return redirect('turmas:listar_turmas')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = TurmaForm(instance=turma)
     return render(request, 'turmas/editar_turma.html', {'form': form, 'turma': turma})
+
+def excluir_turma(request, id):
+    turma = get_object_or_404(Turma, id=id)
+    if request.method == 'POST':
+        turma.delete()
+        messages.success(request, 'Turma excluída com sucesso!')
+        return redirect('turmas:listar_turmas')
+    return render(request, 'turmas/excluir_turma.html', {'turma': turma})
+
+# Views para Cursos
+def listar_cursos(request):
+    cursos = Curso.objects.all()
+    return render(request, 'turmas/listar_cursos.html', {'cursos': cursos})
+
+def criar_curso(request):
+    if request.method == 'POST':
+        form = CursoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Curso criado com sucesso!')
+            return redirect('turmas:listar_cursos')
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    else:
+        form = CursoForm()
+    return render(request, 'turmas/criar_curso.html', {'form': form})
+
+def detalhar_curso(request, id):
+    curso = get_object_or_404(Curso, id=id)
+    return render(request, 'turmas/detalhar_curso.html', {'curso': curso})
+
+def editar_curso(request, id):
+    curso = get_object_or_404(Curso, id=id)
+    if request.method == 'POST':
+        form = CursoForm(request.POST, instance=curso)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Curso atualizado com sucesso!')
+            return redirect('turmas:listar_cursos')
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    else:
+        form = CursoForm(instance=curso)
+    return render(request, 'turmas/editar_curso.html', {'form': form, 'curso': curso})
+
+def excluir_curso(request, id):
+    curso = get_object_or_404(Curso, id=id)
+    if request.method == 'POST':
+        curso.delete()
+        messages.success(request, 'Curso excluído com sucesso!')
+        return redirect('turmas:listar_cursos')
+    return render(request, 'turmas/excluir_curso.html', {'curso': curso})
 ```
 
 
@@ -288,27 +378,46 @@ File: .\turmas\migrations\__init__.py
 ```
 
 
-File: .\turmas\templates\criar_turma.html
-```html
-
-```
-
-
 File: .\turmas\templates\turmas\criar_turma.html
 ```html
 {% extends 'base.html' %}
 
+{% block title %}Criar Turma{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <h1>Criar Nova Turma</h1>
+    
     <form method="post">
         {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+        
         {% for field in form %}
-            {% include 'includes/form_field.html' %}
+            <div class="form-group mb-3">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="alert alert-danger mt-1">
+                        {% for error in field.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+            </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary">Criar Turma</button>
-        <a href="{% url 'listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
+        
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}
@@ -354,10 +463,55 @@ File: .\turmas\templates\turmas\listar_turmas.html
 ```html
 {% extends 'base.html' %}
 
-{% block content %}
-<!-- Existing content -->
+{% block title %}Lista de Turmas{% endblock %}
 
-<a href="javascript:history.back()" class="back-button">Voltar</a>
+{% block content %}
+<div class="container mt-4">
+    <h1>Lista de Turmas</h1>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary mb-3">
+        <i class="fas fa-plus"></i> Nova Turma
+    </a>
+    
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Curso</th>
+                <th>Data de Início</th>
+                <th>Data de Fim</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for turma in turmas %}
+            <tr>
+                <td>{{ turma.nome }}</td>
+                <td>{{ turma.curso }}</td>
+                <td>{{ turma.data_inicio|date:"d/m/Y" }}</td>
+                <td>{{ turma.data_fim|date:"d/m/Y" }}</td>
+                <td>
+                    <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info">Detalhes</a>
+                    <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning">Editar</a>
+                    <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-sm btn-danger">Excluir</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">Nenhuma turma encontrada.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
 
 ```
