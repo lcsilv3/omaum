@@ -10,7 +10,7 @@
             {% include 'includes/form_field.html' %}
         {% endfor %}
         <button type="submit" class="btn btn-primary">Atualizar Atividade Acadêmica</button>
-        <a href="{% url 'listar_atividades_academicas' %}" class="btn btn-secondary">Cancelar</a>
+        <a href="{% url 'atividades:academica_lista' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}

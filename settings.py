@@ -34,25 +34,13 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    # Django apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_extensions',  # Certifique-se de que está aqui
-    # Third-party apps
-    'crispy_forms',
-    'widget_tweaks',
-    # Your apps
     'core',
-    'alunos',
-    'turmas',
-    'atividades',
-    'presencas',
-    'cargos',
-    'relatorios',
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

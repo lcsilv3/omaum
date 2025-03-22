@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from atividades.models import AtividadeAcademica
+from atividades.models import AtividadeAcademica, Atividade
 
 class AtividadeViewTest(TestCase):
     def setUp(self):
@@ -22,3 +22,8 @@ class AtividadeViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.atividade.nome)
         self.assertContains(response, self.atividade.descricao)
+
+class RitualisticaExcluirView(DeleteView):
+    model = AtividadeRitualistica
+    template_name = 'atividades/ritualistica_confirmar_exclusao.html'  # Change this line
+    success_url = reverse_lazy('atividades:ritualistica_lista')

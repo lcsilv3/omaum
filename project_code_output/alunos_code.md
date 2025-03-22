@@ -1,0 +1,969 @@
+# Código da Funcionalidade: alunos
+*Gerado automaticamente*
+
+
+
+## alunos\admin.py
+
+python
+from django.contrib import admin
+from .models import Aluno
+
+@admin.register(Aluno)
+class AlunoAdmin(admin.ModelAdmin):
+    # Remova 'telefone' se esse campo não existir no modelo Aluno
+    # list_display = ['nome', 'email', 'telefone']  # Linha com erro
+    
+    # Use apenas campos que existem no modelo
+    list_display = ['nome', 'email']  # Ajuste conforme os campos reais do seu modelo
+    search_fields = ['nome', 'email']
+
+
+
+
+## alunos\apps.py
+
+python
+from django.apps import AppConfig
+
+
+class AlunosConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'alunos'
+    from django.apps import AppConfig
+
+
+
+
+## alunos\forms.py
+
+python
+from django import forms
+from core.models import Aluno
+from django.core.exceptions import ValidationError
+
+class AlunoForm(forms.ModelForm):
+    class Meta:
+        model = Aluno
+        fields = ['nome', 'matricula', 'curso']  # Add other fields as needed
+
+    def clean_matricula(self):
+        matricula = self.cleaned_data.get('matricula')
+        if len(matricula) != 8:
+            raise ValidationError("A matrícula deve ter 8 dígitos.")
+        return matricula
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Add any cross-field validations here
+        return cleaned_data
+
+class ImportForm(forms.Form):
+    file = forms.FileField()
+
+
+
+
+
+## alunos\models.py
+
+python
+from django.db import models
+from django.core.validators import EmailValidator, RegexValidator
+from django.utils.translation import gettext_lazy as _
+from datetime import date
+from django.utils import timezone
+
+class Aluno(models.Model):
+    SEXO_CHOICES = [
+        ('M', _('Masculino')),
+        ('F', _('Feminino')),
+        ('O', _('Outro')),
+    ]
+
+    TIPO_SANGUINEO_CHOICES = [
+        ('A', 'A'),
+        ('B', 'B'),
+        ('AB', 'AB'),
+        ('O', 'O'),
+    ]
+
+    FATOR_RH_CHOICES = [
+        ('+', 'Positivo'),
+        ('-', 'Negativo'),
+    ]
+
+    ESTADO_CIVIL_CHOICES = [
+        ('S', _('Solteiro(a)')),
+        ('C', _('Casado(a)')),
+        ('D', _('Divorciado(a)')),
+        ('V', _('Viúvo(a)')),
+        ('U', _('União Estável')),
+    ]
+
+    ESCOLARIDADE_CHOICES = [
+        ('EF', _('Ensino Fundamental')),
+        ('EM', _('Ensino Médio')),
+        ('ES', _('Ensino Superior')),
+        ('PG', _('Pós-Graduação')),
+        ('ME', _('Mestrado')),
+        ('DO', _('Doutorado')),
+    ]
+
+    STATUS_CHOICES = [
+        ('A', _('Ativo')),
+        ('I', _('Inativo')),
+        ('S', _('Suspenso')),
+    ]
+    cpf_validator = RegexValidator(
+        regex=r'^\d{11}$',
+        message=_('CPF deve conter 11 dígitos numéricos')
+    )
+
+    celular_validator = RegexValidator(
+        regex=r'^\d{10,11}$',
+        message=_('Número de celular inválido')
+    )
+
+    cep_validator = RegexValidator(
+        regex=r'^\d{8}$',
+        message=_('CEP deve conter 8 dígitos numéricos')
+    )
+
+    telefone_fixo_validator = RegexValidator(
+        regex=r'^\d{10,11}$',
+        message=_('Número de telefone fixo inválido')
+    )
+    cpf = models.CharField(
+        _('CPF'),
+        max_length=11,
+        primary_key=True,
+        validators=[cpf_validator],
+        help_text=_('Digite apenas números')
+    )
+    foto = models.ImageField(
+        _('Foto'),
+        upload_to='alunos/',
+        null=True,
+        blank=True
+    )
+    nome = models.CharField(
+        _('Nome completo'),
+        max_length=100
+    )
+    data_nascimento = models.DateField(_('Data de nascimento'))
+    hora_nascimento = models.TimeField(_('Hora de nascimento'))
+    numero_iniciatico = models.CharField(
+        _('Número iniciático'),
+        max_length=20,
+        blank=True,
+        null=True
+    )
+    nome_iniciatico = models.CharField(
+        _('Nome iniciático'),
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    data_iniciacao = models.DateField(_('Data de iniciação'), null=True, blank=True)
+
+    sexo = models.CharField(
+        _('Sexo'),
+        max_length=1,
+        choices=SEXO_CHOICES
+    )
+    estado_civil = models.CharField(
+        _('Estado Civil'),
+        max_length=1,
+        choices=ESTADO_CIVIL_CHOICES,
+        null=True,  # Adicione esta linha
+        blank=True,  # Adicione esta linha
+        default='S'  # Adicione esta linha (S para Solteiro como padrão)
+    )
+
+    profissao = models.CharField(
+        _('Profissão'), 
+        max_length=100,
+        null=True,  # Adicione esta linha
+        blank=True  # Adicione esta linha
+    )
+    escolaridade = models.CharField(
+        _('Escolaridade'),
+        max_length=2,
+        choices=ESCOLARIDADE_CHOICES,
+        null=True,  # Adicione esta linha
+        blank=True  # Adicione esta linha
+    )
+
+    email = models.EmailField(
+        _('E-mail'),
+        validators=[EmailValidator()]
+    )
+    telefone_fixo = models.CharField(
+        _('Telefone Fixo'),
+        max_length=11,
+        validators=[telefone_fixo_validator],
+        blank=True,
+        null=True
+    )
+    nacionalidade = models.CharField(_('Nacionalidade'), max_length=50)
+    naturalidade = models.CharField(_('Naturalidade'), max_length=50)
+    cep = models.CharField(
+        _('CEP'),
+        max_length=8,
+        validators=[cep_validator]
+    )
+    rua = models.CharField(_('Rua'), max_length=100)
+    numero_imovel = models.CharField(_('Número'), max_length=10)
+    complemento = models.CharField(
+        _('Complemento'),
+        max_length=50,
+        blank=True,
+        null=True
+    )
+    bairro = models.CharField(_('Bairro'), max_length=50)
+    cidade = models.CharField(_('Cidade'), max_length=50)
+    estado = models.CharField(_('Estado'), max_length=2)
+    nome_primeiro_contato = models.CharField(
+        _('Nome do primeiro contato'),
+        max_length=100
+    )
+    celular_primeiro_contato = models.CharField(
+        _('Celular do primeiro contato'),
+        max_length=11,
+        validators=[celular_validator]
+    )
+    tipo_relacionamento_primeiro_contato = models.CharField(
+        _('Relacionamento do primeiro contato'),
+        max_length=50
+    )
+    nome_segundo_contato = models.CharField(
+        _('Nome do segundo contato'),
+        max_length=100
+    )
+    celular_segundo_contato = models.CharField(
+        _('Celular do segundo contato'),
+        max_length=11,
+        validators=[celular_validator]
+    )
+    tipo_relacionamento_segundo_contato = models.CharField(
+        _('Relacionamento do segundo contato'),
+        max_length=50
+    )
+    tipo_sanguineo = models.CharField(
+        _('Tipo sanguíneo'),
+        max_length=2,
+        choices=TIPO_SANGUINEO_CHOICES
+    )
+    fator_rh = models.CharField(
+        _('Fator RH'),
+        max_length=1,
+        choices=FATOR_RH_CHOICES
+    )
+    alergias = models.TextField(
+        _('Alergias'),
+        blank=True,
+        null=True
+    )
+    condicoes_medicas_gerais = models.TextField(
+        _('Condições médicas'),
+        blank=True,
+        null=True
+    )
+    convenio_medico = models.CharField(
+        _('Convênio médico'),
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    hospital = models.CharField(
+        _('Hospital de preferência'),
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    status = models.CharField(
+        _('Status'),
+        max_length=1,
+        choices=STATUS_CHOICES,
+        default='A'
+    )
+
+    created_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(
+        _('Atualizado em'),
+        auto_now=True
+    )
+
+    class Meta:
+        verbose_name = _('Aluno')
+        verbose_name_plural = _('Alunos')
+        ordering = ['nome']
+
+    def __str__(self):
+        return f"{self.nome} (CPF: {self.cpf})"
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('aluno-detail', args=[str(self.cpf)])
+
+    def save(self, *args, **kwargs):
+        if not self.created_at:
+            self.created_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    @property
+    def idade(self):
+        today = date.today()
+        return today.year - self.data_nascimento.year - (
+            (today.month, today.day) <
+            (self.data_nascimento.month, self.data_nascimento.day)
+        )
+
+    @property
+    def tempo_desde_iniciacao(self):
+        if self.data_iniciacao:
+            today = date.today()
+            delta = today - self.data_iniciacao
+            return delta.days
+        return None
+
+
+
+
+## alunos\tests.py
+
+python
+from django.test import TestCase
+from alunos.models import Aluno
+from datetime import date, time
+
+class AlunoTest(TestCase):
+    def test_criar_aluno(self):
+        aluno = Aluno.objects.create(
+            cpf='12345678901',
+            nome='João Test',
+            data_nascimento=date(1995, 5, 15),
+            hora_nascimento=time(14, 30),
+            email='joao@test.com',
+            sexo='M',
+            nacionalidade='Brasileira',
+            naturalidade='São Paulo',
+            rua='Rua Test',
+            numero_imovel='123',
+            cidade='São Paulo',
+            estado='SP',
+            bairro='Centro',
+            cep='01234567',
+            nome_primeiro_contato='Maria Test',
+            celular_primeiro_contato='11999999999',
+            tipo_relacionamento_primeiro_contato='Mãe',
+            nome_segundo_contato='José Test',
+            celular_segundo_contato='11988888888',
+            tipo_relacionamento_segundo_contato='Pai',
+            tipo_sanguineo='A',
+            fator_rh='+'
+        )
+        self.assertEqual(aluno.nome, 'João Test')
+class AlunoValidationTest(TestCase):
+    def setUp(self):
+        self.valid_data = {
+            'cpf': '12345678901',
+            'nome': 'Carlos Souza',
+            'data_nascimento': date(1975, 12, 25),
+            'hora_nascimento': time(8, 30),
+            'email': 'carlos@example.com',
+            'sexo': 'M',
+            'nacionalidade': 'Brasileira',
+            'naturalidade': 'São Paulo',
+            'rua': 'Rua Augusta',
+            'numero_imovel': '789',
+            'cidade': 'São Paulo',
+            'estado': 'SP',
+            'bairro': 'Consolação',
+            'cep': '01234567',
+            'nome_primeiro_contato': 'Pedro Souza',
+            'celular_primeiro_contato': '11999999999',
+            'tipo_relacionamento_primeiro_contato': 'Pai',
+            'nome_segundo_contato': 'Julia Souza',
+            'celular_segundo_contato': '11988888888',
+            'tipo_relacionamento_segundo_contato': 'Mãe',
+            'tipo_sanguineo': 'B',
+            'fator_rh': '+'
+        }
+
+    def test_cpf_invalido(self):
+        self.valid_data['cpf'] = '123'
+        aluno = Aluno(**self.valid_data)
+        with self.assertRaises(ValidationError):
+            aluno.full_clean()
+
+    def test_email_invalido(self):
+        self.valid_data['email'] = 'email_invalido'
+        aluno = Aluno(**self.valid_data)
+        with self.assertRaises(ValidationError):
+            aluno.full_clean()
+
+    def test_sexo_invalido(self):
+        self.valid_data['sexo'] = 'X'
+        aluno = Aluno(**self.valid_data)
+        with self.assertRaises(ValidationError):
+            aluno.full_clean()
+
+    def test_data_futura_invalida(self):
+        self.valid_data['data_nascimento'] = date(2025, 1, 1)
+        aluno = Aluno(**self.valid_data)
+        with self.assertRaises(ValidationError):
+            aluno.full_clean()
+
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+
+class SeleniumTestCase(TestCase):
+    def setUp(self):
+        service = Service('chromedriver.exe')  # Path to your chromedriver
+        self.driver = webdriver.Chrome(service=service)
+        
+    def tearDown(self):
+        self.driver.quit()
+
+
+
+## alunos\test_models.py
+
+python
+from django.test import TestCase
+from alunos.models import Aluno
+from datetime import date, time
+
+class AlunoModelTest(TestCase):
+    def test_criar_aluno(self):
+        aluno = Aluno.objects.create(
+            cpf='12345678901',
+            nome='João Test',
+            data_nascimento=date(1995, 5, 15),
+            hora_nascimento=time(14, 30),
+            email='joao@test.com',
+            sexo='M',
+            nacionalidade='Brasileira',
+            naturalidade='São Paulo',
+            rua='Rua Test',
+            numero_imovel='123',
+            cidade='São Paulo',
+            estado='SP',
+            bairro='Centro',
+            cep='01234567',
+            nome_primeiro_contato='Maria Test',
+            celular_primeiro_contato='11999999999',
+            tipo_relacionamento_primeiro_contato='Mãe',
+            nome_segundo_contato='José Test',
+            celular_segundo_contato='11988888888',
+            tipo_relacionamento_segundo_contato='Pai',
+            tipo_sanguineo='A',
+            fator_rh='+'
+        )
+        self.assertEqual(aluno.nome, 'João Test')
+
+
+
+
+## alunos\test_ui.py
+
+python
+from django.test import LiveServerTestCase
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from alunos.models import Aluno
+from datetime import date, time
+
+class AlunoUITest(LiveServerTestCase):
+    def setUp(self):
+        service = Service('chromedriver.exe')
+        self.browser = webdriver.Chrome(service=service)
+        
+        # Create a test student
+        self.aluno = Aluno.objects.create(
+            cpf='12345678901',
+            nome='Maria Test',
+            data_nascimento=date(1995, 5, 15),
+            hora_nascimento=time(14, 30),
+            email='maria@test.com',
+            sexo='F',
+            nacionalidade='Brasileira',
+            naturalidade='São Paulo',
+            rua='Rua Test',
+            numero_imovel='123',
+            cidade='São Paulo',
+            estado='SP',
+            bairro='Centro',
+            cep='01234567',
+            nome_primeiro_contato='João Test',
+            celular_primeiro_contato='11999999999',
+            tipo_relacionamento_primeiro_contato='Pai',
+            nome_segundo_contato='Ana Test',
+            celular_segundo_contato='11988888888',
+            tipo_relacionamento_segundo_contato='Mãe',
+            tipo_sanguineo='A',
+            fator_rh='+'
+        )
+
+    def tearDown(self):
+        self.browser.quit()
+
+    def test_listar_alunos(self):
+        # Access the student listing page
+        self.browser.get(f'{self.live_server_url}/alunos/')
+        
+        # Check page title
+        self.assertIn('Lista de Alunos', self.browser.title)
+        
+        # Check header
+        header = self.browser.find_element(By.TAG_NAME, 'h1')
+        self.assertEqual(header.text, 'Lista de Alunos')
+        
+        # Check if test student is listed
+        student_element = self.browser.find_element(By.CLASS_NAME, 'aluno-nome')
+        self.assertEqual(student_element.text, 'Maria Test')
+
+
+
+
+## alunos\urls.py
+
+python
+from django.urls import path
+from . import views
+
+app_name = 'alunos'
+
+urlpatterns = [
+    path('', views.listar_alunos, name='listar'),
+    path('buscar/', views.listar_alunos, name='buscar'),
+    path('cadastrar/', views.cadastrar_aluno, name='cadastrar'),
+    path('editar/<str:cpf>/', views.editar_aluno, name='editar'),
+    path('excluir/<str:cpf>/', views.excluir_aluno, name='excluir'),
+    path('detalhes/<str:cpf>/', views.detalhes_aluno, name='detalhes'),
+]
+
+
+
+
+
+## alunos\views.py
+
+python
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from core.models import Aluno, Curso  # Import Curso from core.models
+from .forms import AlunoForm, ImportForm
+from django.db.models import Count, Q
+from django.http import HttpResponse
+import csv
+from io import StringIO
+from django.contrib import messages
+from django.utils.translation import gettext as _
+
+@login_required
+def listar_alunos(request):
+    query = request.GET.get('q')
+    if query:
+        alunos = Aluno.objects.filter(nome__icontains=query)
+    else:
+        alunos = Aluno.objects.all()
+    
+    paginator = Paginator(alunos, 10)  # Mostra 10 alunos por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'alunos/listar_alunos.html', {'page_obj': page_obj, 'query': query})
+
+from django.shortcuts import render, redirect
+from .forms import AlunoForm
+from django.contrib import messages
+def cadastrar_aluno(request):
+    if request.method == 'POST':
+        form = AlunoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Aluno cadastrado com sucesso!')
+            return redirect('listar_alunos')
+    else:
+        form = AlunoForm()
+    return render(request, 'alunos/aluno_form.html', {'form': form})
+
+@login_required
+def editar_aluno(request, cpf):
+    aluno = get_object_or_404(Aluno, cpf=cpf)
+    if request.method == 'POST':
+        form = AlunoForm(request.POST, request.FILES, instance=aluno)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('Dados do aluno atualizados com sucesso!'))
+            return redirect('alunos:detalhes', cpf=aluno.cpf)
+        else:
+            messages.error(request, _('Erro ao atualizar dados do aluno. Por favor, verifique os dados.'))
+    else:
+        form = AlunoForm(instance=aluno)
+    return render(request, 'alunos/editar_aluno.html', {'form': form, 'aluno': aluno})
+
+@login_required
+def detalhes_aluno(request, cpf):
+    aluno = get_object_or_404(Aluno, cpf=cpf)
+    return render(request, 'alunos/detalhes_aluno.html', {'aluno': aluno})
+
+@login_required
+def excluir_aluno(request, cpf):
+    aluno = get_object_or_404(Aluno, cpf=cpf)
+    if request.method == 'POST':
+        if request.POST.get('confirmar') == 'sim':
+            aluno.delete()
+            messages.success(request, _('Aluno excluído com sucesso!'))
+            return redirect('alunos:listar')
+        else:
+            messages.info(request, _('Exclusão cancelada.'))
+            return redirect('alunos:detalhes', cpf=cpf)
+    return render(request, 'alunos/excluir_aluno.html', {'aluno': aluno})
+
+@login_required
+def buscar_alunos(request):
+    query = request.GET.get('q', '')
+    alunos = Aluno.objects.filter(
+        Q(nome__icontains=query) | 
+        Q(cpf__icontains=query) |
+        Q(email__icontains=query)
+    ) if query else Aluno.objects.none()
+    return render(request, 'alunos/buscar.html', {'alunos': alunos, 'query': query})
+
+@login_required
+def exportar_alunos(request):
+    alunos = Aluno.objects.all()
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="alunos.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome', 'CPF', 'Email', 'Data de Nascimento', 'Curso'])
+
+    for aluno in alunos:
+        writer.writerow([aluno.nome, aluno.cpf, aluno.email, aluno.data_nascimento, aluno.curso])
+    return response
+
+@login_required
+def importar_alunos(request):
+    if request.method == 'POST':
+        form = ImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            csv_file = request.FILES['file']
+            decoded_file = csv_file.read().decode('utf-8')
+            io_string = StringIO(decoded_file)
+            next(io_string)  # Pular o cabeçalho
+            for row in csv.reader(io_string, delimiter=','):
+                _, created = Aluno.objects.update_or_create(
+                    cpf=row[1],
+                    defaults={
+                        'nome': row[0],
+                        'email': row[2],
+                        'data_nascimento': row[3],
+                        'curso': row[4],
+                    }
+                )
+            messages.success(request, _('Alunos importados com sucesso!'))
+            return redirect('alunos:listar')
+    else:
+        form = ImportForm()
+    return render(request, 'alunos/importar.html', {'form': form})
+
+@login_required
+def relatorio_alunos(request):
+    alunos = Aluno.objects.all()
+    total_alunos = alunos.count()
+    alunos_por_curso = alunos.values('curso__nome').annotate(total=Count('id'))
+    context = {
+        'alunos': alunos,
+        'total_alunos': total_alunos,
+        'alunos_por_curso': alunos_por_curso,
+    }
+    return render(request, 'alunos/relatorio.html', context)
+
+def dashboard(request):
+    context = {
+        'total_alunos': Aluno.objects.count(),
+        'alunos_ativos': Aluno.objects.filter(ativo=True).count(),
+        'total_cursos': Curso.objects.count(),
+        'atividades_recentes': Aluno.objects.order_by('-data_cadastro')[:5].count(),
+        'alunos_recentes': Aluno.objects.order_by('-data_cadastro')[:5],
+    }
+
+    # Dados para o gráfico
+    cursos = Curso.objects.annotate(num_alunos=Count('aluno'))
+    context['cursos_labels'] = [curso.nome for curso in cursos]
+    context['alunos_por_curso_data'] = [curso.num_alunos for curso in cursos]
+
+    return render(request, 'alunos/dashboard.html', context)
+
+
+
+## alunos\templates\alunos\aluno_form.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+  <h1>Cadastrar Novo Aluno</h1>
+  <form method="post" class="aluno-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}
+          {{ error }}
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% for field in form %}
+      <div class="form-group">
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.errors %}
+          <div class="alert alert-danger">
+            {% for error in field.errors %}
+              {{ error }}
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% if field.help_text %}
+          <small class="form-text text-muted">{{ field.help_text }}</small>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Cadastrar Aluno</button>
+  </form>
+</div>
+{% endblock %}
+
+
+
+
+
+## alunos\templates\alunos\dashboard.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Dashboard de Alunos</h1>
+
+    <div class="row">
+        <!-- Cartão de Total de Alunos -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Alunos</h5>
+                    <p class="card-text display-4">{{ total_alunos }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cartão de Alunos Ativos -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos Ativos</h5>
+                    <p class="card-text display-4">{{ alunos_ativos }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cartão de Alunos por Curso -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Cursos</h5>
+                    <p class="card-text display-4">{{ total_cursos }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cartão de Atividades Recentes -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Atividades Recentes</h5>
+                    <p class="card-text display-4">{{ atividades_recentes }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Gráfico de Alunos por Curso -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos por Curso</h5>
+                    <canvas id="alunosPorCursoChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Alunos Recentes -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos Recentemente Adicionados</h5>
+                    <ul class="list-group">
+                        {% for aluno in alunos_recentes %}
+                            <li class="list-group-item">
+                                {{ aluno.nome }} - {{ aluno.curso }}
+                                <a href="{% url 'alunos:detalhes' aluno.cpf %}" class="btn btn-sm btn-info float-right">Detalhes</a>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">Nenhum aluno recente.</li>
+                        {% endfor %}
+                    </ul>
+
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Ações Rápidas -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Ações Rápidas</h5>
+                    <a href="{% url 'alunos:cadastrar' %}" class="btn btn-primary mr-2">Cadastrar Novo Aluno</a>
+                    <a href="{% url 'alunos:listar' %}" class="btn btn-secondary mr-2">Listar Todos os Alunos</a>
+                    <a href="{% url 'alunos:exportar' %}" class="btn btn-success mr-2">Exportar Dados</a>
+                    <a href="{% url 'alunos:importar' %}" class="btn btn-info">Importar Dados</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+data: {
+    labels: JSON.parse('{{ cursos_labels|safe }}'),
+    datasets: [{
+        label: 'Número de Alunos',
+        data: JSON.parse('{{ alunos_por_curso_data|safe }}'),
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+    }]
+},
+{% endblock %}
+
+
+
+## alunos\templates\alunos\detalhes_aluno.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Existing content -->
+
+<a href="javascript:history.back()" class="back-button">Voltar</a>
+{% endblock %}
+
+
+
+
+## alunos\templates\alunos\listar_alunos.html
+
+html
+{% extends "base.html" %}
+
+{% block title %}Lista de Alunos{% endblock %}
+
+{% block content %}
+    <h1>Lista de Alunos</h1>
+    <ul>{% for aluno in alunos %}
+        <li>{{ aluno.nome }} - {{ aluno.matricula }}</li>{% empty %}
+        <li>Nenhum aluno cadastrado.</li>{% endfor %}
+    </ul>
+{% endblock %}
+
+
+
+
+## alunos\templates\alunos\registro.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Registro</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Registrar</button>
+</form>
+
+<a href="javascript:history.back()" class="back-button">Voltar</a>
+
+<style>
+    .back-button {
+        margin-top: 20px;
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        text-decoration: none;
+        color: #333;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}
+
+
+
+
+## alunos\tests\test_ui.py
+
+python
+from django.test import LiveServerTestCase
+from django.urls import reverse
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+
+class AlunoUITest(LiveServerTestCase):
+    def setUp(self):
+        self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+
+    def tearDown(self):
+        self.browser.quit()
+
+    def test_listar_alunos(self):
+        self.browser.get(self.live_server_url + reverse('listar_alunos'))
+        self.assertIn('Lista de Alunos', self.browser.title)
+
+    def test_criar_aluno(self):
+        self.browser.get(self.live_server_url + reverse('criar_aluno'))
+        self.assertIn('Criar Aluno', self.browser.title)
+        
+        # Fill form and submit
+        self.browser.find_element(By.NAME, 'nome').send_keys('João Test')
+        self.browser.find_element(By.NAME, 'cpf').send_keys('98765432100')
+        # Add other form fields...
+        
+        self.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]').click()
+        
+        # Verify success        self.assertIn('Aluno criado com sucesso', self.browser.page_source)        self.assertIn('Lista de Alunos', self.browser.title)
+

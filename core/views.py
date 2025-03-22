@@ -172,3 +172,35 @@ class RegisterView(CreateView):
     form_class = UserCreationForm
     success_url = reverse_lazy('login')
     template_name = 'registration/registro.html'
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from .models import Aluno, Categoria, Item
+
+def lista_alunos(request):
+    alunos = Aluno.objects.filter(ativo=True)
+    return render(request, 'core/lista_alunos.html', {'alunos': alunos})
+
+def detalhe_aluno(request, aluno_id):
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    return render(request, 'core/detalhe_aluno.html', {'aluno': aluno})
+
+def lista_categorias(request):
+    categorias = Categoria.objects.all()
+    return render(request, 'core/lista_categorias.html', {'categorias': categorias})
+
+def detalhe_categoria(request, categoria_id):
+    categoria = get_object_or_404(Categoria, pk=categoria_id)
+    itens = categoria.itens.all()
+    return render(request, 'core/detalhe_categoria.html', {
+        'categoria': categoria,
+        'itens': itens
+    })
+
+def lista_itens(request):
+    itens = Item.objects.filter(disponivel=True)
+    return render(request, 'core/lista_itens.html', {'itens': itens})
+
+def detalhe_item(request, item_id):
+    item = get_object_or_404(Item, pk=item_id)
+    return render(request, 'core/detalhe_item.html', {'item': item})

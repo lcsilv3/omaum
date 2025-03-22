@@ -1,0 +1,65 @@
+# Código da Funcionalidade: static
+*Gerado automaticamente*
+
+
+
+## static\css\accessibility_fixes.css
+
+css
+/* Fix for list structure accessibility issues */
+ul, ol {
+  font-size: 0;  /* Collapse whitespace between list items */
+  list-style-position: inside;  /* Ensure bullets/numbers are within the list item's text flow */
+}
+
+li {
+  font-size: 1rem;  /* Restore font size for list items */
+  margin-bottom: 0.5em;  /* Add some vertical spacing between list items for better readability */
+}
+
+ul *, ol * {
+  font-size: 1rem;  /* Restore font size for nested elements */
+}
+
+/* Fix for Bootstrap components */
+.navbar-nav, .dropdown-menu {
+  font-size: 0;  /* Collapse whitespace between nav items */
+}
+
+.navbar-nav *, .dropdown-menu * {
+  font-size: 1rem;  /* Restore font size for nav items and dropdowns */
+}
+
+/* Additional accessibility improvements */
+:focus {
+  outline: 2px solid #007bff;  /* Add a visible focus indicator */
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Improve color contrast for better readability */
+body {
+  color: #333;  /* Darker text color for better contrast */
+}
+
+a {
+  color: #0056b3;  /* Darker link color for better contrast */
+}
+
+/* Ensure sufficient line height for readability */
+p, li {
+  line-height: 1.5;
+}
+
+
