@@ -66,17 +66,13 @@
                     <ul class="list-group">
                         {% for aluno in alunos_recentes %}
                             <li class="list-group-item">
-                                {{ aluno.nome }} - {{ aluno.curso }}
+                                {{ aluno.nome }}
                                 <a href="{% url 'alunos:detalhes' aluno.cpf %}" class="btn btn-sm btn-info float-right">Detalhes</a>
                             </li>
                         {% empty %}
                             <li class="list-group-item">Nenhum aluno recente.</li>
                         {% endfor %}
                     </ul>
-
-
-
-
                 </div>
             </div>
         </div>
@@ -97,19 +93,33 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-data: {
-    labels: JSON.parse('{{ cursos_labels|safe }}'),
-    datasets: [{
-        label: 'Número de Alunos',
-        data: JSON.parse('{{ alunos_por_curso_data|safe }}'),
-        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 1
-    }]
-},
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('alunosPorCursoChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: JSON.parse('{{ cursos_labels|safe }}'),
+            datasets: [{
+                label: 'Número de Alunos',
+                data: JSON.parse('{{ alunos_por_curso_data|safe }}'),
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

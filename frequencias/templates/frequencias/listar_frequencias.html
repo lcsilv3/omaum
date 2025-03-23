@@ -1,7 +1,175 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<!-- Existing content -->
-
-<a href="javascript:history.back()" class="back-button">Voltar</a>
+<div class="container mt-4">
+    <!-- Adicionar após o título da página -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Lista de Frequências</h1>
+        <div>
+            <a href="{% url 'registrar_frequencia' %}" class="btn btn-primary">Registrar Frequência Individual</a>
+            {% if turma_id %}
+            <a href="{% url 'registrar_frequencia_turma' turma_id %}" class="btn btn-success">Registrar Frequência da Turma</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="aluno" class="form-label">Aluno</label>
+                    <select name="aluno" id="aluno" class="form-select">
+                        <option value="">Todos</option>
+                        {% for aluno in alunos %}
+                            <option value="{{ aluno.id }}" {% if aluno_id == aluno.id|stringformat:"s" %}selected{% endif %}>{{ aluno.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="turma" class="form-label">Turma</label>
+                    <select name="turma" id="turma" class="form-select">
+                        <option value="">Todas</option>
+                        {% for turma in turmas %}
+                            <option value="{{ turma.id }}" {% if turma_id == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.codigo_turma }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="presente" {% if status == 'presente' %}selected{% endif %}>Presente</option>
+                        <option value="ausente" {% if status == 'ausente' %}selected{% endif %}>Ausente</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Limpar Filtros</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Aluno</th>
+                <th>Turma</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for frequencia in frequencias %}
+            <tr>
+                <td>{{ frequencia.aluno }}</td>
+                <td>{{ frequencia.turma }}</td>
+                <td>{{ frequencia.data }}</td>
+                <td>
+                    {% if frequencia.presente %}
+                        <span class="badge bg-success">Presente</span>
+                    {% else %}
+                        <span class="badge bg-danger">Ausente</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'detalhe_frequencia' frequencia.id %}" class="btn btn-sm btn-info">Detalhes</a>
+                    <a href="{% url 'editar_frequencia' frequencia.id %}" class="btn btn-sm btn-warning">Editar</a>
+                    <a href="{% url 'excluir_frequencia' frequencia.id %}" class="btn btn-sm btn-danger">Excluir</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">Nenhuma frequência registrada.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Paginação -->
+    {% if frequencias.paginator.num_pages > 1 %}
+    <nav aria-label="Navegação de página">
+        <ul class="pagination justify-content-center">
+            {% if frequencias.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status %}&status={{ status }}{% endif %}" aria-label="Primeira">
+                        <span aria-hidden="true">««</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ frequencias.previous_page_number }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status %}&status={{ status }}{% endif %}" aria-label="Anterior">
+                        <span aria-hidden="true">«</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Primeira">
+                        <span aria-hidden="true">««</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Anterior">
+                        <span aria-hidden="true">«</span>
+                    </a>
+                </li>
+            {% endif %}
+           
+            {% for i in frequencias.paginator.page_range %}
+                {% if frequencias.number == i %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                {% elif i > frequencias.number|add:'-3' and i < frequencias.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status %}&status={{ status }}{% endif %}">{{ i }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+           
+            {% if frequencias.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ frequencias.next_page_number }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status %}&status={{ status }}{% endif %}" aria-label="Próximo">
+                        <span aria-hidden="true">»</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ frequencias.paginator.num_pages }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status %}&status={{ status }}{% endif %}" aria-label="Última">
+                        <span aria-hidden="true">»»</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Próximo">
+                        <span aria-hidden="true">»</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Última">
+                        <span aria-hidden="true">»»</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
 {% endblock %}

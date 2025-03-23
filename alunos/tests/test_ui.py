@@ -1,24 +1,38 @@
 from django.test import LiveServerTestCase
 from django.urls import reverse
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 
 class AlunoUITest(LiveServerTestCase):
     def setUp(self):
-        self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-
+        options = Options()
+        options.add_argument('--headless')  # Run in headless mode for CI environments
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        
+        try:
+            self.browser = webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()),
+                options=options
+            )
+        except Exception as e:
+            print(f"Could not initialize Chrome driver: {e}")
+            self.skipTest("Webdriver not available")
+            
     def tearDown(self):
-        self.browser.quit()
+        if hasattr(self, 'browser'):
+            self.browser.quit()
 
     def test_listar_alunos(self):
-        self.browser.get(self.live_server_url + reverse('listar_alunos'))
+        self.browser.get(self.live_server_url + reverse('alunos:listar'))
         self.assertIn('Lista de Alunos', self.browser.title)
 
     def test_criar_aluno(self):
-        self.browser.get(self.live_server_url + reverse('criar_aluno'))
-        self.assertIn('Criar Aluno', self.browser.title)
+        self.browser.get(self.live_server_url + reverse('alunos:cadastrar'))
+        self.assertIn('Cadastrar Novo Aluno', self.browser.page_source)
         
         # Fill form and submit
         self.browser.find_element(By.NAME, 'nome').send_keys('João Test')

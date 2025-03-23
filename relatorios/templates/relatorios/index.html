@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Relatórios do Sistema</h1>
+    
+    <div class="row mt-4">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Relatório de Alunos</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Gere relatórios completos dos alunos cadastrados no sistema, com opções de filtros por nome e data de nascimento.</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'relatorio_alunos' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Relatório de Presenças</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Acompanhe o registro de presenças dos alunos, com filtros por aluno, turma e período.</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'relatorio_presencas' %}" class="btn btn-success">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Relatório de Punições</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Visualize as punições registradas no sistema, com filtros por aluno, tipo de punição e período.</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'relatorio_punicoes' %}" class="btn btn-danger">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

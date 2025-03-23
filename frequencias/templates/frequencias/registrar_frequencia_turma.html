@@ -1,0 +1,65 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Registrar Frequência da Turma: {{ turma.codigo_turma }}</h1>
+   
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+   
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+               
+                <div class="mb-3">
+                    <label for="data" class="form-label">Data</label>
+                    <input type="date" class="form-control" id="data" name="data" required>
+                </div>
+               
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Presente</th>
+                            <th>Justificativa (se ausente)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aluno in alunos %}
+                        <tr>
+                            <td>{{ aluno.nome }}</td>
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="presentes" value="{{ aluno.id }}" id="presente_{{ aluno.id }}" checked>
+                                    <label class="form-check-label" for="presente_{{ aluno.id }}">
+                                        Presente
+                                    </label>
+                                </div>
+                            </td>
+                            <td>
+                                <textarea class="form-control" name="justificativa_{{ aluno.id }}" rows="2" placeholder="Justificativa para ausência"></textarea>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">Nenhum aluno encontrado nesta turma.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+               
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">Registrar Frequências</button>
+                    <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

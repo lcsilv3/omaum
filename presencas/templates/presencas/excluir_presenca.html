@@ -1,0 +1,31 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Registro de Presença</h1>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5>Confirmação de Exclusão</h5>
+                <p>Você está prestes a excluir o seguinte registro de presença:</p>
+                <ul>
+                    <li><strong>Aluno:</strong> {{ presenca.aluno }}</li>
+                    <li><strong>Turma:</strong> {{ presenca.turma }}</li>
+                    <li><strong>Data:</strong> {{ presenca.data }}</li>
+                    <li><strong>Presente:</strong> {% if presenca.presente %}Sim{% else %}Não{% endif %}</li>
+                </ul>
+                <p>Esta ação não pode ser desfeita. Deseja continuar?</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                    <a href="{% url 'lista_presencas' %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

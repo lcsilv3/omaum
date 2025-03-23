@@ -11,8 +11,9 @@ from .models import Curso
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
-    list_display = ['nome']  # Ajuste conforme os campos do seu modelo
-    search_fields = ('nome',)
+    list_display = ['codigo_curso', 'nome', 'duracao']
+    search_fields = ('codigo_curso', 'nome')
+    list_filter = ('duracao',)
 
 
 
@@ -40,7 +41,7 @@ from django.core.exceptions import ValidationError
 class CursoForm(forms.ModelForm):
     class Meta:
         model = Curso
-        fields = ['codigo_curso', 'nome', 'descricao']
+        fields = ['codigo_curso', 'nome', 'descricao', 'duracao']
 
     def clean_codigo_curso(self):
         codigo = self.cleaned_data.get('codigo_curso')
@@ -62,6 +63,7 @@ python
 from django.db import models
 
 class Curso(models.Model):
+    codigo_curso = models.CharField(max_length=5, unique=True)
     nome = models.CharField(max_length=100)
     descricao = models.TextField()
     duracao = models.PositiveIntegerField(verbose_name="Duração (meses)", null=True, blank=True)
@@ -93,10 +95,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.CursoListView.as_view(), name='curso_list'),
-    path('novo/', views.CursoCreateView.as_view(), name='curso_create'),
-    path('<str:pk>/editar/', views.CursoUpdateView.as_view(), name='curso_update'),
-    path('<str:pk>/excluir/', views.CursoDeleteView.as_view(), name='curso_delete'),
+    path('', views.listar_cursos, name='listar_cursos'),
+    path('novo/', views.criar_curso, name='criar_curso'),
+    path('<int:id>/editar/', views.editar_curso, name='editar_curso'),
+    path('<int:id>/excluir/', views.excluir_curso, name='excluir_curso'),
+    path('<int:id>/detalhes/', views.detalhes_curso, name='detalhes_curso'),
 ]
 
 
@@ -104,17 +107,14 @@ urlpatterns = [
 ## cursos\views.py
 
 python
-from django import forms
-from .models import Curso
-
-class CursoForm(forms.ModelForm):
-    class Meta:
-        model = Curso
-        fields = ['nome', 'codigo', 'descricao']  # Add or remove fields as needed
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import Curso
 from .forms import CursoForm
+
+def listar_cursos(request):
+    cursos = Curso.objects.all()
+    return render(request, 'cursos/listar_cursos.html', {'cursos': cursos})
 
 def criar_curso(request):
     if request.method == 'POST':
@@ -142,6 +142,18 @@ def editar_curso(request, id):
     else:
         form = CursoForm(instance=curso)
     return render(request, 'cursos/editar_curso.html', {'form': form, 'curso': curso})
+
+def excluir_curso(request, id):
+    curso = get_object_or_404(Curso, id=id)
+    if request.method == 'POST':
+        curso.delete()
+        messages.success(request, 'Curso excluído com sucesso!')
+        return redirect('listar_cursos')
+    return render(request, 'cursos/excluir_curso.html', {'curso': curso})
+
+def detalhes_curso(request, id):
+    curso = get_object_or_404(Curso, id=id)
+    return render(request, 'cursos/detalhes_curso.html', {'curso': curso})
 
 
 
@@ -265,47 +277,31 @@ html
 
 
 
-## cursos\templates\cursos\curso_form.html
-
-html
-{% extends 'base.html' %}
-
-{% block content %}
-  <h1>Criar Curso</h1>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Criar</button>
-  </form>
-{% endblock %}
-
-
-
-## cursos\templates\cursos\curso_list.html
-
-html
-{% extends 'base.html' %}
-
-{% block content %}
-  <h1>Cursos</h1>
-  {% for curso in cursos %}
-    <ul>
-      <li>{{ curso.nome }} ({{ curso.descricao }})</li>
-    </ul>
-  {% endfor %}
-{% endblock %}
-
-
-
 ## cursos\templates\cursos\detalhes_curso.html
 
 html
 {% extends 'base.html' %}
 
 {% block content %}
-<!-- Existing content -->
-
-<a href="javascript:history.back()" class="back-button">Voltar</a>
+<div class="container mt-4">
+  <h1>Detalhes do Curso</h1>
+  
+  <div class="card">
+    <div class="card-header">
+      <h2>{{ curso.nome }}</h2>
+    </div>
+    <div class="card-body">
+      <p><strong>Código:</strong> {{ curso.codigo_curso }}</p>
+      <p><strong>Descrição:</strong> {{ curso.descricao }}</p>
+      <p><strong>Duração:</strong> {{ curso.duracao }} meses</p>
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'editar_curso' curso.id %}" class="btn btn-warning">Editar</a>
+      <a href="{% url 'excluir_curso' curso.id %}" class="btn btn-danger">Excluir</a>
+      <a href="{% url 'listar_cursos' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 
@@ -330,4 +326,72 @@ html
     </form>
 </div>
 {% endblock %}
+
+
+
+## cursos\templates\cursos\excluir_curso.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Curso</h1>
+    <p>Tem certeza que deseja excluir o curso "{{ curso.nome }}"?</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Sim, excluir</button>
+        <a href="{% url 'listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
+
+
+
+
+## cursos\templates\cursos\listar_cursos.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Cursos</h1>
+  
+  <a href="{% url 'criar_curso' %}" class="btn btn-primary mb-3">Novo Curso</a>
+  
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nome</th>
+        <th>Descrição</th>
+        <th>Duração</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for curso in cursos %}
+      <tr>
+        <td>{{ curso.codigo_curso }}</td>
+        <td>{{ curso.nome }}</td>
+        <td>{{ curso.descricao|truncatechars:50 }}</td>
+        <td>{{ curso.duracao }} meses</td>
+        <td>
+          <a href="{% url 'detalhes_curso' curso.id %}" class="btn btn-sm btn-info">Detalhes</a>
+          <a href="{% url 'editar_curso' curso.id %}" class="btn btn-sm btn-warning">Editar</a>
+          <a href="{% url 'excluir_curso' curso.id %}" class="btn btn-sm btn-danger">Excluir</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5">Nenhum curso cadastrado.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
 

@@ -32,9 +32,9 @@ class IniciacaoModelTest(TestCase):
 
     def test_criar_iniciacao(self):
         iniciacao = Iniciacao.objects.create(
-            cpf_aluno=self.aluno,
+            aluno=self.aluno,
             nome_curso='Curso de Iniciação',
             data_iniciacao=date(2023, 10, 1)
         )
         self.assertEqual(iniciacao.nome_curso, 'Curso de Iniciação')
-        self.assertEqual(iniciacao.cpf_aluno, self.aluno)
+        self.assertEqual(iniciacao.aluno, self.aluno)

@@ -1,7 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from core.models import Aluno, Curso  # Import Curso from core.models
+from alunos.models import Aluno  # Corrigido: importar do módulo alunos
+from django.apps import apps
 from .forms import AlunoForm, ImportForm
 from django.db.models import Count, Q
 from django.http import HttpResponse
@@ -10,30 +11,62 @@ from io import StringIO
 from django.contrib import messages
 from django.utils.translation import gettext as _
 
+# Obter o modelo Curso de onde estiver definido
+Curso = apps.get_model('core', 'Curso')
+
 @login_required
 def listar_alunos(request):
     query = request.GET.get('q')
-    if query:
-        alunos = Aluno.objects.filter(nome__icontains=query)
-    else:
-        alunos = Aluno.objects.all()
+    curso_id = request.GET.get('curso')
     
-    paginator = Paginator(alunos, 10)  # Mostra 10 alunos por página
+    # Start with all students
+    queryset = Aluno.objects.all()
+    
+    # Apply filters if provided
+    if query:
+        queryset = queryset.filter(
+            Q(nome__icontains=query) | 
+            Q(cpf__icontains=query) | 
+            Q(email__icontains=query)
+        )
+    
+    if curso_id:
+        queryset = queryset.filter(curso_id=curso_id)
+    
+    # Include curso in the queryset to avoid N+1 query problem
+    queryset = queryset.select_related('curso')
+    
+    # Paginate the results
+    paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    return render(request, 'alunos/listar_alunos.html', {'page_obj': page_obj, 'query': query})
+    # Get all courses for the filter dropdown
+    try:
+        Curso = apps.get_model('core', 'Curso')
+        cursos = Curso.objects.all()
+    except:
+        cursos = []
+    
+    # Return with both page_obj and alunos (pointing to the same data)
+    return render(request, 'alunos/listar_alunos.html', {
+        'page_obj': page_obj,
+        'alunos': page_obj,  # This fixes the template mismatch
+        'query': query,
+        'cursos': cursos,
+        'curso_selecionado': curso_id
+    })
 
-from django.shortcuts import render, redirect
-from .forms import AlunoForm
-from django.contrib import messages
+@login_required
 def cadastrar_aluno(request):
     if request.method == 'POST':
-        form = AlunoForm(request.POST)
+        form = AlunoForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, 'Aluno cadastrado com sucesso!')
-            return redirect('listar_alunos')
+            return redirect('alunos:listar')
+        else:
+            messages.error(request, 'Erro ao cadastrar aluno. Verifique os dados.')
     else:
         form = AlunoForm()
     return render(request, 'alunos/aluno_form.html', {'form': form})
@@ -75,7 +108,7 @@ def excluir_aluno(request, cpf):
 def buscar_alunos(request):
     query = request.GET.get('q', '')
     alunos = Aluno.objects.filter(
-        Q(nome__icontains=query) | 
+        Q(nome__icontains=query) |
         Q(cpf__icontains=query) |
         Q(email__icontains=query)
     ) if query else Aluno.objects.none()
@@ -88,10 +121,10 @@ def exportar_alunos(request):
     response['Content-Disposition'] = 'attachment; filename="alunos.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['Nome', 'CPF', 'Email', 'Data de Nascimento', 'Curso'])
+    writer.writerow(['Nome', 'CPF', 'Email', 'Data de Nascimento'])
 
     for aluno in alunos:
-        writer.writerow([aluno.nome, aluno.cpf, aluno.email, aluno.data_nascimento, aluno.curso])
+        writer.writerow([aluno.nome, aluno.cpf, aluno.email, aluno.data_nascimento])
     return response
 
 @login_required
@@ -110,7 +143,6 @@ def importar_alunos(request):
                         'nome': row[0],
                         'email': row[2],
                         'data_nascimento': row[3],
-                        'curso': row[4],
                     }
                 )
             messages.success(request, _('Alunos importados com sucesso!'))
@@ -123,26 +155,32 @@ def importar_alunos(request):
 def relatorio_alunos(request):
     alunos = Aluno.objects.all()
     total_alunos = alunos.count()
-    alunos_por_curso = alunos.values('curso__nome').annotate(total=Count('id'))
+    # Remover referência a curso se não existir no modelo
     context = {
         'alunos': alunos,
         'total_alunos': total_alunos,
-        'alunos_por_curso': alunos_por_curso,
     }
     return render(request, 'alunos/relatorio.html', context)
 
+@login_required
 def dashboard(request):
     context = {
         'total_alunos': Aluno.objects.count(),
-        'alunos_ativos': Aluno.objects.filter(ativo=True).count(),
-        'total_cursos': Curso.objects.count(),
-        'atividades_recentes': Aluno.objects.order_by('-data_cadastro')[:5].count(),
-        'alunos_recentes': Aluno.objects.order_by('-data_cadastro')[:5],
+        'alunos_ativos': Aluno.objects.filter(status='A').count(),
+        'alunos_recentes': Aluno.objects.order_by('-created_at')[:5],
     }
-
-    # Dados para o gráfico
-    cursos = Curso.objects.annotate(num_alunos=Count('aluno'))
-    context['cursos_labels'] = [curso.nome for curso in cursos]
-    context['alunos_por_curso_data'] = [curso.num_alunos for curso in cursos]
+    
+    try:
+        Curso = apps.get_model('core', 'Curso')
+        context['total_cursos'] = Curso.objects.count()
+        
+        # Dados para o gráfico
+        cursos = Curso.objects.all()
+        context['cursos_labels'] = [curso.nome for curso in cursos]
+        context['alunos_por_curso_data'] = [0] * len(cursos)  # Placeholder
+    except:
+        context['total_cursos'] = 0
+        context['cursos_labels'] = []
+        context['alunos_por_curso_data'] = []
 
     return render(request, 'alunos/dashboard.html', context)

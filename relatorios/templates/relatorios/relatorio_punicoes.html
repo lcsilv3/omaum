@@ -1,0 +1,87 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Relatório de Punições</h1>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="aluno" class="form-label">Aluno:</label>
+                    <select name="aluno" id="aluno" class="form-select">
+                        <option value="">Todos</option>
+                        {% for aluno in alunos %}
+                            <option value="{{ aluno.id }}" {% if aluno_id == aluno.id|stringformat:"s" %}selected{% endif %}>{{ aluno.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="tipo_punicao" class="form-label">Tipo de Punição:</label>
+                    <select name="tipo_punicao" id="tipo_punicao" class="form-select">
+                        <option value="">Todos</option>
+                        {% for tipo in tipos_punicao %}
+                            <option value="{{ tipo }}" {% if tipo_punicao == tipo %}selected{% endif %}>{{ tipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="data_inicio" class="form-label">Data Início:</label>
+                    <input type="date" id="data_inicio" name="data_inicio" class="form-control" value="{{ data_inicio }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="data_fim" class="form-label">Data Fim:</label>
+                    <input type="date" id="data_fim" name="data_fim" class="form-control" value="{{ data_fim }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Botões de ação -->
+    <div class="mb-3">
+        <a href="{% url 'relatorio_punicoes_pdf' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-danger">
+            <i class="fas fa-file-pdf"></i> Baixar PDF
+        </a>
+    </div>
+    
+    <!-- Tabela de resultados -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Resultados</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Aluno</th>
+                        <th>Tipo de Punição</th>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for punicao in punicoes %}
+                    <tr>
+                        <td>{{ punicao.aluno.nome }}</td>
+                        <td>{{ punicao.tipo_punicao }}</td>
+                        <td>{{ punicao.data|date:"d/m/Y" }}</td>
+                        <td>{{ punicao.descricao|truncatechars:50 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">Nenhuma punição encontrada com os filtros selecionados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

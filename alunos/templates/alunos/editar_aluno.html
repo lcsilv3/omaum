@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Aluno - {{ aluno.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>Editar Aluno</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="aluno-form">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Informações Pessoais</h4>
+                        <hr>
+                        
+                        <div class="form-group">
+                            {{ form.nome.label_tag }}
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.nome.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.cpf.label_tag }}
+                            {{ form.cpf }}
+                            {% if form.cpf.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.cpf.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">{{ form.cpf.help_text }}</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.data_nascimento.label_tag }}
+                            {{ form.data_nascimento }}
+                            {% if form.data_nascimento.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.data_nascimento.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.hora_nascimento.label_tag }}
+                            {{ form.hora_nascimento }}
+                            {% if form.hora_nascimento.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.hora_nascimento.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.email.label_tag }}
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.email.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.sexo.label_tag }}
+                            {{ form.sexo }}
+                            {% if form.sexo.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.sexo.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h4>Nacionalidade e Endereço</h4>
+                        <hr>
+                        
+                        <div class="form-group">
+                            {{ form.nacionalidade.label_tag }}
+                            {{ form.nacionalidade }}
+                            {% if form.nacionalidade.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.nacionalidade.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.naturalidade.label_tag }}
+                            {{ form.naturalidade }}
+                            {% if form.naturalidade.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.naturalidade.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.cep.label_tag }}
+                            {{ form.cep }}
+                            {% if form.cep.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.cep.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.rua.label_tag }}
+                            {{ form.rua }}
+                            {% if form.rua.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.rua.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.numero_imovel.label_tag }}
+                            {{ form.numero_imovel }}
+                            {% if form.numero_imovel.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.numero_imovel.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.bairro.label_tag }}
+                            {{ form.bairro }}
+                            {% if form.bairro.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.bairro.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.cidade.label_tag }}
+                            {{ form.cidade }}
+                            {% if form.cidade.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.cidade.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.estado.label_tag }}
+                            {{ form.estado }}
+                            {% if form.estado.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.estado.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h4>Contatos de Emergência</h4>
+                        <hr>
+                        
+                        <div class="form-group">
+                            {{ form.nome_primeiro_contato.label_tag }}
+                            {{ form.nome_primeiro_contato }}
+                            {% if form.nome_primeiro_contato.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.nome_primeiro_contato.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.celular_primeiro_contato.label_tag }}
+                            {{ form.celular_primeiro_contato }}
+                            {% if form.celular_primeiro_contato.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.celular_primeiro_contato.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.tipo_relacionamento_primeiro_contato.label_tag }}
+                            {{ form.tipo_relacionamento_primeiro_contato }}
+                            {% if form.tipo_relacionamento_primeiro_contato.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.tipo_relacionamento_primeiro_contato.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.nome_segundo_contato.label_tag }}
+                            {{ form.nome_segundo_contato }}
+                            {% if form.nome_segundo_contato.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.nome_segundo_contato.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.celular_segundo_contato.label_tag }}
+                            {{ form.celular_segundo_contato }}
+                            {% if form.celular_segundo_contato.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.celular_segundo_contato.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.tipo_relacionamento_segundo_contato.label_tag }}
+                            {{ form.tipo_relacionamento_segundo_contato }}
+                            {% if form.tipo_relacionamento_segundo_contato.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.tipo_relacionamento_segundo_contato.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h4>Informações Médicas</h4>
+                        <hr>
+                        
+                        <div class="form-group">
+                            {{ form.tipo_sanguineo.label_tag }}
+                            {{ form.tipo_sanguineo }}
+                            {% if form.tipo_sanguineo.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.tipo_sanguineo.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.fator_rh.label_tag }}
+                            {{ form.fator_rh }}
+                            {% if form.fator_rh.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.fator_rh.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    <a href="{% url 'alunos:detalhes' aluno.cpf %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

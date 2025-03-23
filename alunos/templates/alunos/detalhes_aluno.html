@@ -1,7 +1,110 @@
 {% extends 'base.html' %}
 
-{% block content %}
-<!-- Existing content -->
+{% block title %}Detalhes do Aluno - {{ aluno.nome }}{% endblock %}
 
-<a href="javascript:history.back()" class="back-button">Voltar</a>
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>Detalhes do Aluno</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    {% if aluno.foto %}
+                        <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" class="img-fluid rounded">
+                    {% else %}
+                        <div class="text-center p-5 bg-light rounded">
+                            <i class="fas fa-user fa-5x text-secondary"></i>
+                            <p class="mt-2">Sem foto</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    <h3>{{ aluno.nome }}</h3>
+                    <p><strong>CPF:</strong> {{ aluno.cpf }}</p>
+                    <p><strong>Data de Nascimento:</strong> {{ aluno.data_nascimento }}</p>
+                    <p><strong>Idade:</strong> {{ aluno.idade }} anos</p>
+                    <p><strong>Email:</strong> {{ aluno.email }}</p>
+                    <p><strong>Sexo:</strong> {{ aluno.get_sexo_display }}</p>
+                    <p><strong>Status:</strong> {{ aluno.get_status_display }}</p>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <h4>Informações Pessoais</h4>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Nacionalidade:</strong> {{ aluno.nacionalidade }}</p>
+                        <p><strong>Naturalidade:</strong> {{ aluno.naturalidade }}</p>
+                        <p><strong>Estado Civil:</strong> {{ aluno.get_estado_civil_display }}</p>
+                        <p><strong>Profissão:</strong> {{ aluno.profissao|default:"Não informado" }}</p>
+                        <p><strong>Escolaridade:</strong> {{ aluno.get_escolaridade_display|default:"Não informado" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Tipo Sanguíneo:</strong> {{ aluno.tipo_sanguineo }} {{ aluno.fator_rh }}</p>
+                        <p><strong>Alergias:</strong> {{ aluno.alergias|default:"Nenhuma informada" }}</p>
+                        <p><strong>Condições Médicas:</strong> {{ aluno.condicoes_medicas_gerais|default:"Nenhuma informada" }}</p>
+                        <p><strong>Convênio Médico:</strong> {{ aluno.convenio_medico|default:"Não informado" }}</p>
+                        <p><strong>Hospital de Preferência:</strong> {{ aluno.hospital|default:"Não informado" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <h4>Endereço</h4>
+                <hr>
+                <p>{{ aluno.rua }}, {{ aluno.numero_imovel }}{% if aluno.complemento %}, {{ aluno.complemento }}{% endif %}</p>
+                <p>{{ aluno.bairro }}, {{ aluno.cidade }} - {{ aluno.estado }}</p>
+                <p>CEP: {{ aluno.cep }}</p>
+            </div>
+
+            <div class="mt-4">
+                <h4>Contatos de Emergência</h4>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Contato Principal</h5>
+                        <p><strong>Nome:</strong> {{ aluno.nome_primeiro_contato }}</p>
+                        <p><strong>Telefone:</strong> {{ aluno.celular_primeiro_contato }}</p>
+                        <p><strong>Relação:</strong> {{ aluno.tipo_relacionamento_primeiro_contato }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Contato Secundário</h5>
+                        <p><strong>Nome:</strong> {{ aluno.nome_segundo_contato }}</p>
+                        <p><strong>Telefone:</strong> {{ aluno.celular_segundo_contato }}</p>
+                        <p><strong>Relação:</strong> {{ aluno.tipo_relacionamento_segundo_contato }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if aluno.data_iniciacao %}
+            <div class="mt-4">
+                <h4>Informações Iniciáticas</h4>
+                <hr>
+                <p><strong>Data de Iniciação:</strong> {{ aluno.data_iniciacao }}</p>
+                <p><strong>Tempo desde a Iniciação:</strong> {{ aluno.tempo_desde_iniciacao }} dias</p>
+                {% if aluno.numero_iniciatico %}
+                    <p><strong>Número Iniciático:</strong> {{ aluno.numero_iniciatico }}</p>
+                {% endif %}
+                {% if aluno.nome_iniciatico %}
+                    <p><strong>Nome Iniciático:</strong> {{ aluno.nome_iniciatico }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer">
+            <div class="btn-group">
+                <a href="{% url 'alunos:editar' aluno.cpf %}" class="btn btn-primary">Editar</a>
+                <a href="{% url 'alunos:excluir' aluno.cpf %}" class="btn btn-danger">Excluir</a>
+                <a href="{% url 'alunos:listar' %}" class="btn btn-secondary">Voltar</a>
+            </div>
+            <small class="text-muted float-right">
+                Cadastrado em: {{ aluno.created_at|date:"d/m/Y H:i" }} | 
+                Última atualização: {{ aluno.updated_at|date:"d/m/Y H:i" }}
+            </small>
+        </div>
+    </div>
+</div>
 {% endblock %}

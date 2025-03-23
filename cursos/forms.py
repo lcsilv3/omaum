@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 class CursoForm(forms.ModelForm):
     class Meta:
         model = Curso
-        fields = ['codigo_curso', 'nome', 'descricao']
+        fields = ['codigo_curso', 'nome', 'descricao', 'duracao']
 
     def clean_codigo_curso(self):
         codigo = self.cleaned_data.get('codigo_curso')

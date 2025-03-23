@@ -1,14 +1,52 @@
 {% extends 'base.html' %}
 
+{% block title %}Cargos Administrativos{% endblock %}
+
 {% block content %}
-<h1>Lista de Cargos Administrativos</h1>
-<div class="cargos-list">
-    {% for cargo in cargos %}
-    <div class="cargo-item">
-        <h2>{{ cargo.nome }}</h2>
-        <p>Código: {{ cargo.codigo_cargo }}</p>
-        <p>{{ cargo.descricao }}</p>
+<div class="container">
+    <h1 class="my-4">Lista de Cargos Administrativos</h1>
+    
+    <div class="d-flex justify-content-between mb-3">
+        <a href="{% url 'cargos:criar_cargo' %}" class="btn btn-primary">Novo Cargo</a>
+        
+        <form class="d-flex" method="get">
+            <input class="form-control me-2" type="search" placeholder="Buscar cargos" 
+                   name="search" value="{{ search_query }}">
+            <button class="btn btn-outline-primary" type="submit">Buscar</button>
+        </form>
     </div>
-    {% endfor %}
+    
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Descrição</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cargo in cargos %}
+                    <tr>
+                        <td>{{ cargo.codigo_cargo }}</td>
+                        <td>{{ cargo.nome }}</td>
+                        <td>{{ cargo.descricao|truncatechars:50 }}</td>
+                        <td>
+                            <a href="{% url 'cargos:detalhe_cargo' cargo.codigo_cargo %}" class="btn btn-sm btn-info">Detalhes</a>
+                            <a href="{% url 'cargos:editar_cargo' cargo.codigo_cargo %}" class="btn btn-sm btn-warning">Editar</a>
+                            <a href="{% url 'cargos:excluir_cargo' cargo.codigo_cargo %}" class="btn btn-sm btn-danger">Excluir</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">Nenhum cargo administrativo encontrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

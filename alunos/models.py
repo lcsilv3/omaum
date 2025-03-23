@@ -225,6 +225,15 @@ class Aluno(models.Model):
         auto_now=True
     )
 
+    curso = models.ForeignKey(
+        'cursos.Curso',  # Use string reference to avoid circular imports
+        on_delete=models.SET_NULL,  # Prevent deletion of Curso if students are enrolled
+        verbose_name=_('Curso'),
+        related_name='alunos',  # This allows curso.alunos.all() to get all students in a course
+        null=True,
+        blank=True
+    )
+
     class Meta:
         verbose_name = _('Aluno')
         verbose_name_plural = _('Alunos')
@@ -241,6 +250,11 @@ class Aluno(models.Model):
         if not self.created_at:
             self.created_at = timezone.now()
         super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        if not self.curso_id:
+            raise ValidationError({'curso': _('Todo aluno deve estar associado a um curso.')})
 
     @property
     def idade(self):

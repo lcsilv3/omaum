@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Frequência</h1>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title text-danger">Confirmação de Exclusão</h5>
+            <p class="card-text">Você tem certeza que deseja excluir este registro de frequência?</p>
+            
+            <div class="alert alert-warning">
+                <p><strong>Aluno:</strong> {{ frequencia.aluno.nome }}</p>
+                <p><strong>Turma:</strong> {{ frequencia.turma.codigo_turma }}</p>
+                <p><strong>Data:</strong> {{ frequencia.data }}</p>
+                <p>
+                    <strong>Status:</strong> 
+                    {% if frequencia.presente %}
+                        <span class="badge bg-success">Presente</span>
+                    {% else %}
+                        <span class="badge bg-danger">Ausente</span>
+                    {% endif %}
+                </p>
+            </div>
+            
+            <p class="text-danger"><strong>Atenção:</strong> Esta ação não pode ser desfeita!</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                    <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

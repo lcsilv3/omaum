@@ -1,6 +1,8 @@
 from django.test import TestCase
 from alunos.models import Aluno
 from datetime import date, time
+from django.core.exceptions import ValidationError  # Adicionada importação faltante
+
 
 class AlunoTest(TestCase):
     def test_criar_aluno(self):
@@ -29,6 +31,7 @@ class AlunoTest(TestCase):
             fator_rh='+'
         )
         self.assertEqual(aluno.nome, 'João Test')
+
 class AlunoValidationTest(TestCase):
     def setUp(self):
         self.valid_data = {

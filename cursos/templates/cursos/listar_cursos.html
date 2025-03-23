@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Cursos</h1>
+  
+  <a href="{% url 'criar_curso' %}" class="btn btn-primary mb-3">Novo Curso</a>
+  
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nome</th>
+        <th>Descrição</th>
+        <th>Duração</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for curso in cursos %}
+      <tr>
+        <td>{{ curso.codigo_curso }}</td>
+        <td>{{ curso.nome }}</td>
+        <td>{{ curso.descricao|truncatechars:50 }}</td>
+        <td>{{ curso.duracao }} meses</td>
+        <td>
+          <a href="{% url 'detalhes_curso' curso.id %}" class="btn btn-sm btn-info">Detalhes</a>
+          <a href="{% url 'editar_curso' curso.id %}" class="btn btn-sm btn-warning">Editar</a>
+          <a href="{% url 'excluir_curso' curso.id %}" class="btn btn-sm btn-danger">Excluir</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5">Nenhum curso cadastrado.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

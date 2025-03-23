@@ -1,5 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.contrib.auth.models import User
 from iniciacoes.models import Iniciacao
 from alunos.models import Aluno
 from datetime import date, time
@@ -7,6 +8,10 @@ from datetime import date, time
 class IniciacaoViewTest(TestCase):
     def setUp(self):
         self.client = Client()
+        # Criar um usuário de teste e fazer login
+        self.usuario = User.objects.create_user(username='usuarioteste', password='12345')
+        self.client.login(username='usuarioteste', password='12345')
+        
         self.aluno = Aluno.objects.create(
             cpf='12345678901',
             nome='João Silva',
@@ -32,13 +37,13 @@ class IniciacaoViewTest(TestCase):
             fator_rh='+'
         )
         self.iniciacao = Iniciacao.objects.create(
-            cpf_aluno=self.aluno,
+            aluno=self.aluno,
             nome_curso='Curso de Iniciação',
             data_iniciacao=date(2023, 10, 1)
         )
 
     def test_listar_iniciacoes(self):
-        response = self.client.get(reverse('listar_iniciacoes'))
+        response = self.client.get(reverse('iniciacoes:listar_iniciacoes'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'João Silva')
         self.assertContains(response, 'Curso de Iniciação')

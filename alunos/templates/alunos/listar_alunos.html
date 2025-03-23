@@ -4,8 +4,97 @@
 
 {% block content %}
     <h1>Lista de Alunos</h1>
-    <ul>{% for aluno in alunos %}
-        <li>{{ aluno.nome }} - {{ aluno.matricula }}</li>{% empty %}
-        <li>Nenhum aluno cadastrado.</li>{% endfor %}
-    </ul>
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome, CPF ou email" value="{{ query|default:'' }}">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="input-group">
+                    <select name="curso" class="form-control">
+                        <option value="">Todos os cursos</option>
+                        {% for curso in cursos %}
+                            <option value="{{ curso.id }}" {% if curso.id|stringformat:'s' == curso_selecionado %}selected{% endif %}>
+                                {{ curso.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Email</th>
+                <th>Curso</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aluno in page_obj %}
+            <tr>
+                <td class="aluno-nome">{{ aluno.nome }}</td>
+                <td>{{ aluno.cpf }}</td>
+                <td>{{ aluno.email }}</td>
+                <td>{{ aluno.curso.nome }}</td>
+                <td>
+                    {% if aluno.status == 'A' %}
+                        <span class="badge badge-success">Ativo</span>
+                    {% elif aluno.status == 'I' %}
+                        <span class="badge badge-secondary">Inativo</span>
+                    {% elif aluno.status == 'S' %}
+                        <span class="badge badge-warning">Suspenso</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group">
+                        <a href="{% url 'alunos:detalhes' aluno.cpf %}" class="btn btn-sm btn-info">Detalhes</a>
+                        <a href="{% url 'alunos:editar' aluno.cpf %}" class="btn btn-sm btn-primary">Editar</a>
+                        <a href="{% url 'alunos:excluir' aluno.cpf %}" class="btn btn-sm btn-danger">Excluir</a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">Nenhum aluno encontrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Paginação">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1">« Primeira</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última »</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 {% endblock %}

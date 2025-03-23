@@ -1,0 +1,61 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Detalhes da Frequência</h1>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Informações da Frequência</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>Aluno:</strong> {{ frequencia.aluno.nome }}</p>
+                    <p><strong>Turma:</strong> {{ frequencia.turma.codigo_turma }}</p>
+                    <p><strong>Data:</strong> {{ frequencia.data }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p>
+                        <strong>Status:</strong> 
+                        {% if frequencia.presente %}
+                            <span class="badge bg-success">Presente</span>
+                        {% else %}
+                            <span class="badge bg-danger">Ausente</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Registrado por:</strong> {{ frequencia.registrado_por|default:"Não informado" }}</p>
+                    <p><strong>Data de registro:</strong> {{ frequencia.data_registro }}</p>
+                </div>
+            </div>
+            
+            {% if not frequencia.presente %}
+            <div class="mb-3">
+                <h6>Justificativa:</h6>
+                <div class="p-3 bg-light rounded">
+                    {% if frequencia.justificativa %}
+                        {{ frequencia.justificativa|linebreaks }}
+                    {% else %}
+                        <em>Nenhuma justificativa fornecida.</em>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{% url 'editar_frequencia' frequencia.id %}" class="btn btn-warning">Editar</a>
+                <a href="{% url 'excluir_frequencia' frequencia.id %}" class="btn btn-danger">Excluir</a>
+                <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Voltar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

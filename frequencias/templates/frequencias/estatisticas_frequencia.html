@@ -1,0 +1,141 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Estatísticas de Frequência</h1>
+   
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+   
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="aluno" class="form-label">Aluno</label>
+                    <select name="aluno" id="aluno" class="form-select">
+                        <option value="">Todos</option>
+                        {% for aluno in alunos %}
+                            <option value="{{ aluno.id }}" {% if aluno_id == aluno.id|stringformat:"s" %}selected{% endif %}>{{ aluno.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="turma" class="form-label">Turma</label>
+                    <select name="turma" id="turma" class="form-select">
+                        <option value="">Todas</option>
+                        {% for turma in turmas %}
+                            <option value="{{ turma.id }}" {% if turma_id == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.codigo_turma }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <a href="{% url 'estatisticas_frequencia' %}" class="btn btn-secondary">Limpar Filtros</a>
+                </div>
+            </form>
+        </div>
+    </div>
+   
+    <!-- Resumo Estatístico -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-4">
+                <div class="card-header">Total de Registros</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ total }}</h5>
+                    <p class="card-text">registros de frequência</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-4">
+                <div class="card-header">Presenças</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ presentes }}</h5>
+                    <p class="card-text">alunos presentes ({{ taxa_presenca|floatformat:2 }}%)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger mb-4">
+                <div class="card-header">Ausências</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ ausentes }}</h5>
+                    <p class="card-text">alunos ausentes ({{ 100|sub:taxa_presenca|floatformat:2 }}%)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+   
+    <!-- Gráfico (pode ser implementado com Chart.js) -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Gráfico de Frequência</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="graficoFrequencia" width="400" height="200"></canvas>
+        </div>
+    </div>
+   
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Voltar para Lista</a>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var ctx = document.getElementById('graficoFrequencia').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Presentes', 'Ausentes'],
+                datasets: [{
+                    label: 'Frequência',
+                    data: [{{ presentes }}, {{ ausentes }}],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',
+                        'rgba(220, 53, 69, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribuição de Frequência'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,14 +1,12 @@
 from django.test import TestCase
 from presencas.models import PresencaAcademica
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
 from alunos.models import Aluno
 from datetime import date, time
 
 class PresencaAcademicaModelTest(TestCase):
     def setUp(self):
         self.turma = Turma.objects.create(codigo_turma='TURMA001')
-        self.atividade = AtividadeAcademica.objects.create(codigo_atividade='ATV001')
         self.aluno = Aluno.objects.create(
             cpf='12345678901',
             nome='João Silva',
@@ -36,11 +34,10 @@ class PresencaAcademicaModelTest(TestCase):
 
     def test_criar_presenca(self):
         presenca = PresencaAcademica.objects.create(
-            codigo_turma=self.turma,
-            codigo_atividade=self.atividade,
-            cpf_aluno=self.aluno,
+            turma=self.turma,
+            aluno=self.aluno,
             data=date(2023, 10, 1),
             presente=True
         )
         self.assertEqual(presenca.presente, True)
-        self.assertEqual(presenca.cpf_aluno, self.aluno)
+        self.assertEqual(presenca.aluno, self.aluno)

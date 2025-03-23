@@ -23,6 +23,7 @@ python
 from django import forms
 from .models import Punicao
 from django.core.exceptions import ValidationError
+import datetime
 
 class PunicaoForm(forms.ModelForm):
     class Meta:
@@ -50,6 +51,7 @@ class PunicaoForm(forms.ModelForm):
 
 python
 from django.db import models
+from django.contrib.auth.models import User
 from alunos.models import Aluno
 
 class Punicao(models.Model):
@@ -58,12 +60,18 @@ class Punicao(models.Model):
     data = models.DateField()
     tipo_punicao = models.CharField(max_length=50)
     observacoes = models.TextField(blank=True, null=True)
+    registrado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    data_registro = models.DateTimeField(auto_now_add=True)
+    data_atualizacao = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Punição - {self.aluno.nome} - {self.data}"
 
     class Meta:
         ordering = ['-data']
+        permissions = [
+            ("gerar_relatorio_punicao", "Pode gerar relatório de punições"),
+        ]
 
 
 
@@ -90,14 +98,21 @@ urlpatterns = [
 python
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required, permission_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Punicao
 from .forms import PunicaoForm
+from alunos.models import Aluno
 
+@login_required
+@permission_required('punicoes.add_punicao', raise_exception=True)
 def criar_punicao(request):
     if request.method == 'POST':
         form = PunicaoForm(request.POST)
         if form.is_valid():
-            form.save()
+            punicao = form.save(commit=False)
+            punicao.registrado_por = request.user
+            punicao.save()
             messages.success(request, 'Punição criada com sucesso!')
             return redirect('listar_punicoes')
         else:
@@ -106,6 +121,8 @@ def criar_punicao(request):
         form = PunicaoForm()
     return render(request, 'punicoes/criar_punicao.html', {'form': form})
 
+@login_required
+@permission_required('punicoes.change_punicao', raise_exception=True)
 def editar_punicao(request, id):
     punicao = get_object_or_404(Punicao, id=id)
     if request.method == 'POST':
@@ -120,14 +137,59 @@ def editar_punicao(request, id):
         form = PunicaoForm(instance=punicao)
     return render(request, 'punicoes/editar_punicao.html', {'form': form, 'punicao': punicao})
 
+@login_required
+@permission_required('punicoes.view_punicao', raise_exception=True)
 def listar_punicoes(request):
-    punicoes = Punicao.objects.all()
-    return render(request, 'punicoes/listar_punicoes.html', {'punicoes': punicoes})
+    punicoes_list = Punicao.objects.all().select_related('aluno')
+    
+    # Filtros
+    aluno_id = request.GET.get('aluno')
+    tipo_punicao = request.GET.get('tipo_punicao')
+    data_inicio = request.GET.get('data_inicio')
+    data_fim = request.GET.get('data_fim')
+    
+    if aluno_id:
+        punicoes_list = punicoes_list.filter(aluno_id=aluno_id)
+    if tipo_punicao:
+        punicoes_list = punicoes_list.filter(tipo_punicao=tipo_punicao)
+    if data_inicio:
+        punicoes_list = punicoes_list.filter(data__gte=data_inicio)
+    if data_fim:
+        punicoes_list = punicoes_list.filter(data__lte=data_fim)
+    
+    # Paginação
+    paginator = Paginator(punicoes_list, 10)  # 10 itens por página
+    page = request.GET.get('page')
+    
+    try:
+        punicoes = paginator.page(page)
+    except PageNotAnInteger:
+        punicoes = paginator.page(1)
+    except EmptyPage:
+        punicoes = paginator.page(paginator.num_pages)
+    
+    # Obter tipos de punição únicos para o filtro
+    tipos_punicao = Punicao.objects.values_list('tipo_punicao', flat=True).distinct()
+    alunos = Aluno.objects.all()
+    
+    return render(request, 'punicoes/listar_punicoes.html', {
+        'punicoes': punicoes,
+        'aluno_id': aluno_id,
+        'tipo_punicao': tipo_punicao,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+        'tipos_punicao': tipos_punicao,
+        'alunos': alunos
+    })
 
+@login_required
+@permission_required('punicoes.view_punicao', raise_exception=True)
 def detalhe_punicao(request, id):
     punicao = get_object_or_404(Punicao, id=id)
     return render(request, 'punicoes/detalhe_punicao.html', {'punicao': punicao})
 
+@login_required
+@permission_required('punicoes.delete_punicao', raise_exception=True)
 def excluir_punicao(request, id):
     punicao = get_object_or_404(Punicao, id=id)
     if request.method == 'POST':
@@ -141,7 +203,7 @@ def excluir_punicao(request, id):
 ## punicoes\templates\punicoes\criar_punicao.html
 
 html
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
 <div class="container mt-4">
@@ -182,7 +244,7 @@ html
 ## punicoes\templates\punicoes\detalhe_punicao.html
 
 html
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
 <h1>Detalhes da Punição</h1>
@@ -207,7 +269,7 @@ html
 ## punicoes\templates\punicoes\editar_punicao.html
 
 html
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
 <div class="container mt-4">
@@ -249,7 +311,7 @@ html
 ## punicoes\templates\punicoes\excluir_punicao.html
 
 html
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
 <h1>Excluir Punição</h1>
@@ -266,7 +328,7 @@ html
 ## punicoes\templates\punicoes\listar_punicoes.html
 
 html
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
 <div class="container mt-4">
@@ -278,6 +340,45 @@ html
             </div>
         {% endfor %}
     {% endif %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="aluno" class="form-label">Aluno</label>
+                    <select name="aluno" id="aluno" class="form-select">
+                        <option value="">Todos</option>
+                        {% for aluno in alunos %}
+                            <option value="{{ aluno.id }}" {% if aluno_id == aluno.id|stringformat:"s" %}selected{% endif %}>{{ aluno.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="tipo_punicao" class="form-label">Tipo de Punição</label>
+                    <select name="tipo_punicao" id="tipo_punicao" class="form-select">
+                        <option value="">Todos</option>
+                        {% for tipo in tipos_punicao %}
+                            <option value="{{ tipo }}" {% if tipo_punicao == tipo %}selected{% endif %}>{{ tipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <a href="{% url 'listar_punicoes' %}" class="btn btn-secondary">Limpar Filtros</a>
+                </div>
+            </form>
+        </div>
+    </div>
     <table class="table">
         <thead>
             <tr>
