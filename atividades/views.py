@@ -1,200 +1,223 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
+from django.core.paginator import Paginator
+import importlib
+
+# Importação dinâmica dos modelos
 from .models import AtividadeAcademica, AtividadeRitualistica
-from .forms import AtividadeAcademicaForm, AtividadeRitualisticaForm
-from turmas.models import Turma
+from .forms import criar_form_atividade_academica, criar_form_atividade_ritualistica
 
 # Views para Atividades Acadêmicas
-class AcademicaListaView(ListView):
-    model = AtividadeAcademica
-    template_name = 'atividades/academica_lista.html'
-    context_object_name = 'atividades'
-    paginate_by = 10  # Número de itens por página
+def listar_atividades_academicas(request):
+    """Exibe a lista de atividades acadêmicas com filtros e paginação"""
+    # Importação dinâmica
+    turmas_module = importlib.import_module('turmas.models')
+    Turma = getattr(turmas_module, 'Turma')
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['search_query'] = self.request.GET.get('search', '')
-        
-        # Adicionar lista de turmas para o filtro
-        context['turmas'] = Turma.objects.all()
-        
-        return context
+    # Obter todas as atividades
+    atividades = AtividadeAcademica.objects.all()
     
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        
-        # Busca por nome
-        search_query = self.request.GET.get('search', '')
-        if search_query:
-            queryset = queryset.filter(nome__icontains=search_query)
-        
-        # Filtro por turma
-        turma_id = self.request.GET.get('turma', '')
-        if turma_id:
-            queryset = queryset.filter(turma_id=turma_id)
-        
-        # Filtro por data de início
-        data_inicio_min = self.request.GET.get('data_inicio_min', '')
-        if data_inicio_min:
-            queryset = queryset.filter(data_inicio__gte=data_inicio_min)
-        
-        # Filtro por data de fim
-        data_fim_max = self.request.GET.get('data_fim_max', '')
-        if data_fim_max:
-            queryset = queryset.filter(data_fim__lte=data_fim_max)
-        
-        # Ordenação
-        order_by = self.request.GET.get('order_by', 'nome')
-        order_dir = self.request.GET.get('order_dir', 'asc')
-        
-        if order_dir == 'desc':
-            order_by = f'-{order_by}'
-            
-        return queryset.order_by(order_by)
-
-
-class AcademicaCriarView(CreateView):
-    model = AtividadeAcademica
-    form_class = AtividadeAcademicaForm
-    template_name = 'atividades/academica_formulario.html'
-    success_url = reverse_lazy('atividades:academica_lista')
+    # Busca por nome
+    search_query = request.GET.get('search', '')
+    if search_query:
+        atividades = atividades.filter(nome__icontains=search_query)
     
-    def form_valid(self, form):
-        messages.success(self.request, 'Atividade acadêmica criada com sucesso!')
-        return super().form_valid(form)
-
-
-class AcademicaEditarView(UpdateView):
-    model = AtividadeAcademica
-    form_class = AtividadeAcademicaForm
-    template_name = 'atividades/academica_formulario.html'
-    success_url = reverse_lazy('atividades:academica_lista')
+    # Filtro por turma
+    turma_id = request.GET.get('turma', '')
+    if turma_id:
+        atividades = atividades.filter(turma_id=turma_id)
     
-    def form_valid(self, form):
-        messages.success(self.request, 'Atividade acadêmica atualizada com sucesso!')
-        return super().form_valid(form)
-
-
-class AcademicaExcluirView(DeleteView):
-    model = AtividadeAcademica
-    template_name = 'atividades/academica_confirmar_exclusao.html'
-    success_url = reverse_lazy('atividades:academica_lista')
+    # Ordenação
+    order_by = request.GET.get('order_by', 'nome')
+    order_dir = request.GET.get('order_dir', 'asc')
     
-    def delete(self, request, *args, **kwargs):
+    if order_dir == 'desc':
+        order_by = f'-{order_by}'
+        
+    atividades = atividades.order_by(order_by)
+    
+    # Paginação
+    paginator = Paginator(atividades, 10)  # 10 itens por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Contexto para o template
+    context = {
+        'atividades': page_obj,
+        'search_query': search_query,
+        'turmas': Turma.objects.all(),
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'atividades/academica_lista.html', context)
+
+def criar_atividade_academica(request):
+    """Cria uma nova atividade acadêmica"""
+    AtividadeAcademicaForm = criar_form_atividade_academica()
+   
+    if request.method == 'POST':
+        form = AtividadeAcademicaForm(request.POST)
+        if form.is_valid():
+            try:
+                atividade = form.save()
+                messages.success(request, 'Atividade acadêmica criada com sucesso!')
+                return redirect('atividades:academica_lista')
+            except Exception as e:
+                messages.error(request, f'Erro ao criar atividade: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'Erro no campo {field}: {error}')
+    else:
+        form = AtividadeAcademicaForm()
+   
+    return render(request, 'atividades/academica_formulario.html', {'form': form})
+
+def editar_atividade_academica(request, pk):
+    """Edita uma atividade acadêmica existente"""
+    AtividadeAcademicaForm = criar_form_atividade_academica()
+    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+    
+    if request.method == 'POST':
+        form = AtividadeAcademicaForm(request.POST, instance=atividade)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Atividade acadêmica atualizada com sucesso!')
+            return redirect('atividades:academica_lista')
+    else:
+        form = AtividadeAcademicaForm(instance=atividade)
+    
+    return render(request, 'atividades/academica_formulario.html', {'form': form})
+
+def excluir_atividade_academica(request, pk):
+    """Exclui uma atividade acadêmica"""
+    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+    
+    if request.method == 'POST':
+        atividade.delete()
         messages.success(request, 'Atividade acadêmica excluída com sucesso!')
-        return super().delete(request, *args, **kwargs)
-
+        return redirect('atividades:academica_lista')
+    
+    return render(request, 'atividades/academica_confirmar_exclusao.html', {'object': atividade})
 
 # Views para Atividades Ritualísticas
-class RitualisticaListaView(ListView):
-    model = AtividadeRitualistica
-    template_name = 'atividades/ritualistica_lista.html'
-    context_object_name = 'atividades_ritualisticas'
-    paginate_by = 10  # Número de itens por página
+def listar_atividades_ritualisticas(request):
+    """Exibe a lista de atividades ritualísticas com filtros e paginação"""
+    # Importação dinâmica
+    turmas_module = importlib.import_module('turmas.models')
+    Turma = getattr(turmas_module, 'Turma')
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['search_query'] = self.request.GET.get('search', '')
-        
-        # Adicionar lista de turmas para o filtro
-        context['turmas'] = Turma.objects.all()
-        
-        return context
+    # Obter todas as atividades
+    atividades = AtividadeRitualistica.objects.all()
     
-    def get_queryset(self):
-        queryset = super().get_queryset()
+    # Busca por nome
+    search_query = request.GET.get('search', '')
+    if search_query:
+        atividades = atividades.filter(nome__icontains=search_query)
+    
+    # Filtro por turma
+    turma_id = request.GET.get('turma', '')
+    if turma_id:
+        atividades = atividades.filter(turma_id=turma_id)
+    
+    # Ordenação
+    order_by = request.GET.get('order_by', 'nome')
+    order_dir = request.GET.get('order_dir', 'asc')
+    
+    if order_dir == 'desc':
+        order_by = f'-{order_by}'
         
-        # Busca por nome
-        search_query = self.request.GET.get('search', '')
-        if search_query:
-            queryset = queryset.filter(nome__icontains=search_query)
-        
-        # Filtro por turma
-        turma_id = self.request.GET.get('turma', '')
-        if turma_id:
-            queryset = queryset.filter(turma_id=turma_id)
-        
-        # Filtro por data de início
-        data_inicio_min = self.request.GET.get('data_inicio_min', '')
-        if data_inicio_min:
-            queryset = queryset.filter(data_inicio__gte=data_inicio_min)
-        
-        # Filtro por data de fim
-        data_fim_max = self.request.GET.get('data_fim_max', '')
-        if data_fim_max:
-            queryset = queryset.filter(data_fim__lte=data_fim_max)
-        
-        # Ordenação
-        order_by = self.request.GET.get('order_by', 'nome')
-        order_dir = self.request.GET.get('order_dir', 'asc')
-        
-        if order_dir == 'desc':
-            order_by = f'-{order_by}'
-            
-        return queryset.order_by(order_by)
+    atividades = atividades.order_by(order_by)
+    
+    # Paginação
+    paginator = Paginator(atividades, 10)  # 10 itens por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Contexto para o template
+    context = {
+        'atividades_ritualisticas': page_obj,
+        'search_query': search_query,
+        'turmas': Turma.objects.all(),
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'atividades/ritualistica_lista.html', context)
 
-
-class RitualisticaCriarView(CreateView):
-    model = AtividadeRitualistica
-    form_class = AtividadeRitualisticaForm
-    template_name = 'atividades/atividade_ritualistica_form.html'
-    success_url = reverse_lazy('atividades:ritualistica_lista')
+def criar_atividade_ritualistica(request):
+    """Cria uma nova atividade ritualística"""
+    AtividadeRitualisticaForm = criar_form_atividade_ritualistica()
     
-    def form_valid(self, form):
-        instance = form.save(commit=False)
-        # Handle the todos_alunos field logic
-        if form.cleaned_data.get('todos_alunos'):
-            # Logic to get all students from the selected turma
-            turma = form.cleaned_data.get('turma')
-            if turma:
-                # Save first to create the instance
-                instance.save()
-                # Then add all students from the turma
-                from core.models import Aluno
-                alunos = Aluno.objects.filter(turma=turma)
-                instance.alunos.set(alunos)
-        else:
+    if request.method == 'POST':
+        form = AtividadeRitualisticaForm(request.POST)
+        if form.is_valid():
+            instance = form.save(commit=False)
             instance.save()
-            # The many-to-many relationship will be saved by the form
-        
-        messages.success(self.request, 'Atividade ritualística criada com sucesso!')
-        return redirect(self.success_url)
-
-
-class RitualisticaEditarView(UpdateView):
-    model = AtividadeRitualistica
-    form_class = AtividadeRitualisticaForm
-    template_name = 'atividades/atividade_ritualistica_form.html'
-    success_url = reverse_lazy('atividades:ritualistica_lista')
-    
-    def form_valid(self, form):
-        instance = form.save(commit=False)
-        # Handle the todos_alunos field logic
-        if form.cleaned_data.get('todos_alunos'):
-            # Logic to get all students from the selected turma
-            turma = form.cleaned_data.get('turma')
-            if turma:
-                # Save first to create the instance
-                instance.save()
-                # Then add all students from the turma
-                from core.models import Aluno
-                alunos = Aluno.objects.filter(turma=turma)
-                instance.alunos.set(alunos)
-        else:
-            instance.save()
-            # The many-to-many relationship will be saved by the form
             
-        messages.success(self.request, 'Atividade ritualística atualizada com sucesso!')
-        return redirect(self.success_url)
-
-
-class RitualisticaExcluirView(DeleteView):
-    model = AtividadeRitualistica
-    template_name = 'atividades/ritualistica_confirmar_exclusao.html'
-    success_url = reverse_lazy('atividades:ritualistica_lista')
+            # Tratar a opção de incluir todos os alunos
+            if form.cleaned_data.get('todos_alunos'):
+                turma = form.cleaned_data.get('turma')
+                if turma:
+                    # Importação dinâmica usando importlib
+                    alunos_module = importlib.import_module('alunos.models')
+                    Aluno = getattr(alunos_module, 'Aluno')
+                    
+                    # Adicionar todos os alunos da turma
+                    alunos = Aluno.objects.filter(turmas=turma)
+                    instance.alunos.set(alunos)
+            else:
+                # Salvar os alunos selecionados no formulário
+                form.save_m2m()
+            
+            messages.success(request, 'Atividade ritualística criada com sucesso!')
+            return redirect('atividades:ritualistica_lista')
+    else:
+        form = AtividadeRitualisticaForm()
     
-    def delete(self, request, *args, **kwargs):
+    return render(request, 'atividades/atividade_ritualistica_form.html', {'form': form})
+
+def editar_atividade_ritualistica(request, pk):
+    """Edita uma atividade ritualística existente"""
+    AtividadeRitualisticaForm = criar_form_atividade_ritualistica()
+    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
+    
+    if request.method == 'POST':
+        form = AtividadeRitualisticaForm(request.POST, instance=atividade)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.save()
+            
+            # Tratar a opção de incluir todos os alunos
+            if form.cleaned_data.get('todos_alunos'):
+                turma = form.cleaned_data.get('turma')
+                if turma:
+                    # Importação dinâmica usando importlib
+                    alunos_module = importlib.import_module('alunos.models')
+                    Aluno = getattr(alunos_module, 'Aluno')
+                    
+                    # Adicionar todos os alunos da turma
+                    alunos = Aluno.objects.filter(turmas=turma)
+                    instance.alunos.set(alunos)
+            else:
+                # Salvar os alunos selecionados no formulário
+                form.save_m2m()
+            
+            messages.success(request, 'Atividade ritualística atualizada com sucesso!')
+            return redirect('atividades:ritualistica_lista')
+    else:
+        form = AtividadeRitualisticaForm(instance=atividade)
+    
+    return render(request, 'atividades/atividade_ritualistica_form.html', {'form': form})
+
+def excluir_atividade_ritualistica(request, pk):
+    """Exclui uma atividade ritualística"""
+    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
+    
+    if request.method == 'POST':
+        atividade.delete()
         messages.success(request, 'Atividade ritualística excluída com sucesso!')
-        return super().delete(request, *args, **kwargs)
+        return redirect('atividades:ritualistica_lista')
+    
+    return render(request, 'atividades/ritualistica_confirmar_exclusao.html', {'object': atividade})

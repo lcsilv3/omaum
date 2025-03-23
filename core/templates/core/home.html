@@ -1,0 +1,51 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="jumbotron">
+        <h1 class="display-4">Bem-vindo ao {{ titulo }}</h1>
+        <p class="lead">Sistema de Gestão para Organizações Maçônicas</p>
+        <hr class="my-4">
+        <p>Utilize o menu acima para navegar pelo sistema.</p>
+        
+        {% if user.is_authenticated %}
+            <div class="mt-4">
+                <h3>Acesso Rápido</h3>
+                <div class="row mt-3">
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Atividades Acadêmicas</h5>
+                                <p class="card-text">Gerencie atividades acadêmicas do sistema.</p>
+                                <a href="{% url 'atividades:atividade_academica_list' %}" class="btn btn-primary">Acessar</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Atividades Ritualísticas</h5>
+                                <p class="card-text">Gerencie atividades ritualísticas do sistema.</p>
+                                <a href="{% url 'atividades:atividade_ritualistica_list' %}" class="btn btn-primary">Acessar</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Alunos</h5>
+                                <p class="card-text">Gerencie os alunos cadastrados no sistema.</p>
+                                <a href="{% url 'alunos:listar' %}" class="btn btn-primary">Acessar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <a class="btn btn-primary btn-lg" href="{% url 'core:entrar' %}" role="button">Entrar no Sistema</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

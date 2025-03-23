@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'core',
 ]
 MIDDLEWARE = [
+    'core.middleware.ManutencaoMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',

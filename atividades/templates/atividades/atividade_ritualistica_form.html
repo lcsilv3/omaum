@@ -38,15 +38,100 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        var todosAlunosCheckbox = document.getElementById('id_todos_alunos');
-        var alunosField = document.getElementById('id_alunos');
-
+        const todosAlunosCheckbox = document.getElementById('id_todos_alunos');
+        const alunosField = document.getElementById('id_alunos');
+        const alunosContainer = alunosField.closest('.mb-3');
+        const turmaSelect = document.getElementById('id_turma');
+        
+        // Function to toggle the visibility and state of the alunos field
         function toggleAlunosField() {
-            alunosField.disabled = todosAlunosCheckbox.checked;
+            if (todosAlunosCheckbox.checked) {
+                alunosContainer.style.opacity = '0.5';
+                alunosField.disabled = true;
+                
+                // Add a visual indicator that the field is disabled
+                const helpText = document.createElement('small');
+                helpText.id = 'alunos-help-text';
+                helpText.className = 'form-text text-muted';
+                helpText.textContent = 'Todos os alunos da turma serão incluídos automaticamente';
+                
+                // Remove existing help text if any
+                const existingHelpText = document.getElementById('alunos-help-text');
+                if (existingHelpText) {
+                    existingHelpText.remove();
+                }
+                
+                alunosContainer.appendChild(helpText);
+            } else {
+                alunosContainer.style.opacity = '1';
+                alunosField.disabled = false;
+                
+                // Remove the help text
+                const helpText = document.getElementById('alunos-help-text');
+                if (helpText) {
+                    helpText.remove();
+                }
+            }
         }
-
+        
+        // Function to update available students based on selected turma
+        function updateAlunosList() {
+            const turmaId = turmaSelect.value;
+            if (!turmaId) return;
+            
+            // Show loading indicator
+            alunosContainer.style.opacity = '0.5';
+            
+            // Fetch students for the selected turma via AJAX
+            fetch(`/api/turmas/${turmaId}/alunos/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear current options
+                    while (alunosField.firstChild) {
+                        alunosField.removeChild(alunosField.firstChild);
+                    }
+                    
+                    // Add new options
+                    data.forEach(aluno => {
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = 'alunos';
+                        checkbox.value = aluno.id;
+                        checkbox.id = `aluno_${aluno.id}`;
+                        
+                        const label = document.createElement('label');
+                        label.htmlFor = `aluno_${aluno.id}`;
+                        label.textContent = aluno.nome;
+                        
+                        const div = document.createElement('div');
+                        div.className = 'form-check';
+                        div.appendChild(checkbox);
+                        div.appendChild(label);
+                        
+                        alunosField.appendChild(div);
+                    });
+                    
+                    alunosContainer.style.opacity = '1';
+                })
+                .catch(error => {
+                    console.error('Error fetching students:', error);
+                    alunosContainer.style.opacity = '1';
+                });
+        }
+        
+        // Event listeners
         todosAlunosCheckbox.addEventListener('change', toggleAlunosField);
+        turmaSelect.addEventListener('change', function() {
+            if (!todosAlunosCheckbox.checked) {
+                updateAlunosList();
+            }
+        });
+        
+        // Initial setup
         toggleAlunosField();
+        if (turmaSelect.value && !todosAlunosCheckbox.checked) {
+            updateAlunosList();
+        }
     });
 </script>
 {% endblock %}

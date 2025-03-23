@@ -1,0 +1,47 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ titulo }}</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Informações da Turma</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Nome da Turma:</strong> {{ turma.nome }}</p>
+            <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
+            <p><strong>Período:</strong> {{ turma.data_inicio|date:"d/m/Y" }} a {{ turma.data_fim|date:"d/m/Y" }}</p>
+            <p><strong>Vagas Disponíveis:</strong> {{ turma.vagas_disponiveis }} de {{ turma.vagas }}</p>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Selecionar Aluno</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.aluno.id_for_label }}" class="form-label">Aluno</label>
+                    {{ form.aluno }}
+                    {% if form.aluno.errors %}
+                        <div class="text-danger">{{ form.aluno.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'turmas:detalhes_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Matricular</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <a href="javascript:history.back()" class="btn btn-secondary mt-3">Voltar</a>
+</div>
+{% endblock %}

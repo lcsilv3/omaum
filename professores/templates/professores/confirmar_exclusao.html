@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h4>Confirmar Exclusão</h4>
+        </div>
+        <div class="card-body">
+            <p class="lead">Você tem certeza que deseja excluir o professor <strong>{{ professor.nome }}</strong>?</p>
+            <p>Esta ação não poderá ser desfeita.</p>
+            
+            <div class="mt-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'professores:detalhes_professor' professor.id %}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <a href="javascript:history.back()" class="btn btn-secondary mt-3">Voltar</a>
+</div>
+{% endblock %}

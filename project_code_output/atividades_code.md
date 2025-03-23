@@ -11,16 +11,16 @@ from .models import AtividadeAcademica, AtividadeRitualistica
 
 @admin.register(AtividadeAcademica)
 class AtividadeAcademicaAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'turma', 'data_inicio', 'data_fim']
-    list_filter = ['turma']
-    search_fields = ['nome', 'descricao']
+    list_display = ('nome', 'descricao', 'data', 'turma')
+    list_filter = ('turma',)
+    search_fields = ('nome', 'descricao')
 
 @admin.register(AtividadeRitualistica)
 class AtividadeRitualisticaAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'turma', 'data_inicio', 'data_fim']
-    list_filter = ['turma']
-    search_fields = ['nome', 'descricao']
-    filter_horizontal = ['alunos']
+    list_display = ('nome', 'descricao', 'data', 'turma')
+    list_filter = ('turma',)
+    search_fields = ('nome', 'descricao')
+    filter_horizontal = ('alunos',)
 
 
 
@@ -42,69 +42,66 @@ class AtividadesConfig(AppConfig):
 
 python
 from django import forms
-from django.core.exceptions import ValidationError
-import datetime
-from .models import AtividadeAcademica, AtividadeRitualistica  # Adicione AtividadeRitualistica aqui
+import importlib
 
-class AtividadeAcademicaForm(forms.ModelForm):
-    class Meta:
-        model = AtividadeAcademica
-        fields = ['nome', 'descricao', 'data_inicio', 'data_fim', 'turma']
-        widgets = {
-            'data_inicio': forms.DateInput(attrs={'type': 'date'}),
-            'data_fim': forms.DateInput(attrs={'type': 'date'}),
-        }
-
-    def clean_data_inicio(self):
-        data_inicio = self.cleaned_data.get('data_inicio')
-        if data_inicio and data_inicio < datetime.date.today():
-            raise ValidationError("A data de início da atividade não pode ser no passado.")
-        return data_inicio
-
-    def clean(self):
-        cleaned_data = super().clean()
-        data_inicio = cleaned_data.get('data_inicio')
-        data_fim = cleaned_data.get('data_fim')
-        if data_inicio and data_fim and data_fim < data_inicio:
-            raise ValidationError("A data de fim não pode ser anterior à data de início.")
-        return cleaned_data
-
-class AtividadeRitualisticaForm(forms.ModelForm):
-    todos_alunos = forms.BooleanField(required=False, label='Todos os Alunos')
+def criar_form_atividade_academica():
+    """
+    Cria o formulário para atividades acadêmicas usando importação dinâmica
+    para evitar referências circulares.
+    """
+    class AtividadeAcademicaForm(forms.ModelForm):
+        class Meta:
+            model = None  # Será definido no __init__
+            fields = ('nome', 'descricao', 'data', 'turma')
+            
+        def __init__(self, *args, **kwargs):
+            # Importação dinâmica do modelo
+            from .models import AtividadeAcademica
+            self.Meta.model = AtividadeAcademica
+            super().__init__(*args, **kwargs)
+            
+            # Importação dinâmica da turma
+            turmas_module = importlib.import_module('turmas.models')
+            Turma = getattr(turmas_module, 'Turma')
+            
+            # Configurar queryset
+            self.fields['turma'].queryset = Turma.objects.all()
     
-    class Meta:
-        model = AtividadeRitualistica
-        fields = ['nome', 'descricao', 'data_inicio', 'data_fim', 'turma', 'alunos']
-        widgets = {
-            'data_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'data_fim': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'turma': forms.Select(attrs={'class': 'form-control'}),
-            'alunos': forms.SelectMultiple(attrs={'class': 'form-control'}),
-        }
+    return AtividadeAcademicaForm
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['alunos'].required = False
-
-    def clean(self):
-        cleaned_data = super().clean()
-        data_inicio = cleaned_data.get('data_inicio')
-        data_fim = cleaned_data.get('data_fim')
-        todos_alunos = cleaned_data.get('todos_alunos')
-        alunos = cleaned_data.get('alunos')
+def criar_form_atividade_ritualistica():
+    """
+    Cria o formulário para atividades ritualísticas usando importação dinâmica
+    para evitar referências circulares.
+    """
+    class AtividadeRitualisticaForm(forms.ModelForm):
+        todos_alunos = forms.BooleanField(required=False, label="Incluir todos os alunos da turma")
         
-        if data_inicio and data_fim and data_fim < data_inicio:
-            raise ValidationError("A data de fim não pode ser anterior à data de início.")
+        class Meta:
+            model = None  # Será definido no __init__
+            fields = ['nome', 'descricao', 'data', 'turma', 'alunos', 'todos_alunos']
 
-        if not todos_alunos and not alunos:
-            raise ValidationError("Selecione alunos específicos ou marque 'Todos os Alunos'.")
-
-        if todos_alunos and alunos:
-            raise ValidationError("Você não pode selecionar alunos específicos quando 'Todos os Alunos' está marcado.")
-        
-        return cleaned_data
+        def __init__(self, *args, **kwargs):
+            # Importação dinâmica dos modelos
+            from .models import AtividadeRitualistica
+            self.Meta.model = AtividadeRitualistica
+            
+            super().__init__(*args, **kwargs)
+            
+            # Importação dinâmica usando importlib
+            turmas_module = importlib.import_module('turmas.models')
+            alunos_module = importlib.import_module('alunos.models')
+            
+            Turma = getattr(turmas_module, 'Turma')
+            Aluno = getattr(alunos_module, 'Aluno')
+            
+            # Configurar os querysets
+            self.fields['turma'].queryset = Turma.objects.all()
+            self.fields['alunos'].queryset = Aluno.objects.all()
+            self.fields['alunos'].widget = forms.CheckboxSelectMultiple()
+            self.fields['alunos'].required = False
+   
+    return AtividadeRitualisticaForm
 
 
 
@@ -112,15 +109,14 @@ class AtividadeRitualisticaForm(forms.ModelForm):
 
 python
 from django.db import models
-from turmas.models import Turma
-from django.conf import settings
+from django.utils import timezone
 
 class AtividadeAcademica(models.Model):
-    nome = models.CharField(max_length=255, verbose_name='Nome')
-    descricao = models.TextField(verbose_name='Descrição')
-    data_inicio = models.DateField(verbose_name='Data de Início')
-    data_fim = models.DateField(verbose_name='Data de Fim')
-    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, verbose_name='Turma')
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(blank=True, null=True)
+    data = models.DateTimeField(default=timezone.now)
+    # Referência ao app correto
+    turma = models.ForeignKey('turmas.Turma', on_delete=models.CASCADE, related_name='atividades_academicas')
     
     def __str__(self):
         return self.nome
@@ -130,12 +126,13 @@ class AtividadeAcademica(models.Model):
         verbose_name_plural = 'Atividades Acadêmicas'
 
 class AtividadeRitualistica(models.Model):
-    nome = models.CharField(max_length=255, verbose_name='Nome')
-    descricao = models.TextField(verbose_name='Descrição')
-    data_inicio = models.DateField(verbose_name='Data de Início')
-    data_fim = models.DateField(verbose_name='Data de Fim')
-    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, verbose_name='Turma')
-    alunos = models.ManyToManyField('core.Aluno', blank=True, related_name='atividades_ritualisticas', verbose_name='Alunos')
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(blank=True, null=True)
+    data = models.DateTimeField(default=timezone.now)
+    # Referência ao app correto
+    turma = models.ForeignKey('turmas.Turma', on_delete=models.CASCADE, related_name='atividades_ritualisticas')
+    # Referência ao app correto
+    alunos = models.ManyToManyField('alunos.Aluno', related_name='atividades_ritualisticas')
     
     def __str__(self):
         return self.nome
@@ -166,17 +163,17 @@ from . import views
 app_name = 'atividades'
 
 urlpatterns = [
-    # URLs para Atividades Acadêmicas
-    path('academicas/', views.AcademicaListaView.as_view(), name='academica_lista'),
-    path('academicas/criar/', views.AcademicaCriarView.as_view(), name='academica_criar'),
-    path('academicas/<int:pk>/editar/', views.AcademicaEditarView.as_view(), name='academica_editar'),
-    path('academicas/<int:pk>/excluir/', views.AcademicaExcluirView.as_view(), name='academica_excluir'),
+    # URLs for Academic Activities
+    path('academicas/', views.listar_atividades_academicas, name='academica_lista'),
+    path('academicas/criar/', views.criar_atividade_academica, name='academica_criar'),
+    path('academicas/<int:pk>/editar/', views.editar_atividade_academica, name='academica_editar'),
+    path('academicas/<int:pk>/excluir/', views.excluir_atividade_academica, name='academica_excluir'),
     
-    # URLs para Atividades Ritualísticas
-    path('ritualisticas/', views.RitualisticaListaView.as_view(), name='ritualistica_lista'),
-    path('ritualisticas/criar/', views.RitualisticaCriarView.as_view(), name='ritualistica_criar'),
-    path('ritualisticas/<int:pk>/editar/', views.RitualisticaEditarView.as_view(), name='ritualistica_editar'),
-    path('ritualisticas/<int:pk>/excluir/', views.RitualisticaExcluirView.as_view(), name='ritualistica_excluir'),
+    # URLs for Ritualistic Activities
+    path('ritualisticas/', views.listar_atividades_ritualisticas, name='ritualistica_lista'),
+    path('ritualisticas/criar/', views.criar_atividade_ritualistica, name='ritualistica_criar'),
+    path('ritualisticas/<int:pk>/editar/', views.editar_atividade_ritualistica, name='ritualistica_editar'),
+    path('ritualisticas/<int:pk>/excluir/', views.excluir_atividade_ritualistica, name='ritualistica_excluir'),
 ]
 
 
@@ -185,205 +182,228 @@ urlpatterns = [
 
 python
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
+from django.core.paginator import Paginator
+import importlib
+
+# Importação dinâmica dos modelos
 from .models import AtividadeAcademica, AtividadeRitualistica
-from .forms import AtividadeAcademicaForm, AtividadeRitualisticaForm
-from turmas.models import Turma
+from .forms import criar_form_atividade_academica, criar_form_atividade_ritualistica
 
 # Views para Atividades Acadêmicas
-class AcademicaListaView(ListView):
-    model = AtividadeAcademica
-    template_name = 'atividades/academica_lista.html'
-    context_object_name = 'atividades'
-    paginate_by = 10  # Número de itens por página
+def listar_atividades_academicas(request):
+    """Exibe a lista de atividades acadêmicas com filtros e paginação"""
+    # Importação dinâmica
+    turmas_module = importlib.import_module('turmas.models')
+    Turma = getattr(turmas_module, 'Turma')
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['search_query'] = self.request.GET.get('search', '')
-        
-        # Adicionar lista de turmas para o filtro
-        context['turmas'] = Turma.objects.all()
-        
-        return context
+    # Obter todas as atividades
+    atividades = AtividadeAcademica.objects.all()
     
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        
-        # Busca por nome
-        search_query = self.request.GET.get('search', '')
-        if search_query:
-            queryset = queryset.filter(nome__icontains=search_query)
-        
-        # Filtro por turma
-        turma_id = self.request.GET.get('turma', '')
-        if turma_id:
-            queryset = queryset.filter(turma_id=turma_id)
-        
-        # Filtro por data de início
-        data_inicio_min = self.request.GET.get('data_inicio_min', '')
-        if data_inicio_min:
-            queryset = queryset.filter(data_inicio__gte=data_inicio_min)
-        
-        # Filtro por data de fim
-        data_fim_max = self.request.GET.get('data_fim_max', '')
-        if data_fim_max:
-            queryset = queryset.filter(data_fim__lte=data_fim_max)
-        
-        # Ordenação
-        order_by = self.request.GET.get('order_by', 'nome')
-        order_dir = self.request.GET.get('order_dir', 'asc')
-        
-        if order_dir == 'desc':
-            order_by = f'-{order_by}'
-            
-        return queryset.order_by(order_by)
-
-
-class AcademicaCriarView(CreateView):
-    model = AtividadeAcademica
-    form_class = AtividadeAcademicaForm
-    template_name = 'atividades/academica_formulario.html'
-    success_url = reverse_lazy('atividades:academica_lista')
+    # Busca por nome
+    search_query = request.GET.get('search', '')
+    if search_query:
+        atividades = atividades.filter(nome__icontains=search_query)
     
-    def form_valid(self, form):
-        messages.success(self.request, 'Atividade acadêmica criada com sucesso!')
-        return super().form_valid(form)
-
-
-class AcademicaEditarView(UpdateView):
-    model = AtividadeAcademica
-    form_class = AtividadeAcademicaForm
-    template_name = 'atividades/academica_formulario.html'
-    success_url = reverse_lazy('atividades:academica_lista')
+    # Filtro por turma
+    turma_id = request.GET.get('turma', '')
+    if turma_id:
+        atividades = atividades.filter(turma_id=turma_id)
     
-    def form_valid(self, form):
-        messages.success(self.request, 'Atividade acadêmica atualizada com sucesso!')
-        return super().form_valid(form)
-
-
-class AcademicaExcluirView(DeleteView):
-    model = AtividadeAcademica
-    template_name = 'atividades/academica_confirmar_exclusao.html'
-    success_url = reverse_lazy('atividades:academica_lista')
+    # Ordenação
+    order_by = request.GET.get('order_by', 'nome')
+    order_dir = request.GET.get('order_dir', 'asc')
     
-    def delete(self, request, *args, **kwargs):
+    if order_dir == 'desc':
+        order_by = f'-{order_by}'
+        
+    atividades = atividades.order_by(order_by)
+    
+    # Paginação
+    paginator = Paginator(atividades, 10)  # 10 itens por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Contexto para o template
+    context = {
+        'atividades': page_obj,
+        'search_query': search_query,
+        'turmas': Turma.objects.all(),
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'atividades/academica_lista.html', context)
+
+def criar_atividade_academica(request):
+    """Cria uma nova atividade acadêmica"""
+    AtividadeAcademicaForm = criar_form_atividade_academica()
+   
+    if request.method == 'POST':
+        form = AtividadeAcademicaForm(request.POST)
+        if form.is_valid():
+            try:
+                atividade = form.save()
+                messages.success(request, 'Atividade acadêmica criada com sucesso!')
+                return redirect('atividades:academica_lista')
+            except Exception as e:
+                messages.error(request, f'Erro ao criar atividade: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'Erro no campo {field}: {error}')
+    else:
+        form = AtividadeAcademicaForm()
+   
+    return render(request, 'atividades/academica_formulario.html', {'form': form})
+
+def editar_atividade_academica(request, pk):
+    """Edita uma atividade acadêmica existente"""
+    AtividadeAcademicaForm = criar_form_atividade_academica()
+    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+    
+    if request.method == 'POST':
+        form = AtividadeAcademicaForm(request.POST, instance=atividade)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Atividade acadêmica atualizada com sucesso!')
+            return redirect('atividades:academica_lista')
+    else:
+        form = AtividadeAcademicaForm(instance=atividade)
+    
+    return render(request, 'atividades/academica_formulario.html', {'form': form})
+
+def excluir_atividade_academica(request, pk):
+    """Exclui uma atividade acadêmica"""
+    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+    
+    if request.method == 'POST':
+        atividade.delete()
         messages.success(request, 'Atividade acadêmica excluída com sucesso!')
-        return super().delete(request, *args, **kwargs)
-
+        return redirect('atividades:academica_lista')
+    
+    return render(request, 'atividades/academica_confirmar_exclusao.html', {'object': atividade})
 
 # Views para Atividades Ritualísticas
-class RitualisticaListaView(ListView):
-    model = AtividadeRitualistica
-    template_name = 'atividades/ritualistica_lista.html'
-    context_object_name = 'atividades_ritualisticas'
-    paginate_by = 10  # Número de itens por página
+def listar_atividades_ritualisticas(request):
+    """Exibe a lista de atividades ritualísticas com filtros e paginação"""
+    # Importação dinâmica
+    turmas_module = importlib.import_module('turmas.models')
+    Turma = getattr(turmas_module, 'Turma')
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['search_query'] = self.request.GET.get('search', '')
-        
-        # Adicionar lista de turmas para o filtro
-        context['turmas'] = Turma.objects.all()
-        
-        return context
+    # Obter todas as atividades
+    atividades = AtividadeRitualistica.objects.all()
     
-    def get_queryset(self):
-        queryset = super().get_queryset()
+    # Busca por nome
+    search_query = request.GET.get('search', '')
+    if search_query:
+        atividades = atividades.filter(nome__icontains=search_query)
+    
+    # Filtro por turma
+    turma_id = request.GET.get('turma', '')
+    if turma_id:
+        atividades = atividades.filter(turma_id=turma_id)
+    
+    # Ordenação
+    order_by = request.GET.get('order_by', 'nome')
+    order_dir = request.GET.get('order_dir', 'asc')
+    
+    if order_dir == 'desc':
+        order_by = f'-{order_by}'
         
-        # Busca por nome
-        search_query = self.request.GET.get('search', '')
-        if search_query:
-            queryset = queryset.filter(nome__icontains=search_query)
-        
-        # Filtro por turma
-        turma_id = self.request.GET.get('turma', '')
-        if turma_id:
-            queryset = queryset.filter(turma_id=turma_id)
-        
-        # Filtro por data de início
-        data_inicio_min = self.request.GET.get('data_inicio_min', '')
-        if data_inicio_min:
-            queryset = queryset.filter(data_inicio__gte=data_inicio_min)
-        
-        # Filtro por data de fim
-        data_fim_max = self.request.GET.get('data_fim_max', '')
-        if data_fim_max:
-            queryset = queryset.filter(data_fim__lte=data_fim_max)
-        
-        # Ordenação
-        order_by = self.request.GET.get('order_by', 'nome')
-        order_dir = self.request.GET.get('order_dir', 'asc')
-        
-        if order_dir == 'desc':
-            order_by = f'-{order_by}'
-            
-        return queryset.order_by(order_by)
+    atividades = atividades.order_by(order_by)
+    
+    # Paginação
+    paginator = Paginator(atividades, 10)  # 10 itens por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Contexto para o template
+    context = {
+        'atividades_ritualisticas': page_obj,
+        'search_query': search_query,
+        'turmas': Turma.objects.all(),
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'atividades/ritualistica_lista.html', context)
 
-
-class RitualisticaCriarView(CreateView):
-    model = AtividadeRitualistica
-    form_class = AtividadeRitualisticaForm
-    template_name = 'atividades/atividade_ritualistica_form.html'
-    success_url = reverse_lazy('atividades:ritualistica_lista')
+def criar_atividade_ritualistica(request):
+    """Cria uma nova atividade ritualística"""
+    AtividadeRitualisticaForm = criar_form_atividade_ritualistica()
     
-    def form_valid(self, form):
-        instance = form.save(commit=False)
-        # Handle the todos_alunos field logic
-        if form.cleaned_data.get('todos_alunos'):
-            # Logic to get all students from the selected turma
-            turma = form.cleaned_data.get('turma')
-            if turma:
-                # Save first to create the instance
-                instance.save()
-                # Then add all students from the turma
-                from core.models import Aluno
-                alunos = Aluno.objects.filter(turma=turma)
-                instance.alunos.set(alunos)
-        else:
+    if request.method == 'POST':
+        form = AtividadeRitualisticaForm(request.POST)
+        if form.is_valid():
+            instance = form.save(commit=False)
             instance.save()
-            # The many-to-many relationship will be saved by the form
-        
-        messages.success(self.request, 'Atividade ritualística criada com sucesso!')
-        return redirect(self.success_url)
-
-
-class RitualisticaEditarView(UpdateView):
-    model = AtividadeRitualistica
-    form_class = AtividadeRitualisticaForm
-    template_name = 'atividades/atividade_ritualistica_form.html'
-    success_url = reverse_lazy('atividades:ritualistica_lista')
-    
-    def form_valid(self, form):
-        instance = form.save(commit=False)
-        # Handle the todos_alunos field logic
-        if form.cleaned_data.get('todos_alunos'):
-            # Logic to get all students from the selected turma
-            turma = form.cleaned_data.get('turma')
-            if turma:
-                # Save first to create the instance
-                instance.save()
-                # Then add all students from the turma
-                from core.models import Aluno
-                alunos = Aluno.objects.filter(turma=turma)
-                instance.alunos.set(alunos)
-        else:
-            instance.save()
-            # The many-to-many relationship will be saved by the form
             
-        messages.success(self.request, 'Atividade ritualística atualizada com sucesso!')
-        return redirect(self.success_url)
-
-
-class RitualisticaExcluirView(DeleteView):
-    model = AtividadeRitualistica
-    template_name = 'atividades/ritualistica_confirmar_exclusao.html'
-    success_url = reverse_lazy('atividades:ritualistica_lista')
+            # Tratar a opção de incluir todos os alunos
+            if form.cleaned_data.get('todos_alunos'):
+                turma = form.cleaned_data.get('turma')
+                if turma:
+                    # Importação dinâmica usando importlib
+                    alunos_module = importlib.import_module('alunos.models')
+                    Aluno = getattr(alunos_module, 'Aluno')
+                    
+                    # Adicionar todos os alunos da turma
+                    alunos = Aluno.objects.filter(turmas=turma)
+                    instance.alunos.set(alunos)
+            else:
+                # Salvar os alunos selecionados no formulário
+                form.save_m2m()
+            
+            messages.success(request, 'Atividade ritualística criada com sucesso!')
+            return redirect('atividades:ritualistica_lista')
+    else:
+        form = AtividadeRitualisticaForm()
     
-    def delete(self, request, *args, **kwargs):
+    return render(request, 'atividades/atividade_ritualistica_form.html', {'form': form})
+
+def editar_atividade_ritualistica(request, pk):
+    """Edita uma atividade ritualística existente"""
+    AtividadeRitualisticaForm = criar_form_atividade_ritualistica()
+    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
+    
+    if request.method == 'POST':
+        form = AtividadeRitualisticaForm(request.POST, instance=atividade)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.save()
+            
+            # Tratar a opção de incluir todos os alunos
+            if form.cleaned_data.get('todos_alunos'):
+                turma = form.cleaned_data.get('turma')
+                if turma:
+                    # Importação dinâmica usando importlib
+                    alunos_module = importlib.import_module('alunos.models')
+                    Aluno = getattr(alunos_module, 'Aluno')
+                    
+                    # Adicionar todos os alunos da turma
+                    alunos = Aluno.objects.filter(turmas=turma)
+                    instance.alunos.set(alunos)
+            else:
+                # Salvar os alunos selecionados no formulário
+                form.save_m2m()
+            
+            messages.success(request, 'Atividade ritualística atualizada com sucesso!')
+            return redirect('atividades:ritualistica_lista')
+    else:
+        form = AtividadeRitualisticaForm(instance=atividade)
+    
+    return render(request, 'atividades/atividade_ritualistica_form.html', {'form': form})
+
+def excluir_atividade_ritualistica(request, pk):
+    """Exclui uma atividade ritualística"""
+    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
+    
+    if request.method == 'POST':
+        atividade.delete()
         messages.success(request, 'Atividade ritualística excluída com sucesso!')
-        return super().delete(request, *args, **kwargs)
+        return redirect('atividades:ritualistica_lista')
+    
+    return render(request, 'atividades/ritualistica_confirmar_exclusao.html', {'object': atividade})
 
 
 
@@ -728,15 +748,100 @@ html
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        var todosAlunosCheckbox = document.getElementById('id_todos_alunos');
-        var alunosField = document.getElementById('id_alunos');
-
+        const todosAlunosCheckbox = document.getElementById('id_todos_alunos');
+        const alunosField = document.getElementById('id_alunos');
+        const alunosContainer = alunosField.closest('.mb-3');
+        const turmaSelect = document.getElementById('id_turma');
+        
+        // Function to toggle the visibility and state of the alunos field
         function toggleAlunosField() {
-            alunosField.disabled = todosAlunosCheckbox.checked;
+            if (todosAlunosCheckbox.checked) {
+                alunosContainer.style.opacity = '0.5';
+                alunosField.disabled = true;
+                
+                // Add a visual indicator that the field is disabled
+                const helpText = document.createElement('small');
+                helpText.id = 'alunos-help-text';
+                helpText.className = 'form-text text-muted';
+                helpText.textContent = 'Todos os alunos da turma serão incluídos automaticamente';
+                
+                // Remove existing help text if any
+                const existingHelpText = document.getElementById('alunos-help-text');
+                if (existingHelpText) {
+                    existingHelpText.remove();
+                }
+                
+                alunosContainer.appendChild(helpText);
+            } else {
+                alunosContainer.style.opacity = '1';
+                alunosField.disabled = false;
+                
+                // Remove the help text
+                const helpText = document.getElementById('alunos-help-text');
+                if (helpText) {
+                    helpText.remove();
+                }
+            }
         }
-
+        
+        // Function to update available students based on selected turma
+        function updateAlunosList() {
+            const turmaId = turmaSelect.value;
+            if (!turmaId) return;
+            
+            // Show loading indicator
+            alunosContainer.style.opacity = '0.5';
+            
+            // Fetch students for the selected turma via AJAX
+            fetch(`/api/turmas/${turmaId}/alunos/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear current options
+                    while (alunosField.firstChild) {
+                        alunosField.removeChild(alunosField.firstChild);
+                    }
+                    
+                    // Add new options
+                    data.forEach(aluno => {
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = 'alunos';
+                        checkbox.value = aluno.id;
+                        checkbox.id = `aluno_${aluno.id}`;
+                        
+                        const label = document.createElement('label');
+                        label.htmlFor = `aluno_${aluno.id}`;
+                        label.textContent = aluno.nome;
+                        
+                        const div = document.createElement('div');
+                        div.className = 'form-check';
+                        div.appendChild(checkbox);
+                        div.appendChild(label);
+                        
+                        alunosField.appendChild(div);
+                    });
+                    
+                    alunosContainer.style.opacity = '1';
+                })
+                .catch(error => {
+                    console.error('Error fetching students:', error);
+                    alunosContainer.style.opacity = '1';
+                });
+        }
+        
+        // Event listeners
         todosAlunosCheckbox.addEventListener('change', toggleAlunosField);
+        turmaSelect.addEventListener('change', function() {
+            if (!todosAlunosCheckbox.checked) {
+                updateAlunosList();
+            }
+        });
+        
+        // Initial setup
         toggleAlunosField();
+        if (turmaSelect.value && !todosAlunosCheckbox.checked) {
+            updateAlunosList();
+        }
     });
 </script>
 {% endblock %}

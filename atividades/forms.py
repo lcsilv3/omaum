@@ -1,64 +1,61 @@
 from django import forms
-from django.core.exceptions import ValidationError
-import datetime
-from .models import AtividadeAcademica, AtividadeRitualistica  # Adicione AtividadeRitualistica aqui
+import importlib
 
-class AtividadeAcademicaForm(forms.ModelForm):
-    class Meta:
-        model = AtividadeAcademica
-        fields = ['nome', 'descricao', 'data_inicio', 'data_fim', 'turma']
-        widgets = {
-            'data_inicio': forms.DateInput(attrs={'type': 'date'}),
-            'data_fim': forms.DateInput(attrs={'type': 'date'}),
-        }
-
-    def clean_data_inicio(self):
-        data_inicio = self.cleaned_data.get('data_inicio')
-        if data_inicio and data_inicio < datetime.date.today():
-            raise ValidationError("A data de início da atividade não pode ser no passado.")
-        return data_inicio
-
-    def clean(self):
-        cleaned_data = super().clean()
-        data_inicio = cleaned_data.get('data_inicio')
-        data_fim = cleaned_data.get('data_fim')
-        if data_inicio and data_fim and data_fim < data_inicio:
-            raise ValidationError("A data de fim não pode ser anterior à data de início.")
-        return cleaned_data
-
-class AtividadeRitualisticaForm(forms.ModelForm):
-    todos_alunos = forms.BooleanField(required=False, label='Todos os Alunos')
+def criar_form_atividade_academica():
+    """
+    Cria o formulário para atividades acadêmicas usando importação dinâmica
+    para evitar referências circulares.
+    """
+    class AtividadeAcademicaForm(forms.ModelForm):
+        class Meta:
+            model = None  # Será definido no __init__
+            fields = ('nome', 'descricao', 'data', 'turma')
+            
+        def __init__(self, *args, **kwargs):
+            # Importação dinâmica do modelo
+            from .models import AtividadeAcademica
+            self.Meta.model = AtividadeAcademica
+            super().__init__(*args, **kwargs)
+            
+            # Importação dinâmica da turma
+            turmas_module = importlib.import_module('turmas.models')
+            Turma = getattr(turmas_module, 'Turma')
+            
+            # Configurar queryset
+            self.fields['turma'].queryset = Turma.objects.all()
     
-    class Meta:
-        model = AtividadeRitualistica
-        fields = ['nome', 'descricao', 'data_inicio', 'data_fim', 'turma', 'alunos']
-        widgets = {
-            'data_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'data_fim': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'turma': forms.Select(attrs={'class': 'form-control'}),
-            'alunos': forms.SelectMultiple(attrs={'class': 'form-control'}),
-        }
+    return AtividadeAcademicaForm
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['alunos'].required = False
-
-    def clean(self):
-        cleaned_data = super().clean()
-        data_inicio = cleaned_data.get('data_inicio')
-        data_fim = cleaned_data.get('data_fim')
-        todos_alunos = cleaned_data.get('todos_alunos')
-        alunos = cleaned_data.get('alunos')
+def criar_form_atividade_ritualistica():
+    """
+    Cria o formulário para atividades ritualísticas usando importação dinâmica
+    para evitar referências circulares.
+    """
+    class AtividadeRitualisticaForm(forms.ModelForm):
+        todos_alunos = forms.BooleanField(required=False, label="Incluir todos os alunos da turma")
         
-        if data_inicio and data_fim and data_fim < data_inicio:
-            raise ValidationError("A data de fim não pode ser anterior à data de início.")
+        class Meta:
+            model = None  # Será definido no __init__
+            fields = ['nome', 'descricao', 'data', 'turma', 'alunos', 'todos_alunos']
 
-        if not todos_alunos and not alunos:
-            raise ValidationError("Selecione alunos específicos ou marque 'Todos os Alunos'.")
-
-        if todos_alunos and alunos:
-            raise ValidationError("Você não pode selecionar alunos específicos quando 'Todos os Alunos' está marcado.")
-        
-        return cleaned_data
+        def __init__(self, *args, **kwargs):
+            # Importação dinâmica dos modelos
+            from .models import AtividadeRitualistica
+            self.Meta.model = AtividadeRitualistica
+            
+            super().__init__(*args, **kwargs)
+            
+            # Importação dinâmica usando importlib
+            turmas_module = importlib.import_module('turmas.models')
+            alunos_module = importlib.import_module('alunos.models')
+            
+            Turma = getattr(turmas_module, 'Turma')
+            Aluno = getattr(alunos_module, 'Aluno')
+            
+            # Configurar os querysets
+            self.fields['turma'].queryset = Turma.objects.all()
+            self.fields['alunos'].queryset = Aluno.objects.all()
+            self.fields['alunos'].widget = forms.CheckboxSelectMultiple()
+            self.fields['alunos'].required = False
+   
+    return AtividadeRitualisticaForm

@@ -135,54 +135,69 @@ def excluir_turma(request, id):
 # Views para Matrículas
 @login_required
 def matricular_aluno(request, turma_id):
-    turma = get_object_or_404(Turma, id=turma_id)
+    """Matricula um aluno na turma"""
+    turma = get_object_or_404(Turma, pk=turma_id)
+    
+    # Verificar se há vagas disponíveis
+    if turma.vagas_disponiveis <= 0:
+        adicionar_mensagem(request, 'erro', 'Não há vagas disponíveis nesta turma.')
+        return redirect('turmas:detalhes_turma', turma_id=turma.id)
     
     if request.method == 'POST':
-        form = MatriculaForm(request.POST, turma=turma)
+        form = AlunoTurmaForm(request.POST, turma=turma)
         if form.is_valid():
-            matricula = form.save(commit=False)
-            matricula.turma = turma
+            aluno = form.cleaned_data['aluno']
             
-            try:
-                matricula.full_clean()
-                matricula.save()
-                messages.success(request, f'Aluno matriculado com sucesso na turma {turma.nome}.')
-                return redirect('turmas:detalhar_turma', id=turma.id)
-            except ValidationError as e:
-                for field, errors in e.message_dict.items():
-                    for error in errors:
-                        form.add_error(field, error)
-        
+            # Verificar se o aluno já está matriculado
+            if turma.alunos.filter(id=aluno.id).exists():
+                adicionar_mensagem(request, 'erro', f'O aluno {aluno.nome} já está matriculado nesta turma.')
+            else:
+                turma.alunos.add(aluno)
+                registrar_log(request, f'Aluno {aluno.nome} matriculado na turma {turma.nome}')
+                adicionar_mensagem(request, 'sucesso', f'Aluno {aluno.nome} matriculado com sucesso!')
+            
+            return redirect('turmas:detalhes_turma', turma_id=turma.id)
     else:
-        form = MatriculaForm(turma=turma)
+        form = AlunoTurmaForm(turma=turma)
     
     return render(request, 'turmas/matricular_aluno.html', {
         'form': form,
-        'turma': turma
+        'turma': turma,
+        'titulo': f'Matricular Aluno na Turma: {turma.nome}'
     })
 
 @login_required
-def cancelar_matricula(request, matricula_id):
-    matricula = get_object_or_404(Matricula, id=matricula_id)
-    turma = matricula.turma
-    turma_id = turma.id
-    
-    # Verifica se é a última matrícula da turma
-    total_matriculas_ativas = Matricula.objects.filter(turma=turma, status='A').count()
+def cancelar_matricula(request, turma_id, aluno_id):
+    """Cancela a matrícula de um aluno na turma"""
+    turma = get_object_or_404(Turma, pk=turma_id)
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
     
     if request.method == 'POST':
-        if total_matriculas_ativas <= 1 and matricula.status == 'A':
-            messages.error(request, 'Não é possível cancelar a matrícula. Uma turma deve ter pelo menos um aluno matriculado.')
-            return redirect('turmas:detalhar_turma', id=turma_id)
+        if turma.alunos.filter(id=aluno.id).exists():
+            turma.alunos.remove(aluno)
+            registrar_log(request, f'Matrícula do aluno {aluno.nome} na turma {turma.nome} foi cancelada')
+            adicionar_mensagem(request, 'sucesso', f'Matrícula do aluno {aluno.nome} cancelada com sucesso!')
+        else:
+            adicionar_mensagem(request, 'erro', f'O aluno {aluno.nome} não está matriculado nesta turma.')
         
-        matricula.status = 'C'  # Cancelada
-        matricula.save()
-        messages.success(request, 'Matrícula cancelada com sucesso.')
-        return redirect('turmas:detalhar_turma', id=turma_id)
+        return redirect('turmas:detalhes_turma', turma_id=turma.id)
     
-    return render(request, 'turmas/cancelar_matricula.html', {
-        'matricula': matricula,
-        'ultima_matricula': total_matriculas_ativas <= 1 and matricula.status == 'A'
+    return render(request, 'turmas/confirmar_cancelamento_matricula.html', {
+        'turma': turma,
+        'aluno': aluno,
+        'titulo': 'Confirmar Cancelamento de Matrícula'
+    })
+
+@login_required
+def listar_alunos_matriculados(request, turma_id):
+    """Lista todos os alunos matriculados em uma turma"""
+    turma = get_object_or_404(Turma, pk=turma_id)
+    alunos = turma.alunos.all()
+    
+    return render(request, 'turmas/listar_alunos_matriculados.html', {
+        'turma': turma,
+        'alunos': alunos,
+        'titulo': f'Alunos Matriculados na Turma: {turma.nome}'
     })
 
 # Views para Cursos (mantidas para compatibilidade)

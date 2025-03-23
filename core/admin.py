@@ -1,22 +1,15 @@
 from django.contrib import admin
-from .models import Aluno, Categoria, Item
+from .models import ConfiguracaoSistema, LogAtividade
 
-@admin.register(Aluno)
-class AlunoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'email', 'telefone', 'data_nascimento', 'ativo')
-    search_fields = ('nome', 'email', 'telefone')
-    list_filter = ('ativo', 'data_cadastro')
-    list_editable = ('ativo',)
+@admin.register(ConfiguracaoSistema)
+class ConfiguracaoSistemaAdmin(admin.ModelAdmin):
+    list_display = ('nome_sistema', 'versao', 'data_atualizacao', 'manutencao_ativa')
+    list_editable = ('manutencao_ativa',)
+    readonly_fields = ('data_atualizacao',)
 
-@admin.register(Categoria)
-class CategoriaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'descricao', 'data_criacao')
-    search_fields = ('nome',)
-    list_filter = ('data_criacao',)
-
-@admin.register(Item)
-class ItemAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'categoria', 'preco', 'disponivel', 'data_criacao')
-    list_filter = ('categoria', 'disponivel', 'data_criacao')
-    search_fields = ('nome', 'descricao')
-    list_editable = ('preco', 'disponivel')
+@admin.register(LogAtividade)
+class LogAtividadeAdmin(admin.ModelAdmin):
+    list_display = ('tipo', 'acao', 'usuario', 'data')
+    list_filter = ('tipo', 'data', 'usuario')
+    search_fields = ('acao', 'usuario', 'detalhes')
+    readonly_fields = ('data',)

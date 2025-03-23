@@ -21,7 +21,8 @@ class TurmaForm(forms.ModelForm):
 class AtividadeAcademicaForm(forms.ModelForm):
     class Meta:
         model = AtividadeAcademica
-        fields = ('nome', 'descricao', 'data', 'turma')
+        # Corrigir para usar os campos corretos
+        fields = ('nome', 'descricao', 'data_inicio', 'data_fim', 'turma')
 
 class AtividadeRitualisticaForm(forms.ModelForm):
     class Meta:

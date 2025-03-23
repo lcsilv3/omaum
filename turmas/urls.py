@@ -13,7 +13,8 @@ urlpatterns = [
     
     # URLs para Matrículas
     path('<int:turma_id>/matricular/', views.matricular_aluno, name='matricular_aluno'),
-    path('matricula/<int:matricula_id>/cancelar/', views.cancelar_matricula, name='cancelar_matricula'),
+    path('<int:turma_id>/alunos/', views.listar_alunos_matriculados, name='listar_alunos_matriculados'),
+    path('<int:turma_id>/alunos/<int:aluno_id>/cancelar/', views.cancelar_matricula, name='cancelar_matricula'),
     
     # URLs para Cursos (mantidas para compatibilidade)
     path('cursos/', views.listar_cursos, name='listar_cursos'),

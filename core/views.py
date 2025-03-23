@@ -1,206 +1,101 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.db.models import Q, Avg
-from core.models import Aluno, Curso, Turma
-from core.forms import AlunoForm, CursoForm, TurmaForm, AlunoTurmaForm
 from django.contrib.auth import login, authenticate
-from .forms import RegistroForm
+from django.contrib.auth.forms import AuthenticationForm
+from .utils import registrar_log, adicionar_mensagem, garantir_configuracao_sistema
+from .models import ConfiguracaoSistema
+from django.utils import timezone
 
-def home(request):
-    return render(request, 'core/home.html')
-
-def registro(request):
-    if request.method == 'POST':
-        form = RegistroForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('core:home')
-    else:
-        form = RegistroForm()
-    return render(request, 'core/registro.html', {'form': form})
-
-# Aluno views
-@login_required
-def aluno_list(request):
-    alunos = Aluno.objects.all()
-    return render(request, 'core/listar_alunos.html', {'alunos': alunos})
-
-@login_required
-def aluno_create(request):
-    if request.method == 'POST':
-        form = AlunoForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('core:listar_alunos')
-    else:
-        form = AlunoForm()
-    return render(request, 'core/aluno_form.html', {'form': form})
-
-@login_required
-def aluno_detail(request, pk):
-    aluno = get_object_or_404(Aluno, pk=pk)
-    return render(request, 'core/aluno_detail.html', {'aluno': aluno})
-
-@login_required
-def aluno_update(request, pk):
-    aluno = get_object_or_404(Aluno, pk=pk)
-    if request.method == 'POST':
-        form = AlunoForm(request.POST, instance=aluno)
-        if form.is_valid():
-            form.save()
-            return redirect('core:listar_alunos')
-    else:
-        form = AlunoForm(instance=aluno)
-    return render(request, 'core/aluno_form.html', {'form': form})
-
-@login_required
-def aluno_delete(request, pk):
-    aluno = get_object_or_404(Aluno, pk=pk)
-    if request.method == 'POST':
-        aluno.delete()
-        return redirect('core:listar_alunos')
-    return render(request, 'core/aluno_confirm_delete.html', {'aluno': aluno})
-
-# Turma views
-@login_required
-def turma_list(request):
-    turmas = Turma.objects.all()
-    return render(request, 'core/turma_list.html', {'turmas': turmas})
-
-@login_required
-def turma_create(request):
-    if request.method == 'POST':
-        form = TurmaForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('core:listar_turmas')
-    else:
-        form = TurmaForm()
-    return render(request, 'core/turma_form.html', {'form': form})
-
-@login_required
-def turma_detail(request, pk):
-    turma = get_object_or_404(Turma, pk=pk)
-    return render(request, 'core/turma_detail.html', {'turma': turma})
-
-@login_required
-def turma_update(request, pk):
-    turma = get_object_or_404(Turma, pk=pk)
-    if request.method == 'POST':
-        form = TurmaForm(request.POST, instance=turma)
-        if form.is_valid():
-            form.save()
-            return redirect('core:listar_turmas')
-    else:
-        form = TurmaForm(instance=turma)
-    return render(request, 'core/turma_form.html', {'form': form})
-
-@login_required
-def turma_delete(request, pk):
-    turma = get_object_or_404(Turma, pk=pk)
-    if request.method == 'POST':
-        turma.delete()
-        return redirect('core:listar_turmas')
-    return render(request, 'core/turma_confirm_delete.html', {'turma': turma})
-
-# Presença views
-@login_required
-def listar_presencas_academicas(request):
-    # Adicione a lógica para listar presenças acadêmicas
-    pass
-
-# Cargo views
-@login_required
-def listar_cargos_administrativos(request):
-    # Adicione a lógica para listar cargos administrativos
-    pass
-
-# Relatório views
-@login_required
-def relatorio_alunos(request):
-    # Adicione a lógica para gerar relatórios de alunos
-    pass
-
-# Punição views
-@login_required
-def listar_punicoes(request):
-    # Adicione a lógica para listar punições
-    pass
-
-# Iniciação views
-@login_required
-def listar_iniciacoes(request):
-    # Adicione a lógica para listar iniciações
-    pass
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.middleware.csrf import get_token
-from django.http import HttpResponse
-import logging
-
-logger = logging.getLogger(__name__)
-
-@method_decorator(ensure_csrf_cookie, name='dispatch')
-class CustomLoginView(LoginView):
-    template_name = 'registration/login.html'
-
-    def get(self, request, *args, **kwargs):
-        # Forçar a geração do token CSRF
-        csrf_token = get_token(request)
-
-        logger.info(f"GET CSRF cookie: {request.META.get('CSRF_COOKIE')}")
-        logger.info(f"GET CSRF token: {csrf_token}")
-        response = super().get(request, *args, **kwargs)
-        response.set_cookie('csrftoken', csrf_token, httponly=False, samesite='Lax')
-        return response
-
-    def post(self, request, *args, **kwargs):
-        logger.info(f"POST CSRF cookie: {request.META.get('CSRF_COOKIE')}")
-        logger.info(f"POST CSRF token: {request.POST.get('csrfmiddlewaretoken')}")
-        return super().post(request, *args, **kwargs)
-
-def test_csrf(request):
-    csrf_token = get_token(request)
-    return HttpResponse(f"CSRF Token: {csrf_token}")
-from django.contrib.auth.forms import UserCreationForm
-from django.urls import reverse_lazy
-from django.views.generic.edit import CreateView
-
-class RegisterView(CreateView):
-    form_class = UserCreationForm
-    success_url = reverse_lazy('login')
-    template_name = 'registration/registro.html'
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from .models import Aluno, Categoria, Item
-
-def lista_alunos(request):
-    alunos = Aluno.objects.filter(ativo=True)
-    return render(request, 'core/lista_alunos.html', {'alunos': alunos})
-
-def detalhe_aluno(request, aluno_id):
-    aluno = get_object_or_404(Aluno, pk=aluno_id)
-    return render(request, 'core/detalhe_aluno.html', {'aluno': aluno})
-
-def lista_categorias(request):
-    categorias = Categoria.objects.all()
-    return render(request, 'core/lista_categorias.html', {'categorias': categorias})
-
-def detalhe_categoria(request, categoria_id):
-    categoria = get_object_or_404(Categoria, pk=categoria_id)
-    itens = categoria.itens.all()
-    return render(request, 'core/detalhe_categoria.html', {
-        'categoria': categoria,
-        'itens': itens
+def pagina_inicial(request):
+    """Renderiza a página inicial do sistema"""
+    config = garantir_configuracao_sistema()
+    
+    # Se o sistema estiver em manutenção e o usuário não for admin
+    if config.manutencao_ativa and not request.user.is_staff:
+        return render(request, 'core/manutencao.html', {
+            'mensagem': config.mensagem_manutencao
+        })
+    
+    return render(request, 'core/home.html', {
+        'titulo': config.nome_sistema
     })
 
-def lista_itens(request):
-    itens = Item.objects.filter(disponivel=True)
-    return render(request, 'core/lista_itens.html', {'itens': itens})
+def entrar(request):
+    """Página de login do sistema"""
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            
+            if user is not None:
+                login(request, user)
+                registrar_log(request, f'Login realizado com sucesso')
+                adicionar_mensagem(request, 'sucesso', 'Login realizado com sucesso!')
+                return redirect('core:pagina_inicial')
+            else:
+                adicionar_mensagem(request, 'erro', 'Nome de usuário ou senha inválidos.')
+        else:
+            adicionar_mensagem(request, 'erro', 'Nome de usuário ou senha inválidos.')
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'core/login.html', {'form': form})
 
-def detalhe_item(request, item_id):
-    item = get_object_or_404(Item, pk=item_id)
-    return render(request, 'core/detalhe_item.html', {'item': item})
+@login_required
+def painel_controle(request):
+    """Painel de controle do sistema (apenas para staff)"""
+    if not request.user.is_staff:
+        adicionar_mensagem(request, 'erro', 'Você não tem permissão para acessar esta página.')
+        return redirect('core:pagina_inicial')
+    
+    config = ConfiguracaoSistema.objects.first()
+    logs_recentes = LogAtividade.objects.all()[:10]
+    
+    return render(request, 'core/painel_controle.html', {
+        'config': config,
+        'logs_recentes': logs_recentes
+    })
+
+@login_required
+def atualizar_configuracao(request):
+    """Atualiza as configurações do sistema"""
+    if not request.user.is_staff:
+        adicionar_mensagem(request, 'erro', 'Você não tem permissão para acessar esta página.')
+        return redirect('core:pagina_inicial')
+    
+    config = garantir_configuracao_sistema()
+    
+    if request.method == 'POST':
+        nome_sistema = request.POST.get('nome_sistema')
+        versao = request.POST.get('versao')
+        manutencao_ativa = request.POST.get('manutencao_ativa') == 'on'
+        mensagem_manutencao = request.POST.get('mensagem_manutencao')
+        
+        config.nome_sistema = nome_sistema
+        config.versao = versao
+        config.manutencao_ativa = manutencao_ativa
+        config.mensagem_manutencao = mensagem_manutencao
+        config.data_atualizacao = timezone.now()
+        config.save()
+        
+        registrar_log(request, 'Configurações do sistema atualizadas', 'INFO')
+        adicionar_mensagem(request, 'sucesso', 'Configurações atualizadas com sucesso!')
+        
+        return redirect('core:painel_controle')
+    
+    return render(request, 'core/atualizar_configuracao.html', {
+        'config': config
+    })
+
+from django.contrib.auth import logout
+
+def sair(request):
+    """Realiza o logout do usuário"""
+    if request.user.is_authenticated:
+        registrar_log(request, 'Logout realizado com sucesso')
+        logout(request)
+        adicionar_mensagem(request, 'info', 'Você saiu do sistema com sucesso.')
+    
+    return redirect('core:pagina_inicial')
