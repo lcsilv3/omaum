@@ -44,10 +44,15 @@ class TurmasConfig(AppConfig):
 python
 from django import forms
 from .models import Turma, Matricula
-from cursos.models import Curso
-from alunos.models import Aluno
-from django.core.exceptions import ValidationError
+from importlib import import_module
 
+def get_aluno_model():
+    alunos_module = import_module('alunos.models')
+    return getattr(alunos_module, 'Aluno')
+
+def get_curso_model():
+    cursos_module = import_module('cursos.models')
+    return getattr(cursos_module, 'Curso')
 class TurmaForm(forms.ModelForm):
     class Meta:
         model = Turma
@@ -58,108 +63,30 @@ class TurmaForm(forms.ModelForm):
             'descricao': forms.Textarea(attrs={'rows': 3}),
         }
 
-    def clean_nome(self):
-        nome = self.cleaned_data.get('nome')
-        if len(nome) < 3:
-            raise ValidationError("O nome da turma deve ter pelo menos 3 caracteres.")
-        return nome
-
-    def clean(self):
-        cleaned_data = super().clean()
-        data_inicio = cleaned_data.get('data_inicio')
-        data_fim = cleaned_data.get('data_fim')
-        if data_inicio and data_fim and data_inicio >= data_fim:
-            raise ValidationError("A data de início deve ser anterior à data de fim.")
-        return cleaned_data
-
-class AlunoSelecionadoForm(forms.Form):
-    aluno = forms.ModelChoiceField(
-        queryset=Aluno.objects.all(),
-        label="Selecione pelo menos um aluno",
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
-    
     def __init__(self, *args, **kwargs):
-        curso = kwargs.pop('curso', None)
         super().__init__(*args, **kwargs)
-        
-        if curso:
-            # Filtra alunos pelo curso selecionado
-            self.fields['aluno'].queryset = Aluno.objects.filter(curso=curso)
+        self.fields['curso'].queryset = get_curso_model().objects.all()
 
-class TurmaComAlunoForm(forms.Form):
-    """Formulário combinado para criar uma turma com pelo menos um aluno"""
-    # Campos da turma
-    nome = forms.CharField(max_length=100, label="Nome da Turma")
-    curso = forms.ModelChoiceField(
-        queryset=Curso.objects.all(), 
-        label="Curso",
-        widget=forms.Select(attrs={'class': 'form-control', 'id': 'id_curso'})
-    )
-    data_inicio = forms.DateField(
-        label="Data de Início",
-        widget=forms.DateInput(attrs={'type': 'date'})
-    )
-    data_fim = forms.DateField(
-        label="Data de Fim",
-        widget=forms.DateInput(attrs={'type': 'date'})
-    )
-    capacidade = forms.IntegerField(
-        label="Capacidade de Alunos",
-        initial=30,
-        min_value=1
-    )
-    status = forms.ChoiceField(
-        choices=Turma.OPCOES_STATUS,
-        initial='A',
-        label="Status"
-    )
-    descricao = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 3}),
-        required=False,
-        label="Descrição"
-    )
-    
-    # Campo para selecionar pelo menos um aluno
-    alunos = forms.ModelMultipleChoiceField(
-        queryset=Aluno.objects.all(),
-        label="Selecione pelo menos um aluno",
-        widget=forms.SelectMultiple(attrs={'class': 'form-control'}),
-        help_text="Mantenha pressionado Ctrl (ou Command no Mac) para selecionar múltiplos alunos."
-    )
-    
     def clean(self):
         cleaned_data = super().clean()
         data_inicio = cleaned_data.get('data_inicio')
         data_fim = cleaned_data.get('data_fim')
-        alunos = cleaned_data.get('alunos')
-        curso = cleaned_data.get('curso')
-        
         if data_inicio and data_fim and data_inicio >= data_fim:
-            raise ValidationError("A data de início deve ser anterior à data de fim.")
-        
-        if not alunos or len(alunos) < 1:
-            raise ValidationError("É necessário selecionar pelo menos um aluno para criar uma turma.")
-        
-        # Verifica se todos os alunos pertencem ao curso selecionado
-        if alunos and curso:
-            for aluno in alunos:
-                if aluno.curso != curso:
-                    raise ValidationError(f"O aluno {aluno.nome} não pertence ao curso {curso.nome}.")
-        
+            raise forms.ValidationError("A data de início deve ser anterior à data de fim.")
         return cleaned_data
 
 class MatriculaForm(forms.ModelForm):
     class Meta:
         model = Matricula
         fields = ['aluno', 'status']
-        
+
     def __init__(self, *args, **kwargs):
         turma = kwargs.pop('turma', None)
         super().__init__(*args, **kwargs)
-        
+
         if turma:
             # Filtra alunos pelo curso da turma
+            self.fields['aluno'].queryset = get_aluno_model().objects.filter(curso=turma.curso)
             self.fields['aluno'].queryset = self.fields['aluno'].queryset.filter(curso=turma.curso)
 
 
@@ -281,24 +208,14 @@ from . import views
 app_name = 'turmas'
 
 urlpatterns = [
-    # URLs para Turmas
     path('', views.listar_turmas, name='listar_turmas'),
     path('criar/', views.criar_turma, name='criar_turma'),
     path('<int:id>/', views.detalhar_turma, name='detalhar_turma'),
     path('<int:id>/editar/', views.editar_turma, name='editar_turma'),
     path('<int:id>/excluir/', views.excluir_turma, name='excluir_turma'),
-    
-    # URLs para Matrículas
     path('<int:turma_id>/matricular/', views.matricular_aluno, name='matricular_aluno'),
     path('<int:turma_id>/alunos/', views.listar_alunos_matriculados, name='listar_alunos_matriculados'),
     path('<int:turma_id>/alunos/<int:aluno_id>/cancelar/', views.cancelar_matricula, name='cancelar_matricula'),
-    
-    # URLs para Cursos (mantidas para compatibilidade)
-    path('cursos/', views.listar_cursos, name='listar_cursos'),
-    path('cursos/criar/', views.criar_curso, name='criar_curso'),
-    path('cursos/<int:id>/editar/', views.editar_curso, name='editar_curso'),
-    path('cursos/<int:id>/excluir/', views.excluir_curso, name='excluir_curso'),
-    path('cursos/<int:id>/', views.detalhar_curso, name='detalhar_curso'),
 ]
 
 
@@ -313,38 +230,42 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
+from importlib import import_module
 from .models import Turma, Matricula
-from cursos.models import Curso
 from .forms import TurmaForm, MatriculaForm
 
-# Views para Turmas
+# Função para importar dinamicamente o modelo Aluno
+def get_aluno_model():
+    alunos_module = import_module('alunos.models')
+    return getattr(alunos_module, 'Aluno')
 @login_required
 def listar_turmas(request):
     query = request.GET.get('q')
     curso_id = request.GET.get('curso')
     status = request.GET.get('status')
-    
+
     turmas = Turma.objects.all().select_related('curso')
-    
+
     if query:
         turmas = turmas.filter(
             Q(nome__icontains=query) | 
             Q(curso__nome__icontains=query)
         )
-    
+
     if curso_id:
         turmas = turmas.filter(curso_id=curso_id)
-    
+
     if status:
         turmas = turmas.filter(status=status)
-    
+
     # Obtém todos os cursos para o filtro dropdown
+    Curso = import_module('cursos.models').Curso
     cursos = Curso.objects.all()
-    
+
     paginator = Paginator(turmas, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'turmas': page_obj,
         'query': query,
@@ -353,56 +274,36 @@ def listar_turmas(request):
         'opcoes_status': Turma.OPCOES_STATUS,
         'status_selecionado': status
     }
-    
+
     return render(request, 'turmas/listar_turmas.html', context)
 
 @login_required
 def criar_turma(request):
     if request.method == 'POST':
-        form = TurmaComAlunoForm(request.POST)
+        form = TurmaForm(request.POST)
         if form.is_valid():
-            # Cria a turma
-            turma = Turma(
-                nome=form.cleaned_data['nome'],
-                curso=form.cleaned_data['curso'],
-                data_inicio=form.cleaned_data['data_inicio'],
-                data_fim=form.cleaned_data['data_fim'],
-                capacidade=form.cleaned_data['capacidade'],
-                status=form.cleaned_data['status'],
-                descricao=form.cleaned_data['descricao']
-            )
-            turma.save()
-            
-            # Cria as matrículas para os alunos selecionados
-            alunos = form.cleaned_data['alunos']
-            for aluno in alunos:
-                Matricula.objects.create(
-                    aluno=aluno,
-                    turma=turma,
-                    status='A'  # Ativa
-                )
-            
-            messages.success(request, 'Turma criada com sucesso com os alunos selecionados!')
+            turma = form.save()
+            messages.success(request, 'Turma criada com sucesso!')
             return redirect('turmas:listar_turmas')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
-        form = TurmaComAlunoForm()
-    
+        form = TurmaForm()
+
     return render(request, 'turmas/criar_turma.html', {'form': form})
 
 @login_required
 def detalhar_turma(request, id):
     turma = get_object_or_404(Turma, id=id)
     matriculas = Matricula.objects.filter(turma=turma).select_related('aluno')
-    
+
     context = {
         'turma': turma,
         'matriculas': matriculas,
         'total_matriculas': matriculas.count(),
         'vagas_disponiveis': turma.capacidade - matriculas.count()
     }
-    
+
     return render(request, 'turmas/detalhar_turma.html', context)
 
 @login_required
@@ -423,79 +324,52 @@ def editar_turma(request, id):
 @login_required
 def excluir_turma(request, id):
     turma = get_object_or_404(Turma, id=id)
-    
-    # Verifica se há matrículas associadas à turma
-    matriculas = Matricula.objects.filter(turma=turma)
-    
+
     if request.method == 'POST':
-        if matriculas.exists():
+        if turma.matriculas.exists():
             messages.error(request, 'Não é possível excluir uma turma com alunos matriculados.')
             return redirect('turmas:detalhar_turma', id=turma.id)
-        
+
         turma.delete()
         messages.success(request, 'Turma excluída com sucesso!')
         return redirect('turmas:listar_turmas')
-    
-    return render(request, 'turmas/excluir_turma.html', {
-        'turma': turma,
-        'tem_matriculas': matriculas.exists()
-    })
 
-# Views para Matrículas
+    return render(request, 'turmas/excluir_turma.html', {'turma': turma})
+
 @login_required
 def matricular_aluno(request, turma_id):
-    """Matricula um aluno na turma"""
-    turma = get_object_or_404(Turma, pk=turma_id)
-    
-    # Verificar se há vagas disponíveis
-    if turma.vagas_disponiveis <= 0:
-        adicionar_mensagem(request, 'erro', 'Não há vagas disponíveis nesta turma.')
-        return redirect('turmas:detalhes_turma', turma_id=turma.id)
-    
+    turma = get_object_or_404(Turma, id=turma_id)
+    Aluno = get_aluno_model()
+
     if request.method == 'POST':
-        form = AlunoTurmaForm(request.POST, turma=turma)
+        form = MatriculaForm(request.POST)
         if form.is_valid():
             aluno = form.cleaned_data['aluno']
-            
-            # Verificar se o aluno já está matriculado
-            if turma.alunos.filter(id=aluno.id).exists():
-                adicionar_mensagem(request, 'erro', f'O aluno {aluno.nome} já está matriculado nesta turma.')
+            if Matricula.objects.filter(turma=turma, aluno=aluno).exists():
+                messages.error(request, 'Este aluno já está matriculado nesta turma.')
             else:
-                turma.alunos.add(aluno)
-                registrar_log(request, f'Aluno {aluno.nome} matriculado na turma {turma.nome}')
-                adicionar_mensagem(request, 'sucesso', f'Aluno {aluno.nome} matriculado com sucesso!')
-            
-            return redirect('turmas:detalhes_turma', turma_id=turma.id)
+                Matricula.objects.create(turma=turma, aluno=aluno)
+                messages.success(request, 'Aluno matriculado com sucesso!')
+            return redirect('turmas:detalhar_turma', id=turma.id)
     else:
-        form = AlunoTurmaForm(turma=turma)
-    
-    return render(request, 'turmas/matricular_aluno.html', {
+        form = MatriculaForm()
+
+    context = {
         'form': form,
         'turma': turma,
-        'titulo': f'Matricular Aluno na Turma: {turma.nome}'
-    })
+    }
+    return render(request, 'turmas/matricular_aluno.html', context)
 
 @login_required
 def cancelar_matricula(request, turma_id, aluno_id):
-    """Cancela a matrícula de um aluno na turma"""
-    turma = get_object_or_404(Turma, pk=turma_id)
-    aluno = get_object_or_404(Aluno, pk=aluno_id)
-    
+    matricula = get_object_or_404(Matricula, turma_id=turma_id, aluno_id=aluno_id)
+
     if request.method == 'POST':
-        if turma.alunos.filter(id=aluno.id).exists():
-            turma.alunos.remove(aluno)
-            registrar_log(request, f'Matrícula do aluno {aluno.nome} na turma {turma.nome} foi cancelada')
-            adicionar_mensagem(request, 'sucesso', f'Matrícula do aluno {aluno.nome} cancelada com sucesso!')
-        else:
-            adicionar_mensagem(request, 'erro', f'O aluno {aluno.nome} não está matriculado nesta turma.')
-        
-        return redirect('turmas:detalhes_turma', turma_id=turma.id)
-    
-    return render(request, 'turmas/confirmar_cancelamento_matricula.html', {
-        'turma': turma,
-        'aluno': aluno,
-        'titulo': 'Confirmar Cancelamento de Matrícula'
-    })
+        matricula.delete()
+        messages.success(request, 'Matrícula cancelada com sucesso!')
+        return redirect('turmas:detalhar_turma', id=turma_id)
+
+    return render(request, 'turmas/cancelar_matricula.html', {'matricula': matricula})
 
 @login_required
 def listar_alunos_matriculados(request, turma_id):
@@ -701,6 +575,79 @@ class Migration(migrations.Migration):
 
 
 
+## turmas\migrations\0004_turma_capacidade_turma_descricao_turma_status_and_more.py
+
+python
+# Generated by Django 5.1.7 on 2025-03-23 20:14
+
+import django.db.models.deletion
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('alunos', '__first__'),
+        ('cursos', '0004_curso_codigo_curso'),
+        ('turmas', '0003_alter_turma_curso_alter_turma_data_fim_and_more'),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name='turma',
+            name='capacidade',
+            field=models.PositiveIntegerField(default=30, verbose_name='Capacidade de Alunos'),
+        ),
+        migrations.AddField(
+            model_name='turma',
+            name='descricao',
+            field=models.TextField(blank=True, verbose_name='Descrição'),
+        ),
+        migrations.AddField(
+            model_name='turma',
+            name='status',
+            field=models.CharField(choices=[('A', 'Ativa'), ('I', 'Inativa'), ('C', 'Concluída')], default='A', max_length=1, verbose_name='Status'),
+        ),
+        migrations.AlterField(
+            model_name='turma',
+            name='curso',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='cursos.curso', verbose_name='Curso'),
+        ),
+        migrations.AlterField(
+            model_name='turma',
+            name='data_fim',
+            field=models.DateField(verbose_name='Data de Fim'),
+        ),
+        migrations.AlterField(
+            model_name='turma',
+            name='data_inicio',
+            field=models.DateField(verbose_name='Data de Início'),
+        ),
+        migrations.AlterField(
+            model_name='turma',
+            name='nome',
+            field=models.CharField(max_length=100, verbose_name='Nome'),
+        ),
+        migrations.CreateModel(
+            name='Matricula',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('data_matricula', models.DateField(auto_now_add=True, verbose_name='Data da Matrícula')),
+                ('status', models.CharField(choices=[('A', 'Ativa'), ('C', 'Cancelada'), ('F', 'Finalizada')], default='A', max_length=1, verbose_name='Status')),
+                ('aluno', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='matriculas', to='alunos.aluno', verbose_name='Aluno')),
+                ('turma', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='matriculas', to='turmas.turma', verbose_name='Turma')),
+            ],
+            options={
+                'verbose_name': 'Matrícula',
+                'verbose_name_plural': 'Matrículas',
+                'unique_together': {('aluno', 'turma')},
+            },
+        ),
+    ]
+
+
+
+
 ## turmas\templates\turmas\cancelar_matricula.html
 
 html
@@ -776,168 +723,34 @@ html
 html
 {% extends 'base.html' %}
 
-{% block title %}Criar Turma{% endblock %}
+{% block title %}Criar Nova Turma{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <h1>Criar Nova Turma</h1>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="alert alert-info">
-        <p><strong>Atenção:</strong> Para criar uma turma, é necessário adicionar pelo menos um aluno.</p>
-    </div>
-    
+
     <form method="post">
         {% csrf_token %}
-        
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                {% for error in form.non_field_errors %}
-                    {{ error }}
+
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
                 {% endfor %}
             </div>
-        {% endif %}
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3>Informações da Turma</h3>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group mb-3">
-                            <label for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
-                            {{ form.nome }}
-                            {% if form.nome.errors %}
-                                <div class="alert alert-danger mt-1">
-                                    {% for error in form.nome.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group mb-3">
-                            <label for="{{ form.curso.id_for_label }}">{{ form.curso.label }}</label>
-                            {{ form.curso }}
-                            {% if form.curso.errors %}
-                                <div class="alert alert-danger mt-1">
-                                    {% for error in form.curso.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group mb-3">
-                            <label for="{{ form.data_inicio.id_for_label }}">{{ form.data_inicio.label }}</label>
-                            {{ form.data_inicio }}
-                            {% if form.data_inicio.errors %}
-                                <div class="alert alert-danger mt-1">
-                                    {% for error in form.data_inicio.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group mb-3">
-                            <label for="{{ form.data_fim.id_for_label }}">{{ form.data_fim.label }}</label>
-                            {{ form.data_fim }}
-                            {% if form.data_fim.errors %}
-                                <div class="alert alert-danger mt-1">
-                                    {% for error in form.data_fim.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group mb-3">
-                            <label for="{{ form.capacidade.id_for_label }}">{{ form.capacidade.label }}</label>
-                            {{ form.capacidade }}
-                            {% if form.capacidade.errors %}
-                                <div class="alert alert-danger mt-1">
-                                    {% for error in form.capacidade.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="form-group mb-3">
-                            <label for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
-                            {{ form.status }}
-                            {% if form.status.errors %}
-                                <div class="alert alert-danger mt-1">
-                                    {% for error in form.status.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group mb-3">
-                    <label for="{{ form.descricao.id_for_label }}">{{ form.descricao.label }}</label>
-                    {{ form.descricao }}
-                    {% if form.descricao.errors %}
-                        <div class="alert alert-danger mt-1">
-                            {% for error in form.descricao.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3>Alunos</h3>
-            </div>
-            <div class="card-body">
-                <div class="form-group mb-3">
-                    <label for="{{ form.alunos.id_for_label }}">{{ form.alunos.label }}</label>
-                    {{ form.alunos }}
-                    {% if form.alunos.help_text %}
-                        <small class="form-text text-muted">{{ form.alunos.help_text }}</small>
-                    {% endif %}
-                    {% if form.alunos.errors %}
-                        <div class="alert alert-danger mt-1">
-                            {% for error in form.alunos.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <button type="submit" class="btn btn-primary">Salvar Turma</button>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Salvar</button>
         <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}
+
 
 
 
@@ -947,12 +760,12 @@ html
 html
 {% extends 'base.html' %}
 
-{% block title %}Detalhes da Turma{% endblock %}
+{% block title %}Detalhes da Turma: {{ turma.nome }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Detalhes da Turma</h1>
-    
+    <h1>Detalhes da Turma: {{ turma.nome }}</h1>
+
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">
@@ -960,75 +773,56 @@ html
             </div>
         {% endfor %}
     {% endif %}
-    
     <div class="card mb-4">
-        <div class="card-header">
-            <h2>{{ turma.nome }}</h2>
-        </div>
         <div class="card-body">
-            <p><strong>Curso:</strong> {{ turma.curso }}</p>
+            <h5 class="card-title">Informações da Turma</h5>
+            <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
             <p><strong>Data de Início:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
             <p><strong>Data de Fim:</strong> {{ turma.data_fim|date:"d/m/Y" }}</p>
             <p><strong>Status:</strong> {{ turma.get_status_display }}</p>
-            <p><strong>Capacidade:</strong> {{ turma.capacidade }} alunos</p>
+            <p><strong>Capacidade:</strong> {{ turma.capacidade }}</p>
             <p><strong>Alunos Matriculados:</strong> {{ total_matriculas }}</p>
             <p><strong>Vagas Disponíveis:</strong> {{ vagas_disponiveis }}</p>
-            {% if turma.descricao %}
-                <p><strong>Descrição:</strong> {{ turma.descricao }}</p>
-            {% endif %}
+            <p><strong>Descrição:</strong> {{ turma.descricao|default:"Não informada" }}</p>
         </div>
     </div>
-    
+
     <h2>Alunos Matriculados</h2>
-    
-    {% if vagas_disponiveis > 0 %}
-        <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-primary mb-3">
-            <i class="fas fa-user-plus"></i> Matricular Aluno
-        </a>
-    {% else %}
-        <div class="alert alert-warning mb-3">
-            Não há vagas disponíveis nesta turma.
-        </div>
-    {% endif %}
-    
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Matrícula</th>
-                <th>Data da Matrícula</th>
-                <th>Status</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for matricula in matriculas %}
-            <tr>
-                <td>{{ matricula.aluno.nome }}</td>
-                <td>{{ matricula.aluno.matricula }}</td>
-                <td>{{ matricula.data_matricula|date:"d/m/Y" }}</td>
-                <td>{{ matricula.get_status_display }}</td>
-                <td>
-                    {% if matricula.status == 'A' %}
-                        <a href="{% url 'turmas:cancelar_matricula' matricula.id %}" class="btn btn-sm btn-danger">Cancelar Matrícula</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" class="text-center">Nenhum aluno matriculado nesta turma.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    
-    <div class="mt-3">
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Matrícula</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for matricula in matriculas %}
+                <tr>
+                    <td>{{ matricula.aluno.nome }}</td>
+                    <td>{{ matricula.aluno.matricula }}</td>
+                    <td>
+                        <a href="{% url 'turmas:cancelar_matricula' turma.id matricula.aluno.id %}" class="btn btn-sm btn-danger">Cancelar Matrícula</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center">Nenhum aluno matriculado nesta turma.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-primary">Matricular Novo Aluno</a>
         <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning">Editar Turma</a>
-        <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger">Excluir Turma</a>
-        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para Lista</a>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para Lista de Turmas</a>
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -1052,20 +846,44 @@ html
 html
 {% extends 'base.html' %}
 
+{% block title %}Editar Turma: {{ turma.nome }}{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <h1>Editar Turma</h1>
+    <h1>Editar Turma: {{ turma.nome }}</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
     <form method="post">
         {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
+
         {% for field in form %}
-            {% include 'includes/form_field.html' %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary">Atualizar Turma</button>
-        <a href="{% url 'listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
+        </div>
     </form>
 </div>
 {% endblock %}
+
+
 
 
 
@@ -1074,32 +892,34 @@ html
 html
 {% extends 'base.html' %}
 
-{% block title %}Excluir Turma{% endblock %}
+{% block title %}Excluir Turma: {{ turma.nome }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Excluir Turma</h1>
-    
-    {% if tem_matriculas %}
-        <div class="alert alert-danger">
-            <p>Não é possível excluir esta turma porque ela possui alunos matriculados.</p>
-            <p>Para excluir a turma, primeiro cancele todas as matrículas.</p>
-        </div>
-        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-primary">Voltar para Detalhes da Turma</a>
-    {% else %}
-        <div class="alert alert-warning">
-            <p>Você tem certeza que deseja excluir a turma "{{ turma.nome }}"?</p>
-            <p>Esta ação não pode ser desfeita.</p>
-        </div>
-        
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
-            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
-        </form>
+    <h1>Excluir Turma: {{ turma.nome }}</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
     {% endif %}
+    <div class="alert alert-danger">
+        <p>Você tem certeza que deseja excluir esta turma?</p>
+        <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mt-4">
+            <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
 </div>
 {% endblock %}
+
 
 
 
@@ -1188,33 +1008,38 @@ html
 {% block content %}
 <div class="container mt-4">
     <h1>Lista de Turmas</h1>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
+
+    <form method="get" class="mb-3">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" name="q" class="form-control" placeholder="Buscar turmas..." value="{{ query }}">
             </div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="row mb-3">
-        <div class="col-md-8">
-            <form method="get" class="form-inline">
-                <div class="input-group">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome ou curso" value="{{ request.GET.q }}">
-                    <div class="input-group-append">
-                        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
-                    </div>
-                </div>
-            </form>
+            <div class="col-md-3">
+                <select name="curso" class="form-control">
+                    <option value="">Todos os cursos</option>
+                    {% for curso in cursos %}
+                        <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_selecionado %}selected{% endif %}>
+                            {{ curso.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-control">
+                    <option value="">Todos os status</option>
+                    {% for status_value, status_label in opcoes_status %}
+                        <option value="{{ status_value }}" {% if status_value == status_selecionado %}selected{% endif %}>
+                            {{ status_label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
         </div>
-        <div class="col-md-4">
-            <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary mb-3">
-                <i class="fas fa-plus"></i> Nova Turma
-            </a>
-        </div>
-    </div>
-    
+    </form>
+
     <table class="table table-striped">
         <thead>
             <tr>
@@ -1222,6 +1047,7 @@ html
                 <th>Curso</th>
                 <th>Data de Início</th>
                 <th>Data de Fim</th>
+                <th>Status</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -1229,9 +1055,10 @@ html
             {% for turma in turmas %}
             <tr>
                 <td>{{ turma.nome }}</td>
-                <td>{{ turma.curso }}</td>
+                <td>{{ turma.curso.nome }}</td>
                 <td>{{ turma.data_inicio|date:"d/m/Y" }}</td>
                 <td>{{ turma.data_fim|date:"d/m/Y" }}</td>
+                <td>{{ turma.get_status_display }}</td>
                 <td>
                     <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info">Detalhes</a>
                     <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning">Editar</a>
@@ -1240,11 +1067,35 @@ html
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5" class="text-center">Nenhuma turma encontrada.</td>
+                <td colspan="6">Nenhuma turma encontrada.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    {% if turmas.has_other_pages %}
+    <nav>
+        <ul class="pagination">
+            {% if turmas.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ turmas.previous_page_number }}">Anterior</a></li>
+            {% endif %}
+
+            {% for i in turmas.paginator.page_range %}
+                {% if turmas.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if turmas.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ turmas.next_page_number }}">Próxima</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary">Criar Nova Turma</a>
 </div>
 {% endblock %}
 

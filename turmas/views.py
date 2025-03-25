@@ -4,38 +4,42 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
+from importlib import import_module
 from .models import Turma, Matricula
-from cursos.models import Curso
 from .forms import TurmaForm, MatriculaForm
 
-# Views para Turmas
+# Função para importar dinamicamente o modelo Aluno
+def get_aluno_model():
+    alunos_module = import_module('alunos.models')
+    return getattr(alunos_module, 'Aluno')
 @login_required
 def listar_turmas(request):
     query = request.GET.get('q')
     curso_id = request.GET.get('curso')
     status = request.GET.get('status')
-    
+
     turmas = Turma.objects.all().select_related('curso')
-    
+
     if query:
         turmas = turmas.filter(
             Q(nome__icontains=query) | 
             Q(curso__nome__icontains=query)
         )
-    
+
     if curso_id:
         turmas = turmas.filter(curso_id=curso_id)
-    
+
     if status:
         turmas = turmas.filter(status=status)
-    
+
     # Obtém todos os cursos para o filtro dropdown
+    Curso = import_module('cursos.models').Curso
     cursos = Curso.objects.all()
-    
+
     paginator = Paginator(turmas, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'turmas': page_obj,
         'query': query,
@@ -44,56 +48,36 @@ def listar_turmas(request):
         'opcoes_status': Turma.OPCOES_STATUS,
         'status_selecionado': status
     }
-    
+
     return render(request, 'turmas/listar_turmas.html', context)
 
 @login_required
 def criar_turma(request):
     if request.method == 'POST':
-        form = TurmaComAlunoForm(request.POST)
+        form = TurmaForm(request.POST)
         if form.is_valid():
-            # Cria a turma
-            turma = Turma(
-                nome=form.cleaned_data['nome'],
-                curso=form.cleaned_data['curso'],
-                data_inicio=form.cleaned_data['data_inicio'],
-                data_fim=form.cleaned_data['data_fim'],
-                capacidade=form.cleaned_data['capacidade'],
-                status=form.cleaned_data['status'],
-                descricao=form.cleaned_data['descricao']
-            )
-            turma.save()
-            
-            # Cria as matrículas para os alunos selecionados
-            alunos = form.cleaned_data['alunos']
-            for aluno in alunos:
-                Matricula.objects.create(
-                    aluno=aluno,
-                    turma=turma,
-                    status='A'  # Ativa
-                )
-            
-            messages.success(request, 'Turma criada com sucesso com os alunos selecionados!')
+            turma = form.save()
+            messages.success(request, 'Turma criada com sucesso!')
             return redirect('turmas:listar_turmas')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
-        form = TurmaComAlunoForm()
-    
+        form = TurmaForm()
+
     return render(request, 'turmas/criar_turma.html', {'form': form})
 
 @login_required
 def detalhar_turma(request, id):
     turma = get_object_or_404(Turma, id=id)
     matriculas = Matricula.objects.filter(turma=turma).select_related('aluno')
-    
+
     context = {
         'turma': turma,
         'matriculas': matriculas,
         'total_matriculas': matriculas.count(),
         'vagas_disponiveis': turma.capacidade - matriculas.count()
     }
-    
+
     return render(request, 'turmas/detalhar_turma.html', context)
 
 @login_required
@@ -114,79 +98,52 @@ def editar_turma(request, id):
 @login_required
 def excluir_turma(request, id):
     turma = get_object_or_404(Turma, id=id)
-    
-    # Verifica se há matrículas associadas à turma
-    matriculas = Matricula.objects.filter(turma=turma)
-    
+
     if request.method == 'POST':
-        if matriculas.exists():
+        if turma.matriculas.exists():
             messages.error(request, 'Não é possível excluir uma turma com alunos matriculados.')
             return redirect('turmas:detalhar_turma', id=turma.id)
-        
+
         turma.delete()
         messages.success(request, 'Turma excluída com sucesso!')
         return redirect('turmas:listar_turmas')
-    
-    return render(request, 'turmas/excluir_turma.html', {
-        'turma': turma,
-        'tem_matriculas': matriculas.exists()
-    })
 
-# Views para Matrículas
+    return render(request, 'turmas/excluir_turma.html', {'turma': turma})
+
 @login_required
 def matricular_aluno(request, turma_id):
-    """Matricula um aluno na turma"""
-    turma = get_object_or_404(Turma, pk=turma_id)
-    
-    # Verificar se há vagas disponíveis
-    if turma.vagas_disponiveis <= 0:
-        adicionar_mensagem(request, 'erro', 'Não há vagas disponíveis nesta turma.')
-        return redirect('turmas:detalhes_turma', turma_id=turma.id)
-    
+    turma = get_object_or_404(Turma, id=turma_id)
+    Aluno = get_aluno_model()
+
     if request.method == 'POST':
-        form = AlunoTurmaForm(request.POST, turma=turma)
+        form = MatriculaForm(request.POST)
         if form.is_valid():
             aluno = form.cleaned_data['aluno']
-            
-            # Verificar se o aluno já está matriculado
-            if turma.alunos.filter(id=aluno.id).exists():
-                adicionar_mensagem(request, 'erro', f'O aluno {aluno.nome} já está matriculado nesta turma.')
+            if Matricula.objects.filter(turma=turma, aluno=aluno).exists():
+                messages.error(request, 'Este aluno já está matriculado nesta turma.')
             else:
-                turma.alunos.add(aluno)
-                registrar_log(request, f'Aluno {aluno.nome} matriculado na turma {turma.nome}')
-                adicionar_mensagem(request, 'sucesso', f'Aluno {aluno.nome} matriculado com sucesso!')
-            
-            return redirect('turmas:detalhes_turma', turma_id=turma.id)
+                Matricula.objects.create(turma=turma, aluno=aluno)
+                messages.success(request, 'Aluno matriculado com sucesso!')
+            return redirect('turmas:detalhar_turma', id=turma.id)
     else:
-        form = AlunoTurmaForm(turma=turma)
-    
-    return render(request, 'turmas/matricular_aluno.html', {
+        form = MatriculaForm()
+
+    context = {
         'form': form,
         'turma': turma,
-        'titulo': f'Matricular Aluno na Turma: {turma.nome}'
-    })
+    }
+    return render(request, 'turmas/matricular_aluno.html', context)
 
 @login_required
 def cancelar_matricula(request, turma_id, aluno_id):
-    """Cancela a matrícula de um aluno na turma"""
-    turma = get_object_or_404(Turma, pk=turma_id)
-    aluno = get_object_or_404(Aluno, pk=aluno_id)
-    
+    matricula = get_object_or_404(Matricula, turma_id=turma_id, aluno_id=aluno_id)
+
     if request.method == 'POST':
-        if turma.alunos.filter(id=aluno.id).exists():
-            turma.alunos.remove(aluno)
-            registrar_log(request, f'Matrícula do aluno {aluno.nome} na turma {turma.nome} foi cancelada')
-            adicionar_mensagem(request, 'sucesso', f'Matrícula do aluno {aluno.nome} cancelada com sucesso!')
-        else:
-            adicionar_mensagem(request, 'erro', f'O aluno {aluno.nome} não está matriculado nesta turma.')
-        
-        return redirect('turmas:detalhes_turma', turma_id=turma.id)
-    
-    return render(request, 'turmas/confirmar_cancelamento_matricula.html', {
-        'turma': turma,
-        'aluno': aluno,
-        'titulo': 'Confirmar Cancelamento de Matrícula'
-    })
+        matricula.delete()
+        messages.success(request, 'Matrícula cancelada com sucesso!')
+        return redirect('turmas:detalhar_turma', id=turma_id)
+
+    return render(request, 'turmas/cancelar_matricula.html', {'matricula': matricula})
 
 @login_required
 def listar_alunos_matriculados(request, turma_id):

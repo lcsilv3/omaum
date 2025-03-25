@@ -1,57 +1,49 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from alunos.models import Aluno  # Corrigido: importar do módulo alunos
-from django.apps import apps
-from .forms import AlunoForm, ImportForm
-from django.db.models import Count, Q
+from django.db.models import Q
+from django.contrib import messages
+from django.utils.translation import gettext as _
 from django.http import HttpResponse
 import csv
 from io import StringIO
-from django.contrib import messages
-from django.utils.translation import gettext as _
+from importlib import import_module
 
+# Importar modelos e formulários
+Aluno = import_module('alunos.models').Aluno
+AlunoForm = import_module('alunos.forms').AlunoForm
+ImportForm = import_module('alunos.forms').ImportForm
 # Obter o modelo Curso de onde estiver definido
-Curso = apps.get_model('core', 'Curso')
+Curso = import_module('core.models').Curso
 
 @login_required
 def listar_alunos(request):
     query = request.GET.get('q')
     curso_id = request.GET.get('curso')
-    
-    # Start with all students
+
     queryset = Aluno.objects.all()
-    
-    # Apply filters if provided
+
     if query:
         queryset = queryset.filter(
             Q(nome__icontains=query) | 
             Q(cpf__icontains=query) | 
             Q(email__icontains=query)
         )
-    
+
     if curso_id:
         queryset = queryset.filter(curso_id=curso_id)
-    
-    # Include curso in the queryset to avoid N+1 query problem
+
     queryset = queryset.select_related('curso')
-    
-    # Paginate the results
+
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    # Get all courses for the filter dropdown
-    try:
-        Curso = apps.get_model('core', 'Curso')
-        cursos = Curso.objects.all()
-    except:
-        cursos = []
-    
-    # Return with both page_obj and alunos (pointing to the same data)
+
+    cursos = Curso.objects.all()
+
     return render(request, 'alunos/listar_alunos.html', {
         'page_obj': page_obj,
-        'alunos': page_obj,  # This fixes the template mismatch
+        'alunos': page_obj,
         'query': query,
         'cursos': cursos,
         'curso_selecionado': curso_id
@@ -63,14 +55,19 @@ def cadastrar_aluno(request):
         form = AlunoForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Aluno cadastrado com sucesso!')
+            messages.success(request, _('Aluno cadastrado com sucesso!'))
             return redirect('alunos:listar')
         else:
-            messages.error(request, 'Erro ao cadastrar aluno. Verifique os dados.')
+            messages.error(request, _('Erro ao cadastrar aluno. Verifique os dados.'))
     else:
         form = AlunoForm()
     return render(request, 'alunos/aluno_form.html', {'form': form})
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.utils.translation import gettext as _
+from .models import Aluno
+from .forms import AlunoForm
 @login_required
 def editar_aluno(request, cpf):
     aluno = get_object_or_404(Aluno, cpf=cpf)

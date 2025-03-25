@@ -11,13 +11,13 @@ from .models import AtividadeAcademica, AtividadeRitualistica
 
 @admin.register(AtividadeAcademica)
 class AtividadeAcademicaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'descricao', 'data', 'turma')
+    list_display = ('nome', 'descricao', 'data_inicio', 'data_fim', 'turma')
     list_filter = ('turma',)
     search_fields = ('nome', 'descricao')
 
 @admin.register(AtividadeRitualistica)
 class AtividadeRitualisticaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'descricao', 'data', 'turma')
+    list_display = ('nome', 'descricao', 'data_inicio', 'data_fim', 'turma')
     list_filter = ('turma',)
     search_fields = ('nome', 'descricao')
     filter_horizontal = ('alunos',)
@@ -52,7 +52,7 @@ def criar_form_atividade_academica():
     class AtividadeAcademicaForm(forms.ModelForm):
         class Meta:
             model = None  # Será definido no __init__
-            fields = ('nome', 'descricao', 'data', 'turma')
+            fields = ('nome', 'descricao', 'data_inicio', 'data_fim', 'turma')
             
         def __init__(self, *args, **kwargs):
             # Importação dinâmica do modelo
@@ -79,7 +79,7 @@ def criar_form_atividade_ritualistica():
         
         class Meta:
             model = None  # Será definido no __init__
-            fields = ['nome', 'descricao', 'data', 'turma', 'alunos', 'todos_alunos']
+            fields = ['nome', 'descricao', 'data_inicio', 'data_fim', 'turma', 'alunos', 'todos_alunos']
 
         def __init__(self, *args, **kwargs):
             # Importação dinâmica dos modelos
@@ -114,7 +114,9 @@ from django.utils import timezone
 class AtividadeAcademica(models.Model):
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
-    data = models.DateTimeField(default=timezone.now)
+    # Substituir o campo data por data_inicio e data_fim
+    data_inicio = models.DateTimeField(default=timezone.now)
+    data_fim = models.DateTimeField(blank=True, null=True)
     # Referência ao app correto
     turma = models.ForeignKey('turmas.Turma', on_delete=models.CASCADE, related_name='atividades_academicas')
     
@@ -128,7 +130,9 @@ class AtividadeAcademica(models.Model):
 class AtividadeRitualistica(models.Model):
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
-    data = models.DateTimeField(default=timezone.now)
+    # Substituir o campo data por data_inicio e data_fim
+    data_inicio = models.DateTimeField(default=timezone.now)
+    data_fim = models.DateTimeField(blank=True, null=True)
     # Referência ao app correto
     turma = models.ForeignKey('turmas.Turma', on_delete=models.CASCADE, related_name='atividades_ritualisticas')
     # Referência ao app correto
@@ -163,17 +167,8 @@ from . import views
 app_name = 'atividades'
 
 urlpatterns = [
-    # URLs for Academic Activities
-    path('academicas/', views.listar_atividades_academicas, name='academica_lista'),
-    path('academicas/criar/', views.criar_atividade_academica, name='academica_criar'),
-    path('academicas/<int:pk>/editar/', views.editar_atividade_academica, name='academica_editar'),
-    path('academicas/<int:pk>/excluir/', views.excluir_atividade_academica, name='academica_excluir'),
-    
-    # URLs for Ritualistic Activities
-    path('ritualisticas/', views.listar_atividades_ritualisticas, name='ritualistica_lista'),
-    path('ritualisticas/criar/', views.criar_atividade_ritualistica, name='ritualistica_criar'),
-    path('ritualisticas/<int:pk>/editar/', views.editar_atividade_ritualistica, name='ritualistica_editar'),
-    path('ritualisticas/<int:pk>/excluir/', views.excluir_atividade_ritualistica, name='ritualistica_excluir'),
+    path('academicas/', views.atividade_academica_list, name='atividade_academica_list'),
+    # Other URL patterns...
 ]
 
 
@@ -190,50 +185,12 @@ import importlib
 from .models import AtividadeAcademica, AtividadeRitualistica
 from .forms import criar_form_atividade_academica, criar_form_atividade_ritualistica
 
-# Views para Atividades Acadêmicas
-def listar_atividades_academicas(request):
-    """Exibe a lista de atividades acadêmicas com filtros e paginação"""
-    # Importação dinâmica
-    turmas_module = importlib.import_module('turmas.models')
-    Turma = getattr(turmas_module, 'Turma')
-    
-    # Obter todas as atividades
+from django.shortcuts import render
+from .models import AtividadeAcademica
+
+def atividade_academica_list(request):
     atividades = AtividadeAcademica.objects.all()
-    
-    # Busca por nome
-    search_query = request.GET.get('search', '')
-    if search_query:
-        atividades = atividades.filter(nome__icontains=search_query)
-    
-    # Filtro por turma
-    turma_id = request.GET.get('turma', '')
-    if turma_id:
-        atividades = atividades.filter(turma_id=turma_id)
-    
-    # Ordenação
-    order_by = request.GET.get('order_by', 'nome')
-    order_dir = request.GET.get('order_dir', 'asc')
-    
-    if order_dir == 'desc':
-        order_by = f'-{order_by}'
-        
-    atividades = atividades.order_by(order_by)
-    
-    # Paginação
-    paginator = Paginator(atividades, 10)  # 10 itens por página
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # Contexto para o template
-    context = {
-        'atividades': page_obj,
-        'search_query': search_query,
-        'turmas': Turma.objects.all(),
-        'is_paginated': page_obj.has_other_pages(),
-        'page_obj': page_obj,
-    }
-    
-    return render(request, 'atividades/academica_lista.html', context)
+    return render(request, 'atividades/atividade_academica_list.html', {'atividades': atividades})
 
 def criar_atividade_academica(request):
     """Cria uma nova atividade acadêmica"""
@@ -404,6 +361,104 @@ def excluir_atividade_ritualistica(request, pk):
         return redirect('atividades:ritualistica_lista')
     
     return render(request, 'atividades/ritualistica_confirmar_exclusao.html', {'object': atividade})
+
+
+
+
+## atividades\migrations\0001_initial.py
+
+python
+# Generated by Django 5.1.7 on 2025-03-23 20:14
+
+import django.db.models.deletion
+import django.utils.timezone
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    initial = True
+
+    dependencies = [
+        ('alunos', '__first__'),
+        ('turmas', '0003_alter_turma_curso_alter_turma_data_fim_and_more'),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='AtividadeAcademica',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('nome', models.CharField(max_length=100)),
+                ('descricao', models.TextField(blank=True, null=True)),
+                ('data', models.DateTimeField(default=django.utils.timezone.now)),
+                ('turma', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='atividades_academicas', to='turmas.turma')),
+            ],
+            options={
+                'verbose_name': 'Atividade Acadêmica',
+                'verbose_name_plural': 'Atividades Acadêmicas',
+            },
+        ),
+        migrations.CreateModel(
+            name='AtividadeRitualistica',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('nome', models.CharField(max_length=100)),
+                ('descricao', models.TextField(blank=True, null=True)),
+                ('data', models.DateTimeField(default=django.utils.timezone.now)),
+                ('alunos', models.ManyToManyField(related_name='atividades_ritualisticas', to='alunos.aluno')),
+                ('turma', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='atividades_ritualisticas', to='turmas.turma')),
+            ],
+            options={
+                'verbose_name': 'Atividade Ritualística',
+                'verbose_name_plural': 'Atividades Ritualísticas',
+            },
+        ),
+    ]
+
+
+
+
+## atividades\migrations\0002_rename_data_to_data_inicio_and_add_data_fim.py
+
+python
+# Generated by Django 5.1.7 on 2025-03-25 14:30
+
+from django.db import migrations, models
+import django.utils.timezone
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('atividades', '0001_initial'),
+    ]
+
+    operations = [
+        # For AtividadeAcademica
+        migrations.RenameField(
+            model_name='atividadeacademica',
+            old_name='data',
+            new_name='data_inicio',
+        ),
+        migrations.AddField(
+            model_name='atividadeacademica',
+            name='data_fim',
+            field=models.DateTimeField(blank=True, null=True),
+        ),
+        
+        # For AtividadeRitualistica
+        migrations.RenameField(
+            model_name='atividaderitualistica',
+            old_name='data',
+            new_name='data_inicio',
+        ),
+        migrations.AddField(
+            model_name='atividaderitualistica',
+            name='data_fim',
+            field=models.DateTimeField(blank=True, null=True),
+        ),
+    ]
 
 
 
@@ -1079,7 +1134,9 @@ from django.test import TestCase
 from atividades.models import AtividadeAcademica, AtividadeRitualistica
 from turmas.models import Turma
 from cursos.models import Curso
-from datetime import date
+from alunos.models import Aluno
+from datetime import date, timedelta
+from django.utils import timezone
 
 class AtividadeAcademicaModelTest(TestCase):
     def setUp(self):
@@ -1095,17 +1152,69 @@ class AtividadeAcademicaModelTest(TestCase):
         )
         
     def test_criar_atividade(self):
+        data_inicio = timezone.now()
+        data_fim = data_inicio + timedelta(days=7)
+        
         atividade = AtividadeAcademica.objects.create(
             nome='Aula de Matemática',
             descricao='Aula introdutória sobre álgebra.',
-            data_inicio=date(2023, 2, 1),
-            data_fim=date(2023, 2, 28),
+            data_inicio=data_inicio,
+            data_fim=data_fim,
             turma=self.turma
         )
         
         self.assertEqual(atividade.nome, 'Aula de Matemática')
         self.assertEqual(atividade.descricao, 'Aula introdutória sobre álgebra.')
+        self.assertEqual(atividade.data_inicio, data_inicio)
+        self.assertEqual(atividade.data_fim, data_fim)
+        self.assertEqual(atividade.turma, self.turma)
         self.assertEqual(str(atividade), 'Aula de Matemática')
+
+class AtividadeRitualisticaModelTest(TestCase):
+    def setUp(self):
+        self.curso = Curso.objects.create(
+            nome='Curso de Teste',
+            descricao='Descrição do curso de teste'
+        )
+        self.turma = Turma.objects.create(
+            nome='Turma de Teste',
+            curso=self.curso,
+            data_inicio=date(2023, 1, 1),
+            data_fim=date(2023, 12, 31)
+        )
+        self.aluno1 = Aluno.objects.create(
+            nome='Aluno 1',
+            email='aluno1@teste.com'
+        )
+        self.aluno1.turmas.add(self.turma)
+        self.aluno2 = Aluno.objects.create(
+            nome='Aluno 2',
+            email='aluno2@teste.com'
+        )
+        self.aluno2.turmas.add(self.turma)
+        
+    def test_criar_atividade_ritualistica(self):
+        data_inicio = timezone.now()
+        data_fim = data_inicio + timedelta(days=7)
+        
+        atividade = AtividadeRitualistica.objects.create(
+            nome='Ritual de Iniciação',
+            descricao='Ritual para novos membros',
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            turma=self.turma
+        )
+        atividade.alunos.add(self.aluno1, self.aluno2)
+        
+        self.assertEqual(atividade.nome, 'Ritual de Iniciação')
+        self.assertEqual(atividade.descricao, 'Ritual para novos membros')
+        self.assertEqual(atividade.data_inicio, data_inicio)
+        self.assertEqual(atividade.data_fim, data_fim)
+        self.assertEqual(atividade.turma, self.turma)
+        self.assertEqual(atividade.alunos.count(), 2)
+        self.assertTrue(self.aluno1 in atividade.alunos.all())
+        self.assertTrue(self.aluno2 in atividade.alunos.all())
+        self.assertEqual(str(atividade), 'Ritual de Iniciação')
 
 
 
@@ -1118,9 +1227,11 @@ from django.urls import reverse
 from atividades.models import AtividadeAcademica, AtividadeRitualistica
 from turmas.models import Turma
 from cursos.models import Curso
-from datetime import date
+from alunos.models import Aluno
+from datetime import date, timedelta
+from django.utils import timezone
 
-class AtividadeViewTest(TestCase):
+class AtividadeAcademicaViewTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.curso = Curso.objects.create(
@@ -1134,11 +1245,13 @@ class AtividadeViewTest(TestCase):
             data_inicio=date(2023, 1, 1),
             data_fim=date(2023, 12, 31)
         )
+        self.data_inicio = timezone.now()
+        self.data_fim = self.data_inicio + timedelta(days=7)
         self.atividade = AtividadeAcademica.objects.create(
             nome='Aula de Matemática',
             descricao='Aula introdutória sobre álgebra.',
-            data_inicio=date(2023, 2, 1),
-            data_fim=date(2023, 2, 28),
+            data_inicio=self.data_inicio,
+            data_fim=self.data_fim,
             turma=self.turma
         )
 
@@ -1146,9 +1259,74 @@ class AtividadeViewTest(TestCase):
         response = self.client.get(reverse('atividades:academica_lista'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Aula de Matemática')
+        
+    def test_filtrar_atividades_por_turma(self):
+        # Criar outra turma e atividade
+        turma2 = Turma.objects.create(
+            nome='Turma 2',
+            curso=self.curso,
+            data_inicio=date(2023, 1, 1),
+            data_fim=date(2023, 12, 31)
+        )
+        AtividadeAcademica.objects.create(
+            nome='Aula de Física',
+            descricao='Introdução à física',
+            data_inicio=self.data_inicio,
+            data_fim=self.data_fim,
+            turma=turma2
+        )
+        
+        # Filtrar por turma1
+        response = self.client.get(f"{reverse('atividades:academica_lista')}?turma={self.turma.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Aula de Matemática')
+        self.assertNotContains(response, 'Aula de Física')
+        
+        # Filtrar por turma2
+        response = self.client.get(f"{reverse('atividades:academica_lista')}?turma={turma2.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Aula de Física')
+        self.assertNotContains(response, 'Aula de Matemática')
 
     def test_criar_atividade(self):
         response = self.client.get(reverse('atividades:academica_criar'))
         self.assertEqual(response.status_code, 200)
+        
+        # Testar POST para criar atividade
+        data = {
+            'nome': 'Nova Atividade',
+            'descricao': 'Descrição da nova atividade',
+            'data_inicio': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'data_fim': (timezone.now() + timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S'),
+            'turma': self.turma.id
+        }
+        response = self.client.post(reverse('atividades:academica_criar'), data)
+        self.assertEqual(response.status_code, 302)  # Redirecionamento após sucesso
+        
+        # Verificar se a atividade foi criada
+        self.assertTrue(AtividadeAcademica.objects.filter(nome='Nova Atividade').exists())
+    
+    def test_editar_atividade(self):
+        response = self.client.get(reverse('atividades:academica_editar', args=[self.atividade.id]))
+        self.assertEqual(response.status_code, 200)
+        
+        # Testar POST para editar atividade
+        data = {
+            'nome': 'Aula de Matemática Atualizada',
+            'descricao': 'Descrição atualizada',
+            'data_inicio': self.data_inicio.strftime('%Y-%m-%d %H:%M:%S'),
+            'data_fim': self.data_fim.strftime('%Y-%m-%d %H:%M:%S'),
+            'turma': self.turma.id
+        }
+        response = self.client.post(reverse('atividades:academica_editar', args=[self.atividade.id]), data)
+        self.assertEqual(response.status_code, 302)  # Redirecionamento após sucesso
+        
+        # Verificar se a atividade foi atualizada
+        self.atividade.refresh_from_db()
+        self.assertEqual(self.atividade.nome, 'Aula de Matemática Atualizada')
+        self.assertEqual(self.atividade.descricao, 'Descrição atualizada')
+    
+    def test_excluir_atividade(self):
+        response = self.client.get(reverse('atividades:academica_excluir',
 
 

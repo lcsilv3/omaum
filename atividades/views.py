@@ -7,50 +7,12 @@ import importlib
 from .models import AtividadeAcademica, AtividadeRitualistica
 from .forms import criar_form_atividade_academica, criar_form_atividade_ritualistica
 
-# Views para Atividades Acadêmicas
-def listar_atividades_academicas(request):
-    """Exibe a lista de atividades acadêmicas com filtros e paginação"""
-    # Importação dinâmica
-    turmas_module = importlib.import_module('turmas.models')
-    Turma = getattr(turmas_module, 'Turma')
-    
-    # Obter todas as atividades
+from django.shortcuts import render
+from .models import AtividadeAcademica
+
+def atividade_academica_list(request):
     atividades = AtividadeAcademica.objects.all()
-    
-    # Busca por nome
-    search_query = request.GET.get('search', '')
-    if search_query:
-        atividades = atividades.filter(nome__icontains=search_query)
-    
-    # Filtro por turma
-    turma_id = request.GET.get('turma', '')
-    if turma_id:
-        atividades = atividades.filter(turma_id=turma_id)
-    
-    # Ordenação
-    order_by = request.GET.get('order_by', 'nome')
-    order_dir = request.GET.get('order_dir', 'asc')
-    
-    if order_dir == 'desc':
-        order_by = f'-{order_by}'
-        
-    atividades = atividades.order_by(order_by)
-    
-    # Paginação
-    paginator = Paginator(atividades, 10)  # 10 itens por página
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # Contexto para o template
-    context = {
-        'atividades': page_obj,
-        'search_query': search_query,
-        'turmas': Turma.objects.all(),
-        'is_paginated': page_obj.has_other_pages(),
-        'page_obj': page_obj,
-    }
-    
-    return render(request, 'atividades/academica_lista.html', context)
+    return render(request, 'atividades/atividade_academica_list.html', {'atividades': atividades})
 
 def criar_atividade_academica(request):
     """Cria uma nova atividade acadêmica"""

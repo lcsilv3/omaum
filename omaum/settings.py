@@ -36,26 +36,9 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
-    # Your custom apps
-    'alunos',  # App de alunos
-    'turmas',  # App de turmas
-    'atividades',  # App de atividades
-    'presencas',  # App de presenças
-    'relatorios',  # App de relatórios
-    'cargos',  # App de cargos
-    'iniciacoes',  # App de iniciações
-    'cursos',
-
-    # Third-party apps
-    'crispy_forms',
-    'core',
+    # ...
+    'atividades',
+    # ...
 ]
 
 

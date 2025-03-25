@@ -9,15 +9,16 @@ from django.utils import timezone
 def pagina_inicial(request):
     """Renderiza a página inicial do sistema"""
     config = garantir_configuracao_sistema()
-    
-    # Se o sistema estiver em manutenção e o usuário não for admin
+
+    # If the system is under maintenance and the user is not staff
     if config.manutencao_ativa and not request.user.is_staff:
         return render(request, 'core/manutencao.html', {
             'mensagem': config.mensagem_manutencao
         })
-    
+
     return render(request, 'core/home.html', {
-        'titulo': config.nome_sistema
+        'titulo': config.nome_sistema,
+        # Add any other context data needed for displaying functionalities
     })
 
 def entrar(request):

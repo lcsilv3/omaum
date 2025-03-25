@@ -9,7 +9,7 @@ def criar_form_atividade_academica():
     class AtividadeAcademicaForm(forms.ModelForm):
         class Meta:
             model = None  # Será definido no __init__
-            fields = ('nome', 'descricao', 'data', 'turma')
+            fields = ('nome', 'descricao', 'data_inicio', 'data_fim', 'turma')
             
         def __init__(self, *args, **kwargs):
             # Importação dinâmica do modelo
@@ -36,7 +36,7 @@ def criar_form_atividade_ritualistica():
         
         class Meta:
             model = None  # Será definido no __init__
-            fields = ['nome', 'descricao', 'data', 'turma', 'alunos', 'todos_alunos']
+            fields = ['nome', 'descricao', 'data_inicio', 'data_fim', 'turma', 'alunos', 'todos_alunos']
 
         def __init__(self, *args, **kwargs):
             # Importação dinâmica dos modelos

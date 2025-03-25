@@ -576,57 +576,49 @@ python
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from alunos.models import Aluno  # Corrigido: importar do módulo alunos
-from django.apps import apps
-from .forms import AlunoForm, ImportForm
-from django.db.models import Count, Q
+from django.db.models import Q
+from django.contrib import messages
+from django.utils.translation import gettext as _
 from django.http import HttpResponse
 import csv
 from io import StringIO
-from django.contrib import messages
-from django.utils.translation import gettext as _
+from importlib import import_module
 
+# Importar modelos e formulários
+Aluno = import_module('alunos.models').Aluno
+AlunoForm = import_module('alunos.forms').AlunoForm
+ImportForm = import_module('alunos.forms').ImportForm
 # Obter o modelo Curso de onde estiver definido
-Curso = apps.get_model('core', 'Curso')
+Curso = import_module('core.models').Curso
 
 @login_required
 def listar_alunos(request):
     query = request.GET.get('q')
     curso_id = request.GET.get('curso')
-    
-    # Start with all students
+
     queryset = Aluno.objects.all()
-    
-    # Apply filters if provided
+
     if query:
         queryset = queryset.filter(
             Q(nome__icontains=query) | 
             Q(cpf__icontains=query) | 
             Q(email__icontains=query)
         )
-    
+
     if curso_id:
         queryset = queryset.filter(curso_id=curso_id)
-    
-    # Include curso in the queryset to avoid N+1 query problem
+
     queryset = queryset.select_related('curso')
-    
-    # Paginate the results
+
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    # Get all courses for the filter dropdown
-    try:
-        Curso = apps.get_model('core', 'Curso')
-        cursos = Curso.objects.all()
-    except:
-        cursos = []
-    
-    # Return with both page_obj and alunos (pointing to the same data)
+
+    cursos = Curso.objects.all()
+
     return render(request, 'alunos/listar_alunos.html', {
         'page_obj': page_obj,
-        'alunos': page_obj,  # This fixes the template mismatch
+        'alunos': page_obj,
         'query': query,
         'cursos': cursos,
         'curso_selecionado': curso_id
@@ -638,14 +630,19 @@ def cadastrar_aluno(request):
         form = AlunoForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Aluno cadastrado com sucesso!')
+            messages.success(request, _('Aluno cadastrado com sucesso!'))
             return redirect('alunos:listar')
         else:
-            messages.error(request, 'Erro ao cadastrar aluno. Verifique os dados.')
+            messages.error(request, _('Erro ao cadastrar aluno. Verifique os dados.'))
     else:
         form = AlunoForm()
     return render(request, 'alunos/aluno_form.html', {'form': form})
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.utils.translation import gettext as _
+from .models import Aluno
+from .forms import AlunoForm
 @login_required
 def editar_aluno(request, cpf):
     aluno = get_object_or_404(Aluno, cpf=cpf)
@@ -1057,326 +1054,93 @@ html
 
 html
 {% extends 'base.html' %}
+{% load crispy_forms_tags %}
 
 {% block title %}Editar Aluno - {{ aluno.nome }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h2>Editar Aluno</h2>
+    <h1>Editar Aluno</h1>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Informações Pessoais</h3>
+                {{ form.nome|crispy }}
+                {{ form.cpf|crispy }}
+                {{ form.data_nascimento|crispy }}
+                {{ form.sexo|crispy }}
+                {{ form.email|crispy }}
+                {{ form.telefone_fixo|crispy }}
+            </div>
+            <div class="col-md-6">
+                <h3>Endereço</h3>
+                {{ form.cep|crispy }}
+                {{ form.rua|crispy }}
+                {{ form.numero_imovel|crispy }}
+                {{ form.complemento|crispy }}
+                {{ form.bairro|crispy }}
+                {{ form.cidade|crispy }}
+                {{ form.estado|crispy }}
+            </div>
         </div>
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data" class="aluno-form">
-                {% csrf_token %}
-                
-                {% if form.non_field_errors %}
-                <div class="alert alert-danger">
-                    {% for error in form.non_field_errors %}
-                        {{ error }}
-                    {% endfor %}
-                </div>
-                {% endif %}
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <h4>Informações Pessoais</h4>
-                        <hr>
-                        
-                        <div class="form-group">
-                            {{ form.nome.label_tag }}
-                            {{ form.nome }}
-                            {% if form.nome.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.nome.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.cpf.label_tag }}
-                            {{ form.cpf }}
-                            {% if form.cpf.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.cpf.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                            <small class="form-text text-muted">{{ form.cpf.help_text }}</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.data_nascimento.label_tag }}
-                            {{ form.data_nascimento }}
-                            {% if form.data_nascimento.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.data_nascimento.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.hora_nascimento.label_tag }}
-                            {{ form.hora_nascimento }}
-                            {% if form.hora_nascimento.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.hora_nascimento.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.email.label_tag }}
-                            {{ form.email }}
-                            {% if form.email.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.email.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.sexo.label_tag }}
-                            {{ form.sexo }}
-                            {% if form.sexo.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.sexo.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <h4>Nacionalidade e Endereço</h4>
-                        <hr>
-                        
-                        <div class="form-group">
-                            {{ form.nacionalidade.label_tag }}
-                            {{ form.nacionalidade }}
-                            {% if form.nacionalidade.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.nacionalidade.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.naturalidade.label_tag }}
-                            {{ form.naturalidade }}
-                            {% if form.naturalidade.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.naturalidade.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.cep.label_tag }}
-                            {{ form.cep }}
-                            {% if form.cep.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.cep.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.rua.label_tag }}
-                            {{ form.rua }}
-                            {% if form.rua.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.rua.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.numero_imovel.label_tag }}
-                            {{ form.numero_imovel }}
-                            {% if form.numero_imovel.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.numero_imovel.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.bairro.label_tag }}
-                            {{ form.bairro }}
-                            {% if form.bairro.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.bairro.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.cidade.label_tag }}
-                            {{ form.cidade }}
-                            {% if form.cidade.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.cidade.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.estado.label_tag }}
-                            {{ form.estado }}
-                            {% if form.estado.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.estado.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <h4>Contatos de Emergência</h4>
-                        <hr>
-                        
-                        <div class="form-group">
-                            {{ form.nome_primeiro_contato.label_tag }}
-                            {{ form.nome_primeiro_contato }}
-                            {% if form.nome_primeiro_contato.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.nome_primeiro_contato.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.celular_primeiro_contato.label_tag }}
-                            {{ form.celular_primeiro_contato }}
-                            {% if form.celular_primeiro_contato.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.celular_primeiro_contato.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.tipo_relacionamento_primeiro_contato.label_tag }}
-                            {{ form.tipo_relacionamento_primeiro_contato }}
-                            {% if form.tipo_relacionamento_primeiro_contato.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.tipo_relacionamento_primeiro_contato.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.nome_segundo_contato.label_tag }}
-                            {{ form.nome_segundo_contato }}
-                            {% if form.nome_segundo_contato.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.nome_segundo_contato.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.celular_segundo_contato.label_tag }}
-                            {{ form.celular_segundo_contato }}
-                            {% if form.celular_segundo_contato.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.celular_segundo_contato.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.tipo_relacionamento_segundo_contato.label_tag }}
-                            {{ form.tipo_relacionamento_segundo_contato }}
-                            {% if form.tipo_relacionamento_segundo_contato.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.tipo_relacionamento_segundo_contato.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <h4>Informações Médicas</h4>
-                        <hr>
-                        
-                        <div class="form-group">
-                            {{ form.tipo_sanguineo.label_tag }}
-                            {{ form.tipo_sanguineo }}
-                            {% if form.tipo_sanguineo.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.tipo_sanguineo.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form.fator_rh.label_tag }}
-                            {{ form.fator_rh }}
-                            {% if form.fator_rh.errors %}
-                            <div class="alert alert-danger">
-                                {% for error in form.fator_rh.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group mt-4">
-                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                    <a href="{% url 'alunos:detalhes' aluno.cpf %}" class="btn btn-secondary">Cancelar</a>
-                </div>
-            </form>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h3>Informações Acadêmicas</h3>
+                {{ form.curso|crispy }}
+                {{ form.numero_iniciatico|crispy }}
+                {{ form.nome_iniciatico|crispy }}
+                {{ form.data_iniciacao|crispy }}
+            </div>
+            <div class="col-md-6">
+                <h3>Informações Médicas</h3>
+                {{ form.tipo_sanguineo|crispy }}
+                {{ form.fator_rh|crispy }}
+                {{ form.alergias|crispy }}
+                {{ form.condicoes_medicas_gerais|crispy }}
+            </div>
         </div>
-    </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h3>Contato de Emergência 1</h3>
+                {{ form.nome_primeiro_contato|crispy }}
+                {{ form.celular_primeiro_contato|crispy }}
+                {{ form.tipo_relacionamento_primeiro_contato|crispy }}
+            </div>
+            <div class="col-md-6">
+                <h3>Contato de Emergência 2</h3>
+                {{ form.nome_segundo_contato|crispy }}
+                {{ form.celular_segundo_contato|crispy }}
+                {{ form.tipo_relacionamento_segundo_contato|crispy }}
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h3>Foto</h3>
+                {{ form.foto|crispy }}
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+            <a href="{% url 'alunos:detalhes' aluno.cpf %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
 </div>
 {% endblock %}
-
 
 
 
@@ -1424,39 +1188,37 @@ html
 ## alunos\templates\alunos\listar_alunos.html
 
 html
-{% extends "base.html" %}
-
-{% block title %}Lista de Alunos{% endblock %}
+{% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
-    <h1>Lista de Alunos</h1>
-    <form method="get" class="mb-4">
-        <div class="row">
-            <div class="col-md-6">
+<div class="container mt-4">
+    <h1>{% trans "Lista de Alunos" %}</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <form method="get" class="form-inline">
                 <div class="input-group">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome, CPF ou email" value="{{ query|default:'' }}">
+                    <input type="text" name="q" class="form-control" placeholder="{% trans 'Buscar por nome, CPF ou email' %}" value="{{ request.GET.q }}">
                     <div class="input-group-append">
-                        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+                        <button class="btn btn-outline-secondary" type="submit">{% trans "Buscar" %}</button>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-6">
-                <div class="input-group">
-                    <select name="curso" class="form-control">
-                        <option value="">Todos os cursos</option>
-                        {% for curso in cursos %}
-                            <option value="{{ curso.id }}" {% if curso.id|stringformat:'s' == curso_selecionado %}selected{% endif %}>
-                                {{ curso.nome }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <div class="input-group-append">
-                        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
-                    </div>
-                </div>
-            </div>
+            </form>
         </div>
-    </form>
+        <div class="col-md-4">
+            <a href="{% url 'alunos:cadastrar' %}" class="btn btn-primary mb-3">
+                <i class="fas fa-plus"></i> {% trans "Novo Aluno" %}
+            </a>
+        </div>
+    </div>
     <table class="table table-striped">
         <thead>
             <tr>

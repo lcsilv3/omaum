@@ -1,14 +1,15 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
-from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('core.urls')),
+    path('alunos/', include('alunos.urls')),
     path('atividades/', include('atividades.urls')),
-    path('turmas/', include('turmas.urls')),  # Add this line
-    path('', RedirectView.as_view(pattern_name='atividades:atividade_academica_list'), name='home'),
-    # Other URL patterns
+    path('turmas/', include('turmas.urls')),
+    path('presencas/', include('presencas.urls')),
+    path('relatorios/', include('relatorios.urls')),
+    # Add other apps here
 ]
 
 from django.contrib.auth import views as auth_views

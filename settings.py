@@ -40,8 +40,23 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Your custom apps
+    'alunos',
+    'atividades',
+    'cargos',
     'core',
+    'cursos',
+    'frequencias',
+    'iniciacoes',
+    'presencas',
+    'professores',
+    'punicoes',
+    'relatorios',
+    'turmas',
+    # Other apps as needed
 ]
+
+
 MIDDLEWARE = [
     'core.middleware.ManutencaoMiddleware',
     'django.middleware.security.SecurityMiddleware',

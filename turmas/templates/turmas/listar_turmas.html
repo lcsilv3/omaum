@@ -5,33 +5,38 @@
 {% block content %}
 <div class="container mt-4">
     <h1>Lista de Turmas</h1>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
+
+    <form method="get" class="mb-3">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" name="q" class="form-control" placeholder="Buscar turmas..." value="{{ query }}">
             </div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="row mb-3">
-        <div class="col-md-8">
-            <form method="get" class="form-inline">
-                <div class="input-group">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome ou curso" value="{{ request.GET.q }}">
-                    <div class="input-group-append">
-                        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
-                    </div>
-                </div>
-            </form>
+            <div class="col-md-3">
+                <select name="curso" class="form-control">
+                    <option value="">Todos os cursos</option>
+                    {% for curso in cursos %}
+                        <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_selecionado %}selected{% endif %}>
+                            {{ curso.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-control">
+                    <option value="">Todos os status</option>
+                    {% for status_value, status_label in opcoes_status %}
+                        <option value="{{ status_value }}" {% if status_value == status_selecionado %}selected{% endif %}>
+                            {{ status_label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
         </div>
-        <div class="col-md-4">
-            <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary mb-3">
-                <i class="fas fa-plus"></i> Nova Turma
-            </a>
-        </div>
-    </div>
-    
+    </form>
+
     <table class="table table-striped">
         <thead>
             <tr>
@@ -39,6 +44,7 @@
                 <th>Curso</th>
                 <th>Data de Início</th>
                 <th>Data de Fim</th>
+                <th>Status</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -46,9 +52,10 @@
             {% for turma in turmas %}
             <tr>
                 <td>{{ turma.nome }}</td>
-                <td>{{ turma.curso }}</td>
+                <td>{{ turma.curso.nome }}</td>
                 <td>{{ turma.data_inicio|date:"d/m/Y" }}</td>
                 <td>{{ turma.data_fim|date:"d/m/Y" }}</td>
+                <td>{{ turma.get_status_display }}</td>
                 <td>
                     <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info">Detalhes</a>
                     <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning">Editar</a>
@@ -57,10 +64,34 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5" class="text-center">Nenhuma turma encontrada.</td>
+                <td colspan="6">Nenhuma turma encontrada.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    {% if turmas.has_other_pages %}
+    <nav>
+        <ul class="pagination">
+            {% if turmas.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ turmas.previous_page_number }}">Anterior</a></li>
+            {% endif %}
+
+            {% for i in turmas.paginator.page_range %}
+                {% if turmas.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if turmas.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ turmas.next_page_number }}">Próxima</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary">Criar Nova Turma</a>
 </div>
 {% endblock %}

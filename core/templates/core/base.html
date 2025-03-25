@@ -9,7 +9,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">Sistema</a>
+            <a class="navbar-brand" href="{% url 'core:pagina_inicial' %}">OMAUM</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -17,8 +17,23 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'core:painel_controle' %}">Painel de Controle</a>
+                            <a class="nav-link" href="{% url 'alunos:listar' %}">Alunos</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'atividades:atividade_academica_list' %}">Atividades Acadêmicas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'atividades:atividade_ritualistica_list' %}">Atividades Ritualísticas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'turmas:listar' %}">Turmas</a>
+                        </li>
+                        <!-- Add more navigation items for other functionalities -->
+                        {% if user.is_staff %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'core:painel_controle' %}">Painel de Controle</a>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'core:sair' %}">Sair</a>
                         </li>
@@ -31,6 +46,7 @@
             </div>
         </div>
     </nav>
+
 
     <div class="container mt-4">
         {% if messages %}

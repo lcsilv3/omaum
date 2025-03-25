@@ -4,48 +4,72 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="jumbotron">
-        <h1 class="display-4">Bem-vindo ao {{ titulo }}</h1>
-        <p class="lead">Sistema de Gestão para Organizações Maçônicas</p>
-        <hr class="my-4">
-        <p>Utilize o menu acima para navegar pelo sistema.</p>
-        
-        {% if user.is_authenticated %}
-            <div class="mt-4">
-                <h3>Acesso Rápido</h3>
-                <div class="row mt-3">
-                    <div class="col-md-4 mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Atividades Acadêmicas</h5>
-                                <p class="card-text">Gerencie atividades acadêmicas do sistema.</p>
-                                <a href="{% url 'atividades:atividade_academica_list' %}" class="btn btn-primary">Acessar</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Atividades Ritualísticas</h5>
-                                <p class="card-text">Gerencie atividades ritualísticas do sistema.</p>
-                                <a href="{% url 'atividades:atividade_ritualistica_list' %}" class="btn btn-primary">Acessar</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Alunos</h5>
-                                <p class="card-text">Gerencie os alunos cadastrados no sistema.</p>
-                                <a href="{% url 'alunos:listar' %}" class="btn btn-primary">Acessar</a>
-                            </div>
-                        </div>
+    <h1>Bem-vindo ao {{ titulo }}</h1>
+    {% if user.is_authenticated %}
+        <div class="row mt-4">
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Alunos</h5>
+                        <a href="{% url 'alunos:listar' %}" class="btn btn-primary">Gerenciar Alunos</a>
                     </div>
                 </div>
             </div>
-        {% else %}
-            <a class="btn btn-primary btn-lg" href="{% url 'core:entrar' %}" role="button">Entrar no Sistema</a>
-        {% endif %}
-    </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Atividades Acadêmicas</h5>
+                        <a href="{% url 'atividades:atividade_academica_list' %}" class="btn btn-primary">Gerenciar Atividades Acadêmicas</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Atividades Ritualísticas</h5>
+                        <a href="{% url 'atividades:atividade_ritualistica_list' %}" class="btn btn-primary">Gerenciar Atividades Ritualísticas</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Turmas</h5>
+                        <a href="{% url 'turmas:listar' %}" class="btn btn-primary">Gerenciar Turmas</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Presenças</h5>
+                        <a href="{% url 'presencas:listar' %}" class="btn btn-primary">Gerenciar Presenças</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Relatórios</h5>
+                        <a href="{% url 'relatorios:listar' %}" class="btn btn-primary">Gerar Relatórios</a>
+                    </div>
+                </div>
+            </div>
+            {% if user.is_staff %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Painel de Controle</h5>
+                        <a href="{% url 'core:painel_controle' %}" class="btn btn-primary">Acessar Painel</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <p>Por favor, faça login para acessar as funcionalidades do sistema.</p>
+        <a href="{% url 'core:entrar' %}" class="btn btn-primary">Entrar</a>
+    {% endif %}
 </div>
 {% endblock %}
+

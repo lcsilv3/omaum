@@ -67,26 +67,9 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
-    # Your custom apps
-    'alunos',  # App de alunos
-    'turmas',  # App de turmas
-    'atividades',  # App de atividades
-    'presencas',  # App de presenças
-    'relatorios',  # App de relatórios
-    'cargos',  # App de cargos
-    'iniciacoes',  # App de iniciações
-    'cursos',
-
-    # Third-party apps
-    'crispy_forms',
-    'core',
+    # ...
+    'atividades',
+    # ...
 ]
 
 
@@ -231,15 +214,16 @@ LOGOUT_REDIRECT_URL = 'home'
 python
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
-from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('core.urls')),
+    path('alunos/', include('alunos.urls')),
     path('atividades/', include('atividades.urls')),
-    path('turmas/', include('turmas.urls')),  # Add this line
-    path('', RedirectView.as_view(pattern_name='atividades:atividade_academica_list'), name='home'),
-    # Other URL patterns
+    path('turmas/', include('turmas.urls')),
+    path('presencas/', include('presencas.urls')),
+    path('relatorios/', include('relatorios.urls')),
+    # Add other apps here
 ]
 
 from django.contrib.auth import views as auth_views
