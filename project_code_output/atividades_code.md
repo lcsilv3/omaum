@@ -25,6 +25,7 @@ class AtividadeRitualisticaAdmin(admin.ModelAdmin):
 
 
 
+
 ## atividades\apps.py
 
 python
@@ -34,6 +35,7 @@ from django.apps import AppConfig
 class AtividadesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'atividades'
+
 
 
 
@@ -105,6 +107,7 @@ def criar_form_atividade_ritualistica():
 
 
 
+
 ## atividades\models.py
 
 python
@@ -148,12 +151,14 @@ class AtividadeRitualistica(models.Model):
 
 
 
+
 ## atividades\tests.py
 
 python
 from django.test import TestCase
 
 # Create your tests here.
+
 
 
 
@@ -170,6 +175,7 @@ urlpatterns = [
     path('academicas/', views.atividade_academica_list, name='atividade_academica_list'),
     # Other URL patterns...
 ]
+
 
 
 
@@ -365,6 +371,7 @@ def excluir_atividade_ritualistica(request, pk):
 
 
 
+
 ## atividades\migrations\0001_initial.py
 
 python
@@ -419,6 +426,7 @@ class Migration(migrations.Migration):
 
 
 
+
 ## atividades\migrations\0002_rename_data_to_data_inicio_and_add_data_fim.py
 
 python
@@ -463,6 +471,7 @@ class Migration(migrations.Migration):
 
 
 
+
 ## atividades\templates\atividades\academica_confirmar_exclusao.html
 
 html
@@ -488,6 +497,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -533,6 +543,7 @@ html
     </form>
 </div>
 {% endblock %}
+
 
 
 
@@ -760,6 +771,7 @@ html
 
 
 
+
 ## atividades\templates\atividades\atividade_ritualistica_form.html
 
 html
@@ -903,6 +915,7 @@ html
 
 
 
+
 ## atividades\templates\atividades\ritualistica_confirmar_exclusao.html
 
 html
@@ -928,6 +941,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -1127,6 +1141,7 @@ html
 
 
 
+
 ## atividades\tests\test_models.py
 
 python
@@ -1215,6 +1230,7 @@ class AtividadeRitualisticaModelTest(TestCase):
         self.assertTrue(self.aluno1 in atividade.alunos.all())
         self.assertTrue(self.aluno2 in atividade.alunos.all())
         self.assertEqual(str(atividade), 'Ritual de Iniciação')
+
 
 
 
@@ -1328,5 +1344,6 @@ class AtividadeAcademicaViewTest(TestCase):
     
     def test_excluir_atividade(self):
         response = self.client.get(reverse('atividades:academica_excluir',
+
 
 

@@ -32,6 +32,7 @@ class ProfessorAdmin(admin.ModelAdmin):
 
 
 
+
 ## professores\apps.py
 
 python
@@ -41,6 +42,7 @@ class ProfessoresConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'professores'
     verbose_name = 'Professores'
+
 
 
 
@@ -92,6 +94,7 @@ class ProfessorForm(forms.ModelForm):
 
 
 
+
 ## professores\models.py
 
 python
@@ -134,6 +137,7 @@ class HistoricoAlteracaoProfessor(models.Model):
         verbose_name = "Histórico de Alteração"
         verbose_name_plural = "Histórico de Alterações"
         ordering = ['-data_alteracao']
+
 
 
 
@@ -348,6 +352,7 @@ class ProfessorViewsTest(TestCase):
 
 
 
+
 ## professores\urls.py
 
 python
@@ -365,6 +370,7 @@ urlpatterns = [
     path('exportar/csv/', views.exportar_professores_csv, name='exportar_professores_csv'),
     path('exportar/pdf/', views.exportar_professores_pdf, name='exportar_professores_pdf'),
 ]
+
 
 
 
@@ -656,6 +662,7 @@ def estatisticas_professores(request):
 
 
 
+
 ## professores\templates\professores\cadastrar_professor.html
 
 html
@@ -739,6 +746,7 @@ html
 
 
 
+
 ## professores\templates\professores\confirmar_exclusao.html
 
 html
@@ -771,6 +779,7 @@ html
     <a href="javascript:history.back()" class="btn btn-secondary mt-3">Voltar</a>
 </div>
 {% endblock %}
+
 
 
 
@@ -907,6 +916,7 @@ html
     <a href="javascript:history.back()" class="btn btn-secondary mt-3">Voltar</a>
 </div>
 {% endblock %}
+
 
 
 
@@ -1069,5 +1079,6 @@ html
     <a href="javascript:history.back()" class="btn btn-secondary mt-3">Voltar</a>
 </div>
 {% endblock %}
+
 
 

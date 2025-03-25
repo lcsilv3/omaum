@@ -17,6 +17,7 @@ html
 
 
 
+
 ## matriculas\templates\matriculas\listar_matriculas.html
 
 html
@@ -31,6 +32,7 @@ html
 
 
 
+
 ## matriculas\templates\matriculas\realizar_matricula.html
 
 html
@@ -41,5 +43,6 @@ html
 
 <a href="javascript:history.back()" class="back-button">Voltar</a>
 {% endblock %}
+
 
 

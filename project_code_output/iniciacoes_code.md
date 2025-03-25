@@ -21,6 +21,7 @@ class IniciacaoAdmin(admin.ModelAdmin):
 
 
 
+
 ## iniciacoes\apps.py
 
 python
@@ -30,6 +31,7 @@ from django.apps import AppConfig
 class IniciacoesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'iniciacoes'
+
 
 
 
@@ -92,6 +94,7 @@ class IniciacaoForm(forms.ModelForm):
 
 
 
+
 ## iniciacoes\models.py
 
 python
@@ -125,12 +128,14 @@ class Iniciacao(models.Model):
 
 
 
+
 ## iniciacoes\tests.py
 
 python
 from django.test import TestCase
 
 # Create your tests here.
+
 
 
 
@@ -151,6 +156,7 @@ urlpatterns = [
     path('<int:id>/excluir/', views.excluir_iniciacao, name='excluir_iniciacao'),
     path('exportar/csv/', views.exportar_iniciacoes_csv, name='exportar_iniciacoes_csv'),
 ]
+
 
 
 
@@ -321,6 +327,7 @@ def exportar_iniciacoes_csv(request):
 
 
 
+
 ## iniciacoes\templates\iniciacoes\criar_iniciacao.html
 
 html
@@ -410,6 +417,7 @@ html
 
 
 
+
 ## iniciacoes\templates\iniciacoes\detalhe_iniciacao.html
 
 html
@@ -459,6 +467,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -550,6 +559,7 @@ html
 
 
 
+
 ## iniciacoes\templates\iniciacoes\excluir_iniciacao.html
 
 html
@@ -594,6 +604,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -774,6 +785,7 @@ html
 
 
 
+
 ## iniciacoes\tests\test_forms.py
 
 python
@@ -854,6 +866,7 @@ class IniciacaoFormTest(TestCase):
 
 
 
+
 ## iniciacoes\tests\test_models.py
 
 python
@@ -897,6 +910,7 @@ class IniciacaoModelTest(TestCase):
         )
         self.assertEqual(iniciacao.nome_curso, 'Curso de Iniciação')
         self.assertEqual(iniciacao.aluno, self.aluno)
+
 
 
 
@@ -953,6 +967,7 @@ class IniciacaoViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'João Silva')
         self.assertContains(response, 'Curso de Iniciação')
+
 
 
 
@@ -1105,5 +1120,6 @@ class IniciacaoViewAvancadoTest(TestCase):
         response = self.client.post(reverse('iniciacoes:criar_iniciacao'), form_data)
         self.assertEqual(response.status_code, 200)  # Permanece no formulário
         self.assertContains(response, "já possui uma iniciação no curso")
+
 
 

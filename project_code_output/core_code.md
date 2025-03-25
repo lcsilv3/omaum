@@ -25,6 +25,7 @@ class LogAtividadeAdmin(admin.ModelAdmin):
 
 
 
+
 ## core\apps.py
 
 python
@@ -34,6 +35,7 @@ from django.apps import AppConfig
 class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'core'
+
 
 
 
@@ -103,6 +105,7 @@ class RegistroForm(UserCreationForm):
 
 
 
+
 ## core\middleware.py
 
 python
@@ -128,6 +131,7 @@ class ManutencaoMiddleware:
             
         response = self.get_response(request)
         return response
+
 
 
 
@@ -175,6 +179,7 @@ class LogAtividade(models.Model):
         verbose_name = 'Log de Atividade'
         verbose_name_plural = 'Logs de Atividades'
         ordering = ['-data']
+
 
 
 
@@ -511,6 +516,7 @@ class MiddlewareTests(TestCase):
 
 
 
+
 ## core\urls.py
 
 python
@@ -526,6 +532,7 @@ urlpatterns = [
     path('painel-controle/', views.painel_controle, name='painel_controle'),
     path('atualizar-configuracao/', views.atualizar_configuracao, name='atualizar_configuracao'),
 ]
+
 
 
 
@@ -591,6 +598,7 @@ def garantir_configuracao_sistema():
     )
     
     return config
+
 
 
 
@@ -704,6 +712,7 @@ def sair(request):
 
 
 
+
 ## core\migrations\0001_initial.py
 
 python
@@ -757,6 +766,7 @@ class Migration(migrations.Migration):
 
 
 
+
 ## core\templates\core\atualizar_configuracao.html
 
 html
@@ -802,6 +812,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -874,6 +885,7 @@ html
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
@@ -960,6 +972,7 @@ html
 
 
 
+
 ## core\templates\core\lista_categorias.html
 
 html
@@ -988,6 +1001,7 @@ html
         {% endfor %}
     </div>
 {% endblock %}
+
 
 
 
@@ -1041,6 +1055,7 @@ html
 
 
 
+
 ## core\templates\core\manutencao.html
 
 html
@@ -1067,6 +1082,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -1160,5 +1176,6 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 

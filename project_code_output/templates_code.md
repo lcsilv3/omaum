@@ -55,6 +55,7 @@ html
 
 
 
+
 ## templates\csrf_test.html
 
 html
@@ -76,6 +77,7 @@ html
     </script>
 </body>
 </html>
+
 
 
 
@@ -105,6 +107,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -210,11 +213,13 @@ html
 
 
 
+
 ## templates\includes\form_errors.html
 
 html
 {% if form.non_field_errors %}
     <div class="alert alert-
+
 
 
 
@@ -265,6 +270,7 @@ html
   </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -323,4 +329,5 @@ html
   </div>
 </div>
 {% endblock %}
+
 

@@ -13,6 +13,7 @@ from django.contrib import admin
 
 
 
+
 ## presencas\apps.py
 
 python
@@ -22,6 +23,7 @@ from django.apps import AppConfig
 class PresencasConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'presencas'
+
 
 
 
@@ -62,6 +64,7 @@ class PresencaForm(forms.ModelForm):
 
 
 
+
 ## presencas\models.py
 
 python
@@ -91,12 +94,14 @@ class PresencaAcademica(models.Model):
 
 
 
+
 ## presencas\tests.py
 
 python
 from django.test import TestCase
 
 # Create your tests here.
+
 
 
 
@@ -113,6 +118,7 @@ urlpatterns = [
     path('editar/<int:id>/', views.editar_presenca, name='editar_presenca'),
     path('excluir/<int:id>/', views.excluir_presenca, name='excluir_presenca'),
 ]
+
 
 
 
@@ -225,6 +231,7 @@ def excluir_presenca(request, id):
 
 
 
+
 ## presencas\management\commands\setup_presencas_permissions.py
 
 python
@@ -251,6 +258,7 @@ class Command(BaseCommand):
             teachers_group.permissions.add(permission)
             
         self.stdout.write(self.style.SUCCESS(f'Successfully set up permissions for the presencas app'))
+
 
 
 
@@ -296,6 +304,7 @@ html
 
 
 
+
 ## presencas\templates\presencas\excluir_presenca.html
 
 html
@@ -330,6 +339,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -486,6 +496,7 @@ html
 
 
 
+
 ## presencas\templates\presencas\registrar_presenca.html
 
 html
@@ -502,6 +513,7 @@ html
     <a href="{% url 'lista_presencas' %}" class="btn btn-secondary mt-2">Voltar</a>
 </div>
 {% endblock %}
+
 
 
 
@@ -578,6 +590,7 @@ class PresencaFormTest(TestCase):
 
 
 
+
 ## presencas\tests\test_models.py
 
 python
@@ -624,6 +637,7 @@ class PresencaAcademicaModelTest(TestCase):
         )
         self.assertEqual(presenca.presente, True)
         self.assertEqual(presenca.aluno, self.aluno)
+
 
 
 
@@ -677,5 +691,6 @@ class PresencaViewTest(TestCase):
         response = self.client.get(reverse('lista_presencas'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'João Silva')
+
 
 

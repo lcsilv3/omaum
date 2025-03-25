@@ -17,6 +17,7 @@ class PunicaoAdmin(admin.ModelAdmin):
 
 
 
+
 ## punicoes\forms.py
 
 python
@@ -44,6 +45,7 @@ class PunicaoForm(forms.ModelForm):
         if data and data > datetime.date.today():
             raise ValidationError("A data da punição não pode ser no futuro.")
         return data
+
 
 
 
@@ -76,6 +78,7 @@ class Punicao(models.Model):
 
 
 
+
 ## punicoes\urls.py
 
 python
@@ -89,6 +92,7 @@ urlpatterns = [
     path('<int:id>/editar/', views.editar_punicao, name='editar_punicao'),
     path('<int:id>/excluir/', views.excluir_punicao, name='excluir_punicao'),
 ]
+
 
 
 
@@ -200,6 +204,7 @@ def excluir_punicao(request, id):
 
 
 
+
 ## punicoes\templates\punicoes\criar_punicao.html
 
 html
@@ -241,6 +246,7 @@ html
 
 
 
+
 ## punicoes\templates\punicoes\detalhe_punicao.html
 
 html
@@ -263,6 +269,7 @@ html
 <a href="{% url 'editar_punicao' punicao.id %}" class="btn btn-warning">Editar</a>
 <a href="{% url 'listar_punicoes' %}" class="btn btn-secondary">Voltar</a>
 {% endblock %}
+
 
 
 
@@ -308,6 +315,7 @@ html
 
 
 
+
 ## punicoes\templates\punicoes\excluir_punicao.html
 
 html
@@ -322,6 +330,7 @@ html
     <a href="{% url 'listar_punicoes' %}" class="btn btn-secondary">Cancelar</a>
 </form>
 {% endblock %}
+
 
 
 
@@ -409,5 +418,6 @@ html
     <a href="{% url 'criar_punicao' %}" class="btn btn-primary">Nova Punição</a>
 </div>
 {% endblock %}
+
 
 

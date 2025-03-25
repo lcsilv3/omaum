@@ -26,6 +26,7 @@ application = get_asgi_application()
 
 
 
+
 ## omaum\settings.py
 
 python
@@ -209,6 +210,7 @@ LOGOUT_REDIRECT_URL = 'home'
 
 
 
+
 ## omaum\urls.py
 
 python
@@ -231,6 +233,7 @@ urlpatterns += [
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
 ]
+
 
 
 
@@ -259,6 +262,7 @@ def verify(path):
 
 
 
+
 ## omaum\wsgi.py
 
 python
@@ -278,5 +282,6 @@ from django.core.wsgi import get_wsgi_application
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omaum.settings')
 
 application = get_wsgi_application()
+
 
 

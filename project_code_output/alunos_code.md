@@ -18,6 +18,7 @@ class AlunoAdmin(admin.ModelAdmin):
 
 
 
+
 ## alunos\apps.py
 
 python
@@ -26,6 +27,7 @@ from django.apps import AppConfig
 class AlunosConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'alunos'
+
 
 
 
@@ -60,6 +62,7 @@ class AlunoForm(forms.ModelForm):
 
 class ImportForm(forms.Form):
     file = forms.FileField()
+
 
 
 
@@ -344,6 +347,7 @@ class Aluno(models.Model):
 
 
 
+
 ## alunos\tests.py
 
 python
@@ -446,6 +450,7 @@ class SeleniumTestCase(TestCase):
 
 
 
+
 ## alunos\test_models.py
 
 python
@@ -480,6 +485,7 @@ class AlunoModelTest(TestCase):
             fator_rh='+'
         )
         self.assertEqual(aluno.nome, 'João Test')
+
 
 
 
@@ -546,6 +552,7 @@ class AlunoUITest(LiveServerTestCase):
 
 
 
+
 ## alunos\urls.py
 
 python
@@ -566,6 +573,7 @@ urlpatterns = [
     path('relatorio/', views.relatorio_alunos, name='relatorio'),
     path('dashboard/', views.dashboard, name='dashboard'),
 ]
+
 
 
 
@@ -759,6 +767,7 @@ def dashboard(request):
 
 
 
+
 ## alunos\templates\alunos\aluno_form.html
 
 html
@@ -796,6 +805,7 @@ html
   </form>
 </div>
 {% endblock %}
+
 
 
 
@@ -933,6 +943,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
+
 ## alunos\templates\alunos\detalhes_aluno.html
 
 html
@@ -1050,6 +1061,7 @@ html
 
 
 
+
 ## alunos\templates\alunos\editar_aluno.html
 
 html
@@ -1144,6 +1156,7 @@ html
 
 
 
+
 ## alunos\templates\alunos\excluir_aluno.html
 
 html
@@ -1181,6 +1194,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -1290,6 +1304,7 @@ html
 
 
 
+
 ## alunos\templates\alunos\registro.html
 
 html
@@ -1319,6 +1334,7 @@ html
     }
 </style>
 {% endblock %}
+
 
 
 
@@ -1370,4 +1386,5 @@ class AlunoUITest(LiveServerTestCase):
         self.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]').click()
         
         # Verify success        self.assertIn('Aluno criado com sucesso', self.browser.page_source)        self.assertIn('Lista de Alunos', self.browser.title)
+
 

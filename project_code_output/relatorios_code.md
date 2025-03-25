@@ -15,6 +15,7 @@ admin.site.register(Permission)
 
 
 
+
 ## relatorios\apps.py
 
 python
@@ -24,6 +25,7 @@ from django.apps import AppConfig
 class RelatoriosConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'relatorios'
+
 
 
 
@@ -38,12 +40,14 @@ from django.db import models
 
 
 
+
 ## relatorios\tests.py
 
 python
 from django.test import TestCase
 
 # Create your tests here.
+
 
 
 
@@ -63,6 +67,7 @@ urlpatterns = [
     path('punicoes/', views.relatorio_punicoes, name='relatorio_punicoes'),
     path('punicoes/pdf/', views.relatorio_punicoes_pdf, name='relatorio_punicoes_pdf'),
 ]
+
 
 
 
@@ -430,6 +435,7 @@ def relatorio_punicoes_pdf(request):
 
 
 
+
 ## relatorios\templates\relatorios\gerar_relatorio.html
 
 html
@@ -440,6 +446,7 @@ html
 
 <a href="javascript:history.back()" class="back-button">Voltar</a>
 {% endblock %}
+
 
 
 
@@ -498,6 +505,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -580,6 +588,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -675,6 +684,7 @@ html
 
 
 
+
 ## relatorios\templates\relatorios\relatorio_punicoes.html
 
 html
@@ -765,6 +775,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -935,4 +946,5 @@ class RelatorioViewTest(TestCase):
         response = self.client.get(f"{reverse('relatorio_punicoes_pdf')}?tipo_punicao=Advertência")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/pdf')
+
 

@@ -33,6 +33,7 @@ class FrequenciaAdmin(admin.ModelAdmin):
 
 
 
+
 ## frequencias\api.py
 
 python
@@ -61,6 +62,7 @@ class FrequenciaViewSet(viewsets.ModelViewSet):
 
 
 
+
 ## frequencias\apps.py
 
 python
@@ -70,6 +72,7 @@ class FrequenciasConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'frequencias'
     verbose_name = 'Frequências'
+
 
 
 
@@ -120,6 +123,7 @@ class FrequenciaForm(forms.ModelForm):
 
 
 
+
 ## frequencias\models.py
 
 python
@@ -153,6 +157,7 @@ class Frequencia(models.Model):
 
 
 
+
 ## frequencias\urls.py
 
 python
@@ -169,6 +174,7 @@ urlpatterns = [
     path('<int:id>/excluir/', views.excluir_frequencia, name='excluir_frequencia'),
     path('bulk-actions/', views.bulk_actions, name='frequencia_bulk_actions'),
 ]
+
 
 
 
@@ -398,6 +404,7 @@ def bulk_actions(request):
 
 
 
+
 ## frequencias\static\js\frequencia_form.js
 
 javascript
@@ -419,6 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
         presenteCheckbox.addEventListener('change', toggleJustificativa);
     }
 });
+
 
 
 
@@ -487,6 +495,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -591,6 +600,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -743,6 +753,7 @@ html
 
 
 
+
 ## frequencias\templates\frequencias\excluir_frequencia.html
 
 html
@@ -792,6 +803,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -978,6 +990,7 @@ html
 
 
 
+
 ## frequencias\templates\frequencias\registrar_frequencia.html
 
 html
@@ -1082,6 +1095,7 @@ html
 
 
 
+
 ## frequencias\templates\frequencias\registrar_frequencia_turma.html
 
 html
@@ -1154,6 +1168,7 @@ html
 
 
 
+
 ## frequencias\templatetags\frequencia_extras.py
 
 python
@@ -1169,9 +1184,11 @@ def sub(value, arg):
 
 
 
+
 ## frequencias\templatetags\__init__.py
 
 python
 # Arquivo vazio para marcar o diretório como um pacote Python
+
 
 

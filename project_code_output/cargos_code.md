@@ -18,6 +18,7 @@ class CargoAdministrativoAdmin(admin.ModelAdmin):
 
 
 
+
 ## cargos\apps.py
 
 python
@@ -27,6 +28,7 @@ from django.apps import AppConfig
 class CargosConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'cargos'
+
 
 
 
@@ -104,6 +106,7 @@ class CargoAdministrativoForm(forms.ModelForm):
 
 
 
+
 ## cargos\models.py
 
 python
@@ -129,6 +132,7 @@ class CargoAdministrativo(models.Model):
 
 
 
+
 ## cargos\urls.py
 
 python
@@ -144,6 +148,7 @@ urlpatterns = [
     path('<str:codigo_cargo>/editar/', views.editar_cargo, name='editar_cargo'),
     path('<str:codigo_cargo>/excluir/', views.excluir_cargo, name='excluir_cargo'),
 ]
+
 
 
 
@@ -221,6 +226,7 @@ def excluir_cargo(request, codigo_cargo):
 
 
 
+
 ## cargos\templates\cargos\confirmar_exclusao.html
 
 html
@@ -246,6 +252,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -276,6 +283,7 @@ html
     </div>
 </div>
 {% endblock %}
+
 
 
 
@@ -317,6 +325,7 @@ html
     </form>
 </div>
 {% endblock %}
+
 
 
 
@@ -379,6 +388,7 @@ html
 
 
 
+
 ## cargos\tests\test_models.py
 
 python
@@ -394,6 +404,7 @@ class CargoAdministrativoTest(TestCase):
         )
         self.assertEqual(cargo.nome, 'Coordenador')
         self.assertEqual(cargo.codigo_cargo, 'CARGO001')
+
 
 
 
@@ -464,5 +475,6 @@ class CargoViewTest(TestCase):
         # Verifica se o cargo foi excluído
         with self.assertRaises(CargoAdministrativo.DoesNotExist):
             CargoAdministrativo.objects.get(codigo_cargo='CARGO001')
+
 
 

@@ -18,6 +18,7 @@ class CursoAdmin(admin.ModelAdmin):
 
 
 
+
 ## cursos\apps.py
 
 python
@@ -27,6 +28,7 @@ from django.apps import AppConfig
 class CursosConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'cursos'
+
 
 
 
@@ -57,6 +59,7 @@ class CursoForm(forms.ModelForm):
 
 
 
+
 ## cursos\models.py
 
 python
@@ -78,12 +81,14 @@ class Curso(models.Model):
 
 
 
+
 ## cursos\tests.py
 
 python
 from django.test import TestCase
 
 # Create your tests here.
+
 
 
 
@@ -101,6 +106,7 @@ urlpatterns = [
     path('<int:id>/excluir/', views.excluir_curso, name='excluir_curso'),
     path('<int:id>/detalhes/', views.detalhes_curso, name='detalhes_curso'),
 ]
+
 
 
 
@@ -157,6 +163,7 @@ def detalhes_curso(request, id):
 
 
 
+
 ## cursos\migrations\0001_initial.py
 
 python
@@ -186,6 +193,7 @@ class Migration(migrations.Migration):
             },
         ),
     ]
+
 
 
 
@@ -224,6 +232,7 @@ class Migration(migrations.Migration):
 
 
 
+
 ## cursos\migrations\0003_curso_descricao_curso_duracao.py
 
 python
@@ -255,6 +264,7 @@ class Migration(migrations.Migration):
 
 
 
+
 ## cursos\migrations\0004_curso_codigo_curso.py
 
 python
@@ -281,6 +291,7 @@ class Migration(migrations.Migration):
 
 
 
+
 ## cursos\templates\cursos\criar_curso.html
 
 html
@@ -300,6 +311,7 @@ html
     </form>
 </div>
 {% endblock %}
+
 
 
 
@@ -333,6 +345,7 @@ html
 
 
 
+
 ## cursos\templates\cursos\editar_curso.html
 
 html
@@ -355,6 +368,7 @@ html
 
 
 
+
 ## cursos\templates\cursos\excluir_curso.html
 
 html
@@ -372,6 +386,7 @@ html
     </form>
 </div>
 {% endblock %}
+
 
 
 
@@ -419,5 +434,6 @@ html
   </table>
 </div>
 {% endblock %}
+
 
 

@@ -26,6 +26,7 @@ class MatriculaAdmin(admin.ModelAdmin):
 
 
 
+
 ## turmas\apps.py
 
 python
@@ -35,6 +36,7 @@ from django.apps import AppConfig
 class TurmasConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'turmas'
+
 
 
 
@@ -88,6 +90,7 @@ class MatriculaForm(forms.ModelForm):
             # Filtra alunos pelo curso da turma
             self.fields['aluno'].queryset = get_aluno_model().objects.filter(curso=turma.curso)
             self.fields['aluno'].queryset = self.fields['aluno'].queryset.filter(curso=turma.curso)
+
 
 
 
@@ -189,12 +192,14 @@ class Matricula(models.Model):
 
 
 
+
 ## turmas\tests.py
 
 python
 from django.test import TestCase
 
 # Create your tests here.
+
 
 
 
@@ -217,6 +222,7 @@ urlpatterns = [
     path('<int:turma_id>/alunos/', views.listar_alunos_matriculados, name='listar_alunos_matriculados'),
     path('<int:turma_id>/alunos/<int:aluno_id>/cancelar/', views.cancelar_matricula, name='cancelar_matricula'),
 ]
+
 
 
 
@@ -429,6 +435,7 @@ def excluir_curso(request, id):
 
 
 
+
 ## turmas\migrations\0001_initial.py
 
 python
@@ -461,6 +468,7 @@ class Migration(migrations.Migration):
             ],
         ),
     ]
+
 
 
 
@@ -530,6 +538,7 @@ class Migration(migrations.Migration):
 
 
 
+
 ## turmas\migrations\0003_alter_turma_curso_alter_turma_data_fim_and_more.py
 
 python
@@ -571,6 +580,7 @@ class Migration(migrations.Migration):
             name='Curso',
         ),
     ]
+
 
 
 
@@ -648,6 +658,7 @@ class Migration(migrations.Migration):
 
 
 
+
 ## turmas\templates\turmas\cancelar_matricula.html
 
 html
@@ -678,6 +689,7 @@ html
     {% endif %}
 </div>
 {% endblock %}
+
 
 
 
@@ -718,6 +730,7 @@ html
 
 
 
+
 ## turmas\templates\turmas\criar_turma.html
 
 html
@@ -750,6 +763,7 @@ html
     </form>
 </div>
 {% endblock %}
+
 
 
 
@@ -827,6 +841,7 @@ html
 
 
 
+
 ## turmas\templates\turmas\detalhes_turma.html
 
 html
@@ -837,6 +852,7 @@ html
 
 <a href="javascript:history.back()" class="back-button">Voltar</a>
 {% endblock %}
+
 
 
 
@@ -887,6 +903,7 @@ html
 
 
 
+
 ## turmas\templates\turmas\excluir_turma.html
 
 html
@@ -919,6 +936,7 @@ html
     </form>
 </div>
 {% endblock %}
+
 
 
 
@@ -994,6 +1012,7 @@ html
     <a href="{% url 'turmas:detalhes_turma' turma.id %}" class="btn btn-secondary mt-3">Voltar para Detalhes da Turma</a>
 </div>
 {% endblock %}
+
 
 
 
@@ -1102,6 +1121,7 @@ html
 
 
 
+
 ## turmas\templates\turmas\matricular_aluno.html
 
 html
@@ -1156,6 +1176,7 @@ html
 
 
 
+
 ## turmas\templates\turmas\turma_form.html
 
 html
@@ -1169,6 +1190,7 @@ html
     <button type="submit">Criar</button>
   </form>
 {% endblock %}
+
 
 
 
@@ -1208,6 +1230,7 @@ class CargoAdministrativoTest(TestCase):
         )
         self.assertEqual(cargo.nome, 'Coordenador')
         self.assertEqual(cargo.codigo_cargo, 'CARGO001')
+
 
 
 
@@ -1300,5 +1323,6 @@ class CursoViewTest(TestCase):
         response = self.client.post(reverse('turmas:curso_delete', args=[self.curso.id]))
         self.assertEqual(response.status_code, 302)  # Redirect after successful deletion
         self.assertFalse(Curso.objects.filter(id=self.curso.id).exists())
+
 
 

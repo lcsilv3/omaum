@@ -14,12 +14,21 @@ def collect_code(root_dir, output_dir):
             
         # Pega o primeiro diretório após o root_dir como a funcionalidade
         relative_path = os.path.relpath(root, root_dir)
-        functionality = relative_path.split(os.path.sep)[0]
+        
+        # Special handling for root files - assign them to "root" functionality
+        if relative_path == '.':
+            functionality = "root"
+        else:
+            functionality = relative_path.split(os.path.sep)[0]
 
         if functionality not in functionality_content:
             functionality_content[functionality] = []
 
         for file in files:
+            # Skip collect*.py files
+            if file.startswith('collect') and file.endswith('.py'):
+                continue
+                
             if file.endswith(('.py', '.html', '.js', '.css')):
                 file_path = os.path.join(root, file)
                 
@@ -52,13 +61,13 @@ def collect_code(root_dir, output_dir):
                 except IOError as e:
                     content += f"Error reading file: {e}"
                 
-                content += "\n\n"
+                content += "\n\n\n"
                 functionality_content[functionality].append(content)
 
     # Escreve o conteúdo de cada funcionalidade em um arquivo Markdown separado
     for functionality, content in functionality_content.items():
-        # Ignorar diretórios vazios ou especiais
-        if functionality == '.' or not content:
+        # Ignorar diretórios vazios (mas não mais ignorando '.')
+        if not content:
             continue
             
         output_file = os.path.join(output_dir, f"{functionality}_code.md")
