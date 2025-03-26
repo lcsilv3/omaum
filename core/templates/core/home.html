@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container mt-4">
     <h1>Bem-vindo ao {{ titulo }}</h1>
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated %}    
         <div class="row mt-4">
             <div class="col-md-4 mb-3">
                 <div class="card">
@@ -35,7 +35,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Turmas</h5>
-                        <a href="{% url 'turmas:listar' %}" class="btn btn-primary">Gerenciar Turmas</a>
+                        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-primary">Gerenciar Turmas</a>
                     </div>
                 </div>
             </div>
@@ -43,7 +43,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Presenças</h5>
-                        <a href="{% url 'presencas:listar' %}" class="btn btn-primary">Gerenciar Presenças</a>
+                        <a href="/presencas/lista/" class="btn btn-primary">Gerenciar Presenças</a>
                     </div>
                 </div>
             </div>
@@ -51,7 +51,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Relatórios</h5>
-                        <a href="{% url 'relatorios:listar' %}" class="btn btn-primary">Gerar Relatórios</a>
+                        <a href="{% url 'relatorios_index' %}" class="btn btn-primary">Gerar Relatórios</a>
                     </div>
                 </div>
             </div>
@@ -72,4 +72,3 @@
     {% endif %}
 </div>
 {% endblock %}
-

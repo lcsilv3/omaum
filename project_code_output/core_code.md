@@ -531,6 +531,7 @@ urlpatterns = [
     path('sair/', views.sair, name='sair'),
     path('painel-controle/', views.painel_controle, name='painel_controle'),
     path('atualizar-configuracao/', views.atualizar_configuracao, name='atualizar_configuracao'),
+    path('csrf_check/', views.csrf_check, name='csrf_check'),
 ]
 
 
@@ -709,6 +710,20 @@ def sair(request):
     
     return redirect('core:pagina_inicial')
 
+# Adicione esta função à views.py existente
+from django.http import JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+@ensure_csrf_cookie
+def csrf_check(request):
+    """
+    View para verificar se o token CSRF ainda é válido.
+    Retorna status 200 se o token for válido, caso contrário retorna 403.
+    """
+    if request.is_ajax() or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error'}, status=403)
+
 
 
 
@@ -839,7 +854,7 @@ html
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'alunos:listar' %}">Alunos</a>
+                            <a class="nav-link" href="{% url 'alunos:listar_alunos' %}">Alunos</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'atividades:atividade_academica_list' %}">Atividades Acadêmicas</a>
@@ -848,7 +863,7 @@ html
                             <a class="nav-link" href="{% url 'atividades:atividade_ritualistica_list' %}">Atividades Ritualísticas</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'turmas:listar' %}">Turmas</a>
+                            <a class="nav-link" href="{% url 'turmas:listar_turmas' %}">Turmas</a>
                         </li>
                         <!-- Add more navigation items for other functionalities -->
                         {% if user.is_staff %}
@@ -883,6 +898,9 @@ html
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+    <!-- Adicione esta linha antes do fechamento do body -->
+    <script src="{% static 'js/csrf_refresh.js' %}"></script>
 </body>
 </html>
 
@@ -906,7 +924,7 @@ html
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Alunos</h5>
-                        <a href="{% url 'alunos:listar' %}" class="btn btn-primary">Gerenciar Alunos</a>
+                        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-primary">Gerenciar Alunos</a>
                     </div>
                 </div>
             </div>
@@ -930,7 +948,7 @@ html
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Turmas</h5>
-                        <a href="{% url 'turmas:listar' %}" class="btn btn-primary">Gerenciar Turmas</a>
+                        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-primary">Gerenciar Turmas</a>
                     </div>
                 </div>
             </div>
@@ -938,7 +956,7 @@ html
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Presenças</h5>
-                        <a href="{% url 'presencas:listar' %}" class="btn btn-primary">Gerenciar Presenças</a>
+                        <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-primary">Gerenciar Presenças</a>
                     </div>
                 </div>
             </div>
@@ -946,7 +964,7 @@ html
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Relatórios</h5>
-                        <a href="{% url 'relatorios:listar' %}" class="btn btn-primary">Gerar Relatórios</a>
+                        <a href="{% url 'relatorios:listar_relatorios' %}" class="btn btn-primary">Gerar Relatórios</a>
                     </div>
                 </div>
             </div>
@@ -967,7 +985,6 @@ html
     {% endif %}
 </div>
 {% endblock %}
-
 
 
 

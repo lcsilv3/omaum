@@ -9,4 +9,5 @@ urlpatterns = [
     path('sair/', views.sair, name='sair'),
     path('painel-controle/', views.painel_controle, name='painel_controle'),
     path('atualizar-configuracao/', views.atualizar_configuracao, name='atualizar_configuracao'),
+    path('csrf_check/', views.csrf_check, name='csrf_check'),
 ]

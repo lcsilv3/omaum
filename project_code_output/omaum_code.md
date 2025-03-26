@@ -44,14 +44,13 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-BASE_DIR = Path(__file__).resolve().parent.parent
-GETTEXT_PATH = os.path.join(BASE_DIR, r'msys64\usr\bin\gettext.dll')
-from django.contrib.messages import constants as messages
-from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Adjust this path to where gettext is actually installed
+GETTEXT_PATH = r'C:\msys64\usr\bin'
+os.environ['PATH'] += os.pathsep + GETTEXT_PATH
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -64,29 +63,37 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
-    # ...
+    'django.contrib.admin',  # Certifique-se de que esta linha está presente
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # Your custom apps
+    'alunos',
     'atividades',
-    # ...
+    'cargos',
+    'core',
+    'cursos',
+    'frequencias',
+    'iniciacoes',
+    'presencas',
+    'professores',
+    'punicoes',
+    'relatorios',
+    'turmas',
+    # Other apps as needed
 ]
 
 
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
-
-MESSAGE_TAGS = {
-    messages.DEBUG: 'alert-info',
-    messages.INFO: 'alert-info',
-    messages.SUCCESS: 'alert-success',
-    messages.WARNING: 'alert-warning',
-    messages.ERROR: 'alert-danger',
-}
-
 MIDDLEWARE = [
+    'core.middleware.ManutencaoMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -94,26 +101,19 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+if DEBUG:
+    INSTALLED_APPS += ['debug_toolbar']
+    MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+    INTERNAL_IPS = ['127.0.0.1']
 
-
-
-# Adicione estas configurações se não estiverem presentes
-CSRF_COOKIE_SECURE = False  # Mude para True em produção com HTTPS
-CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_USE_SESSIONS = False
-CSRF_COOKIE_NAME = 'csrftoken'
-SESSION_COOKIE_SECURE = False  # Mude para True em produção com HTTPS
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'
-
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 ROOT_URLCONF = 'omaum.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Adicione esta linha se não estiver presente
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Make sure this points to your templates directory
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,11 +125,7 @@ TEMPLATES = [
         },
     },
 ]
-
-
-
 WSGI_APPLICATION = 'omaum.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -140,7 +136,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -160,28 +155,21 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'pt-BR'
-
-TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_L10N = True
+LANGUAGE_CODE = 'pt-BR'
 USE_TZ = True
-
-# Add this new setting
-LANGUAGE_COOKIE_NAME = 'django_language'
-
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -189,23 +177,19 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'home'
+LOGIN_URL = 'login'  # Adjust this if your login URL name is different
 
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
-LOGIN_URL = 'login'
-LOCALE_PATHS = [
+# Specifies the directory paths for localization (translation) files in the Django project
+LOCALE_PATHS = (
     BASE_DIR / 'locale',
-]
+)
 
-# Authentication settings
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'home'
-
-# Authentication settings
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'home'
+# Adicione ou verifique estas configurações
+CSRF_COOKIE_AGE = 86400  # Duração do cookie CSRF em segundos (24 horas)
+CSRF_USE_SESSIONS = False  # Se True, armazena o token na sessão em vez de cookies
+SESSION_COOKIE_AGE = 86400  # Duração da sessão em segundos (24 horas)
 
 
 
@@ -216,49 +200,40 @@ LOGOUT_REDIRECT_URL = 'home'
 python
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
+from django.conf import settings  # Adicione esta linha
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('core.urls')),
     path('alunos/', include('alunos.urls')),
     path('atividades/', include('atividades.urls')),
-    path('turmas/', include('turmas.urls')),
+    path('cargos/', include('cargos.urls')),
+    path('core/', include('core.urls')),
+    path('cursos/', include('cursos.urls')),
+    path('frequencias/', include('frequencias.urls')),
+    path('iniciacoes/', include('iniciacoes.urls')),
     path('presencas/', include('presencas.urls')),
+    path('professores/', include('professores.urls')),
+    path('punicoes/', include('punicoes.urls')),
     path('relatorios/', include('relatorios.urls')),
-    # Add other apps here
+    path('turmas/', include('turmas.urls')),
+    path('', RedirectView.as_view(pattern_name='core:pagina_inicial'), name='home'),
 ]
 
 from django.contrib.auth import views as auth_views
+
 urlpatterns += [
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
 ]
 
+# Adicione este bloco no final do arquivo
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ]
 
-
-
-
-## omaum\utils.py
-
-python
-from pathlib import Path
-
-def verify(path):
-    """
-    Verifica se um caminho existe e retorna o caminho absoluto.
-    Se o caminho não existir, lança uma exceção ValueError.
-
-    :param path: O caminho a ser verificado (pode ser uma string ou um objeto Path)
-    :return: O caminho absoluto como um objeto Path
-    :raises ValueError: Se o caminho não existir
-    """
-    path = Path(path)
-    if path.exists():
-        return path.resolve()
-    else:
-        raise ValueError(f"O caminho {path} não existe")
-
-# Você pode adicionar outras funções utilitárias aqui, se necessário
 
 
 

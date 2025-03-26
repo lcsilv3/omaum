@@ -100,3 +100,17 @@ def sair(request):
         adicionar_mensagem(request, 'info', 'Você saiu do sistema com sucesso.')
     
     return redirect('core:pagina_inicial')
+
+# Adicione esta função à views.py existente
+from django.http import JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+@ensure_csrf_cookie
+def csrf_check(request):
+    """
+    View para verificar se o token CSRF ainda é válido.
+    Retorna status 200 se o token for válido, caso contrário retorna 403.
+    """
+    if request.is_ajax() or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error'}, status=403)

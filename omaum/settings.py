@@ -1,3 +1,4 @@
+
 """
 Django settings for omaum project.
 
@@ -153,3 +154,8 @@ LOGIN_URL = 'login'  # Adjust this if your login URL name is different
 LOCALE_PATHS = (
     BASE_DIR / 'locale',
 )
+
+# Adicione ou verifique estas configurações
+CSRF_COOKIE_AGE = 86400  # Duração do cookie CSRF em segundos (24 horas)
+CSRF_USE_SESSIONS = False  # Se True, armazena o token na sessão em vez de cookies
+SESSION_COOKIE_AGE = 86400  # Duração da sessão em segundos (24 horas)

@@ -597,7 +597,7 @@ Aluno = import_module('alunos.models').Aluno
 AlunoForm = import_module('alunos.forms').AlunoForm
 ImportForm = import_module('alunos.forms').ImportForm
 # Obter o modelo Curso de onde estiver definido
-Curso = import_module('core.models').Curso
+Curso = import_module('cursos.models').Curso
 
 @login_required
 def listar_alunos(request):
