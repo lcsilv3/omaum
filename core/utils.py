@@ -49,7 +49,7 @@ def garantir_configuracao_sistema():
     config, criado = ConfiguracaoSistema.objects.get_or_create(
         pk=1,
         defaults={
-            'nome_sistema': 'OMAUM',
+            'nome_sistema': 'Sistema de Gestão de Iniciados da OmAum',
             'versao': '1.0.0',
             'manutencao_ativa': False,
             'mensagem_manutencao': 'Sistema em manutenção. Tente novamente mais tarde.'

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Cargo Administrativo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Detalhes do Cargo Administrativo</h1>
+  
+  <div class="card">
+    <div class="card-header">
+      <h2>{{ cargo.nome }}</h2>
+    </div>
+    <div class="card-body">
+      <p><strong>Código:</strong> {{ cargo.codigo_cargo }}</p>
+      <p><strong>Descrição:</strong> {{ cargo.descricao|default:"Não informada" }}</p>
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'cargos:editar_cargo' cargo.id %}" class="btn btn-warning">Editar</a>
+      <a href="{% url 'cargos:excluir_cargo' cargo.id %}" class="btn btn-danger">Excluir</a>
+      <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

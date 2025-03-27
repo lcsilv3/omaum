@@ -17,7 +17,7 @@ class Command(BaseCommand):
         permissions = Permission.objects.filter(content_type=content_type)
         
         # Add all permissions to the teachers group
-        for permission in permissions:
-            teachers_group.permissions.add(permission)
+        # for permission in permissions:
+        #     teachers_group.permissions.add(permission)
             
         self.stdout.write(self.style.SUCCESS(f'Successfully set up permissions for the presencas app'))

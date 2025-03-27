@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}OMAUM{% endblock %}</title>
@@ -36,6 +37,21 @@
                             <li><a class="dropdown-item" href="{% url 'atividades:atividade_academica_list' %}">Acadêmicas</a></li>
                             <li><a class="dropdown-item" href="{% url 'atividades:atividade_ritualistica_list' %}">Ritualísticas</a></li>
                         </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cursos/">Cursos</a>  <!-- Use um URL absoluto temporariamente -->
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'cargos:listar_cargos' %}">Cargos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'frequencias:listar_frequencias' %}">Frequências</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'iniciacoes:listar_iniciacoes' %}">Iniciações</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'punicoes:listar_punicoes' %}">Punições</a>
                     </li>
                     {% endif %}
                 </ul>

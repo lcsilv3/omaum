@@ -9,19 +9,9 @@ class CargoAdministrativoForm(forms.ModelForm):
         model = CargoAdministrativo
         fields = ['codigo_cargo', 'nome', 'descricao']
         widgets = {
-            'codigo_cargo': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Digite o código do cargo'
-            }),
-            'nome': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Digite o nome do cargo'
-            }),
-            'descricao': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 4,
-                'placeholder': 'Digite a descrição do cargo'
-            }),
+            'codigo_cargo': forms.TextInput(attrs={'class': 'form-control'}),
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         labels = {
             'codigo_cargo': 'Código do Cargo',

@@ -7,6 +7,22 @@ from .forms import FrequenciaForm
 from alunos.models import Aluno
 from turmas.models import Turma
 
+def criar_frequencia(request):
+    """
+    Cria uma nova frequência no sistema.
+    """
+    if request.method == 'POST':
+        form = FrequenciaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Frequência criada com sucesso!')
+            return redirect('frequencias:listar_frequencias')
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    else:
+        form = FrequenciaForm()
+    return render(request, 'frequencias/criar_frequencia.html', {'form': form})
+
 @login_required
 @permission_required('frequencias.add_frequencia', raise_exception=True)
 def registrar_frequencia(request):

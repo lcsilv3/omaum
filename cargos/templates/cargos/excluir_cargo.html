@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Cargo Administrativo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Cargo Administrativo</h1>
+    <p>Tem certeza que deseja excluir o cargo administrativo "{{ cargo.nome }}" ({{ cargo.codigo_cargo }})?</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Sim, excluir</button>
+        <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

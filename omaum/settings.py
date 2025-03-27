@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'frequencias',
     'iniciacoes',
     'presencas',
-    'professores',
     'punicoes',
     'relatorios',
     'turmas',
