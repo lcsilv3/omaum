@@ -30,6 +30,7 @@ application = get_asgi_application()
 ## omaum\settings.py
 
 python
+
 """
 Django settings for omaum project.
 

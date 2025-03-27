@@ -112,6 +112,8 @@ python
 from django.urls import path
 from . import views
 
+app_name = 'presencas'  # Add this line to define a namespace
+
 urlpatterns = [
     path('registrar/', views.registrar_presenca, name='registrar_presenca'),
     path('lista/', views.lista_presencas, name='lista_presencas'),
