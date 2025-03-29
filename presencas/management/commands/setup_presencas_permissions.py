@@ -7,9 +7,6 @@ class Command(BaseCommand):
     help = 'Set up permissions for the presencas app'
 
     def handle(self, *args, **options):
-        # Create a group for teachers if it doesn't exist
-        teachers_group, created = Group.objects.get_or_create(name='Professores')
-        
         # Get content type for the PresencaAcademica model
         content_type = ContentType.objects.get_for_model(PresencaAcademica)
         

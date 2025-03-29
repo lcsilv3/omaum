@@ -1,3 +1,36 @@
+# Código da Funcionalidade: omaum
+*Gerado automaticamente*
+
+
+
+## omaum\asgi.py
+
+python
+"""
+ASGI config for omaum project.
+
+It exposes the ASGI callable as a module-level variable named ``application``.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
+"""
+
+import os
+
+from django.core.asgi import get_asgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omaum.settings')
+
+application = get_asgi_application()
+
+
+
+
+
+## omaum\settings.py
+
+python
+
 """
 Django settings for omaum project.
 
@@ -55,9 +88,9 @@ INSTALLED_APPS = [
     # Other apps as needed
 ]
 
+
 MIDDLEWARE = [
     'core.middleware.ManutencaoMiddleware',
-    'core.middleware.SessionRenewalMiddleware',  # Novo middleware para renovação de sessão
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -153,13 +186,76 @@ LOCALE_PATHS = (
     BASE_DIR / 'locale',
 )
 
-# Configurações de sessão e CSRF atualizadas
-SESSION_COOKIE_AGE = 86400 * 7  # Aumentar para 7 dias (em segundos)
-SESSION_SAVE_EVERY_REQUEST = True  # Salvar a sessão a cada requisição
-CSRF_COOKIE_AGE = 86400 * 7  # Aumentar para 7 dias
-CSRF_USE_SESSIONS = True  # Armazenar o token CSRF na sessão para maior segurança
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Não expirar a sessão ao fechar o navegador
+# Adicione ou verifique estas configurações
+CSRF_COOKIE_AGE = 86400  # Duração do cookie CSRF em segundos (24 horas)
+CSRF_USE_SESSIONS = False  # Se True, armazena o token na sessão em vez de cookies
+SESSION_COOKIE_AGE = 86400  # Duração da sessão em segundos (24 horas)
 
-# Configurações para renovação de sessão
-SESSION_SECURITY_WARN_AFTER = 3000  # Avisar após 50 minutos de inatividade
-SESSION_SECURITY_EXPIRE_AFTER = 3600  # Expirar após 60 minutos de inatividade
+
+
+
+
+## omaum\urls.py
+
+python
+from django.contrib import admin
+from django.urls import path, include
+from django.views.generic import RedirectView
+from django.conf import settings  # Adicione esta linha
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('alunos/', include('alunos.urls')),
+    path('atividades/', include('atividades.urls')),
+    path('cargos/', include('cargos.urls')),
+    path('core/', include('core.urls')),
+    path('cursos/', include('cursos.urls')),
+    path('frequencias/', include('frequencias.urls')),
+    path('iniciacoes/', include('iniciacoes.urls')),
+    path('presencas/', include('presencas.urls')),
+    path('punicoes/', include('punicoes.urls')),
+    path('relatorios/', include('relatorios.urls')),
+    path('turmas/', include('turmas.urls')),
+    path('', RedirectView.as_view(pattern_name='core:pagina_inicial'), name='home'),
+]
+
+from django.contrib.auth import views as auth_views
+
+urlpatterns += [
+    path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+]
+
+# Adicione este bloco no final do arquivo
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ]
+
+
+
+
+
+## omaum\wsgi.py
+
+python
+"""
+WSGI config for omaum project.
+
+It exposes the WSGI callable as a module-level variable named ``application``.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/5.1/howto/deployment/wsgi/
+"""
+
+import os
+
+from django.core.wsgi import get_wsgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omaum.settings')
+
+application = get_wsgi_application()
+
+
+
