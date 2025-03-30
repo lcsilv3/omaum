@@ -11,7 +11,15 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Alunos</h5>
-                        <a href="{% url 'alunos:listar' %}" class="btn btn-primary">Gerenciar Alunos</a>
+                        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-primary">Gerenciar Alunos</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Cursos</h5>
+                        <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-primary">Gerenciar Cursos</a>
                     </div>
                 </div>
             </div>
@@ -19,7 +27,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Atividades Acadêmicas</h5>
-                        <a href="{% url 'atividades:atividade_academica_list' %}" class="btn btn-primary">Gerenciar Atividades Acadêmicas</a>
+                        <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-primary">Gerenciar Atividades Acadêmicas</a>
                     </div>
                 </div>
             </div>
@@ -27,7 +35,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Atividades Ritualísticas</h5>
-                        <a href="{% url 'atividades:atividade_ritualistica_list' %}" class="btn btn-primary">Gerenciar Atividades Ritualísticas</a>
+                        <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-primary">Gerenciar Atividades Ritualísticas</a>
                     </div>
                 </div>
             </div>
@@ -42,8 +50,32 @@
             <div class="col-md-4 mb-3">
                 <div class="card">
                     <div class="card-body">
+                        <h5 class="card-title">Iniciações</h5>
+                        <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-primary">Gerenciar Iniciações</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Cargos</h5>
+                        <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-primary">Gerenciar Cargos</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Frequências</h5>
+                        <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-primary">Gerenciar Frequências</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
                         <h5 class="card-title">Presenças</h5>
-                        <a href="/presencas/lista/" class="btn btn-primary">Gerenciar Presenças</a>
+                        <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-primary">Gerenciar Presenças</a>
                     </div>
                 </div>
             </div>
@@ -51,7 +83,15 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Relatórios</h5>
-                        <a href="{% url 'relatorios_index' %}" class="btn btn-primary">Gerar Relatórios</a>
+                        <a href="{% url 'relatorios:index' %}" class="btn btn-primary">Gerar Relatórios</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Punições</h5>
+                        <a href="{% url 'punicoes:listar_punicoes' %}" class="btn btn-primary">Gerenciar Punições</a>
                     </div>
                 </div>
             </div>

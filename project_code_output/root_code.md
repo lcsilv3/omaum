@@ -255,29 +255,3 @@ if __name__ == '__main__':
 
 
 
-
-
-## settings.py
-
-python
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'cursos',
-]
-
-
-
-
-
-## urls.py
-
-python
-path('cursos/', include('cursos.urls')),
-
-
-

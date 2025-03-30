@@ -10,7 +10,7 @@ from .forms import criar_form_atividade_academica, criar_form_atividade_ritualis
 from django.shortcuts import render
 from .models import AtividadeAcademica
 
-def atividade_academica_list(request):
+def listar_atividades_academicas(request):
     atividades = AtividadeAcademica.objects.all()
     return render(request, 'atividades/atividade_academica_list.html', {'atividades': atividades})
 
@@ -183,3 +183,18 @@ def excluir_atividade_ritualistica(request, pk):
         return redirect('atividades:ritualistica_lista')
     
     return render(request, 'atividades/ritualistica_confirmar_exclusao.html', {'object': atividade})
+
+# Adicione esses aliases no final do arquivo views.py
+# Supondo que as funções reais sejam listar_atividades_academicas, etc.
+
+atividade_academica_list = listar_atividades_academicas
+atividade_academica_create = criar_atividade_academica
+atividade_academica_detail = detalhar_atividade_academica
+atividade_academica_update = editar_atividade_academica
+atividade_academica_delete = excluir_atividade_academica
+
+atividade_ritualistica_list = listar_atividades_ritualisticas
+atividade_ritualistica_create = criar_atividade_ritualistica
+atividade_ritualistica_detail = detalhar_atividade_ritualistica
+atividade_ritualistica_update = editar_atividade_ritualistica
+atividade_ritualistica_delete = excluir_atividade_ritualistica

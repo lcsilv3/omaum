@@ -185,10 +185,12 @@ app_name = 'cargos'
 
 urlpatterns = [
     path('', views.listar_cargos, name='listar_cargos'),
-    path('novo/', views.criar_cargo, name='criar_cargo'),
+    path('criar/', views.criar_cargo, name='criar_cargo'),
     path('<int:id>/editar/', views.editar_cargo, name='editar_cargo'),
     path('<int:id>/excluir/', views.excluir_cargo, name='excluir_cargo'),
-    path('<int:id>/detalhes/', views.detalhes_cargo, name='detalhes_cargo'),
+    path('<int:id>/detalhes/', views.detalhar_cargo, name='detalhar_cargo'),
+    path('atribuir/', views.atribuir_cargo, name='atribuir_cargo'),
+    path('remover-atribuicao/<int:id>/', views.remover_atribuicao_cargo, name='remover_atribuicao_cargo'),
 ]
 
 
@@ -285,6 +287,33 @@ class Migration(migrations.Migration):
 
 
 
+## cargos\templates\cargos\atribuir_cargo.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Atribuir Cargo</h1>
+  
+  <form method="post">
+    {% csrf_token %}
+    {% include 'includes/form_errors.html' %}
+    
+    {% for field in form %}
+      {% include 'includes/form_field.html' %}
+    {% endfor %}
+    
+    <button type="submit" class="btn btn-primary">Atribuir</button>
+    <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
+
+
+
+
+
 ## cargos\templates\cargos\confirmar_exclusao.html
 
 html
@@ -337,6 +366,48 @@ html
         <button type="submit" class="btn btn-primary">Criar Cargo</button>
         <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Cancelar</a>
     </form>
+</div>
+{% endblock %}
+
+
+
+
+
+## cargos\templates\cargos\detalhar_cargo.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Detalhes do Cargo</h1>
+  
+  <div class="card">
+    <div class="card-header">
+      <h2>{{ cargo.nome }}</h2>
+    </div>
+    <div class="card-body">
+      <p><strong>Descrição:</strong> {{ cargo.descricao }}</p>
+      <p><strong>Nível:</strong> {{ cargo.get_nivel_display }}</p>
+      
+      <h3 class="mt-4">Alunos com este Cargo</h3>
+      <ul class="list-group">
+        {% for atribuicao in atribuicoes %}
+          <li class="list-group-item">
+            {{ atribuicao.aluno.nome }} 
+            ({{ atribuicao.data_inicio|date:"d/m/Y" }} - {{ atribuicao.data_fim|date:"d/m/Y"|default:"Atual" }})
+          </li>
+        {% empty %}
+          <li class="list-group-item">Nenhum aluno atribuído a este cargo.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'cargos:editar_cargo' cargo.id %}" class="btn btn-warning">Editar</a>
+      <a href="{% url 'cargos:excluir_cargo' cargo.id %}" class="btn btn-danger">Excluir</a>
+      <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -441,17 +512,21 @@ html
 html
 {% extends 'base.html' %}
 
-{% block title %}Excluir Cargo Administrativo{% endblock %}
-
 {% block content %}
 <div class="container mt-4">
-    <h1>Excluir Cargo Administrativo</h1>
-    <p>Tem certeza que deseja excluir o cargo administrativo "{{ cargo.nome }}" ({{ cargo.codigo_cargo }})?</p>
-    
+    <h1>Excluir Cargo</h1>
+  
+    <div class="alert alert-danger">
+      <p>Tem certeza que deseja excluir o cargo "{{ cargo.nome }}"?</p>
+      {% if atribuicoes %}
+        <p><strong>Atenção:</strong> Este cargo possui {{ atribuicoes.count }} atribuições. Excluir o cargo removerá todas as atribuições associadas.</p>
+      {% endif %}
+    </div>
+  
     <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Sim, excluir</button>
-        <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Cancelar</a>
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Sim, excluir</button>
+      <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}
@@ -502,49 +577,132 @@ html
 
 
 
+## cargos\templates\cargos\form_cargo.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>{% if cargo.id %}Editar{% else %}Novo{% endif %} Cargo</h1>
+  
+  <form method="post">
+    {% csrf_token %}
+    {% include 'includes/form_errors.html' %}
+    
+    {% for field in form %}
+      {% include 'includes/form_field.html' %}
+    {% endfor %}
+    
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
+
+
+
+
+
 ## cargos\templates\cargos\listar_cargos.html
 
 html
 {% extends 'base.html' %}
 
-{% block title %}Cargos Administrativos{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h1>Cargos</h1>
+  
+  <div class="d-flex justify-content-between mb-3">
+    <a href="{% url 'cargos:criar_cargo' %}" class="btn btn-primary">Novo Cargo</a>
+    <a href="{% url 'cargos:atribuir_cargo' %}" class="btn btn-success">Atribuir Cargo</a>
+  </div>
+  
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Descrição</th>
+        <th>Nível</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cargo in cargos %}
+      <tr>
+        <td>{{ cargo.nome }}</td>
+        <td>{{ cargo.descricao|truncatechars:50 }}</td>
+        <td>{{ cargo.get_nivel_display }}</td>
+        <td>
+          <a href="{% url 'cargos:detalhar_cargo' cargo.id %}" class="btn btn-sm btn-info">Detalhes</a>
+          <a href="{% url 'cargos:editar_cargo' cargo.id %}" class="btn btn-sm btn-warning">Editar</a>
+          <a href="{% url 'cargos:excluir_cargo' cargo.id %}" class="btn btn-sm btn-danger">Excluir</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4">Nenhum cargo cadastrado.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  <h2 class="mt-5">Atribuições de Cargos</h2>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Aluno</th>
+        <th>Cargo</th>
+        <th>Data de Início</th>
+        <th>Data de Término</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for atribuicao in atribuicoes %}
+      <tr>
+        <td>{{ atribuicao.aluno.nome }}</td>
+        <td>{{ atribuicao.cargo.nome }}</td>
+        <td>{{ atribuicao.data_inicio|date:"d/m/Y" }}</td>
+        <td>{{ atribuicao.data_fim|date:"d/m/Y"|default:"Atual" }}</td>
+        <td>
+          <a href="{% url 'cargos:remover_atribuicao_cargo' atribuicao.id %}" class="btn btn-sm btn-danger">Remover</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5">Nenhuma atribuição de cargo cadastrada.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+
+
+
+## cargos\templates\cargos\remover_atribuicao.html
+
+html
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Cargos Administrativos</h1>
+  <h1>Remover Atribuição de Cargo</h1>
   
-    <a href="{% url 'cargos:criar_cargo' %}" class="btn btn-primary mb-3">Novo Cargo</a>
+  <div class="alert alert-danger">
+    <p>Tem certeza que deseja remover a atribuição do cargo "{{ atribuicao.cargo.nome }}" para o aluno "{{ atribuicao.aluno.nome }}"?</p>
+  </div>
   
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Código</th>
-          <th>Nome</th>
-          <th>Descrição</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for cargo in cargos %}
-        <tr>
-          <td>{{ cargo.codigo_cargo }}</td>
-          <td>{{ cargo.nome }}</td>
-          <td>{{ cargo.descricao|truncatechars:50|default:"-" }}</td>
-          <td>
-            <a href="{% url 'cargos:detalhes_cargo' cargo.id %}" class="btn btn-sm btn-info">Detalhes</a>
-            <a href="{% url 'cargos:editar_cargo' cargo.id %}" class="btn btn-sm btn-warning">Editar</a>
-            <a href="{% url 'cargos:excluir_cargo' cargo.id %}" class="btn btn-sm btn-danger">Excluir</a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="4" class="text-center">Nenhum cargo administrativo cadastrado.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sim, remover</button>
+    <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
 </div>
 {% endblock %}
+
 
 
 

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Detalhes do Cargo</h1>
+  
+  <div class="card">
+    <div class="card-header">
+      <h2>{{ cargo.nome }}</h2>
+    </div>
+    <div class="card-body">
+      <p><strong>Descrição:</strong> {{ cargo.descricao }}</p>
+      <p><strong>Nível:</strong> {{ cargo.get_nivel_display }}</p>
+      
+      <h3 class="mt-4">Alunos com este Cargo</h3>
+      <ul class="list-group">
+        {% for atribuicao in atribuicoes %}
+          <li class="list-group-item">
+            {{ atribuicao.aluno.nome }} 
+            ({{ atribuicao.data_inicio|date:"d/m/Y" }} - {{ atribuicao.data_fim|date:"d/m/Y"|default:"Atual" }})
+          </li>
+        {% empty %}
+          <li class="list-group-item">Nenhum aluno atribuído a este cargo.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'cargos:editar_cargo' cargo.id %}" class="btn btn-warning">Editar</a>
+      <a href="{% url 'cargos:excluir_cargo' cargo.id %}" class="btn btn-danger">Excluir</a>
+      <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

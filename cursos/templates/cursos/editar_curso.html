@@ -10,7 +10,7 @@
             {% include 'includes/form_field.html' %}
         {% endfor %}
         <button type="submit" class="btn btn-primary">Atualizar Curso</button>
-        <a href="{% url 'listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
+        <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}

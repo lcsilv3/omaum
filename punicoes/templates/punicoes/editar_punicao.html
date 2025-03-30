@@ -1,35 +1,19 @@
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
     <h1>Editar Punição</h1>
+    
     <form method="post">
         {% csrf_token %}
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                {% for error in form.non_field_errors %}
-                    {{ error }}
-                {% endfor %}
-            </div>
-        {% endif %}
+        {% include 'includes/form_errors.html' %}
+        
         {% for field in form %}
-            <div class="form-group">
-                {{ field.label_tag }}
-                {{ field }}
-                {% if field.errors %}
-                    <div class="alert alert-danger">
-                        {% for error in field.errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-            </div>
+            {% include 'includes/form_field.html' %}
         {% endfor %}
+        
         <button type="submit" class="btn btn-primary">Atualizar Punição</button>
-        <a href="{% url 'listar_punicoes' %}" class="btn btn-secondary">Cancelar</a>
+        <a href="{% url 'punicoes:listar_punicoes' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}

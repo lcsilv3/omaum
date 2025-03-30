@@ -37,4 +37,4 @@ class LogAtividade(models.Model):
     class Meta:
         verbose_name = 'Log de Atividade'
         verbose_name_plural = 'Logs de Atividades'
-        ordering = ['-data']
+        ordering = ['-data']  # Garante que os logs mais recentes apareçam primeiro

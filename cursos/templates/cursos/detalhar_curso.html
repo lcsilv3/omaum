@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Detalhes do Curso</h1>
+  
+  <div class="card">
+    <div class="card-header">
+      <h2>{{ curso.nome }}</h2>
+    </div>
+    <div class="card-body">
+      <p><strong>Código:</strong> {{ curso.codigo_curso }}</p>
+      <p><strong>Descrição:</strong> {{ curso.descricao }}</p>
+      <p><strong>Duração:</strong> {{ curso.duracao }} meses</p>
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'cursos:editar_curso' curso.id %}" class="btn btn-warning">Editar</a>
+      <a href="{% url 'cursos:excluir_curso' curso.id %}" class="btn btn-danger">Excluir</a>
+      <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

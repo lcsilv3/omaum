@@ -30,7 +30,6 @@ application = get_asgi_application()
 ## omaum\settings.py
 
 python
-
 """
 Django settings for omaum project.
 
@@ -88,9 +87,9 @@ INSTALLED_APPS = [
     # Other apps as needed
 ]
 
-
 MIDDLEWARE = [
-    'core.middleware.ManutencaoMiddleware',
+    'core.middleware.manutencao_middleware',
+    'core.middleware.renovacao_sessao_middleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -179,17 +178,23 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
-LOGIN_URL = 'login'  # Adjust this if your login URL name is different
+LOGIN_URL = 'core:entrar'  # Alterado para usar a view de login do core
 
 # Specifies the directory paths for localization (translation) files in the Django project
 LOCALE_PATHS = (
     BASE_DIR / 'locale',
 )
 
-# Adicione ou verifique estas configurações
-CSRF_COOKIE_AGE = 86400  # Duração do cookie CSRF em segundos (24 horas)
-CSRF_USE_SESSIONS = False  # Se True, armazena o token na sessão em vez de cookies
-SESSION_COOKIE_AGE = 86400  # Duração da sessão em segundos (24 horas)
+# Configurações de sessão e CSRF atualizadas
+SESSION_COOKIE_AGE = 86400 * 7  # Aumentar para 7 dias (em segundos)
+SESSION_SAVE_EVERY_REQUEST = True  # Salvar a sessão a cada requisição
+CSRF_COOKIE_AGE = 86400 * 7  # Aumentar para 7 dias
+CSRF_USE_SESSIONS = True  # Armazenar o token CSRF na sessão para maior segurança
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Não expirar a sessão ao fechar o navegador
+
+# Configurações para renovação de sessão
+SESSION_SECURITY_WARN_AFTER = 3000  # Avisar após 50 minutos de inatividade
+SESSION_SECURITY_EXPIRE_AFTER = 3600  # Expirar após 60 minutos de inatividade
 
 
 

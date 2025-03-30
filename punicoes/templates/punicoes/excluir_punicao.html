@@ -1,11 +1,17 @@
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
-<h1>Excluir Punição</h1>
-<p>Tem certeza que deseja excluir a punição de {{ punicao.aluno.nome }} do tipo {{ punicao.tipo_punicao }}?</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
-    <a href="{% url 'listar_punicoes' %}" class="btn btn-secondary">Cancelar</a>
-</form>
+<div class="container mt-4">
+    <h1>Excluir Punição</h1>
+  
+    <div class="alert alert-danger">
+      <p>Tem certeza que deseja excluir a punição de <strong>{{ punicao.aluno.nome }}</strong> do tipo <strong>{{ punicao.tipo_punicao.nome }}</strong> aplicada em <strong>{{ punicao.data_aplicacao|date:"d/m/Y" }}</strong>?</p>
+    </div>
+  
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Sim, excluir</button>
+      <a href="{% url 'punicoes:listar_punicoes' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
 {% endblock %}

@@ -153,7 +153,11 @@ urlpatterns = [
     path('nova/', views.criar_iniciacao, name='criar_iniciacao'),
     path('<int:id>/editar/', views.editar_iniciacao, name='editar_iniciacao'),
     path('<int:id>/excluir/', views.excluir_iniciacao, name='excluir_iniciacao'),
-    path('<int:id>/detalhes/', views.detalhe_iniciacao, name='detalhe_iniciacao'),
+    path('<int:id>/detalhes/', views.detalhar_iniciacao, name='detalhar_iniciacao'),
+    path('graus/', views.listar_graus, name='listar_graus'),
+    path('graus/novo/', views.criar_grau, name='criar_grau'),
+    path('graus/<int:id>/editar/', views.editar_grau, name='editar_grau'),
+    path('graus/<int:id>/excluir/', views.excluir_grau, name='excluir_grau'),
 ]
 
 
@@ -366,89 +370,102 @@ class Migration(migrations.Migration):
 
 
 
+## iniciacoes\templates\iniciacoes\criar_grau.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Novo Grau de Iniciação</h1>
+  
+  <form method="post">
+    {% csrf_token %}
+    {% include 'includes/form_errors.html' %}
+    
+    {% for field in form %}
+      {% include 'includes/form_field.html' %}
+    {% endfor %}
+    
+    <button type="submit" class="btn btn-primary">Criar Grau</button>
+    <a href="{% url 'iniciacoes:listar_graus' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
+
+
+
+
+
 ## iniciacoes\templates\iniciacoes\criar_iniciacao.html
 
 html
 {% extends 'base.html' %}
 
-{% block title %}Nova Iniciação{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Nova Iniciação</h1>
+  
+    <form method="post">
+      {% csrf_token %}
+      {% include 'includes/form_errors.html' %}
+    
+      {% for field in form %}
+        {% include 'includes/form_field.html' %}
+      {% endfor %}
+    
+      <button type="submit" class="btn btn-primary">Registrar Iniciação</button>
+      <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
+
+
+
+
+
+## iniciacoes\templates\iniciacoes\detalhar_iniciacao.html
+
+html
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h1 class="h3 mb-0">Nova Iniciação</h1>
-        </div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                
-                {% if form.errors %}
-                <div class="alert alert-danger">
-                    <strong>Erro ao salvar o formulário:</strong>
-                    <ul>
-                        {% for field, errors in form.errors.items %}
-                            {% for error in errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.aluno.id_for_label }}">{{ form.aluno.label }}</label>
-                            {{ form.aluno }}
-                            {% if form.aluno.help_text %}
-                            <small class="form-text text-muted">{{ form.aluno.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.nome_curso.id_for_label }}">{{ form.nome_curso.label }}</label>
-                            {{ form.nome_curso }}
-                            {% if form.nome_curso.help_text %}
-                            <small class="form-text text-muted">{{ form.nome_curso.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.data_iniciacao.id_for_label }}">{{ form.data_iniciacao.label }}</label>
-                            {{ form.data_iniciacao }}
-                            {% if form.data_iniciacao.help_text %}
-                            <small class="form-text text-muted">{{ form.data_iniciacao.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label for="{{ form.observacoes.id_for_label }}">{{ form.observacoes.label }}</label>
-                            {{ form.observacoes }}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Salvar
-                    </button>
-                    <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Cancelar
-                    </a>
-                </div>
-            </form>
-        </div>
+  <h1>Detalhes da Iniciação</h1>
+  
+  <div class="card">
+    <div class="card-header">
+      <h2>Iniciação de {{ iniciacao.aluno.nome }}</h2>
     </div>
+    <div class="card-body">
+      <p><strong>Aluno:</strong> {{ iniciacao.aluno.nome }}</p>
+      <p><strong>Grau:</strong> {{ iniciacao.grau.nome }}</p>
+      <p><strong>Data:</strong> {{ iniciacao.data|date:"d/m/Y" }}</p>
+      <p><strong>Local:</strong> {{ iniciacao.local }}</p>
+      <p>
+        <strong>Status:</strong> 
+        {% if iniciacao.concluida %}
+          <span class="badge bg-success">Concluída</span>
+        {% else %}
+          <span class="badge bg-warning">Pendente</span>
+        {% endif %}
+      </p>
+      {% if iniciacao.observacoes %}
+        <p><strong>Observações:</strong> {{ iniciacao.observacoes }}</p>
+      {% endif %}
+      <p><strong>Registrado por:</strong> {{ iniciacao.registrado_por.username }}</p>
+      <p><strong>Data de registro:</strong> {{ iniciacao.data_registro|date:"d/m/Y H:i" }}</p>
+      {% if iniciacao.atualizado_por %}
+        <p><strong>Atualizado por:</strong> {{ iniciacao.atualizado_por.username }}</p>
+        <p><strong>Data de atualização:</strong> {{ iniciacao.data_atualizacao|date:"d/m/Y H:i" }}</p>
+      {% endif %}
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'iniciacoes:editar_iniciacao' iniciacao.id %}" class="btn btn-warning">Editar</a>
+      <a href="{% url 'iniciacoes:excluir_iniciacao' iniciacao.id %}" class="btn btn-danger">Excluir</a>
+      <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -509,91 +526,85 @@ html
 
 
 
+## iniciacoes\templates\iniciacoes\editar_grau.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Editar Grau de Iniciação</h1>
+  
+  <form method="post">
+    {% csrf_token %}
+    {% include 'includes/form_errors.html' %}
+    
+    {% for field in form %}
+      {% include 'includes/form_field.html' %}
+    {% endfor %}
+    
+    <button type="submit" class="btn btn-primary">Atualizar Grau</button>
+    <a href="{% url 'iniciacoes:listar_graus' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
+
+
+
+
+
 ## iniciacoes\templates\iniciacoes\editar_iniciacao.html
 
 html
 {% extends 'base.html' %}
 
-{% block title %}Editar Iniciação{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Editar Iniciação</h1>
+  
+    <form method="post">
+      {% csrf_token %}
+      {% include 'includes/form_errors.html' %}
+    
+      {% for field in form %}
+        {% include 'includes/form_field.html' %}
+      {% endfor %}
+    
+      <button type="submit" class="btn btn-primary">Atualizar Iniciação</button>
+      <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
+
+
+
+
+## iniciacoes\templates\iniciacoes\excluir_grau.html
+
+html
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-warning">
-            <h1 class="h3 mb-0">Editar Iniciação</h1>
-        </div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-               
-                {% if form.errors %}
-                <div class="alert alert-danger">
-                    <strong>Erro ao salvar o formulário:</strong>
-                    <ul>
-                        {% for field, errors in form.errors.items %}
-                            {% for error in errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-               
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.aluno.id_for_label }}">{{ form.aluno.label }}</label>
-                            {{ form.aluno }}
-                            {% if form.aluno.help_text %}
-                            <small class="form-text text-muted">{{ form.aluno.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.nome_curso.id_for_label }}">{{ form.nome_curso.label }}</label>
-                            {{ form.nome_curso }}
-                            {% if form.nome_curso.help_text %}
-                            <small class="form-text text-muted">{{ form.nome_curso.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-               
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.data_iniciacao.id_for_label }}">{{ form.data_iniciacao.label }}</label>
-                            {{ form.data_iniciacao }}
-                            {% if form.data_iniciacao.help_text %}
-                            <small class="form-text text-muted">{{ form.data_iniciacao.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-               
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label for="{{ form.observacoes.id_for_label }}">{{ form.observacoes.label }}</label>
-                            {{ form.observacoes }}
-                        </div>
-                    </div>
-                </div>
-               
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-save"></i> Salvar Alterações
-                    </button>
-                    <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Cancelar
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
+  <h1>Excluir Grau de Iniciação</h1>
+  
+  <div class="alert alert-danger">
+    <p>Tem certeza que deseja excluir o grau <strong>{{ grau.nome }}</strong>?</p>
+    {% if iniciacoes_associadas %}
+      <div class="mt-3">
+        <p><strong>Atenção:</strong> Existem {{ iniciacoes_associadas }} iniciações associadas a este grau. A exclusão deste grau pode afetar esses registros.</p>
+      </div>
+    {% endif %}
+  </div>
+  
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sim, excluir</button>
+    <a href="{% url 'iniciacoes:listar_graus' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
 </div>
 {% endblock %}
+
 
 
 
@@ -603,45 +614,71 @@ html
 html
 {% extends 'base.html' %}
 
-{% block title %}Excluir Iniciação{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Iniciação</h1>
+  
+    <div class="alert alert-danger">
+      <p>Tem certeza que deseja excluir a iniciação de <strong>{{ iniciacao.aluno.nome }}</strong> no grau <strong>{{ iniciacao.grau.nome }}</strong> realizada em <strong>{{ iniciacao.data|date:"d/m/Y" }}</strong>?</p>
+    </div>
+  
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Sim, excluir</button>
+      <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
+
+
+
+
+## iniciacoes\templates\iniciacoes\listar_graus.html
+
+html
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card shadow-sm border-danger">
-        <div class="card-header bg-danger text-white">
-            <h1 class="h3 mb-0">Excluir Iniciação</h1>
-        </div>
-        <div class="card-body">
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i> Atenção: Esta ação não pode ser desfeita!
-            </div>
-            
-            <p class="lead">Tem certeza que deseja excluir a iniciação abaixo?</p>
-            
-            <dl class="row">
-                <dt class="col-sm-3">Aluno:</dt>
-                <dd class="col-sm-9">{{ iniciacao.aluno.nome }}</dd>
-                
-                <dt class="col-sm-3">Curso:</dt>
-                <dd class="col-sm-9">{{ iniciacao.nome_curso }}</dd>
-                
-                <dt class="col-sm-3">Data:</dt>
-                <dd class="col-sm-9">{{ iniciacao.data_iniciacao|date:"d/m/Y" }}</dd>
-            </dl>
-            
-            <form method="post" class="mt-4">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Confirmar Exclusão
-                </button>
-                <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
-            </form>
-        </div>
-    </div>
+  <h1>Graus de Iniciação</h1>
+  
+  <div class="d-flex justify-content-between mb-3">
+    <a href="{% url 'iniciacoes:criar_grau' %}" class="btn btn-primary">Novo Grau</a>
+    <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">Voltar para Iniciações</a>
+  </div>
+  
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Número</th>
+        <th>Descrição</th>
+        <th>Requisitos</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for grau in graus %}
+      <tr>
+        <td>{{ grau.nome }}</td>
+        <td>{{ grau.numero }}</td>
+        <td>{{ grau.descricao|truncatechars:50 }}</td>
+        <td>{{ grau.requisitos|truncatechars:50 }}</td>
+        <td>
+          <a href="{% url 'iniciacoes:editar_grau' grau.id %}" class="btn btn-sm btn-warning">Editar</a>
+          <a href="{% url 'iniciacoes:excluir_grau' grau.id %}" class="btn btn-sm btn-danger">Excluir</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5">Nenhum grau cadastrado.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}
+
 
 
 
@@ -651,173 +688,157 @@ html
 html
 {% extends 'base.html' %}
 
-{% block title %}Lista de Iniciações{% endblock %}
-
 {% block content %}
 <div class="container mt-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h1 class="h3 mb-0">Lista de Iniciações</h1>
-        </div>
-        <div class="card-body">
-            <!-- Botão de Nova Iniciação -->
-            <div class="mb-3">
-                <a href="{% url 'iniciacoes:criar_iniciacao' %}" class="btn btn-success">
-                    <i class="fas fa-plus-circle"></i> Nova Iniciação
-                </a>
-            </div>
-            
-            <!-- Filtros Avançados -->
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Filtros</h5>
-                </div>
-                <div class="card-body">
-                    <form method="get" class="row g-3">
-                        <!-- Busca geral -->
-                        <div class="col-md-12 mb-2">
-                            <div class="input-group">
-                                <input type="text" name="search" class="form-control" placeholder="Buscar por aluno ou curso" value="{{ filtros.search }}">
-                                <button class="btn btn-outline-primary" type="submit">Buscar</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Filtros específicos -->
-                        <div class="col-md-3">
-                            <label for="aluno" class="form-label">Aluno</label>
-                            <select name="aluno" id="aluno" class="form-select">
-                                <option value="">Todos os alunos</option>
-                                {% for aluno in alunos %}
-                                <option value="{{ aluno.id }}" {% if filtros.aluno_id == aluno.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ aluno.nome }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-3">
-                            <label for="curso" class="form-label">Curso</label>
-                            <input type="text" name="curso" id="curso" class="form-control" value="{{ filtros.nome_curso }}">
-                        </div>
-                        
-                        <div class="col-md-3">
-                            <label for="data_inicio" class="form-label">Data Inicial</label>
-                            <input type="date" name="data_inicio" id="data_inicio" class="form-control" value="{{ filtros.data_inicio }}">
-                        </div>
-                        
-                        <div class="col-md-3">
-                            <label for="data_fim" class="form-label">Data Final</label>
-                            <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ filtros.data_fim }}">
-                        </div>
-                        
-                        <div class="col-12 mt-3">
-                            <button type="submit" class="btn btn-primary">Filtrar</button>
-                            <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">Limpar Filtros</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            
-            <!-- Tabela de Iniciações -->
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Aluno</th>
-                            <th>Curso</th>
-                            <th>Data</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for iniciacao in page_obj %}
-                        <tr>
-                            <td>{{ iniciacao.aluno.nome }}</td>
-                            <td>{{ iniciacao.nome_curso }}</td>
-                            <td>{{ iniciacao.data_iniciacao|date:"d/m/Y" }}</td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'iniciacoes:detalhe_iniciacao' iniciacao.id %}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-eye"></i> Detalhes
-                                    </a>
-                                    <a href="{% url 'iniciacoes:editar_iniciacao' iniciacao.id %}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i> Editar
-                                    </a>
-                                    <a href="{% url 'iniciacoes:excluir_iniciacao' iniciacao.id %}" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i> Excluir
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center">Nenhuma iniciação encontrada.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Paginação -->
-            {% if page_obj.has_other_pages %}
-            <nav aria-label="Paginação">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Primeira">
-                            <span aria-hidden="true">««</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Anterior">
-                            <span aria-hidden="true">«</span>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">««</a>
-                    </li>
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">«</a>
-                    </li>
-                    {% endif %}
-                    
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                        <li class="page-item active" aria-current="page">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
-                        </li>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Próxima">
-                            <span aria-hidden="true">»</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Última">
-                            <span aria-hidden="true">»»</span>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">»</a>
-                    </li>
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">»»</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-        </div>
+    <h1>Iniciações</h1>
+  
+    <div class="d-flex justify-content-between mb-3">
+      <a href="{% url 'iniciacoes:criar_iniciacao' %}" class="btn btn-primary">Nova Iniciação</a>
+      <a href="{% url 'iniciacoes:listar_graus' %}" class="btn btn-info">Gerenciar Graus</a>
     </div>
+  
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5>Filtros</h5>
+      </div>
+      <div class="card-body">
+        <form method="get" class="row g-3">
+          <div class="col-md-4">
+            <label for="aluno" class="form-label">Aluno</label>
+            <select name="aluno" id="aluno" class="form-select">
+              <option value="">Todos</option>
+              {% for aluno in alunos %}
+                <option value="{{ aluno.id }}" {% if request.GET.aluno == aluno.id|stringformat:"i" %}selected{% endif %}>
+                  {{ aluno.nome }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="grau" class="form-label">Grau</label>
+            <select name="grau" id="grau" class="form-select">
+              <option value="">Todos</option>
+              {% for grau in graus %}
+                <option value="{{ grau.id }}" {% if request.GET.grau == grau.id|stringformat:"i" %}selected{% endif %}>
+                  {{ grau.nome }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="data" class="form-label">Data</label>
+            <input type="date" name="data" id="data" class="form-control" value="{{ request.GET.data }}">
+          </div>
+          <div class="col-12 mt-3">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">Limpar Filtros</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Aluno</th>
+          <th>Grau</th>
+          <th>Data</th>
+          <th>Local</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for iniciacao in iniciacoes %}
+        <tr>
+          <td>{{ iniciacao.aluno.nome }}</td>
+          <td>{{ iniciacao.grau.nome }}</td>
+          <td>{{ iniciacao.data|date:"d/m/Y" }}</td>
+          <td>{{ iniciacao.local }}</td>
+          <td>
+            {% if iniciacao.concluida %}
+              <span class="badge bg-success">Concluída</span>
+            {% else %}
+              <span class="badge bg-warning">Pendente</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'iniciacoes:detalhar_iniciacao' iniciacao.id %}" class="btn btn-sm btn-info">Detalhes</a>
+            <a href="{% url 'iniciacoes:editar_iniciacao' iniciacao.id %}" class="btn btn-sm btn-warning">Editar</a>
+            <a href="{% url 'iniciacoes:excluir_iniciacao' iniciacao.id %}" class="btn btn-sm btn-danger">Excluir</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">Nenhuma iniciação encontrada.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  
+    {% if iniciacoes.has_other_pages %}
+    <nav aria-label="Paginação">
+      <ul class="pagination justify-content-center">
+        {% if iniciacoes.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.grau %}&grau={{ request.GET.grau }}{% endif %}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}" aria-label="Primeira">
+              <span aria-hidden="true">««</span>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ iniciacoes.previous_page_number }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.grau %}&grau={{ request.GET.grau }}{% endif %}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}" aria-label="Anterior">
+              <span aria-hidden="true">«</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Primeira">
+              <span aria-hidden="true">««</span>
+            </a>
+          </li>
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Anterior">
+              <span aria-hidden="true">«</span>
+            </a>
+          </li>
+        {% endif %}
+      
+        {% for i in iniciacoes.paginator.page_range %}
+          {% if iniciacoes.number == i %}
+            <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+          {% elif i > iniciacoes.number|add:'-3' and i < iniciacoes.number|add:'3' %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ i }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.grau %}&grau={{ request.GET.grau }}{% endif %}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}">{{ i }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+      
+        {% if iniciacoes.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ iniciacoes.next_page_number }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.grau %}&grau={{ request.GET.grau }}{% endif %}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}" aria-label="Próxima">
+              <span aria-hidden="true">»</span>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ iniciacoes.paginator.num_pages }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.grau %}&grau={{ request.GET.grau }}{% endif %}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}" aria-label="Última">
+              <span aria-hidden="true">»»</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Próxima">
+              <span aria-hidden="true">»</span>
+            </a>
+          </li>
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Última">
+              <span aria-hidden="true">»»</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
 </div>
 {% endblock %}
 

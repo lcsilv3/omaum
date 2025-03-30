@@ -1,82 +1,19 @@
 {% extends 'base.html' %}
 
-{% block title %}Editar Iniciação{% endblock %}
-
 {% block content %}
 <div class="container mt-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-warning">
-            <h1 class="h3 mb-0">Editar Iniciação</h1>
-        </div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-               
-                {% if form.errors %}
-                <div class="alert alert-danger">
-                    <strong>Erro ao salvar o formulário:</strong>
-                    <ul>
-                        {% for field, errors in form.errors.items %}
-                            {% for error in errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-               
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.aluno.id_for_label }}">{{ form.aluno.label }}</label>
-                            {{ form.aluno }}
-                            {% if form.aluno.help_text %}
-                            <small class="form-text text-muted">{{ form.aluno.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.nome_curso.id_for_label }}">{{ form.nome_curso.label }}</label>
-                            {{ form.nome_curso }}
-                            {% if form.nome_curso.help_text %}
-                            <small class="form-text text-muted">{{ form.nome_curso.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-               
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.data_iniciacao.id_for_label }}">{{ form.data_iniciacao.label }}</label>
-                            {{ form.data_iniciacao }}
-                            {% if form.data_iniciacao.help_text %}
-                            <small class="form-text text-muted">{{ form.data_iniciacao.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-               
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label for="{{ form.observacoes.id_for_label }}">{{ form.observacoes.label }}</label>
-                            {{ form.observacoes }}
-                        </div>
-                    </div>
-                </div>
-               
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-save"></i> Salvar Alterações
-                    </button>
-                    <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Cancelar
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
+    <h1>Editar Iniciação</h1>
+  
+    <form method="post">
+      {% csrf_token %}
+      {% include 'includes/form_errors.html' %}
+    
+      {% for field in form %}
+        {% include 'includes/form_field.html' %}
+      {% endfor %}
+    
+      <button type="submit" class="btn btn-primary">Atualizar Iniciação</button>
+      <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
 </div>
 {% endblock %}

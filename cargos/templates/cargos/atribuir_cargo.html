@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Atribuir Cargo</h1>
+  
+  <form method="post">
+    {% csrf_token %}
+    {% include 'includes/form_errors.html' %}
+    
+    {% for field in form %}
+      {% include 'includes/form_field.html' %}
+    {% endfor %}
+    
+    <button type="submit" class="btn btn-primary">Atribuir</button>
+    <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

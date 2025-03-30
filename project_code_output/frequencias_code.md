@@ -168,10 +168,12 @@ app_name = 'frequencias'
 
 urlpatterns = [
     path('', views.listar_frequencias, name='listar_frequencias'),
-    path('nova/', views.criar_frequencia, name='criar_frequencia'),
+    path('registrar/', views.registrar_frequencia, name='registrar_frequencia'),
     path('<int:id>/editar/', views.editar_frequencia, name='editar_frequencia'),
     path('<int:id>/excluir/', views.excluir_frequencia, name='excluir_frequencia'),
-    path('<int:id>/detalhes/', views.detalhe_frequencia, name='detalhe_frequencia'),
+    path('<int:id>/detalhes/', views.detalhar_frequencia, name='detalhar_frequencia'),
+    path('relatorio/', views.relatorio_frequencias, name='relatorio_frequencias'),
+    path('exportar/', views.exportar_frequencias, name='exportar_frequencias'),
 ]
 
 
@@ -493,6 +495,57 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
+## frequencias\templates\frequencias\detalhar_frequencia.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Detalhes do Registro de Frequência</h1>
+  
+  <div class="card">
+    <div class="card-header">
+      <h2>Frequência de {{ frequencia.aluno.nome }}</h2>
+    </div>
+    <div class="card-body">
+      <p><strong>Aluno:</strong> {{ frequencia.aluno.nome }}</p>
+      <p><strong>Atividade:</strong> {{ frequencia.atividade.nome }}</p>
+      <p><strong>Data:</strong> {{ frequencia.data|date:"d/m/Y" }}</p>
+      <p>
+        <strong>Presente:</strong> 
+        {% if frequencia.presente %}
+          <span class="badge bg-success">Sim</span>
+        {% else %}
+          <span class="badge bg-danger">Não</span>
+        {% endif %}
+      </p>
+      {% if frequencia.justificativa %}
+        <p><strong>Justificativa:</strong> {{ frequencia.justificativa }}</p>
+      {% endif %}
+      {% if frequencia.observacoes %}
+        <p><strong>Observações:</strong> {{ frequencia.observacoes }}</p>
+      {% endif %}
+      <p><strong>Registrado por:</strong> {{ frequencia.registrado_por.username }}</p>
+      <p><strong>Data de registro:</strong> {{ frequencia.data_registro|date:"d/m/Y H:i" }}</p>
+      {% if frequencia.atualizado_por %}
+        <p><strong>Atualizado por:</strong> {{ frequencia.atualizado_por.username }}</p>
+        <p><strong>Data de atualização:</strong> {{ frequencia.data_atualizacao|date:"d/m/Y H:i" }}</p>
+      {% endif %}
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'frequencias:editar_frequencia' frequencia.id %}" class="btn btn-warning">Editar</a>
+      <a href="{% url 'frequencias:excluir_frequencia' frequencia.id %}" class="btn btn-danger">Excluir</a>
+      <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+
+
+
 ## frequencias\templates\frequencias\detalhe_frequencia.html
 
 html
@@ -565,101 +618,23 @@ html
 ## frequencias\templates\frequencias\editar_frequencia.html
 
 html
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Editar Frequência</h1>
+    <h1>Editar Registro de Frequência</h1>
+  
+    <form method="post">
+      {% csrf_token %}
+      {% include 'includes/form_errors.html' %}
     
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
+      {% for field in form %}
+        {% include 'includes/form_field.html' %}
+      {% endfor %}
     
-    <div class="card">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                
-                <div class="mb-3">
-                    <label for="{{ form.aluno.id_for_label }}" class="form-label">{{ form.aluno.label }}</label>
-                    {{ form.aluno }}
-                    {% if form.aluno.errors %}
-                        <div class="text-danger">
-                            {% for error in form.aluno.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.turma.id_for_label }}" class="form-label">{{ form.turma.label }}</label>
-                    {{ form.turma }}
-                    {% if form.turma.errors %}
-                        <div class="text-danger">
-                            {% for error in form.turma.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.data.id_for_label }}" class="form-label">{{ form.data.label }}</label>
-                    {{ form.data }}
-                    {% if form.data.errors %}
-                        <div class="text-danger">
-                            {% for error in form.data.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3 form-check">
-                    {{ form.presente }}
-                    <label for="{{ form.presente.id_for_label }}" class="form-check-label">{{ form.presente.label }}</label>
-                    {% if form.presente.errors %}
-                        <div class="text-danger">
-                            {% for error in form.presente.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.justificativa.id_for_label }}" class="form-label">{{ form.justificativa.label }}</label>
-                    {{ form.justificativa }}
-                    {% if form.justificativa.errors %}
-                        <div class="text-danger">
-                            {% for error in form.justificativa.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    <small class="form-text text-muted">Preencha apenas se o aluno estiver ausente e tiver justificativa.</small>
-                </div>
-                
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-primary">Atualizar Frequência</button>
-                    <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
-                </div>
-            </form>
-        </div>
-    </div>
+      <button type="submit" class="btn btn-primary">Atualizar</button>
+      <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
 </div>
 {% endblock %}
 
@@ -819,50 +794,21 @@ html
 ## frequencias\templates\frequencias\excluir_frequencia.html
 
 html
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Excluir Frequência</h1>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title text-danger">Confirmação de Exclusão</h5>
-            <p class="card-text">Você tem certeza que deseja excluir este registro de frequência?</p>
-            
-            <div class="alert alert-warning">
-                <p><strong>Aluno:</strong> {{ frequencia.aluno.nome }}</p>
-                <p><strong>Turma:</strong> {{ frequencia.turma.codigo_turma }}</p>
-                <p><strong>Data:</strong> {{ frequencia.data }}</p>
-                <p>
-                    <strong>Status:</strong> 
-                    {% if frequencia.presente %}
-                        <span class="badge bg-success">Presente</span>
-                    {% else %}
-                        <span class="badge bg-danger">Ausente</span>
-                    {% endif %}
-                </p>
-            </div>
-            
-            <p class="text-danger"><strong>Atenção:</strong> Esta ação não pode ser desfeita!</p>
-            
-            <form method="post">
-                {% csrf_token %}
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
-                    <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
-                </div>
-            </form>
-        </div>
+    <h1>Excluir Registro de Frequência</h1>
+  
+    <div class="alert alert-danger">
+      <p>Tem certeza que deseja excluir o registro de frequência de <strong>{{ frequencia.aluno.nome }}</strong> na atividade <strong>{{ frequencia.atividade.nome }}</strong> do dia <strong>{{ frequencia.data|date:"d/m/Y" }}</strong>?</p>
     </div>
+  
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Sim, excluir</button>
+      <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
 </div>
 {% endblock %}
 
@@ -873,179 +819,163 @@ html
 ## frequencias\templates\frequencias\listar_frequencias.html
 
 html
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Adicionar após o título da página -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Lista de Frequências</h1>
-        <div>
-            <a href="{% url 'registrar_frequencia' %}" class="btn btn-primary">Registrar Frequência Individual</a>
-            {% if turma_id %}
-            <a href="{% url 'registrar_frequencia_turma' turma_id %}" class="btn btn-success">Registrar Frequência da Turma</a>
-            {% endif %}
-        </div>
+    <h1>Frequências</h1>
+  
+    <div class="d-flex justify-content-between mb-3">
+      <a href="{% url 'frequencias:registrar_frequencia' %}" class="btn btn-primary">Registrar Frequência</a>
+      <a href="{% url 'frequencias:relatorio_frequencias' %}" class="btn btn-info">Gerar Relatório</a>
     </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <!-- Filtros -->
+  
     <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Filtros</h5>
-        </div>
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="aluno" class="form-label">Aluno</label>
-                    <select name="aluno" id="aluno" class="form-select">
-                        <option value="">Todos</option>
-                        {% for aluno in alunos %}
-                            <option value="{{ aluno.id }}" {% if aluno_id == aluno.id|stringformat:"s" %}selected{% endif %}>{{ aluno.nome }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="turma" class="form-label">Turma</label>
-                    <select name="turma" id="turma" class="form-select">
-                        <option value="">Todas</option>
-                        {% for turma in turmas %}
-                            <option value="{{ turma.id }}" {% if turma_id == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.codigo_turma }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label for="data_inicio" class="form-label">Data Início</label>
-                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
-                </div>
-                <div class="col-md-2">
-                    <label for="data_fim" class="form-label">Data Fim</label>
-                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
-                </div>
-                <div class="col-md-2">
-                    <label for="status" class="form-label">Status</label>
-                    <select name="status" id="status" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="presente" {% if status == 'presente' %}selected{% endif %}>Presente</option>
-                        <option value="ausente" {% if status == 'ausente' %}selected{% endif %}>Ausente</option>
-                    </select>
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">Filtrar</button>
-                    <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Limpar Filtros</a>
-                </div>
-            </form>
-        </div>
+      <div class="card-header">
+        <h5>Filtros</h5>
+      </div>
+      <div class="card-body">
+        <form method="get" class="row g-3">
+          <div class="col-md-4">
+            <label for="aluno" class="form-label">Aluno</label>
+            <select name="aluno" id="aluno" class="form-select">
+              <option value="">Todos</option>
+              {% for aluno in alunos %}
+                <option value="{{ aluno.id }}" {% if request.GET.aluno == aluno.id|stringformat:"i" %}selected{% endif %}>
+                  {{ aluno.nome }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="atividade" class="form-label">Atividade</label>
+            <select name="atividade" id="atividade" class="form-select">
+              <option value="">Todas</option>
+              {% for atividade in atividades %}
+                <option value="{{ atividade.id }}" {% if request.GET.atividade == atividade.id|stringformat:"i" %}selected{% endif %}>
+                  {{ atividade.nome }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="data" class="form-label">Data</label>
+            <input type="date" name="data" id="data" class="form-control" value="{{ request.GET.data }}">
+          </div>
+          <div class="col-12 mt-3">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Limpar Filtros</a>
+          </div>
+        </form>
+      </div>
     </div>
-    
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Aluno</th>
-                <th>Turma</th>
-                <th>Data</th>
-                <th>Status</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for frequencia in frequencias %}
-            <tr>
-                <td>{{ frequencia.aluno }}</td>
-                <td>{{ frequencia.turma }}</td>
-                <td>{{ frequencia.data }}</td>
-                <td>
-                    {% if frequencia.presente %}
-                        <span class="badge bg-success">Presente</span>
-                    {% else %}
-                        <span class="badge bg-danger">Ausente</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{% url 'detalhe_frequencia' frequencia.id %}" class="btn btn-sm btn-info">Detalhes</a>
-                    <a href="{% url 'editar_frequencia' frequencia.id %}" class="btn btn-sm btn-warning">Editar</a>
-                    <a href="{% url 'excluir_frequencia' frequencia.id %}" class="btn btn-sm btn-danger">Excluir</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5">Nenhuma frequência registrada.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+  
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Aluno</th>
+          <th>Atividade</th>
+          <th>Data</th>
+          <th>Presente</th>
+          <th>Justificativa</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for frequencia in frequencias %}
+        <tr>
+          <td>{{ frequencia.aluno.nome }}</td>
+          <td>{{ frequencia.atividade.nome }}</td>
+          <td>{{ frequencia.data|date:"d/m/Y" }}</td>
+          <td>
+            {% if frequencia.presente %}
+              <span class="badge bg-success">Sim</span>
+            {% else %}
+              <span class="badge bg-danger">Não</span>
+            {% endif %}
+          </td>
+          <td>{{ frequencia.justificativa|truncatechars:30|default:"-" }}</td>
+          <td>
+            <a href="{% url 'frequencias:detalhar_frequencia' frequencia.id %}" class="btn btn-sm btn-info">Detalhes</a>
+            <a href="{% url 'frequencias:editar_frequencia' frequencia.id %}" class="btn btn-sm btn-warning">Editar</a>
+            <a href="{% url 'frequencias:excluir_frequencia' frequencia.id %}" class="btn btn-sm btn-danger">Excluir</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">Nenhum registro de frequência encontrado.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
-    
-    <!-- Paginação -->
-    {% if frequencias.paginator.num_pages > 1 %}
-    <nav aria-label="Navegação de página">
-        <ul class="pagination justify-content-center">
-            {% if frequencias.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status %}&status={{ status }}{% endif %}" aria-label="Primeira">
-                        <span aria-hidden="true">««</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ frequencias.previous_page_number }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status %}&status={{ status }}{% endif %}" aria-label="Anterior">
-                        <span aria-hidden="true">«</span>
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Primeira">
-                        <span aria-hidden="true">««</span>
-                    </a>
-                </li>
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Anterior">
-                        <span aria-hidden="true">«</span>
-                    </a>
-                </li>
-            {% endif %}
-           
-            {% for i in frequencias.paginator.page_range %}
-                {% if frequencias.number == i %}
-                    <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
-                {% elif i > frequencias.number|add:'-3' and i < frequencias.number|add:'3' %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ i }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status %}&status={{ status }}{% endif %}">{{ i }}</a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-           
-            {% if frequencias.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ frequencias.next_page_number }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status %}&status={{ status }}{% endif %}" aria-label="Próximo">
-                        <span aria-hidden="true">»</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ frequencias.paginator.num_pages }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status %}&status={{ status }}{% endif %}" aria-label="Última">
-                        <span aria-hidden="true">»»</span>
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Próximo">
-                        <span aria-hidden="true">»</span>
-                    </a>
-                </li>
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Última">
-                        <span aria-hidden="true">»»</span>
-                    </a>
-                </li>
-            {% endif %}
-        </ul>
+  
+    {% if frequencias.has_other_pages %}
+    <nav aria-label="Paginação">
+      <ul class="pagination justify-content-center">
+        {% if frequencias.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.atividade %}&atividade={{ request.GET.atividade }}{% endif %}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}" aria-label="Primeira">
+              <span aria-hidden="true">««</span>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ frequencias.previous_page_number }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.atividade %}&atividade={{ request.GET.atividade }}{% endif %}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}" aria-label="Anterior">
+              <span aria-hidden="true">«</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Primeira">
+              <span aria-hidden="true">««</span>
+            </a>
+          </li>
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Anterior">
+              <span aria-hidden="true">«</span>
+            </a>
+          </li>
+        {% endif %}
+      
+        {% for i in frequencias.paginator.page_range %}
+          {% if frequencias.number == i %}
+            <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+          {% elif i > frequencias.number|add:'-3' and i < frequencias.number|add:'3' %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ i }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.atividade %}&atividade={{ request.GET.atividade }}{% endif %}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}">{{ i }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+      
+        {% if frequencias.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ frequencias.next_page_number }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.atividade %}&atividade={{ request.GET.atividade }}{% endif %}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}" aria-label="Próxima">
+              <span aria-hidden="true">»</span>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ frequencias.paginator.num_pages }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.atividade %}&atividade={{ request.GET.atividade }}{% endif %}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}" aria-label="Última">
+              <span aria-hidden="true">»»</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Próxima">
+              <span aria-hidden="true">»</span>
+            </a>
+          </li>
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Última">
+              <span aria-hidden="true">»»</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
     </nav>
     {% endif %}
+  
+    <div class="mt-3">
+      <a href="{% url 'frequencias:exportar_frequencias' %}" class="btn btn-success">Exportar para Excel</a>
+    </div>
 </div>
 {% endblock %}
 
@@ -1056,7 +986,7 @@ html
 ## frequencias\templates\frequencias\registrar_frequencia.html
 
 html
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
@@ -1074,79 +1004,15 @@ html
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
+                {% include 'includes/form_errors.html' %}
                 
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                
-                <div class="mb-3">
-                    <label for="{{ form.aluno.id_for_label }}" class="form-label">{{ form.aluno.label }}</label>
-                    {{ form.aluno }}
-                    {% if form.aluno.errors %}
-                        <div class="text-danger">
-                            {% for error in form.aluno.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.turma.id_for_label }}" class="form-label">{{ form.turma.label }}</label>
-                    {{ form.turma }}
-                    {% if form.turma.errors %}
-                        <div class="text-danger">
-                            {% for error in form.turma.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.data.id_for_label }}" class="form-label">{{ form.data.label }}</label>
-                    {{ form.data }}
-                    {% if form.data.errors %}
-                        <div class="text-danger">
-                            {% for error in form.data.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3 form-check">
-                    {{ form.presente }}
-                    <label for="{{ form.presente.id_for_label }}" class="form-check-label">{{ form.presente.label }}</label>
-                    {% if form.presente.errors %}
-                        <div class="text-danger">
-                            {% for error in form.presente.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.justificativa.id_for_label }}" class="form-label">{{ form.justificativa.label }}</label>
-                    {{ form.justificativa }}
-                    {% if form.justificativa.errors %}
-                        <div class="text-danger">
-                            {% for error in form.justificativa.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    <small class="form-text text-muted">Preencha apenas se o aluno estiver ausente e tiver justificativa.</small>
-                </div>
+                {% for field in form %}
+                    {% include 'includes/form_field.html' %}
+                {% endfor %}
                 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                     <button type="submit" class="btn btn-primary">Registrar Frequência</button>
-                    <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
+                    <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
                 </div>
             </form>
         </div>
@@ -1224,6 +1090,172 @@ html
             </form>
         </div>
     </div>
+</div>
+{% endblock %}
+
+
+
+
+
+## frequencias\templates\frequencias\relatorio_frequencias.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Relatório de Frequências</h1>
+  
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5>Filtros do Relatório</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row g-3">
+        <div class="col-md-4">
+          <label for="aluno" class="form-label">Aluno</label>
+          <select name="aluno" id="aluno" class="form-select">
+            <option value="">Todos</option>
+            {% for aluno in alunos %}
+              <option value="{{ aluno.id }}" {% if request.GET.aluno == aluno.id|stringformat:"i" %}selected{% endif %}>
+                {{ aluno.nome }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="atividade" class="form-label">Atividade</label>
+          <select name="atividade" id="atividade" class="form-select">
+            <option value="">Todas</option>
+            {% for atividade in atividades %}
+              <option value="{{ atividade.id }}" {% if request.GET.atividade == atividade.id|stringformat:"i" %}selected{% endif %}>
+                {{ atividade.nome }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="turma" class="form-label">Turma</label>
+          <select name="turma" id="turma" class="form-select">
+            <option value="">Todas</option>
+            {% for turma in turmas %}
+              <option value="{{ turma.id }}" {% if request.GET.turma == turma.id|stringformat:"i" %}selected{% endif %}>
+                {{ turma.nome }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="data_inicio" class="form-label">Data Início</label>
+          <input type="date" name="data_inicio" id="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
+        </div>
+        <div class="col-md-4">
+          <label for="data_fim" class="form-label">Data Fim</label>
+          <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
+        </div>
+        <div class="col-md-4">
+          <label for="status" class="form-label">Status</label>
+          <select name="status" id="status" class="form-select">
+            <option value="">Todos</option>
+            <option value="presente" {% if request.GET.status == 'presente' %}selected{% endif %}>Presente</option>
+            <option value="ausente" {% if request.GET.status == 'ausente' %}selected{% endif %}>Ausente</option>
+          </select>
+        </div>
+        <div class="col-12 mt-3">
+          <button type="submit" class="btn btn-primary">Gerar Relatório</button>
+          <a href="{% url 'frequencias:relatorio_frequencias' %}" class="btn btn-secondary">Limpar Filtros</a>
+          {% if frequencias %}
+            <a href="{% url 'frequencias:exportar_frequencias' %}?{{ request.GET.urlencode }}" class="btn btn-success">Exportar para Excel</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  {% if frequencias %}
+    <div class="card">
+      <div class="card-header">
+        <h5>Resultados do Relatório</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Aluno</th>
+                <th>Atividade</th>
+                <th>Turma</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Justificativa</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for frequencia in frequencias %}
+              <tr>
+                <td>{{ frequencia.aluno.nome }}</td>
+                <td>{{ frequencia.atividade.nome }}</td>
+                <td>{{ frequencia.atividade.turma.nome }}</td>
+                <td>{{ frequencia.data|date:"d/m/Y" }}</td>
+                <td>
+                  {% if frequencia.presente %}
+                    <span class="badge bg-success">Presente</span>
+                  {% else %}
+                    <span class="badge bg-danger">Ausente</span>
+                  {% endif %}
+                </td>
+                <td>{{ frequencia.justificativa|default:"-" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="mt-4">
+          <h5>Resumo</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <h6 class="card-title">Total de Registros</h6>
+                  <p class="card-text display-6">{{ frequencias|length }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card bg-success text-white">
+                <div class="card-body">
+                  <h6 class="card-title">Presenças</h6>
+                  <p class="card-text display-6">{{ presencas }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card bg-danger text-white">
+                <div class="card-body">
+                  <h6 class="card-title">Ausências</h6>
+                  <p class="card-text display-6">{{ ausencias }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {% if taxa_presenca is not None %}
+          <div class="mt-3">
+            <h6>Taxa de Presença: {{ taxa_presenca }}%</h6>
+            <div class="progress">
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ taxa_presenca }}%" aria-valuenow="{{ taxa_presenca }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% elif request.GET %}
+    <div class="alert alert-info">
+      Nenhum registro de frequência encontrado com os filtros selecionados.
+    </div>
+  {% endif %}
 </div>
 {% endblock %}
 

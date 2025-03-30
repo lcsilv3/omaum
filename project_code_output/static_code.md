@@ -69,10 +69,14 @@ p, li {
 ## static\js\csrf_refresh.js
 
 javascript
+// Variáveis para controle de inatividade
+let inactivityTimer;
+const inactivityTimeout = 30 * 60 * 1000; // 30 minutos em milissegundos
+
 // Função para verificar o status da sessão e do token CSRF
 function checkSessionStatus() {
     // Fazer uma requisição AJAX para verificar o status da sessão
-    fetch('/csrf_check/', {
+    fetch('/core/csrf_check/', {  // Corrigir o caminho para incluir 'core/'
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
@@ -99,7 +103,7 @@ function showSessionExpiredAlert() {
         alertDiv.id = 'session-expired-alert';
         alertDiv.className = 'alert alert-warning alert-dismissible fade show session-alert';
         alertDiv.innerHTML = `
-            <strong>Atenção!</strong> Sua sessão pode ter expirado. 
+            <strong>Atenção!</strong> Sua sessão pode ter expirado devido à inatividade. 
             <button type="button" class="btn btn-sm btn-primary mx-2" onclick="refreshPage()">Recarregar Página</button>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
         `;
@@ -121,22 +125,47 @@ function refreshPage() {
     window.location.reload();
 }
 
-// Verificar a sessão a cada 5 minutos (300000 ms)
-// Você pode ajustar este valor conforme necessário
-const checkInterval = 300000;
-setInterval(checkSessionStatus, checkInterval);
+// Função para reiniciar o timer de inatividade
+function resetInactivityTimer() {
+    // Limpar o timer existente
+    clearTimeout(inactivityTimer);
+    
+    // Iniciar um novo timer
+    inactivityTimer = setTimeout(() => {
+        // Após 30 minutos de inatividade, verificar a sessão
+        checkSessionStatus();
+    }, inactivityTimeout);
+}
+
+// Lista de eventos que indicam atividade do usuário
+const userActivityEvents = [
+    'mousedown', 'mousemove', 'keypress', 
+    'scroll', 'touchstart', 'click', 'keydown'
+];
+
+// Inicializar o monitoramento de atividade do usuário
+function initInactivityMonitoring() {
+    // Adicionar listeners para todos os eventos de atividade
+    userActivityEvents.forEach(eventType => {
+        document.addEventListener(eventType, resetInactivityTimer, { passive: true });
+    });
+    
+    // Iniciar o timer pela primeira vez
+    resetInactivityTimer();
+}
 
 // Também verificar quando o usuário retorna à aba
 document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible') {
-        checkSessionStatus();
+        // Reiniciar o timer quando o usuário volta para a aba
+        resetInactivityTimer();
     }
 });
 
-// Verificar status inicial após carregamento da página
+// Inicializar o monitoramento de inatividade quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
-    // Esperar um pouco para garantir que a página esteja totalmente carregada
-    setTimeout(checkSessionStatus, 1000);
+    // Iniciar o monitoramento de inatividade
+    initInactivityMonitoring();
 });
 
 

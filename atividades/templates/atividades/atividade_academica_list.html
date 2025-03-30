@@ -1,0 +1,7 @@
+<!-- Botão para criar nova atividade -->
+<a href="{% url 'atividades:criar_atividade_academica' %}" class="btn btn-primary">Nova Atividade</a>
+
+<!-- Links nas ações da tabela -->
+<a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
+<a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning">Editar</a>
+<a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger">Excluir</a>

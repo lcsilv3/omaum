@@ -99,14 +99,14 @@ python
 from django.urls import path
 from . import views
 
-app_name = 'cursos'  # Adicione esta linha
+app_name = 'cursos'
 
 urlpatterns = [
     path('', views.listar_cursos, name='listar_cursos'),
     path('novo/', views.criar_curso, name='criar_curso'),
     path('<int:id>/editar/', views.editar_curso, name='editar_curso'),
     path('<int:id>/excluir/', views.excluir_curso, name='excluir_curso'),
-    path('<int:id>/detalhes/', views.detalhes_curso, name='detalhes_curso'),
+    path('<int:id>/detalhes/', views.detalhar_curso, name='detalhar_curso'),
 ]
 
 
@@ -217,10 +217,41 @@ html
             {% include 'includes/form_field.html' %}
         {% endfor %}
         <button type="submit" class="btn btn-primary">Criar Curso</button>
-        <a href="{% url 'listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
+        <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}
+
+
+
+
+## cursos\templates\cursos\detalhar_curso.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Detalhes do Curso</h1>
+  
+  <div class="card">
+    <div class="card-header">
+      <h2>{{ curso.nome }}</h2>
+    </div>
+    <div class="card-body">
+      <p><strong>Código:</strong> {{ curso.codigo_curso }}</p>
+      <p><strong>Descrição:</strong> {{ curso.descricao }}</p>
+      <p><strong>Duração:</strong> {{ curso.duracao }} meses</p>
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'cursos:editar_curso' curso.id %}" class="btn btn-warning">Editar</a>
+      <a href="{% url 'cursos:excluir_curso' curso.id %}" class="btn btn-danger">Excluir</a>
+      <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
 
 
 
@@ -271,7 +302,7 @@ html
             {% include 'includes/form_field.html' %}
         {% endfor %}
         <button type="submit" class="btn btn-primary">Atualizar Curso</button>
-        <a href="{% url 'listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
+        <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}
@@ -292,7 +323,7 @@ html
     <form method="post">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger">Sim, excluir</button>
-        <a href="{% url 'listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
+        <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}
@@ -310,7 +341,7 @@ html
 <div class="container mt-4">
   <h1>Cursos</h1>
   
-  <a href="{% url 'criar_curso' %}" class="btn btn-primary mb-3">Novo Curso</a>
+  <a href="{% url 'cursos:criar_curso' %}" class="btn btn-primary mb-3">Novo Curso</a>
   
   <table class="table table-striped">
     <thead>
@@ -330,9 +361,9 @@ html
         <td>{{ curso.descricao|truncatechars:50 }}</td>
         <td>{{ curso.duracao }} meses</td>
         <td>
-          <a href="{% url 'detalhes_curso' curso.id %}" class="btn btn-sm btn-info">Detalhes</a>
-          <a href="{% url 'editar_curso' curso.id %}" class="btn btn-sm btn-warning">Editar</a>
-          <a href="{% url 'excluir_curso' curso.id %}" class="btn btn-sm btn-danger">Excluir</a>
+          <a href="{% url 'cursos:detalhar_curso' curso.id %}" class="btn btn-sm btn-info">Detalhes</a>
+          <a href="{% url 'cursos:editar_curso' curso.id %}" class="btn btn-sm btn-warning">Editar</a>
+          <a href="{% url 'cursos:excluir_curso' curso.id %}" class="btn btn-sm btn-danger">Excluir</a>
         </td>
       </tr>
       {% empty %}

@@ -172,21 +172,59 @@ from . import views
 app_name = 'atividades'
 
 urlpatterns = [
-    path('academicas/', views.atividade_academica_list, name='atividade_academica_list'),
-    path('ritualisticas/', views.listar_atividades_ritualisticas, name='atividade_ritualistica_list'),
+    # Atividades Acadêmicas
+    path('academicas/', views.listar_atividades_academicas, name='listar_atividades_academicas'),
+    path('academicas/criar/', views.criar_atividade_academica, name='criar_atividade_academica'),
+    path('academicas/<int:pk>/', views.detalhar_atividade_academica, name='detalhar_atividade_academica'),
+    path('academicas/<int:pk>/editar/', views.editar_atividade_academica, name='editar_atividade_academica'),
+    path('academicas/<int:pk>/excluir/', views.excluir_atividade_academica, name='excluir_atividade_academica'),
     
-    # URLs para atividades acadêmicas
-    path('academicas/criar/', views.criar_atividade_academica, name='academica_criar'),
-    path('academicas/editar/<int:pk>/', views.editar_atividade_academica, name='academica_editar'),
-    path('academicas/excluir/<int:pk>/', views.excluir_atividade_academica, name='academica_excluir'),
-    path('academicas/lista/', views.atividade_academica_list, name='academica_lista'),
-    
-    # URLs para atividades ritualísticas
-    path('ritualisticas/criar/', views.criar_atividade_ritualistica, name='ritualistica_criar'),
-    path('ritualisticas/editar/<int:pk>/', views.editar_atividade_ritualistica, name='ritualistica_editar'),
-    path('ritualisticas/excluir/<int:pk>/', views.excluir_atividade_ritualistica, name='ritualistica_excluir'),
-    path('ritualisticas/lista/', views.listar_atividades_ritualisticas, name='ritualistica_lista'),
+    # Atividades Ritualísticas
+    path('ritualisticas/', views.listar_atividades_ritualisticas, name='listar_atividades_ritualisticas'),
+    path('ritualisticas/criar/', views.criar_atividade_ritualistica, name='criar_atividade_ritualistica'),
+    path('ritualisticas/<int:pk>/', views.detalhar_atividade_ritualistica, name='detalhar_atividade_ritualistica'),
+    path('ritualisticas/<int:pk>/editar/', views.editar_atividade_ritualistica, name='editar_atividade_ritualistica'),
+    path('ritualisticas/<int:pk>/excluir/', views.excluir_atividade_ritualistica, name='excluir_atividade_ritualistica'),
 ]
+
+
+
+
+## atividades\url_aliases.py
+
+python
+from django.urls import reverse
+
+def listar_atividades_academicas(*args, **kwargs):
+    return reverse('atividades:atividade_academica_list', args=args, kwargs=kwargs)
+
+def criar_atividade_academica(*args, **kwargs):
+    return reverse('atividades:atividade_academica_create', args=args, kwargs=kwargs)
+
+def detalhar_atividade_academica(*args, **kwargs):
+    return reverse('atividades:atividade_academica_detail', args=args, kwargs=kwargs)
+
+def editar_atividade_academica(*args, **kwargs):
+    return reverse('atividades:atividade_academica_update', args=args, kwargs=kwargs)
+
+def excluir_atividade_academica(*args, **kwargs):
+    return reverse('atividades:atividade_academica_delete', args=args, kwargs=kwargs)
+
+def listar_atividades_ritualisticas(*args, **kwargs):
+    return reverse('atividades:atividade_ritualistica_list', args=args, kwargs=kwargs)
+
+def criar_atividade_ritualistica(*args, **kwargs):
+    return reverse('atividades:atividade_ritualistica_create', args=args, kwargs=kwargs)
+
+def detalhar_atividade_ritualistica(*args, **kwargs):
+    return reverse('atividades:atividade_ritualistica_detail', args=args, kwargs=kwargs)
+
+def editar_atividade_ritualistica(*args, **kwargs):
+    return reverse('atividades:atividade_ritualistica_update', args=args, kwargs=kwargs)
+
+def excluir_atividade_ritualistica(*args, **kwargs):
+    return reverse('atividades:atividade_ritualistica_delete', args=args, kwargs=kwargs)
+
 
 
 
@@ -206,7 +244,7 @@ from .forms import criar_form_atividade_academica, criar_form_atividade_ritualis
 from django.shortcuts import render
 from .models import AtividadeAcademica
 
-def atividade_academica_list(request):
+def listar_atividades_academicas(request):
     atividades = AtividadeAcademica.objects.all()
     return render(request, 'atividades/atividade_academica_list.html', {'atividades': atividades})
 
@@ -379,6 +417,21 @@ def excluir_atividade_ritualistica(request, pk):
         return redirect('atividades:ritualistica_lista')
     
     return render(request, 'atividades/ritualistica_confirmar_exclusao.html', {'object': atividade})
+
+# Adicione esses aliases no final do arquivo views.py
+# Supondo que as funções reais sejam listar_atividades_academicas, etc.
+
+atividade_academica_list = listar_atividades_academicas
+atividade_academica_create = criar_atividade_academica
+atividade_academica_detail = detalhar_atividade_academica
+atividade_academica_update = editar_atividade_academica
+atividade_academica_delete = excluir_atividade_academica
+
+atividade_ritualistica_list = listar_atividades_ritualisticas
+atividade_ritualistica_create = criar_atividade_ritualistica
+atividade_ritualistica_detail = detalhar_atividade_ritualistica
+atividade_ritualistica_update = editar_atividade_ritualistica
+atividade_ritualistica_delete = excluir_atividade_ritualistica
 
 
 
@@ -776,146 +829,153 @@ html
 
 
 
+## atividades\templates\atividades\atividade_academica_list.html
+
+html
+<!-- Botão para criar nova atividade -->
+<a href="{% url 'atividades:criar_atividade_academica' %}" class="btn btn-primary">Nova Atividade</a>
+
+<!-- Links nas ações da tabela -->
+<a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
+<a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning">Editar</a>
+<a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger">Excluir</a>
+
+
+
+
+
+## atividades\templates\atividades\atividade_ritualistica_confirm_delete.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Excluir Atividade Ritualística</h1>
+  
+  <div class="alert alert-danger">
+    <p>Tem certeza que deseja excluir a atividade ritualística "{{ object.nome }}"?</p>
+  </div>
+  
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sim, excluir</button>
+    <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
+
+
+
+
+
+## atividades\templates\atividades\atividade_ritualistica_detail.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Detalhes da Atividade Ritualística</h1>
+  
+  <div class="card">
+    <div class="card-header">
+      <h2>{{ atividade.nome }}</h2>
+    </div>
+    <div class="card-body">
+      <p><strong>Descrição:</strong> {{ atividade.descricao }}</p>
+      <p><strong>Turma:</strong> {{ atividade.turma.nome }}</p>
+      
+      <h3 class="mt-4">Alunos Participantes</h3>
+      <ul class="list-group">
+        {% for aluno in atividade.alunos.all %}
+          <li class="list-group-item">{{ aluno.nome }} ({{ aluno.numero_iniciatico }})</li>
+        {% empty %}
+          <li class="list-group-item">Nenhum aluno associado a esta atividade.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.id %}" class="btn btn-warning">Editar</a>
+      <a href="{% url 'atividades:excluir_atividade_ritualistica' atividade.id %}" class="btn btn-danger">Excluir</a>
+      <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+
+
+
 ## atividades\templates\atividades\atividade_ritualistica_form.html
 
 html
 {% extends 'base.html' %}
 
-{% block title %}
-    {% if form.instance.pk %}Editar{% else %}Nova{% endif %} Atividade Ritualística
-{% endblock %}
-
 {% block content %}
-<div class="container">
-    <h1 class="my-4">
-        {% if form.instance.pk %}Editar{% else %}Nova{% endif %} Atividade Ritualística
-    </h1>
-    
+<div class="container mt-4">
+    <h1>{% if form.instance.pk %}Editar{% else %}Nova{% endif %} Atividade Ritualística</h1>
+  
     <form method="post">
-        {% csrf_token %}
-        
-        <div class="card">
-            <div class="card-body">
-                {% for field in form %}
-                <div class="mb-3">
-                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                    <div class="text-danger">
-                        {{ field.errors }}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        
-        <div class="mt-3">
-            <button type="submit" class="btn btn-primary">Salvar</button>
-            <a href="{% url 'atividades:ritualistica_lista' %}" class="btn btn-secondary">Cancelar</a>
-        </div>
+      {% csrf_token %}
+      {% include 'includes/form_errors.html' %}
+    
+      {% for field in form %}
+        {% include 'includes/form_field.html' %}
+      {% endfor %}
+    
+      <button type="submit" class="btn btn-primary">Salvar</button>
+      <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const todosAlunosCheckbox = document.getElementById('id_todos_alunos');
-        const alunosField = document.getElementById('id_alunos');
-        const alunosContainer = alunosField.closest('.mb-3');
-        const turmaSelect = document.getElementById('id_turma');
-        
-        // Function to toggle the visibility and state of the alunos field
-        function toggleAlunosField() {
-            if (todosAlunosCheckbox.checked) {
-                alunosContainer.style.opacity = '0.5';
-                alunosField.disabled = true;
-                
-                // Add a visual indicator that the field is disabled
-                const helpText = document.createElement('small');
-                helpText.id = 'alunos-help-text';
-                helpText.className = 'form-text text-muted';
-                helpText.textContent = 'Todos os alunos da turma serão incluídos automaticamente';
-                
-                // Remove existing help text if any
-                const existingHelpText = document.getElementById('alunos-help-text');
-                if (existingHelpText) {
-                    existingHelpText.remove();
-                }
-                
-                alunosContainer.appendChild(helpText);
-            } else {
-                alunosContainer.style.opacity = '1';
-                alunosField.disabled = false;
-                
-                // Remove the help text
-                const helpText = document.getElementById('alunos-help-text');
-                if (helpText) {
-                    helpText.remove();
-                }
-            }
-        }
-        
-        // Function to update available students based on selected turma
-        function updateAlunosList() {
-            const turmaId = turmaSelect.value;
-            if (!turmaId) return;
-            
-            // Show loading indicator
-            alunosContainer.style.opacity = '0.5';
-            
-            // Fetch students for the selected turma via AJAX
-            fetch(`/api/turmas/${turmaId}/alunos/`)
-                .then(response => response.json())
-                .then(data => {
-                    // Clear current options
-                    while (alunosField.firstChild) {
-                        alunosField.removeChild(alunosField.firstChild);
-                    }
-                    
-                    // Add new options
-                    data.forEach(aluno => {
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.name = 'alunos';
-                        checkbox.value = aluno.id;
-                        checkbox.id = `aluno_${aluno.id}`;
-                        
-                        const label = document.createElement('label');
-                        label.htmlFor = `aluno_${aluno.id}`;
-                        label.textContent = aluno.nome;
-                        
-                        const div = document.createElement('div');
-                        div.className = 'form-check';
-                        div.appendChild(checkbox);
-                        div.appendChild(label);
-                        
-                        alunosField.appendChild(div);
-                    });
-                    
-                    alunosContainer.style.opacity = '1';
-                })
-                .catch(error => {
-                    console.error('Error fetching students:', error);
-                    alunosContainer.style.opacity = '1';
-                });
-        }
-        
-        // Event listeners
-        todosAlunosCheckbox.addEventListener('change', toggleAlunosField);
-        turmaSelect.addEventListener('change', function() {
-            if (!todosAlunosCheckbox.checked) {
-                updateAlunosList();
-            }
-        });
-        
-        // Initial setup
-        toggleAlunosField();
-        if (turmaSelect.value && !todosAlunosCheckbox.checked) {
-            updateAlunosList();
-        }
-    });
-</script>
 {% endblock %}
+
+
+
+
+## atividades\templates\atividades\atividade_ritualistica_list.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Atividades Ritualísticas</h1>
+  
+  <a href="{% url 'atividades:criar_atividade_ritualistica' %}" class="btn btn-primary mb-3">Nova Atividade Ritualística</a>
+  
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Descrição</th>
+        <th>Turma</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for atividade in atividades %}
+      <tr>
+        <td>{{ atividade.nome }}</td>
+        <td>{{ atividade.descricao|truncatechars:50 }}</td>
+        <td>{{ atividade.turma.nome }}</td>
+        <td>
+          <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
+          <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-warning">Editar</a>
+          <a href="{% url 'atividades:excluir_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-danger">Excluir</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4">Nenhuma atividade ritualística cadastrada.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
 
 
 

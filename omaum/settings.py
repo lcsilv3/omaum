@@ -56,8 +56,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'core.middleware.ManutencaoMiddleware',
-    'core.middleware.SessionRenewalMiddleware',  # Novo middleware para renovação de sessão
+    'core.middleware.manutencao_middleware',
+    'core.middleware.renovacao_sessao_middleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -146,7 +146,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
-LOGIN_URL = 'login'  # Adjust this if your login URL name is different
+LOGIN_URL = 'core:entrar'  # Alterado para usar a view de login do core
 
 # Specifies the directory paths for localization (translation) files in the Django project
 LOCALE_PATHS = (

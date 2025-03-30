@@ -1,4 +1,4 @@
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
@@ -16,79 +16,15 @@
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
+                {% include 'includes/form_errors.html' %}
                 
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                
-                <div class="mb-3">
-                    <label for="{{ form.aluno.id_for_label }}" class="form-label">{{ form.aluno.label }}</label>
-                    {{ form.aluno }}
-                    {% if form.aluno.errors %}
-                        <div class="text-danger">
-                            {% for error in form.aluno.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.turma.id_for_label }}" class="form-label">{{ form.turma.label }}</label>
-                    {{ form.turma }}
-                    {% if form.turma.errors %}
-                        <div class="text-danger">
-                            {% for error in form.turma.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.data.id_for_label }}" class="form-label">{{ form.data.label }}</label>
-                    {{ form.data }}
-                    {% if form.data.errors %}
-                        <div class="text-danger">
-                            {% for error in form.data.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3 form-check">
-                    {{ form.presente }}
-                    <label for="{{ form.presente.id_for_label }}" class="form-check-label">{{ form.presente.label }}</label>
-                    {% if form.presente.errors %}
-                        <div class="text-danger">
-                            {% for error in form.presente.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.justificativa.id_for_label }}" class="form-label">{{ form.justificativa.label }}</label>
-                    {{ form.justificativa }}
-                    {% if form.justificativa.errors %}
-                        <div class="text-danger">
-                            {% for error in form.justificativa.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    <small class="form-text text-muted">Preencha apenas se o aluno estiver ausente e tiver justificativa.</small>
-                </div>
+                {% for field in form %}
+                    {% include 'includes/form_field.html' %}
+                {% endfor %}
                 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                     <button type="submit" class="btn btn-primary">Registrar Frequência</button>
-                    <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
+                    <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
                 </div>
             </form>
         </div>

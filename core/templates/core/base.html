@@ -18,19 +18,31 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'alunos:listar' %}">Alunos</a>
+                            <a class="nav-link" href="{% url 'alunos:listar_alunos' %}">Alunos</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'atividades:atividade_academica_list' %}">Atividades Acadêmicas</a>
+                            <a class="nav-link" href="{% url 'cursos:listar_cursos' %}">Cursos</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'atividades:atividade_ritualistica_list' %}">Atividades Ritualísticas</a>
+                            <a class="nav-link" href="{% url 'atividades:listar_atividades_academicas' %}">Atividades Acadêmicas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'atividades:listar_atividades_ritualisticas' %}">Atividades Ritualísticas</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'turmas:listar_turmas' %}">Turmas</a>   
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/presencas/lista/">Presenças</a>
+                            <a class="nav-link" href="{% url 'iniciacoes:listar_iniciacoes' %}">Iniciações</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'cargos:listar_cargos' %}">Cargos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'frequencias:listar_frequencias' %}">Frequências</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'presencas:listar_presencas' %}">Presenças</a>
                         </li>
                         <!-- Add more navigation items for other functionalities -->
                         {% if user.is_staff %}
@@ -38,6 +50,9 @@
                                 <a class="nav-link" href="{% url 'core:painel_controle' %}">Painel de Controle</a>
                             </li>
                         {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'punicoes:listar_punicoes' %}">Punições</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'core:sair' %}">Sair</a>
                         </li>
