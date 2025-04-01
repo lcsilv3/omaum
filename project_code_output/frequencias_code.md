@@ -183,34 +183,29 @@ urlpatterns = [
 ## frequencias\views.py
 
 python
+import importlib
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib import messages
-from .models import Frequencia
-from .forms import FrequenciaForm
-from alunos.models import Aluno
-from turmas.models import Turma
 
-def criar_frequencia(request):
-    """
-    Cria uma nova frequência no sistema.
-    """
-    if request.method == 'POST':
-        form = FrequenciaForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Frequência criada com sucesso!')
-            return redirect('frequencias:listar_frequencias')
-        else:
-            messages.error(request, 'Por favor, corrija os erros abaixo.')
-    else:
-        form = FrequenciaForm()
-    return render(request, 'frequencias/criar_frequencia.html', {'form': form})
+# Função para obter modelos usando importlib
+def get_models():
+    Frequencia = importlib.import_module('frequencias.models').Frequencia
+    Aluno = importlib.import_module('alunos.models').Aluno
+    Turma = importlib.import_module('turmas.models').Turma
+    return Frequencia, Aluno, Turma
+
+# Função para obter formulários usando importlib
+def get_forms():
+    FrequenciaForm = importlib.import_module('frequencias.forms').FrequenciaForm
+    return FrequenciaForm
 
 @login_required
 @permission_required('frequencias.add_frequencia', raise_exception=True)
 def registrar_frequencia(request):
+    FrequenciaForm = get_forms()
+    
     if request.method == 'POST':
         form = FrequenciaForm(request.POST)
         if form.is_valid():
@@ -218,7 +213,7 @@ def registrar_frequencia(request):
             frequencia.registrado_por = request.user
             frequencia.save()
             messages.success(request, 'Frequência registrada com sucesso!')
-            return redirect('listar_frequencias')
+            return redirect('frequencias:listar_frequencias')
         else:
             messages.error(request, 'Corrija os erros no formulário.')
     else:
@@ -229,6 +224,8 @@ def registrar_frequencia(request):
 @login_required
 @permission_required('frequencias.add_frequencia', raise_exception=True)
 def registrar_frequencia_turma(request, turma_id):
+    Frequencia, Aluno, Turma = get_models()
+    
     turma = get_object_or_404(Turma, id=turma_id)
     alunos = Aluno.objects.filter(turmas=turma)
     
@@ -254,7 +251,7 @@ def registrar_frequencia_turma(request, turma_id):
             )
         
         messages.success(request, 'Frequências registradas com sucesso!')
-        return redirect('listar_frequencias')
+        return redirect('frequencias:listar_frequencias')
     
     return render(request, 'frequencias/registrar_frequencia_turma.html', {
         'turma': turma,
@@ -264,6 +261,8 @@ def registrar_frequencia_turma(request, turma_id):
 @login_required
 @permission_required('frequencias.view_frequencia', raise_exception=True)
 def listar_frequencias(request):
+    Frequencia, Aluno, Turma = get_models()
+    
     frequencias_list = Frequencia.objects.all().select_related('aluno', 'turma')
    
     # Filtros
@@ -314,6 +313,9 @@ def listar_frequencias(request):
 @login_required
 @permission_required('frequencias.change_frequencia', raise_exception=True)
 def editar_frequencia(request, id):
+    Frequencia = get_models()[0]
+    FrequenciaForm = get_forms()
+    
     frequencia = get_object_or_404(Frequencia, id=id)
    
     if request.method == 'POST':
@@ -321,7 +323,7 @@ def editar_frequencia(request, id):
         if form.is_valid():
             form.save()
             messages.success(request, 'Frequência atualizada com sucesso!')
-            return redirect('listar_frequencias')
+            return redirect('frequencias:listar_frequencias')
         else:
             messages.error(request, 'Corrija os erros no formulário.')
     else:
@@ -331,92 +333,36 @@ def editar_frequencia(request, id):
 
 @login_required
 @permission_required('frequencias.view_frequencia', raise_exception=True)
-def detalhe_frequencia(request, id):
+def detalhar_frequencia(request, id):
+    """Exibe os detalhes de uma frequência."""
+    Frequencia = get_models()[0]
     frequencia = get_object_or_404(Frequencia, id=id)
-    return render(request, 'frequencias/detalhe_frequencia.html', {'frequencia': frequencia})
+    return render(request, 'frequencias/detalhar_frequencia.html', {'frequencia': frequencia})
 
 @login_required
 @permission_required('frequencias.delete_frequencia', raise_exception=True)
 def excluir_frequencia(request, id):
+    Frequencia = get_models()[0]
     frequencia = get_object_or_404(Frequencia, id=id)
    
     if request.method == 'POST':
         frequencia.delete()
         messages.success(request, 'Frequência excluída com sucesso!')
-        return redirect('listar_frequencias')
+        return redirect('frequencias:listar_frequencias')
    
     return render(request, 'frequencias/excluir_frequencia.html', {'frequencia': frequencia})
 
 @login_required
 @permission_required('frequencias.view_frequencia', raise_exception=True)
-def estatisticas_frequencia(request):
-    # Get filter parameters
-    aluno_id = request.GET.get('aluno')
-    turma_id = request.GET.get('turma')
-    data_inicio = request.GET.get('data_inicio')
-    data_fim = request.GET.get('data_fim')
-    
-    # Base queryset
-    frequencias = Frequencia.objects.all()
-    
-    # Apply filters
-    if aluno_id:
-        frequencias = frequencias.filter(aluno_id=aluno_id)
-    if turma_id:
-        frequencias = frequencias.filter(turma_id=turma_id)
-    if data_inicio:
-        frequencias = frequencias.filter(data__gte=data_inicio)
-    if data_fim:
-        frequencias = frequencias.filter(data__lte=data_fim)
-    
-    # Calculate statistics
-    total = frequencias.count()
-    presentes = frequencias.filter(presente=True).count()
-    ausentes = total - presentes
-    
-    taxa_presenca = (presentes / total * 100) if total > 0 else 0
-    
-    # Get lists for filters
-    alunos = Aluno.objects.all()
-    turmas = Turma.objects.all()
-    
-    return render(request, 'frequencias/estatisticas_frequencia.html', {
-        'total': total,
-        'presentes': presentes,
-        'ausentes': ausentes,
-        'taxa_presenca': taxa_presenca,
-        'alunos': alunos,
-        'turmas': turmas,
-        'aluno_id': aluno_id,
-        'turma_id': turma_id,
-        'data_inicio': data_inicio,
-        'data_fim': data_fim,
-    })
+def relatorio_frequencias(request):
+    # Implementação pendente
+    return render(request, 'frequencias/relatorio_frequencias.html')
 
 @login_required
-@permission_required('frequencias.change_frequencia', raise_exception=True)
-def bulk_actions(request):
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        selected_ids = request.POST.getlist('selected_ids')
-        
-        if not selected_ids:
-            messages.error(request, 'Nenhum registro selecionado.')
-            return redirect('listar_frequencias')
-            
-        if action == 'delete':
-            Frequencia.objects.filter(id__in=selected_ids).delete()
-            messages.success(request, f'{len(selected_ids)} registros excluídos com sucesso!')
-        elif action == 'mark_present':
-            Frequencia.objects.filter(id__in=selected_ids).update(presente=True, justificativa='')
-            messages.success(request, f'{len(selected_ids)} registros marcados como presente!')
-        elif action == 'mark_absent':
-            Frequencia.objects.filter(id__in=selected_ids).update(presente=False)
-            messages.success(request, f'{len(selected_ids)} registros marcados como ausente!')
-            
-        return redirect('listar_frequencias')
-    
-    return redirect('listar_frequencias')
+@permission_required('frequencias.view_frequencia', raise_exception=True)
+def exportar_frequencias(request):
+    # Implementação pendente
+    return redirect('frequencias:listar_frequencias')
 
 
 
@@ -498,116 +444,65 @@ document.addEventListener('DOMContentLoaded', function() {
 ## frequencias\templates\frequencias\detalhar_frequencia.html
 
 html
-{% extends 'base.html' %}
-
-{% block content %}
-<div class="container mt-4">
-  <h1>Detalhes do Registro de Frequência</h1>
-  
-  <div class="card">
-    <div class="card-header">
-      <h2>Frequência de {{ frequencia.aluno.nome }}</h2>
-    </div>
-    <div class="card-body">
-      <p><strong>Aluno:</strong> {{ frequencia.aluno.nome }}</p>
-      <p><strong>Atividade:</strong> {{ frequencia.atividade.nome }}</p>
-      <p><strong>Data:</strong> {{ frequencia.data|date:"d/m/Y" }}</p>
-      <p>
-        <strong>Presente:</strong> 
-        {% if frequencia.presente %}
-          <span class="badge bg-success">Sim</span>
-        {% else %}
-          <span class="badge bg-danger">Não</span>
-        {% endif %}
-      </p>
-      {% if frequencia.justificativa %}
-        <p><strong>Justificativa:</strong> {{ frequencia.justificativa }}</p>
-      {% endif %}
-      {% if frequencia.observacoes %}
-        <p><strong>Observações:</strong> {{ frequencia.observacoes }}</p>
-      {% endif %}
-      <p><strong>Registrado por:</strong> {{ frequencia.registrado_por.username }}</p>
-      <p><strong>Data de registro:</strong> {{ frequencia.data_registro|date:"d/m/Y H:i" }}</p>
-      {% if frequencia.atualizado_por %}
-        <p><strong>Atualizado por:</strong> {{ frequencia.atualizado_por.username }}</p>
-        <p><strong>Data de atualização:</strong> {{ frequencia.data_atualizacao|date:"d/m/Y H:i" }}</p>
-      {% endif %}
-    </div>
-    <div class="card-footer">
-      <a href="{% url 'frequencias:editar_frequencia' frequencia.id %}" class="btn btn-warning">Editar</a>
-      <a href="{% url 'frequencias:excluir_frequencia' frequencia.id %}" class="btn btn-danger">Excluir</a>
-      <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Voltar</a>
-    </div>
-  </div>
-</div>
-{% endblock %}
-
-
-
-
-
-## frequencias\templates\frequencias\detalhe_frequencia.html
-
-html
 {% extends 'core/base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Detalhes da Frequência</h1>
+  <h1>Detalhes da Frequência</h1>
     
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
+  {% if messages %}
+      {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">
+              {{ message }}
+          </div>
+      {% endfor %}
+  {% endif %}
     
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Informações da Frequência</h5>
-        </div>
-        <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <p><strong>Aluno:</strong> {{ frequencia.aluno.nome }}</p>
-                    <p><strong>Turma:</strong> {{ frequencia.turma.codigo_turma }}</p>
-                    <p><strong>Data:</strong> {{ frequencia.data }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p>
-                        <strong>Status:</strong> 
-                        {% if frequencia.presente %}
-                            <span class="badge bg-success">Presente</span>
-                        {% else %}
-                            <span class="badge bg-danger">Ausente</span>
-                        {% endif %}
-                    </p>
-                    <p><strong>Registrado por:</strong> {{ frequencia.registrado_por|default:"Não informado" }}</p>
-                    <p><strong>Data de registro:</strong> {{ frequencia.data_registro }}</p>
-                </div>
-            </div>
+  <div class="card">
+      <div class="card-header">
+          <h5 class="mb-0">Informações da Frequência</h5>
+      </div>
+      <div class="card-body">
+          <div class="row mb-3">
+              <div class="col-md-6">
+                  <p><strong>Aluno:</strong> {{ frequencia.aluno.nome }}</p>
+                  <p><strong>Turma:</strong> {{ frequencia.turma.codigo_turma }}</p>
+                  <p><strong>Data:</strong> {{ frequencia.data }}</p>
+              </div>
+              <div class="col-md-6">
+                  <p>
+                      <strong>Status:</strong> 
+                      {% if frequencia.presente %}
+                          <span class="badge bg-success">Presente</span>
+                      {% else %}
+                          <span class="badge bg-danger">Ausente</span>
+                      {% endif %}
+                  </p>
+                  <p><strong>Registrado por:</strong> {{ frequencia.registrado_por|default:"Não informado" }}</p>
+                  <p><strong>Data de registro:</strong> {{ frequencia.data_registro }}</p>
+              </div>
+          </div>
             
-            {% if not frequencia.presente %}
-            <div class="mb-3">
-                <h6>Justificativa:</h6>
-                <div class="p-3 bg-light rounded">
-                    {% if frequencia.justificativa %}
-                        {{ frequencia.justificativa|linebreaks }}
-                    {% else %}
-                        <em>Nenhuma justificativa fornecida.</em>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
+          {% if not frequencia.presente %}
+          <div class="mb-3">
+              <h6>Justificativa:</h6>
+              <div class="p-3 bg-light rounded">
+                  {% if frequencia.justificativa %}
+                      {{ frequencia.justificativa|linebreaks }}
+                  {% else %}
+                      <em>Nenhuma justificativa fornecida.</em>
+                  {% endif %}
+              </div>
+          </div>
+          {% endif %}
             
-            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                <a href="{% url 'editar_frequencia' frequencia.id %}" class="btn btn-warning">Editar</a>
-                <a href="{% url 'excluir_frequencia' frequencia.id %}" class="btn btn-danger">Excluir</a>
-                <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Voltar</a>
-            </div>
-        </div>
-    </div>
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{% url 'frequencias:editar_frequencia' frequencia.id %}" class="btn btn-warning">Editar</a>
+              <a href="{% url 'frequencias:excluir_frequencia' frequencia.id %}" class="btn btn-danger">Excluir</a>
+              <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Voltar</a>
+          </div>
+      </div>
+  </div>
 </div>
 {% endblock %}
 

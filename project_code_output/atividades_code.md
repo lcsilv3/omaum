@@ -172,14 +172,12 @@ from . import views
 app_name = 'atividades'
 
 urlpatterns = [
-    # Atividades Acadêmicas
     path('academicas/', views.listar_atividades_academicas, name='listar_atividades_academicas'),
     path('academicas/criar/', views.criar_atividade_academica, name='criar_atividade_academica'),
     path('academicas/<int:pk>/', views.detalhar_atividade_academica, name='detalhar_atividade_academica'),
     path('academicas/<int:pk>/editar/', views.editar_atividade_academica, name='editar_atividade_academica'),
     path('academicas/<int:pk>/excluir/', views.excluir_atividade_academica, name='excluir_atividade_academica'),
     
-    # Atividades Ritualísticas
     path('ritualisticas/', views.listar_atividades_ritualisticas, name='listar_atividades_ritualisticas'),
     path('ritualisticas/criar/', views.criar_atividade_ritualistica, name='criar_atividade_ritualistica'),
     path('ritualisticas/<int:pk>/', views.detalhar_atividade_ritualistica, name='detalhar_atividade_ritualistica'),
@@ -232,47 +230,103 @@ def excluir_atividade_ritualistica(*args, **kwargs):
 ## atividades\views.py
 
 python
+import importlib
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.core.paginator import Paginator
-import importlib
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-# Importação dinâmica dos modelos
-from .models import AtividadeAcademica, AtividadeRitualistica
-from .forms import criar_form_atividade_academica, criar_form_atividade_ritualistica
+# Função para obter modelos usando importlib
+def get_models():
+    AtividadeAcademica = importlib.import_module('atividades.models').AtividadeAcademica
+    AtividadeRitualistica = importlib.import_module('atividades.models').AtividadeRitualistica
+    return AtividadeAcademica, AtividadeRitualistica
 
-from django.shortcuts import render
-from .models import AtividadeAcademica
+# Função para obter formulários usando importlib
+def get_forms():
+    AtividadeAcademicaForm = importlib.import_module('atividades.forms').AtividadeAcademicaForm
+    AtividadeRitualisticaForm = importlib.import_module('atividades.forms').AtividadeRitualisticaForm
+    AtividadeBuscaForm = importlib.import_module('atividades.forms').AtividadeBuscaForm
+    return AtividadeAcademicaForm, AtividadeRitualisticaForm, AtividadeBuscaForm
 
+@login_required
 def listar_atividades_academicas(request):
+    """Lista todas as atividades acadêmicas com opções de filtragem."""
+    AtividadeAcademica, _ = get_models()
+    _, _, AtividadeBuscaForm = get_forms()
+    
+    form_busca = AtividadeBuscaForm(request.GET)
     atividades = AtividadeAcademica.objects.all()
-    return render(request, 'atividades/atividade_academica_list.html', {'atividades': atividades})
+    
+    # Aplicar filtros se o formulário for válido
+    if form_busca.is_valid():
+        termo = form_busca.cleaned_data.get('termo')
+        data_inicio = form_busca.cleaned_data.get('data_inicio')
+        data_fim = form_busca.cleaned_data.get('data_fim')
+        
+        if termo:
+            atividades = atividades.filter(
+                Q(nome__icontains=termo) | 
+                Q(descricao__icontains=termo)
+            )
+        
+        if data_inicio:
+            atividades = atividades.filter(data_inicio__gte=data_inicio)
+        
+        if data_fim:
+            atividades = atividades.filter(data_fim__lte=data_fim)
+    
+    # Paginação
+    paginator = Paginator(atividades, 10)  # 10 atividades por página
+    page = request.GET.get('page')
+    
+    try:
+        atividades_paginadas = paginator.page(page)
+    except PageNotAnInteger:
+        atividades_paginadas = paginator.page(1)
+    except EmptyPage:
+        atividades_paginadas = paginator.page(paginator.num_pages)
+    
+    context = {
+        'atividades': atividades_paginadas,
+        'form_busca': form_busca,
+        'total_atividades': atividades.count(),
+    }
+    
+    return render(request, 'atividades/listar_atividades_academicas.html', context)
 
+@login_required
 def criar_atividade_academica(request):
-    """Cria uma nova atividade acadêmica"""
-    AtividadeAcademicaForm = criar_form_atividade_academica()
-   
+    """Cria uma nova atividade acadêmica."""
+    AtividadeAcademicaForm, _, _ = get_forms()
+    
     if request.method == 'POST':
         form = AtividadeAcademicaForm(request.POST)
         if form.is_valid():
-            try:
-                atividade = form.save()
-                messages.success(request, 'Atividade acadêmica criada com sucesso!')
-                return redirect('atividades:academica_lista')
-            except Exception as e:
-                messages.error(request, f'Erro ao criar atividade: {str(e)}')
+            atividade = form.save()
+            messages.success(request, 'Atividade acadêmica criada com sucesso!')
+            return redirect('atividades:detalhar_atividade_academica', pk=atividade.pk)
         else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'Erro no campo {field}: {error}')
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = AtividadeAcademicaForm()
-   
-    return render(request, 'atividades/academica_formulario.html', {'form': form})
+    
+    return render(request, 'atividades/criar_atividade_academica.html', {'form': form})
 
+@login_required
+def detalhar_atividade_academica(request, pk):
+    """Exibe os detalhes de uma atividade acadêmica."""
+    AtividadeAcademica, _ = get_models()
+    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+    return render(request, 'atividades/detalhar_atividade_academica.html', {'atividade': atividade})
+
+@login_required
 def editar_atividade_academica(request, pk):
-    """Edita uma atividade acadêmica existente"""
-    AtividadeAcademicaForm = criar_form_atividade_academica()
+    """Edita uma atividade acadêmica existente."""
+    AtividadeAcademica, _ = get_models()
+    AtividadeAcademicaForm, _, _ = get_forms()
+    
     atividade = get_object_or_404(AtividadeAcademica, pk=pk)
     
     if request.method == 'POST':
@@ -280,158 +334,131 @@ def editar_atividade_academica(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Atividade acadêmica atualizada com sucesso!')
-            return redirect('atividades:academica_lista')
+            return redirect('atividades:detalhar_atividade_academica', pk=atividade.pk)
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = AtividadeAcademicaForm(instance=atividade)
     
-    return render(request, 'atividades/academica_formulario.html', {'form': form})
+    return render(request, 'atividades/editar_atividade_academica.html', {'form': form, 'atividade': atividade})
 
+@login_required
 def excluir_atividade_academica(request, pk):
-    """Exclui uma atividade acadêmica"""
+    """Exclui uma atividade acadêmica."""
+    AtividadeAcademica, _ = get_models()
     atividade = get_object_or_404(AtividadeAcademica, pk=pk)
     
     if request.method == 'POST':
         atividade.delete()
         messages.success(request, 'Atividade acadêmica excluída com sucesso!')
-        return redirect('atividades:academica_lista')
+        return redirect('atividades:listar_atividades_academicas')
     
-    return render(request, 'atividades/academica_confirmar_exclusao.html', {'object': atividade})
+    return render(request, 'atividades/excluir_atividade_academica.html', {'atividade': atividade})
 
-# Views para Atividades Ritualísticas
+@login_required
 def listar_atividades_ritualisticas(request):
-    """Exibe a lista de atividades ritualísticas com filtros e paginação"""
-    # Importação dinâmica
-    turmas_module = importlib.import_module('turmas.models')
-    Turma = getattr(turmas_module, 'Turma')
+    """Lista todas as atividades ritualísticas com opções de filtragem."""
+    _, AtividadeRitualistica = get_models()
+    _, _, AtividadeBuscaForm = get_forms()
     
-    # Obter todas as atividades
+    form_busca = AtividadeBuscaForm(request.GET)
     atividades = AtividadeRitualistica.objects.all()
     
-    # Busca por nome
-    search_query = request.GET.get('search', '')
-    if search_query:
-        atividades = atividades.filter(nome__icontains=search_query)
-    
-    # Filtro por turma
-    turma_id = request.GET.get('turma', '')
-    if turma_id:
-        atividades = atividades.filter(turma_id=turma_id)
-    
-    # Ordenação
-    order_by = request.GET.get('order_by', 'nome')
-    order_dir = request.GET.get('order_dir', 'asc')
-    
-    if order_dir == 'desc':
-        order_by = f'-{order_by}'
+    # Aplicar filtros se o formulário for válido
+    if form_busca.is_valid():
+        termo = form_busca.cleaned_data.get('termo')
+        data_inicio = form_busca.cleaned_data.get('data_inicio')
+        data_fim = form_busca.cleaned_data.get('data_fim')
         
-    atividades = atividades.order_by(order_by)
+        if termo:
+            atividades = atividades.filter(
+                Q(nome__icontains=termo) | 
+                Q(descricao__icontains=termo)
+            )
+        
+        if data_inicio:
+            atividades = atividades.filter(data_inicio__gte=data_inicio)
+        
+        if data_fim:
+            atividades = atividades.filter(data_fim__lte=data_fim)
     
     # Paginação
-    paginator = Paginator(atividades, 10)  # 10 itens por página
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    paginator = Paginator(atividades, 10)  # 10 atividades por página
+    page = request.GET.get('page')
     
-    # Contexto para o template
+    try:
+        atividades_paginadas = paginator.page(page)
+    except PageNotAnInteger:
+        atividades_paginadas = paginator.page(1)
+    except EmptyPage:
+        atividades_paginadas = paginator.page(paginator.num_pages)
+    
     context = {
-        'atividades_ritualisticas': page_obj,
-        'search_query': search_query,
-        'turmas': Turma.objects.all(),
-        'is_paginated': page_obj.has_other_pages(),
-        'page_obj': page_obj,
+        'atividades': atividades_paginadas,
+        'form_busca': form_busca,
+        'total_atividades': atividades.count(),
     }
     
-    return render(request, 'atividades/ritualistica_lista.html', context)
+    return render(request, 'atividades/listar_atividades_ritualisticas.html', context)
 
+@login_required
 def criar_atividade_ritualistica(request):
-    """Cria uma nova atividade ritualística"""
-    AtividadeRitualisticaForm = criar_form_atividade_ritualistica()
+    """Cria uma nova atividade ritualística."""
+    _, AtividadeRitualisticaForm, _ = get_forms()
     
     if request.method == 'POST':
         form = AtividadeRitualisticaForm(request.POST)
         if form.is_valid():
-            instance = form.save(commit=False)
-            instance.save()
-            
-            # Tratar a opção de incluir todos os alunos
-            if form.cleaned_data.get('todos_alunos'):
-                turma = form.cleaned_data.get('turma')
-                if turma:
-                    # Importação dinâmica usando importlib
-                    alunos_module = importlib.import_module('alunos.models')
-                    Aluno = getattr(alunos_module, 'Aluno')
-                    
-                    # Adicionar todos os alunos da turma
-                    alunos = Aluno.objects.filter(turmas=turma)
-                    instance.alunos.set(alunos)
-            else:
-                # Salvar os alunos selecionados no formulário
-                form.save_m2m()
-            
+            atividade = form.save()
             messages.success(request, 'Atividade ritualística criada com sucesso!')
-            return redirect('atividades:ritualistica_lista')
+            return redirect('atividades:detalhar_atividade_ritualistica', pk=atividade.pk)
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = AtividadeRitualisticaForm()
     
-    return render(request, 'atividades/atividade_ritualistica_form.html', {'form': form})
+    return render(request, 'atividades/criar_atividade_ritualistica.html', {'form': form})
 
+@login_required
+def detalhar_atividade_ritualistica(request, pk):
+    """Exibe os detalhes de uma atividade ritualística."""
+    _, AtividadeRitualistica = get_models()
+    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
+    return render(request, 'atividades/detalhar_atividade_ritualistica.html', {'atividade': atividade})
+
+@login_required
 def editar_atividade_ritualistica(request, pk):
-    """Edita uma atividade ritualística existente"""
-    AtividadeRitualisticaForm = criar_form_atividade_ritualistica()
+    """Edita uma atividade ritualística existente."""
+    _, AtividadeRitualistica = get_models()
+    _, AtividadeRitualisticaForm, _ = get_forms()
+    
     atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
     
     if request.method == 'POST':
         form = AtividadeRitualisticaForm(request.POST, instance=atividade)
         if form.is_valid():
-            instance = form.save(commit=False)
-            instance.save()
-            
-            # Tratar a opção de incluir todos os alunos
-            if form.cleaned_data.get('todos_alunos'):
-                turma = form.cleaned_data.get('turma')
-                if turma:
-                    # Importação dinâmica usando importlib
-                    alunos_module = importlib.import_module('alunos.models')
-                    Aluno = getattr(alunos_module, 'Aluno')
-                    
-                    # Adicionar todos os alunos da turma
-                    alunos = Aluno.objects.filter(turmas=turma)
-                    instance.alunos.set(alunos)
-            else:
-                # Salvar os alunos selecionados no formulário
-                form.save_m2m()
-            
+            form.save()
             messages.success(request, 'Atividade ritualística atualizada com sucesso!')
-            return redirect('atividades:ritualistica_lista')
+            return redirect('atividades:detalhar_atividade_ritualistica', pk=atividade.pk)
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = AtividadeRitualisticaForm(instance=atividade)
     
-    return render(request, 'atividades/atividade_ritualistica_form.html', {'form': form})
+    return render(request, 'atividades/editar_atividade_ritualistica.html', {'form': form, 'atividade': atividade})
 
+@login_required
 def excluir_atividade_ritualistica(request, pk):
-    """Exclui uma atividade ritualística"""
+    """Exclui uma atividade ritualística."""
+    _, AtividadeRitualistica = get_models()
     atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
     
     if request.method == 'POST':
         atividade.delete()
         messages.success(request, 'Atividade ritualística excluída com sucesso!')
-        return redirect('atividades:ritualistica_lista')
+        return redirect('atividades:listar_atividades_ritualisticas')
     
-    return render(request, 'atividades/ritualistica_confirmar_exclusao.html', {'object': atividade})
-
-# Adicione esses aliases no final do arquivo views.py
-# Supondo que as funções reais sejam listar_atividades_academicas, etc.
-
-atividade_academica_list = listar_atividades_academicas
-atividade_academica_create = criar_atividade_academica
-atividade_academica_detail = detalhar_atividade_academica
-atividade_academica_update = editar_atividade_academica
-atividade_academica_delete = excluir_atividade_academica
-
-atividade_ritualistica_list = listar_atividades_ritualisticas
-atividade_ritualistica_create = criar_atividade_ritualistica
-atividade_ritualistica_detail = detalhar_atividade_ritualistica
-atividade_ritualistica_update = editar_atividade_ritualistica
-atividade_ritualistica_delete = excluir_atividade_ritualistica
+    return render(request, 'atividades/excluir_atividade_ritualistica.html', {'atividade': atividade})
 
 
 
@@ -973,6 +1000,103 @@ html
       {% endfor %}
     </tbody>
   </table>
+</div>
+{% endblock %}
+
+
+
+
+
+## atividades\templates\atividades\detalhar_atividade_academica.html
+
+html
+{% extends 'core/base.html' %}
+
+{% block title %}Detalhes da Atividade Acadêmica{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Detalhes da Atividade Acadêmica</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">{{ atividade.nome }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Descrição:</strong> {{ atividade.descricao|default:"Não informada" }}</p>
+                    <p><strong>Data de Início:</strong> {{ atividade.data_inicio|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Data de Término:</strong> {{ atividade.data_fim|date:"d/m/Y H:i"|default:"Não definida" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Turma:</strong> {{ atividade.turma.nome }}</p>
+                    <p><strong>Status:</strong> 
+                        {% if atividade.ativa %}
+                            <span class="badge bg-success">Ativa</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inativa</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <a href="{% url 'atividades:editar_atividade_academica' atividade.pk %}" class="btn btn-primary">Editar</a>
+                <a href="{% url 'atividades:excluir_atividade_academica' atividade.pk %}" class="btn btn-danger">Excluir</a>
+                <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Voltar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+## atividades\templates\atividades\detalhar_atividade_ritualistica.html
+
+html
+{% extends 'core/base.html' %}
+
+{% block title %}Detalhes da Atividade Ritualística{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Detalhes da Atividade Ritualística</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">{{ atividade.nome }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Descrição:</strong> {{ atividade.descricao|default:"Não informada" }}</p>
+                    <p><strong>Data de Início:</strong> {{ atividade.data_inicio|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Data de Término:</strong> {{ atividade.data_fim|date:"d/m/Y H:i"|default:"Não definida" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Turma:</strong> {{ atividade.turma.nome }}</p>
+                    <p><strong>Tipo de Ritual:</strong> {{ atividade.tipo_ritual }}</p>
+                    <p><strong>Status:</strong> 
+                        {% if atividade.ativa %}
+                            <span class="badge bg-success">Ativa</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inativa</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.pk %}" class="btn btn-primary">Editar</a>
+                <a href="{% url 'atividades:excluir_atividade_ritualistica' atividade.pk %}" class="btn btn-danger">Excluir</a>
+                <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">Voltar</a>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

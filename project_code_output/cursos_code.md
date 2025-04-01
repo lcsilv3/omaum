@@ -104,10 +104,11 @@ app_name = 'cursos'
 urlpatterns = [
     path('', views.listar_cursos, name='listar_cursos'),
     path('novo/', views.criar_curso, name='criar_curso'),
+    path('<int:id>/detalhes/', views.detalhar_curso, name='detalhar_curso'),
     path('<int:id>/editar/', views.editar_curso, name='editar_curso'),
     path('<int:id>/excluir/', views.excluir_curso, name='excluir_curso'),
-    path('<int:id>/detalhes/', views.detalhar_curso, name='detalhar_curso'),
 ]
+
 
 
 
@@ -115,53 +116,89 @@ urlpatterns = [
 ## cursos\views.py
 
 python
+import importlib
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .models import Curso
-from .forms import CursoForm
+from django.contrib.auth.decorators import login_required
+from django.utils.translation import gettext as _
 
+# Função para obter modelos usando importlib
+def get_models():
+    Curso = importlib.import_module('cursos.models').Curso
+    return Curso
+
+# Função para obter formulários usando importlib
+def get_forms():
+    CursoForm = importlib.import_module('cursos.forms').CursoForm
+    return CursoForm
+
+@login_required
 def listar_cursos(request):
+    """Lista todos os cursos."""
+    Curso = get_models()
     cursos = Curso.objects.all()
     return render(request, 'cursos/listar_cursos.html', {'cursos': cursos})
 
+@login_required
 def criar_curso(request):
+    """Cria um novo curso."""
+    CursoForm = get_forms()
+    
     if request.method == 'POST':
         form = CursoForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Curso criado com sucesso!')
-            return redirect('listar_cursos')
+            messages.success(request, _('Curso criado com sucesso!'))
+            return redirect('cursos:listar_cursos')
         else:
-            messages.error(request, 'Por favor, corrija os erros abaixo.')
+            messages.error(request, _('Por favor, corrija os erros abaixo.'))
     else:
         form = CursoForm()
+    
     return render(request, 'cursos/criar_curso.html', {'form': form})
 
-def editar_curso(request, id):
+@login_required
+def detalhar_curso(request, id):
+    """Exibe os detalhes de um curso."""
     curso = get_object_or_404(Curso, id=id)
+    return render(request, 'cursos/detalhar_curso.html', {'curso': curso})
+
+@login_required
+def editar_curso(request, id):
+    """Edita um curso existente."""
+    Curso = get_models()
+    CursoForm = get_forms()
+    
+    curso = get_object_or_404(Curso, id=id)
+    
     if request.method == 'POST':
         form = CursoForm(request.POST, instance=curso)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Curso atualizado com sucesso!')
-            return redirect('listar_cursos')
+            messages.success(request, _('Curso atualizado com sucesso!'))
+            return redirect('cursos:detalhar_curso', id=curso.id)
         else:
-            messages.error(request, 'Por favor, corrija os erros abaixo.')
+            messages.error(request, _('Por favor, corrija os erros abaixo.'))
     else:
         form = CursoForm(instance=curso)
-    return render(request, 'cursos/editar_curso.html', {'form': form, 'curso': curso})
+    
+    return render(request, 'cursos/editar_curso.html', {
+        'form': form, 
+        'curso': curso
+    })
 
+@login_required
 def excluir_curso(request, id):
+    """Exclui um curso."""
+    Curso = get_models()
     curso = get_object_or_404(Curso, id=id)
+    
     if request.method == 'POST':
         curso.delete()
-        messages.success(request, 'Curso excluído com sucesso!')
-        return redirect('listar_cursos')
+        messages.success(request, _('Curso excluído com sucesso!'))
+        return redirect('cursos:listar_cursos')
+    
     return render(request, 'cursos/excluir_curso.html', {'curso': curso})
-
-def detalhes_curso(request, id):
-    curso = get_object_or_404(Curso, id=id)
-    return render(request, 'cursos/detalhes_curso.html', {'curso': curso})
 
 
 
@@ -228,7 +265,7 @@ html
 ## cursos\templates\cursos\detalhar_curso.html
 
 html
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
 <div class="container mt-4">
@@ -247,37 +284,6 @@ html
       <a href="{% url 'cursos:editar_curso' curso.id %}" class="btn btn-warning">Editar</a>
       <a href="{% url 'cursos:excluir_curso' curso.id %}" class="btn btn-danger">Excluir</a>
       <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Voltar</a>
-    </div>
-  </div>
-</div>
-{% endblock %}
-
-
-
-
-
-## cursos\templates\cursos\detalhes_curso.html
-
-html
-{% extends 'base.html' %}
-
-{% block content %}
-<div class="container mt-4">
-  <h1>Detalhes do Curso</h1>
-  
-  <div class="card">
-    <div class="card-header">
-      <h2>{{ curso.nome }}</h2>
-    </div>
-    <div class="card-body">
-      <p><strong>Código:</strong> {{ curso.codigo_curso }}</p>
-      <p><strong>Descrição:</strong> {{ curso.descricao }}</p>
-      <p><strong>Duração:</strong> {{ curso.duracao }} meses</p>
-    </div>
-    <div class="card-footer">
-      <a href="{% url 'editar_curso' curso.id %}" class="btn btn-warning">Editar</a>
-      <a href="{% url 'excluir_curso' curso.id %}" class="btn btn-danger">Excluir</a>
-      <a href="{% url 'listar_cursos' %}" class="btn btn-secondary">Voltar</a>
     </div>
   </div>
 </div>

@@ -14,6 +14,9 @@ from datetime import datetime
 
 @login_required
 def index(request):
+    """
+    Página inicial do módulo de relatórios.
+    """
     return render(request, 'relatorios/index.html')
 
 @login_required

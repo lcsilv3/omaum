@@ -1,8 +1,10 @@
 from django.urls import path
 from . import views
 
+app_name = 'relatorios'
+
 urlpatterns = [
-    path('', views.index, name='relatorios_index'),
+    path('', views.index, name='index'),
     path('alunos/', views.relatorio_alunos, name='relatorio_alunos'),
     path('alunos/pdf/', views.relatorio_alunos_pdf, name='relatorio_alunos_pdf'),
     path('presencas/', views.relatorio_presencas, name='relatorio_presencas'),

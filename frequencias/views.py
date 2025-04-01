@@ -1,31 +1,26 @@
+import importlib
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib import messages
-from .models import Frequencia
-from .forms import FrequenciaForm
-from alunos.models import Aluno
-from turmas.models import Turma
 
-def criar_frequencia(request):
-    """
-    Cria uma nova frequência no sistema.
-    """
-    if request.method == 'POST':
-        form = FrequenciaForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Frequência criada com sucesso!')
-            return redirect('frequencias:listar_frequencias')
-        else:
-            messages.error(request, 'Por favor, corrija os erros abaixo.')
-    else:
-        form = FrequenciaForm()
-    return render(request, 'frequencias/criar_frequencia.html', {'form': form})
+# Função para obter modelos usando importlib
+def get_models():
+    Frequencia = importlib.import_module('frequencias.models').Frequencia
+    Aluno = importlib.import_module('alunos.models').Aluno
+    Turma = importlib.import_module('turmas.models').Turma
+    return Frequencia, Aluno, Turma
+
+# Função para obter formulários usando importlib
+def get_forms():
+    FrequenciaForm = importlib.import_module('frequencias.forms').FrequenciaForm
+    return FrequenciaForm
 
 @login_required
 @permission_required('frequencias.add_frequencia', raise_exception=True)
 def registrar_frequencia(request):
+    FrequenciaForm = get_forms()
+    
     if request.method == 'POST':
         form = FrequenciaForm(request.POST)
         if form.is_valid():
@@ -33,7 +28,7 @@ def registrar_frequencia(request):
             frequencia.registrado_por = request.user
             frequencia.save()
             messages.success(request, 'Frequência registrada com sucesso!')
-            return redirect('listar_frequencias')
+            return redirect('frequencias:listar_frequencias')
         else:
             messages.error(request, 'Corrija os erros no formulário.')
     else:
@@ -44,6 +39,8 @@ def registrar_frequencia(request):
 @login_required
 @permission_required('frequencias.add_frequencia', raise_exception=True)
 def registrar_frequencia_turma(request, turma_id):
+    Frequencia, Aluno, Turma = get_models()
+    
     turma = get_object_or_404(Turma, id=turma_id)
     alunos = Aluno.objects.filter(turmas=turma)
     
@@ -69,7 +66,7 @@ def registrar_frequencia_turma(request, turma_id):
             )
         
         messages.success(request, 'Frequências registradas com sucesso!')
-        return redirect('listar_frequencias')
+        return redirect('frequencias:listar_frequencias')
     
     return render(request, 'frequencias/registrar_frequencia_turma.html', {
         'turma': turma,
@@ -79,6 +76,8 @@ def registrar_frequencia_turma(request, turma_id):
 @login_required
 @permission_required('frequencias.view_frequencia', raise_exception=True)
 def listar_frequencias(request):
+    Frequencia, Aluno, Turma = get_models()
+    
     frequencias_list = Frequencia.objects.all().select_related('aluno', 'turma')
    
     # Filtros
@@ -129,6 +128,9 @@ def listar_frequencias(request):
 @login_required
 @permission_required('frequencias.change_frequencia', raise_exception=True)
 def editar_frequencia(request, id):
+    Frequencia = get_models()[0]
+    FrequenciaForm = get_forms()
+    
     frequencia = get_object_or_404(Frequencia, id=id)
    
     if request.method == 'POST':
@@ -136,7 +138,7 @@ def editar_frequencia(request, id):
         if form.is_valid():
             form.save()
             messages.success(request, 'Frequência atualizada com sucesso!')
-            return redirect('listar_frequencias')
+            return redirect('frequencias:listar_frequencias')
         else:
             messages.error(request, 'Corrija os erros no formulário.')
     else:
@@ -146,89 +148,33 @@ def editar_frequencia(request, id):
 
 @login_required
 @permission_required('frequencias.view_frequencia', raise_exception=True)
-def detalhe_frequencia(request, id):
+def detalhar_frequencia(request, id):
+    """Exibe os detalhes de uma frequência."""
+    Frequencia = get_models()[0]
     frequencia = get_object_or_404(Frequencia, id=id)
-    return render(request, 'frequencias/detalhe_frequencia.html', {'frequencia': frequencia})
+    return render(request, 'frequencias/detalhar_frequencia.html', {'frequencia': frequencia})
 
 @login_required
 @permission_required('frequencias.delete_frequencia', raise_exception=True)
 def excluir_frequencia(request, id):
+    Frequencia = get_models()[0]
     frequencia = get_object_or_404(Frequencia, id=id)
    
     if request.method == 'POST':
         frequencia.delete()
         messages.success(request, 'Frequência excluída com sucesso!')
-        return redirect('listar_frequencias')
+        return redirect('frequencias:listar_frequencias')
    
     return render(request, 'frequencias/excluir_frequencia.html', {'frequencia': frequencia})
 
 @login_required
 @permission_required('frequencias.view_frequencia', raise_exception=True)
-def estatisticas_frequencia(request):
-    # Get filter parameters
-    aluno_id = request.GET.get('aluno')
-    turma_id = request.GET.get('turma')
-    data_inicio = request.GET.get('data_inicio')
-    data_fim = request.GET.get('data_fim')
-    
-    # Base queryset
-    frequencias = Frequencia.objects.all()
-    
-    # Apply filters
-    if aluno_id:
-        frequencias = frequencias.filter(aluno_id=aluno_id)
-    if turma_id:
-        frequencias = frequencias.filter(turma_id=turma_id)
-    if data_inicio:
-        frequencias = frequencias.filter(data__gte=data_inicio)
-    if data_fim:
-        frequencias = frequencias.filter(data__lte=data_fim)
-    
-    # Calculate statistics
-    total = frequencias.count()
-    presentes = frequencias.filter(presente=True).count()
-    ausentes = total - presentes
-    
-    taxa_presenca = (presentes / total * 100) if total > 0 else 0
-    
-    # Get lists for filters
-    alunos = Aluno.objects.all()
-    turmas = Turma.objects.all()
-    
-    return render(request, 'frequencias/estatisticas_frequencia.html', {
-        'total': total,
-        'presentes': presentes,
-        'ausentes': ausentes,
-        'taxa_presenca': taxa_presenca,
-        'alunos': alunos,
-        'turmas': turmas,
-        'aluno_id': aluno_id,
-        'turma_id': turma_id,
-        'data_inicio': data_inicio,
-        'data_fim': data_fim,
-    })
+def relatorio_frequencias(request):
+    # Implementação pendente
+    return render(request, 'frequencias/relatorio_frequencias.html')
 
 @login_required
-@permission_required('frequencias.change_frequencia', raise_exception=True)
-def bulk_actions(request):
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        selected_ids = request.POST.getlist('selected_ids')
-        
-        if not selected_ids:
-            messages.error(request, 'Nenhum registro selecionado.')
-            return redirect('listar_frequencias')
-            
-        if action == 'delete':
-            Frequencia.objects.filter(id__in=selected_ids).delete()
-            messages.success(request, f'{len(selected_ids)} registros excluídos com sucesso!')
-        elif action == 'mark_present':
-            Frequencia.objects.filter(id__in=selected_ids).update(presente=True, justificativa='')
-            messages.success(request, f'{len(selected_ids)} registros marcados como presente!')
-        elif action == 'mark_absent':
-            Frequencia.objects.filter(id__in=selected_ids).update(presente=False)
-            messages.success(request, f'{len(selected_ids)} registros marcados como ausente!')
-            
-        return redirect('listar_frequencias')
-    
-    return redirect('listar_frequencias')
+@permission_required('frequencias.view_frequencia', raise_exception=True)
+def exportar_frequencias(request):
+    # Implementação pendente
+    return redirect('frequencias:listar_frequencias')

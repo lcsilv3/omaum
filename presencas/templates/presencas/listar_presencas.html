@@ -63,8 +63,8 @@
                 <td>{{ presenca.data }}</td>
                 <td>{% if presenca.presente %}Sim{% else %}Não{% endif %}</td>
                 <td>
-                    <a href="{% url 'editar_presenca' presenca.id %}" class="btn btn-sm btn-warning">Editar</a>
-                    <a href="{% url 'excluir_presenca' presenca.id %}" class="btn btn-sm btn-danger">Excluir</a>
+                    <a href="{% url 'presencas:editar_presenca' presenca.id %}" class="btn btn-sm btn-warning">Editar</a>
+                    <a href="{% url 'presencas:excluir_presenca' presenca.id %}" class="btn btn-sm btn-danger">Excluir</a>
                 </td>
             </tr>
             {% empty %}

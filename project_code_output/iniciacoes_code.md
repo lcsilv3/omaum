@@ -246,9 +246,9 @@ def criar_iniciacao(request):
 
 
 @login_required
-def detalhe_iniciacao(request, id):
+def detalhar_iniciacao(request, id):
     iniciacao = get_object_or_404(Iniciacao, id=id)
-    return render(request, 'iniciacoes/detalhe_iniciacao.html', {'iniciacao': iniciacao})
+    return render(request, 'iniciacoes/detalhar_iniciacao.html', {'iniciacao': iniciacao})
 
 
 @login_required
@@ -469,59 +469,6 @@ html
 </div>
 {% endblock %}
 
-
-
-
-
-## iniciacoes\templates\iniciacoes\detalhe_iniciacao.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Detalhes da Iniciação{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-info text-white">
-            <h1 class="h3 mb-0">Detalhes da Iniciação</h1>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5 class="card-title">Informações Gerais</h5>
-                    <dl class="row">
-                        <dt class="col-sm-4">Aluno:</dt>
-                        <dd class="col-sm-8">{{ iniciacao.aluno.nome }}</dd>
-                        
-                        <dt class="col-sm-4">Curso:</dt>
-                        <dd class="col-sm-8">{{ iniciacao.nome_curso }}</dd>
-                        
-                        <dt class="col-sm-4">Data:</dt>
-                        <dd class="col-sm-8">{{ iniciacao.data_iniciacao|date:"d/m/Y" }}</dd>
-                    </dl>
-                </div>
-                <div class="col-md-6">
-                    <h5 class="card-title">Observações</h5>
-                    <p class="card-text">{{ iniciacao.observacoes|default:"Nenhuma observação registrada."|linebreaks }}</p>
-                </div>
-            </div>
-            
-            <div class="mt-4">
-                <a href="{% url 'iniciacoes:editar_iniciacao' iniciacao.id %}" class="btn btn-warning">
-                    <i class="fas fa-edit"></i> Editar
-                </a>
-                <a href="{% url 'iniciacoes:excluir_iniciacao' iniciacao.id %}" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Excluir
-                </a>
-                <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Voltar
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
 
 
 

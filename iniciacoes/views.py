@@ -77,9 +77,9 @@ def criar_iniciacao(request):
 
 
 @login_required
-def detalhe_iniciacao(request, id):
+def detalhar_iniciacao(request, id):
     iniciacao = get_object_or_404(Iniciacao, id=id)
-    return render(request, 'iniciacoes/detalhe_iniciacao.html', {'iniciacao': iniciacao})
+    return render(request, 'iniciacoes/detalhar_iniciacao.html', {'iniciacao': iniciacao})
 
 
 @login_required
@@ -157,3 +157,46 @@ def exportar_iniciacoes_csv(request):
     messages.success(request, f'Arquivo CSV com {iniciacoes.count()} iniciações exportado com sucesso.')
     
     return response
+
+@login_required
+def listar_graus(request):
+    """Lista todos os graus de iniciação."""
+    graus = GrauIniciacao.objects.all()
+    return render(request, 'iniciacoes/listar_graus.html', {'graus': graus})
+
+@login_required
+def criar_grau(request):
+    """Cria um novo grau de iniciação."""
+    if request.method == 'POST':
+        form = GrauIniciacaoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Grau de iniciação criado com sucesso!')
+            return redirect('iniciacoes:listar_graus')
+    else:
+        form = GrauIniciacaoForm()
+    return render(request, 'iniciacoes/criar_grau.html', {'form': form})
+
+@login_required
+def editar_grau(request, id):
+    """Edita um grau de iniciação existente."""
+    grau = get_object_or_404(GrauIniciacao, id=id)
+    if request.method == 'POST':
+        form = GrauIniciacaoForm(request.POST, instance=grau)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Grau de iniciação atualizado com sucesso!')
+            return redirect('iniciacoes:listar_graus')
+    else:
+        form = GrauIniciacaoForm(instance=grau)
+    return render(request, 'iniciacoes/editar_grau.html', {'form': form, 'grau': grau})
+
+@login_required
+def excluir_grau(request, id):
+    """Exclui um grau de iniciação."""
+    grau = get_object_or_404(GrauIniciacao, id=id)
+    if request.method == 'POST':
+        grau.delete()
+        messages.success(request, 'Grau de iniciação excluído com sucesso!')
+        return redirect('iniciacoes:listar_graus')
+    return render(request, 'iniciacoes/excluir_grau.html', {'grau': grau})

@@ -17,7 +17,7 @@ def registrar_presenca(request):
             presenca.registrado_por = request.user
             presenca.save()
             messages.success(request, 'Presença registrada com sucesso!')
-            return redirect('lista_presencas')
+            return redirect('presencas:listar_presencas')  # Corrigido para usar o namespace
         else:
             messages.error(request, 'Corrija os erros no formulário.')
     else:
@@ -27,7 +27,7 @@ def registrar_presenca(request):
 
 @login_required
 @permission_required('presencas.view_presencaacademica', raise_exception=True)
-def lista_presencas(request):
+def listar_presencas(request):
     presencas_list = PresencaAcademica.objects.all().select_related('aluno', 'turma')
     
     # Filtros
@@ -72,7 +72,7 @@ def lista_presencas(request):
 
 @login_required
 @permission_required('presencas.change_presencaacademica', raise_exception=True)
-def editar_presenca(request, id):
+def editar_presenca(request, id):  # Padronizado para usar 'id'
     presenca = get_object_or_404(PresencaAcademica, id=id)
     
     if request.method == 'POST':
@@ -80,7 +80,7 @@ def editar_presenca(request, id):
         if form.is_valid():
             form.save()
             messages.success(request, 'Presença atualizada com sucesso!')
-            return redirect('lista_presencas')
+            return redirect('presencas:listar_presencas')  # Corrigido para usar o namespace
         else:
             messages.error(request, 'Corrija os erros no formulário.')
     else:
@@ -90,12 +90,18 @@ def editar_presenca(request, id):
 
 @login_required
 @permission_required('presencas.delete_presencaacademica', raise_exception=True)
-def excluir_presenca(request, id):
+def excluir_presenca(request, id):  # Padronizado para usar 'id'
     presenca = get_object_or_404(PresencaAcademica, id=id)
     
     if request.method == 'POST':
         presenca.delete()
         messages.success(request, 'Presença excluída com sucesso!')
-        return redirect('lista_presencas')
+        return redirect('presencas:listar_presencas')  # Corrigido para usar o namespace
     
     return render(request, 'presencas/excluir_presenca.html', {'presenca': presenca})
+
+@login_required
+@permission_required('presencas.view_presencaacademica', raise_exception=True)
+def relatorio_presencas(request):
+    # Implementação pendente
+    return render(request, 'presencas/relatorio_presencas.html')

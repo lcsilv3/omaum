@@ -186,9 +186,9 @@ app_name = 'cargos'
 urlpatterns = [
     path('', views.listar_cargos, name='listar_cargos'),
     path('criar/', views.criar_cargo, name='criar_cargo'),
+    path('<int:id>/detalhes/', views.detalhar_cargo, name='detalhar_cargo'),
     path('<int:id>/editar/', views.editar_cargo, name='editar_cargo'),
     path('<int:id>/excluir/', views.excluir_cargo, name='excluir_cargo'),
-    path('<int:id>/detalhes/', views.detalhar_cargo, name='detalhar_cargo'),
     path('atribuir/', views.atribuir_cargo, name='atribuir_cargo'),
     path('remover-atribuicao/<int:id>/', views.remover_atribuicao_cargo, name='remover_atribuicao_cargo'),
 ]
@@ -199,16 +199,33 @@ urlpatterns = [
 ## cargos\views.py
 
 python
+import importlib
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .models import CargoAdministrativo
-from .formulario_cargo import CargoAdministrativoForm
+from django.contrib.auth.decorators import login_required
 
+# Função para obter modelos usando importlib
+def get_models():
+    CargoAdministrativo = importlib.import_module('cargos.models').CargoAdministrativo
+    return CargoAdministrativo
+
+# Função para obter formulários usando importlib
+def get_forms():
+    CargoAdministrativoForm = importlib.import_module('cargos.formulario_cargo').CargoAdministrativoForm
+    return CargoAdministrativoForm
+
+@login_required
 def listar_cargos(request):
+    """Lista todos os cargos administrativos."""
+    CargoAdministrativo = get_models()
     cargos = CargoAdministrativo.objects.all()
     return render(request, 'cargos/listar_cargos.html', {'cargos': cargos})
 
+@login_required
 def criar_cargo(request):
+    """Cria um novo cargo administrativo."""
+    CargoAdministrativoForm = get_forms()
+    
     if request.method == 'POST':
         form = CargoAdministrativoForm(request.POST)
         if form.is_valid():
@@ -219,10 +236,24 @@ def criar_cargo(request):
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = CargoAdministrativoForm()
+    
     return render(request, 'cargos/criar_cargo.html', {'form': form})
 
-def editar_cargo(request, id):
+@login_required
+def detalhar_cargo(request, id):
+    """Exibe os detalhes de um cargo administrativo."""
+    CargoAdministrativo = get_models()
     cargo = get_object_or_404(CargoAdministrativo, id=id)
+    return render(request, 'cargos/detalhar_cargo.html', {'cargo': cargo})
+
+@login_required
+def editar_cargo(request, id):
+    """Edita um cargo administrativo existente."""
+    CargoAdministrativo = get_models()
+    CargoAdministrativoForm = get_forms()
+    
+    cargo = get_object_or_404(CargoAdministrativo, id=id)
+    
     if request.method == 'POST':
         form = CargoAdministrativoForm(request.POST, instance=cargo)
         if form.is_valid():
@@ -233,19 +264,33 @@ def editar_cargo(request, id):
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = CargoAdministrativoForm(instance=cargo)
+    
     return render(request, 'cargos/editar_cargo.html', {'form': form, 'cargo': cargo})
 
+@login_required
 def excluir_cargo(request, id):
+    """Exclui um cargo administrativo."""
+    CargoAdministrativo = get_models()
     cargo = get_object_or_404(CargoAdministrativo, id=id)
+    
     if request.method == 'POST':
         cargo.delete()
         messages.success(request, 'Cargo administrativo excluído com sucesso!')
         return redirect('cargos:listar_cargos')
+    
     return render(request, 'cargos/excluir_cargo.html', {'cargo': cargo})
 
-def detalhes_cargo(request, id):
-    cargo = get_object_or_404(CargoAdministrativo, id=id)
-    return render(request, 'cargos/detalhes_cargo.html', {'cargo': cargo})
+@login_required
+def atribuir_cargo(request):
+    """Atribui um cargo a um aluno."""
+    # Implementação pendente
+    return render(request, 'cargos/atribuir_cargo.html')
+
+@login_required
+def remover_atribuicao_cargo(request, id):
+    """Remove a atribuição de um cargo a um aluno."""
+    # Implementação pendente
+    return render(request, 'cargos/remover_atribuicao.html')
 
 
 
@@ -376,31 +421,21 @@ html
 ## cargos\templates\cargos\detalhar_cargo.html
 
 html
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
+
+{% block title %}Detalhes do Cargo Administrativo{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-  <h1>Detalhes do Cargo</h1>
+  <h1>Detalhes do Cargo Administrativo</h1>
   
   <div class="card">
     <div class="card-header">
       <h2>{{ cargo.nome }}</h2>
     </div>
     <div class="card-body">
-      <p><strong>Descrição:</strong> {{ cargo.descricao }}</p>
-      <p><strong>Nível:</strong> {{ cargo.get_nivel_display }}</p>
-      
-      <h3 class="mt-4">Alunos com este Cargo</h3>
-      <ul class="list-group">
-        {% for atribuicao in atribuicoes %}
-          <li class="list-group-item">
-            {{ atribuicao.aluno.nome }} 
-            ({{ atribuicao.data_inicio|date:"d/m/Y" }} - {{ atribuicao.data_fim|date:"d/m/Y"|default:"Atual" }})
-          </li>
-        {% empty %}
-          <li class="list-group-item">Nenhum aluno atribuído a este cargo.</li>
-        {% endfor %}
-      </ul>
+      <p><strong>Código:</strong> {{ cargo.codigo_cargo }}</p>
+      <p><strong>Descrição:</strong> {{ cargo.descricao|default:"Não informada" }}</p>
     </div>
     <div class="card-footer">
       <a href="{% url 'cargos:editar_cargo' cargo.id %}" class="btn btn-warning">Editar</a>
