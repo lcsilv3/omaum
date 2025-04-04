@@ -1,0 +1,62 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Relatório de Alunos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Relatório de Alunos</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title">Estatísticas Gerais</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Total de Alunos</h5>
+                            <p class="card-text display-4">{{ total_alunos }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Masculino</h5>
+                            <p class="card-text display-4">{{ total_masculino }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Feminino</h5>
+                            <p class="card-text display-4">{{ total_feminino }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Outros</h5>
+                            <p class="card-text display-4">{{ total_outros }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Idade Média</h5>
+                            <p class="card-text display-4">{{ idade_media|floatformat:1 }} anos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -9,7 +9,7 @@ class AtividadeAcademicaAdmin(admin.ModelAdmin):
 
 @admin.register(AtividadeRitualistica)
 class AtividadeRitualisticaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'descricao', 'data_inicio', 'data_fim', 'turma')
+    list_display = ['nome', 'descricao']
     list_filter = ('turma',)
     search_fields = ('nome', 'descricao')
-    filter_horizontal = ('alunos',)
+    filter_horizontal = []

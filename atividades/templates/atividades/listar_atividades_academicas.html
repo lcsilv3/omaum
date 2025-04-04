@@ -1,0 +1,108 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lista de Atividades Acadêmicas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Cabeçalho com título e botões na mesma linha -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Lista de Atividades Acadêmicas</h1>
+        <div>
+            <!-- Use uma URL específica em vez de javascript:history.back() -->
+            <a href="{% url 'home' %}" class="btn btn-secondary me-2">Voltar ao Dashboard</a>
+            
+            <!-- Botão para criar nova atividade acadêmica com URL de retorno -->
+            <a href="{% url 'atividades:criar_atividade_academica' %}?return_url={{ request.path|urlencode }}" class="btn btn-primary">
+                Nova Atividade Acadêmica
+            </a>
+        </div>
+    </div>    
+    <!-- Barra de busca e filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" name="q" class="form-control" placeholder="Buscar por título, descrição ou responsável..." value="{{ query }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Responsável</th>
+                            <th>Data de Início</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for atividade in atividades %}
+                            <tr>
+                                <td>{{ atividade.nome }}</td>
+                                <td>{{ atividade.descrição }}</td>
+                                <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+                                <td>{{ atividade.get_status_display }}</td>
+                                <td>
+                                    <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
+                                    <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning">Editar</a>
+                                    <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger">Excluir</a>                                </td>                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <p class="my-3">Nenhuma atividade acadêmica cadastrada.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <p class="text-muted mb-0">Total: {{ atividades.count|default:"0" }} atividade(s)</p>
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginação">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}">Anterior</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Anterior</span>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}&q={{ query }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}">Próxima</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Próxima</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

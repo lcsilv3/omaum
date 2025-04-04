@@ -3,8 +3,10 @@ from .models import Iniciacao
 
 @admin.register(Iniciacao)
 class IniciacaoAdmin(admin.ModelAdmin):
-    list_display = ('aluno', 'nome_curso', 'data_iniciacao')
-    list_filter = ('nome_curso', 'data_iniciacao')
+    # Adjust list_display and list_filter to use fields that actually exist
+    # Remove 'data' since it doesn't exist in the model
+    list_display = ['aluno']  # Keep only fields that exist
+    list_filter = []  # Remove 'data' since it doesn't exist
     search_fields = ('aluno__nome', 'nome_curso')
     date_hierarchy = 'data_iniciacao'
     ordering = ('-data_iniciacao',)

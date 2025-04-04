@@ -1,10 +1,14 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-  <h1>Cursos</h1>
-  
-  <a href="{% url 'cursos:criar_curso' %}" class="btn btn-primary mb-3">Novo Curso</a>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Cursos</h1>
+    <div>
+      <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
+      <a href="{% url 'cursos:criar_curso' %}" class="btn btn-primary">Novo Curso</a>
+    </div>
+  </div>
   
   <table class="table table-striped">
     <thead>
@@ -24,9 +28,9 @@
         <td>{{ curso.descricao|truncatechars:50 }}</td>
         <td>{{ curso.duracao }} meses</td>
         <td>
-          <a href="{% url 'cursos:detalhar_curso' curso.id %}" class="btn btn-sm btn-info">Detalhes</a>
-          <a href="{% url 'cursos:editar_curso' curso.id %}" class="btn btn-sm btn-warning">Editar</a>
-          <a href="{% url 'cursos:excluir_curso' curso.id %}" class="btn btn-sm btn-danger">Excluir</a>
+          <a href="{% url 'cursos:detalhar_curso' curso.codigo_curso %}" class="btn btn-sm btn-info">Detalhes</a>
+          <a href="{% url 'cursos:editar_curso' curso.codigo_curso %}" class="btn btn-sm btn-warning">Editar</a>
+          <a href="{% url 'cursos:excluir_curso' curso.codigo_curso %}" class="btn btn-sm btn-danger">Excluir</a>
         </td>
       </tr>
       {% empty %}

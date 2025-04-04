@@ -10,7 +10,7 @@ class TurmaAdmin(admin.ModelAdmin):
 
 @admin.register(Matricula)
 class MatriculaAdmin(admin.ModelAdmin):
-    list_display = ['aluno', 'turma', 'data_matricula', 'status']
-    list_filter = ['status', 'turma']
+    list_display = ['aluno', 'turma', 'data_matricula']
+    list_filter = ['data_matricula']
     search_fields = ['aluno__nome', 'turma__nome']
     date_hierarchy = 'data_matricula'

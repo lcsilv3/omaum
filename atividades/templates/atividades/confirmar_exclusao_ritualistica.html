@@ -1,0 +1,37 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Excluir Atividade Ritualística{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Atividade Ritualística</h1>
+    
+    <div class="alert alert-danger">
+        <p>Tem certeza que deseja excluir a atividade ritualística "{{ atividade.nome }}"?</p>
+        <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Informações da Atividade</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Nome:</strong> {{ atividade.nome }}</p>
+            <p><strong>Data:</strong> {{ atividade.data|date:"d/m/Y" }}</p>
+            <p><strong>Horário:</strong> {{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</p>
+            <p><strong>Local:</strong> {{ atividade.local }}</p>
+            <p><strong>Turma:</strong> {{ atividade.turma }}</p>
+            <p><strong>Total de Participantes:</strong> {{ atividade.participantes.count }}</p>
+        </div>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="return_url" value="{{ return_url }}">
+        <div class="d-flex">
+            <button type="submit" class="btn btn-danger me-2">Sim, excluir</button>
+            <a href="{{ return_url }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

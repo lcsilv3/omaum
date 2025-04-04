@@ -1,6 +1,15 @@
 from django import forms
-from .models import Turma, Matricula
-from importlib import import_module
+from .models import Turma, Matricula  # Importe os modelos necessários
+
+def get_matricula_model():
+    """Obtém o modelo Matricula dinamicamente."""
+    turmas_module = import_module('turmas.models')
+    return getattr(turmas_module, 'Matricula')
+
+def get_turma_model():
+    """Obtém o modelo Turma dinamicamente."""
+    turmas_module = import_module('turmas.models')
+    return getattr(turmas_module, 'Turma')
 
 def get_aluno_model():
     alunos_module = import_module('alunos.models')
@@ -33,8 +42,13 @@ class TurmaForm(forms.ModelForm):
 
 class MatriculaForm(forms.ModelForm):
     class Meta:
-        model = Matricula
-        fields = ['aluno', 'status']
+        model = Matricula  # or get_matricula_model() if you're using dynamic imports
+        fields = ['aluno', 'turma']  # Make sure 'data_matricula' is NOT in this list
+        widgets = {
+            'aluno': forms.Select(attrs={'class': 'form-control'}),
+            'turma': forms.Select(attrs={'class': 'form-control'}),
+            # Make sure there's NO line for 'data_matricula' here
+        }
 
     def __init__(self, *args, **kwargs):
         turma = kwargs.pop('turma', None)

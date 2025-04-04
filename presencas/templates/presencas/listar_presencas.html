@@ -58,9 +58,9 @@
         <tbody>
             {% for presenca in presencas %}
             <tr>
-                <td>{{ presenca.aluno }}</td>
-                <td>{{ presenca.turma }}</td>
-                <td>{{ presenca.data }}</td>
+                <td>{{ presenca.aluno.nome }}</td>
+                <td>{{ presenca.turma.nome }}</td>
+                <td>{{ presenca.data|date:"d/m/Y" }}</td>
                 <td>{% if presenca.presente %}Sim{% else %}Não{% endif %}</td>
                 <td>
                     <a href="{% url 'presencas:editar_presenca' presenca.id %}" class="btn btn-sm btn-warning">Editar</a>

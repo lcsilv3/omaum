@@ -1,26 +1,35 @@
 from django.db import models
-from alunos.models import Aluno
+from importlib import import_module
 
+def get_aluno_model():
+    alunos_module = import_module('alunos.models')
+    return getattr(alunos_module, 'Aluno')
+
+def get_curso_model():
+    cursos_module = import_module('cursos.models')
+    return getattr(cursos_module, 'Curso')
 
 class Iniciacao(models.Model):
-    """
-    Modelo para armazenar informações sobre iniciações de alunos em cursos.
+    aluno = models.ForeignKey(
+        get_aluno_model(), 
+        on_delete=models.CASCADE, 
+        verbose_name='Aluno',
+        to_field='cpf'  # Especificar que estamos referenciando o campo cpf
+    )
+    curso = models.ForeignKey(
+        get_curso_model(), 
+        on_delete=models.CASCADE, 
+        verbose_name='Curso'
+    )
+    data_iniciacao = models.DateField(verbose_name='Data da Iniciação')
+    grau = models.CharField(max_length=50, verbose_name='Grau')
+    observacoes = models.TextField(blank=True, null=True, verbose_name='Observações')
     
-    Atributos:
-        aluno (ForeignKey): Referência ao aluno que recebeu a iniciação
-        nome_curso (str): Nome do curso de iniciação
-        data_iniciacao (date): Data em que a iniciação ocorreu
-        observacoes (str, opcional): Observações adicionais sobre a iniciação
-    """
-    aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name='iniciacoes')
-    nome_curso = models.CharField(max_length=100)
-    data_iniciacao = models.DateField()
-    observacoes = models.TextField(blank=True, null=True)
-
     def __str__(self):
-        return f"Iniciação - {self.aluno.nome} - {self.nome_curso}"
-
+        return f"{self.aluno.nome} - {self.curso.nome} - {self.grau}"
+    
     class Meta:
-        ordering = ['-data_iniciacao']
         verbose_name = 'Iniciação'
         verbose_name_plural = 'Iniciações'
+        ordering = ['-data_iniciacao']
+        unique_together = ['aluno', 'curso', 'grau']

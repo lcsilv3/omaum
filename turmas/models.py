@@ -1,6 +1,13 @@
 from django.db import models
-from django.core.exceptions import ValidationError
-from django.utils import timezone
+from importlib import import_module
+
+def get_aluno_model():
+    alunos_module = import_module('alunos.models')
+    return getattr(alunos_module, 'Aluno')
+
+def get_curso_model():
+    cursos_module = import_module('cursos.models')
+    return getattr(cursos_module, 'Curso')
 
 class Turma(models.Model):
     OPCOES_STATUS = [
@@ -10,7 +17,12 @@ class Turma(models.Model):
     ]
     
     nome = models.CharField('Nome', max_length=100)
-    curso = models.ForeignKey('cursos.Curso', on_delete=models.CASCADE, verbose_name='Curso')
+    curso = models.ForeignKey(
+        'cursos.Curso',
+        on_delete=models.CASCADE,
+        verbose_name='Curso',
+        to_field='codigo_curso'  # Especificar que estamos referenciando o campo codigo_curso
+    )
     data_inicio = models.DateField('Data de Início')
     data_fim = models.DateField('Data de Fim')
     status = models.CharField('Status', max_length=1, choices=OPCOES_STATUS, default='A')
@@ -63,16 +75,15 @@ class Matricula(models.Model):
         ('F', 'Finalizada'),
     ]
     
-    aluno = models.ForeignKey('alunos.Aluno', on_delete=models.CASCADE, 
-                             related_name='matriculas', verbose_name='Aluno')
-    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, 
-                             related_name='matriculas', verbose_name='Turma')
-    data_matricula = models.DateField('Data da Matrícula', auto_now_add=True)
-    status = models.CharField('Status', max_length=1, choices=OPCOES_STATUS, default='A')
+    aluno = models.ForeignKey('alunos.Aluno', on_delete=models.CASCADE, verbose_name='Aluno')
+    turma = models.ForeignKey('turmas.Turma', on_delete=models.CASCADE, verbose_name='Turma')
+    data_matricula = models.DateField(verbose_name='Data da Matrícula')
+    ativa = models.BooleanField(default=True, verbose_name='Matrícula Ativa')
     
     class Meta:
         verbose_name = 'Matrícula'
         verbose_name_plural = 'Matrículas'
+        ordering = ['-data_matricula']
         unique_together = ['aluno', 'turma']
     
     def __str__(self):

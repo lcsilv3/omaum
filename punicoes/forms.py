@@ -1,20 +1,24 @@
 from django import forms
-import importlib
+from importlib import import_module
 
-# Importando modelos usando importlib para evitar importações circulares
-def get_model(app_name, model_name):
-    module = importlib.import_module(f"{app_name}.models")
-    return getattr(module, model_name)
+def get_punicao_model():
+    punicoes_module = import_module('punicoes.models')
+    return getattr(punicoes_module, 'Punicao')
+
+def get_tipo_punicao_model():
+    punicoes_module = import_module('punicoes.models')
+    return getattr(punicoes_module, 'TipoPunicao')
 
 class PunicaoForm(forms.ModelForm):
     class Meta:
-        model = get_model('punicoes', 'Punicao')
-        fields = ['aluno', 'tipo_punicao', 'descricao', 'data_aplicacao', 'data_termino', 'status', 'observacoes']
+        model = get_punicao_model()
+        fields = ['aluno', 'tipo_punicao', 'data_aplicacao', 'motivo', 'observacoes']
         widgets = {
-            'data_aplicacao': forms.DateInput(attrs={'type': 'date'}),
-            'data_termino': forms.DateInput(attrs={'type': 'date'}),
-            'descricao': forms.Textarea(attrs={'rows': 3}),
-            'observacoes': forms.Textarea(attrs={'rows': 3}),
+            'aluno': forms.Select(attrs={'class': 'form-control'}),
+            'tipo_punicao': forms.Select(attrs={'class': 'form-control'}),
+            'data_aplicacao': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'motivo': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'observacoes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
 class TipoPunicaoForm(forms.ModelForm):

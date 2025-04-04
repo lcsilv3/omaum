@@ -14,10 +14,12 @@
       <p><strong>Duração:</strong> {{ curso.duracao }} meses</p>
     </div>
     <div class="card-footer">
-      <a href="{% url 'cursos:editar_curso' curso.id %}" class="btn btn-warning">Editar</a>
-      <a href="{% url 'cursos:excluir_curso' curso.id %}" class="btn btn-danger">Excluir</a>
-      <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Voltar</a>
+      <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
+      <a href="{% url 'cursos:editar_curso' curso.codigo_curso %}" class="btn btn-warning">Editar</a>
+      <a href="{% url 'cursos:excluir_curso' curso.codigo_curso %}" class="btn btn-danger">Excluir</a>
+      <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Voltar para Lista</a>
     </div>
   </div>
 </div>
 {% endblock %}
+

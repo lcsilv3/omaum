@@ -6,39 +6,45 @@ from .models import Iniciacao
 class IniciacaoForm(forms.ModelForm):
     class Meta:
         model = Iniciacao
-        fields = ['aluno', 'nome_curso', 'data_iniciacao', 'observacoes']
+        # Remova 'nome' da lista de campos
+        fields = ['aluno', 'curso', 'data_iniciacao', 'grau', 'observacoes']
         widgets = {
             'data_iniciacao': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'aluno': forms.Select(attrs={'class': 'form-control'}),
-            'nome_curso': forms.TextInput(attrs={'class': 'form-control'}),
+            'curso': forms.Select(attrs={'class': 'form-control'}),
+            'grau': forms.TextInput(attrs={'class': 'form-control'}),
             'observacoes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
         labels = {
             'aluno': 'Aluno',
-            'nome_curso': 'Nome do Curso',
+            'curso': 'Curso',
             'data_iniciacao': 'Data de Iniciação',
+            'grau': 'Grau',
             'observacoes': 'Observações'
         }
         help_texts = {
-            'nome_curso': 'Digite o nome completo do curso de iniciação',
+            'curso': 'Selecione o curso de iniciação',
             'data_iniciacao': 'Selecione a data em que o aluno foi iniciado no curso'
         }
 
     def clean(self):
         cleaned_data = super().clean()
         aluno = cleaned_data.get('aluno')
-        nome_curso = cleaned_data.get('nome_curso')
+        curso = cleaned_data.get('curso')
         data_iniciacao = cleaned_data.get('data_iniciacao')
         
         # Verifica se já existe uma iniciação para este aluno neste curso
-        if aluno and nome_curso:
+        if aluno and curso:
             # Exclui a instância atual em caso de edição
             instance_id = self.instance.id if self.instance else None
             
             # Verifica se já existe outra iniciação com o mesmo aluno e curso
-            if Iniciacao.objects.filter(aluno=aluno, nome_curso=nome_curso).exclude(id=instance_id).exists():
+            if Iniciacao.objects.filter(
+                aluno=aluno, 
+                curso=curso
+            ).exclude(id=instance_id).exists():
                 raise ValidationError(
-                    f"O aluno {aluno.nome} já possui uma iniciação no curso {nome_curso}."
+                    f"O aluno {aluno.nome} já possui uma iniciação no curso {curso.nome}."
                 )
         
         return cleaned_data

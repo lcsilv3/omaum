@@ -1,6 +1,6 @@
 import os
 
-def collect_code(root_dir, output_dir):
+def collect_code(root_dir, output_dir, max_files_per_chunk=10):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -49,6 +49,7 @@ def collect_code(root_dir, output_dir):
                 elif extension == 'js':
                     language = 'javascript'
                 
+                # Adicionar abertura do bloco de código com a linguagem correta
                 content += f"{language}\n"
                 
                 try:
@@ -61,24 +62,28 @@ def collect_code(root_dir, output_dir):
                 except IOError as e:
                     content += f"Error reading file: {e}"
                 
+                # Adicionar fechamento do bloco de código
                 content += "\n\n\n"
+                
                 functionality_content[functionality].append(content)
 
-    # Escreve o conteúdo de cada funcionalidade em um arquivo Markdown separado
-    for functionality, content in functionality_content.items():
-        # Ignorar diretórios vazios (mas não mais ignorando '.')
-        if not content:
+    # Dividindo em chunks menores ao salvar
+    for functionality, content_list in functionality_content.items():
+        if not content_list:
             continue
+        
+        # Dividir em chunks
+        chunks = [content_list[i:i + max_files_per_chunk] for i in range(0, len(content_list), max_files_per_chunk)]
+        
+        for i, chunk in enumerate(chunks):
+            chunk_file = os.path.join(output_dir, f"{functionality}_part{i+1}_code.md")
             
-        output_file = os.path.join(output_dir, f"{functionality}_code.md")
-        
-        with open(output_file, 'w', encoding='utf-8') as out:
-            # Adicionar título principal
-            out.write(f"# Código da Funcionalidade: {functionality}\n")
-            out.write(f"*Gerado automaticamente*\n\n")
-            out.write(''.join(content))
-        
-        print(f"Código da funcionalidade '{functionality}' coletado e salvo em {output_file}")
+            with open(chunk_file, 'w', encoding='utf-8') as out:
+                out.write(f"# Código da Funcionalidade: {functionality} - Parte {i+1}/{len(chunks)}\n")
+                out.write(f"*Gerado automaticamente*\n\n")
+                out.write(''.join(chunk))
+            
+            print(f"Código da funcionalidade '{functionality}' (parte {i+1}) salvo em {chunk_file}")
 
 if __name__ == "__main__":
     project_root = "."  # Caminho para a raiz do seu projeto

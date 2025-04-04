@@ -1,0 +1,219 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{% if aluno.id %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% if aluno.id %}Editar{% else %}Novo{% endif %} Aluno</h1>
+        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">Voltar para a lista</a>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Dados Pessoais</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.cpf %}
+                        {% include 'includes/form_field.html' with field=form.nome %}
+                        {% include 'includes/form_field.html' with field=form.data_nascimento %}
+                        {% include 'includes/form_field.html' with field=form.hora_nascimento %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.email %}
+                        {% include 'includes/form_field.html' with field=form.sexo %}
+                        {% include 'includes/form_field.html' with field=form.foto %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Dados Iniciáticos</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.numero_iniciatico %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.nome_iniciatico %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Nacionalidade e Naturalidade</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.nacionalidade %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.naturalidade %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Endereço</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        {% include 'includes/form_field.html' with field=form.rua %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.numero_imovel %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.complemento %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.bairro %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.cep %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        {% include 'includes/form_field.html' with field=form.cidade %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.estado %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Contatos de Emergência</h5>
+            </div>
+            <div class="card-body">
+                <h6>Primeiro Contato</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.nome_primeiro_contato %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.celular_primeiro_contato %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.tipo_relacionamento_primeiro_contato %}
+                    </div>
+                </div>
+                
+                <h6 class="mt-3">Segundo Contato</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.nome_segundo_contato %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.celular_segundo_contato %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.tipo_relacionamento_segundo_contato %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Informações Médicas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        {% include 'includes/form_field.html' with field=form.tipo_sanguineo %}
+                    </div>
+                    <div class="col-md-3">
+                        {% include 'includes/form_field.html' with field=form.fator_rh %}
+                    </div>
+                    <div class="col-md-3">
+                        {% include 'includes/form_field.html' with field=form.convenio_medico %}
+                    </div>
+                    <div class="col-md-3">
+                        {% include 'includes/form_field.html' with field=form.hospital %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.alergias %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.condicoes_medicas_gerais %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mb-5">
+            <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {% if aluno.cpf %}Atualizar{% else %}Cadastrar{% endif %} Aluno
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Script para pré-visualização da imagem quando o usuário seleciona uma foto
+    document.addEventListener('DOMContentLoaded', function() {
+        const fotoInput = document.getElementById('{{ form.foto.id_for_label }}');
+        if (fotoInput) {
+            fotoInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const preview = document.createElement('img');
+                    preview.className = 'img-fluid mt-2 rounded';
+                    preview.style.maxHeight = '200px';
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.src = e.target.result;
+                    }
+                    
+                    reader.readAsDataURL(this.files[0]);
+                    
+                    // Remove qualquer preview anterior
+                    const previewContainer = fotoInput.parentNode;
+                    const existingPreview = previewContainer.querySelector('img');
+                    if (existingPreview) {
+                        previewContainer.removeChild(existingPreview);
+                    }
+                    
+                    // Adiciona o novo preview
+                    previewContainer.appendChild(preview);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

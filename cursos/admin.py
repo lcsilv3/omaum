@@ -3,6 +3,7 @@ from .models import Curso
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
-    list_display = ['codigo_curso', 'nome', 'duracao']
-    search_fields = ('codigo_curso', 'nome')
-    list_filter = ('duracao',)
+    # Adjust list_display to use fields that actually exist in the Curso model
+    list_display = ['codigo_curso', 'duracao']  # Remove 'nome' if it doesn't exist
+    search_fields = ['codigo_curso']
+    list_filter = ['duracao']

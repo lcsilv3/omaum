@@ -8,8 +8,8 @@ from alunos.models import Aluno
 from turmas.models import Turma
 
 @login_required
-@permission_required('presencas.add_presencaacademica', raise_exception=True)
 def registrar_presenca(request):
+    """Registra a presença de um aluno."""
     if request.method == 'POST':
         form = PresencaForm(request.POST)
         if form.is_valid():
@@ -17,9 +17,7 @@ def registrar_presenca(request):
             presenca.registrado_por = request.user
             presenca.save()
             messages.success(request, 'Presença registrada com sucesso!')
-            return redirect('presencas:listar_presencas')  # Corrigido para usar o namespace
-        else:
-            messages.error(request, 'Corrija os erros no formulário.')
+            return redirect('presencas:listar_presencas')
     else:
         form = PresencaForm()
     
@@ -71,8 +69,8 @@ def listar_presencas(request):
     })
 
 @login_required
-@permission_required('presencas.change_presencaacademica', raise_exception=True)
-def editar_presenca(request, id):  # Padronizado para usar 'id'
+def editar_presenca(request, id):
+    """Edita um registro de presença."""
     presenca = get_object_or_404(PresencaAcademica, id=id)
     
     if request.method == 'POST':
@@ -80,9 +78,7 @@ def editar_presenca(request, id):  # Padronizado para usar 'id'
         if form.is_valid():
             form.save()
             messages.success(request, 'Presença atualizada com sucesso!')
-            return redirect('presencas:listar_presencas')  # Corrigido para usar o namespace
-        else:
-            messages.error(request, 'Corrija os erros no formulário.')
+            return redirect('presencas:listar_presencas')
     else:
         form = PresencaForm(instance=presenca)
     

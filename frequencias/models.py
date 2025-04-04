@@ -1,26 +1,35 @@
 from django.db import models
-from django.contrib.auth.models import User
-from alunos.models import Aluno
-from turmas.models import Turma
+from importlib import import_module
+
+def get_aluno_model():
+    alunos_module = import_module('alunos.models')
+    return getattr(alunos_module, 'Aluno')
+
+def get_atividade_model():
+    atividades_module = import_module('atividades.models')
+    return getattr(atividades_module, 'AtividadeAcademica')
 
 class Frequencia(models.Model):
-    aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name='frequencias')
-    turma = models.ForeignKey(Turma, on_delete=models.CASCADE)
-    data = models.DateField()
-    presente = models.BooleanField(default=False)
-    justificativa = models.TextField(blank=True, null=True)
-    registrado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    data_registro = models.DateTimeField(auto_now_add=True)
-    data_atualizacao = models.DateTimeField(auto_now=True)
-
+    aluno = models.ForeignKey(
+        get_aluno_model(), 
+        on_delete=models.CASCADE, 
+        verbose_name='Aluno',
+        to_field='cpf'  # Especificar que estamos referenciando o campo cpf
+    )
+    atividade = models.ForeignKey(
+        get_atividade_model(), 
+        on_delete=models.CASCADE, 
+        verbose_name='Atividade'
+    )
+    data = models.DateField(verbose_name='Data')
+    presente = models.BooleanField(default=True, verbose_name='Presente')
+    justificativa = models.TextField(blank=True, null=True, verbose_name='Justificativa')
+    
     def __str__(self):
-        return f"{self.aluno} - {self.turma} - {self.data}"
-
+        return f"{self.aluno.nome} - {self.atividade.nome} - {self.data}"
+    
     class Meta:
-        verbose_name = "Frequência"
-        verbose_name_plural = "Frequências"
-        permissions = [
-            ("gerar_relatorio_frequencia", "Pode gerar relatório de frequências"),
-        ]
-        # Garantir que não tenhamos entradas duplicadas para o mesmo aluno, turma e data
-        unique_together = ['aluno', 'turma', 'data']
+        verbose_name = 'Frequência'
+        verbose_name_plural = 'Frequências'
+        ordering = ['-data']
+        unique_together = ['aluno', 'atividade', 'data']

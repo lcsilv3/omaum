@@ -1,14 +1,28 @@
 from django import forms
-from .models import PresencaAcademica
-import datetime
-from django.core.exceptions import ValidationError
+from importlib import import_module
+
+def get_presenca_model():
+    presencas_module = import_module('presencas.models')
+    return getattr(presencas_module, 'PresencaAcademica')
+
+def get_aluno_model():
+    alunos_module = import_module('alunos.models')
+    return getattr(alunos_module, 'Aluno')
+
+def get_turma_model():
+    turmas_module = import_module('turmas.models')
+    return getattr(turmas_module, 'Turma')
 
 class PresencaForm(forms.ModelForm):
     class Meta:
-        model = PresencaAcademica
-        fields = ['aluno', 'turma', 'data', 'presente']
+        model = get_presenca_model()
+        fields = ['aluno', 'turma', 'data', 'presente', 'justificativa']
         widgets = {
-            'data': forms.DateInput(attrs={'type': 'date'}),
+            'aluno': forms.Select(attrs={'class': 'form-control'}),
+            'turma': forms.Select(attrs={'class': 'form-control'}),
+            'data': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'presente': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'justificativa': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         
     def clean_data(self):

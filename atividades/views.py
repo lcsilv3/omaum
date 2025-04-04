@@ -1,229 +1,290 @@
 import importlib
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.urls import reverse
+from django.http import HttpResponse
 
-# Função para obter modelos usando importlib
-def get_models():
-    AtividadeAcademica = importlib.import_module('atividades.models').AtividadeAcademica
-    AtividadeRitualistica = importlib.import_module('atividades.models').AtividadeRitualistica
-    return AtividadeAcademica, AtividadeRitualistica
+# Set up logger
+logger = logging.getLogger(__name__)
 
-# Função para obter formulários usando importlib
-def get_forms():
-    AtividadeAcademicaForm = importlib.import_module('atividades.forms').AtividadeAcademicaForm
-    AtividadeRitualisticaForm = importlib.import_module('atividades.forms').AtividadeRitualisticaForm
-    AtividadeBuscaForm = importlib.import_module('atividades.forms').AtividadeBuscaForm
-    return AtividadeAcademicaForm, AtividadeRitualisticaForm, AtividadeBuscaForm
+
+def get_return_url(request, default_url):
+    """Obtém a URL de retorno do request ou usa o valor padrão."""
+    return_url = request.GET.get("return_url", "")
+    # Verificação básica de segurança
+    if not return_url or not return_url.startswith("/"):
+        return default_url
+    return return_url
+
+
+def get_form_class(form_name):
+    """Importa dinamicamente uma classe de formulário para evitar importações circulares."""
+    forms_module = importlib.import_module("atividades.forms")
+    return getattr(forms_module, form_name)
+
+
+def get_model_class(model_name, module_name="atividades.models"):
+    """Importa dinamicamente uma classe de modelo para evitar importações circulares."""
+    models_module = importlib.import_module(module_name)
+    return getattr(models_module, model_name)
+
 
 @login_required
 def listar_atividades_academicas(request):
-    """Lista todas as atividades acadêmicas com opções de filtragem."""
-    AtividadeAcademica, _ = get_models()
-    _, _, AtividadeBuscaForm = get_forms()
-    
-    form_busca = AtividadeBuscaForm(request.GET)
+    """Lista todas as atividades acadêmicas."""
+    AtividadeAcademica = get_model_class("AtividadeAcademica")
     atividades = AtividadeAcademica.objects.all()
     
-    # Aplicar filtros se o formulário for válido
-    if form_busca.is_valid():
-        termo = form_busca.cleaned_data.get('termo')
-        data_inicio = form_busca.cleaned_data.get('data_inicio')
-        data_fim = form_busca.cleaned_data.get('data_fim')
-        
-        if termo:
-            atividades = atividades.filter(
-                Q(nome__icontains=termo) | 
-                Q(descricao__icontains=termo)
-            )
-        
-        if data_inicio:
-            atividades = atividades.filter(data_inicio__gte=data_inicio)
-        
-        if data_fim:
-            atividades = atividades.filter(data_fim__lte=data_fim)
+    # Armazenar a URL atual na sessão para uso posterior
+    request.session["last_academicas_list_url"] = request.get_full_path()
     
-    # Paginação
-    paginator = Paginator(atividades, 10)  # 10 atividades por página
-    page = request.GET.get('page')
-    
-    try:
-        atividades_paginadas = paginator.page(page)
-    except PageNotAnInteger:
-        atividades_paginadas = paginator.page(1)
-    except EmptyPage:
-        atividades_paginadas = paginator.page(paginator.num_pages)
-    
-    context = {
-        'atividades': atividades_paginadas,
-        'form_busca': form_busca,
-        'total_atividades': atividades.count(),
-    }
-    
-    return render(request, 'atividades/listar_atividades_academicas.html', context)
+    return render(
+        request,
+        "atividades/listar_atividades_academicas.html",
+        {
+            "atividades": atividades,
+            "return_url": request.path,  # Armazena URL atual para retorno
+        },
+    )
 
-@login_required
-def criar_atividade_academica(request):
-    """Cria uma nova atividade acadêmica."""
-    AtividadeAcademicaForm, _, _ = get_forms()
-    
-    if request.method == 'POST':
-        form = AtividadeAcademicaForm(request.POST)
-        if form.is_valid():
-            atividade = form.save()
-            messages.success(request, 'Atividade acadêmica criada com sucesso!')
-            return redirect('atividades:detalhar_atividade_academica', pk=atividade.pk)
-        else:
-            messages.error(request, 'Por favor, corrija os erros abaixo.')
-    else:
-        form = AtividadeAcademicaForm()
-    
-    return render(request, 'atividades/criar_atividade_academica.html', {'form': form})
-
-@login_required
-def detalhar_atividade_academica(request, pk):
-    """Exibe os detalhes de uma atividade acadêmica."""
-    AtividadeAcademica, _ = get_models()
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
-    return render(request, 'atividades/detalhar_atividade_academica.html', {'atividade': atividade})
-
-@login_required
-def editar_atividade_academica(request, pk):
-    """Edita uma atividade acadêmica existente."""
-    AtividadeAcademica, _ = get_models()
-    AtividadeAcademicaForm, _, _ = get_forms()
-    
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
-    
-    if request.method == 'POST':
-        form = AtividadeAcademicaForm(request.POST, instance=atividade)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Atividade acadêmica atualizada com sucesso!')
-            return redirect('atividades:detalhar_atividade_academica', pk=atividade.pk)
-        else:
-            messages.error(request, 'Por favor, corrija os erros abaixo.')
-    else:
-        form = AtividadeAcademicaForm(instance=atividade)
-    
-    return render(request, 'atividades/editar_atividade_academica.html', {'form': form, 'atividade': atividade})
-
-@login_required
-def excluir_atividade_academica(request, pk):
-    """Exclui uma atividade acadêmica."""
-    AtividadeAcademica, _ = get_models()
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
-    
-    if request.method == 'POST':
-        atividade.delete()
-        messages.success(request, 'Atividade acadêmica excluída com sucesso!')
-        return redirect('atividades:listar_atividades_academicas')
-    
-    return render(request, 'atividades/excluir_atividade_academica.html', {'atividade': atividade})
 
 @login_required
 def listar_atividades_ritualisticas(request):
-    """Lista todas as atividades ritualísticas com opções de filtragem."""
-    _, AtividadeRitualistica = get_models()
-    _, _, AtividadeBuscaForm = get_forms()
-    
-    form_busca = AtividadeBuscaForm(request.GET)
+    """Lista todas as atividades ritualísticas."""
+    AtividadeRitualistica = get_model_class("AtividadeRitualistica")
     atividades = AtividadeRitualistica.objects.all()
     
-    # Aplicar filtros se o formulário for válido
-    if form_busca.is_valid():
-        termo = form_busca.cleaned_data.get('termo')
-        data_inicio = form_busca.cleaned_data.get('data_inicio')
-        data_fim = form_busca.cleaned_data.get('data_fim')
-        
-        if termo:
-            atividades = atividades.filter(
-                Q(nome__icontains=termo) | 
-                Q(descricao__icontains=termo)
+    # Armazenar a URL atual na sessão para uso posterior
+    request.session["last_ritualisticas_list_url"] = request.get_full_path()
+    
+    # Salvar URL referenciadora, exceto se vier do próprio formulário de atividade ritualística
+    referer = request.META.get("HTTP_REFERER", "")
+    if referer and not any(
+        x in referer
+        for x in ["criar_atividade_ritualistica", "editar_atividade_ritualistica"]
+    ):
+        request.session["atividade_ritualistica_referer"] = referer
+    
+    # Usar a URL referenciadora armazenada ou a página inicial como fallback
+    previous_url = request.session.get("atividade_ritualistica_referer", "/")
+    
+    return render(
+        request,
+        "atividades/listar_atividades_ritualisticas.html",
+        {
+            "atividades": atividades,
+            "previous_url": previous_url,
+        },
+    )
+
+
+@login_required
+def criar_atividade_academica(request):
+    """Função para criar uma nova atividade acadêmica."""
+    AtividadeAcademicaForm = get_form_class("AtividadeAcademicaForm")
+    return_url = request.GET.get("return_url", reverse("atividades:listar_atividades_academicas"))
+    
+    if request.method == "POST":
+        form = AtividadeAcademicaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Atividade acadêmica criada com sucesso.")
+            return redirect(return_url)
+        else:
+            messages.error(request, "Corrija os erros no formulário.")
+    else:
+        form = AtividadeAcademicaForm()
+    
+    return render(
+        request,
+        "atividades/formulario_atividade_academica.html",
+        {"form": form, "return_url": return_url},
+    )
+
+
+@login_required
+def editar_atividade_academica(request, pk):
+    """Função para editar uma atividade acadêmica existente."""
+    AtividadeAcademica = get_model_class("AtividadeAcademica")
+    AtividadeAcademicaForm = get_form_class("AtividadeAcademicaForm")
+    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+    return_url = request.GET.get("return_url", reverse("atividades:listar_atividades_academicas"))
+    
+    if request.method == "POST":
+        try:
+            form = AtividadeAcademicaForm(request.POST, instance=atividade)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Atividade acadêmica atualizada com sucesso.")
+                return redirect(return_url)
+            else:
+                messages.error(request, "Corrija os erros no formulário.")
+        except Exception as e:
+            messages.error(
+                request,
+                f"Erro ao processar formulário de atividade acadêmica: {str(e)}",
             )
-        
-        if data_inicio:
-            atividades = atividades.filter(data_inicio__gte=data_inicio)
-        
-        if data_fim:
-            atividades = atividades.filter(data_fim__lte=data_fim)
+    else:
+        form = AtividadeAcademicaForm(instance=atividade)
     
-    # Paginação
-    paginator = Paginator(atividades, 10)  # 10 atividades por página
-    page = request.GET.get('page')
+    return render(
+        request,
+        "atividades/formulario_atividade_academica.html",
+        {"form": form, "atividade": atividade, "return_url": return_url},
+    )
+
+  @login_required
+  def excluir_atividade_academica(request, pk):
+      """Função para excluir uma atividade acadêmica."""
+      AtividadeAcademica = get_model_class("AtividadeAcademica")
+      atividade = get_object_or_404(AtividadeAcademica, pk=pk)
     
-    try:
-        atividades_paginadas = paginator.page(page)
-    except PageNotAnInteger:
-        atividades_paginadas = paginator.page(1)
-    except EmptyPage:
-        atividades_paginadas = paginator.page(paginator.num_pages)
+      if request.method == "POST":
+          try:
+              atividade.delete()
+              messages.success(request, "Atividade acadêmica excluída com sucesso.")
+          except Exception as e:
+              messages.error(request, f"Erro ao excluir atividade acadêmica: {str(e)}")
+      return redirect("atividades:listar_atividades_academicas")
+    )def detalhar_atividade_academica(request, pk):
+    """Função para mostrar detalhes de uma atividade acadêmica."""
+    AtividadeAcademica = get_model_class("AtividadeAcademica")
+    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+    return_url = request.GET.get("return_url", reverse("atividades:listar_atividades_academicas"))
     
-    context = {
-        'atividades': atividades_paginadas,
-        'form_busca': form_busca,
-        'total_atividades': atividades.count(),
-    }
-    
-    return render(request, 'atividades/listar_atividades_ritualisticas.html', context)
+    return render(
+        request,
+        "atividades/detalhar_atividade_academica.html",
+        {"atividade": atividade, "return_url": return_url},
+    )
+
 
 @login_required
 def criar_atividade_ritualistica(request):
-    """Cria uma nova atividade ritualística."""
-    _, AtividadeRitualisticaForm, _ = get_forms()
+    """Função para criar uma nova atividade ritualística."""
+    AtividadeRitualisticaForm = get_form_class("AtividadeRitualisticaForm")
+    return_url = request.GET.get("return_url", reverse("atividades:listar_atividades_ritualisticas"))
     
-    if request.method == 'POST':
-        form = AtividadeRitualisticaForm(request.POST)
-        if form.is_valid():
-            atividade = form.save()
-            messages.success(request, 'Atividade ritualística criada com sucesso!')
-            return redirect('atividades:detalhar_atividade_ritualistica', pk=atividade.pk)
-        else:
-            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    if request.method == "POST":
+        try:
+            form = AtividadeRitualisticaForm(request.POST)
+            if form.is_valid():
+                atividade = form.save(commit=False)
+                atividade.save()
+                
+                # Processar o campo todos_alunos se existir
+                if hasattr(form, 'cleaned_data') and form.cleaned_data.get('todos_alunos'):
+                    # Obter todos os alunos da turma e adicioná-los à atividade
+                    Aluno = get_model_class("Aluno", module_name="alunos.models")
+                    alunos_da_turma = Aluno.objects.filter(turmas=atividade.turma)
+                    for aluno in alunos_da_turma:
+                        atividade.participantes.add(aluno)
+                else:
+                    # Salvar apenas os participantes selecionados no formulário
+                    form.save_m2m()
+                    
+                messages.success(request, "Atividade ritualística criada com sucesso.")
+                return redirect(return_url)
+            else:
+                messages.error(request, "Corrija os erros no formulário.")
+        except Exception as e:
+            messages.error(
+                request,
+                f"Erro ao processar formulário de atividade ritualística: {str(e)}",
+            )
     else:
         form = AtividadeRitualisticaForm()
     
-    return render(request, 'atividades/criar_atividade_ritualistica.html', {'form': form})
+    return render(
+        request,
+        "atividades/criar_atividade_ritualistica.html",
+        {"form": form, "return_url": return_url},
+    )
 
-@login_required
-def detalhar_atividade_ritualistica(request, pk):
-    """Exibe os detalhes de uma atividade ritualística."""
-    _, AtividadeRitualistica = get_models()
-    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
-    return render(request, 'atividades/detalhar_atividade_ritualistica.html', {'atividade': atividade})
 
 @login_required
 def editar_atividade_ritualistica(request, pk):
-    """Edita uma atividade ritualística existente."""
-    _, AtividadeRitualistica = get_models()
-    _, AtividadeRitualisticaForm, _ = get_forms()
-    
+    """Função para editar uma atividade ritualística existente."""
+    AtividadeRitualistica = get_model_class("AtividadeRitualistica")
+    AtividadeRitualisticaForm = get_form_class("AtividadeRitualisticaForm")
     atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
+    return_url = request.GET.get("return_url", reverse("atividades:listar_atividades_ritualisticas"))
     
-    if request.method == 'POST':
-        form = AtividadeRitualisticaForm(request.POST, instance=atividade)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Atividade ritualística atualizada com sucesso!')
-            return redirect('atividades:detalhar_atividade_ritualistica', pk=atividade.pk)
-        else:
-            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    if request.method == "POST":
+        try:
+            form = AtividadeRitualisticaForm(request.POST, instance=atividade)
+            if form.is_valid():
+                atividade = form.save(commit=False)
+                atividade.save()
+                
+                # Processar o campo todos_alunos se existir
+                if hasattr(form, 'cleaned_data') and form.cleaned_data.get('todos_alunos'):
+                    # Limpar participantes existentes
+                    atividade.participantes.clear()
+                    # Obter todos os alunos da turma e adicioná-los à atividade
+                    Aluno = get_model_class("Aluno", module_name="alunos.models")
+                    alunos_da_turma = Aluno.objects.filter(turmas=atividade.turma)
+                    for aluno in alunos_da_turma:
+                        atividade.participantes.add(aluno)
+                else:
+                    # Salvar apenas os participantes selecionados no formulário
+                    form.save_m2m()
+                
+                messages.success(request, "Atividade ritualística atualizada com sucesso.")
+                return redirect(return_url)
+            else:
+                messages.error(request, "Corrija os erros no formulário.")
+        except Exception as e:
+            messages.error(
+                request,
+                f"Erro ao processar formulário de atividade ritualística: {str(e)}",
+            )
     else:
         form = AtividadeRitualisticaForm(instance=atividade)
     
-    return render(request, 'atividades/editar_atividade_ritualistica.html', {'form': form, 'atividade': atividade})
+    return render(
+        request,
+        "atividades/editar_atividade_ritualistica.html",
+        {"form": form, "atividade": atividade, "return_url": return_url},
+    )
+
 
 @login_required
-def excluir_atividade_ritualistica(request, pk):
-    """Exclui uma atividade ritualística."""
-    _, AtividadeRitualistica = get_models()
+def confirmar_exclusao_ritualistica(request, pk):
+    """Função para confirmar a exclusão de uma atividade ritualística."""
+    AtividadeRitualistica = get_model_class("AtividadeRitualistica")
     atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
     
-    if request.method == 'POST':
-        atividade.delete()
-        messages.success(request, 'Atividade ritualística excluída com sucesso!')
-        return redirect('atividades:listar_atividades_ritualisticas')
+    if request.method == "POST":
+        try:
+            atividade.delete()
+            messages.success(request, "Atividade ritualística excluída com sucesso.")
+            return redirect("atividades:listar_atividades_ritualisticas")
+        except Exception as e:
+            messages.error(request, f"Erro ao excluir atividade ritualística: {str(e)}")
+            return redirect("atividades:detalhar_atividade_ritualistica", pk=pk)
     
-    return render(request, 'atividades/excluir_atividade_ritualistica.html', {'atividade': atividade})
+    return render(
+        request,
+        "atividades/confirmar_exclusao_ritualistica.html",
+        {"object": atividade},
+    )
+
+@login_required
+def detalhar_atividade_ritualistica(request, pk):
+    """Função para mostrar detalhes de uma atividade ritualística."""
+    AtividadeRitualistica = get_model_class("AtividadeRitualistica")
+    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
+    total_participantes = atividade.participantes.count()
+    
+    return render(
+        request,
+        "atividades/detalhar_atividade_ritualistica.html",
+        {
+            "atividade": atividade,
+            "total_participantes": total_participantes,
+        },
+    )

@@ -15,7 +15,7 @@
                 <select name="curso" class="form-control">
                     <option value="">Todos os cursos</option>
                     {% for curso in cursos %}
-                        <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_selecionado %}selected{% endif %}>
+                        <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == curso_selecionado %}selected{% endif %}>
                             {{ curso.nome }}
                         </option>
                     {% endfor %}
@@ -95,3 +95,4 @@
     <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary">Criar Nova Turma</a>
 </div>
 {% endblock %}
+

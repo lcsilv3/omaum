@@ -1,87 +1,31 @@
-{% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% extends 'core/base.html' %}
 
-{% block title %}Editar Aluno - {{ aluno.nome }}{% endblock %}
+{% block title %}Editar Aluno: {{ aluno.nome }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Editar Aluno</h1>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
+    <h1>Editar Aluno: {{ aluno.nome }}</h1>
     
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         
-        <div class="row">
-            <div class="col-md-6">
-                <h3>Informações Pessoais</h3>
-                {{ form.nome|crispy }}
-                {{ form.cpf|crispy }}
-                {{ form.data_nascimento|crispy }}
-                {{ form.sexo|crispy }}
-                {{ form.email|crispy }}
-                {{ form.telefone_fixo|crispy }}
+        {% for field in form %}
+            <div class="form-group mb-3">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
             </div>
-            <div class="col-md-6">
-                <h3>Endereço</h3>
-                {{ form.cep|crispy }}
-                {{ form.rua|crispy }}
-                {{ form.numero_imovel|crispy }}
-                {{ form.complemento|crispy }}
-                {{ form.bairro|crispy }}
-                {{ form.cidade|crispy }}
-                {{ form.estado|crispy }}
-            </div>
-        </div>
-        
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <h3>Informações Acadêmicas</h3>
-                {{ form.curso|crispy }}
-                {{ form.numero_iniciatico|crispy }}
-                {{ form.nome_iniciatico|crispy }}
-                {{ form.data_iniciacao|crispy }}
-            </div>
-            <div class="col-md-6">
-                <h3>Informações Médicas</h3>
-                {{ form.tipo_sanguineo|crispy }}
-                {{ form.fator_rh|crispy }}
-                {{ form.alergias|crispy }}
-                {{ form.condicoes_medicas_gerais|crispy }}
-            </div>
-        </div>
-        
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <h3>Contato de Emergência 1</h3>
-                {{ form.nome_primeiro_contato|crispy }}
-                {{ form.celular_primeiro_contato|crispy }}
-                {{ form.tipo_relacionamento_primeiro_contato|crispy }}
-            </div>
-            <div class="col-md-6">
-                <h3>Contato de Emergência 2</h3>
-                {{ form.nome_segundo_contato|crispy }}
-                {{ form.celular_segundo_contato|crispy }}
-                {{ form.tipo_relacionamento_segundo_contato|crispy }}
-            </div>
-        </div>
-        
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <h3>Foto</h3>
-                {{ form.foto|crispy }}
-            </div>
-        </div>
+        {% endfor %}
         
         <div class="mt-4">
             <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-            <a href="{% url 'alunos:detalhes' aluno.cpf %}" class="btn btn-secondary">Cancelar</a>
+            <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-info">Cancelar</a>
         </div>
     </form>
 </div>

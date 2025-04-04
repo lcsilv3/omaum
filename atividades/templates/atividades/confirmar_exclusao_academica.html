@@ -1,0 +1,37 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Confirmar Exclusão de Atividade Acadêmica{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Confirmar Exclusão</h1>
+    
+    <div class="alert alert-danger">
+        <p>Tem certeza que deseja excluir a atividade acadêmica "{{ atividade.nome }}"?</p>
+        <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Informações da Atividade</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Nome:</strong> {{ atividade.nome }}</p>
+            <p><strong>Responsável:</strong> {{ atividade.responsavel|default:"Não informado" }}</p>
+            <p><strong>Data de Início:</strong> {{ atividade.data_inicio|date:"d/m/Y H:i" }}</p>
+            <p><strong>Data de Término:</strong> {{ atividade.data_fim|date:"d/m/Y H:i"|default:"Não definida" }}</p>
+            <p><strong>Local:</strong> {{ atividade.local|default:"Não informado" }}</p>
+            <p><strong>Tipo:</strong> {{ atividade.get_tipo_atividade_display }}</p>
+            <p><strong>Status:</strong> {{ atividade.get_status_display }}</p>
+            <p><strong>Turma:</strong> {{ atividade.turma.nome }}</p>
+        </div>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <!-- Adicionar um campo oculto para a URL de retorno -->
+        <input type="hidden" name="return_url" value="{{ return_url }}">
+        <button type="submit" class="btn btn-danger">Sim, excluir</button>
+        <a href="{{ return_url }}" class="btn btn-secondary">Cancelar</a>
+    </form></div>
+{% endblock %}

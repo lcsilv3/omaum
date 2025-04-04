@@ -70,18 +70,30 @@ def criar_punicao(request):
     return render(request, 'punicoes/criar_punicao.html', {'form': form})
 
 @login_required
-def editar_punicao(request, id):
-    Punicao = get_model('punicoes', 'Punicao')
-    PunicaoForm = get_form('punicoes', 'PunicaoForm')
+def aplicar_punicao(request):
+    """Aplica uma punição a um aluno."""
+    if request.method == 'POST':
+        form = PunicaoForm(request.POST)
+        if form.is_valid():
+            punicao = form.save(commit=False)
+            punicao.aplicada_por = request.user
+            punicao.save()
+            messages.success(request, 'Punição aplicada com sucesso!')
+            return redirect('punicoes:listar_punicoes')
+    else:
+        form = PunicaoForm()
     
+    return render(request, 'punicoes/aplicar_punicao.html', {'form': form})
+
+@login_required
+def editar_punicao(request, id):
+    """Edita uma punição."""
     punicao = get_object_or_404(Punicao, id=id)
     
     if request.method == 'POST':
         form = PunicaoForm(request.POST, instance=punicao)
         if form.is_valid():
-            punicao = form.save(commit=False)
-            punicao.atualizado_por = request.user
-            punicao.save()
+            form.save()
             messages.success(request, 'Punição atualizada com sucesso!')
             return redirect('punicoes:listar_punicoes')
     else:
