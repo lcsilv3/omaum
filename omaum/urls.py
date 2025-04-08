@@ -14,7 +14,7 @@ urlpatterns = [
     path('iniciacoes/', include('iniciacoes.urls')),
     path('presencas/', include('presencas.urls')),
     path('punicoes/', include('punicoes.urls')),
-    path('relatorios/', include('relatorios.urls')),
+    path('relatorios/', include('relatorios.urls', namespace='relatorios')),
     path('turmas/', include('turmas.urls')),
     path('', RedirectView.as_view(pattern_name='core:pagina_inicial'), name='home'),
 ]

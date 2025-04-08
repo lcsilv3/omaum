@@ -432,22 +432,20 @@ def editar_atividade_academica(request, pk):
         {"form": form, "atividade": atividade, "return_url": return_url},
     )
 
-
-@login_required
-def excluir_atividade_academica(request, pk):
-    """Função para excluir uma atividade acadêmica."""
-    AtividadeAcademica = get_model_class("AtividadeAcademica")
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+  @login_required
+  def excluir_atividade_academica(request, pk):
+      """Função para excluir uma atividade acadêmica."""
+      AtividadeAcademica = get_model_class("AtividadeAcademica")
+      atividade = get_object_or_404(AtividadeAcademica, pk=pk)
     
-    if request.method == "POST":
-        try:
-            atividade.delete()
-            messages.success(request, "Atividade acadêmica excluída com sucesso.")
-            return redirect("atividades:listar_atividades_academicas")
-        except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade acadêmica: {str(e)}")
-    return redirect("atividades:listar_atividades_academicas")@login_required
-def detalhar_atividade_academica(request, pk):
+      if request.method == "POST":
+          try:
+              atividade.delete()
+              messages.success(request, "Atividade acadêmica excluída com sucesso.")
+          except Exception as e:
+              messages.error(request, f"Erro ao excluir atividade acadêmica: {str(e)}")
+      return redirect("atividades:listar_atividades_academicas")
+    )def detalhar_atividade_academica(request, pk):
     """Função para mostrar detalhes de uma atividade acadêmica."""
     AtividadeAcademica = get_model_class("AtividadeAcademica")
     atividade = get_object_or_404(AtividadeAcademica, pk=pk)

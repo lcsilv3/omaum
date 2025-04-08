@@ -11,12 +11,22 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from io import BytesIO
 from datetime import datetime
+from django.urls import reverse
+import logging
 
+logger = logging.getLogger(__name__)
 @login_required
 def index(request):
     """
     Página inicial do módulo de relatórios.
     """
+    try:
+        # Try to reverse the URL to see if it works
+        alunos_url = reverse('relatorios:relatorio_alunos')
+        logger.info(f"Successfully reversed URL: {alunos_url}")
+    except Exception as e:
+        # Log the error if it fails
+        logger.error(f"Error reversing URL: {str(e)}")
     return render(request, 'relatorios/index.html')
 
 @login_required
@@ -26,10 +36,10 @@ def relatorio_alunos(request):
     nome = request.GET.get('nome', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
-    
+
     # Começar com todos os alunos
     alunos = Aluno.objects.all()
-    
+
     # Aplicar filtros
     if nome:
         alunos = alunos.filter(nome__icontains=nome)
@@ -37,7 +47,7 @@ def relatorio_alunos(request):
         alunos = alunos.filter(data_nascimento__gte=data_inicio)
     if data_fim:
         alunos = alunos.filter(data_nascimento__lte=data_fim)
-    
+
     context = {
         'alunos': alunos,
         'nome': nome,
@@ -53,10 +63,10 @@ def relatorio_alunos_pdf(request):
     nome = request.GET.get('nome', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
-    
+
     # Começar com todos os alunos
     alunos = Aluno.objects.all()
-    
+
     # Aplicar filtros
     if nome:
         alunos = alunos.filter(nome__icontains=nome)
@@ -64,23 +74,23 @@ def relatorio_alunos_pdf(request):
         alunos = alunos.filter(data_nascimento__gte=data_inicio)
     if data_fim:
         alunos = alunos.filter(data_nascimento__lte=data_fim)
-    
+
     # Criar um buffer para receber os dados do PDF
     buffer = BytesIO()
-    
+
     # Criar o objeto PDF
     doc = SimpleDocTemplate(buffer, pagesize=landscape(letter))
-    
+
     # Container para os objetos 'Flowable'
     elementos = []
-    
+
     # Definir estilos
     estilos = getSampleStyleSheet()
     estilo_titulo = estilos['Heading1']
-    
+
     # Adicionar título
     elementos.append(Paragraph("Relatório de Alunos", estilo_titulo))
-    
+
     # Criar dados da tabela
     data = [['Nome', 'CPF', 'Email', 'Data de Nascimento']]  # Linha de cabeçalho
     for aluno in alunos:
@@ -90,10 +100,10 @@ def relatorio_alunos_pdf(request):
             aluno.email,
             aluno.data_nascimento.strftime('%d/%m/%Y')
         ])
-    
+
     # Criar tabela
     tabela = Table(data)
-    
+
     # Adicionar estilo à tabela
     estilo = TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -105,23 +115,23 @@ def relatorio_alunos_pdf(request):
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ])
     tabela.setStyle(estilo)
-    
+
     # Adicionar tabela aos elementos
     elementos.append(tabela)
-    
+
     # Construir PDF
     doc.build(elementos)
-    
+
     # Retornar resposta
     buffer.seek(0)
-    
+
     # Definir nome do arquivo com data atual
     data_atual = datetime.now().strftime('%d-%m-%Y')
     filename = f"relatorio_alunos_{data_atual}.pdf"
-    
+
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
+
     return response
 
 @login_required
@@ -132,10 +142,10 @@ def relatorio_presencas(request):
     turma_id = request.GET.get('turma', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
-    
+
     # Começar com todas as presenças
     presencas = PresencaAcademica.objects.all().select_related('aluno', 'turma')
-    
+
     # Aplicar filtros
     if aluno_id:
         presencas = presencas.filter(aluno_id=aluno_id)
@@ -145,10 +155,10 @@ def relatorio_presencas(request):
         presencas = presencas.filter(data__gte=data_inicio)
     if data_fim:
         presencas = presencas.filter(data__lte=data_fim)
-    
+
     # Obter listas para os filtros
     alunos = Aluno.objects.all()
-    
+
     context = {
         'presencas': presencas,
         'alunos': alunos,
@@ -167,10 +177,10 @@ def relatorio_presencas_pdf(request):
     turma_id = request.GET.get('turma', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
-    
+
     # Começar com todas as presenças
     presencas = PresencaAcademica.objects.all().select_related('aluno', 'turma')
-    
+
     # Aplicar filtros
     if aluno_id:
         presencas = presencas.filter(aluno_id=aluno_id)
@@ -180,23 +190,23 @@ def relatorio_presencas_pdf(request):
         presencas = presencas.filter(data__gte=data_inicio)
     if data_fim:
         presencas = presencas.filter(data__lte=data_fim)
-    
+
     # Criar um buffer para receber os dados do PDF
     buffer = BytesIO()
-    
+
     # Criar o objeto PDF
     doc = SimpleDocTemplate(buffer, pagesize=landscape(letter))
-    
+
     # Container para os objetos 'Flowable'
     elementos = []
-    
+
     # Definir estilos
     estilos = getSampleStyleSheet()
     estilo_titulo = estilos['Heading1']
-    
+
     # Adicionar título
     elementos.append(Paragraph("Relatório de Presenças", estilo_titulo))
-    
+
     # Criar dados da tabela
     data = [['Aluno', 'Turma', 'Data', 'Status']]  # Linha de cabeçalho
     for presenca in presencas:
@@ -206,10 +216,10 @@ def relatorio_presencas_pdf(request):
             presenca.data.strftime('%d/%m/%Y'),
             "Presente" if presenca.presente else "Ausente"
         ])
-    
+
     # Criar tabela
     tabela = Table(data)
-    
+
     # Adicionar estilo à tabela
     estilo = TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -221,23 +231,23 @@ def relatorio_presencas_pdf(request):
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ])
     tabela.setStyle(estilo)
-    
+
     # Adicionar tabela aos elementos
     elementos.append(tabela)
-    
+
     # Construir PDF
     doc.build(elementos)
-    
+
     # Retornar resposta
     buffer.seek(0)
-    
+
     # Definir nome do arquivo com data atual
     data_atual = datetime.now().strftime('%d-%m-%Y')
     filename = f"relatorio_presencas_{data_atual}.pdf"
-    
+
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
+
     return response
 
 @login_required
@@ -248,10 +258,10 @@ def relatorio_punicoes(request):
     tipo_punicao = request.GET.get('tipo_punicao', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
-    
+
     # Começar com todas as punições
     punicoes = Punicao.objects.all().select_related('aluno')
-    
+
     # Aplicar filtros
     if aluno_id:
         punicoes = punicoes.filter(aluno_id=aluno_id)
@@ -261,11 +271,11 @@ def relatorio_punicoes(request):
         punicoes = punicoes.filter(data__gte=data_inicio)
     if data_fim:
         punicoes = punicoes.filter(data__lte=data_fim)
-    
+
     # Obter listas para os filtros
     alunos = Aluno.objects.all()
     tipos_punicao = Punicao.objects.values_list('tipo_punicao', flat=True).distinct()
-    
+
     context = {
         'punicoes': punicoes,
         'alunos': alunos,
@@ -285,10 +295,10 @@ def relatorio_punicoes_pdf(request):
     tipo_punicao = request.GET.get('tipo_punicao', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
-    
+
     # Começar com todas as punições
     punicoes = Punicao.objects.all().select_related('aluno')
-    
+
     # Aplicar filtros
     if aluno_id:
         punicoes = punicoes.filter(aluno_id=aluno_id)
@@ -298,23 +308,23 @@ def relatorio_punicoes_pdf(request):
         punicoes = punicoes.filter(data__gte=data_inicio)
     if data_fim:
         punicoes = punicoes.filter(data__lte=data_fim)
-    
+
     # Criar um buffer para receber os dados do PDF
     buffer = BytesIO()
-    
+
     # Criar o objeto PDF
     doc = SimpleDocTemplate(buffer, pagesize=landscape(letter))
-    
+
     # Container para os objetos 'Flowable'
     elementos = []
-    
+
     # Definir estilos
     estilos = getSampleStyleSheet()
     estilo_titulo = estilos['Heading1']
-    
+
     # Adicionar título
     elementos.append(Paragraph("Relatório de Punições", estilo_titulo))
-    
+
     # Criar dados da tabela
     data = [['Aluno', 'Tipo de Punição', 'Data', 'Descrição']]  # Linha de cabeçalho
     for punicao in punicoes:
@@ -324,10 +334,10 @@ def relatorio_punicoes_pdf(request):
             punicao.data.strftime('%d/%m/%Y'),
             punicao.descricao[:100] + '...' if len(punicao.descricao) > 100 else punicao.descricao
         ])
-    
+
     # Criar tabela
     tabela = Table(data)
-    
+
     # Adicionar estilo à tabela
     estilo = TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -339,21 +349,22 @@ def relatorio_punicoes_pdf(request):
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ])
     tabela.setStyle(estilo)
-    
+
     # Adicionar tabela aos elementos
     elementos.append(tabela)
-    
+
     # Construir PDF
     doc.build(elementos)
-    
+
     # Retornar resposta
     buffer.seek(0)
-    
+
     # Definir nome do arquivo com data atual
     data_atual = datetime.now().strftime('%d-%m-%Y')
     filename = f"relatorio_punicoes_{data_atual}.pdf"
-    
+
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
+
     return response
+

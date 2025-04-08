@@ -168,3 +168,4 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Não expirar a sessão ao fechar o na
 # Configurações para renovação de sessão
 SESSION_SECURITY_WARN_AFTER = 3000  # Avisar após 50 minutos de inatividade
 SESSION_SECURITY_EXPIRE_AFTER = 3600  # Expirar após 60 minutos de inatividade
+

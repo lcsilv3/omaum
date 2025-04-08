@@ -2,6 +2,8 @@ import importlib
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from .forms import AtribuirCargoForm
+from .models import AtribuicaoCargo
 
 # Função para obter modelos usando importlib
 def get_models():
@@ -24,7 +26,7 @@ def listar_cargos(request):
 def criar_cargo(request):
     """Cria um novo cargo administrativo."""
     CargoAdministrativoForm = get_forms()
-    
+
     if request.method == 'POST':
         form = CargoAdministrativoForm(request.POST)
         if form.is_valid():
@@ -35,7 +37,7 @@ def criar_cargo(request):
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = CargoAdministrativoForm()
-    
+
     return render(request, 'cargos/criar_cargo.html', {'form': form})
 
 @login_required
@@ -50,9 +52,9 @@ def editar_cargo(request, id):
     """Edita um cargo administrativo existente."""
     CargoAdministrativo = get_models()
     CargoAdministrativoForm = get_forms()
-    
+
     cargo = get_object_or_404(CargoAdministrativo, id=id)
-    
+
     if request.method == 'POST':
         form = CargoAdministrativoForm(request.POST, instance=cargo)
         if form.is_valid():
@@ -63,7 +65,7 @@ def editar_cargo(request, id):
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = CargoAdministrativoForm(instance=cargo)
-    
+
     return render(request, 'cargos/editar_cargo.html', {'form': form, 'cargo': cargo})
 
 @login_required
@@ -71,19 +73,32 @@ def excluir_cargo(request, id):
     """Exclui um cargo administrativo."""
     CargoAdministrativo = get_models()
     cargo = get_object_or_404(CargoAdministrativo, id=id)
-    
+
     if request.method == 'POST':
         cargo.delete()
         messages.success(request, 'Cargo administrativo excluído com sucesso!')
         return redirect('cargos:listar_cargos')
-    
+
     return render(request, 'cargos/excluir_cargo.html', {'cargo': cargo})
 
 @login_required
 def atribuir_cargo(request):
-    """Atribui um cargo a um aluno."""
-    # Implementação pendente
-    return render(request, 'cargos/atribuir_cargo.html')
+    if request.method == 'POST':
+        form = AtribuirCargoForm(request.POST)
+        if form.is_valid():
+            atribuicao = AtribuicaoCargo(
+                aluno=form.cleaned_data['aluno'],
+                cargo=form.cleaned_data['cargo'],
+                data_inicio=form.cleaned_data['data_inicio'],
+                data_fim=form.cleaned_data['data_fim']
+            )
+            atribuicao.save()
+            messages.success(request, 'Cargo atribuído com sucesso!')
+            return redirect('cargos:listar_cargos')
+    else:
+        form = AtribuirCargoForm()
+
+    return render(request, 'cargos/atribuir_cargo.html', {'form': form})
 
 @login_required
 def remover_atribuicao_cargo(request, id):

@@ -4,4 +4,16 @@
 <div class="container mt-4">
   <h1>Novo Tipo de Punição</h1>
   
-  <form method="post">
+    <form method="post">
+      {% csrf_token %}
+      {% include 'includes/form_errors.html' %}
+
+      {% for field in form %}
+        {% include 'includes/form_field.html' %}
+      {% endfor %}
+
+      <button type="submit" class="btn btn-primary">Criar Tipo de Punição</button>
+      <a href="{% url 'punicoes:listar_tipos_punicao' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+  {% endblock %}

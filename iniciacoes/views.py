@@ -2,8 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .models import Iniciacao
-from .forms import IniciacaoForm
+from .models import Iniciacao, GrauIniciacao  # Add GrauIniciacao here
+from .forms import IniciacaoForm, GrauIniciacaoForm  # Add GrauIniciacaoForm if it exists
 from alunos.models import Aluno
 from django.contrib.auth.decorators import login_required
 
@@ -15,23 +15,23 @@ def listar_iniciacoes(request):
     nome_curso = request.GET.get('curso')
     data_inicio = request.GET.get('data_inicio')
     data_fim = request.GET.get('data_fim')
-    
+
     # Query base
     iniciacoes = Iniciacao.objects.all()
-    
+
     # Aplicar filtros
     if aluno_id:
         iniciacoes = iniciacoes.filter(aluno_id=aluno_id)
-    
+
     if nome_curso:
         iniciacoes = iniciacoes.filter(nome_curso__icontains=nome_curso)
-    
+
     if data_inicio:
         iniciacoes = iniciacoes.filter(data_iniciacao__gte=data_inicio)
-    
+
     if data_fim:
         iniciacoes = iniciacoes.filter(data_iniciacao__lte=data_fim)
-    
+
     # Busca geral
     search_query = request.GET.get('search', '')
     if search_query:
@@ -39,15 +39,15 @@ def listar_iniciacoes(request):
             Q(aluno__nome__icontains=search_query) |
             Q(nome_curso__icontains=search_query)
         )
-    
+
     # Paginação
     paginator = Paginator(iniciacoes, 10)  # 10 itens por página
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     # Lista de alunos para o filtro
     alunos = Aluno.objects.all()
-    
+
     context = {
         'page_obj': page_obj,
         'alunos': alunos,
@@ -59,7 +59,7 @@ def listar_iniciacoes(request):
             'search': search_query
         }
     }
-    
+
     return render(request, 'iniciacoes/listar_iniciacoes.html', context)
 
 
@@ -112,39 +112,39 @@ from django.http import HttpResponse
 def exportar_iniciacoes_csv(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="iniciacoes.csv"'
-    
+
     # Aplicar os mesmos filtros da listagem
     aluno_id = request.GET.get('aluno')
     nome_curso = request.GET.get('curso')
     data_inicio = request.GET.get('data_inicio')
     data_fim = request.GET.get('data_fim')
     search_query = request.GET.get('search', '')
-    
+
     # Query base
     iniciacoes = Iniciacao.objects.all()
-    
+
     # Aplicar filtros (mesmo código da view listar_iniciacoes)
     if aluno_id:
         iniciacoes = iniciacoes.filter(aluno_id=aluno_id)
-    
+
     if nome_curso:
         iniciacoes = iniciacoes.filter(nome_curso__icontains=nome_curso)
-    
+
     if data_inicio:
         iniciacoes = iniciacoes.filter(data_iniciacao__gte=data_inicio)
-    
+
     if data_fim:
         iniciacoes = iniciacoes.filter(data_iniciacao__lte=data_fim)
-    
+
     if search_query:
         iniciacoes = iniciacoes.filter(
             Q(aluno__nome__icontains=search_query) |
             Q(nome_curso__icontains=search_query)
         )
-    
+
     writer = csv.writer(response)
     writer.writerow(['Aluno', 'Curso', 'Data de Iniciação', 'Observações'])
-    
+
     for iniciacao in iniciacoes:
         writer.writerow([
             iniciacao.aluno.nome,
@@ -152,10 +152,10 @@ def exportar_iniciacoes_csv(request):
             iniciacao.data_iniciacao.strftime('%d/%m/%Y'),
             iniciacao.observacoes or ''
         ])
-    
+
     # Adicionar mensagem de sucesso
     messages.success(request, f'Arquivo CSV com {iniciacoes.count()} iniciações exportado com sucesso.')
-    
+
     return response
 
 @login_required

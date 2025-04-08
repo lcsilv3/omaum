@@ -9,6 +9,10 @@ def get_tipo_punicao_model():
     punicoes_module = import_module('punicoes.models')
     return getattr(punicoes_module, 'TipoPunicao')
 
+def get_model(app_name, model_name):
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
 class PunicaoForm(forms.ModelForm):
     class Meta:
         model = get_punicao_model()
@@ -23,8 +27,9 @@ class PunicaoForm(forms.ModelForm):
 
 class TipoPunicaoForm(forms.ModelForm):
     class Meta:
-        model = get_model('punicoes', 'TipoPunicao')
-        fields = ['nome', 'descricao', 'gravidade']
+        model = get_tipo_punicao_model()
+        fields = ['nome', 'descricao']  # Removed 'gravidade' since it's not in the model
         widgets = {
             'descricao': forms.Textarea(attrs={'rows': 3}),
+
         }

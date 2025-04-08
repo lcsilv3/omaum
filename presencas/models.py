@@ -1,24 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import User
-from importlib import import_module
-
-def get_aluno_model():
-    alunos_module = import_module('alunos.models')
-    return getattr(alunos_module, 'Aluno')
-
-def get_turma_model():
-    turmas_module = import_module('turmas.models')
-    return getattr(turmas_module, 'Turma')
+from alunos.models import Aluno
+from turmas.models import Turma
 
 class PresencaAcademica(models.Model):
     aluno = models.ForeignKey(
-        get_aluno_model(), 
+        Aluno,
         on_delete=models.CASCADE, 
         verbose_name='Aluno',
         to_field='cpf'  # Especificar que estamos referenciando o campo cpf
     )
     turma = models.ForeignKey(
-        get_turma_model(), 
+        Turma,
         on_delete=models.CASCADE, 
         verbose_name='Turma'
     )

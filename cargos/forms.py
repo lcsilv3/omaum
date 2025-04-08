@@ -1,5 +1,6 @@
 from django import forms
 from .models import CargoAdministrativo
+from alunos.models import Aluno
 
 class CargoAdministrativoForm(forms.ModelForm):
     """
@@ -54,3 +55,24 @@ class CargoAdministrativoForm(forms.ModelForm):
         if nome:
             return ' '.join(word.capitalize() for word in nome.split())
         return nome
+
+class AtribuirCargoForm(forms.Form):
+    aluno = forms.ModelChoiceField(
+        queryset=Aluno.objects.all(),
+        label="Aluno",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    cargo = forms.ModelChoiceField(
+        queryset=CargoAdministrativo.objects.all(),
+        label="Cargo",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    data_inicio = forms.DateField(
+        label="Data de Início",
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+    data_fim = forms.DateField(
+        label="Data de Término",
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )

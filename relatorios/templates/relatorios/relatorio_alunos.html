@@ -32,7 +32,7 @@
     
     <!-- Botões de ação -->
     <div class="mb-3">
-        <a href="{% url 'relatorio_alunos_pdf' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-danger">
+        <a href="{% url 'relatorios:relatorio_alunos_pdf' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-danger">
             <i class="fas fa-file-pdf"></i> Baixar PDF
         </a>
     </div>

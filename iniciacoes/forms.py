@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from datetime import date
-from .models import Iniciacao
+from .models import Iniciacao, GrauIniciacao
 
 class IniciacaoForm(forms.ModelForm):
     class Meta:
@@ -32,12 +32,12 @@ class IniciacaoForm(forms.ModelForm):
         aluno = cleaned_data.get('aluno')
         curso = cleaned_data.get('curso')
         data_iniciacao = cleaned_data.get('data_iniciacao')
-        
+
         # Verifica se já existe uma iniciação para este aluno neste curso
         if aluno and curso:
             # Exclui a instância atual em caso de edição
             instance_id = self.instance.id if self.instance else None
-            
+
             # Verifica se já existe outra iniciação com o mesmo aluno e curso
             if Iniciacao.objects.filter(
                 aluno=aluno, 
@@ -46,13 +46,29 @@ class IniciacaoForm(forms.ModelForm):
                 raise ValidationError(
                     f"O aluno {aluno.nome} já possui uma iniciação no curso {curso.nome}."
                 )
-        
+
         return cleaned_data
 
     def clean_data_iniciacao(self):
         data_iniciacao = self.cleaned_data.get('data_iniciacao')
-        
+
         if data_iniciacao and data_iniciacao > date.today():
             raise ValidationError("A data de iniciação não pode ser no futuro.")
-        
+
         return data_iniciacao
+
+class GrauIniciacaoForm(forms.ModelForm):
+    class Meta:
+        model = GrauIniciacao
+        fields = ['nome', 'descricao', 'ordem']
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'ordem': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean_ordem(self):
+        ordem = self.cleaned_data.get('ordem')
+        if ordem <= 0:
+            raise ValidationError("A ordem deve ser um número positivo.")
+        return ordem

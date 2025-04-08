@@ -24,12 +24,25 @@ class Iniciacao(models.Model):
     data_iniciacao = models.DateField(verbose_name='Data da Iniciação')
     grau = models.CharField(max_length=50, verbose_name='Grau')
     observacoes = models.TextField(blank=True, null=True, verbose_name='Observações')
-    
+
     def __str__(self):
         return f"{self.aluno.nome} - {self.curso.nome} - {self.grau}"
-    
+
     class Meta:
         verbose_name = 'Iniciação'
         verbose_name_plural = 'Iniciações'
         ordering = ['-data_iniciacao']
         unique_together = ['aluno', 'curso', 'grau']
+
+class GrauIniciacao(models.Model):
+    nome = models.CharField(max_length=100, verbose_name='Nome do Grau')
+    descricao = models.TextField(blank=True, null=True, verbose_name='Descrição')
+    ordem = models.PositiveIntegerField(unique=True, verbose_name='Ordem')
+
+    class Meta:
+        verbose_name = 'Grau de Iniciação'
+        verbose_name_plural = 'Graus de Iniciação'
+        ordering = ['ordem']
+
+    def __str__(self):
+        return self.nome
