@@ -1,121 +1,100 @@
 import os
 import chardet
 
-def collect_code(root_dir, output_dir, max_files_per_chunk=10, enable_chunking=True):
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # Dicionário para armazenar o conteúdo de cada funcionalidade
-    functionality_content = {}
+def collect_files_by_app(project_root):
+    # Dicionário para armazenar arquivos por app/funcionalidade
+    apps_files = {}
     
-    for root, dirs, files in os.walk(root_dir):
+    for root, dirs, files in os.walk(project_root):
         # Ignorar diretórios de ambiente virtual e cache
         if 'venv' in root or '__pycache__' in root:
             continue
-            
-        # Pega o primeiro diretório após o root_dir como a funcionalidade
-        relative_path = os.path.relpath(root, root_dir)
         
-        # Special handling for root files - assign them to "root" functionality
-        if relative_path == '.':
-            functionality = "root"
-        else:
-            functionality = relative_path.split(os.path.sep)[0]
-
-        if functionality not in functionality_content:
-            functionality_content[functionality] = []
-
+        # Identificar o app/funcionalidade com base no caminho
+        relative_path = os.path.relpath(root, project_root)
+        app_name = relative_path.split(os.path.sep)[0] if relative_path != '.' else 'core'
+        
+        # Inicializar a estrutura para o app se ainda não existir
+        if app_name not in apps_files:
+            apps_files[app_name] = {
+                'forms.py': [],
+                'views.py': [],
+                'urls.py': [],
+                'models.py': [],
+                'templates': []
+            }
+        
         for file in files:
-            # Skip collect*.py files
-            if file.startswith('collect') and file.endswith('.py'):
-                continue
-                
-            if file.endswith(('.py', '.html', '.js', '.css')):
-                file_path = os.path.join(root, file)
-                
-                # Verificar se o arquivo está vazio
-                if os.path.getsize(file_path) == 0:
-                    continue  # Pular arquivos vazios
-                
-                relative_file_path = os.path.relpath(file_path, root_dir)
-                
-                # Formatação Markdown aprimorada
-                content = f"\n\n## {relative_file_path}\n\n"
-                
-                # Determinar a linguagem para o bloco de código
-                extension = file.split('.')[-1]
-                language = extension
-                if extension == 'py':
-                    language = 'python'
-                elif extension == 'js':
-                    language = 'javascript'
-                
-                # Adicionar abertura do bloco de código com a linguagem correta
-                content += f"{language}\n"
-                
-                # Detect encoding
-                with open(file_path, 'rb') as f:
-                    raw_data = f.read()
-                    result = chardet.detect(raw_data)
-                    encoding = result['encoding']
-                
-                try:
-                    with open(file_path, 'r', encoding=encoding) as f:
-                        file_content = f.read()
-                except Exception as e:
-                    print(f"Error reading {file_path}: {e}")
-                    continue
-                    # Verificar se o conteúdo está vazio ou contém apenas espaços em branco
-                    if not file_content.strip():
-                        continue  # Pular arquivos com conteúdo vazio
-                    content += file_content
-                except IOError as e:
-                    content += f"Error reading file: {e}"
-                
-                # Adicionar fechamento do bloco de código
-                content += "\n\n\n"
-                
-                functionality_content[functionality].append(content)
+            if file in ['forms.py', 'views.py', 'urls.py', 'models.py']:
+                apps_files[app_name][file].append(os.path.join(root, file))
+            elif file.endswith('.html'):
+                apps_files[app_name]['templates'].append(os.path.join(root, file))
+    
+    return apps_files
 
-    # Dividindo em chunks menores ao salvar (ou não, dependendo da opção)
-    for functionality, content_list in functionality_content.items():
-        if not content_list:
+def write_file_contents(output_file, filepath):
+    # Detectar codificação do arquivo
+    with open(filepath, 'rb') as raw_file:
+        raw_data = raw_file.read()
+        result = chardet.detect(raw_data)
+        encoding = result['encoding'] or 'utf-8'  # Fallback para utf-8
+    
+    try:
+        with open(filepath, 'r', encoding=encoding) as file:
+            relative_path = os.path.relpath(filepath)
+            output_file.write(f"\n\n### Arquivo: {relative_path}\n\n")
+            
+            # Determinar o tipo de linguagem para o bloco de código
+            if filepath.endswith('.html'):
+                language = 'html'
+            elif filepath.endswith('.py'):
+                language = 'python'
+            else:
+                language = 'text'
+                
+            output_file.write(f"```{language}\n")
+            output_file.write(file.read())
+            output_file.write("\n```\n")
+    except Exception as e:
+        output_file.write(f"\n\n### Arquivo: {filepath}\n\n")
+        output_file.write(f"```\nErro ao ler o arquivo: {str(e)}\n```\n")
+
+def main():
+    project_root = input("Digite o diretório raiz do seu projeto Django: ")
+    output_dir = "revisao_projeto"
+    
+    # Criar diretório de saída se não existir
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    apps_files = collect_files_by_app(project_root)
+    
+    for app_name, file_types in apps_files.items():
+        # Verificar se há arquivos para este app
+        has_files = any(files for files in file_types.values())
+        if not has_files:
             continue
+            
+        output_filename = os.path.join(output_dir, f"{app_name}_revisao.md")
         
-        if enable_chunking:
-            # Dividir em chunks
-            chunks = [content_list[i:i + max_files_per_chunk] for i in range(0, len(content_list), max_files_per_chunk)]
+        with open(output_filename, 'w', encoding='utf-8') as output_file:
+            output_file.write(f"# Revisão da Funcionalidade: {app_name}\n")
             
-            for i, chunk in enumerate(chunks):
-                chunk_file = os.path.join(output_dir, f"{functionality}_part{i+1}_code.md")
+            for file_type, file_paths in file_types.items():
+                if not file_paths:
+                    continue
+                    
+                if file_type == 'templates':
+                    output_file.write(f"\n## Arquivos de Template:\n")
+                else:
+                    output_file.write(f"\n## Arquivos {file_type}:\n")
                 
-                with open(chunk_file, 'w', encoding='utf-8') as out:
-                    out.write(f"# Código da Funcionalidade: {functionality} - Parte {i+1}/{len(chunks)}\n")
-                    out.write(f"*Gerado automaticamente*\n\n")
-                    out.write(''.join(chunk))
-                
-                print(f"Código da funcionalidade '{functionality}' (parte {i+1}) salvo em {chunk_file}")
-        else:
-            # Sem chunking - salvar tudo em um único arquivo
-            output_file = os.path.join(output_dir, f"{functionality}_code.md")
-            
-            with open(output_file, 'w', encoding='utf-8') as out:
-                out.write(f"# Código da Funcionalidade: {functionality}\n")
-                out.write(f"*Gerado automaticamente*\n\n")
-                out.write(''.join(content_list))
-            
-            print(f"Código da funcionalidade '{functionality}' salvo em {output_file}")
+                for filepath in sorted(file_paths):
+                    write_file_contents(output_file, filepath)
+        
+        print(f"Conteúdo da funcionalidade '{app_name}' foi escrito em {output_filename}")
+    
+    print(f"Revisão completa! Arquivos gerados no diretório '{output_dir}'")
 
 if __name__ == "__main__":
-    project_root = "."  # Caminho para a raiz do seu projeto
-    output_dir = "project_code_output"  # Diretório para armazenar os arquivos de saída
-    
-    # Você pode modificar estes parâmetros conforme necessário
-    collect_code(
-        project_root, 
-        output_dir,
-        max_files_per_chunk=10,  # Número máximo de arquivos por chunk
-        enable_chunking=False     # Definir como False para desativar o chunking
-    )
-    
-    print(f"Coleta de código concluída. Arquivos Markdown salvos em {output_dir}")
+    main()
