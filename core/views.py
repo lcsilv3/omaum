@@ -1,3 +1,23 @@
+"""
+Core Views
+
+Este arquivo contém as views para o aplicativo 'core' do projeto OMAUM.
+Localização: core/views.py
+
+Uso:
+- Define as funções de view que processam as requisições e retornam respostas.
+- Lida com a lógica de negócios central do sistema.
+- Interage com modelos, formulários e renderiza templates.
+
+As views definidas aqui são responsáveis por funcionalidades como:
+- Página inicial
+- Autenticação (login/logout)
+- Painel de controle
+- Configurações do sistema
+- Verificação CSRF
+
+Estas views são mapeadas para URLs no arquivo core/urls.py.
+"""
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
@@ -13,7 +33,7 @@ def pagina_inicial(request):
     context = {
         'titulo': 'Sistema de Gestão de Iniciados da OmAum'
     }
-    return render(request, 'core/home.html', context)
+    return render(request, 'home.html', context)
 
 def entrar(request):
     """Página de login do sistema"""

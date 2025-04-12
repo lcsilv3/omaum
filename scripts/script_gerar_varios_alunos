@@ -1,0 +1,133 @@
+from alunos.models import Aluno
+from datetime import date, time
+import random
+
+# Listas de nomes, sobrenomes e cidades para gerar dados variados
+nomes = ['Ana', 'João', 'Maria', 'Pedro', 'Carla', 'Lucas', 'Fernanda', 'Rafael', 'Juliana', 'Bruno', 
+         'Camila', 'Rodrigo', 'Patrícia', 'Marcelo', 'Aline', 'Gustavo', 'Mariana', 'Felipe', 'Daniela', 'André']
+
+sobrenomes = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Pereira', 'Lima', 'Costa', 'Ferreira', 'Rodrigues', 'Almeida', 
+              'Nascimento', 'Carvalho', 'Gomes', 'Martins', 'Araújo', 'Ribeiro', 'Mendes', 'Barbosa', 'Cardoso', 'Rocha']
+
+cidades = ['São Paulo', 'Rio de Janeiro', 'Belo Horizonte', 'Salvador', 'Fortaleza', 'Brasília', 'Curitiba', 
+           'Recife', 'Porto Alegre', 'Manaus', 'Belém', 'Goiânia', 'Guarulhos', 'Campinas', 'São Luís', 
+           'Maceió', 'Natal', 'Teresina', 'João Pessoa', 'Florianópolis']
+
+estados = ['SP', 'RJ', 'MG', 'BA', 'CE', 'DF', 'PR', 'PE', 'RS', 'AM', 'PA', 'GO', 'SP', 'SP', 'MA', 'AL', 'RN', 'PI', 'PB', 'SC']
+
+bairros = ['Centro', 'Jardim Paulista', 'Copacabana', 'Savassi', 'Barra', 'Asa Norte', 'Batel', 'Boa Viagem', 
+           'Moinhos de Vento', 'Adrianópolis', 'Nazaré', 'Setor Bueno', 'Vila Madalena', 'Cambuí', 'Renascença', 
+           'Ponta Verde', 'Petrópolis', 'Jóquei', 'Manaíra', 'Trindade']
+
+tipos_sanguineos = ['A', 'B', 'AB', 'O']
+fatores_rh = ['+', '-']
+sexos = ['M', 'F']
+
+convenios = ['Unimed', 'Amil', 'SulAmérica', 'Bradesco Saúde', 'NotreDame Intermédica', 
+             'Hapvida', 'Golden Cross', 'Medial Saúde', 'Porto Seguro Saúde', 'Cassi']
+
+hospitais = ['Hospital Albert Einstein', 'Hospital Sírio-Libanês', 'Hospital Samaritano', 'Hospital São Luiz', 
+             'Hospital Moinhos de Vento', 'Hospital Português', 'Hospital Santa Joana', 'Hospital Mater Dei', 
+             'Hospital São Lucas', 'Hospital Esperança']
+
+nomes_iniciaticos = ['Ananda', 'Shakti', 'Dharma', 'Parvati', 'Shiva', 'Krishna', 'Lakshmi', 'Saraswati', 
+                     'Vishnu', 'Ganesha', 'Rama', 'Sita', 'Hanuman', 'Durga', 'Kali', 'Brahma', 'Indra', 
+                     'Agni', 'Surya', 'Chandra', 'Maya', 'Padma', 'Deva', 'Devi', 'Arjuna', 'Radha', 
+                     'Yama', 'Tara', 'Bhakti', 'Moksha']
+
+# Função para gerar CPF único
+def gerar_cpf_unico():
+    while True:
+        # Gera um CPF aleatório de 11 dígitos
+        cpf = ''.join([str(random.randint(0, 9)) for _ in range(11)])
+        
+        # Verifica se já existe no banco
+        if not Aluno.objects.filter(cpf=cpf).exists():
+            return cpf
+
+# Função para gerar email único
+def gerar_email_unico(nome, sobrenome):
+    base_email = f"{nome.lower()}.{sobrenome.lower()}@exemplo.com"
+    
+    # Verifica se o email já existe
+    if Aluno.objects.filter(email=base_email).exists():
+        # Adiciona um número aleatório ao email
+        return f"{nome.lower()}.{sobrenome.lower()}{random.randint(1, 999)}@exemplo.com"
+    
+    return base_email
+
+# Função para gerar número iniciático único
+def gerar_numero_iniciatico_unico():
+    while True:
+        # Gera um número iniciático aleatório
+        numero = f"{random.randint(100, 999)}{chr(random.randint(65, 90))}"
+        
+        # Verifica se já existe no banco
+        if not Aluno.objects.filter(numero_iniciatico=numero).exists():
+            return numero
+
+# Contador de alunos criados
+count = 0
+
+# Criar 30 alunos
+for i in range(30):
+    try:
+        # Gerar dados aleatórios
+        nome_idx = random.randint(0, len(nomes) - 1)
+        sobrenome_idx = random.randint(0, len(sobrenomes) - 1)
+        cidade_idx = random.randint(0, len(cidades) - 1)
+        
+        nome_completo = f"{nomes[nome_idx]} {sobrenomes[sobrenome_idx]}"
+        
+        # Ano entre 1970 e 2000
+        ano_nascimento = random.randint(1970, 2000)
+        mes_nascimento = random.randint(1, 12)
+        dia_nascimento = random.randint(1, 28)  # Evita problemas com meses de diferentes dias
+        
+        # Hora aleatória
+        hora_nascimento = random.randint(0, 23)
+        minuto_nascimento = random.randint(0, 59)
+        
+        # Dados do aluno
+        aluno_dados = {
+            'cpf': gerar_cpf_unico(),
+            'nome': nome_completo,
+            'data_nascimento': date(ano_nascimento, mes_nascimento, dia_nascimento),
+            'hora_nascimento': time(hora_nascimento, minuto_nascimento),
+            'email': gerar_email_unico(nomes[nome_idx], sobrenomes[sobrenome_idx]),
+            'sexo': random.choice(sexos),
+            'numero_iniciatico': gerar_numero_iniciatico_unico(),
+            'nome_iniciatico': random.choice(nomes_iniciaticos),
+            'nacionalidade': 'Brasileira',
+            'naturalidade': cidades[cidade_idx],
+            'rua': f"Rua {random.choice(sobrenomes)} {random.randint(1, 100)}",
+            'numero_imovel': str(random.randint(1, 999)),
+            'complemento': f"Apto {random.randint(1, 100)}" if random.random() > 0.5 else None,
+            'bairro': bairros[cidade_idx % len(bairros)],
+            'cidade': cidades[cidade_idx],
+            'estado': estados[cidade_idx % len(estados)],
+            'cep': f"{random.randint(10000, 99999)}{random.randint(100, 999)}",
+            'nome_primeiro_contato': f"{random.choice(nomes)} {random.choice(sobrenomes)}",
+            'celular_primeiro_contato': f"{random.randint(10, 99)}9{random.randint(10000000, 99999999)}",
+            'tipo_relacionamento_primeiro_contato': random.choice(['Pai', 'Mãe', 'Irmão', 'Irmã', 'Cônjuge']),
+            'nome_segundo_contato': f"{random.choice(nomes)} {random.choice(sobrenomes)}",
+            'celular_segundo_contato': f"{random.randint(10, 99)}9{random.randint(10000000, 99999999)}",
+            'tipo_relacionamento_segundo_contato': random.choice(['Pai', 'Mãe', 'Irmão', 'Irmã', 'Amigo', 'Amiga']),
+            'tipo_sanguineo': random.choice(tipos_sanguineos),
+            'fator_rh': random.choice(fatores_rh),
+            'alergias': 'Nenhuma' if random.random() > 0.3 else random.choice(['Poeira', 'Pólen', 'Penicilina', 'Frutos do mar', 'Amendoim']),
+            'condicoes_medicas_gerais': 'Nenhuma' if random.random() > 0.3 else random.choice(['Asma', 'Hipertensão', 'Diabetes', 'Rinite alérgica']),
+            'convenio_medico': random.choice(convenios),
+            'hospital': random.choice(hospitais)
+        }
+        
+        # Criar o aluno
+        aluno = Aluno.objects.create(**aluno_dados)
+        print(f'Aluno "{aluno.nome}" criado com sucesso!')
+        count += 1
+        
+    except Exception as e:
+        print(f'Erro ao criar aluno {i+1}: {str(e)}')
+
+print(f'\nTotal de {count} alunos criados com sucesso!')
+print(f'Total geral de alunos no banco: {Aluno.objects.count()}')

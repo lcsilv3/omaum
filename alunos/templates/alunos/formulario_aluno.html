@@ -1,4 +1,4 @@
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}{% if aluno.id %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
 
@@ -27,16 +27,49 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.cpf %}
-                        {% include 'includes/form_field.html' with field=form.nome %}
-                        {% include 'includes/form_field.html' with field=form.data_nascimento %}
-                        {% include 'includes/form_field.html' with field=form.hora_nascimento %}
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {% include 'includes/form_field.html' with field=form.cpf %}
+                                {% include 'includes/form_field.html' with field=form.nome %}
+                                {% include 'includes/form_field.html' with field=form.data_nascimento %}
+                                {% include 'includes/form_field.html' with field=form.hora_nascimento %}
+                            </div>
+                            <div class="col-md-6">
+                                {% include 'includes/form_field.html' with field=form.email %}
+                                {% include 'includes/form_field.html' with field=form.sexo %}
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.email %}
-                        {% include 'includes/form_field.html' with field=form.sexo %}
-                        {% include 'includes/form_field.html' with field=form.foto %}
+                    <div class="col-md-4">
+                        <!-- Moldura tracejada azul brilhante sem cabeçalho -->
+                        <div class="border rounded p-3 mb-3 text-center" 
+                             style="border-style: dashed !important; 
+                                    border-color: #007bff !important; 
+                                    border-width: 2px !important;
+                                    height: 200px; 
+                                    display: flex; 
+                                    align-items: center; 
+                                    justify-content: center;">
+                            {% if aluno.foto %}
+                                <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
+                                     class="img-fluid rounded" 
+                                     style="max-width: 120px; max-height: 160px; object-fit: cover;">
+                            {% else %}
+                                <div class="text-muted">Sem foto</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Campo de upload separado da moldura -->
+                        <div class="form-group">
+                            {{ form.foto }}
+                            {% if form.foto.help_text %}
+                                <small class="form-text text-muted">{{ form.foto.help_text }}</small>
+                            {% endif %}
+                            {% for error in form.foto.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}500 Erro Interno do Servidor{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h1 class="display-1">500</h1>
+                    <h2 class="mb-4">Erro Interno do Servidor</h2>
+                    <p class="lead">Desculpe, ocorreu um erro interno no servidor. Nossa equipe técnica foi notificada e está trabalhando para resolver o problema.</p>
+                    <a href="{% url 'core:home' %}" class="btn btn-primary mt-3">Tentar Novamente</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

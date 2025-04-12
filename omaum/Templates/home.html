@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}OMAUM - Página Inicial{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+<div class="container mt-4">
+    <div class="jumbotron">
+        <h1 class="display-4">Sistema de Gestão de Pessoal</h1>
+        <p class="lead">Bem-vindo ao sistema de gestão de Pessoal da Ordem Mística de Iniciação Universal ao Mestrado.</p>
+    </div>
+    
+    <!-- Primeira linha: Cursos, Alunos, Turmas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3 border-bottom pb-2">Gestão Acadêmica</h3>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Cursos</h5>
+                    <p class="card-text">Gerenciamento de cursos oferecidos pela instituição.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos</h5>
+                    <p class="card-text">Cadastro e gerenciamento de alunos.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Turmas</h5>
+                    <p class="card-text">Gerenciamento de turmas e períodos letivos.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Segunda linha: Atividades, Presenças, Frequências -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3 border-bottom pb-2">Controle de Participação</h3>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Atividades</h5>
+                    <p class="card-text">Gerenciamento de atividades da instituição.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <div class="btn-group">
+                        <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-primary">Atividades Acadêmicas</a>
+                        <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-primary">Atividades Ritualísticas</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Presenças</h5>
+                    <p class="card-text">Registro e controle de presenças em atividades.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Frequências</h5>
+                    <p class="card-text">Análise e relatórios de frequência dos alunos.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Terceira linha: Iniciações, Punições, Cargos -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3 border-bottom pb-2">Gestão Institucional</h3>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Iniciações</h5>
+                    <p class="card-text">Gerenciamento de processos iniciatórios.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Punições</h5>
+                    <p class="card-text">Registro e controle de medidas disciplinares.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <a href="{% url 'punicoes:listar_punicoes' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Cargos</h5>
+                    <p class="card-text">Gestão de cargos e funções institucionais.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quarta linha: Relatórios, Painel de Controle -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3 border-bottom pb-2">Análise e Controle</h3>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Relatórios</h5>
+                    <p class="card-text">Geração de relatórios e análises estatísticas.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <a href="{% url 'relatorios:index' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Painel de Controle</h5>
+                    <p class="card-text">Visão geral e indicadores de desempenho.</p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <a href="{% url 'core:painel_controle' %}" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

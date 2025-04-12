@@ -1,5 +1,22 @@
-templates\base.html -->
-<!DOCTYPE html>
+{% load static %}
+{% comment %}
+Este é o template base para o projeto OMAUM.
+Localização: omaum/templates/base.html
+
+Uso:
+Este template serve como base para todas as outras páginas do projeto.
+Ele contém a estrutura HTML comum, incluindo cabeçalho, rodapé, e blocos
+que podem ser sobrescritos pelos templates filhos.
+
+Para usar este template em outras páginas, comece o template filho com:
+{% extends "base.html" %}
+
+E então defina os blocos necessários, como título e conteúdo:
+{% block title %}Título da Página{% endblock %}
+{% block content %}
+    <!-- Conteúdo específico da página aqui -->
+{% endblock %}
+{% endcomment %}<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -16,15 +33,39 @@ templates\base.html -->
     <!-- Cabeçalho -->
     <header class="bg-dark text-white p-3">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1>OMAUM</h1>
-                {% if user.is_authenticated %}
-                <div>
-                    <span>Olá, {{ user.username }}</span>
-                    <a href="{% url 'core:sair' %}" class="btn btn-outline-light btn-sm ms-2">Sair</a>
+            <nav class="navbar navbar-expand-lg navbar-dark">
+                <a class="navbar-brand" href="{% url 'core:pagina_inicial' %}">OMAUM</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Menu de navegação">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        {% if user.is_authenticated %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'alunos:listar_alunos' %}">Alunos</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'cursos:listar_cursos' %}">Cursos</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'atividades:listar_atividades_academicas' %}">Atividades Acadêmicas</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'atividades:listar_atividades_ritualisticas' %}">Atividades Ritualísticas</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'turmas:listar_turmas' %}">Turmas</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'iniciacoes:listar_iniciacoes' %}">Iniciações</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'cargos:listar_cargos' %}">Cargos</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'frequencias:listar_frequencias' %}">Frequências</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'presencas:listar_presencas' %}">Presenças</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'punicoes:listar_punicoes' %}">Punições</a></li>
+                            {% if user.is_staff %}
+                                <li class="nav-item"><a class="nav-link" href="{% url 'core:painel_controle' %}">Painel de Controle</a></li>
+                            {% endif %}
+                        {% endif %}
+                    </ul>
+                    <div class="navbar-nav">
+                        {% if user.is_authenticated %}
+                            <span class="nav-item nav-link">Olá, {{ user.username }}</span>
+                            <a class="nav-link" href="{% url 'core:sair' %}">Sair</a>
+                        {% else %}
+                            <a class="nav-link" href="{% url 'core:entrar' %}">Entrar</a>
+                        {% endif %}
+                    </div>
                 </div>
-                {% endif %}
-            </div>
+            </nav>
         </div>
     </header>
 
@@ -65,5 +106,7 @@ templates\base.html -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- JavaScript Personalizado -->
     {% block extra_js %}{% endblock %}
+    <!-- CSRF Refresh Script -->
+    <script src="{% static 'js/csrf_refresh.js' %}"></script>
 </body>
 </html>

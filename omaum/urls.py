@@ -5,10 +5,10 @@ from django.conf import settings  # Adicione esta linha
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('core.urls')),  # Inclui as URLs do core, incluindo a página inicial
     path('alunos/', include('alunos.urls')),
     path('atividades/', include('atividades.urls')),
     path('cargos/', include('cargos.urls')),
-    path('core/', include('core.urls')),
     path('cursos/', include('cursos.urls')),
     path('frequencias/', include('frequencias.urls')),
     path('iniciacoes/', include('iniciacoes.urls')),
@@ -16,7 +16,6 @@ urlpatterns = [
     path('punicoes/', include('punicoes.urls')),
     path('relatorios/', include('relatorios.urls', namespace='relatorios')),
     path('turmas/', include('turmas.urls')),
-    path('', RedirectView.as_view(pattern_name='core:pagina_inicial'), name='home'),
 ]
 
 from django.contrib.auth import views as auth_views

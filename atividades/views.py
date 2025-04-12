@@ -38,6 +38,12 @@ def get_model_class(model_name, module_name="atividades.models"):
 
 
 @login_required
+def index(request):
+    """Página inicial do módulo de atividades."""
+    return render(request, 'atividades/index.html')
+
+
+@login_required
 def listar_atividades_academicas(request):
     """Lista todas as atividades acadêmicas."""
     AtividadeAcademica = get_model_class("AtividadeAcademica")

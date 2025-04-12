@@ -1,4 +1,4 @@
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}Lista de Alunos{% endblock %}
 
@@ -52,7 +52,21 @@
                     <tbody>
                         {% for aluno in alunos %}
                             <tr>
-                                <td>{{ aluno.nome }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if aluno.foto %}
+                                            <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
+                                                 class="rounded-circle me-2" width="40" height="40" 
+                                                 style="object-fit: cover;">
+                                        {% else %}
+                                            <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px; color: white;">
+                                                {{ aluno.nome|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                        {{ aluno.nome }}
+                                    </div>
+                                </td>
                                 <td>{{ aluno.cpf }}</td>
                                 <td>{{ aluno.email }}</td>
                                 <td>{{ aluno.data_nascimento|date:"d/m/Y" }}</td>

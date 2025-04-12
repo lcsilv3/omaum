@@ -4,6 +4,7 @@ from . import views
 app_name = 'atividades'  # Definindo o namespace
 
 urlpatterns = [
+    path('', views.index, name='listar'),  # Página de índice/agregador
     # Atividades Acadêmicas
     path('academicas/', views.listar_atividades_academicas, name='listar_atividades_academicas'),
     path('academicas/criar/', views.criar_atividade_academica, name='criar_atividade_academica'),
