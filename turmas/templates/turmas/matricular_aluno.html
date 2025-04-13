@@ -1,12 +1,21 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{{ titulo }}{% endblock %}
+{% block title %}Matricular Aluno na Turma: {{ turma.nome }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>{{ titulo }}</h1>
+    <h1>Matricular Aluno na Turma: {{ turma.nome }}</h1>
     
-    <div class="card">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="card mb-4">
         <div class="card-header">
             <h5 class="mb-0">Informações da Turma</h5>
         </div>
@@ -14,34 +23,168 @@
             <p><strong>Nome da Turma:</strong> {{ turma.nome }}</p>
             <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
             <p><strong>Período:</strong> {{ turma.data_inicio|date:"d/m/Y" }} a {{ turma.data_fim|date:"d/m/Y" }}</p>
-            <p><strong>Vagas Disponíveis:</strong> {{ turma.vagas_disponiveis }} de {{ turma.vagas }}</p>
+            <p><strong>Vagas Disponíveis:</strong> {{ vagas_disponiveis }}</p>
         </div>
     </div>
     
-    <div class="card mt-4">
+    <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">Selecionar Aluno</h5>
+            <h5 class="mb-0">Selecionar Aluno para Matrícula</h5>
         </div>
         <div class="card-body">
-            <form method="post">
+            <!-- Search input with autocomplete -->
+            <div class="mb-4">
+                {% csrf_token %}  <!-- Make sure you have this for AJAX requests -->
+                <label for="search-aluno" class="form-label">Buscar Aluno:</label>
+                <input type="text" id="search-aluno" class="form-control"
+                       placeholder="Digite parte do CPF, nome ou número iniciático..."
+                       autocomplete="off">
+                <div id="search-results" class="list-group mt-2">
+                    <!-- Results will be populated here dynamically -->
+                </div>
+            </div>
+            
+            <form method="post" id="matricula-form">
                 {% csrf_token %}
-                
                 <div class="mb-3">
-                    <label for="{{ form.aluno.id_for_label }}" class="form-label">Aluno</label>
-                    {{ form.aluno }}
-                    {% if form.aluno.errors %}
-                        <div class="text-danger">{{ form.aluno.errors }}</div>
-                    {% endif %}
+                    <label for="aluno" class="form-label">Aluno Selecionado:</label>
+                    <div id="selected-aluno-container" class="p-3 border rounded mb-2 d-none">
+                        <div id="selected-aluno-info">Nenhum aluno selecionado</div>
+                    </div>
+                    <input type="hidden" name="aluno" id="aluno-id" required>
                 </div>
-                
-                <div class="d-flex justify-content-between">
-                    <a href="{% url 'turmas:detalhes_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">Matricular</button>
-                </div>
+                <button type="submit" class="btn btn-primary" id="submit-btn" disabled>Matricular</button>
+                <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
             </form>
         </div>
     </div>
     
-    <a href="javascript:history.back()" class="btn btn-secondary mt-3">Voltar</a>
+    <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary mt-3">Voltar para Detalhes da Turma</a>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search-aluno');
+        const searchResults = document.getElementById('search-results');
+        const selectedAlunoContainer = document.getElementById('selected-aluno-container');
+        const selectedAlunoInfo = document.getElementById('selected-aluno-info');
+        const alunoIdField = document.getElementById('aluno-id');
+        const submitBtn = document.getElementById('submit-btn');
+        
+        let searchTimeout;
+        
+        // Get CSRF token
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Add CSRF token to all fetch requests
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            if (url.startsWith('/')) {
+                options.headers = options.headers || {};
+                options.headers['X-CSRFToken'] = csrftoken;
+            }
+            return originalFetch(url, options);
+        };
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            
+            const query = this.value.trim();
+            
+            // Clear results if query is too short
+            if (query.length < 2) {
+                searchResults.innerHTML = '';
+                searchResults.classList.add('d-none');
+                return;
+            }
+            
+            // Set a timeout to avoid making too many requests
+            searchTimeout = setTimeout(function() {
+                // Show loading indicator
+                searchResults.innerHTML = '<div class="list-group-item text-muted">Buscando...</div>';
+                searchResults.classList.remove('d-none');
+                
+                fetch(`/alunos/search/?q=${encodeURIComponent(query)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erro na requisição');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        
+                        if (data.error) {
+                            // Handle error response
+                            searchResults.innerHTML = `<div class="list-group-item text-danger">${data.error}</div>`;
+                            return;
+                        }
+                        
+                        if (data.length === 0) {
+                            searchResults.innerHTML = '<div class="list-group-item">Nenhum aluno encontrado</div>';
+                            return;
+                        }
+                        
+                        // Display results
+                        data.forEach(aluno => {
+                            const item = document.createElement('a');
+                            item.href = '#';
+                            item.className = 'list-group-item list-group-item-action';
+                            item.innerHTML = `
+                                <div class="d-flex justify-content-between">
+                                    <div>${aluno.nome}</div>
+                                    <div class="text-muted">
+                                        <small>CPF: ${aluno.cpf}</small>
+                                        ${aluno.numero_iniciatico !== "N/A" ? `<small class="ms-2">Nº: ${aluno.numero_iniciatico}</small>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Add click event to select this aluno
+                            item.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                selectAluno(aluno);
+                                searchResults.classList.add('d-none');
+                            });
+                            
+                            searchResults.appendChild(item);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        searchResults.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar alunos</div>';
+                    });
+            }, 300);
+        });
+        
+        // Hide results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.add('d-none');
+            }
+        });
+        
+        // Function to select an aluno
+        function selectAluno(aluno) {
+            // Update the hidden input with the selected aluno's CPF
+            alunoIdField.value = aluno.cpf;
+            
+            // Update the search input with the selected aluno's name
+            searchInput.value = aluno.nome;
+            
+            // Show the selected aluno info
+            selectedAlunoInfo.innerHTML = `
+                <strong>${aluno.nome}</strong><br>
+                CPF: ${aluno.cpf}<br>
+                ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
+            `;
+            
+            // Show the container and enable the submit button
+            selectedAlunoContainer.classList.remove('d-none');
+            submitBtn.disabled = false;
+        }
+    });
+</script>
 {% endblock %}

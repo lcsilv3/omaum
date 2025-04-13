@@ -39,10 +39,35 @@ O projeto está organizado em módulos funcionais, cada um responsável por uma 
 - **turmas**: Gerenciamento de turmas e períodos letivos
 - [outros módulos]
 
-## Contribuição
+## Desenvolvimento
 
-[Instruções para contribuição]
+### Linting e Formatação de Código
 
-## Licença
+Este projeto usa Pylint e Flake8 para garantir a qualidade do código. Para executar os linters:
 
-[Informações sobre a licença]
+```bash
+python scripts/lint.py
+```
+
+Recomendamos configurar seu editor para executar o linter automaticamente ao salvar os arquivos.
+
+Para o VS Code, instale as extensões:
+- Python (Microsoft)
+- Pylint
+- Flake8
+
+As configurações recomendadas já estão no arquivo `.vscode/settings.json`.
+```
+
+## 7. Corrigindo o Arquivo verificar_arquivos_importantes_duplicados.py
+
+Agora, vamos corrigir o problema específico que você encontrou no arquivo `scripts/verificar_arquivos_importantes_duplicados.py`:
+
+```python:scripts/verificar_arquivos_importantes_duplicados.py
+# Nas linhas 61-62, substitua:
+("base.html", "omaum\\templates\\base.html"),
+("home.html", "omaum\Templates\home.html"),
+
+# Por:
+("base.html", r"omaum\templates\base.html"),
+("home.html", r"omaum\Templates\home.html"),

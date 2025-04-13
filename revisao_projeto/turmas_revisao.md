@@ -332,6 +332,8 @@ urlpatterns = [
 
 ```python
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils import timezone  # Adicione esta linha
 from importlib import import_module
 
 def get_aluno_model():

@@ -146,7 +146,9 @@ def painel_controle(request):
     
     config = ConfiguracaoSistema.objects.first()
     logs_recentes = LogAtividade.objects.all()[:10]
-    return render(request, 'core/painel_controle.html', {
+    
+    # Altere o caminho do template para o local atual
+    return render(request, 'painel_controle.html', {
         'config': config,
         'logs_recentes': logs_recentes
     })

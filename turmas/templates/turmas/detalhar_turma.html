@@ -5,61 +5,74 @@
 {% block content %}
 <div class="container mt-4">
     <h1>Detalhes da Turma: {{ turma.nome }}</h1>
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
+    
     <div class="card mb-4">
         <div class="card-body">
             <h5 class="card-title">Informações da Turma</h5>
-            <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
+            <p><strong>Curso:</strong> {{ turma.curso }}</p>
             <p><strong>Data de Início:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
             <p><strong>Data de Fim:</strong> {{ turma.data_fim|date:"d/m/Y" }}</p>
             <p><strong>Status:</strong> {{ turma.get_status_display }}</p>
             <p><strong>Capacidade:</strong> {{ turma.capacidade }}</p>
-            <p><strong>Alunos Matriculados:</strong> {{ total_matriculas }}</p>
+            <p><strong>Alunos Matriculados:</strong> {{ alunos_matriculados_count }}</p>
             <p><strong>Vagas Disponíveis:</strong> {{ vagas_disponiveis }}</p>
             <p><strong>Descrição:</strong> {{ turma.descricao|default:"Não informada" }}</p>
         </div>
     </div>
-
-    <h2>Alunos Matriculados</h2>
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Matrícula</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for matricula in matriculas %}
-                <tr>
-                    <td>{{ matricula.aluno.nome }}</td>
-                    <td>{{ matricula.aluno.matricula }}</td>
-                    <td>
-                        <a href="{% url 'turmas:cancelar_matricula' turma.id matricula.aluno.id %}" class="btn btn-sm btn-danger">Cancelar Matrícula</a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="3" class="text-center">Nenhum aluno matriculado nesta turma.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Alunos Matriculados</h5>
+            <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Matricular Aluno
+            </a>
+        </div>
+        <div class="card-body">
+            {% if matriculas.exists %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>CPF</th>
+                                <th>Nº Iniciático</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for matricula in matriculas %}
+                            <tr>
+                                <td>{{ matricula.aluno.nome }}</td>
+                                <td>{{ matricula.aluno.cpf }}</td>
+                                <td>{{ matricula.aluno.numero_iniciatico|default:"N/A" }}</td>
+                                <td>
+                                    <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.cpf %}" class="btn btn-sm btn-info">Ver Aluno</a>
+                                    <a href="{% url 'turmas:cancelar_matricula' turma.id matricula.aluno.cpf %}" class="btn btn-sm btn-danger">Cancelar Matrícula</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">Nenhum aluno matriculado nesta turma.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <p class="mb-0">Turma sem Alunos</p>
+                </div>
+                <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-primary">Matricular Aluno</a>
+            {% endif %}
+        </div>
     </div>
-
+    
     <div class="mt-4">
-        <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-primary">Matricular Novo Aluno</a>
-        <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning">Editar Turma</a>
         <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para Lista de Turmas</a>
+        <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning">Editar Turma</a>
+        {% if matriculas.count == 0 %}
+            <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger">Excluir Turma</a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
-

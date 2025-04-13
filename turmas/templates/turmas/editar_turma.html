@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container mt-4">
     <h1>Editar Turma: {{ turma.nome }}</h1>
-
+    
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">
@@ -13,27 +13,97 @@
             </div>
         {% endfor %}
     {% endif %}
+    
     <form method="post">
         {% csrf_token %}
-
-        {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
+        {% include 'includes/form_errors.html' %}
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Informações da Turma</h5>
             </div>
-        {% endfor %}
-
-        <div class="mt-4">
-            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
+                        {{ form.nome }}
+                        {% if form.nome.help_text %}
+                            <small class="form-text text-muted">{{ form.nome.help_text }}</small>
+                        {% endif %}
+                        {% for error in form.nome.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.curso.id_for_label }}" class="form-label">{{ form.curso.label }}</label>
+                        {{ form.curso }}
+                        {% if form.curso.help_text %}
+                            <small class="form-text text-muted">{{ form.curso.help_text }}</small>
+                        {% endif %}
+                        {% for error in form.curso.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.data_inicio.id_for_label }}" class="form-label">{{ form.data_inicio.label }}</label>
+                        {{ form.data_inicio }}
+                        {% if form.data_inicio.help_text %}
+                            <small class="form-text text-muted">{{ form.data_inicio.help_text }}</small>
+                        {% endif %}
+                        {% for error in form.data_inicio.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.data_fim.id_for_label }}" class="form-label">{{ form.data_fim.label }}</label>
+                        {{ form.data_fim }}
+                        {% if form.data_fim.help_text %}
+                            <small class="form-text text-muted">{{ form.data_fim.help_text }}</small>
+                        {% endif %}
+                        {% for error in form.data_fim.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.capacidade.id_for_label }}" class="form-label">{{ form.capacidade.label }}</label>
+                        {{ form.capacidade }}
+                        {% if form.capacidade.help_text %}
+                            <small class="form-text text-muted">{{ form.capacidade.help_text }}</small>
+                        {% endif %}
+                        {% for error in form.capacidade.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                        {{ form.status }}
+                        {% if form.status.help_text %}
+                            <small class="form-text text-muted">{{ form.status.help_text }}</small>
+                        {% endif %}
+                        {% for error in form.status.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between">
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
+            <div>
+                <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary me-2">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Atualizar Turma</button>
+            </div>
         </div>
     </form>
 </div>
 {% endblock %}
-

@@ -38,14 +38,19 @@
             </form>
         </div>
         <div class="card-body">
+            {% if error_message %}
+            <div class="alert alert-danger">
+                {{ error_message }}
+            </div>
+            {% endif %}
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
                         <tr>
                             <th>Nome</th>
                             <th>CPF</th>
+                            <th>Nº Iniciático</th>
                             <th>Email</th>
-                            <th>Data de Nascimento</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -68,8 +73,8 @@
                                     </div>
                                 </td>
                                 <td>{{ aluno.cpf }}</td>
+                                <td>{{ aluno.numero_iniciatico|default:"N/A" }}</td>
                                 <td>{{ aluno.email }}</td>
-                                <td>{{ aluno.data_nascimento|date:"d/m/Y" }}</td>
                                 <td>
                                     {% if aluno.cpf %}
                                         <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info">Detalhes</a>

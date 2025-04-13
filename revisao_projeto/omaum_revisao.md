@@ -45,7 +45,7 @@ if settings.DEBUG:
 ## Arquivos de Template:
 
 
-### Arquivo: omaum\Templates\403.html
+### Arquivo: omaum\templates\403.html
 
 ```html
 {% extends "base.html" %}
@@ -71,7 +71,7 @@ if settings.DEBUG:
 ```
 
 
-### Arquivo: omaum\Templates\404.html
+### Arquivo: omaum\templates\404.html
 
 ```html
 {% extends "base.html" %}
@@ -97,7 +97,7 @@ if settings.DEBUG:
 ```
 
 
-### Arquivo: omaum\Templates\500.html
+### Arquivo: omaum\templates\500.html
 
 ```html
 {% extends "base.html" %}
@@ -123,7 +123,7 @@ if settings.DEBUG:
 ```
 
 
-### Arquivo: omaum\Templates\atualizar_configuracao.html
+### Arquivo: omaum\templates\atualizar_configuracao.html
 
 ```html
 {% extends "base.html" %}
@@ -172,7 +172,7 @@ if settings.DEBUG:
 ```
 
 
-### Arquivo: omaum\Templates\base.html
+### Arquivo: omaum\templates\base.html
 
 ```html
 {% load static %}
@@ -290,7 +290,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\csrf_test.html
+### Arquivo: omaum\templates\csrf_test.html
 
 ```html
 <!DOCTYPE html>
@@ -316,7 +316,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\home.html
+### Arquivo: omaum\templates\home.html
 
 ```html
 {% extends 'base.html' %}
@@ -500,7 +500,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\home_old.html
+### Arquivo: omaum\templates\home_old.html
 
 ```html
 {% extends "base.html" %}
@@ -620,7 +620,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\includes\form_error.html
+### Arquivo: omaum\templates\includes\form_error.html
 
 ```html
 {% if form.errors %}
@@ -651,7 +651,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\includes\form_errors.html
+### Arquivo: omaum\templates\includes\form_errors.html
 
 ```html
 {% if form.errors %}
@@ -682,7 +682,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\includes\form_field.html
+### Arquivo: omaum\templates\includes\form_field.html
 
 ```html
 <div class="mb-3">
@@ -703,7 +703,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\lista_categorias.html
+### Arquivo: omaum\templates\lista_categorias.html
 
 ```html
 {% extends "base.html" %}
@@ -735,7 +735,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\manutencao.html
+### Arquivo: omaum\templates\manutencao.html
 
 ```html
 {% extends "base.html" %}
@@ -765,7 +765,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\painel_controle.html
+### Arquivo: omaum\templates\painel_controle.html
 
 ```html
 {% extends "base.html" %}
@@ -858,7 +858,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\registration\login.html
+### Arquivo: omaum\templates\registration\login.html
 
 ```html
 {% extends "base.html" %}
@@ -937,7 +937,7 @@ E então defina os blocos necessários, como título e conteúdo:
 ```
 
 
-### Arquivo: omaum\Templates\registration\registro.html
+### Arquivo: omaum\templates\registration\registro.html
 
 ```html
 {% extends 'base.html' %}

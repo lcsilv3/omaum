@@ -58,8 +58,8 @@ def generate_report(results, critical_files):
 if __name__ == "__main__":
     project_root = "C:\\projetos\\omaum"
     critical_files = [
-        ("base.html", "omaum\\templates\\base.html"),
-        ("home.html", "omaum\Templates\home.html"),
+        ("base.html", r"omaum\templates\base.html"),
+        ("home.html", r"omaum\Templates\home.html"),
         ("settings.py", "omaum\\settings.py"),
         ("urls.py", "omaum\\urls.py"),
         ("views.py", "core\views.py),

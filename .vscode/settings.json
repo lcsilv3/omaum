@@ -1,3 +1,11 @@
 {
-    "cody.suggestions.mode": "auto-edit (Experimental)"
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.lintOnSave": true,
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "black",
+    "python.linting.pylintArgs": [
+        "--rcfile=.pylintrc"
+    ]
 }

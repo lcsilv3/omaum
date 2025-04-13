@@ -45,6 +45,7 @@
                 <th>Data de Início</th>
                 <th>Data de Fim</th>
                 <th>Status</th>
+                <th>Alunos</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -57,6 +58,11 @@
                 <td>{{ turma.data_fim|date:"d/m/Y" }}</td>
                 <td>{{ turma.get_status_display }}</td>
                 <td>
+                    <a href="{% url 'turmas:listar_alunos_matriculados' turma.id %}" class="badge bg-info text-white">
+                        {{ turma.alunos_count }} aluno(s)
+                    </a>
+                </td>
+                <td>
                     <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info">Detalhes</a>
                     <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning">Editar</a>
                     <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-sm btn-danger">Excluir</a>
@@ -64,7 +70,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6">Nenhuma turma encontrada.</td>
+                <td colspan="7">Nenhuma turma encontrada.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -95,4 +101,3 @@
     <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary">Criar Nova Turma</a>
 </div>
 {% endblock %}
-

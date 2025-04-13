@@ -6,22 +6,15 @@
 <div class="container mt-4">
     <h1>Cancelar Matrícula</h1>
     
-    {% if ultima_matricula %}
-        <div class="alert alert-danger">
-            <p>Não é possível cancelar esta matrícula porque é a única matrícula ativa na turma.</p>
-            <p>Uma turma deve ter pelo menos um aluno matriculado.</p>
-        </div>
-        <a href="{% url 'turmas:detalhar_turma' matricula.turma.id %}" class="btn btn-primary">Voltar para Detalhes da Turma</a>
-    {% else %}
-        <div class="alert alert-warning">
-            <p>Você tem certeza que deseja cancelar a matrícula de "{{ matricula.aluno.nome }}" na turma "{{ matricula.turma.nome }}"?</p>
-        </div>
-        
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Confirmar Cancelamento</button>
-            <a href="{% url 'turmas:detalhar_turma' matricula.turma.id %}" class="btn btn-secondary">Cancelar</a>
-        </form>
-    {% endif %}
+    <div class="alert alert-warning">
+        <p>Você está prestes a cancelar a matrícula do aluno <strong>{{ aluno.nome }}</strong> na turma <strong>{{ turma.nome }}</strong>.</p>
+        <p>Esta ação não pode ser desfeita. Deseja continuar?</p>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Confirmar Cancelamento</button>
+        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar</a>
+    </form>
 </div>
 {% endblock %}

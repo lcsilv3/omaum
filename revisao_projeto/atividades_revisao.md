@@ -1627,7 +1627,7 @@ class AtividadeRitualistica(models.Model):
         <h1>Lista de Atividades Acadêmicas</h1>
         <div>
             <!-- Use uma URL específica em vez de javascript:history.back() -->
-            <a href="{% url 'home' %}" class="btn btn-secondary me-2">Voltar ao Dashboard</a>
+            <a href="{% url 'core:pagina_inicial' %}" class="btn btn-secondary me-2">Página Inicial</a>
             
             <!-- Botão para criar nova atividade acadêmica com URL de retorno -->
             <a href="{% url 'atividades:criar_atividade_academica' %}?return_url={{ request.path|urlencode }}" class="btn btn-primary">
@@ -1741,7 +1741,7 @@ class AtividadeRitualistica(models.Model):
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Lista de Atividades Ritualísticas</h1>
         <div>
-            <a href="{% url 'home' %}" class="btn btn-secondary me-2">Voltar ao Dashboard</a>
+            <a href="{% url 'core:pagina_inicial' %}" class="btn btn-secondary me-2">Página Inicial</a>
             <!-- Botão para criar nova atividade ritualística -->
             <a href="{% url 'atividades:criar_atividade_ritualistica' %}?return_url={{ request.path|urlencode }}" class="btn btn-primary">
                 Nova Atividade Ritualística
