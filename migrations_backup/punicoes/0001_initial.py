@@ -7,49 +7,124 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
+        ("alunos", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='TipoPunicao',
+            name="TipoPunicao",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100)),
-                ('descricao', models.TextField()),
-                ('gravidade', models.CharField(choices=[('leve', 'Leve'), ('media', 'Média'), ('grave', 'Grave'), ('gravissima', 'Gravíssima')], default='media', max_length=20)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nome", models.CharField(max_length=100)),
+                ("descricao", models.TextField()),
+                (
+                    "gravidade",
+                    models.CharField(
+                        choices=[
+                            ("leve", "Leve"),
+                            ("media", "Média"),
+                            ("grave", "Grave"),
+                            ("gravissima", "Gravíssima"),
+                        ],
+                        default="media",
+                        max_length=20,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Tipo de Punição',
-                'verbose_name_plural': 'Tipos de Punição',
-                'ordering': ['nome'],
+                "verbose_name": "Tipo de Punição",
+                "verbose_name_plural": "Tipos de Punição",
+                "ordering": ["nome"],
             },
         ),
         migrations.CreateModel(
-            name='Punicao',
+            name="Punicao",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('descricao', models.TextField()),
-                ('data_aplicacao', models.DateField()),
-                ('data_termino', models.DateField(blank=True, null=True)),
-                ('status', models.CharField(choices=[('pendente', 'Pendente'), ('em_andamento', 'Em Andamento'), ('concluida', 'Concluída'), ('cancelada', 'Cancelada')], default='pendente', max_length=20)),
-                ('observacoes', models.TextField(blank=True, null=True)),
-                ('data_registro', models.DateTimeField(default=django.utils.timezone.now)),
-                ('data_atualizacao', models.DateTimeField(blank=True, null=True)),
-                ('aluno', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='punicoes', to='alunos.aluno')),
-                ('atualizado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='punicoes_atualizadas', to=settings.AUTH_USER_MODEL)),
-                ('registrado_por', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='punicoes_registradas', to=settings.AUTH_USER_MODEL)),
-                ('tipo_punicao', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='punicoes', to='punicoes.tipopunicao')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("descricao", models.TextField()),
+                ("data_aplicacao", models.DateField()),
+                ("data_termino", models.DateField(blank=True, null=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pendente", "Pendente"),
+                            ("em_andamento", "Em Andamento"),
+                            ("concluida", "Concluída"),
+                            ("cancelada", "Cancelada"),
+                        ],
+                        default="pendente",
+                        max_length=20,
+                    ),
+                ),
+                ("observacoes", models.TextField(blank=True, null=True)),
+                (
+                    "data_registro",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                (
+                    "data_atualizacao",
+                    models.DateTimeField(blank=True, null=True),
+                ),
+                (
+                    "aluno",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="punicoes",
+                        to="alunos.aluno",
+                    ),
+                ),
+                (
+                    "atualizado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="punicoes_atualizadas",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "registrado_por",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="punicoes_registradas",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "tipo_punicao",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="punicoes",
+                        to="punicoes.tipopunicao",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Punição',
-                'verbose_name_plural': 'Punições',
-                'ordering': ['-data_aplicacao'],
+                "verbose_name": "Punição",
+                "verbose_name_plural": "Punições",
+                "ordering": ["-data_aplicacao"],
             },
         ),
     ]

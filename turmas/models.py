@@ -1,88 +1,132 @@
 from django.db import models
-from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.utils import timezone
-from django.utils.translation import gettext as _
-from importlib import import_module
-
-
-def get_aluno_model():
-    alunos_module = import_module("alunos.models")
-    return getattr(alunos_module, "Aluno")
-
-
-def get_curso_model():
-    cursos_module = import_module("cursos.models")
-    return getattr(cursos_module, "Curso")
 
 
 class Turma(models.Model):
-    OPCOES_STATUS = [
+    """
+    Modelo para representar uma turma no sistema OMAUM.
+    """
+
+    STATUS_CHOICES = [
         ("A", "Ativa"),
         ("I", "Inativa"),
         ("C", "Concluída"),
     ]
 
-    nome = models.CharField("Nome", max_length=100)
+    # Informações básicas
+    nome = models.CharField(max_length=100, verbose_name="Nome da Turma")
     curso = models.ForeignKey(
         "cursos.Curso",
         on_delete=models.CASCADE,
         verbose_name="Curso",
-        to_field="codigo_curso",  # Especificar que estamos referenciando o campo codigo_curso
+        related_name="turmas",
     )
-    data_inicio = models.DateField("Data de Início")
-    data_fim = models.DateField("Data de Fim")
-    status = models.CharField(
-        "Status", max_length=1, choices=OPCOES_STATUS, default="A"
+    descricao = models.TextField(
+        blank=True, null=True, verbose_name="Descrição"
     )
-    capacidade = models.PositiveIntegerField("Capacidade de Alunos", default=30)
-    descricao = models.TextField("Descrição", blank=True)
 
-    def __str__(self):
-        return f"{self.nome} - {self.curso}"
+    # Datas
+    data_inicio = models.DateField(verbose_name="Data de Início")
+    data_fim = models.DateField(verbose_name="Data de Término")
+
+    # Informações de agendamento
+    dias_semana = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Dias da Semana"
+    )
+    local = models.CharField(
+        max_length=200, blank=True, null=True, verbose_name="Local"
+    )
+    horario = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Horário"
+    )
+
+    # Capacidade e status
+    vagas = models.PositiveIntegerField(
+        default=20,
+        validators=[MinValueValidator(1)],
+        verbose_name="Número de Vagas",
+    )
+    status = models.CharField(
+        max_length=1,
+        choices=STATUS_CHOICES,
+        default="A",
+        verbose_name="Status",
+    )
+
+    # Instrutores
+    instrutor = models.ForeignKey(
+        "alunos.Aluno",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="turmas_como_instrutor",
+        verbose_name="Instrutor Principal",
+    )
+    instrutor_auxiliar = models.ForeignKey(
+        "alunos.Aluno",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="turmas_como_instrutor_auxiliar",
+        verbose_name="Instrutor Auxiliar",
+    )
+    auxiliar_instrucao = models.ForeignKey(
+        "alunos.Aluno",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="turmas_como_auxiliar_instrucao",
+        verbose_name="Auxiliar de Instrução",
+    )
+
+    # Metadados
+    created_at = models.DateTimeField(
+        default=timezone.now, verbose_name="Criado em"
+    )
+    updated_at = models.DateTimeField(
+        default=timezone.now, verbose_name="Atualizado em"
+    )
 
     class Meta:
         verbose_name = "Turma"
         verbose_name_plural = "Turmas"
+        ordering = ["-data_inicio"]
 
-    def clean(self):
-        if self.data_fim and self.data_inicio and self.data_fim < self.data_inicio:
-            raise ValidationError(
-                {"data_fim": "A data de término deve ser posterior à data de início."}
-            )
-        # Atualiza status automaticamente com base nas datas
-        hoje = timezone.now().date()
-        if self.status == "A" and self.data_fim < hoje:
-            self.status = "C"  # Marca como concluída se a data final já passou
-
-    @property
-    def alunos_matriculados(self):
-        return self.matriculas.count()
+    def __str__(self):
+        return f"{self.nome} - {self.curso.nome}"
 
     @property
     def vagas_disponiveis(self):
-
-        return (
-            self.capacidade - self.alunos_matriculados
-        )  # Use alunos_matriculados for consistency
-
-    @property
-    def total_alunos(self):
-        """Retorna o número total de alunos matriculados na turma."""
-        return self.matriculas.count()
+        """Retorna o número de vagas disponíveis na turma."""
+        vagas_ocupadas = self.matriculas.filter(status="A").count()
+        return self.vagas - vagas_ocupadas
 
     @property
-    def tem_alunos(self):
-        """Verifica se a turma tem alunos matriculados."""
-        return self.total_alunos > 0
+    def esta_ativa(self):
+        """Verifica se a turma está ativa."""
+        return self.status == "A"
 
-    def save(self, *args, **kwargs):
-        # Se for uma turma nova, permitimos salvar sem alunos inicialmente
-        if not self.pk:
-            super().save(*args, **kwargs)
-        else:
-            # Para turmas existentes, verificamos se há pelo menos um aluno
-            if not self.tem_alunos:  # Corrigido: removidos os parênteses
+    @property
+    def esta_em_andamento(self):
+        """Verifica se a turma está em andamento (começou mas não terminou)."""
+        hoje = timezone.now().date()
+        return self.data_inicio <= hoje <= self.data_fim and self.status == "A"
+
+    def clean(self):
+        super().clean()
+
+        # Verificar se já existe uma turma com o mesmo nome (ignorando case)
+        if self.nome:
+            turmas_existentes = Turma.objects.filter(nome__iexact=self.nome)
+
+            # Excluir a própria instância se estiver editando
+            if self.pk:
+                turmas_existentes = turmas_existentes.exclude(pk=self.pk)
+
+            if turmas_existentes.exists():
                 raise ValidationError(
-                    "Uma turma deve ter pelo menos um aluno matriculado."
+                    {
+                        "nome": "Já existe uma turma com este nome. Por favor, escolha um nome diferente."
+                    }
                 )
-            super().save(*args, **kwargs)

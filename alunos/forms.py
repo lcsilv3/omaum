@@ -36,6 +36,7 @@ class AlunoForm(forms.ModelForm):
             "email",
             "foto",
             "sexo",
+            "situacao",
             "numero_iniciatico",
             "nome_iniciatico",
             "nacionalidade",
@@ -71,8 +72,13 @@ class AlunoForm(forms.ModelForm):
             "email": forms.EmailInput(attrs={"class": "form-control"}),
             "foto": forms.ClearableFileInput(attrs={"class": "form-control"}),
             "sexo": forms.Select(attrs={"class": "form-control"}),
-            "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
-            "nome_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
+            "situacao": forms.Select(attrs={"class": "form-control"}),
+            "numero_iniciatico": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
+            "nome_iniciatico": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
             "nacionalidade": forms.TextInput(
                 attrs={"class": "form-control", "value": "Brasileira"}
             ),
@@ -84,27 +90,40 @@ class AlunoForm(forms.ModelForm):
             "cidade": forms.TextInput(attrs={"class": "form-control"}),
             "estado": forms.TextInput(attrs={"class": "form-control"}),
             "cep": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Somente números"}
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Somente números",
+                }
             ),
-            "nome_primeiro_contato": forms.TextInput(attrs={"class": "form-control"}),
+            "nome_primeiro_contato": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
             "celular_primeiro_contato": forms.TextInput(
                 attrs={"class": "form-control"}
             ),
             "tipo_relacionamento_primeiro_contato": forms.TextInput(
                 attrs={"class": "form-control"}
             ),
-            "nome_segundo_contato": forms.TextInput(attrs={"class": "form-control"}),
-            "celular_segundo_contato": forms.TextInput(attrs={"class": "form-control"}),
+            "nome_segundo_contato": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
+            "celular_segundo_contato": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
             "tipo_relacionamento_segundo_contato": forms.TextInput(
                 attrs={"class": "form-control"}
             ),
             "tipo_sanguineo": forms.TextInput(attrs={"class": "form-control"}),
             "fator_rh": forms.Select(attrs={"class": "form-control"}),
-            "alergias": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "alergias": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
             "condicoes_medicas_gerais": forms.Textarea(
                 attrs={"class": "form-control", "rows": 3}
             ),
-            "convenio_medico": forms.TextInput(attrs={"class": "form-control"}),
+            "convenio_medico": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
             "hospital": forms.TextInput(attrs={"class": "form-control"}),
         }
         labels = {
@@ -115,6 +134,7 @@ class AlunoForm(forms.ModelForm):
             "email": "E-mail",
             "foto": "Foto",
             "sexo": "Sexo",
+            "situacao": "Situação",
             "numero_iniciatico": "Número Iniciático",
             "nome_iniciatico": "Nome Iniciático",
             "nacionalidade": "Nacionalidade",
@@ -143,6 +163,7 @@ class AlunoForm(forms.ModelForm):
             "cpf": "Digite apenas os 11 números do CPF, sem pontos ou traços.",
             "data_nascimento": "Formato: DD/MM/AAAA",
             "hora_nascimento": "Formato: HH:MM",
+            "situacao": "Selecione a situação atual do aluno.",
             "numero_iniciatico": "Número único de identificação do iniciado.",
             "cep": "Digite apenas os 8 números do CEP, sem hífen.",
             "tipo_sanguineo": "Ex: A, B, AB, O",
@@ -160,7 +181,9 @@ class AlunoForm(forms.ModelForm):
 
             # Verifica se tem 11 dígitos
             if len(cpf) != 11:
-                raise forms.ValidationError("O CPF deve conter exatamente 11 dígitos.")
+                raise forms.ValidationError(
+                    "O CPF deve conter exatamente 11 dígitos."
+                )
 
             # Aqui você poderia adicionar uma validação mais complexa do CPF
             # como verificar os dígitos verificadores
@@ -185,7 +208,11 @@ class AlunoForm(forms.ModelForm):
             Aluno = get_aluno_model()
             instance = getattr(self, "instance", None)
             if instance and instance.pk:
-                if Aluno.objects.filter(email=email).exclude(pk=instance.pk).exists():
+                if (
+                    Aluno.objects.filter(email=email)
+                    .exclude(pk=instance.pk)
+                    .exists()
+                ):
                     raise forms.ValidationError(
                         "Este e-mail já está em uso por outro aluno."
                     )
@@ -203,8 +230,56 @@ class AlunoForm(forms.ModelForm):
 
             # Verifica se tem 8 dígitos
             if len(cep) != 8:
-                raise forms.ValidationError("O CEP deve conter exatamente 8 dígitos.")
+                raise forms.ValidationError(
+                    "O CEP deve conter exatamente 8 dígitos."
+                )
         return cep
+
+    def clean_situacao(self):
+        """Validação personalizada para o campo situacao."""
+        situacao = self.cleaned_data.get("situacao")
+        situacao_anterior = None
+
+        # Verificar se é uma edição e se a situação mudou
+        if self.instance and self.instance.pk:
+            situacao_anterior = self.instance.situacao
+
+            # Se a situação mudou de "ATIVO" para outra coisa, verificar se o aluno é instrutor em alguma turma
+            if situacao_anterior == "ATIVO" and situacao != "ATIVO":
+                from importlib import import_module
+
+                try:
+                    # Importar o modelo Turma dinamicamente
+                    turmas_module = import_module("turmas.models")
+                    Turma = getattr(turmas_module, "Turma")
+
+                    # Verificar se o aluno é instrutor em alguma turma ativa
+                    turmas_como_instrutor = Turma.objects.filter(
+                        instrutor=self.instance, status="A"
+                    ).count()
+
+                    turmas_como_instrutor_auxiliar = Turma.objects.filter(
+                        instrutor_auxiliar=self.instance, status="A"
+                    ).count()
+
+                    turmas_como_auxiliar_instrucao = Turma.objects.filter(
+                        auxiliar_instrucao=self.instance, status="A"
+                    ).count()
+
+                    total_turmas = (
+                        turmas_como_instrutor
+                        + turmas_como_instrutor_auxiliar
+                        + turmas_como_auxiliar_instrucao
+                    )
+
+                    if total_turmas > 0:
+                        # Não vamos lançar erro aqui, apenas registrar para mostrar alerta na view
+                        self.aluno_e_instrutor = True
+                        self.total_turmas_como_instrutor = total_turmas
+                except (ImportError, AttributeError):
+                    pass
+
+        return situacao
 
     def clean(self):
         """Validação global do formulário."""

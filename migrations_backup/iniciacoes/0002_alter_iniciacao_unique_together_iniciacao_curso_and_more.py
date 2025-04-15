@@ -5,50 +5,62 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0002_remove_aluno_id_alter_aluno_cpf'),
-        ('cursos', '0001_initial'),
-        ('iniciacoes', '0001_initial'),
+        ("alunos", "0002_remove_aluno_id_alter_aluno_cpf"),
+        ("cursos", "0001_initial"),
+        ("iniciacoes", "0001_initial"),
     ]
 
     operations = [
         # First add the fields
         migrations.AddField(
-            model_name='iniciacao',
-            name='curso',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='cursos.curso', verbose_name='Curso'),
+            model_name="iniciacao",
+            name="curso",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="cursos.curso",
+                verbose_name="Curso",
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='iniciacao',
-            name='grau',
-            field=models.CharField(default=1, max_length=50, verbose_name='Grau'),
+            model_name="iniciacao",
+            name="grau",
+            field=models.CharField(
+                default=1, max_length=50, verbose_name="Grau"
+            ),
             preserve_default=False,
         ),
         # Then set up the unique constraint
         migrations.AlterUniqueTogether(
-            name='iniciacao',
-            unique_together={('aluno', 'curso', 'grau')},
+            name="iniciacao",
+            unique_together={("aluno", "curso", "grau")},
         ),
         # Rest of the operations
         migrations.AlterField(
-            model_name='iniciacao',
-            name='aluno',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='alunos.aluno', verbose_name='Aluno'),
+            model_name="iniciacao",
+            name="aluno",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="alunos.aluno",
+                verbose_name="Aluno",
+            ),
         ),
         migrations.AlterField(
-            model_name='iniciacao',
-            name='data_iniciacao',
-            field=models.DateField(verbose_name='Data da IniciaÃ§Ã£o'),
+            model_name="iniciacao",
+            name="data_iniciacao",
+            field=models.DateField(verbose_name="Data da IniciaÃ§Ã£o"),
         ),
         migrations.AlterField(
-            model_name='iniciacao',
-            name='observacoes',
-            field=models.TextField(blank=True, null=True, verbose_name='ObservaÃ§Ãµes'),
+            model_name="iniciacao",
+            name="observacoes",
+            field=models.TextField(
+                blank=True, null=True, verbose_name="ObservaÃ§Ãµes"
+            ),
         ),
         migrations.RemoveField(
-            model_name='iniciacao',
-            name='nome_curso',
+            model_name="iniciacao",
+            name="nome_curso",
         ),
     ]

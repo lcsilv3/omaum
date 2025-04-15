@@ -4,25 +4,46 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='CargoAdministrativo',
+            name="CargoAdministrativo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('codigo_cargo', models.CharField(max_length=10, unique=True, verbose_name='Código do Cargo')),
-                ('nome', models.CharField(max_length=100, verbose_name='Nome')),
-                ('descricao', models.TextField(blank=True, null=True, verbose_name='Descrição')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "codigo_cargo",
+                    models.CharField(
+                        max_length=10,
+                        unique=True,
+                        verbose_name="Código do Cargo",
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(max_length=100, verbose_name="Nome"),
+                ),
+                (
+                    "descricao",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Descrição"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Cargo Administrativo',
-                'verbose_name_plural': 'Cargos Administrativos',
-                'ordering': ['nome'],
+                "verbose_name": "Cargo Administrativo",
+                "verbose_name_plural": "Cargos Administrativos",
+                "ordering": ["nome"],
             },
         ),
     ]

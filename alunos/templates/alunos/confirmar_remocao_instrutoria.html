@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Remoção de Instrutoria{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h4 class="mb-0">Atenção: Remoção de Instrutoria</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <h5>O aluno <strong>{{ aluno.nome }}</strong> é instrutor em {{ total_turmas }} turma(s) ativa(s).</h5>
+                <p>Ao alterar a situação para <strong>{{ nova_situacao }}</strong>, o aluno será removido automaticamente como instrutor dessas turmas.</p>
+            </div>
+            
+            {% if turmas_instrutor %}
+            <h5 class="mt-4">Turmas onde é Instrutor Principal:</h5>
+            <ul class="list-group mb-3">
+                {% for turma in turmas_instrutor %}
+                <li class="list-group-item">
+                    <strong>{{ turma.nome }}</strong> - {{ turma.curso }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            
+            {% if turmas_instrutor_auxiliar %}
+            <h5 class="mt-4">Turmas onde é Instrutor Auxiliar:</h5>
+            <ul class="list-group mb-3">
+                {% for turma in turmas_instrutor_auxiliar %}
+                <li class="list-group-item">
+                    <strong>{{ turma.nome }}</strong> - {{ turma.curso }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            
+            {% if turmas_auxiliar_instrucao %}
+            <h5 class="mt-4">Turmas onde é Auxiliar de Instrução:</h5>
+            <ul class="list-group mb-3">
+                {% for turma in turmas_auxiliar_instrucao %}
+                <li class="list-group-item">
+                    <strong>{{ turma.nome }}</strong> - {{ turma.curso }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-danger">
+                        Confirmar Alteração e Remover Instrutoria
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

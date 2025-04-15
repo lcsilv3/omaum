@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('frequencias', '0003_alter_frequencia_options_and_more'),
-        ('frequencias', 'xxxx_update_aluno_fk'),
+        ("frequencias", "0003_alter_frequencia_options_and_more"),
+        ("frequencias", "xxxx_update_aluno_fk"),
     ]
 
-    operations = [
-    ]
+    operations = []

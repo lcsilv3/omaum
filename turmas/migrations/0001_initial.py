@@ -5,46 +5,116 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
-        ('cursos', '0001_initial'),
+        ("alunos", "0001_initial"),
+        ("cursos", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Turma',
+            name="Turma",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100, verbose_name='Nome')),
-                ('data_inicio', models.DateField(verbose_name='Data de Início')),
-                ('data_fim', models.DateField(verbose_name='Data de Fim')),
-                ('status', models.CharField(choices=[('A', 'Ativa'), ('I', 'Inativa'), ('C', 'Concluída')], default='A', max_length=1, verbose_name='Status')),
-                ('capacidade', models.PositiveIntegerField(default=30, verbose_name='Capacidade de Alunos')),
-                ('descricao', models.TextField(blank=True, verbose_name='Descrição')),
-                ('curso', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='cursos.curso', verbose_name='Curso')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(max_length=100, verbose_name="Nome"),
+                ),
+                (
+                    "data_inicio",
+                    models.DateField(verbose_name="Data de Início"),
+                ),
+                ("data_fim", models.DateField(verbose_name="Data de Fim")),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("A", "Ativa"),
+                            ("I", "Inativa"),
+                            ("C", "Concluída"),
+                        ],
+                        default="A",
+                        max_length=1,
+                        verbose_name="Status",
+                    ),
+                ),
+                (
+                    "capacidade",
+                    models.PositiveIntegerField(
+                        default=30, verbose_name="Capacidade de Alunos"
+                    ),
+                ),
+                (
+                    "descricao",
+                    models.TextField(blank=True, verbose_name="Descrição"),
+                ),
+                (
+                    "curso",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="cursos.curso",
+                        verbose_name="Curso",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Turma',
-                'verbose_name_plural': 'Turmas',
+                "verbose_name": "Turma",
+                "verbose_name_plural": "Turmas",
             },
         ),
         migrations.CreateModel(
-            name='Matricula',
+            name="Matricula",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_matricula', models.DateField(verbose_name='Data da Matrícula')),
-                ('ativa', models.BooleanField(default=True, verbose_name='Matrícula Ativa')),
-                ('aluno', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='alunos.aluno', verbose_name='Aluno')),
-                ('turma', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='turmas.turma', verbose_name='Turma')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "data_matricula",
+                    models.DateField(verbose_name="Data da Matrícula"),
+                ),
+                (
+                    "ativa",
+                    models.BooleanField(
+                        default=True, verbose_name="Matrícula Ativa"
+                    ),
+                ),
+                (
+                    "aluno",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
+                    ),
+                ),
+                (
+                    "turma",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="turmas.turma",
+                        verbose_name="Turma",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Matrícula',
-                'verbose_name_plural': 'Matrículas',
-                'ordering': ['-data_matricula'],
-                'unique_together': {('aluno', 'turma')},
+                "verbose_name": "Matrícula",
+                "verbose_name_plural": "Matrículas",
+                "ordering": ["-data_matricula"],
+                "unique_together": {("aluno", "turma")},
             },
         ),
     ]

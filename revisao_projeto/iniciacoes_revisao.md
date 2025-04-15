@@ -11,35 +11,40 @@ from django.core.exceptions import ValidationError
 from datetime import date
 from .models import Iniciacao, GrauIniciacao
 
+
 class IniciacaoForm(forms.ModelForm):
     class Meta:
         model = Iniciacao
         # Remova 'nome' da lista de campos
-        fields = ['aluno', 'curso', 'data_iniciacao', 'grau', 'observacoes']
+        fields = ["aluno", "curso", "data_iniciacao", "grau", "observacoes"]
         widgets = {
-            'data_iniciacao': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'aluno': forms.Select(attrs={'class': 'form-control'}),
-            'curso': forms.Select(attrs={'class': 'form-control'}),
-            'grau': forms.TextInput(attrs={'class': 'form-control'}),
-            'observacoes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            "data_iniciacao": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "aluno": forms.Select(attrs={"class": "form-control"}),
+            "curso": forms.Select(attrs={"class": "form-control"}),
+            "grau": forms.TextInput(attrs={"class": "form-control"}),
+            "observacoes": forms.Textarea(
+                attrs={"class": "form-control", "rows": 4}
+            ),
         }
         labels = {
-            'aluno': 'Aluno',
-            'curso': 'Curso',
-            'data_iniciacao': 'Data de Iniciação',
-            'grau': 'Grau',
-            'observacoes': 'Observações'
+            "aluno": "Aluno",
+            "curso": "Curso",
+            "data_iniciacao": "Data de Iniciação",
+            "grau": "Grau",
+            "observacoes": "Observações",
         }
         help_texts = {
-            'curso': 'Selecione o curso de iniciação',
-            'data_iniciacao': 'Selecione a data em que o aluno foi iniciado no curso'
+            "curso": "Selecione o curso de iniciação",
+            "data_iniciacao": "Selecione a data em que o aluno foi iniciado no curso",
         }
 
     def clean(self):
         cleaned_data = super().clean()
-        aluno = cleaned_data.get('aluno')
-        curso = cleaned_data.get('curso')
-        data_iniciacao = cleaned_data.get('data_iniciacao')
+        aluno = cleaned_data.get("aluno")
+        curso = cleaned_data.get("curso")
+        data_iniciacao = cleaned_data.get("data_iniciacao")
 
         # Verifica se já existe uma iniciação para este aluno neste curso
         if aluno and curso:
@@ -47,10 +52,11 @@ class IniciacaoForm(forms.ModelForm):
             instance_id = self.instance.id if self.instance else None
 
             # Verifica se já existe outra iniciação com o mesmo aluno e curso
-            if Iniciacao.objects.filter(
-                aluno=aluno, 
-                curso=curso
-            ).exclude(id=instance_id).exists():
+            if (
+                Iniciacao.objects.filter(aluno=aluno, curso=curso)
+                .exclude(id=instance_id)
+                .exists()
+            ):
                 raise ValidationError(
                     f"O aluno {aluno.nome} já possui uma iniciação no curso {curso.nome}."
                 )
@@ -58,28 +64,34 @@ class IniciacaoForm(forms.ModelForm):
         return cleaned_data
 
     def clean_data_iniciacao(self):
-        data_iniciacao = self.cleaned_data.get('data_iniciacao')
+        data_iniciacao = self.cleaned_data.get("data_iniciacao")
 
         if data_iniciacao and data_iniciacao > date.today():
-            raise ValidationError("A data de iniciação não pode ser no futuro.")
+            raise ValidationError(
+                "A data de iniciação não pode ser no futuro."
+            )
 
         return data_iniciacao
+
 
 class GrauIniciacaoForm(forms.ModelForm):
     class Meta:
         model = GrauIniciacao
-        fields = ['nome', 'descricao', 'ordem']
+        fields = ["nome", "descricao", "ordem"]
         widgets = {
-            'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'ordem': forms.NumberInput(attrs={'class': 'form-control'}),
+            "nome": forms.TextInput(attrs={"class": "form-control"}),
+            "descricao": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
+            "ordem": forms.NumberInput(attrs={"class": "form-control"}),
         }
 
     def clean_ordem(self):
-        ordem = self.cleaned_data.get('ordem')
+        ordem = self.cleaned_data.get("ordem")
         if ordem <= 0:
             raise ValidationError("A ordem deve ser um número positivo.")
         return ordem
+
 ```
 
 ## Arquivos views.py:
@@ -93,7 +105,10 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from .models import Iniciacao, GrauIniciacao  # Add GrauIniciacao here
-from .forms import IniciacaoForm, GrauIniciacaoForm  # Add GrauIniciacaoForm if it exists
+from .forms import (
+    IniciacaoForm,
+    GrauIniciacaoForm,
+)  # Add GrauIniciacaoForm if it exists
 from alunos.models import Aluno
 from django.contrib.auth.decorators import login_required
 
@@ -101,10 +116,10 @@ from django.contrib.auth.decorators import login_required
 @login_required
 def listar_iniciacoes(request):
     # Parâmetros de filtro
-    aluno_id = request.GET.get('aluno')
-    nome_curso = request.GET.get('curso')
-    data_inicio = request.GET.get('data_inicio')
-    data_fim = request.GET.get('data_fim')
+    aluno_id = request.GET.get("aluno")
+    nome_curso = request.GET.get("curso")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
 
     # Query base
     iniciacoes = Iniciacao.objects.all()
@@ -123,92 +138,102 @@ def listar_iniciacoes(request):
         iniciacoes = iniciacoes.filter(data_iniciacao__lte=data_fim)
 
     # Busca geral
-    search_query = request.GET.get('search', '')
+    search_query = request.GET.get("search", "")
     if search_query:
         iniciacoes = iniciacoes.filter(
-            Q(aluno__nome__icontains=search_query) |
-            Q(nome_curso__icontains=search_query)
+            Q(aluno__nome__icontains=search_query)
+            | Q(nome_curso__icontains=search_query)
         )
 
     # Paginação
     paginator = Paginator(iniciacoes, 10)  # 10 itens por página
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
     # Lista de alunos para o filtro
     alunos = Aluno.objects.all()
 
     context = {
-        'page_obj': page_obj,
-        'alunos': alunos,
-        'filtros': {
-            'aluno_id': aluno_id,
-            'nome_curso': nome_curso,
-            'data_inicio': data_inicio,
-            'data_fim': data_fim,
-            'search': search_query
-        }
+        "page_obj": page_obj,
+        "alunos": alunos,
+        "filtros": {
+            "aluno_id": aluno_id,
+            "nome_curso": nome_curso,
+            "data_inicio": data_inicio,
+            "data_fim": data_fim,
+            "search": search_query,
+        },
     }
 
-    return render(request, 'iniciacoes/listar_iniciacoes.html', context)
+    return render(request, "iniciacoes/listar_iniciacoes.html", context)
 
 
 @login_required
 def criar_iniciacao(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = IniciacaoForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Iniciação criada com sucesso.')
-            return redirect('iniciacoes:listar_iniciacoes')
+            messages.success(request, "Iniciação criada com sucesso.")
+            return redirect("iniciacoes:listar_iniciacoes")
     else:
         form = IniciacaoForm()
-    return render(request, 'iniciacoes/criar_iniciacao.html', {'form': form})
+    return render(request, "iniciacoes/criar_iniciacao.html", {"form": form})
 
 
 @login_required
 def detalhar_iniciacao(request, id):
     iniciacao = get_object_or_404(Iniciacao, id=id)
-    return render(request, 'iniciacoes/detalhar_iniciacao.html', {'iniciacao': iniciacao})
+    return render(
+        request, "iniciacoes/detalhar_iniciacao.html", {"iniciacao": iniciacao}
+    )
 
 
 @login_required
 def editar_iniciacao(request, id):
     iniciacao = get_object_or_404(Iniciacao, id=id)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = IniciacaoForm(request.POST, instance=iniciacao)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Iniciação atualizada com sucesso.')
-            return redirect('iniciacoes:listar_iniciacoes')
+            messages.success(request, "Iniciação atualizada com sucesso.")
+            return redirect("iniciacoes:listar_iniciacoes")
     else:
         form = IniciacaoForm(instance=iniciacao)
-    return render(request, 'iniciacoes/editar_iniciacao.html', {'form': form, 'iniciacao': iniciacao})
+    return render(
+        request,
+        "iniciacoes/editar_iniciacao.html",
+        {"form": form, "iniciacao": iniciacao},
+    )
 
 
 @login_required
 def excluir_iniciacao(request, id):
     iniciacao = get_object_or_404(Iniciacao, id=id)
-    if request.method == 'POST':
+    if request.method == "POST":
         iniciacao.delete()
-        messages.success(request, 'Iniciação excluída com sucesso.')
-        return redirect('iniciacoes:listar_iniciacoes')
-    return render(request, 'iniciacoes/excluir_iniciacao.html', {'iniciacao': iniciacao})
+        messages.success(request, "Iniciação excluída com sucesso.")
+        return redirect("iniciacoes:listar_iniciacoes")
+    return render(
+        request, "iniciacoes/excluir_iniciacao.html", {"iniciacao": iniciacao}
+    )
+
 
 import csv
 from django.http import HttpResponse
 
+
 @login_required
 def exportar_iniciacoes_csv(request):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="iniciacoes.csv"'
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="iniciacoes.csv"'
 
     # Aplicar os mesmos filtros da listagem
-    aluno_id = request.GET.get('aluno')
-    nome_curso = request.GET.get('curso')
-    data_inicio = request.GET.get('data_inicio')
-    data_fim = request.GET.get('data_fim')
-    search_query = request.GET.get('search', '')
+    aluno_id = request.GET.get("aluno")
+    nome_curso = request.GET.get("curso")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+    search_query = request.GET.get("search", "")
 
     # Query base
     iniciacoes = Iniciacao.objects.all()
@@ -228,68 +253,81 @@ def exportar_iniciacoes_csv(request):
 
     if search_query:
         iniciacoes = iniciacoes.filter(
-            Q(aluno__nome__icontains=search_query) |
-            Q(nome_curso__icontains=search_query)
+            Q(aluno__nome__icontains=search_query)
+            | Q(nome_curso__icontains=search_query)
         )
 
     writer = csv.writer(response)
-    writer.writerow(['Aluno', 'Curso', 'Data de Iniciação', 'Observações'])
+    writer.writerow(["Aluno", "Curso", "Data de Iniciação", "Observações"])
 
     for iniciacao in iniciacoes:
-        writer.writerow([
-            iniciacao.aluno.nome,
-            iniciacao.nome_curso,
-            iniciacao.data_iniciacao.strftime('%d/%m/%Y'),
-            iniciacao.observacoes or ''
-        ])
+        writer.writerow(
+            [
+                iniciacao.aluno.nome,
+                iniciacao.nome_curso,
+                iniciacao.data_iniciacao.strftime("%d/%m/%Y"),
+                iniciacao.observacoes or "",
+            ]
+        )
 
     # Adicionar mensagem de sucesso
-    messages.success(request, f'Arquivo CSV com {iniciacoes.count()} iniciações exportado com sucesso.')
+    messages.success(
+        request,
+        f"Arquivo CSV com {iniciacoes.count()} iniciações exportado com sucesso.",
+    )
 
     return response
+
 
 @login_required
 def listar_graus(request):
     """Lista todos os graus de iniciação."""
     graus = GrauIniciacao.objects.all()
-    return render(request, 'iniciacoes/listar_graus.html', {'graus': graus})
+    return render(request, "iniciacoes/listar_graus.html", {"graus": graus})
+
 
 @login_required
 def criar_grau(request):
     """Cria um novo grau de iniciação."""
-    if request.method == 'POST':
+    if request.method == "POST":
         form = GrauIniciacaoForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Grau de iniciação criado com sucesso!')
-            return redirect('iniciacoes:listar_graus')
+            messages.success(request, "Grau de iniciação criado com sucesso!")
+            return redirect("iniciacoes:listar_graus")
     else:
         form = GrauIniciacaoForm()
-    return render(request, 'iniciacoes/criar_grau.html', {'form': form})
+    return render(request, "iniciacoes/criar_grau.html", {"form": form})
+
 
 @login_required
 def editar_grau(request, id):
     """Edita um grau de iniciação existente."""
     grau = get_object_or_404(GrauIniciacao, id=id)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = GrauIniciacaoForm(request.POST, instance=grau)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Grau de iniciação atualizado com sucesso!')
-            return redirect('iniciacoes:listar_graus')
+            messages.success(
+                request, "Grau de iniciação atualizado com sucesso!"
+            )
+            return redirect("iniciacoes:listar_graus")
     else:
         form = GrauIniciacaoForm(instance=grau)
-    return render(request, 'iniciacoes/editar_grau.html', {'form': form, 'grau': grau})
+    return render(
+        request, "iniciacoes/editar_grau.html", {"form": form, "grau": grau}
+    )
+
 
 @login_required
 def excluir_grau(request, id):
     """Exclui um grau de iniciação."""
     grau = get_object_or_404(GrauIniciacao, id=id)
-    if request.method == 'POST':
+    if request.method == "POST":
         grau.delete()
-        messages.success(request, 'Grau de iniciação excluído com sucesso!')
-        return redirect('iniciacoes:listar_graus')
-    return render(request, 'iniciacoes/excluir_grau.html', {'grau': grau})
+        messages.success(request, "Grau de iniciação excluído com sucesso!")
+        return redirect("iniciacoes:listar_graus")
+    return render(request, "iniciacoes/excluir_grau.html", {"grau": grau})
 
 ```
 
@@ -302,18 +340,24 @@ def excluir_grau(request, id):
 from django.urls import path
 from . import views
 
-app_name = 'iniciacoes'
+app_name = "iniciacoes"
 
 urlpatterns = [
-    path('', views.listar_iniciacoes, name='listar_iniciacoes'),
-    path('nova/', views.criar_iniciacao, name='criar_iniciacao'),
-    path('<int:id>/editar/', views.editar_iniciacao, name='editar_iniciacao'),
-    path('<int:id>/excluir/', views.excluir_iniciacao, name='excluir_iniciacao'),
-    path('<int:id>/detalhes/', views.detalhar_iniciacao, name='detalhar_iniciacao'),
-    path('graus/', views.listar_graus, name='listar_graus'),
-    path('graus/novo/', views.criar_grau, name='criar_grau'),
-    path('graus/<int:id>/editar/', views.editar_grau, name='editar_grau'),
-    path('graus/<int:id>/excluir/', views.excluir_grau, name='excluir_grau'),
+    path("", views.listar_iniciacoes, name="listar_iniciacoes"),
+    path("nova/", views.criar_iniciacao, name="criar_iniciacao"),
+    path("<int:id>/editar/", views.editar_iniciacao, name="editar_iniciacao"),
+    path(
+        "<int:id>/excluir/", views.excluir_iniciacao, name="excluir_iniciacao"
+    ),
+    path(
+        "<int:id>/detalhes/",
+        views.detalhar_iniciacao,
+        name="detalhar_iniciacao",
+    ),
+    path("graus/", views.listar_graus, name="listar_graus"),
+    path("graus/novo/", views.criar_grau, name="criar_grau"),
+    path("graus/<int:id>/editar/", views.editar_grau, name="editar_grau"),
+    path("graus/<int:id>/excluir/", views.excluir_grau, name="excluir_grau"),
 ]
 
 ```
@@ -327,48 +371,54 @@ urlpatterns = [
 from django.db import models
 from importlib import import_module
 
+
 def get_aluno_model():
-    alunos_module = import_module('alunos.models')
-    return getattr(alunos_module, 'Aluno')
+    alunos_module = import_module("alunos.models")
+    return getattr(alunos_module, "Aluno")
+
 
 def get_curso_model():
-    cursos_module = import_module('cursos.models')
-    return getattr(cursos_module, 'Curso')
+    cursos_module = import_module("cursos.models")
+    return getattr(cursos_module, "Curso")
+
 
 class Iniciacao(models.Model):
     aluno = models.ForeignKey(
-        get_aluno_model(), 
-        on_delete=models.CASCADE, 
-        verbose_name='Aluno',
-        to_field='cpf'  # Especificar que estamos referenciando o campo cpf
+        get_aluno_model(),
+        on_delete=models.CASCADE,
+        verbose_name="Aluno",
+        to_field="cpf",  # Especificar que estamos referenciando o campo cpf
     )
     curso = models.ForeignKey(
-        get_curso_model(), 
-        on_delete=models.CASCADE, 
-        verbose_name='Curso'
+        get_curso_model(), on_delete=models.CASCADE, verbose_name="Curso"
     )
-    data_iniciacao = models.DateField(verbose_name='Data da Iniciação')
-    grau = models.CharField(max_length=50, verbose_name='Grau')
-    observacoes = models.TextField(blank=True, null=True, verbose_name='Observações')
+    data_iniciacao = models.DateField(verbose_name="Data da Iniciação")
+    grau = models.CharField(max_length=50, verbose_name="Grau")
+    observacoes = models.TextField(
+        blank=True, null=True, verbose_name="Observações"
+    )
 
     def __str__(self):
         return f"{self.aluno.nome} - {self.curso.nome} - {self.grau}"
 
     class Meta:
-        verbose_name = 'Iniciação'
-        verbose_name_plural = 'Iniciações'
-        ordering = ['-data_iniciacao']
-        unique_together = ['aluno', 'curso', 'grau']
+        verbose_name = "Iniciação"
+        verbose_name_plural = "Iniciações"
+        ordering = ["-data_iniciacao"]
+        unique_together = ["aluno", "curso", "grau"]
+
 
 class GrauIniciacao(models.Model):
-    nome = models.CharField(max_length=100, verbose_name='Nome do Grau')
-    descricao = models.TextField(blank=True, null=True, verbose_name='Descrição')
-    ordem = models.PositiveIntegerField(unique=True, verbose_name='Ordem')
+    nome = models.CharField(max_length=100, verbose_name="Nome do Grau")
+    descricao = models.TextField(
+        blank=True, null=True, verbose_name="Descrição"
+    )
+    ordem = models.PositiveIntegerField(unique=True, verbose_name="Ordem")
 
     class Meta:
-        verbose_name = 'Grau de Iniciação'
-        verbose_name_plural = 'Graus de Iniciação'
-        ordering = ['ordem']
+        verbose_name = "Grau de Iniciação"
+        verbose_name_plural = "Graus de Iniciação"
+        ordering = ["ordem"]
 
     def __str__(self):
         return self.nome

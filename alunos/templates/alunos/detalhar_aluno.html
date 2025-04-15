@@ -64,6 +64,63 @@
         </div>
     </div>
     
+    {% if aluno.esta_ativo %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Instrutoria</h5>
+        </div>
+        <div class="card-body">
+            {% if turmas_como_instrutor or turmas_como_instrutor_auxiliar or turmas_como_auxiliar_instrucao %}
+                <div class="row">
+                    {% if turmas_como_instrutor %}
+                    <div class="col-md-4">
+                        <h6 class="border-bottom pb-2">Como Instrutor Principal</h6>
+                        <ul class="list-group">
+                            {% for turma in turmas_como_instrutor %}
+                            <li class="list-group-item">
+                                <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
+                                <span class="badge bg-primary float-end">{{ turma.curso }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    {% if turmas_como_instrutor_auxiliar %}
+                    <div class="col-md-4">
+                        <h6 class="border-bottom pb-2">Como Instrutor Auxiliar</h6>
+                        <ul class="list-group">
+                            {% for turma in turmas_como_instrutor_auxiliar %}
+                            <li class="list-group-item">
+                                <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
+                                <span class="badge bg-info float-end">{{ turma.curso }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    {% if turmas_como_auxiliar_instrucao %}
+                    <div class="col-md-4">
+                        <h6 class="border-bottom pb-2">Como Auxiliar de Instrução</h6>
+                        <ul class="list-group">
+                            {% for turma in turmas_como_auxiliar_instrucao %}
+                            <li class="list-group-item">
+                                <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
+                                <span class="badge bg-success float-end">{{ turma.curso }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p class="text-muted">Este aluno não é instrutor em nenhuma turma ativa.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
     <div class="card mb-4">
         <div class="card-header">
             <h5>Dados Iniciáticos</h5>

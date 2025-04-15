@@ -18,28 +18,27 @@ cursos_basicos = [
         "codigo_curso": 101,
         "nome": "Curso de Teste",
         "descricao": "Descrição do curso de teste",
-        "duracao": 6
+        "duracao": 6,
     },
     {
         "codigo_curso": 102,
         "nome": "Curso de Python",
         "descricao": "Aprenda Python do zero",
-        "duracao": 3
+        "duracao": 3,
     },
     {
         "codigo_curso": 103,
         "nome": "Meditação Avançada",
         "descricao": "Técnicas avançadas de meditação",
-        "duracao": 12
-    }
+        "duracao": 12,
+    },
 ]
 
 print("Criando cursos básicos...")
 for curso_data in cursos_basicos:
     try:
         curso, created = Curso.objects.update_or_create(
-            codigo_curso=curso_data["codigo_curso"],
-            defaults=curso_data
+            codigo_curso=curso_data["codigo_curso"], defaults=curso_data
         )
         if created:
             print(f"Curso criado: {curso.codigo_curso} - {curso.nome}")

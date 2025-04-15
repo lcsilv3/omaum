@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Adicionar Aluno à Turma{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Adicionar Aluno à Turma: {{ turma.nome }}</h1>
+        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar para Turma</a>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Selecione um Aluno</h5>
+        </div>
+        <div class="card-body">
+            {% if alunos %}
+                <form method="post" class="mb-4">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_aluno" class="form-label">Aluno</label>
+                        <select name="aluno" id="id_aluno" class="form-select" required>
+                            <option value="">Selecione um aluno</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}">{{ aluno.nome }} (CPF: {{ aluno.cpf }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Adicionar Aluno</button>
+                    </div>
+                </form>
+                
+                <div class="mt-3">
+                    <p><strong>Informações da Turma:</strong></p>
+                    <ul>
+                        <li><strong>Nome:</strong> {{ turma.nome }}</li>
+                        <li><strong>Curso:</strong> {{ turma.curso }}</li>
+                        <li><strong>Vagas Disponíveis:</strong> {{ turma.vagas_disponiveis }}</li>
+                        <li><strong>Status:</strong> {{ turma.get_status_display }}</li>
+                    </ul>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <p>Não há alunos disponíveis para matricular nesta turma.</p>
+                    <p>Possíveis razões:</p>
+                    <ul>
+                        <li>Todos os alunos já estão matriculados nesta turma</li>
+                        <li>Não há alunos cadastrados no sistema</li>
+                    </ul>
+                </div>
+                <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-primary">Cadastrar Novo Aluno</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add select2 for better search experience if available
+        if (typeof $.fn.select2 !== 'undefined') {
+            $('#id_aluno').select2({
+                placeholder: 'Selecione um aluno',
+                width: '100%'
+            });
+        }
+    });
+</script>
+{% endblock %}

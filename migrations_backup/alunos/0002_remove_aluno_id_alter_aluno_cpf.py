@@ -5,19 +5,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0001_initial'),
+        ("alunos", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='aluno',
-            name='id',
+            model_name="aluno",
+            name="id",
         ),
         migrations.AlterField(
-            model_name='aluno',
-            name='cpf',
-            field=models.CharField(max_length=11, primary_key=True, serialize=False, validators=[django.core.validators.RegexValidator(message='CPF deve conter 11 dígitos numéricos', regex='^\\d{11}$')], verbose_name='CPF'),
+            model_name="aluno",
+            name="cpf",
+            field=models.CharField(
+                max_length=11,
+                primary_key=True,
+                serialize=False,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="CPF deve conter 11 dígitos numéricos",
+                        regex="^\\d{11}$",
+                    )
+                ],
+                verbose_name="CPF",
+            ),
         ),
     ]

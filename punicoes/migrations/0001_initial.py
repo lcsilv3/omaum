@@ -6,45 +6,108 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
+        ("alunos", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='TipoPunicao',
+            name="TipoPunicao",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100, verbose_name='Nome')),
-                ('descricao', models.TextField(blank=True, null=True, verbose_name='Descrição')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(max_length=100, verbose_name="Nome"),
+                ),
+                (
+                    "descricao",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Descrição"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Tipo de Punição',
-                'verbose_name_plural': 'Tipos de Punição',
-                'ordering': ['nome'],
+                "verbose_name": "Tipo de Punição",
+                "verbose_name_plural": "Tipos de Punição",
+                "ordering": ["nome"],
             },
         ),
         migrations.CreateModel(
-            name='Punicao',
+            name="Punicao",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_aplicacao', models.DateField(verbose_name='Data de Aplicação')),
-                ('motivo', models.TextField(verbose_name='Motivo')),
-                ('observacoes', models.TextField(blank=True, null=True, verbose_name='Observações')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Criado em')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Atualizado em')),
-                ('aluno', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='alunos.aluno', verbose_name='Aluno')),
-                ('aplicada_por', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL, verbose_name='Aplicada por')),
-                ('tipo_punicao', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='punicoes.tipopunicao', verbose_name='Tipo de Punição')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "data_aplicacao",
+                    models.DateField(verbose_name="Data de Aplicação"),
+                ),
+                ("motivo", models.TextField(verbose_name="Motivo")),
+                (
+                    "observacoes",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observações"
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Criado em"
+                    ),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Atualizado em"
+                    ),
+                ),
+                (
+                    "aluno",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
+                    ),
+                ),
+                (
+                    "aplicada_por",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Aplicada por",
+                    ),
+                ),
+                (
+                    "tipo_punicao",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="punicoes.tipopunicao",
+                        verbose_name="Tipo de Punição",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Punição',
-                'verbose_name_plural': 'Punições',
-                'ordering': ['-data_aplicacao', 'aluno__nome'],
+                "verbose_name": "Punição",
+                "verbose_name_plural": "Punições",
+                "ordering": ["-data_aplicacao", "aluno__nome"],
             },
         ),
     ]

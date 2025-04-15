@@ -40,7 +40,7 @@ def get_model_class(model_name, module_name="atividades.models"):
 @login_required
 def index(request):
     """Página inicial do módulo de atividades."""
-    return render(request, 'atividades/index.html')
+    return render(request, "atividades/index.html")
 
 
 @login_required
@@ -75,7 +75,10 @@ def listar_atividades_ritualisticas(request):
     referer = request.META.get("HTTP_REFERER", "")
     if referer and not any(
         x in referer
-        for x in ["criar_atividade_ritualistica", "editar_atividade_ritualistica"]
+        for x in [
+            "criar_atividade_ritualistica",
+            "editar_atividade_ritualistica",
+        ]
     ):
         request.session["atividade_ritualistica_referer"] = referer
 
@@ -104,7 +107,9 @@ def criar_atividade_academica(request):
         form = AtividadeAcademicaForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Atividade acadêmica criada com sucesso.")
+            messages.success(
+                request, "Atividade acadêmica criada com sucesso."
+            )
             return redirect(return_url)
         else:
             messages.error(request, "Corrija os erros no formulário.")
@@ -133,7 +138,9 @@ def editar_atividade_academica(request, pk):
             form = AtividadeAcademicaForm(request.POST, instance=atividade)
             if form.is_valid():
                 form.save()
-                messages.success(request, "Atividade acadêmica atualizada com sucesso.")
+                messages.success(
+                    request, "Atividade acadêmica atualizada com sucesso."
+                )
                 return redirect(return_url)
             else:
                 messages.error(request, "Corrija os erros no formulário.")
@@ -164,10 +171,14 @@ def excluir_atividade_academica(request, pk):
     if request.method == "POST":
         try:
             atividade.delete()
-            messages.success(request, "Atividade acadêmica excluída com sucesso.")
+            messages.success(
+                request, "Atividade acadêmica excluída com sucesso."
+            )
             return redirect(return_url)
         except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade acadêmica: {str(e)}")
+            messages.error(
+                request, f"Erro ao excluir atividade acadêmica: {str(e)}"
+            )
             return redirect("atividades:listar_atividades_academicas")
 
     return render(
@@ -189,10 +200,14 @@ def confirmar_exclusao_academica(request, pk):
     if request.method == "POST":
         try:
             atividade.delete()
-            messages.success(request, "Atividade acadêmica excluída com sucesso.")
+            messages.success(
+                request, "Atividade acadêmica excluída com sucesso."
+            )
             return redirect(return_url)
         except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade acadêmica: {str(e)}")
+            messages.error(
+                request, f"Erro ao excluir atividade acadêmica: {str(e)}"
+            )
             return redirect("atividades:detalhar_atividade_academica", pk=pk)
 
     return render(
@@ -238,15 +253,21 @@ def criar_atividade_ritualistica(request):
                     "todos_alunos"
                 ):
                     # Obter todos os alunos da turma e adicioná-los à atividade
-                    Aluno = get_model_class("Aluno", module_name="alunos.models")
-                    alunos_da_turma = Aluno.objects.filter(turmas=atividade.turma)
+                    Aluno = get_model_class(
+                        "Aluno", module_name="alunos.models"
+                    )
+                    alunos_da_turma = Aluno.objects.filter(
+                        turmas=atividade.turma
+                    )
                     for aluno in alunos_da_turma:
                         atividade.participantes.add(aluno)
                 else:
                     # Salvar apenas os participantes selecionados no formulário
                     form.save_m2m()
 
-                messages.success(request, "Atividade ritualística criada com sucesso.")
+                messages.success(
+                    request, "Atividade ritualística criada com sucesso."
+                )
                 return redirect(return_url)
             else:
                 messages.error(request, "Corrija os erros no formulário.")
@@ -289,8 +310,12 @@ def editar_atividade_ritualistica(request, pk):
                     # Limpar participantes existentes
                     atividade.participantes.clear()
                     # Obter todos os alunos da turma e adicioná-los à atividade
-                    Aluno = get_model_class("Aluno", module_name="alunos.models")
-                    alunos_da_turma = Aluno.objects.filter(turmas=atividade.turma)
+                    Aluno = get_model_class(
+                        "Aluno", module_name="alunos.models"
+                    )
+                    alunos_da_turma = Aluno.objects.filter(
+                        turmas=atividade.turma
+                    )
                     for aluno in alunos_da_turma:
                         atividade.participantes.add(aluno)
                 else:
@@ -330,10 +355,14 @@ def excluir_atividade_ritualistica(request, pk):
     if request.method == "POST":
         try:
             atividade.delete()
-            messages.success(request, "Atividade ritualística excluída com sucesso.")
+            messages.success(
+                request, "Atividade ritualística excluída com sucesso."
+            )
             return redirect(return_url)
         except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade ritualística: {str(e)}")
+            messages.error(
+                request, f"Erro ao excluir atividade ritualística: {str(e)}"
+            )
             return redirect("atividades:listar_atividades_ritualisticas")
 
     return render(
@@ -355,11 +384,17 @@ def confirmar_exclusao_ritualistica(request, pk):
     if request.method == "POST":
         try:
             atividade.delete()
-            messages.success(request, "Atividade ritualística excluída com sucesso.")
+            messages.success(
+                request, "Atividade ritualística excluída com sucesso."
+            )
             return redirect(return_url)
         except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade ritualística: {str(e)}")
-            return redirect("atividades:detalhar_atividade_ritualistica", pk=pk)
+            messages.error(
+                request, f"Erro ao excluir atividade ritualística: {str(e)}"
+            )
+            return redirect(
+                "atividades:detalhar_atividade_ritualistica", pk=pk
+            )
 
     return render(
         request,

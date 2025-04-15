@@ -5,39 +5,52 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0002_remove_aluno_id_alter_aluno_cpf'),
-        ('turmas', '0001_initial'),
+        ("alunos", "0002_remove_aluno_id_alter_aluno_cpf"),
+        ("turmas", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='matricula',
-            options={'ordering': ['-data_matricula'], 'verbose_name': 'Matrícula', 'verbose_name_plural': 'Matrículas'},
+            name="matricula",
+            options={
+                "ordering": ["-data_matricula"],
+                "verbose_name": "Matrícula",
+                "verbose_name_plural": "Matrículas",
+            },
         ),
         migrations.RemoveField(
-            model_name='matricula',
-            name='status',
+            model_name="matricula",
+            name="status",
         ),
         migrations.AddField(
-            model_name='matricula',
-            name='ativa',
-            field=models.BooleanField(default=True, verbose_name='Matrícula Ativa'),
+            model_name="matricula",
+            name="ativa",
+            field=models.BooleanField(
+                default=True, verbose_name="Matrícula Ativa"
+            ),
         ),
         migrations.AlterField(
-            model_name='matricula',
-            name='aluno',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='alunos.aluno', verbose_name='Aluno'),
+            model_name="matricula",
+            name="aluno",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="alunos.aluno",
+                verbose_name="Aluno",
+            ),
         ),
         migrations.AlterField(
-            model_name='matricula',
-            name='data_matricula',
-            field=models.DateField(verbose_name='Data da Matrícula'),
+            model_name="matricula",
+            name="data_matricula",
+            field=models.DateField(verbose_name="Data da Matrícula"),
         ),
         migrations.AlterField(
-            model_name='matricula',
-            name='turma',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='turmas.turma', verbose_name='Turma'),
+            model_name="matricula",
+            name="turma",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="turmas.turma",
+                verbose_name="Turma",
+            ),
         ),
     ]

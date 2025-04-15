@@ -5,30 +5,59 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
-        ('atividades', '0002_initial'),
+        ("alunos", "0001_initial"),
+        ("atividades", "0002_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Frequencia',
+            name="Frequencia",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data', models.DateField(verbose_name='Data')),
-                ('presente', models.BooleanField(default=True, verbose_name='Presente')),
-                ('justificativa', models.TextField(blank=True, null=True, verbose_name='Justificativa')),
-                ('aluno', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='alunos.aluno', verbose_name='Aluno')),
-                ('atividade', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='atividades.atividadeacademica', verbose_name='Atividade')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("data", models.DateField(verbose_name="Data")),
+                (
+                    "presente",
+                    models.BooleanField(default=True, verbose_name="Presente"),
+                ),
+                (
+                    "justificativa",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Justificativa"
+                    ),
+                ),
+                (
+                    "aluno",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
+                    ),
+                ),
+                (
+                    "atividade",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="atividades.atividadeacademica",
+                        verbose_name="Atividade",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Frequência',
-                'verbose_name_plural': 'Frequências',
-                'ordering': ['-data'],
-                'unique_together': {('aluno', 'atividade', 'data')},
+                "verbose_name": "Frequência",
+                "verbose_name_plural": "Frequências",
+                "ordering": ["-data"],
+                "unique_together": {("aluno", "atividade", "data")},
             },
         ),
     ]

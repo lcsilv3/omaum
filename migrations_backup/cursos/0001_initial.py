@@ -5,25 +5,47 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Curso',
+            name="Curso",
             fields=[
-                ('codigo_curso', models.IntegerField(help_text='Digite um número inteiro positivo', primary_key=True, serialize=False, validators=[django.core.validators.MinValueValidator(1)], verbose_name='Código do Curso')),
-                ('nome', models.CharField(max_length=100, verbose_name='Nome do Curso')),
-                ('descricao', models.TextField(blank=True, verbose_name='Descrição')),
-                ('duracao', models.PositiveIntegerField(default=6, verbose_name='Duração (meses)')),
+                (
+                    "codigo_curso",
+                    models.IntegerField(
+                        help_text="Digite um número inteiro positivo",
+                        primary_key=True,
+                        serialize=False,
+                        validators=[
+                            django.core.validators.MinValueValidator(1)
+                        ],
+                        verbose_name="Código do Curso",
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(
+                        max_length=100, verbose_name="Nome do Curso"
+                    ),
+                ),
+                (
+                    "descricao",
+                    models.TextField(blank=True, verbose_name="Descrição"),
+                ),
+                (
+                    "duracao",
+                    models.PositiveIntegerField(
+                        default=6, verbose_name="Duração (meses)"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Curso',
-                'verbose_name_plural': 'Cursos',
-                'ordering': ['codigo_curso'],
+                "verbose_name": "Curso",
+                "verbose_name_plural": "Cursos",
+                "ordering": ["codigo_curso"],
             },
         ),
     ]

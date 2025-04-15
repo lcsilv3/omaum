@@ -5,62 +5,76 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0002_remove_aluno_id_alter_aluno_cpf'),
-        ('atividades', '0003_alter_atividaderitualistica_options_and_more'),
-        ('frequencias', '0002_initial'),
+        ("alunos", "0002_remove_aluno_id_alter_aluno_cpf"),
+        ("atividades", "0003_alter_atividaderitualistica_options_and_more"),
+        ("frequencias", "0002_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='frequencia',
-            options={'ordering': ['-data'], 'verbose_name': 'Frequência', 'verbose_name_plural': 'Frequências'},
+            name="frequencia",
+            options={
+                "ordering": ["-data"],
+                "verbose_name": "Frequência",
+                "verbose_name_plural": "Frequências",
+            },
         ),
         migrations.AddField(
-            model_name='frequencia',
-            name='atividade',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='atividades.atividadeacademica', verbose_name='Atividade'),
+            model_name="frequencia",
+            name="atividade",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="atividades.atividadeacademica",
+                verbose_name="Atividade",
+            ),
             preserve_default=False,
         ),
         migrations.AlterUniqueTogether(
-            name='frequencia',
-            unique_together={('aluno', 'atividade', 'data')},
+            name="frequencia",
+            unique_together={("aluno", "atividade", "data")},
         ),
         migrations.AlterField(
-            model_name='frequencia',
-            name='aluno',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='alunos.aluno', verbose_name='Aluno'),
+            model_name="frequencia",
+            name="aluno",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="alunos.aluno",
+                verbose_name="Aluno",
+            ),
         ),
         migrations.AlterField(
-            model_name='frequencia',
-            name='data',
-            field=models.DateField(verbose_name='Data'),
+            model_name="frequencia",
+            name="data",
+            field=models.DateField(verbose_name="Data"),
         ),
         migrations.AlterField(
-            model_name='frequencia',
-            name='justificativa',
-            field=models.TextField(blank=True, null=True, verbose_name='Justificativa'),
+            model_name="frequencia",
+            name="justificativa",
+            field=models.TextField(
+                blank=True, null=True, verbose_name="Justificativa"
+            ),
         ),
         migrations.AlterField(
-            model_name='frequencia',
-            name='presente',
-            field=models.BooleanField(default=True, verbose_name='Presente'),
+            model_name="frequencia",
+            name="presente",
+            field=models.BooleanField(default=True, verbose_name="Presente"),
         ),
         migrations.RemoveField(
-            model_name='frequencia',
-            name='data_atualizacao',
+            model_name="frequencia",
+            name="data_atualizacao",
         ),
         migrations.RemoveField(
-            model_name='frequencia',
-            name='data_registro',
+            model_name="frequencia",
+            name="data_registro",
         ),
         migrations.RemoveField(
-            model_name='frequencia',
-            name='registrado_por',
+            model_name="frequencia",
+            name="registrado_por",
         ),
         migrations.RemoveField(
-            model_name='frequencia',
-            name='turma',
+            model_name="frequencia",
+            name="turma",
         ),
     ]

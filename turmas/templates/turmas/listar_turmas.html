@@ -45,32 +45,48 @@
                 <th>Data de Início</th>
                 <th>Data de Fim</th>
                 <th>Status</th>
-                <th>Alunos</th>
+                <th>Vagas</th>
+                <th>Matrículas</th>
+                <th>Disponíveis</th>
                 <th>Ações</th>
             </tr>
         </thead>
         <tbody>
-            {% for turma in turmas %}
-            <tr>
+            {% for turma_info in turmas_com_info %}
+            {% with turma=turma_info.turma %}
+            <tr {% if turma.alerta_instrutor %}class="table-warning"{% endif %}>
                 <td>{{ turma.nome }}</td>
-                <td>{{ turma.curso.nome }}</td>
+                <td>{{ turma.curso }}</td>
                 <td>{{ turma.data_inicio|date:"d/m/Y" }}</td>
                 <td>{{ turma.data_fim|date:"d/m/Y" }}</td>
-                <td>{{ turma.get_status_display }}</td>
                 <td>
-                    <a href="{% url 'turmas:listar_alunos_matriculados' turma.id %}" class="badge bg-info text-white">
-                        {{ turma.alunos_count }} aluno(s)
-                    </a>
+                    {% if turma.status == 'A' %}
+                        <span class="badge bg-success">{{ turma.get_status_display }}</span>
+                    {% elif turma.status == 'I' %}
+                        <span class="badge bg-warning">{{ turma.get_status_display }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ turma.get_status_display }}</span>
+                    {% endif %}
+                    
+                    {% if turma.alerta_instrutor %}
+                        <span class="badge bg-danger ms-1" data-bs-toggle="tooltip" title="{{ turma.alerta_mensagem }}">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </span>
+                    {% endif %}
                 </td>
+                <td>{{ turma.vagas }}</td>
+                <td>{{ turma_info.total_alunos }}</td>
+                <td>{{ turma_info.vagas_disponiveis }}</td>
                 <td>
                     <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info">Detalhes</a>
                     <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning">Editar</a>
                     <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-sm btn-danger">Excluir</a>
                 </td>
             </tr>
+            {% endwith %}
             {% empty %}
             <tr>
-                <td colspan="7">Nenhuma turma encontrada.</td>
+                <td colspan="9" class="text-center">Nenhuma turma encontrada.</td>
             </tr>
             {% endfor %}
         </tbody>

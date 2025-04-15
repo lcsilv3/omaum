@@ -5,30 +5,59 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
-        ('cursos', '0001_initial'),
+        ("alunos", "0001_initial"),
+        ("cursos", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Iniciacao',
+            name="Iniciacao",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_iniciacao', models.DateField(verbose_name='Data da Iniciação')),
-                ('grau', models.CharField(max_length=50, verbose_name='Grau')),
-                ('observacoes', models.TextField(blank=True, null=True, verbose_name='Observações')),
-                ('aluno', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='alunos.aluno', verbose_name='Aluno')),
-                ('curso', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='cursos.curso', verbose_name='Curso')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "data_iniciacao",
+                    models.DateField(verbose_name="Data da Iniciação"),
+                ),
+                ("grau", models.CharField(max_length=50, verbose_name="Grau")),
+                (
+                    "observacoes",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observações"
+                    ),
+                ),
+                (
+                    "aluno",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
+                    ),
+                ),
+                (
+                    "curso",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="cursos.curso",
+                        verbose_name="Curso",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Iniciação',
-                'verbose_name_plural': 'Iniciações',
-                'ordering': ['-data_iniciacao'],
-                'unique_together': {('aluno', 'curso', 'grau')},
+                "verbose_name": "Iniciação",
+                "verbose_name_plural": "Iniciações",
+                "ordering": ["-data_iniciacao"],
+                "unique_together": {("aluno", "curso", "grau")},
             },
         ),
     ]

@@ -6,31 +6,58 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
+        ("alunos", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Frequencia',
+            name="Frequencia",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data', models.DateField()),
-                ('presente', models.BooleanField(default=False)),
-                ('justificativa', models.TextField(blank=True, null=True)),
-                ('data_registro', models.DateTimeField(auto_now_add=True)),
-                ('data_atualizacao', models.DateTimeField(auto_now=True)),
-                ('aluno', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='frequencias', to='alunos.aluno')),
-                ('registrado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("data", models.DateField()),
+                ("presente", models.BooleanField(default=False)),
+                ("justificativa", models.TextField(blank=True, null=True)),
+                ("data_registro", models.DateTimeField(auto_now_add=True)),
+                ("data_atualizacao", models.DateTimeField(auto_now=True)),
+                (
+                    "aluno",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="frequencias",
+                        to="alunos.aluno",
+                    ),
+                ),
+                (
+                    "registrado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Frequência',
-                'verbose_name_plural': 'Frequências',
-                'permissions': [('gerar_relatorio_frequencia', 'Pode gerar relatório de frequências')],
+                "verbose_name": "Frequência",
+                "verbose_name_plural": "Frequências",
+                "permissions": [
+                    (
+                        "gerar_relatorio_frequencia",
+                        "Pode gerar relatório de frequências",
+                    )
+                ],
             },
         ),
     ]

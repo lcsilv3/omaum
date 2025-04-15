@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('atividades', '0003_alter_atividaderitualistica_options_and_more'),
-        ('atividades', 'XXXX_add_titulo_column'),
+        ("atividades", "0003_alter_atividaderitualistica_options_and_more"),
+        ("atividades", "XXXX_add_titulo_column"),
     ]
 
-    operations = [
-    ]
+    operations = []

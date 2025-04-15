@@ -9,32 +9,45 @@
 from django import forms
 from importlib import import_module
 
+
 def get_curso_model():
-    cursos_module = import_module('cursos.models')
-    return getattr(cursos_module, 'Curso')
+    cursos_module = import_module("cursos.models")
+    return getattr(cursos_module, "Curso")
+
 
 class CursoForm(forms.ModelForm):
     class Meta:
         model = get_curso_model()
-        fields = ['codigo_curso', 'nome', 'descricao', 'duracao']
+        fields = ["codigo_curso", "nome", "descricao", "duracao"]
         widgets = {
-            'codigo_curso': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
-            'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'duracao': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'})
+            "codigo_curso": forms.NumberInput(
+                attrs={"class": "form-control", "min": "1"}
+            ),
+            "nome": forms.TextInput(attrs={"class": "form-control"}),
+            "descricao": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
+            "duracao": forms.NumberInput(
+                attrs={"class": "form-control", "min": "1"}
+            ),
         }
-        
+
     def clean_codigo_curso(self):
-        codigo = self.cleaned_data.get('codigo_curso')
+        codigo = self.cleaned_data.get("codigo_curso")
         if codigo <= 0:
-            raise forms.ValidationError('O código do curso deve ser um número inteiro positivo.')
+            raise forms.ValidationError(
+                "O código do curso deve ser um número inteiro positivo."
+            )
         return codigo
 
     def clean_nome(self):
-        nome = self.cleaned_data.get('nome')
+        nome = self.cleaned_data.get("nome")
         if len(nome) < 3:
-            raise ValidationError("O nome do curso deve ter pelo menos 3 caracteres.")
+            raise ValidationError(
+                "O nome do curso deve ter pelo menos 3 caracteres."
+            )
         return nome
+
 ```
 
 ## Arquivos views.py:
@@ -48,41 +61,47 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from importlib import import_module
 
+
 def get_models():
-    cursos_module = import_module('cursos.models')
-    return getattr(cursos_module, 'Curso')
+    cursos_module = import_module("cursos.models")
+    return getattr(cursos_module, "Curso")
+
 
 def get_forms():
-    cursos_forms = import_module('cursos.forms')
-    return getattr(cursos_forms, 'CursoForm')
+    cursos_forms = import_module("cursos.forms")
+    return getattr(cursos_forms, "CursoForm")
+
 
 @login_required
 def listar_cursos(request):
     """Lista todos os cursos cadastrados."""
     Curso = get_models()
     cursos = Curso.objects.all()
-    return render(request, 'cursos/listar_cursos.html', {'cursos': cursos})
+    return render(request, "cursos/listar_cursos.html", {"cursos": cursos})
+
 
 @login_required
 def criar_curso(request):
     """Cria um novo curso."""
     CursoForm = get_forms()
-    if request.method == 'POST':
+    if request.method == "POST":
         form = CursoForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Curso criado com sucesso!')
-            return redirect('cursos:listar_cursos')
+            messages.success(request, "Curso criado com sucesso!")
+            return redirect("cursos:listar_cursos")
     else:
         form = CursoForm()
-    return render(request, 'cursos/criar_curso.html', {'form': form})
+    return render(request, "cursos/criar_curso.html", {"form": form})
+
 
 @login_required
 def detalhar_curso(request, codigo_curso):
     """Exibe os detalhes de um curso."""
     Curso = get_models()
     curso = get_object_or_404(Curso, codigo_curso=codigo_curso)
-    return render(request, 'cursos/detalhar_curso.html', {'curso': curso})
+    return render(request, "cursos/detalhar_curso.html", {"curso": curso})
+
 
 @login_required
 def editar_curso(request, codigo_curso):
@@ -90,30 +109,34 @@ def editar_curso(request, codigo_curso):
     Curso = get_models()
     CursoForm = get_forms()
     curso = get_object_or_404(Curso, codigo_curso=codigo_curso)
-    
-    if request.method == 'POST':
+
+    if request.method == "POST":
         form = CursoForm(request.POST, instance=curso)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Curso atualizado com sucesso!')
-            return redirect('cursos:listar_cursos')
+            messages.success(request, "Curso atualizado com sucesso!")
+            return redirect("cursos:listar_cursos")
     else:
         form = CursoForm(instance=curso)
-    
-    return render(request, 'cursos/editar_curso.html', {'form': form, 'curso': curso})
+
+    return render(
+        request, "cursos/editar_curso.html", {"form": form, "curso": curso}
+    )
+
 
 @login_required
 def excluir_curso(request, codigo_curso):
     """Exclui um curso."""
     Curso = get_models()
     curso = get_object_or_404(Curso, codigo_curso=codigo_curso)
-    
-    if request.method == 'POST':
+
+    if request.method == "POST":
         curso.delete()
-        messages.success(request, 'Curso exclu√≠do com sucesso!')
-        return redirect('cursos:listar_cursos')
-    
-    return render(request, 'cursos/excluir_curso.html', {'curso': curso})
+        messages.success(request, "Curso exclu√≠do com sucesso!")
+        return redirect("cursos:listar_cursos")
+
+    return render(request, "cursos/excluir_curso.html", {"curso": curso})
+
 ```
 
 ## Arquivos urls.py:
@@ -125,14 +148,20 @@ def excluir_curso(request, codigo_curso):
 from django.urls import path
 from . import views
 
-app_name = 'cursos'
+app_name = "cursos"
 
 urlpatterns = [
-    path('', views.listar_cursos, name='listar_cursos'),
-    path('criar/', views.criar_curso, name='criar_curso'),
-    path('<int:codigo_curso>/', views.detalhar_curso, name='detalhar_curso'),
-    path('<int:codigo_curso>/editar/', views.editar_curso, name='editar_curso'),
-    path('<int:codigo_curso>/excluir/', views.excluir_curso, name='excluir_curso'),
+    path("", views.listar_cursos, name="listar_cursos"),
+    path("criar/", views.criar_curso, name="criar_curso"),
+    path("<int:codigo_curso>/", views.detalhar_curso, name="detalhar_curso"),
+    path(
+        "<int:codigo_curso>/editar/", views.editar_curso, name="editar_curso"
+    ),
+    path(
+        "<int:codigo_curso>/excluir/",
+        views.excluir_curso,
+        name="excluir_curso",
+    ),
 ]
 
 ```
@@ -146,16 +175,17 @@ urlpatterns = [
 from django.db import models
 from django.core.validators import MinValueValidator
 
+
 class Curso(models.Model):
     codigo_curso = models.IntegerField(
-        'Código do Curso', 
+        "Código do Curso",
         primary_key=True,
         validators=[MinValueValidator(1)],
-        help_text='Digite um número inteiro positivo'
+        help_text="Digite um número inteiro positivo",
     )
-    nome = models.CharField('Nome do Curso', max_length=100)
-    descricao = models.TextField('Descrição', blank=True)
-    duracao = models.PositiveIntegerField('Duração (meses)', default=6)
+    nome = models.CharField("Nome do Curso", max_length=100)
+    descricao = models.TextField("Descrição", blank=True)
+    duracao = models.PositiveIntegerField("Duração (meses)", default=6)
 
     def __str__(self):
         return f"{self.codigo_curso} - {self.nome}"
@@ -163,7 +193,7 @@ class Curso(models.Model):
     class Meta:
         verbose_name = "Curso"
         verbose_name_plural = "Cursos"
-        ordering = ['codigo_curso']
+        ordering = ["codigo_curso"]
 
 ```
 

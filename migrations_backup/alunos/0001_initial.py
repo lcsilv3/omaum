@@ -6,54 +6,266 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Aluno',
+            name="Aluno",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('cpf', models.CharField(max_length=11, unique=True, validators=[django.core.validators.RegexValidator(message='CPF deve conter 11 dígitos numéricos', regex='^\\d{11}$')], verbose_name='CPF')),
-                ('nome', models.CharField(max_length=100, verbose_name='Nome Completo')),
-                ('data_nascimento', models.DateField(verbose_name='Data de Nascimento')),
-                ('hora_nascimento', models.TimeField(blank=True, null=True, verbose_name='Hora de Nascimento')),
-                ('email', models.EmailField(max_length=254, unique=True, verbose_name='E-mail')),
-                ('foto', models.ImageField(blank=True, null=True, upload_to='alunos/fotos/', verbose_name='Foto')),
-                ('sexo', models.CharField(choices=[('M', 'Masculino'), ('F', 'Feminino'), ('O', 'Outro')], default='M', max_length=1, verbose_name='Sexo')),
-                ('numero_iniciatico', models.CharField(blank=True, max_length=10, null=True, unique=True, verbose_name='Número Iniciático')),
-                ('nome_iniciatico', models.CharField(blank=True, max_length=100, null=True, verbose_name='Nome Iniciático')),
-                ('nacionalidade', models.CharField(default='Brasileira', max_length=50, verbose_name='Nacionalidade')),
-                ('naturalidade', models.CharField(max_length=50, verbose_name='Naturalidade')),
-                ('rua', models.CharField(max_length=100, verbose_name='Rua')),
-                ('numero_imovel', models.CharField(max_length=10, verbose_name='Número')),
-                ('complemento', models.CharField(blank=True, max_length=100, null=True, verbose_name='Complemento')),
-                ('bairro', models.CharField(max_length=50, verbose_name='Bairro')),
-                ('cidade', models.CharField(max_length=50, verbose_name='Cidade')),
-                ('estado', models.CharField(max_length=2, verbose_name='Estado')),
-                ('cep', models.CharField(max_length=8, verbose_name='CEP')),
-                ('nome_primeiro_contato', models.CharField(max_length=100, verbose_name='Nome do Primeiro Contato')),
-                ('celular_primeiro_contato', models.CharField(max_length=11, validators=[django.core.validators.RegexValidator(message='Número de celular inválido', regex='^\\d{10,11}$')], verbose_name='Celular do Primeiro Contato')),
-                ('tipo_relacionamento_primeiro_contato', models.CharField(max_length=50, verbose_name='Tipo de Relacionamento do Primeiro Contato')),
-                ('nome_segundo_contato', models.CharField(blank=True, max_length=100, null=True, verbose_name='Nome do Segundo Contato')),
-                ('celular_segundo_contato', models.CharField(blank=True, max_length=11, null=True, validators=[django.core.validators.RegexValidator(message='Número de celular inválido', regex='^\\d{10,11}$')], verbose_name='Celular do Segundo Contato')),
-                ('tipo_relacionamento_segundo_contato', models.CharField(blank=True, max_length=50, null=True, verbose_name='Tipo de Relacionamento do Segundo Contato')),
-                ('tipo_sanguineo', models.CharField(max_length=3, verbose_name='Tipo Sanguíneo')),
-                ('fator_rh', models.CharField(choices=[('+', 'Positivo'), ('-', 'Negativo')], max_length=1, verbose_name='Fator RH')),
-                ('alergias', models.TextField(blank=True, null=True, verbose_name='Alergias')),
-                ('condicoes_medicas_gerais', models.TextField(blank=True, null=True, verbose_name='Condições Médicas Gerais')),
-                ('convenio_medico', models.CharField(blank=True, max_length=100, null=True, verbose_name='Convênio Médico')),
-                ('hospital', models.CharField(blank=True, max_length=100, null=True, verbose_name='Hospital de Preferência')),
-                ('created_at', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Criado em')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Atualizado em')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "cpf",
+                    models.CharField(
+                        max_length=11,
+                        unique=True,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                message="CPF deve conter 11 dígitos numéricos",
+                                regex="^\\d{11}$",
+                            )
+                        ],
+                        verbose_name="CPF",
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(
+                        max_length=100, verbose_name="Nome Completo"
+                    ),
+                ),
+                (
+                    "data_nascimento",
+                    models.DateField(verbose_name="Data de Nascimento"),
+                ),
+                (
+                    "hora_nascimento",
+                    models.TimeField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Hora de Nascimento",
+                    ),
+                ),
+                (
+                    "email",
+                    models.EmailField(
+                        max_length=254, unique=True, verbose_name="E-mail"
+                    ),
+                ),
+                (
+                    "foto",
+                    models.ImageField(
+                        blank=True,
+                        null=True,
+                        upload_to="alunos/fotos/",
+                        verbose_name="Foto",
+                    ),
+                ),
+                (
+                    "sexo",
+                    models.CharField(
+                        choices=[
+                            ("M", "Masculino"),
+                            ("F", "Feminino"),
+                            ("O", "Outro"),
+                        ],
+                        default="M",
+                        max_length=1,
+                        verbose_name="Sexo",
+                    ),
+                ),
+                (
+                    "numero_iniciatico",
+                    models.CharField(
+                        blank=True,
+                        max_length=10,
+                        null=True,
+                        unique=True,
+                        verbose_name="Número Iniciático",
+                    ),
+                ),
+                (
+                    "nome_iniciatico",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Nome Iniciático",
+                    ),
+                ),
+                (
+                    "nacionalidade",
+                    models.CharField(
+                        default="Brasileira",
+                        max_length=50,
+                        verbose_name="Nacionalidade",
+                    ),
+                ),
+                (
+                    "naturalidade",
+                    models.CharField(
+                        max_length=50, verbose_name="Naturalidade"
+                    ),
+                ),
+                ("rua", models.CharField(max_length=100, verbose_name="Rua")),
+                (
+                    "numero_imovel",
+                    models.CharField(max_length=10, verbose_name="Número"),
+                ),
+                (
+                    "complemento",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Complemento",
+                    ),
+                ),
+                (
+                    "bairro",
+                    models.CharField(max_length=50, verbose_name="Bairro"),
+                ),
+                (
+                    "cidade",
+                    models.CharField(max_length=50, verbose_name="Cidade"),
+                ),
+                (
+                    "estado",
+                    models.CharField(max_length=2, verbose_name="Estado"),
+                ),
+                ("cep", models.CharField(max_length=8, verbose_name="CEP")),
+                (
+                    "nome_primeiro_contato",
+                    models.CharField(
+                        max_length=100, verbose_name="Nome do Primeiro Contato"
+                    ),
+                ),
+                (
+                    "celular_primeiro_contato",
+                    models.CharField(
+                        max_length=11,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                message="Número de celular inválido",
+                                regex="^\\d{10,11}$",
+                            )
+                        ],
+                        verbose_name="Celular do Primeiro Contato",
+                    ),
+                ),
+                (
+                    "tipo_relacionamento_primeiro_contato",
+                    models.CharField(
+                        max_length=50,
+                        verbose_name="Tipo de Relacionamento do Primeiro Contato",
+                    ),
+                ),
+                (
+                    "nome_segundo_contato",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Nome do Segundo Contato",
+                    ),
+                ),
+                (
+                    "celular_segundo_contato",
+                    models.CharField(
+                        blank=True,
+                        max_length=11,
+                        null=True,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                message="Número de celular inválido",
+                                regex="^\\d{10,11}$",
+                            )
+                        ],
+                        verbose_name="Celular do Segundo Contato",
+                    ),
+                ),
+                (
+                    "tipo_relacionamento_segundo_contato",
+                    models.CharField(
+                        blank=True,
+                        max_length=50,
+                        null=True,
+                        verbose_name="Tipo de Relacionamento do Segundo Contato",
+                    ),
+                ),
+                (
+                    "tipo_sanguineo",
+                    models.CharField(
+                        max_length=3, verbose_name="Tipo Sanguíneo"
+                    ),
+                ),
+                (
+                    "fator_rh",
+                    models.CharField(
+                        choices=[("+", "Positivo"), ("-", "Negativo")],
+                        max_length=1,
+                        verbose_name="Fator RH",
+                    ),
+                ),
+                (
+                    "alergias",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Alergias"
+                    ),
+                ),
+                (
+                    "condicoes_medicas_gerais",
+                    models.TextField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Condições Médicas Gerais",
+                    ),
+                ),
+                (
+                    "convenio_medico",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Convênio Médico",
+                    ),
+                ),
+                (
+                    "hospital",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Hospital de Preferência",
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now,
+                        verbose_name="Criado em",
+                    ),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Atualizado em"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Aluno',
-                'verbose_name_plural': 'Alunos',
-                'ordering': ['nome'],
+                "verbose_name": "Aluno",
+                "verbose_name_plural": "Alunos",
+                "ordering": ["nome"],
             },
         ),
     ]

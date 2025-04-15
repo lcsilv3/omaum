@@ -9,56 +9,88 @@
 print("ARQUIVO FORMS.PY CARREGADO")
 from django import forms
 from importlib import import_module
+
 # resto do c√≥digo...
+
 
 def get_atividade_academica_model():
     try:
-        atividades_module = import_module('atividades.models')
-        return getattr(atividades_module, 'AtividadeAcademica')
+        atividades_module = import_module("atividades.models")
+        return getattr(atividades_module, "AtividadeAcademica")
     except (ImportError, AttributeError):
         return None
 
+
 def get_atividade_ritualistica_model():
     try:
-        atividades_module = import_module('atividades.models')
-        return getattr(atividades_module, 'AtividadeRitualistica')
+        atividades_module = import_module("atividades.models")
+        return getattr(atividades_module, "AtividadeRitualistica")
     except (ImportError, AttributeError):
         return None
+
 
 class AtividadeAcademicaForm(forms.ModelForm):
     class Meta:
         model = get_atividade_academica_model()
-        fields = ['nome', 'descricao', 'data_inicio', 'data_fim', 'turma']
+        fields = ["nome", "descricao", "data_inicio", "data_fim", "turma"]
         widgets = {
-            'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'data_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'data_fim': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'turma': forms.Select(attrs={'class': 'form-control'}),
+            "nome": forms.TextInput(attrs={"class": "form-control"}),
+            "descricao": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
+            "data_inicio": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+            "data_fim": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+            "turma": forms.Select(attrs={"class": "form-control"}),
         }
+
 
 class AtividadeRitualisticaForm(forms.ModelForm):
     todos_alunos = forms.BooleanField(
-        required=False, 
-        label="Incluir todos os alunos da turma",
-        initial=False
+        required=False, label="Incluir todos os alunos da turma", initial=False
     )
-    
+
     class Meta:
         model = get_atividade_ritualistica_model()
-        fields = ['nome', 'descricao', 'data', 'hora_inicio', 'hora_fim', 'local', 'turma', 'participantes']
+        fields = [
+            "nome",
+            "descricao",
+            "data",
+            "hora_inicio",
+            "hora_fim",
+            "local",
+            "turma",
+            "participantes",
+        ]
         widgets = {
-            'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'data': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'hora_inicio': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'hora_fim': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'local': forms.TextInput(attrs={'class': 'form-control'}),
-            'turma': forms.Select(attrs={'class': 'form-control'}),
-            'participantes': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            "nome": forms.TextInput(attrs={"class": "form-control"}),
+            "descricao": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
+            "data": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+            "hora_inicio": forms.TimeInput(
+                attrs={"class": "form-control", "type": "time"}
+            ),
+            "hora_fim": forms.TimeInput(
+                attrs={"class": "form-control", "type": "time"}
+            ),
+            "local": forms.TextInput(attrs={"class": "form-control"}),
+            "turma": forms.Select(attrs={"class": "form-control"}),
+            "participantes": forms.SelectMultiple(
+                attrs={"class": "form-control"}
+            ),
         }
+
+
 def criar_form_atividade_academica():
     return AtividadeAcademicaForm
+
+
 def criar_form_atividade_ritualistica():
     return AtividadeRitualisticaForm
 
@@ -112,7 +144,7 @@ def get_model_class(model_name, module_name="atividades.models"):
 @login_required
 def index(request):
     """Página inicial do módulo de atividades."""
-    return render(request, 'atividades/index.html')
+    return render(request, "atividades/index.html")
 
 
 @login_required
@@ -147,7 +179,10 @@ def listar_atividades_ritualisticas(request):
     referer = request.META.get("HTTP_REFERER", "")
     if referer and not any(
         x in referer
-        for x in ["criar_atividade_ritualistica", "editar_atividade_ritualistica"]
+        for x in [
+            "criar_atividade_ritualistica",
+            "editar_atividade_ritualistica",
+        ]
     ):
         request.session["atividade_ritualistica_referer"] = referer
 
@@ -176,7 +211,9 @@ def criar_atividade_academica(request):
         form = AtividadeAcademicaForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Atividade acadêmica criada com sucesso.")
+            messages.success(
+                request, "Atividade acadêmica criada com sucesso."
+            )
             return redirect(return_url)
         else:
             messages.error(request, "Corrija os erros no formulário.")
@@ -205,7 +242,9 @@ def editar_atividade_academica(request, pk):
             form = AtividadeAcademicaForm(request.POST, instance=atividade)
             if form.is_valid():
                 form.save()
-                messages.success(request, "Atividade acadêmica atualizada com sucesso.")
+                messages.success(
+                    request, "Atividade acadêmica atualizada com sucesso."
+                )
                 return redirect(return_url)
             else:
                 messages.error(request, "Corrija os erros no formulário.")
@@ -236,10 +275,14 @@ def excluir_atividade_academica(request, pk):
     if request.method == "POST":
         try:
             atividade.delete()
-            messages.success(request, "Atividade acadêmica excluída com sucesso.")
+            messages.success(
+                request, "Atividade acadêmica excluída com sucesso."
+            )
             return redirect(return_url)
         except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade acadêmica: {str(e)}")
+            messages.error(
+                request, f"Erro ao excluir atividade acadêmica: {str(e)}"
+            )
             return redirect("atividades:listar_atividades_academicas")
 
     return render(
@@ -261,10 +304,14 @@ def confirmar_exclusao_academica(request, pk):
     if request.method == "POST":
         try:
             atividade.delete()
-            messages.success(request, "Atividade acadêmica excluída com sucesso.")
+            messages.success(
+                request, "Atividade acadêmica excluída com sucesso."
+            )
             return redirect(return_url)
         except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade acadêmica: {str(e)}")
+            messages.error(
+                request, f"Erro ao excluir atividade acadêmica: {str(e)}"
+            )
             return redirect("atividades:detalhar_atividade_academica", pk=pk)
 
     return render(
@@ -310,15 +357,21 @@ def criar_atividade_ritualistica(request):
                     "todos_alunos"
                 ):
                     # Obter todos os alunos da turma e adicioná-los à atividade
-                    Aluno = get_model_class("Aluno", module_name="alunos.models")
-                    alunos_da_turma = Aluno.objects.filter(turmas=atividade.turma)
+                    Aluno = get_model_class(
+                        "Aluno", module_name="alunos.models"
+                    )
+                    alunos_da_turma = Aluno.objects.filter(
+                        turmas=atividade.turma
+                    )
                     for aluno in alunos_da_turma:
                         atividade.participantes.add(aluno)
                 else:
                     # Salvar apenas os participantes selecionados no formulário
                     form.save_m2m()
 
-                messages.success(request, "Atividade ritualística criada com sucesso.")
+                messages.success(
+                    request, "Atividade ritualística criada com sucesso."
+                )
                 return redirect(return_url)
             else:
                 messages.error(request, "Corrija os erros no formulário.")
@@ -361,8 +414,12 @@ def editar_atividade_ritualistica(request, pk):
                     # Limpar participantes existentes
                     atividade.participantes.clear()
                     # Obter todos os alunos da turma e adicioná-los à atividade
-                    Aluno = get_model_class("Aluno", module_name="alunos.models")
-                    alunos_da_turma = Aluno.objects.filter(turmas=atividade.turma)
+                    Aluno = get_model_class(
+                        "Aluno", module_name="alunos.models"
+                    )
+                    alunos_da_turma = Aluno.objects.filter(
+                        turmas=atividade.turma
+                    )
                     for aluno in alunos_da_turma:
                         atividade.participantes.add(aluno)
                 else:
@@ -402,10 +459,14 @@ def excluir_atividade_ritualistica(request, pk):
     if request.method == "POST":
         try:
             atividade.delete()
-            messages.success(request, "Atividade ritualística excluída com sucesso.")
+            messages.success(
+                request, "Atividade ritualística excluída com sucesso."
+            )
             return redirect(return_url)
         except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade ritualística: {str(e)}")
+            messages.error(
+                request, f"Erro ao excluir atividade ritualística: {str(e)}"
+            )
             return redirect("atividades:listar_atividades_ritualisticas")
 
     return render(
@@ -427,11 +488,17 @@ def confirmar_exclusao_ritualistica(request, pk):
     if request.method == "POST":
         try:
             atividade.delete()
-            messages.success(request, "Atividade ritualística excluída com sucesso.")
+            messages.success(
+                request, "Atividade ritualística excluída com sucesso."
+            )
             return redirect(return_url)
         except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade ritualística: {str(e)}")
-            return redirect("atividades:detalhar_atividade_ritualistica", pk=pk)
+            messages.error(
+                request, f"Erro ao excluir atividade ritualística: {str(e)}"
+            )
+            return redirect(
+                "atividades:detalhar_atividade_ritualistica", pk=pk
+            )
 
     return render(
         request,
@@ -466,25 +533,72 @@ def detalhar_atividade_ritualistica(request, pk):
 from django.urls import path
 from . import views
 
-app_name = 'atividades'  # Definindo o namespace
+app_name = "atividades"  # Definindo o namespace
 
 urlpatterns = [
-    path('', views.index, name='listar'),  # Página de índice/agregador
+    path("", views.index, name="listar"),  # Página de índice/agregador
     # Atividades Acadêmicas
-    path('academicas/', views.listar_atividades_academicas, name='listar_atividades_academicas'),
-    path('academicas/criar/', views.criar_atividade_academica, name='criar_atividade_academica'),
-    path('academicas/editar/<int:pk>/', views.editar_atividade_academica, name='editar_atividade_academica'),
-    path('academicas/excluir/<int:pk>/', views.excluir_atividade_academica, name='excluir_atividade_academica'),
-    path('academicas/detalhar/<int:pk>/', views.detalhar_atividade_academica, name='detalhar_atividade_academica'),
-    path('academicas/confirmar-exclusao/<int:pk>/', views.confirmar_exclusao_academica, name='confirmar_exclusao_academica'),
-    
+    path(
+        "academicas/",
+        views.listar_atividades_academicas,
+        name="listar_atividades_academicas",
+    ),
+    path(
+        "academicas/criar/",
+        views.criar_atividade_academica,
+        name="criar_atividade_academica",
+    ),
+    path(
+        "academicas/editar/<int:pk>/",
+        views.editar_atividade_academica,
+        name="editar_atividade_academica",
+    ),
+    path(
+        "academicas/excluir/<int:pk>/",
+        views.excluir_atividade_academica,
+        name="excluir_atividade_academica",
+    ),
+    path(
+        "academicas/detalhar/<int:pk>/",
+        views.detalhar_atividade_academica,
+        name="detalhar_atividade_academica",
+    ),
+    path(
+        "academicas/confirmar-exclusao/<int:pk>/",
+        views.confirmar_exclusao_academica,
+        name="confirmar_exclusao_academica",
+    ),
     # Atividades Ritualísticas
-    path('ritualisticas/', views.listar_atividades_ritualisticas, name='listar_atividades_ritualisticas'),
-    path('ritualisticas/criar/', views.criar_atividade_ritualistica, name='criar_atividade_ritualistica'),
-    path('ritualisticas/editar/<int:pk>/', views.editar_atividade_ritualistica, name='editar_atividade_ritualistica'),
-    path('ritualisticas/excluir/<int:pk>/', views.excluir_atividade_ritualistica, name='excluir_atividade_ritualistica'),
-    path('ritualisticas/detalhar/<int:pk>/', views.detalhar_atividade_ritualistica, name='detalhar_atividade_ritualistica'),
-    path('ritualisticas/confirmar-exclusao/<int:pk>/', views.confirmar_exclusao_ritualistica, name='confirmar_exclusao_ritualistica'),
+    path(
+        "ritualisticas/",
+        views.listar_atividades_ritualisticas,
+        name="listar_atividades_ritualisticas",
+    ),
+    path(
+        "ritualisticas/criar/",
+        views.criar_atividade_ritualistica,
+        name="criar_atividade_ritualistica",
+    ),
+    path(
+        "ritualisticas/editar/<int:pk>/",
+        views.editar_atividade_ritualistica,
+        name="editar_atividade_ritualistica",
+    ),
+    path(
+        "ritualisticas/excluir/<int:pk>/",
+        views.excluir_atividade_ritualistica,
+        name="excluir_atividade_ritualistica",
+    ),
+    path(
+        "ritualisticas/detalhar/<int:pk>/",
+        views.detalhar_atividade_ritualistica,
+        name="detalhar_atividade_ritualistica",
+    ),
+    path(
+        "ritualisticas/confirmar-exclusao/<int:pk>/",
+        views.confirmar_exclusao_ritualistica,
+        name="confirmar_exclusao_ritualistica",
+    ),
 ]
 
 ```
@@ -502,14 +616,19 @@ print("CARREGANDO MODELS.PY")
 try:
     from django.db import models
     import inspect
-    
+
     # Carregar o módulo atual
     import sys
+
     current_module = sys.modules[__name__]
-    
+
     # Encontrar todas as classes de modelo no módulo
     for name, obj in inspect.getmembers(current_module):
-        if inspect.isclass(obj) and issubclass(obj, models.Model) and obj != models.Model:
+        if (
+            inspect.isclass(obj)
+            and issubclass(obj, models.Model)
+            and obj != models.Model
+        ):
             print(f"Modelo: {name}")
             for field in obj._meta.fields:
                 print(f"  - {field.name} ({field.__class__.__name__})")
@@ -520,81 +639,110 @@ from django.db import models
 from django.utils import timezone
 from importlib import import_module
 
+
 def get_aluno_model():
-    alunos_module = import_module('alunos.models')
-    return getattr(alunos_module, 'Aluno')
+    alunos_module = import_module("alunos.models")
+    return getattr(alunos_module, "Aluno")
+
 
 def get_turma_model():
-    turmas_module = import_module('turmas.models')
-    return getattr(turmas_module, 'Turma')
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
+
 
 class AtividadeAcademica(models.Model):
     TIPO_CHOICES = (
-        ('aula', 'Aula'),
-        ('palestra', 'Palestra'),
-        ('workshop', 'Workshop'),
-        ('seminario', 'Seminário'),
-        ('outro', 'Outro'),
+        ("aula", "Aula"),
+        ("palestra", "Palestra"),
+        ("workshop", "Workshop"),
+        ("seminario", "Seminário"),
+        ("outro", "Outro"),
     )
-    
+
     STATUS_CHOICES = (
-        ('agendada', 'Agendada'),
-        ('em_andamento', 'Em Andamento'),
-        ('concluida', 'Concluída'),
-        ('cancelada', 'Cancelada'),
+        ("agendada", "Agendada"),
+        ("em_andamento", "Em Andamento"),
+        ("concluida", "Concluída"),
+        ("cancelada", "Cancelada"),
     )
-    
+
     nome = models.CharField(max_length=100)
-    
+
     @property
     def titulo(self):
         return self.nome
-    
+
     @titulo.setter
     def titulo(self, value):
         self.nome = value
-        
-    descricao = models.TextField(blank=True, null=True, verbose_name="Descrição")
-    data_inicio = models.DateTimeField(default=timezone.now, verbose_name="Data de Início")
-    data_fim = models.DateTimeField(blank=True, null=True, verbose_name="Data de Término")
-    responsavel = models.CharField(max_length=100, blank=True, null=True, verbose_name="Responsável")
-    local = models.CharField(max_length=100, blank=True, null=True, verbose_name="Local")
-    tipo_atividade = models.CharField(max_length=20, choices=TIPO_CHOICES, default='aula', verbose_name="Tipo de Atividade")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='agendada', verbose_name="Status")
-    turma = models.ForeignKey('turmas.Turma', on_delete=models.CASCADE, related_name='atividades_academicas')    
+
+    descricao = models.TextField(
+        blank=True, null=True, verbose_name="Descrição"
+    )
+    data_inicio = models.DateTimeField(
+        default=timezone.now, verbose_name="Data de Início"
+    )
+    data_fim = models.DateTimeField(
+        blank=True, null=True, verbose_name="Data de Término"
+    )
+    responsavel = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Responsável"
+    )
+    local = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Local"
+    )
+    tipo_atividade = models.CharField(
+        max_length=20,
+        choices=TIPO_CHOICES,
+        default="aula",
+        verbose_name="Tipo de Atividade",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="agendada",
+        verbose_name="Status",
+    )
+    turma = models.ForeignKey(
+        "turmas.Turma",
+        on_delete=models.CASCADE,
+        related_name="atividades_academicas",
+    )
+
     def __str__(self):
         return self.titulo or self.nome
-    
+
     class Meta:
-        verbose_name = 'Atividade Acadêmica'
-        verbose_name_plural = 'Atividades Acadêmicas'
+        verbose_name = "Atividade Acadêmica"
+        verbose_name_plural = "Atividades Acadêmicas"
+
 
 class AtividadeRitualistica(models.Model):
-    nome = models.CharField(max_length=100, verbose_name='Nome')
-    descricao = models.TextField(blank=True, null=True, verbose_name='Descrição')
-    data = models.DateField(verbose_name='Data')
-    hora_inicio = models.TimeField(verbose_name='Hora de Início')
-    hora_fim = models.TimeField(verbose_name='Hora de Término')
-    local = models.CharField(max_length=100, verbose_name='Local')
+    nome = models.CharField(max_length=100, verbose_name="Nome")
+    descricao = models.TextField(
+        blank=True, null=True, verbose_name="Descrição"
+    )
+    data = models.DateField(verbose_name="Data")
+    hora_inicio = models.TimeField(verbose_name="Hora de Início")
+    hora_fim = models.TimeField(verbose_name="Hora de Término")
+    local = models.CharField(max_length=100, verbose_name="Local")
     turma = models.ForeignKey(
-        get_turma_model(), 
-        on_delete=models.CASCADE, 
-        verbose_name='Turma'
+        get_turma_model(), on_delete=models.CASCADE, verbose_name="Turma"
     )
     participantes = models.ManyToManyField(
-        get_aluno_model(), 
-        blank=True, 
-        verbose_name='Participantes',
-        related_name='atividades_ritualisticas'
+        get_aluno_model(),
+        blank=True,
+        verbose_name="Participantes",
+        related_name="atividades_ritualisticas",
     )
-    
+
     def __str__(self):
         return f"{self.nome} - {self.data}"
-    
+
     class Meta:
-        verbose_name = 'Atividade Ritualística'
-        verbose_name_plural = 'Atividades Ritualísticas'
-        ordering = ['-data', 'hora_inicio']
+        verbose_name = "Atividade Ritualística"
+        verbose_name_plural = "Atividades Ritualísticas"
+        ordering = ["-data", "hora_inicio"]
 
 ```
 

@@ -11,39 +11,58 @@ from .models import Frequencia
 import datetime
 from django.core.exceptions import ValidationError
 
+
 class FrequenciaForm(forms.ModelForm):
     class Meta:
         model = Frequencia
-        fields = ['aluno', 'turma', 'data', 'presente', 'justificativa']
+        fields = ["aluno", "turma", "data", "presente", "justificativa"]
         widgets = {
-            'aluno': forms.Select(attrs={'class': 'form-select'}),
-            'turma': forms.Select(attrs={'class': 'form-select'}),
-            'data': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'presente': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'justificativa': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            "aluno": forms.Select(attrs={"class": "form-select"}),
+            "turma": forms.Select(attrs={"class": "form-select"}),
+            "data": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "presente": forms.CheckboxInput(
+                attrs={"class": "form-check-input"}
+            ),
+            "justificativa": forms.Textarea(
+                attrs={"rows": 3, "class": "form-control"}
+            ),
         }
-       
+
     def clean_data(self):
-        data = self.cleaned_data.get('data')
+        data = self.cleaned_data.get("data")
         if data and data > datetime.date.today():
-            raise ValidationError("A data da frequência não pode ser no futuro.")
+            raise ValidationError(
+                "A data da frequência não pode ser no futuro."
+            )
         return data
-       
+
     def clean(self):
         cleaned_data = super().clean()
-        aluno = cleaned_data.get('aluno')
-        turma = cleaned_data.get('turma')
-        data = cleaned_data.get('data')
-        
+        aluno = cleaned_data.get("aluno")
+        turma = cleaned_data.get("turma")
+        data = cleaned_data.get("data")
+
         # Se for uma atualização (instância existe), precisamos excluir a instância atual da verificação de unicidade
         if self.instance.pk:
-            if Frequencia.objects.filter(aluno=aluno, turma=turma, data=data).exclude(pk=self.instance.pk).exists():
-                raise ValidationError("Já existe um registro de frequência para este aluno nesta turma e data.")
+            if (
+                Frequencia.objects.filter(aluno=aluno, turma=turma, data=data)
+                .exclude(pk=self.instance.pk)
+                .exists()
+            ):
+                raise ValidationError(
+                    "Já existe um registro de frequência para este aluno nesta turma e data."
+                )
         else:
             if aluno and turma and data:
-                if Frequencia.objects.filter(aluno=aluno, turma=turma, data=data).exists():
-                    raise ValidationError("Já existe um registro de frequência para este aluno nesta turma e data.")
-       
+                if Frequencia.objects.filter(
+                    aluno=aluno, turma=turma, data=data
+                ).exists():
+                    raise ValidationError(
+                        "Já existe um registro de frequência para este aluno nesta turma e data."
+                    )
+
         return cleaned_data
 
 ```
@@ -63,54 +82,62 @@ from .models import Frequencia
 from alunos.models import Aluno
 from atividades.models import AtividadeAcademica
 
+
 # Função para obter modelos usando importlib
 def get_models():
-    Frequencia = importlib.import_module('frequencias.models').Frequencia
-    Aluno = importlib.import_module('alunos.models').Aluno
-    Turma = importlib.import_module('turmas.models').Turma
+    Frequencia = importlib.import_module("frequencias.models").Frequencia
+    Aluno = importlib.import_module("alunos.models").Aluno
+    Turma = importlib.import_module("turmas.models").Turma
     return Frequencia, Aluno, Turma
+
 
 # Função para obter formulários usando importlib
 def get_forms():
-    FrequenciaForm = importlib.import_module('frequencias.forms').FrequenciaForm
+    FrequenciaForm = importlib.import_module(
+        "frequencias.forms"
+    ).FrequenciaForm
     return FrequenciaForm
 
+
 @login_required
-@permission_required('frequencias.add_frequencia', raise_exception=True)
+@permission_required("frequencias.add_frequencia", raise_exception=True)
 def registrar_frequencia(request):
     FrequenciaForm = get_forms()
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = FrequenciaForm(request.POST)
         if form.is_valid():
             frequencia = form.save(commit=False)
             frequencia.registrado_por = request.user
             frequencia.save()
-            messages.success(request, 'Frequência registrada com sucesso!')
-            return redirect('frequencias:listar_frequencias')
+            messages.success(request, "Frequência registrada com sucesso!")
+            return redirect("frequencias:listar_frequencias")
         else:
-            messages.error(request, 'Corrija os erros no formulário.')
+            messages.error(request, "Corrija os erros no formulário.")
     else:
         form = FrequenciaForm()
 
-    return render(request, 'frequencias/registrar_frequencia.html', {'form': form})
+    return render(
+        request, "frequencias/registrar_frequencia.html", {"form": form}
+    )
+
 
 @login_required
-@permission_required('frequencias.add_frequencia', raise_exception=True)
+@permission_required("frequencias.add_frequencia", raise_exception=True)
 def registrar_frequencia_turma(request, turma_id):
     Frequencia, Aluno, Turma = get_models()
 
     turma = get_object_or_404(Turma, id=turma_id)
     alunos = Aluno.objects.filter(turmas=turma)
 
-    if request.method == 'POST':
-        data = request.POST.get('data')
-        presentes = request.POST.getlist('presentes')
+    if request.method == "POST":
+        data = request.POST.get("data")
+        presentes = request.POST.getlist("presentes")
 
         # Create or update attendance records
         for aluno in alunos:
             presente = str(aluno.id) in presentes
-            justificativa = request.POST.get(f'justificativa_{aluno.id}', '')
+            justificativa = request.POST.get(f"justificativa_{aluno.id}", "")
 
             # Check if record exists
             frequencia, created = Frequencia.objects.update_or_create(
@@ -118,29 +145,36 @@ def registrar_frequencia_turma(request, turma_id):
                 turma=turma,
                 data=data,
                 defaults={
-                    'presente': presente,
-                    'justificativa': justificativa if not presente else '',
-                    'registrado_por': request.user
-                }
+                    "presente": presente,
+                    "justificativa": justificativa if not presente else "",
+                    "registrado_por": request.user,
+                },
             )
 
-        messages.success(request, 'Frequências registradas com sucesso!')
-        return redirect('frequencias:listar_frequencias')
+        messages.success(request, "Frequências registradas com sucesso!")
+        return redirect("frequencias:listar_frequencias")
 
-    return render(request, 'frequencias/registrar_frequencia_turma.html', {
-        'turma': turma,
-        'alunos': alunos,
-    })
+    return render(
+        request,
+        "frequencias/registrar_frequencia_turma.html",
+        {
+            "turma": turma,
+            "alunos": alunos,
+        },
+    )
+
 
 @login_required
-@permission_required('frequencias.view_frequencia', raise_exception=True)
+@permission_required("frequencias.view_frequencia", raise_exception=True)
 def listar_frequencias(request):
-    frequencias_list = Frequencia.objects.all().select_related('aluno', 'atividade')
+    frequencias_list = Frequencia.objects.all().select_related(
+        "aluno", "atividade"
+    )
 
     # Filtros
-    aluno_id = request.GET.get('aluno')
-    atividade_id = request.GET.get('atividade')
-    data = request.GET.get('data')
+    aluno_id = request.GET.get("aluno")
+    atividade_id = request.GET.get("atividade")
+    data = request.GET.get("data")
 
     if aluno_id:
         frequencias_list = frequencias_list.filter(aluno_id=aluno_id)
@@ -151,7 +185,7 @@ def listar_frequencias(request):
 
     # Paginação
     paginator = Paginator(frequencias_list, 10)  # 10 itens por página
-    page = request.GET.get('page')
+    page = request.GET.get("page")
 
     try:
         frequencias = paginator.page(page)
@@ -164,66 +198,87 @@ def listar_frequencias(request):
     alunos = Aluno.objects.all()
     atividades = AtividadeAcademica.objects.all()
 
-    return render(request, 'frequencias/listar_frequencias.html', {
-        'frequencias': frequencias,
-        'alunos': alunos,
-        'atividades': atividades,
-    })
+    return render(
+        request,
+        "frequencias/listar_frequencias.html",
+        {
+            "frequencias": frequencias,
+            "alunos": alunos,
+            "atividades": atividades,
+        },
+    )
+
 
 @login_required
-@permission_required('frequencias.change_frequencia', raise_exception=True)
+@permission_required("frequencias.change_frequencia", raise_exception=True)
 def editar_frequencia(request, id):
     Frequencia = get_models()[0]
     FrequenciaForm = get_forms()
 
     frequencia = get_object_or_404(Frequencia, id=id)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = FrequenciaForm(request.POST, instance=frequencia)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Frequência atualizada com sucesso!')
-            return redirect('frequencias:listar_frequencias')
+            messages.success(request, "Frequência atualizada com sucesso!")
+            return redirect("frequencias:listar_frequencias")
         else:
-            messages.error(request, 'Corrija os erros no formulário.')
+            messages.error(request, "Corrija os erros no formulário.")
     else:
         form = FrequenciaForm(instance=frequencia)
 
-    return render(request, 'frequencias/editar_frequencia.html', {'form': form, 'frequencia': frequencia})
+    return render(
+        request,
+        "frequencias/editar_frequencia.html",
+        {"form": form, "frequencia": frequencia},
+    )
+
 
 @login_required
-@permission_required('frequencias.view_frequencia', raise_exception=True)
+@permission_required("frequencias.view_frequencia", raise_exception=True)
 def detalhar_frequencia(request, id):
     """Exibe os detalhes de uma frequência."""
     Frequencia = get_models()[0]
     frequencia = get_object_or_404(Frequencia, id=id)
-    return render(request, 'frequencias/detalhar_frequencia.html', {'frequencia': frequencia})
+    return render(
+        request,
+        "frequencias/detalhar_frequencia.html",
+        {"frequencia": frequencia},
+    )
+
 
 @login_required
-@permission_required('frequencias.delete_frequencia', raise_exception=True)
+@permission_required("frequencias.delete_frequencia", raise_exception=True)
 def excluir_frequencia(request, id):
     Frequencia = get_models()[0]
     frequencia = get_object_or_404(Frequencia, id=id)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         frequencia.delete()
-        messages.success(request, 'Frequência excluída com sucesso!')
-        return redirect('frequencias:listar_frequencias')
+        messages.success(request, "Frequência excluída com sucesso!")
+        return redirect("frequencias:listar_frequencias")
 
-    return render(request, 'frequencias/excluir_frequencia.html', {'frequencia': frequencia})
+    return render(
+        request,
+        "frequencias/excluir_frequencia.html",
+        {"frequencia": frequencia},
+    )
+
 
 @login_required
-@permission_required('frequencias.view_frequencia', raise_exception=True)
+@permission_required("frequencias.view_frequencia", raise_exception=True)
 def relatorio_frequencias(request):
     # Implementação pendente
-    return render(request, 'frequencias/relatorio_frequencias.html')
+    return render(request, "frequencias/relatorio_frequencias.html")
+
 
 @login_required
-@permission_required('frequencias.view_frequencia', raise_exception=True)
+@permission_required("frequencias.view_frequencia", raise_exception=True)
 def exportar_frequencias(request):
     # Implementação pendente
 
-    return redirect('frequencias:listar_frequencias')
+    return redirect("frequencias:listar_frequencias")
 
 ```
 
@@ -236,16 +291,30 @@ def exportar_frequencias(request):
 from django.urls import path
 from . import views
 
-app_name = 'frequencias'
+app_name = "frequencias"
 
 urlpatterns = [
-    path('', views.listar_frequencias, name='listar_frequencias'),
-    path('registrar/', views.registrar_frequencia, name='registrar_frequencia'),
-    path('<int:id>/editar/', views.editar_frequencia, name='editar_frequencia'),
-    path('<int:id>/excluir/', views.excluir_frequencia, name='excluir_frequencia'),
-    path('<int:id>/detalhes/', views.detalhar_frequencia, name='detalhar_frequencia'),
-    path('relatorio/', views.relatorio_frequencias, name='relatorio_frequencias'),
-    path('exportar/', views.exportar_frequencias, name='exportar_frequencias'),
+    path("", views.listar_frequencias, name="listar_frequencias"),
+    path(
+        "registrar/", views.registrar_frequencia, name="registrar_frequencia"
+    ),
+    path(
+        "<int:id>/editar/", views.editar_frequencia, name="editar_frequencia"
+    ),
+    path(
+        "<int:id>/excluir/",
+        views.excluir_frequencia,
+        name="excluir_frequencia",
+    ),
+    path(
+        "<int:id>/detalhes/",
+        views.detalhar_frequencia,
+        name="detalhar_frequencia",
+    ),
+    path(
+        "relatorio/", views.relatorio_frequencias, name="relatorio_frequencias"
+    ),
+    path("exportar/", views.exportar_frequencias, name="exportar_frequencias"),
 ]
 
 ```
@@ -260,22 +329,29 @@ from django.db import models
 from alunos.models import Aluno
 from atividades.models import AtividadeAcademica
 
+
 class Frequencia(models.Model):
-    aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, verbose_name='Aluno')
-    atividade = models.ForeignKey(AtividadeAcademica, on_delete=models.CASCADE, verbose_name='Atividade')
-    data = models.DateField(verbose_name='Data')
-    presente = models.BooleanField(default=True, verbose_name='Presente')
-    justificativa = models.TextField(blank=True, null=True, verbose_name='Justificativa')
+    aluno = models.ForeignKey(
+        Aluno, on_delete=models.CASCADE, verbose_name="Aluno"
+    )
+    atividade = models.ForeignKey(
+        AtividadeAcademica, on_delete=models.CASCADE, verbose_name="Atividade"
+    )
+    data = models.DateField(verbose_name="Data")
+    presente = models.BooleanField(default=True, verbose_name="Presente")
+    justificativa = models.TextField(
+        blank=True, null=True, verbose_name="Justificativa"
+    )
 
     def __str__(self):
         return f"{self.aluno.nome} - {self.atividade.nome} - {self.data}"
 
     class Meta:
-        verbose_name = 'Frequência'
-        verbose_name_plural = 'Frequências'
-        ordering = ['-data']
+        verbose_name = "Frequência"
+        verbose_name_plural = "Frequências"
+        ordering = ["-data"]
 
-        unique_together = ['aluno', 'atividade', 'data']
+        unique_together = ["aluno", "atividade", "data"]
 
 ```
 

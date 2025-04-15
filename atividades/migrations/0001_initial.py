@@ -5,46 +5,133 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='AtividadeAcademica',
+            name="AtividadeAcademica",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100)),
-                ('descricao', models.TextField(blank=True, null=True, verbose_name='Descrição')),
-                ('data_inicio', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Data de Início')),
-                ('data_fim', models.DateTimeField(blank=True, null=True, verbose_name='Data de Término')),
-                ('responsavel', models.CharField(blank=True, max_length=100, null=True, verbose_name='Responsável')),
-                ('local', models.CharField(blank=True, max_length=100, null=True, verbose_name='Local')),
-                ('tipo_atividade', models.CharField(choices=[('aula', 'Aula'), ('palestra', 'Palestra'), ('workshop', 'Workshop'), ('seminario', 'Seminário'), ('outro', 'Outro')], default='aula', max_length=20, verbose_name='Tipo de Atividade')),
-                ('status', models.CharField(choices=[('agendada', 'Agendada'), ('em_andamento', 'Em Andamento'), ('concluida', 'Concluída'), ('cancelada', 'Cancelada')], default='agendada', max_length=20, verbose_name='Status')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nome", models.CharField(max_length=100)),
+                (
+                    "descricao",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Descrição"
+                    ),
+                ),
+                (
+                    "data_inicio",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now,
+                        verbose_name="Data de Início",
+                    ),
+                ),
+                (
+                    "data_fim",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="Data de Término"
+                    ),
+                ),
+                (
+                    "responsavel",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Responsável",
+                    ),
+                ),
+                (
+                    "local",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Local",
+                    ),
+                ),
+                (
+                    "tipo_atividade",
+                    models.CharField(
+                        choices=[
+                            ("aula", "Aula"),
+                            ("palestra", "Palestra"),
+                            ("workshop", "Workshop"),
+                            ("seminario", "Seminário"),
+                            ("outro", "Outro"),
+                        ],
+                        default="aula",
+                        max_length=20,
+                        verbose_name="Tipo de Atividade",
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("agendada", "Agendada"),
+                            ("em_andamento", "Em Andamento"),
+                            ("concluida", "Concluída"),
+                            ("cancelada", "Cancelada"),
+                        ],
+                        default="agendada",
+                        max_length=20,
+                        verbose_name="Status",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Atividade Acadêmica',
-                'verbose_name_plural': 'Atividades Acadêmicas',
+                "verbose_name": "Atividade Acadêmica",
+                "verbose_name_plural": "Atividades Acadêmicas",
             },
         ),
         migrations.CreateModel(
-            name='AtividadeRitualistica',
+            name="AtividadeRitualistica",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100, verbose_name='Nome')),
-                ('descricao', models.TextField(blank=True, null=True, verbose_name='Descrição')),
-                ('data', models.DateField(verbose_name='Data')),
-                ('hora_inicio', models.TimeField(verbose_name='Hora de Início')),
-                ('hora_fim', models.TimeField(verbose_name='Hora de Término')),
-                ('local', models.CharField(max_length=100, verbose_name='Local')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(max_length=100, verbose_name="Nome"),
+                ),
+                (
+                    "descricao",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Descrição"
+                    ),
+                ),
+                ("data", models.DateField(verbose_name="Data")),
+                (
+                    "hora_inicio",
+                    models.TimeField(verbose_name="Hora de Início"),
+                ),
+                ("hora_fim", models.TimeField(verbose_name="Hora de Término")),
+                (
+                    "local",
+                    models.CharField(max_length=100, verbose_name="Local"),
+                ),
             ],
             options={
-                'verbose_name': 'Atividade Ritualística',
-                'verbose_name_plural': 'Atividades Ritualísticas',
-                'ordering': ['-data', 'hora_inicio'],
+                "verbose_name": "Atividade Ritualística",
+                "verbose_name_plural": "Atividades Ritualísticas",
+                "ordering": ["-data", "hora_inicio"],
             },
         ),
     ]

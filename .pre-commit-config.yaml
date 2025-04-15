@@ -1,0 +1,22 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.10.0 # Use uma versão mais recente
+    hooks:
+      - id: black
+        args: [--line-length=79]
+        language_version: python3
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.1.0 # Use uma versão mais recente
+    hooks:
+      - id: flake8
+        exclude: migrations/
+        additional_dependencies: [flake8-docstrings]
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        exclude: migrations/
+        args: [--disable=C0111]

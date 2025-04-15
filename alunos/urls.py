@@ -17,4 +17,16 @@ urlpatterns = [
     path("importar/", views.importar_alunos, name="importar_alunos"),
     path("relatorio/", views.relatorio_alunos, name="relatorio_alunos"),
     path("search/", views.search_alunos, name="search_alunos"),
+    # Nova URL para confirmação de remoção de instrutoria
+    path(
+        "<str:cpf>/confirmar-remocao-instrutoria/<str:nova_situacao>/",
+        views.confirmar_remocao_instrutoria,
+        name="confirmar_remocao_instrutoria",
+    ),
+    path(
+        "api/search-instrutores/",
+        views.search_instrutores,
+        name="search_instrutores",
+    ),
+    path("api/get-aluno/<str:cpf>/", views.get_aluno, name="get_aluno"),
 ]

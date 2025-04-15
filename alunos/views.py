@@ -109,7 +109,45 @@ def detalhar_aluno(request, cpf):
     """Exibe os detalhes de um aluno."""
     Aluno = get_models()
     aluno = get_object_or_404(Aluno, cpf=cpf)
-    return render(request, "alunos/detalhar_aluno.html", {"aluno": aluno})
+
+    # Buscar turmas onde o aluno é instrutor
+    turmas_como_instrutor = []
+    turmas_como_instrutor_auxiliar = []
+    turmas_como_auxiliar_instrucao = []
+
+    if aluno.esta_ativo:
+        from importlib import import_module
+
+        try:
+            # Importar o modelo Turma dinamicamente
+            turmas_module = import_module("turmas.models")
+            Turma = getattr(turmas_module, "Turma")
+
+            # Buscar turmas ativas onde o aluno é instrutor
+            turmas_como_instrutor = Turma.objects.filter(
+                instrutor=aluno, status="A"
+            ).select_related("curso")
+
+            turmas_como_instrutor_auxiliar = Turma.objects.filter(
+                instrutor_auxiliar=aluno, status="A"
+            ).select_related("curso")
+
+            turmas_como_auxiliar_instrucao = Turma.objects.filter(
+                auxiliar_instrucao=aluno, status="A"
+            ).select_related("curso")
+        except (ImportError, AttributeError):
+            pass
+
+    return render(
+        request,
+        "alunos/detalhar_aluno.html",
+        {
+            "aluno": aluno,
+            "turmas_como_instrutor": turmas_como_instrutor,
+            "turmas_como_instrutor_auxiliar": turmas_como_instrutor_auxiliar,
+            "turmas_como_auxiliar_instrucao": turmas_como_auxiliar_instrucao,
+        },
+    )
 
 
 @login_required
@@ -119,11 +157,76 @@ def editar_aluno(request, cpf):
     AlunoForm = get_forms()
 
     aluno = get_object_or_404(Aluno, cpf=cpf)
+    situacao_anterior = aluno.situacao
 
     if request.method == "POST":
         form = AlunoForm(request.POST, request.FILES, instance=aluno)
+
+        # Verificar se o formulário é válido
         if form.is_valid():
             try:
+                # Verificar se a situação mudou de "ATIVO" para outra
+                nova_situacao = form.cleaned_data.get("situacao")
+
+                # Se a situação mudou e o aluno é instrutor em alguma turma
+                if (
+                    situacao_anterior == "ATIVO"
+                    and nova_situacao != "ATIVO"
+                    and hasattr(form, "aluno_e_instrutor")
+                ):
+                    # Verificar se o usuário confirmou a remoção da instrutoria
+                    if (
+                        request.POST.get("confirmar_remocao_instrutoria")
+                        != "1"
+                    ):
+                        # Redirecionar para a página de confirmação
+                        return redirect(
+                            "alunos:confirmar_remocao_instrutoria",
+                            cpf=aluno.cpf,
+                            nova_situacao=nova_situacao,
+                        )
+
+                    # Se confirmou, atualizar as turmas
+                    from importlib import import_module
+
+                    try:
+                        # Importar o modelo Turma dinamicamente
+                        turmas_module = import_module("turmas.models")
+                        Turma = getattr(turmas_module, "Turma")
+
+                        # Buscar turmas onde o aluno é instrutor
+                        turmas_instrutor = Turma.objects.filter(
+                            instrutor=aluno, status="A"
+                        )
+                        turmas_instrutor_auxiliar = Turma.objects.filter(
+                            instrutor_auxiliar=aluno, status="A"
+                        )
+                        turmas_auxiliar_instrucao = Turma.objects.filter(
+                            auxiliar_instrucao=aluno, status="A"
+                        )
+
+                        # Atualizar as turmas
+                        for turma in turmas_instrutor:
+                            turma.instrutor = None
+                            turma.alerta_instrutor = True
+                            turma.alerta_mensagem = f"O instrutor {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
+                            turma.save()
+
+                        for turma in turmas_instrutor_auxiliar:
+                            turma.instrutor_auxiliar = None
+                            turma.alerta_instrutor = True
+                            turma.alerta_mensagem = f"O instrutor auxiliar {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
+                            turma.save()
+
+                        for turma in turmas_auxiliar_instrucao:
+                            turma.auxiliar_instrucao = None
+                            turma.alerta_instrutor = True
+                            turma.alerta_mensagem = f"O auxiliar de instrução {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
+                            turma.save()
+                    except (ImportError, AttributeError):
+                        pass
+
+                # Salvar o aluno
                 form.save()
                 messages.success(request, "Aluno atualizado com sucesso!")
                 return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
@@ -205,7 +308,14 @@ def exportar_alunos(request):
 
         writer = csv.writer(response)
         writer.writerow(
-            ["CPF", "Nome", "Email", "Data de Nascimento", "Sexo", "Número Iniciático"]
+            [
+                "CPF",
+                "Nome",
+                "Email",
+                "Data de Nascimento",
+                "Sexo",
+                "Número Iniciático",
+            ]
         )
 
         for aluno in alunos:
@@ -235,7 +345,9 @@ def importar_alunos(request):
             from io import TextIOWrapper
 
             Aluno = get_models()
-            csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
+            csv_file = TextIOWrapper(
+                request.FILES["csv_file"].file, encoding="utf-8"
+            )
             reader = csv.DictReader(csv_file)
 
             count = 0
@@ -248,15 +360,21 @@ def importar_alunos(request):
                         cpf=row.get("CPF", "").strip(),
                         nome=row.get("Nome", "").strip(),
                         email=row.get("Email", "").strip(),
-                        data_nascimento=row.get("Data de Nascimento", "").strip(),
+                        data_nascimento=row.get(
+                            "Data de Nascimento", ""
+                        ).strip(),
                         sexo=row.get("Sexo", "M")[
                             0
                         ].upper(),  # Pega a primeira letra e converte para maiúscula
-                        numero_iniciatico=row.get("Número Iniciático", "").strip(),
+                        numero_iniciatico=row.get(
+                            "Número Iniciático", ""
+                        ).strip(),
                         nome_iniciatico=row.get(
                             "Nome Iniciático", row.get("Nome", "")
                         ).strip(),
-                        nacionalidade=row.get("Nacionalidade", "Brasileira").strip(),
+                        nacionalidade=row.get(
+                            "Nacionalidade", "Brasileira"
+                        ).strip(),
                         naturalidade=row.get("Naturalidade", "").strip(),
                         rua=row.get("Rua", "").strip(),
                         numero_imovel=row.get("Número", "").strip(),
@@ -283,14 +401,19 @@ def importar_alunos(request):
 
             if errors:
                 messages.warning(
-                    request, f"{count} alunos importados com {len(errors)} erros."
+                    request,
+                    f"{count} alunos importados com {len(errors)} erros.",
                 )
                 for error in errors[:5]:  # Mostrar apenas os 5 primeiros erros
                     messages.error(request, error)
                 if len(errors) > 5:
-                    messages.error(request, f"... e mais {len(errors) - 5} erros.")
+                    messages.error(
+                        request, f"... e mais {len(errors) - 5} erros."
+                    )
             else:
-                messages.success(request, f"{count} alunos importados com sucesso!")
+                messages.success(
+                    request, f"{count} alunos importados com sucesso!"
+                )
 
             return redirect("alunos:listar_alunos")
         except Exception as e:
@@ -349,24 +472,24 @@ def get_aluno_model():
 
 @login_required
 def search_alunos(request):
-    """API endpoint to search for alunos."""
+    """API endpoint para buscar alunos."""
     try:
         query = request.GET.get("q", "")
         if len(query) < 2:
             return JsonResponse([], safe=False)
 
-        Aluno = get_models()  # Use the existing function to get the model
+        Aluno = get_aluno_model()  # Use a função existente para obter o modelo
 
-        # Search by name, CPF, or numero_iniciatico
+        # Buscar alunos por nome, CPF ou número iniciático
         alunos = Aluno.objects.filter(
             Q(nome__icontains=query)
             | Q(cpf__icontains=query)
             | Q(numero_iniciatico__icontains=query)
         )[
             :10
-        ]  # Limit to 10 results
+        ]  # Limitar a 10 resultados
 
-        # Format results
+        # Formatar resultados
         results = []
         for aluno in alunos:
             results.append(
@@ -374,6 +497,11 @@ def search_alunos(request):
                     "cpf": aluno.cpf,
                     "nome": aluno.nome,
                     "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                    "foto": (
+                        aluno.foto.url
+                        if hasattr(aluno, "foto") and aluno.foto
+                        else None
+                    ),
                 }
             )
 
@@ -385,3 +513,157 @@ def search_alunos(request):
         logger = logging.getLogger(__name__)
         logger.error(f"Error in search_alunos: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
+
+
+@login_required
+def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
+    """Confirma a remoção da instrutoria de um aluno."""
+    Aluno = get_models()
+    aluno = get_object_or_404(Aluno, cpf=cpf)
+
+    # Importar o modelo Turma dinamicamente
+    from importlib import import_module
+
+    try:
+        turmas_module = import_module("turmas.models")
+        Turma = getattr(turmas_module, "Turma")
+
+        # Buscar turmas onde o aluno é instrutor
+        turmas_instrutor = Turma.objects.filter(instrutor=aluno, status="A")
+        turmas_instrutor_auxiliar = Turma.objects.filter(
+            instrutor_auxiliar=aluno, status="A"
+        )
+        turmas_auxiliar_instrucao = Turma.objects.filter(
+            auxiliar_instrucao=aluno, status="A"
+        )
+
+        # Juntar todas as turmas
+        turmas = (
+            list(turmas_instrutor)
+            + list(turmas_instrutor_auxiliar)
+            + list(turmas_auxiliar_instrucao)
+        )
+
+        # Se não houver turmas, redirecionar para a edição
+        if not turmas:
+            return redirect("alunos:editar_aluno", cpf=aluno.cpf)
+
+        # Se o método for POST, processar a confirmação
+        if request.method == "POST":
+            # Atualizar a situação do aluno
+            aluno.situacao = nova_situacao
+            aluno.save()
+
+            # Atualizar as turmas
+            for turma in turmas_instrutor:
+                turma.instrutor = None
+                turma.alerta_instrutor = True
+                turma.alerta_mensagem = f"O instrutor {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
+                turma.save()
+
+            for turma in turmas_instrutor_auxiliar:
+                turma.instrutor_auxiliar = None
+                turma.alerta_instrutor = True
+                turma.alerta_mensagem = f"O instrutor auxiliar {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
+                turma.save()
+
+            for turma in turmas_auxiliar_instrucao:
+                turma.auxiliar_instrucao = None
+                turma.alerta_instrutor = True
+                turma.alerta_mensagem = f"O auxiliar de instrução {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
+                turma.save()
+
+            messages.success(
+                request,
+                "Aluno atualizado com sucesso e removido das turmas como instrutor!",
+            )
+            return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
+
+        # Renderizar a página de confirmação
+        return render(
+            request,
+            "alunos/confirmar_remocao_instrutoria.html",
+            {
+                "aluno": aluno,
+                "nova_situacao": dict(Aluno.SITUACAO_CHOICES).get(
+                    nova_situacao
+                ),
+                "turmas_instrutor": turmas_instrutor,
+                "turmas_instrutor_auxiliar": turmas_instrutor_auxiliar,
+                "turmas_auxiliar_instrucao": turmas_auxiliar_instrucao,
+                "total_turmas": len(turmas),
+            },
+        )
+    except (ImportError, AttributeError) as e:
+        messages.error(request, f"Erro ao processar a solicitação: {str(e)}")
+        return redirect("alunos:editar_aluno", cpf=aluno.cpf)
+
+
+@login_required
+def search_instrutores(request):
+    """API endpoint para buscar alunos elegíveis para serem instrutores."""
+    try:
+        query = request.GET.get("q", "")
+        if len(query) < 2:
+            return JsonResponse([], safe=False)
+
+        Aluno = get_models()  # Use a função existente para obter o modelo
+
+        # Buscar apenas alunos ativos e que podem ser instrutores
+        alunos = Aluno.objects.filter(
+            Q(nome__icontains=query)
+            | Q(cpf__icontains=query)
+            | Q(numero_iniciatico__icontains=query),
+            situacao="A",  # Apenas alunos ativos
+        )[
+            :10
+        ]  # Limitar a 10 resultados
+
+        # Filtrar alunos que não estão em cursos pré-iniciáticos
+        # Isso depende da estrutura do seu modelo e relacionamentos
+        alunos_elegíveis = []
+        for aluno in alunos:
+            if aluno.pode_ser_instrutor:
+                alunos_elegíveis.append(
+                    {
+                        "cpf": aluno.cpf,
+                        "nome": aluno.nome,
+                        "numero_iniciatico": aluno.numero_iniciatico,
+                        "foto": aluno.foto.url if aluno.foto else None,
+                    }
+                )
+
+        return JsonResponse(alunos_elegíveis, safe=False)
+
+    except Exception as e:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in search_instrutores: {str(e)}")
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@login_required
+def get_aluno(request, cpf):
+    """API endpoint para obter dados de um aluno específico."""
+    try:
+        Aluno = get_aluno_model()
+        aluno = get_object_or_404(Aluno, cpf=cpf)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "aluno": {
+                    "cpf": aluno.cpf,
+                    "nome": aluno.nome,
+                    "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                    "foto": (
+                        aluno.foto.url
+                        if hasattr(aluno, "foto") and aluno.foto
+                        else None
+                    ),
+                },
+            }
+        )
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=404)

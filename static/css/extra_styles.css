@@ -1,0 +1,28 @@
+.list-group {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.list-group-item-action:hover {
+    background-color: #f8f9fa;
+}
+
+/* Garantir que o container do instrutor selecionado tenha a mesma largura do campo de pesquisa */
+.selected-instructor-container {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+    width: 100%; /* Garante que ocupe toda a largura disponível */
+    box-sizing: border-box; /* Inclui padding e border na largura total */
+}
+
+/* Estilo para a informação do instrutor selecionado */
+.selected-instructor-info {
+    font-size: 0.9rem;
+    word-break: break-word; /* Evita que textos longos quebrem o layout */
+}

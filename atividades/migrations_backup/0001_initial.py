@@ -5,39 +5,59 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='AtividadeAcademica',
+            name="AtividadeAcademica",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100)),
-                ('descricao', models.TextField(blank=True, null=True)),
-                ('data_inicio', models.DateTimeField(default=django.utils.timezone.now)),
-                ('data_fim', models.DateTimeField(blank=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nome", models.CharField(max_length=100)),
+                ("descricao", models.TextField(blank=True, null=True)),
+                (
+                    "data_inicio",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("data_fim", models.DateTimeField(blank=True, null=True)),
             ],
             options={
-                'verbose_name': 'Atividade Acadêmica',
-                'verbose_name_plural': 'Atividades Acadêmicas',
+                "verbose_name": "Atividade Acadêmica",
+                "verbose_name_plural": "Atividades Acadêmicas",
             },
         ),
         migrations.CreateModel(
-            name='AtividadeRitualistica',
+            name="AtividadeRitualistica",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100)),
-                ('descricao', models.TextField(blank=True, null=True)),
-                ('data_inicio', models.DateTimeField(default=django.utils.timezone.now)),
-                ('data_fim', models.DateTimeField(blank=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nome", models.CharField(max_length=100)),
+                ("descricao", models.TextField(blank=True, null=True)),
+                (
+                    "data_inicio",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("data_fim", models.DateTimeField(blank=True, null=True)),
             ],
             options={
-                'verbose_name': 'Atividade Ritualística',
-                'verbose_name_plural': 'Atividades Ritualísticas',
+                "verbose_name": "Atividade Ritualística",
+                "verbose_name_plural": "Atividades Ritualísticas",
             },
         ),
     ]

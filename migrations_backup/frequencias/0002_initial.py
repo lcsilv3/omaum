@@ -5,22 +5,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('frequencias', '0001_initial'),
-        ('turmas', '0001_initial'),
+        ("frequencias", "0001_initial"),
+        ("turmas", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='frequencia',
-            name='turma',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='turmas.turma'),
+            model_name="frequencia",
+            name="turma",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="turmas.turma"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='frequencia',
-            unique_together={('aluno', 'turma', 'data')},
+            name="frequencia",
+            unique_together={("aluno", "turma", "data")},
         ),
     ]

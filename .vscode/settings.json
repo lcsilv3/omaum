@@ -2,10 +2,25 @@
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,
     "python.linting.flake8Enabled": true,
-    "python.linting.lintOnSave": true,
-    "editor.formatOnSave": true,
     "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
     "python.linting.pylintArgs": [
-        "--rcfile=.pylintrc"
-    ]
+        "--ignore=migrations"
+    ],
+    "python.linting.flake8Args": [
+        "--exclude=migrations,venv,__pycache__,.git",
+        "--max-line-length=79"
+    ],
+    "python.formatting.blackArgs": [
+        "--line-length=79"
+    ],
+    "[python]": {
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true
+    }
 }

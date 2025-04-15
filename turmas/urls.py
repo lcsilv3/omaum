@@ -9,16 +9,25 @@ urlpatterns = [
     path("<int:id>/", views.detalhar_turma, name="detalhar_turma"),
     path("<int:id>/editar/", views.editar_turma, name="editar_turma"),
     path("<int:id>/excluir/", views.excluir_turma, name="excluir_turma"),
-    # Novas URLs para gerenciamento de alunos em turmas
     path(
-        "<int:turma_id>/alunos/",
+        "<int:id>/adicionar-aluno/",
+        views.adicionar_aluno_turma,
+        name="matricular_aluno",
+    ),
+    path(
+        "<int:id>/matricular-aluno/",
+        views.adicionar_aluno_turma,
+        name="matricular_aluno",
+    ),
+    path(
+        "<int:turma_id>/remover-aluno/<str:aluno_id>/",
+        views.remover_aluno_turma,
+        name="remover_aluno_turma",
+    ),
+    path("dashboard/", views.dashboard_turmas, name="dashboard"),
+    path(
+        "<int:id>/alunos/",
         views.listar_alunos_matriculados,
         name="listar_alunos_matriculados",
-    ),
-    path("<int:turma_id>/matricular/", views.matricular_aluno, name="matricular_aluno"),
-    path(
-        "<int:turma_id>/cancelar-matricula/<str:aluno_cpf>/",
-        views.cancelar_matricula,
-        name="cancelar_matricula",
     ),
 ]

@@ -4,27 +4,423 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Criar Nova Turma</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Criar Nova Turma</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para Lista</a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
 
     <form method="post">
         {% csrf_token %}
-
-        {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
+        
+        <div class="row">
+            <!-- Informações Básicas -->
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Informações Básicas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                                <div class="text-danger">{{ form.nome.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.curso.id_for_label }}" class="form-label">{{ form.curso.label }}</label>
+                            {{ form.curso }}
+                            {% if form.curso.errors %}
+                                <div class="text-danger">{{ form.curso.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.vagas.id_for_label }}" class="form-label">{{ form.vagas.label }}</label>
+                            {{ form.vagas }}
+                            {% if form.vagas.errors %}
+                                <div class="text-danger">{{ form.vagas.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
-        {% endfor %}
-
-        <button type="submit" class="btn btn-primary">Salvar</button>
-        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
+            
+            <!-- Datas e Horários -->
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Datas e Horários</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.data_inicio.id_for_label }}" class="form-label">{{ form.data_inicio.label }}</label>
+                                {{ form.data_inicio }}
+                                {% if form.data_inicio.errors %}
+                                    <div class="text-danger">{{ form.data_inicio.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.data_fim.id_for_label }}" class="form-label">{{ form.data_fim.label }}</label>
+                                {{ form.data_fim }}
+                                {% if form.data_fim.errors %}
+                                    <div class="text-danger">{{ form.data_fim.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.horario.id_for_label }}" class="form-label">{{ form.horario.label }}</label>
+                            {{ form.horario }}
+                            {% if form.horario.errors %}
+                                <div class="text-danger">{{ form.horario.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.dias_semana.id_for_label }}" class="form-label">{{ form.dias_semana.label }}</label>
+                            {{ form.dias_semana }}
+                            {% if form.dias_semana.errors %}
+                                <div class="text-danger">{{ form.dias_semana.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instrutores -->
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Instrutores</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="search-instrutor" class="form-label">Instrutor Principal</label>
+                        <input type="text" id="search-instrutor" class="form-control" 
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." 
+                               autocomplete="off">
+                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-instrutor-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-instrutor-info">Nenhum instrutor selecionado</div>
+                        </div>
+                        {{ form.instrutor }}
+                        {% if form.instrutor.errors %}
+                            <div class="text-danger">{{ form.instrutor.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
+                        <input type="text" id="search-instrutor-auxiliar" class="form-control" 
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." 
+                               autocomplete="off">
+                        <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-instrutor-auxiliar-info">Nenhum instrutor selecionado</div>
+                        </div>
+                        {{ form.instrutor_auxiliar }}
+                        {% if form.instrutor_auxiliar.errors %}
+                            <div class="text-danger">{{ form.instrutor_auxiliar.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
+                        <input type="text" id="search-auxiliar-instrucao" class="form-control" 
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." 
+                               autocomplete="off">
+                        <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-auxiliar-instrucao-info">Nenhum instrutor selecionado</div>
+                        </div>
+                        {{ form.auxiliar_instrucao }}
+                        {% if form.auxiliar_instrucao.errors %}
+                            <div class="text-danger">{{ form.auxiliar_instrucao.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações Adicionais -->
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Informações Adicionais</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="{{ form.descricao.id_for_label }}" class="form-label">{{ form.descricao.label }}</label>
+                    {{ form.descricao }}
+                    {% if form.descricao.errors %}
+                        <div class="text-danger">{{ form.descricao.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.local.id_for_label }}" class="form-label">{{ form.local.label }}</label>
+                    {{ form.local }}
+                    {% if form.local.errors %}
+                        <div class="text-danger">{{ form.local.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Criar Turma</button>
+        </div>
     </form>
 </div>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Esconder os campos select originais
+        document.getElementById('{{ form.instrutor.id_for_label }}').style.display = 'none';
+        document.getElementById('{{ form.instrutor_auxiliar.id_for_label }}').style.display = 'none';
+        document.getElementById('{{ form.auxiliar_instrucao.id_for_label }}').style.display = 'none';
+        
+        // Configurar busca para Instrutor Principal
+        setupInstructorSearch(
+            'search-instrutor',
+            'search-results-instrutor',
+            'selected-instrutor-container',
+            'selected-instrutor-info',
+            '{{ form.instrutor.id_for_label }}'
+        );
+        
+        // Configurar busca para Instrutor Auxiliar
+        setupInstructorSearch(
+            'search-instrutor-auxiliar',
+            'search-results-instrutor-auxiliar',
+            'selected-instrutor-auxiliar-container',
+            'selected-instrutor-auxiliar-info',
+            '{{ form.instrutor_auxiliar.id_for_label }}'
+        );
+        
+        // Configurar busca para Auxiliar de Instrução
+        setupInstructorSearch(
+            'search-auxiliar-instrucao',
+            'search-results-auxiliar-instrucao',
+            'selected-auxiliar-instrucao-container',
+            'selected-auxiliar-instrucao-info',
+            '{{ form.auxiliar_instrucao.id_for_label }}'
+        );
+        
+        // Inicializar valores selecionados se estiver editando
+        initializeSelectedInstructors();
+    });
+    
+    function setupInstructorSearch(searchId, resultsId, containerId, infoId, selectId) {
+        const searchInput = document.getElementById(searchId);
+        const searchResults = document.getElementById(resultsId);
+        const selectedContainer = document.getElementById(containerId);
+        const selectedInfo = document.getElementById(infoId);
+        const selectElement = document.getElementById(selectId);
+        
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            
+            const query = this.value.trim();
+            
+            // Clear results if query is too short
+            if (query.length < 2) {
+                searchResults.innerHTML = '';
+                searchResults.style.display = 'none';
+                return;
+            }
+            
+            // Set a timeout to avoid making too many requests
+            searchTimeout = setTimeout(function() {
+                // Show loading indicator
+                searchResults.innerHTML = '<div class="list-group-item text-muted">Buscando...</div>';
+                searchResults.style.display = 'block';
+                
+                // Get CSRF token
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                fetch(`/alunos/search/?q=${encodeURIComponent(query)}`, {
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    searchResults.innerHTML = '';
+                    
+                    if (data.error) {
+                        // Handle error response
+                        searchResults.innerHTML = `<div class="list-group-item text-danger">Erro ao buscar alunos: ${data.error}</div>`;
+                        return;
+                    }
+                    
+                    if (data.length === 0) {
+                        searchResults.innerHTML = '<div class="list-group-item">Nenhum aluno encontrado</div>';
+                        return;
+                    }
+                    
+                    // Display results
+                    data.forEach(aluno => {
+                        const item = document.createElement('a');
+                        item.href = '#';
+                        item.className = 'list-group-item list-group-item-action';
+                        item.innerHTML = `
+                            <div class="d-flex justify-content-between">
+                                <div>${aluno.nome}</div>
+                                <div class="text-muted">
+                                    <small>CPF: ${aluno.cpf}</small>
+                                    ${aluno.numero_iniciatico !== "N/A" ? `<small class="ms-2">Nº: ${aluno.numero_iniciatico}</small>` : ''}
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Add click event to select this aluno
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            selectInstructor(aluno, searchInput, searchResults, selectedContainer, selectedInfo, selectElement);
+                        });
+                        
+                        searchResults.appendChild(item);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    searchResults.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar alunos</div>';
+                });
+            }, 300);
+        });
+        
+        // Hide results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+        
+        // Function to select an aluno
+        function selectInstructor(aluno, searchInput, searchResults, selectedContainer, selectedInfo, selectElement) {
+            // Update the hidden select with the selected aluno's CPF
+            selectElement.value = aluno.cpf;
+            
+            // Update the search input with the selected aluno's name
+            searchInput.value = aluno.nome;
+            
+            // Show the selected aluno info
+            selectedInfo.innerHTML = `
+                <strong>${aluno.nome}</strong><br>
+                CPF: ${aluno.cpf}<br>
+                ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
+            `;
+            
+            // Show the container
+            selectedContainer.classList.remove('d-none');
+            
+            // Hide the search results
+            searchResults.style.display = 'none';
+        }
+        
+        function initializeSelectedInstructors() {
+            // Verificar se há valores pré-selecionados (útil para edição)
+            const instrutorSelect = document.getElementById('{{ form.instrutor.id_for_label }}');
+            const instrutorAuxiliarSelect = document.getElementById('{{ form.instrutor_auxiliar.id_for_label }}');
+            const auxiliarInstrucaoSelect = document.getElementById('{{ form.auxiliar_instrucao.id_for_label }}');
+            
+            // Inicializar instrutor principal se já estiver selecionado
+            if (instrutorSelect.value) {
+                fetchInstructorData(instrutorSelect.value, function(aluno) {
+                    document.getElementById('search-instrutor').value = aluno.nome;
+                    document.getElementById('selected-instrutor-info').innerHTML = `
+                        <strong>${aluno.nome}</strong><br>
+                        CPF: ${aluno.cpf}<br>
+                        ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
+                    `;
+                    document.getElementById('selected-instrutor-container').classList.remove('d-none');
+                });
+            }
+            
+            // Inicializar instrutor auxiliar se já estiver selecionado
+            if (instrutorAuxiliarSelect.value) {
+                fetchInstructorData(instrutorAuxiliarSelect.value, function(aluno) {
+                    document.getElementById('search-instrutor-auxiliar').value = aluno.nome;
+                    document.getElementById('selected-instrutor-auxiliar-info').innerHTML = `
+                        <strong>${aluno.nome}</strong><br>
+                        CPF: ${aluno.cpf}<br>
+                        ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
+                    `;
+                    document.getElementById('selected-instrutor-auxiliar-container').classList.remove('d-none');
+                });
+            }
+            
+            // Inicializar auxiliar de instrução se já estiver selecionado
+            if (auxiliarInstrucaoSelect.value) {
+                fetchInstructorData(auxiliarInstrucaoSelect.value, function(aluno) {
+                    document.getElementById('search-auxiliar-instrucao').value = aluno.nome;
+                    document.getElementById('selected-auxiliar-instrucao-info').innerHTML = `
+                        <strong>${aluno.nome}</strong><br>
+                        CPF: ${aluno.cpf}<br>
+                        ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
+                    `;
+                    document.getElementById('selected-auxiliar-instrucao-container').classList.remove('d-none');
+                });
+            }
+        }
+        
+        function fetchInstructorData(cpf, callback) {
+            // Get CSRF token
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch(`/alunos/get-aluno/${cpf}/`, {
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    callback(data.aluno);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching instructor data:', error);
+            });
+        }
+    }
+</script>
+{% endblock %}

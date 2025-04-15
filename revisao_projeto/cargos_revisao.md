@@ -10,37 +10,41 @@ from django import forms
 from .models import CargoAdministrativo
 from alunos.models import Aluno
 
+
 class CargoAdministrativoForm(forms.ModelForm):
     """
     Formulário para criação e edição de Cargos Administrativos.
     """
+
     class Meta:
         model = CargoAdministrativo
-        fields = ['codigo_cargo', 'nome', 'descricao']
+        fields = ["codigo_cargo", "nome", "descricao"]
         widgets = {
-            'codigo_cargo': forms.TextInput(attrs={'class': 'form-control'}),
-            'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            "codigo_cargo": forms.TextInput(attrs={"class": "form-control"}),
+            "nome": forms.TextInput(attrs={"class": "form-control"}),
+            "descricao": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
         }
         labels = {
-            'codigo_cargo': 'Código do Cargo',
-            'nome': 'Nome',
-            'descricao': 'Descrição',
+            "codigo_cargo": "Código do Cargo",
+            "nome": "Nome",
+            "descricao": "Descrição",
         }
         help_texts = {
-            'codigo_cargo': 'Código único que identifica o cargo (ex: COORD, DIR, etc.)',
-            'nome': 'Nome completo do cargo administrativo',
-            'descricao': 'Descrição detalhada das responsabilidades do cargo',
+            "codigo_cargo": "Código único que identifica o cargo (ex: COORD, DIR, etc.)",
+            "nome": "Nome completo do cargo administrativo",
+            "descricao": "Descrição detalhada das responsabilidades do cargo",
         }
         error_messages = {
-            'codigo_cargo': {
-                'unique': 'Este código de cargo já está em uso. Por favor, escolha outro.',
-                'required': 'O código do cargo é obrigatório.',
-                'max_length': 'O código do cargo não pode ter mais de 10 caracteres.',
+            "codigo_cargo": {
+                "unique": "Este código de cargo já está em uso. Por favor, escolha outro.",
+                "required": "O código do cargo é obrigatório.",
+                "max_length": "O código do cargo não pode ter mais de 10 caracteres.",
             },
-            'nome': {
-                'required': 'O nome do cargo é obrigatório.',
-                'max_length': 'O nome do cargo não pode ter mais de 100 caracteres.',
+            "nome": {
+                "required": "O nome do cargo é obrigatório.",
+                "max_length": "O nome do cargo não pode ter mais de 100 caracteres.",
             },
         }
 
@@ -49,7 +53,7 @@ class CargoAdministrativoForm(forms.ModelForm):
         Validação personalizada para o campo codigo_cargo.
         Converte o código para maiúsculas e remove espaços extras.
         """
-        codigo = self.cleaned_data.get('codigo_cargo')
+        codigo = self.cleaned_data.get("codigo_cargo")
         if codigo:
             return codigo.upper().strip()
         return codigo
@@ -59,30 +63,35 @@ class CargoAdministrativoForm(forms.ModelForm):
         Validação personalizada para o campo nome.
         Capitaliza a primeira letra de cada palavra e remove espaços extras.
         """
-        nome = self.cleaned_data.get('nome')
+        nome = self.cleaned_data.get("nome")
         if nome:
-            return ' '.join(word.capitalize() for word in nome.split())
+            return " ".join(word.capitalize() for word in nome.split())
         return nome
+
 
 class AtribuirCargoForm(forms.Form):
     aluno = forms.ModelChoiceField(
         queryset=Aluno.objects.all(),
         label="Aluno",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
     cargo = forms.ModelChoiceField(
         queryset=CargoAdministrativo.objects.all(),
         label="Cargo",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
     data_inicio = forms.DateField(
         label="Data de Início",
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+        widget=forms.DateInput(
+            attrs={"class": "form-control", "type": "date"}
+        ),
     )
     data_fim = forms.DateField(
         label="Data de Término",
         required=False,
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+        widget=forms.DateInput(
+            attrs={"class": "form-control", "type": "date"}
+        ),
     )
 
 ```
@@ -100,47 +109,59 @@ from django.contrib.auth.decorators import login_required
 from .forms import AtribuirCargoForm
 from .models import AtribuicaoCargo
 
+
 # Função para obter modelos usando importlib
 def get_models():
-    CargoAdministrativo = importlib.import_module('cargos.models').CargoAdministrativo
+    CargoAdministrativo = importlib.import_module(
+        "cargos.models"
+    ).CargoAdministrativo
     return CargoAdministrativo
+
 
 # Função para obter formulários usando importlib
 def get_forms():
-    CargoAdministrativoForm = importlib.import_module('cargos.formulario_cargo').CargoAdministrativoForm
+    CargoAdministrativoForm = importlib.import_module(
+        "cargos.formulario_cargo"
+    ).CargoAdministrativoForm
     return CargoAdministrativoForm
+
 
 @login_required
 def listar_cargos(request):
     """Lista todos os cargos administrativos."""
     CargoAdministrativo = get_models()
     cargos = CargoAdministrativo.objects.all()
-    return render(request, 'cargos/listar_cargos.html', {'cargos': cargos})
+    return render(request, "cargos/listar_cargos.html", {"cargos": cargos})
+
 
 @login_required
 def criar_cargo(request):
     """Cria um novo cargo administrativo."""
     CargoAdministrativoForm = get_forms()
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = CargoAdministrativoForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Cargo administrativo criado com sucesso!')
-            return redirect('cargos:listar_cargos')
+            messages.success(
+                request, "Cargo administrativo criado com sucesso!"
+            )
+            return redirect("cargos:listar_cargos")
         else:
-            messages.error(request, 'Por favor, corrija os erros abaixo.')
+            messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
         form = CargoAdministrativoForm()
 
-    return render(request, 'cargos/criar_cargo.html', {'form': form})
+    return render(request, "cargos/criar_cargo.html", {"form": form})
+
 
 @login_required
 def detalhar_cargo(request, id):
     """Exibe os detalhes de um cargo administrativo."""
     CargoAdministrativo = get_models()
     cargo = get_object_or_404(CargoAdministrativo, id=id)
-    return render(request, 'cargos/detalhar_cargo.html', {'cargo': cargo})
+    return render(request, "cargos/detalhar_cargo.html", {"cargo": cargo})
+
 
 @login_required
 def editar_cargo(request, id):
@@ -150,18 +171,23 @@ def editar_cargo(request, id):
 
     cargo = get_object_or_404(CargoAdministrativo, id=id)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = CargoAdministrativoForm(request.POST, instance=cargo)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Cargo administrativo atualizado com sucesso!')
-            return redirect('cargos:listar_cargos')
+            messages.success(
+                request, "Cargo administrativo atualizado com sucesso!"
+            )
+            return redirect("cargos:listar_cargos")
         else:
-            messages.error(request, 'Por favor, corrija os erros abaixo.')
+            messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
         form = CargoAdministrativoForm(instance=cargo)
 
-    return render(request, 'cargos/editar_cargo.html', {'form': form, 'cargo': cargo})
+    return render(
+        request, "cargos/editar_cargo.html", {"form": form, "cargo": cargo}
+    )
+
 
 @login_required
 def excluir_cargo(request, id):
@@ -169,37 +195,39 @@ def excluir_cargo(request, id):
     CargoAdministrativo = get_models()
     cargo = get_object_or_404(CargoAdministrativo, id=id)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         cargo.delete()
-        messages.success(request, 'Cargo administrativo excluído com sucesso!')
-        return redirect('cargos:listar_cargos')
+        messages.success(request, "Cargo administrativo excluído com sucesso!")
+        return redirect("cargos:listar_cargos")
 
-    return render(request, 'cargos/excluir_cargo.html', {'cargo': cargo})
+    return render(request, "cargos/excluir_cargo.html", {"cargo": cargo})
+
 
 @login_required
 def atribuir_cargo(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AtribuirCargoForm(request.POST)
         if form.is_valid():
             atribuicao = AtribuicaoCargo(
-                aluno=form.cleaned_data['aluno'],
-                cargo=form.cleaned_data['cargo'],
-                data_inicio=form.cleaned_data['data_inicio'],
-                data_fim=form.cleaned_data['data_fim']
+                aluno=form.cleaned_data["aluno"],
+                cargo=form.cleaned_data["cargo"],
+                data_inicio=form.cleaned_data["data_inicio"],
+                data_fim=form.cleaned_data["data_fim"],
             )
             atribuicao.save()
-            messages.success(request, 'Cargo atribuído com sucesso!')
-            return redirect('cargos:listar_cargos')
+            messages.success(request, "Cargo atribuído com sucesso!")
+            return redirect("cargos:listar_cargos")
     else:
         form = AtribuirCargoForm()
 
-    return render(request, 'cargos/atribuir_cargo.html', {'form': form})
+    return render(request, "cargos/atribuir_cargo.html", {"form": form})
+
 
 @login_required
 def remover_atribuicao_cargo(request, id):
     """Remove a atribuição de um cargo a um aluno."""
     # Implementação pendente
-    return render(request, 'cargos/remover_atribuicao.html')
+    return render(request, "cargos/remover_atribuicao.html")
 
 ```
 
@@ -212,16 +240,20 @@ def remover_atribuicao_cargo(request, id):
 from django.urls import path
 from . import views
 
-app_name = 'cargos'
+app_name = "cargos"
 
 urlpatterns = [
-    path('', views.listar_cargos, name='listar_cargos'),
-    path('criar/', views.criar_cargo, name='criar_cargo'),
-    path('<int:id>/detalhes/', views.detalhar_cargo, name='detalhar_cargo'),
-    path('<int:id>/editar/', views.editar_cargo, name='editar_cargo'),
-    path('<int:id>/excluir/', views.excluir_cargo, name='excluir_cargo'),
-    path('atribuir/', views.atribuir_cargo, name='atribuir_cargo'),
-    path('remover-atribuicao/<int:id>/', views.remover_atribuicao_cargo, name='remover_atribuicao_cargo'),
+    path("", views.listar_cargos, name="listar_cargos"),
+    path("criar/", views.criar_cargo, name="criar_cargo"),
+    path("<int:id>/detalhes/", views.detalhar_cargo, name="detalhar_cargo"),
+    path("<int:id>/editar/", views.editar_cargo, name="editar_cargo"),
+    path("<int:id>/excluir/", views.excluir_cargo, name="excluir_cargo"),
+    path("atribuir/", views.atribuir_cargo, name="atribuir_cargo"),
+    path(
+        "remover-atribuicao/<int:id>/",
+        views.remover_atribuicao_cargo,
+        name="remover_atribuicao_cargo",
+    ),
 ]
 
 ```
@@ -235,14 +267,20 @@ urlpatterns = [
 from django.db import models
 from alunos.models import Aluno
 
+
 class CargoAdministrativo(models.Model):
     """
-    Representa um cargo administrativo no sistema. O cargo administrativo possui um código único, 
+    Representa um cargo administrativo no sistema. O cargo administrativo possui um código único,
     um nome e uma descrição opcional.
     """
-    codigo_cargo = models.CharField(max_length=10, unique=True, verbose_name="Código do Cargo")
+
+    codigo_cargo = models.CharField(
+        max_length=10, unique=True, verbose_name="Código do Cargo"
+    )
     nome = models.CharField(max_length=100, verbose_name="Nome")
-    descricao = models.TextField(blank=True, null=True, verbose_name="Descrição")
+    descricao = models.TextField(
+        blank=True, null=True, verbose_name="Descrição"
+    )
 
     def __str__(self):
         return self.nome
@@ -250,7 +288,8 @@ class CargoAdministrativo(models.Model):
     class Meta:
         verbose_name = "Cargo Administrativo"
         verbose_name_plural = "Cargos Administrativos"
-        ordering = ['nome']
+        ordering = ["nome"]
+
 
 class AtribuicaoCargo(models.Model):
     aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE)

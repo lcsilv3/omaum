@@ -1,9 +1,6 @@
 from django.db import models
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
-
-# Removing unused import:
-# from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 
@@ -19,6 +16,16 @@ class Aluno(models.Model):
     FATOR_RH_CHOICES = [
         ("+", "Positivo"),
         ("-", "Negativo"),
+    ]
+
+    # Opções para o campo situacao
+    SITUACAO_CHOICES = [
+        ("ATIVO", "Ativo"),
+        ("AFASTADO", "Afastado"),
+        ("ESPECIAIS", "Especiais"),
+        ("EXCLUIDO", "Excluído"),
+        ("FALECIDO", "Falecido"),
+        ("LOI", "LOI"),
     ]
 
     # Validadores
@@ -44,10 +51,21 @@ class Aluno(models.Model):
     )
     email = models.EmailField(unique=True, verbose_name=_("E-mail"))
     foto = models.ImageField(
-        upload_to="alunos/fotos/", null=True, blank=True, verbose_name=_("Foto")
+        upload_to="alunos/fotos/",
+        null=True,
+        blank=True,
+        verbose_name=_("Foto"),
     )
     sexo = models.CharField(
         max_length=1, choices=SEXO_CHOICES, default="M", verbose_name=_("Sexo")
+    )
+
+    # Novo campo situacao
+    situacao = models.CharField(
+        max_length=10,
+        choices=SITUACAO_CHOICES,
+        default="ATIVO",
+        verbose_name=_("Situação"),
     )
 
     # Dados iniciáticos - Tornando estes campos nullable
@@ -59,14 +77,19 @@ class Aluno(models.Model):
         verbose_name=_("Número Iniciático"),
     )
     nome_iniciatico = models.CharField(
-        max_length=100, null=True, blank=True, verbose_name=_("Nome Iniciático")
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name=_("Nome Iniciático"),
     )
 
     # Nacionalidade e naturalidade
     nacionalidade = models.CharField(
         max_length=50, default="Brasileira", verbose_name=_("Nacionalidade")
     )
-    naturalidade = models.CharField(max_length=50, verbose_name=_("Naturalidade"))
+    naturalidade = models.CharField(
+        max_length=50, verbose_name=_("Naturalidade")
+    )
 
     # Endereço
     rua = models.CharField(max_length=100, verbose_name=_("Rua"))
@@ -89,11 +112,15 @@ class Aluno(models.Model):
         verbose_name=_("Celular do Primeiro Contato"),
     )
     tipo_relacionamento_primeiro_contato = models.CharField(
-        max_length=50, verbose_name=_("Tipo de Relacionamento do Primeiro Contato")
+        max_length=50,
+        verbose_name=_("Tipo de Relacionamento do Primeiro Contato"),
     )
 
     nome_segundo_contato = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name=_("Nome do Segundo Contato")
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_("Nome do Segundo Contato"),
     )
     celular_segundo_contato = models.CharField(
         max_length=11,
@@ -110,27 +137,72 @@ class Aluno(models.Model):
     )
 
     # Informações médicas
-    tipo_sanguineo = models.CharField(max_length=3, verbose_name=_("Tipo Sanguíneo"))
+    tipo_sanguineo = models.CharField(
+        max_length=3, verbose_name=_("Tipo Sanguíneo")
+    )
     fator_rh = models.CharField(
         max_length=1, choices=FATOR_RH_CHOICES, verbose_name=_("Fator RH")
     )
-    alergias = models.TextField(blank=True, null=True, verbose_name=_("Alergias"))
+    alergias = models.TextField(
+        blank=True, null=True, verbose_name=_("Alergias")
+    )
     condicoes_medicas_gerais = models.TextField(
         blank=True, null=True, verbose_name=_("Condições Médicas Gerais")
     )
     convenio_medico = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name=_("Convênio Médico")
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_("Convênio Médico"),
     )
     hospital = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name=_("Hospital de Preferência")
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_("Hospital de Preferência"),
     )
 
     # Metadados - Definindo um valor padrão para created_at
-    created_at = models.DateTimeField(default=timezone.now, verbose_name=_("Criado em"))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Atualizado em"))
+    created_at = models.DateTimeField(
+        default=timezone.now, verbose_name=_("Criado em")
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name=_("Atualizado em")
+    )
 
     def __str__(self):
         return self.nome
+
+    @property
+    def esta_ativo(self):
+        """Verifica se o aluno está ativo."""
+        return self.situacao == "ATIVO"
+
+    @property
+    def pode_ser_instrutor(self):
+        """Verifica se o aluno pode ser instrutor."""
+        from importlib import import_module
+        from django.db.models import Q
+
+        # Verificar se o aluno está ativo
+        if not self.esta_ativo:
+            return False
+
+        try:
+            # Importar o modelo Matricula dinamicamente
+            matriculas_module = import_module("matriculas.models")
+            Matricula = getattr(matriculas_module, "Matricula")
+
+            # Verificar se o aluno está matriculado em algum curso que não seja "Pré-iniciático"
+            matriculas = Matricula.objects.filter(
+                aluno=self, turma__curso__nome__icontains="Pré-iniciático"
+            )
+
+            # Se não tiver matrículas em cursos "Pré-iniciático", pode ser instrutor
+            return not matriculas.exists()
+        except (ImportError, AttributeError):
+            # Se houver erro na importação, retorna False por segurança
+            return False
 
     def clean(self):
         """Validação personalizada para o modelo."""

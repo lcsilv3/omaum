@@ -1,57 +1,65 @@
 import os
 import chardet
 
+
 def collect_files_by_app(project_root):
     # Dicionário para armazenar arquivos por app/funcionalidade
     apps_files = {}
-    
+
     for root, dirs, files in os.walk(project_root):
         # Ignorar diretórios de ambiente virtual e cache
-        if 'venv' in root or '__pycache__' in root:
+        if "venv" in root or "__pycache__" in root:
             continue
-        
+
         # Identificar o app/funcionalidade com base no caminho
         relative_path = os.path.relpath(root, project_root)
-        app_name = relative_path.split(os.path.sep)[0] if relative_path != '.' else 'core'
-        
+        app_name = (
+            relative_path.split(os.path.sep)[0]
+            if relative_path != "."
+            else "core"
+        )
+
         # Inicializar a estrutura para o app se ainda não existir
         if app_name not in apps_files:
             apps_files[app_name] = {
-                'forms.py': [],
-                'views.py': [],
-                'urls.py': [],
-                'models.py': [],
-                'templates': []
+                "forms.py": [],
+                "views.py": [],
+                "urls.py": [],
+                "models.py": [],
+                "templates": [],
             }
-        
+
         for file in files:
-            if file in ['forms.py', 'views.py', 'urls.py', 'models.py']:
+            if file in ["forms.py", "views.py", "urls.py", "models.py"]:
                 apps_files[app_name][file].append(os.path.join(root, file))
-            elif file.endswith('.html'):
-                apps_files[app_name]['templates'].append(os.path.join(root, file))
-    
+            elif file.endswith(".html"):
+                apps_files[app_name]["templates"].append(
+                    os.path.join(root, file)
+                )
+
     return apps_files
+
 
 def write_file_contents(output_file, filepath):
     # Detectar codificação do arquivo
-    with open(filepath, 'rb') as raw_file:
+    with open(filepath, "rb") as raw_file:
         raw_data = raw_file.read()
         result = chardet.detect(raw_data)
-        encoding = result['encoding'] or 'utf-8'  # Fallback para utf-8
-    
+        encoding = result["encoding"] or "utf-8"  # Fallback para utf-8
+
     try:
-        with open(filepath, 'r', encoding=encoding) as file:
+        with open(filepath, "r", encoding=encoding) as file:
             relative_path = os.path.relpath(filepath)
             output_file.write(f"\n\n### Arquivo: {relative_path}\n\n")
-            
+
             # Determinar o tipo de linguagem para o bloco de código
-            if filepath.endswith('.html'):
-                language = 'html'
-            elif filepath.endswith('.py'):
-                language = 'python'
+            if filepath.endswith(".html"):
+                language = "html"
+            elif filepath.endswith(".py"):
+                language = "python"
             else:
-                language = 'text'
-                
+                language = "text"
+
             output_file.write(f"```{language}\n")
             output_file.write(file.read())
             output_file.write("\n```\n")
@@ -59,42 +67,46 @@ def write_file_contents(output_file, filepath):
         output_file.write(f"\n\n### Arquivo: {filepath}\n\n")
         output_file.write(f"```\nErro ao ler o arquivo: {str(e)}\n```\n")
 
+
 def main():
     project_root = input("Digite o diretório raiz do seu projeto Django: ")
     output_dir = "revisao_projeto"
-    
+
     # Criar diretório de saída se não existir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    
+
     apps_files = collect_files_by_app(project_root)
-    
+
     for app_name, file_types in apps_files.items():
         # Verificar se há arquivos para este app
         has_files = any(files for files in file_types.values())
         if not has_files:
             continue
-            
+
         output_filename = os.path.join(output_dir, f"{app_name}_revisao.md")
-        
-        with open(output_filename, 'w', encoding='utf-8') as output_file:
+
+        with open(output_filename, "w", encoding="utf-8") as output_file:
             output_file.write(f"# Revisão da Funcionalidade: {app_name}\n")
-            
+
             for file_type, file_paths in file_types.items():
                 if not file_paths:
                     continue
-                    
-                if file_type == 'templates':
+
+                if file_type == "templates":
                     output_file.write(f"\n## Arquivos de Template:\n")
                 else:
                     output_file.write(f"\n## Arquivos {file_type}:\n")
-                
+
                 for filepath in sorted(file_paths):
                     write_file_contents(output_file, filepath)
-        
-        print(f"Conteúdo da funcionalidade '{app_name}' foi escrito em {output_filename}")
-    
+
+        print(
+            f"Conteúdo da funcionalidade '{app_name}' foi escrito em {output_filename}"
+        )
+
     print(f"Revisão completa! Arquivos gerados no diretório '{output_dir}'")
+
 
 if __name__ == "__main__":
     main()
