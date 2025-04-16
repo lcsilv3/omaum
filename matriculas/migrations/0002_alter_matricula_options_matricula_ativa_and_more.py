@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("alunos", "0001_initial"),
         ("matriculas", "0001_initial"),
@@ -24,7 +23,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="matricula",
             name="ativa",
-            field=models.BooleanField(default=True, verbose_name="Matrícula Ativa"),
+            field=models.BooleanField(
+                default=True, verbose_name="Matrícula Ativa"
+            ),
         ),
         migrations.AlterField(
             model_name="matricula",
@@ -44,7 +45,11 @@ class Migration(migrations.Migration):
             model_name="matricula",
             name="status",
             field=models.CharField(
-                choices=[("A", "Ativa"), ("C", "Cancelada"), ("F", "Finalizada")],
+                choices=[
+                    ("A", "Ativa"),
+                    ("C", "Cancelada"),
+                    ("F", "Finalizada"),
+                ],
                 default="A",
                 max_length=1,
                 verbose_name="Status",

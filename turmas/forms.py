@@ -68,9 +68,9 @@ class TurmaForm(forms.ModelForm):
         # Convert date format for display in the form
         if self.instance and self.instance.pk:
             if self.instance.data_inicio:
-                self.initial["data_inicio"] = (
-                    self.instance.data_inicio.strftime("%Y-%m-%d")
-                )
+                self.initial[
+                    "data_inicio"
+                ] = self.instance.data_inicio.strftime("%Y-%m-%d")
             if self.instance.data_fim:
                 self.initial["data_fim"] = self.instance.data_fim.strftime(
                     "%Y-%m-%d"

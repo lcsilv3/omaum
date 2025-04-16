@@ -1,9 +1,21 @@
+"""
+Admin configuration for the Alunos app.
+
+This module contains the admin interface customizations for the Alunos app.
+"""
+
 from django.contrib import admin
-from .models import Aluno
+from .models import Aluno  # Corrigido o erro de importação relativo
 
 
 @admin.register(Aluno)
 class AlunoAdmin(admin.ModelAdmin):
+    """
+    A brief description of what this class does.
+
+    Add more details here if necessary.
+    """
+
     list_display = ["nome", "numero_iniciatico", "email", "cpf", "sexo"]
     search_fields = ["nome", "numero_iniciatico", "email", "cpf"]
     list_filter = ["sexo", "created_at"]
@@ -24,8 +36,14 @@ class AlunoAdmin(admin.ModelAdmin):
                 ]
             },
         ),
-        ("Dados Iniciáticos", {"fields": ["numero_iniciatico", "nome_iniciatico"]}),
-        ("Nacionalidade e Naturalidade", {"fields": ["nacionalidade", "naturalidade"]}),
+        (
+            "Dados Iniciáticos",
+            {"fields": ["numero_iniciatico", "nome_iniciatico"]},
+        ),
+        (
+            "Nacionalidade e Naturalidade",
+            {"fields": ["nacionalidade", "naturalidade"]},
+        ),
         (
             "Endereço",
             {
@@ -71,3 +89,11 @@ class AlunoAdmin(admin.ModelAdmin):
             {"fields": ["created_at", "updated_at"], "classes": ["collapse"]},
         ),
     ]
+
+
+class MyClass:
+    """
+    A brief description of what this class does.
+
+    Add more details here if necessary.
+    """

@@ -11,7 +11,9 @@ def listar_matriculas(request):
     """Lista todas as matrículas."""
     matriculas = Matricula.objects.all().select_related("aluno", "turma")
     return render(
-        request, "matriculas/listar_matriculas.html", {"matriculas": matriculas}
+        request,
+        "matriculas/listar_matriculas.html",
+        {"matriculas": matriculas},
     )
 
 
@@ -41,7 +43,8 @@ def realizar_matricula(request):
         # Verificar se já existe matrícula
         if Matricula.objects.filter(aluno=aluno, turma=turma).exists():
             messages.warning(
-                request, f"O aluno {aluno.nome} já está matriculado nesta turma."
+                request,
+                f"O aluno {aluno.nome} já está matriculado nesta turma.",
             )
             return redirect("matriculas:listar_matriculas")
 

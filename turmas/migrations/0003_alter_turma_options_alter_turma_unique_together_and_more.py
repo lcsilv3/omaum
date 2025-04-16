@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("cursos", "0001_initial"),
         ("turmas", "0002_delete_matricula"),

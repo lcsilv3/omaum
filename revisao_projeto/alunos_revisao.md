@@ -212,7 +212,8 @@ class AlunoForm(forms.ModelForm):
         if email:
             email = email.lower()  # Converte para minúsculas
 
-            # Verifica se o email já existe (exceto para o próprio registro em caso de edição)
+            # Verifica se o email já existe (exceto para o próprio registro em
+            # caso de edição)
             Aluno = get_aluno_model()
             instance = getattr(self, "instance", None)
             if instance and instance.pk:
@@ -252,7 +253,8 @@ class AlunoForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             situacao_anterior = self.instance.situacao
 
-            # Se a situação mudou de "ATIVO" para outra coisa, verificar se o aluno é instrutor em alguma turma
+            # Se a situação mudou de "ATIVO" para outra coisa, verificar se o
+            # aluno é instrutor em alguma turma
             if situacao_anterior == "ATIVO" and situacao != "ATIVO":
                 from importlib import import_module
 
@@ -281,7 +283,8 @@ class AlunoForm(forms.ModelForm):
                     )
 
                     if total_turmas > 0:
-                        # Não vamos lançar erro aqui, apenas registrar para mostrar alerta na view
+                        # Não vamos lançar erro aqui, apenas registrar para
+                        # mostrar alerta na view
                         self.aluno_e_instrutor = True
                         self.total_turmas_como_instrutor = total_turmas
                 except (ImportError, AttributeError):

@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("alunos", "0001_initial"),
         ("cargos", "0001_initial"),
@@ -29,7 +28,8 @@ class Migration(migrations.Migration):
                 (
                     "aluno",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="alunos.aluno"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="alunos.aluno",
                     ),
                 ),
                 (
