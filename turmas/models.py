@@ -1,5 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 
@@ -13,7 +15,6 @@ class Turma(models.Model):
         ("I", "Inativa"),
         ("C", "Concluída"),
     ]
-
     # Informações básicas
     nome = models.CharField(max_length=100, verbose_name="Nome da Turma")
     curso = models.ForeignKey(
@@ -28,7 +29,7 @@ class Turma(models.Model):
 
     # Datas
     data_inicio = models.DateField(verbose_name="Data de Início")
-    data_fim = models.DateField(verbose_name="Data de Término")
+    data_fim = models.DateField(verbose_name="Data de Fim")
 
     # Informações de agendamento
     dias_semana = models.CharField(
@@ -79,7 +80,13 @@ class Turma(models.Model):
         related_name="turmas_como_auxiliar_instrucao",
         verbose_name="Auxiliar de Instrução",
     )
-
+    # Campos de alerta para instrutores
+    alerta_instrutor = models.BooleanField(
+        default=False, verbose_name="Alerta de Instrutor"
+    )
+    alerta_mensagem = models.TextField(
+        blank=True, null=True, verbose_name="Mensagem de Alerta"
+    )
     # Metadados
     created_at = models.DateTimeField(
         default=timezone.now, verbose_name="Criado em"
@@ -88,13 +95,13 @@ class Turma(models.Model):
         default=timezone.now, verbose_name="Atualizado em"
     )
 
+    def __str__(self):
+        return f"{self.nome} - {self.curso.nome}"
+
     class Meta:
         verbose_name = "Turma"
         verbose_name_plural = "Turmas"
         ordering = ["-data_inicio"]
-
-    def __str__(self):
-        return f"{self.nome} - {self.curso.nome}"
 
     @property
     def vagas_disponiveis(self):
@@ -115,18 +122,29 @@ class Turma(models.Model):
 
     def clean(self):
         super().clean()
-
         # Verificar se já existe uma turma com o mesmo nome (ignorando case)
         if self.nome:
             turmas_existentes = Turma.objects.filter(nome__iexact=self.nome)
-
             # Excluir a própria instância se estiver editando
             if self.pk:
                 turmas_existentes = turmas_existentes.exclude(pk=self.pk)
-
             if turmas_existentes.exists():
                 raise ValidationError(
                     {
-                        "nome": "Já existe uma turma com este nome. Por favor, escolha um nome diferente."
+                        "nome": "Já existe uma turma com este nome. "
+                        "Por favor, escolha um nome diferente."
                     }
                 )
+        if self.data_fim < self.data_inicio:
+            raise ValidationError(
+                _("A data de fim não pode ser anterior à data de início.")
+            )
+
+
+@classmethod
+def get_by_codigo(cls, codigo_turma):
+    """Método auxiliar para buscar turma por código."""
+    try:
+        return Turma.objects.get(codigo=codigo_turma)
+    except Turma.DoesNotExist:
+        return None

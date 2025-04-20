@@ -4,7 +4,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Definindo o caminho para o diretório de templates
-TEMPLATES_DIR = os.path.join(BASE_DIR, "omaum", "Templates")
+TEMPLATES_DIR = os.path.join(BASE_DIR, "omaum", "templates")
 
 # Imprimindo o caminho completo do diretório de templates
 print(f"Caminho do diretório de templates: {TEMPLATES_DIR}")
@@ -30,20 +30,20 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "core",
-    "alunos",
-    "atividades",
-    "cursos",
-    "cargos",
-    "matriculas",
-    "notas",
-    "pagamentos",
-    "presencas",
-    "punicoes",
-    "frequencias",
-    "iniciacoes",
-    "relatorios",
-    "turmas",
+    "alunos.apps.AlunosConfig",
+    "core.apps.CoreConfig",
+    "atividades.apps.AtividadesConfig",
+    "cursos.apps.CursosConfig",
+    "cargos.apps.CargosConfig",
+    "matriculas.apps.MatriculasConfig",
+    "notas.apps.NotasConfig",
+    "pagamentos.apps.PagamentosConfig",
+    "presencas.apps.PresencasConfig",
+    "punicoes.apps.PunicoesConfig",
+    "frequencias.apps.FrequenciasConfig",
+    "iniciacoes.apps.IniciacoesConfig",
+    "relatorios.apps.RelatoriosConfig",
+    "turmas.apps.TurmasConfig",
     # Adicione outros aplicativos aqui se necessário
 ]
 
@@ -63,10 +63,9 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
-            TEMPLATES_DIR,
-            os.path.join(BASE_DIR, "templates"),
-        ],
-        "APP_DIRS": True,
+            os.path.join(BASE_DIR, "omaum", "templates")
+        ],  # Para templates globais
+        "APP_DIRS": True,  # Isso permite que o Django procure templates dentro dos apps
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -77,7 +76,6 @@ TEMPLATES = [
         },
     },
 ]
-
 WSGI_APPLICATION = "omaum.wsgi.application"
 
 # Database

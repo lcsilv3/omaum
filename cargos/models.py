@@ -31,6 +31,16 @@ class AtribuicaoCargo(models.Model):
     data_inicio = models.DateField()
     data_fim = models.DateField(null=True, blank=True)
 
+    # Modificar este campo para permitir valores nulos
+    turma = models.ForeignKey(
+        "turmas.Turma",
+        on_delete=models.SET_NULL,
+        null=True,  # Permitir valores nulos
+        blank=True,  # Permitir campo em branco nos formulários
+        verbose_name="Turma",
+        related_name="atribuicoes_cargo",
+    )
+
     class Meta:
         verbose_name = "Atribuição de Cargo"
         verbose_name_plural = "Atribuições de Cargos"

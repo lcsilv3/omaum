@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
-
+<!-- Modificar os links para usar turma.id em vez de turma.codigo_turma -->
+<a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar para Turma</a>
 {% block title %}Matricular Aluno na Turma: {{ turma.nome }}{% endblock %}
 
 {% block content %}

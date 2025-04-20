@@ -521,12 +521,15 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
     Aluno = get_models()
     aluno = get_object_or_404(Aluno, cpf=cpf)
 
-    # Importar o modelo Turma dinamicamente
+    # Importar os modelos necessários
     from importlib import import_module
 
     try:
         turmas_module = import_module("turmas.models")
         Turma = getattr(turmas_module, "Turma")
+
+        cargos_module = import_module("cargos.models")
+        AtribuicaoCargo = getattr(cargos_module, "AtribuicaoCargo")
 
         # Buscar turmas onde o aluno é instrutor
         turmas_instrutor = Turma.objects.filter(instrutor=aluno, status="A")
@@ -554,12 +557,22 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
             aluno.situacao = nova_situacao
             aluno.save()
 
-            # Atualizar as turmas
+            # Atualizar as turmas e finalizar os cargos administrativos
             for turma in turmas_instrutor:
                 turma.instrutor = None
                 turma.alerta_instrutor = True
                 turma.alerta_mensagem = f"O instrutor {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
                 turma.save()
+
+                # Finalizar os cargos administrativos relacionados
+                atribuicoes = AtribuicaoCargo.objects.filter(
+                    aluno=aluno,
+                    cargo__nome__icontains="Instrutor Principal",
+                    data_fim__isnull=True,
+                )
+                for atribuicao in atribuicoes:
+                    atribuicao.data_fim = timezone.now().date()
+                    atribuicao.save()
 
             for turma in turmas_instrutor_auxiliar:
                 turma.instrutor_auxiliar = None
@@ -567,11 +580,31 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
                 turma.alerta_mensagem = f"O instrutor auxiliar {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
                 turma.save()
 
+                # Finalizar os cargos administrativos relacionados
+                atribuicoes = AtribuicaoCargo.objects.filter(
+                    aluno=aluno,
+                    cargo__nome__icontains="Instrutor Auxiliar",
+                    data_fim__isnull=True,
+                )
+                for atribuicao in atribuicoes:
+                    atribuicao.data_fim = timezone.now().date()
+                    atribuicao.save()
+
             for turma in turmas_auxiliar_instrucao:
                 turma.auxiliar_instrucao = None
                 turma.alerta_instrutor = True
                 turma.alerta_mensagem = f"O auxiliar de instrução {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
                 turma.save()
+
+                # Finalizar os cargos administrativos relacionados
+                atribuicoes = AtribuicaoCargo.objects.filter(
+                    aluno=aluno,
+                    cargo__nome__icontains="Auxiliar de Instrução",
+                    data_fim__isnull=True,
+                )
+                for atribuicao in atribuicoes:
+                    atribuicao.data_fim = timezone.now().date()
+                    atribuicao.save()
 
             messages.success(
                 request,
@@ -603,24 +636,12 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
 def search_instrutores(request):
     """API endpoint para buscar alunos elegíveis para serem instrutores."""
     try:
-        query = request.GET.get("q", "")
-        if len(query) < 2:
-            return JsonResponse([], safe=False)
-
-        Aluno = get_models()  # Use a função existente para obter o modelo
+        Aluno = get_aluno_model()
 
         # Buscar apenas alunos ativos e que podem ser instrutores
-        alunos = Aluno.objects.filter(
-            Q(nome__icontains=query)
-            | Q(cpf__icontains=query)
-            | Q(numero_iniciatico__icontains=query),
-            situacao="A",  # Apenas alunos ativos
-        )[
-            :10
-        ]  # Limitar a 10 resultados
+        alunos = Aluno.objects.filter(situacao="A")
 
-        # Filtrar alunos que não estão em cursos pré-iniciáticos
-        # Isso depende da estrutura do seu modelo e relacionamentos
+        # Filtrar alunos que podem ser instrutores
         alunos_elegíveis = []
         for aluno in alunos:
             if aluno.pode_ser_instrutor:
@@ -628,18 +649,18 @@ def search_instrutores(request):
                     {
                         "cpf": aluno.cpf,
                         "nome": aluno.nome,
-                        "numero_iniciatico": aluno.numero_iniciatico,
-                        "foto": aluno.foto.url if aluno.foto else None,
+                        "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                        "foto": (
+                            aluno.foto.url
+                            if hasattr(aluno, "foto") and aluno.foto
+                            else None
+                        ),
                     }
                 )
 
         return JsonResponse(alunos_elegíveis, safe=False)
 
     except Exception as e:
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.error(f"Error in search_instrutores: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -667,3 +688,34 @@ def get_aluno(request, cpf):
         )
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=404)
+
+
+@login_required
+def verificar_elegibilidade_instrutor(request, cpf):
+    """API endpoint para verificar se um aluno pode ser instrutor."""
+    try:
+        Aluno = get_aluno_model()
+        aluno = get_object_or_404(Aluno, cpf=cpf)
+
+        # Verificar se o aluno está ativo
+        if aluno.situacao != "A":
+            return JsonResponse(
+                {
+                    "elegivel": False,
+                    "motivo": f"O aluno não está ativo. Situação atual: {aluno.get_situacao_display()}",
+                }
+            )
+
+        # Verificar se o aluno pode ser instrutor
+        if not aluno.pode_ser_instrutor:
+            return JsonResponse(
+                {
+                    "elegivel": False,
+                    "motivo": "O aluno está matriculado em um curso pré-iniciático ou não atende aos requisitos para ser instrutor.",
+                }
+            )
+
+        return JsonResponse({"elegivel": True})
+
+    except Exception as e:
+        return JsonResponse({"elegivel": False, "motivo": str(e)}, status=500)

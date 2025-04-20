@@ -4,24 +4,20 @@ from . import views
 app_name = "presencas"
 
 urlpatterns = [
+    path("", views.listar_presencas, name="listar_presencas"),
     path(
-        "lista/", views.listar_presencas, name="listar_presencas"
-    ),  # Alterado para usar a função existente
-    path("registrar/", views.registrar_presenca, name="registrar_presenca"),
-    path("editar/<int:id>/", views.editar_presenca, name="editar_presenca"),
-    path("excluir/<int:id>/", views.excluir_presenca, name="excluir_presenca"),
+        "<int:presenca_id>/", views.detalhar_presenca, name="detalhar_presenca"
+    ),
+    path("criar/", views.criar_presenca, name="criar_presenca"),
     path(
-        "detalhar/<int:id>/", views.detalhar_presenca, name="detalhar_presenca"
+        "<int:presenca_id>/editar/",
+        views.editar_presenca,
+        name="editar_presenca",
+    ),
+    path(
+        "<int:presenca_id>/excluir/",
+        views.excluir_presenca,
+        name="excluir_presenca",
     ),
     path("relatorio/", views.relatorio_presencas, name="relatorio_presencas"),
-    path(
-        "relatorio/pdf/",
-        views.relatorio_presencas_pdf,
-        name="relatorio_presencas_pdf",
-    ),
-    path(
-        "relatorio/excel/",
-        views.relatorio_presencas_excel,
-        name="relatorio_presencas_excel",
-    ),
 ]

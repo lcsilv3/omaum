@@ -111,7 +111,7 @@
         <!-- Instrutores -->
         <div class="card mb-3">
             <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Instrutores</h5>
+                <h5 class="mb-0">Instrutoria</h5>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -198,229 +198,383 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Esconder os campos select originais
-        document.getElementById('{{ form.instrutor.id_for_label }}').style.display = 'none';
-        document.getElementById('{{ form.instrutor_auxiliar.id_for_label }}').style.display = 'none';
-        document.getElementById('{{ form.auxiliar_instrucao.id_for_label }}').style.display = 'none';
+        // Obter a lista de instrutores elegíveis via AJAX no carregamento da página
+        let instrutoresElegiveis = [];
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
-        // Configurar busca para Instrutor Principal
-        setupInstructorSearch(
-            'search-instrutor',
-            'search-results-instrutor',
-            'selected-instrutor-container',
-            'selected-instrutor-info',
-            '{{ form.instrutor.id_for_label }}'
-        );
-        
-        // Configurar busca para Instrutor Auxiliar
-        setupInstructorSearch(
-            'search-instrutor-auxiliar',
-            'search-results-instrutor-auxiliar',
-            'selected-instrutor-auxiliar-container',
-            'selected-instrutor-auxiliar-info',
-            '{{ form.instrutor_auxiliar.id_for_label }}'
-        );
-        
-        // Configurar busca para Auxiliar de Instrução
-        setupInstructorSearch(
-            'search-auxiliar-instrucao',
-            'search-results-auxiliar-instrucao',
-            'selected-auxiliar-instrucao-container',
-            'selected-auxiliar-instrucao-info',
-            '{{ form.auxiliar_instrucao.id_for_label }}'
-        );
-        
-        // Inicializar valores selecionados se estiver editando
-        initializeSelectedInstructors();
-    });
-    
-    function setupInstructorSearch(searchId, resultsId, containerId, infoId, selectId) {
-        const searchInput = document.getElementById(searchId);
-        const searchResults = document.getElementById(resultsId);
-        const selectedContainer = document.getElementById(containerId);
-        const selectedInfo = document.getElementById(infoId);
-        const selectElement = document.getElementById(selectId);
-        
-        let searchTimeout;
-        
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            
-            const query = this.value.trim();
-            
-            // Clear results if query is too short
-            if (query.length < 2) {
-                searchResults.innerHTML = '';
-                searchResults.style.display = 'none';
-                return;
-            }
-            
-            // Set a timeout to avoid making too many requests
-            searchTimeout = setTimeout(function() {
-                // Show loading indicator
-                searchResults.innerHTML = '<div class="list-group-item text-muted">Buscando...</div>';
-                searchResults.style.display = 'block';
-                
-                // Get CSRF token
-                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                
-                fetch(`/alunos/search/?q=${encodeURIComponent(query)}`, {
-                    headers: {
-                        'X-CSRFToken': csrftoken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    searchResults.innerHTML = '';
-                    
-                    if (data.error) {
-                        // Handle error response
-                        searchResults.innerHTML = `<div class="list-group-item text-danger">Erro ao buscar alunos: ${data.error}</div>`;
-                        return;
-                    }
-                    
-                    if (data.length === 0) {
-                        searchResults.innerHTML = '<div class="list-group-item">Nenhum aluno encontrado</div>';
-                        return;
-                    }
-                    
-                    // Display results
-                    data.forEach(aluno => {
-                        const item = document.createElement('a');
-                        item.href = '#';
-                        item.className = 'list-group-item list-group-item-action';
-                        item.innerHTML = `
-                            <div class="d-flex justify-content-between">
-                                <div>${aluno.nome}</div>
-                                <div class="text-muted">
-                                    <small>CPF: ${aluno.cpf}</small>
-                                    ${aluno.numero_iniciatico !== "N/A" ? `<small class="ms-2">Nº: ${aluno.numero_iniciatico}</small>` : ''}
-                                </div>
-                            </div>
-                        `;
-                        
-                        // Add click event to select this aluno
-                        item.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            selectInstructor(aluno, searchInput, searchResults, selectedContainer, selectedInfo, selectElement);
-                        });
-                        
-                        searchResults.appendChild(item);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    searchResults.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar alunos</div>';
-                });
-            }, 300);
-        });
-        
-        // Hide results when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                searchResults.style.display = 'none';
-            }
-        });
-        
-        // Function to select an aluno
-        function selectInstructor(aluno, searchInput, searchResults, selectedContainer, selectedInfo, selectElement) {
-            // Update the hidden select with the selected aluno's CPF
-            selectElement.value = aluno.cpf;
-            
-            // Update the search input with the selected aluno's name
-            searchInput.value = aluno.nome;
-            
-            // Show the selected aluno info
-            selectedInfo.innerHTML = `
-                <strong>${aluno.nome}</strong><br>
-                CPF: ${aluno.cpf}<br>
-                ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
-            `;
-            
-            // Show the container
-            selectedContainer.classList.remove('d-none');
-            
-            // Hide the search results
-            searchResults.style.display = 'none';
-        }
-        
-        function initializeSelectedInstructors() {
-            // Verificar se há valores pré-selecionados (útil para edição)
-            const instrutorSelect = document.getElementById('{{ form.instrutor.id_for_label }}');
-            const instrutorAuxiliarSelect = document.getElementById('{{ form.instrutor_auxiliar.id_for_label }}');
-            const auxiliarInstrucaoSelect = document.getElementById('{{ form.auxiliar_instrucao.id_for_label }}');
-            
-            // Inicializar instrutor principal se já estiver selecionado
-            if (instrutorSelect.value) {
-                fetchInstructorData(instrutorSelect.value, function(aluno) {
-                    document.getElementById('search-instrutor').value = aluno.nome;
-                    document.getElementById('selected-instrutor-info').innerHTML = `
-                        <strong>${aluno.nome}</strong><br>
-                        CPF: ${aluno.cpf}<br>
-                        ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
-                    `;
-                    document.getElementById('selected-instrutor-container').classList.remove('d-none');
-                });
-            }
-            
-            // Inicializar instrutor auxiliar se já estiver selecionado
-            if (instrutorAuxiliarSelect.value) {
-                fetchInstructorData(instrutorAuxiliarSelect.value, function(aluno) {
-                    document.getElementById('search-instrutor-auxiliar').value = aluno.nome;
-                    document.getElementById('selected-instrutor-auxiliar-info').innerHTML = `
-                        <strong>${aluno.nome}</strong><br>
-                        CPF: ${aluno.cpf}<br>
-                        ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
-                    `;
-                    document.getElementById('selected-instrutor-auxiliar-container').classList.remove('d-none');
-                });
-            }
-            
-            // Inicializar auxiliar de instrução se já estiver selecionado
-            if (auxiliarInstrucaoSelect.value) {
-                fetchInstructorData(auxiliarInstrucaoSelect.value, function(aluno) {
-                    document.getElementById('search-auxiliar-instrucao').value = aluno.nome;
-                    document.getElementById('selected-auxiliar-instrucao-info').innerHTML = `
-                        <strong>${aluno.nome}</strong><br>
-                        CPF: ${aluno.cpf}<br>
-                        ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
-                    `;
-                    document.getElementById('selected-auxiliar-instrucao-container').classList.remove('d-none');
-                });
-            }
-        }
-        
-        function fetchInstructorData(cpf, callback) {
-            // Get CSRF token
-            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            
-            fetch(`/alunos/get-aluno/${cpf}/`, {
+        // Função para carregar instrutores elegíveis
+        function carregarInstrutoresElegiveis() {
+            fetch('/alunos/api/search-instrutores/', {
                 headers: {
                     'X-CSRFToken': csrftoken,
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    callback(data.aluno);
-                }
+                instrutoresElegiveis = data;
+                console.log(`Carregados ${instrutoresElegiveis.length} instrutores elegíveis`);
             })
             .catch(error => {
-                console.error('Error fetching instructor data:', error);
+                console.error('Erro ao carregar instrutores elegíveis:', error);
             });
         }
-    }
+        
+        carregarInstrutoresElegiveis();
+        
+        // Configurar os campos de busca de instrutores
+        setupInstructorSearch(
+            'search-instrutor',
+            'search-results-instrutor',
+            'selected-instrutor-container',
+            'selected-instrutor-info',
+            'id_instrutor'
+        );
+        
+        setupInstructorSearch(
+            'search-instrutor-auxiliar',
+            'search-results-instrutor-auxiliar',
+            'selected-instrutor-auxiliar-container',
+            'selected-instrutor-auxiliar-info',
+            'id_instrutor_auxiliar'
+        );
+        
+        setupInstructorSearch(
+            'search-auxiliar-instrucao',
+            'search-results-auxiliar-instrucao',
+            'selected-auxiliar-instrucao-container',
+            'selected-auxiliar-instrucao-info',
+            'id_auxiliar_instrucao'
+        );
+        
+        // Função para configurar a busca de instrutores
+        function setupInstructorSearch(searchId, resultsId, containerId, infoId, selectId) {
+            const searchInput = document.getElementById(searchId);
+            const searchResults = document.getElementById(resultsId);
+            const selectedContainer = document.getElementById(containerId);
+            const selectedInfo = document.getElementById(infoId);
+            const selectElement = document.getElementById(selectId);
+            
+            // Criar um elemento para mensagens de erro
+            const errorElement = document.createElement('div');
+            errorElement.className = 'alert alert-danger mt-2 d-none';
+            selectedContainer.after(errorElement);
+            
+            let searchTimeout;
+            
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                
+                const query = this.value.trim();
+                
+                // Limpar mensagens de erro
+                errorElement.classList.add('d-none');
+                
+                // Clear results if query is too short
+                if (query.length < 2) {
+                    searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                // Set a timeout to avoid making too many requests
+                searchTimeout = setTimeout(function() {
+                    // Show loading indicator
+                    searchResults.innerHTML = '<div class="list-group-item text-muted">Buscando...</div>';
+                    searchResults.style.display = 'block';
+                    
+                    // Buscar todos os alunos que correspondem à consulta
+                    fetch(`/alunos/search/?q=${encodeURIComponent(query)}`, {
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        
+                        if (data.error) {
+                            // Handle error response
+                            searchResults.innerHTML = `<div class="list-group-item text-danger">Erro ao buscar alunos: ${data.error}</div>`;
+                            return;
+                        }
+                        
+                        if (data.length === 0) {
+                            searchResults.innerHTML = '<div class="list-group-item">Nenhum aluno encontrado</div>';
+                            return;
+                        }
+                        
+                        // Display results - mostrar todos os alunos encontrados
+                        data.forEach(aluno => {
+                            const item = document.createElement('a');
+                            item.href = '#';
+                            item.className = 'list-group-item list-group-item-action';
+                            item.innerHTML = `
+                                <div class="d-flex justify-content-between">
+                                    <div>${aluno.nome}</div>
+                                    <div class="text-muted">
+                                        <small>CPF: ${aluno.cpf}</small>
+                                        ${aluno.numero_iniciatico !== "N/A" ? `<small class="ms-2">Nº: ${aluno.numero_iniciatico}</small>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Add click event to select this aluno
+                            item.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                
+                                // Verificar elegibilidade após a seleção
+                                verificarElegibilidadeInstrutor(aluno);
+                            });
+                            
+                            searchResults.appendChild(item);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        searchResults.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar alunos</div>';
+                    });
+                }, 300);
+            });
+            
+            // Hide results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.style.display = 'none';
+                }
+            });
+            
+            // Função para verificar se um aluno pode ser instrutor
+            function verificarElegibilidadeInstrutor(aluno) {
+                // Verificar se o aluno já foi selecionado em outro campo
+                const outrosSelects = Array.from(document.querySelectorAll('select[name^="instrutor"]')).filter(s => s.id !== selectId);
+                const jaEstaEmUso = outrosSelects.some(select => select.value === aluno.cpf);
+                
+                if (jaEstaEmUso) {
+                    errorElement.textContent = `O aluno ${aluno.nome} já está selecionado como instrutor em outro campo.`;
+                    errorElement.classList.remove('d-none');
+                    return;
+                }
+                
+                // Verificar se o aluno pode ser instrutor
+                fetch(`/alunos/api/verificar-elegibilidade-instrutor/${aluno.cpf}/`, {
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.elegivel) {
+                        // Aluno é elegível, prosseguir com a seleção
+                        selecionarInstrutor(aluno);
+                    } else {
+                        // Aluno não é elegível, mostrar mensagem de erro
+                        errorElement.innerHTML = `
+                            <strong>O aluno ${aluno.nome} não pode ser instrutor.</strong><br>
+                            Motivo: ${data.motivo || 'Não atende aos requisitos para ser instrutor.'}
+                        `;
+                        errorElement.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao verificar elegibilidade:', error);
+                    errorElement.textContent = `Erro ao verificar se ${aluno.nome} pode ser instrutor. Tente novamente.`;
+                    errorElement.classList.remove('d-none');
+                });
+            }
+            
+            // Função para selecionar um instrutor
+            function selecionarInstrutor(aluno) {
+                // Limpar as opções existentes no select
+                while (selectElement.options.length > 0) {
+                    selectElement.remove(0);
+                }
+                
+                // Criar e adicionar a opção para o aluno selecionado
+                const option = new Option(aluno.nome, aluno.cpf, true, true);
+                selectElement.appendChild(option);
+                
+                // Atualizar a interface
+                searchInput.value = aluno.nome;
+                selectedInfo.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${aluno.nome}</strong><br>
+                            CPF: ${aluno.cpf}<br>
+                            ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="remove-${selectId}">
+                            <i class="fas fa-times"></i> Remover
+                        </button>
+                    </div>
+                `;
+                
+                selectedContainer.classList.remove('d-none');
+                searchResults.style.display = 'none';
+                errorElement.classList.add('d-none');
+                
+                // Adicionar evento para remover o instrutor
+                document.getElementById(`remove-${selectId}`).addEventListener('click', function() {
+                    selectElement.value = '';
+                    searchInput.value = '';
+                    selectedContainer.classList.add('d-none');
+                });
+            }
+        }        
+        // Adicionar validação ao formulário antes do envio
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            // Verificar se há erros visíveis
+            const errosVisiveis = document.querySelectorAll('.alert-danger:not(.d-none)');
+            if (errosVisiveis.length > 0) {
+                e.preventDefault();
+                alert('Por favor, corrija os erros antes de enviar o formulário.');
+                return;
+            }
+            
+            // Verificar se os instrutores são diferentes entre si
+            const instrutorPrincipal = document.getElementById('id_instrutor').value;
+            const instrutorAuxiliar = document.getElementById('id_instrutor_auxiliar').value;
+            const auxiliarInstrucao = document.getElementById('id_auxiliar_instrucao').value;
+            
+            const instrutoresSelecionados = [instrutorPrincipal, instrutorAuxiliar, auxiliarInstrucao].filter(Boolean);
+            const instrutoresUnicos = new Set(instrutoresSelecionados);
+            
+            if (instrutoresSelecionados.length !== instrutoresUnicos.size) {
+                e.preventDefault();
+                alert('Não é possível selecionar o mesmo aluno para diferentes funções de instrução.');
+                return;
+            }
+            
+            // Mostrar os selects antes do envio
+            document.getElementById('id_instrutor').style.display = '';
+            document.getElementById('id_instrutor_auxiliar').style.display = '';
+            document.getElementById('id_auxiliar_instrucao').style.display = '';
+        });
+    });
 </script>
+{% endblock %}
+// Adicionar este código no DOMContentLoaded
+const form = document.querySelector('form');
+form.addEventListener('submit', function(e) {
+    // Verificar se os instrutores selecionados estão corretamente refletidos nos selects
+    const instrutorContainer = document.getElementById('selected-instrutor-container');
+    const instrutorAuxiliarContainer = document.getElementById('selected-instrutor-auxiliar-container');
+    const auxiliarInstrucaoContainer = document.getElementById('selected-auxiliar-instrucao-container');
+    
+    // Verificar se os containers estão visíveis (ou seja, se um instrutor foi selecionado)
+    if (!instrutorContainer.classList.contains('d-none') && 
+        document.getElementById('id_instrutor').value === '') {
+        e.preventDefault();
+        alert('Erro ao processar o instrutor principal. Por favor, selecione novamente.');
+        return;
+    }
+    
+    if (!instrutorAuxiliarContainer.classList.contains('d-none') && 
+        document.getElementById('id_instrutor_auxiliar').value === '') {
+        e.preventDefault();
+        alert('Erro ao processar o instrutor auxiliar. Por favor, selecione novamente.');
+        return;
+    }
+    
+    if (!auxiliarInstrucaoContainer.classList.contains('d-none') && 
+        document.getElementById('id_auxiliar_instrucao').value === '') {
+        e.preventDefault();
+        alert('Erro ao processar o auxiliar de instrução. Por favor, selecione novamente.');
+        return;
+    }
+    
+    // Log para debug
+    console.log('Formulário enviando com valores:');
+    console.log('Instrutor:', document.getElementById('id_instrutor').value);
+    console.log('Instrutor Auxiliar:', document.getElementById('id_instrutor_auxiliar').value);
+    console.log('Auxiliar de Instrução:', document.getElementById('id_auxiliar_instrucao').value);
+});
+document.addEventListener('DOMContentLoaded', function() {
+    // Código existente...
+    
+    // Adicionar validação para a data de início
+    const dataInicioInput = document.getElementById('id_data_inicio');
+    const dataFimInput = document.getElementById('id_data_fim');
+    
+    // Criar elemento para mensagem de alerta
+    const alertaDataInicio = document.createElement('div');
+    alertaDataInicio.className = 'alert alert-warning mt-2 d-none';
+    alertaDataInicio.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Atenção: A data de início está no passado. Isso é permitido, mas certifique-se de que é intencional.';
+    dataInicioInput.parentNode.appendChild(alertaDataInicio);
+    
+    // Função para verificar se a data está no passado
+    function verificarDataPassado() {
+        const dataInicio = new Date(dataInicioInput.value);
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0); // Resetar horas para comparar apenas as datas
+        
+        if (dataInicio < hoje) {
+            alertaDataInicio.classList.remove('d-none');
+        } else {
+            alertaDataInicio.classList.add('d-none');
+        }
+    }
+    
+    // Verificar no carregamento da página (caso seja edição)
+    if (dataInicioInput.value) {
+        verificarDataPassado();
+    }
+    
+    // Verificar quando o usuário alterar a data
+    dataInicioInput.addEventListener('change', verificarDataPassado);
+    
+    // Validação para garantir que a data de início não seja posterior à data de fim
+    function validarDatas() {
+        const dataInicio = new Date(dataInicioInput.value);
+        const dataFim = new Date(dataFimInput.value);
+        
+        if (dataInicioInput.value && dataFimInput.value && dataInicio > dataFim) {
+            dataFimInput.setCustomValidity('A data de fim não pode ser anterior à data de início');
+            // Mostrar mensagem de erro
+            const alertaDataFim = document.getElementById('alerta-data-fim') || document.createElement('div');
+            alertaDataFim.id = 'alerta-data-fim';
+            alertaDataFim.className = 'alert alert-danger mt-2';
+            alertaDataFim.textContent = 'A data de fim não pode ser anterior à data de início';
+            if (!document.getElementById('alerta-data-fim')) {
+                dataFimInput.parentNode.appendChild(alertaDataFim);
+            }
+        } else {
+            dataFimInput.setCustomValidity('');
+            const alertaDataFim = document.getElementById('alerta-data-fim');
+            if (alertaDataFim) {
+                alertaDataFim.remove();
+            }
+        }
+    }
+    
+    dataInicioInput.addEventListener('change', validarDatas);
+    dataFimInput.addEventListener('change', validarDatas);
+    
+    // Resto do código existente...
+});
+{% block extra_css %}
+<style>
+    .alert-warning {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 0.8; }
+        50% { opacity: 1; }
+        100% { opacity: 0.8; }
+    }
+    
+    .date-warning-icon {
+        margin-right: 5px;
+        color: #856404;
+    }
+</style>
 {% endblock %}

@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.contrib.auth.models import Permission
+from .models import Relatorio
 
-# Registrar permissões no admin para facilitar a atribuição
-admin.site.register(Permission)
+admin.site.register(Relatorio)

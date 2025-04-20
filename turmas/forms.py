@@ -2,7 +2,7 @@ from django import forms
 from .models import Turma
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from importlib import import_module  # Add this import
+from importlib import import_module
 
 
 def get_aluno_model():
@@ -65,17 +65,6 @@ class TurmaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Convert date format for display in the form
-        if self.instance and self.instance.pk:
-            if self.instance.data_inicio:
-                self.initial[
-                    "data_inicio"
-                ] = self.instance.data_inicio.strftime("%Y-%m-%d")
-            if self.instance.data_fim:
-                self.initial["data_fim"] = self.instance.data_fim.strftime(
-                    "%Y-%m-%d"
-                )
-
         # Tornar os campos de instrutores opcionais
         self.fields["instrutor"].required = False
         self.fields["instrutor_auxiliar"].required = False
@@ -90,14 +79,28 @@ class TurmaForm(forms.ModelForm):
             aluno for aluno in alunos_elegíveis if aluno.pode_ser_instrutor
         ]
 
+        # Se não houver alunos instrutores, usar todos os alunos ativos
+        if not alunos_instrutores:
+            print(
+                "AVISO: Nenhum aluno elegível para ser instrutor. Usando todos os alunos ativos."
+            )
+            alunos_instrutores = list(alunos_elegíveis)
+
+        # Obter CPFs dos alunos instrutores
+        cpfs_instrutores = [a.cpf for a in alunos_instrutores]
+
+        # Debug
+        print(f"Alunos elegíveis para instrutores: {len(cpfs_instrutores)}")
+
+        # Configurar querysets
         self.fields["instrutor"].queryset = Aluno.objects.filter(
-            cpf__in=[a.cpf for a in alunos_instrutores]
+            cpf__in=cpfs_instrutores
         )
         self.fields["instrutor_auxiliar"].queryset = Aluno.objects.filter(
-            cpf__in=[a.cpf for a in alunos_instrutores]
+            cpf__in=cpfs_instrutores
         )
         self.fields["auxiliar_instrucao"].queryset = Aluno.objects.filter(
-            cpf__in=[a.cpf for a in alunos_instrutores]
+            cpf__in=cpfs_instrutores
         )
 
     def clean(self):
@@ -111,15 +114,9 @@ class TurmaForm(forms.ModelForm):
                 "A data de início não pode ser posterior à data de fim."
             )
 
-        # Validar que a data de início não é no passado (para novas turmas)
-        if (
-            not self.instance.pk
-            and data_inicio
-            and data_inicio < timezone.now().date()
-        ):
-            raise ValidationError(
-                "A data de início não pode ser no passado para novas turmas."
-            )
+        # Removemos a validação que impedia datas no passado:
+        # if (not self.instance.pk and data_inicio and data_inicio < timezone.now().date()):
+        #     raise ValidationError("A data de início não pode ser no passado para novas turmas.")
 
         # Verificar se os instrutores são diferentes entre si
         instrutor = cleaned_data.get("instrutor")

@@ -66,8 +66,8 @@ Agora, vamos corrigir o problema específico que você encontrou no arquivo `scr
 ```python:scripts/verificar_arquivos_importantes_duplicados.py
 # Nas linhas 61-62, substitua:
 ("base.html", "omaum\\templates\\base.html"),
-("home.html", "omaum\Templates\home.html"),
+("home.html", "omaum\templates\home.html"),
 
 # Por:
 ("base.html", r"omaum\templates\base.html"),
-("home.html", r"omaum\Templates\home.html"),
+("home.html", r"omaum\templates\home.html"),

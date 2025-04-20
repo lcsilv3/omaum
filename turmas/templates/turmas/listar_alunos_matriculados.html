@@ -9,8 +9,7 @@
         <div>
             <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
             <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary me-2">Detalhes da Turma</a>
-            <a href="{% url 'turmas:adicionar_aluno_turma' turma.id %}" class="btn btn-primary">Adicionar Aluno</a>
-        </div>
+            <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-primary">Adicionar Aluno</a>        </div>
     </div>
     
     {% if messages %}

@@ -59,7 +59,7 @@
                         <!-- Data de Início -->
                         <div class="form-group mb-3">
                             <label for="{{ form.data_inicio.id_for_label }}">{{ form.data_inicio.label }}</label>
-                            {{ form.data_inicio }}
+                            <input type="date" name="data_inicio" value="{{ turma.data_inicio|date:'Y-m-d' }}" class="form-control" required id="id_data_inicio">
                             {% if form.data_inicio.help_text %}
                                 <small class="form-text text-muted">{{ form.data_inicio.help_text }}</small>
                             {% endif %}
@@ -72,7 +72,7 @@
                         <!-- Data de Fim -->
                         <div class="form-group mb-3">
                             <label for="{{ form.data_fim.id_for_label }}">{{ form.data_fim.label }}</label>
-                            {{ form.data_fim }}
+                            <input type="date" name="data_fim" value="{{ turma.data_fim|date:'Y-m-d' }}" class="form-control" required id="id_data_fim">
                             {% if form.data_fim.help_text %}
                                 <small class="form-text text-muted">{{ form.data_fim.help_text }}</small>
                             {% endif %}
@@ -110,7 +110,7 @@
                 </div>
                 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <!-- Local -->
                         <div class="form-group mb-3">
                             <label for="{{ form.local.id_for_label }}">{{ form.local.label }}</label>
@@ -123,7 +123,20 @@
                             {% endfor %}
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <!-- Dias da Semana -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.dias_semana.id_for_label }}">{{ form.dias_semana.label }}</label>
+                            {{ form.dias_semana }}
+                            {% if form.dias_semana.help_text %}
+                                <small class="form-text text-muted">{{ form.dias_semana.help_text }}</small>
+                            {% endif %}
+                            {% for error in form.dias_semana.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
                         <!-- Horário -->
                         <div class="form-group mb-3">
                             <label for="{{ form.horario.id_for_label }}">{{ form.horario.label }}</label>
@@ -154,65 +167,47 @@
         
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Instrutores</h5>
+                <h5 class="mb-0">Instrutoria</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
                         <!-- Instrutor Principal -->
                         <div class="form-group mb-3">
-                            <label for="id_instrutor">Instrutor Principal</label>
-                            <select name="instrutor" class="form-select" id="id_instrutor">
-                                <option value="">---------</option>
-                                {% for aluno in alunos %}
-                                    <option value="{{ aluno.cpf }}" {% if turma.instrutor and turma.instrutor.cpf == aluno.cpf %}selected{% endif %}>
-                                        {{ aluno.nome }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            {% if form.instrutor.errors %}
-                                {% for error in form.instrutor.errors %}
-                                    <div class="alert alert-danger mt-1">{{ error }}</div>
-                                {% endfor %}
+                            <label for="{{ form.instrutor.id_for_label }}">{{ form.instrutor.label }}</label>
+                            {{ form.instrutor }}
+                            {% if form.instrutor.help_text %}
+                                <small class="form-text text-muted">{{ form.instrutor.help_text }}</small>
                             {% endif %}
+                            {% for error in form.instrutor.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
                         </div>
                     </div>
                     <div class="col-md-4">
                         <!-- Instrutor Auxiliar -->
                         <div class="form-group mb-3">
-                            <label for="id_instrutor_auxiliar">Instrutor Auxiliar</label>
-                            <select name="instrutor_auxiliar" class="form-select" id="id_instrutor_auxiliar">
-                                <option value="">---------</option>
-                                {% for aluno in alunos %}
-                                    <option value="{{ aluno.cpf }}" {% if turma.instrutor_auxiliar and turma.instrutor_auxiliar.cpf == aluno.cpf %}selected{% endif %}>
-                                        {{ aluno.nome }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            {% if form.instrutor_auxiliar.errors %}
-                                {% for error in form.instrutor_auxiliar.errors %}
-                                    <div class="alert alert-danger mt-1">{{ error }}</div>
-                                {% endfor %}
+                            <label for="{{ form.instrutor_auxiliar.id_for_label }}">{{ form.instrutor_auxiliar.label }}</label>
+                            {{ form.instrutor_auxiliar }}
+                            {% if form.instrutor_auxiliar.help_text %}
+                                <small class="form-text text-muted">{{ form.instrutor_auxiliar.help_text }}</small>
                             {% endif %}
+                            {% for error in form.instrutor_auxiliar.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
                         </div>
                     </div>
                     <div class="col-md-4">
                         <!-- Auxiliar de Instrução -->
                         <div class="form-group mb-3">
-                            <label for="id_auxiliar_instrucao">Auxiliar de Instrução</label>
-                            <select name="auxiliar_instrucao" class="form-select" id="id_auxiliar_instrucao">
-                                <option value="">---------</option>
-                                {% for aluno in alunos %}
-                                    <option value="{{ aluno.cpf }}" {% if turma.auxiliar_instrucao and turma.auxiliar_instrucao.cpf == aluno.cpf %}selected{% endif %}>
-                                        {{ aluno.nome }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            {% if form.auxiliar_instrucao.errors %}
-                                {% for error in form.auxiliar_instrucao.errors %}
-                                    <div class="alert alert-danger mt-1">{{ error }}</div>
-                                {% endfor %}
+                            <label for="{{ form.auxiliar_instrucao.id_for_label }}">{{ form.auxiliar_instrucao.label }}</label>
+                            {{ form.auxiliar_instrucao }}
+                            {% if form.auxiliar_instrucao.help_text %}
+                                <small class="form-text text-muted">{{ form.auxiliar_instrucao.help_text }}</small>
                             {% endif %}
+                            {% for error in form.auxiliar_instrucao.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>

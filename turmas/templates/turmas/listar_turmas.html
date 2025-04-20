@@ -55,7 +55,14 @@
             {% for turma_info in turmas_com_info %}
             {% with turma=turma_info.turma %}
             <tr {% if turma.alerta_instrutor %}class="table-warning"{% endif %}>
-                <td>{{ turma.nome }}</td>
+                <td>
+                    {{ turma.nome }}
+                    {% if turma_info.tem_pendencia_instrutoria %}
+                    <div class="alert alert-danger mt-1 mb-0 p-1 text-center blink">
+                        <small><strong>Pendência na Instrutoria</strong></small>
+                    </div>
+                    {% endif %}
+                </td>
                 <td>{{ turma.curso }}</td>
                 <td>{{ turma.data_inicio|date:"d/m/Y" }}</td>
                 <td>{{ turma.data_fim|date:"d/m/Y" }}</td>
@@ -84,8 +91,7 @@
                 </td>
             </tr>
             {% endwith %}
-            {% empty %}
-            <tr>
+            {% empty %}            <tr>
                 <td colspan="9" class="text-center">Nenhuma turma encontrada.</td>
             </tr>
             {% endfor %}
@@ -117,3 +123,47 @@
     <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary">Criar Nova Turma</a>
 </div>
 {% endblock %}
+@login_required
+def listar_turmas(request):
+    Turma = get_turma_model()
+    turmas = Turma.objects.all()
+    
+    # Preparar informações adicionais para cada turma
+    turmas_com_info = []
+    for turma in turmas:
+        # Calcular o número de alunos matriculados
+        total_alunos = turma.matriculas.count() if hasattr(turma, 'matriculas') else 0
+        
+        # Calcular vagas disponíveis
+        vagas_disponiveis = turma.vagas - total_alunos
+        
+        turmas_com_info.append({
+            'turma': turma,
+            'total_alunos': total_alunos,
+            'vagas_disponiveis': vagas_disponiveis
+        })
+    
+    # Obter cursos para o filtro
+    try:
+        Curso = get_model_class("Curso", "cursos.models")
+        cursos = Curso.objects.all()
+    except:
+        cursos = []
+    
+    # Opções de status para o filtro
+    opcoes_status = Turma.STATUS_CHOICES
+    
+    context = {
+        'turmas_com_info': turmas_com_info,
+        'cursos': cursos,
+        'opcoes_status': opcoes_status,
+        'query': request.GET.get('q', ''),
+        'curso_selecionado': request.GET.get('curso', ''),
+        'status_selecionado': request.GET.get('status', '')
+    }
+    
+    return render(request, "turmas/listar_turmas.html", context)
+def get_model_class(model_name, module_name="turmas.models"):
+    """Importa dinamicamente uma classe de modelo para evitar importações circulares."""
+    models_module = importlib.import_module(module_name)
+    return getattr(models_module, model_name)

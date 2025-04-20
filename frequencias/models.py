@@ -23,5 +23,4 @@ class Frequencia(models.Model):
         verbose_name = "Frequência"
         verbose_name_plural = "Frequências"
         ordering = ["-data"]
-
         unique_together = ["aluno", "atividade", "data"]

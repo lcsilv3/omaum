@@ -25,7 +25,7 @@
                     <select name="turma" id="turma" class="form-select">
                         <option value="">Todas</option>
                         {% for turma in turmas %}
-                            <option value="{{ turma.id }}" {% if turma_id == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.codigo_turma }}</option>
+                            <option value="{{ turma.id }}" {% if turma_id == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.id }}</option>
                         {% endfor %}
                     </select>
                 </div>

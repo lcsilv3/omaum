@@ -5,4 +5,5 @@ app_name = "notas"
 
 urlpatterns = [
     path("", views.listar_notas, name="listar_notas"),
+    path("<int:nota_id>/", views.detalhar_nota, name="detalhar_nota"),
 ]

@@ -38,9 +38,9 @@ def get_model_class(model_name, module_name="atividades.models"):
 
 
 @login_required
-def index(request):
+def listar_atividades(request):
     """Página inicial do módulo de atividades."""
-    return render(request, "atividades/index.html")
+    return render(request, "atividades/listar_atividades.html")
 
 
 @login_required
