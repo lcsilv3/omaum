@@ -1,0 +1,119 @@
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Instrutoria</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Instrutor Principal -->
+            <div class="col-md-4 mb-3">
+                <label for="search-instrutor" class="form-label">Instrutor Principal</label>
+                <input type="text" id="search-instrutor" class="form-control" 
+                       placeholder="Digite parte do CPF, nome ou número iniciático..." 
+                       autocomplete="off"
+                       value="{{ turma.instrutor.nome|default:'' }}">
+                <div id="search-results-instrutor" class="list-group mt-2" style="display: none;"></div>
+                <div id="selected-instrutor-container" class="p-3 border rounded mt-2 {% if not turma.instrutor %}d-none{% endif %}">
+                    <div id="selected-instrutor-info">
+                        {% if turma.instrutor %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ turma.instrutor.nome }}</strong><br>
+                                    CPF: {{ turma.instrutor.cpf }}<br>
+                                    {% if turma.instrutor.numero_iniciatico %}
+                                        Número Iniciático: {{ turma.instrutor.numero_iniciatico }}
+                                    {% endif %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="remove-id_instrutor">
+                                    <i class="fas fa-times"></i> Remover
+                                </button>
+                            </div>
+                        {% else %}
+                            Nenhum instrutor selecionado
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="alert alert-danger mt-2 d-none"></div>
+                <select name="instrutor" class="form-control d-none" id="id_instrutor">
+                    <option value="">---------</option>
+                    {% if turma.instrutor %}
+                        <option value="{{ turma.instrutor.cpf }}" selected>{{ turma.instrutor.nome }}</option>
+                    {% endif %}
+                </select>
+            </div>
+            
+            <!-- Instrutor Auxiliar -->
+            <div class="col-md-4 mb-3">
+                <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
+                <input type="text" id="search-instrutor-auxiliar" class="form-control" 
+                       placeholder="Digite parte do CPF, nome ou número iniciático..." 
+                       autocomplete="off"
+                       value="{{ turma.instrutor_auxiliar.nome|default:'' }}">
+                <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
+                <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 {% if not turma.instrutor_auxiliar %}d-none{% endif %}">
+                    <div id="selected-instrutor-auxiliar-info">
+                        {% if turma.instrutor_auxiliar %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ turma.instrutor_auxiliar.nome }}</strong><br>
+                                    CPF: {{ turma.instrutor_auxiliar.cpf }}<br>
+                                    {% if turma.instrutor_auxiliar.numero_iniciatico %}
+                                        Número Iniciático: {{ turma.instrutor_auxiliar.numero_iniciatico }}
+                                    {% endif %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="remove-id_instrutor_auxiliar">
+                                    <i class="fas fa-times"></i> Remover
+                                </button>
+                            </div>
+                        {% else %}
+                            Nenhum instrutor auxiliar selecionado
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="alert alert-danger mt-2 d-none"></div>
+                <select name="instrutor_auxiliar" class="form-control d-none" id="id_instrutor_auxiliar">
+                    <option value="">---------</option>
+                    {% if turma.instrutor_auxiliar %}
+                        <option value="{{ turma.instrutor_auxiliar.cpf }}" selected>{{ turma.instrutor_auxiliar.nome }}</option>
+                    {% endif %}
+                </select>
+            </div>
+            
+            <!-- Auxiliar de Instrução -->
+            <div class="col-md-4 mb-3">
+                <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
+                <input type="text" id="search-auxiliar-instrucao" class="form-control" 
+                       placeholder="Digite parte do CPF, nome ou número iniciático..." 
+                       autocomplete="off"
+                       value="{{ turma.auxiliar_instrucao.nome|default:'' }}">
+                <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
+                <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 {% if not turma.auxiliar_instrucao %}d-none{% endif %}">
+                    <div id="selected-auxiliar-instrucao-info">
+                        {% if turma.auxiliar_instrucao %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ turma.auxiliar_instrucao.nome }}</strong><br>
+                                    CPF: {{ turma.auxiliar_instrucao.cpf }}<br>
+                                    {% if turma.auxiliar_instrucao.numero_iniciatico %}
+                                        Número Iniciático: {{ turma.auxiliar_instrucao.numero_iniciatico }}
+                                    {% endif %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="remove-id_auxiliar_instrucao">
+                                    <i class="fas fa-times"></i> Remover
+                                </button>
+                            </div>
+                        {% else %}
+                            Nenhum auxiliar de instrução selecionado
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="alert alert-danger mt-2 d-none"></div>
+                <select name="auxiliar_instrucao" class="form-control d-none" id="id_auxiliar_instrucao">
+                    <option value="">---------</option>
+                    {% if turma.auxiliar_instrucao %}
+                        <option value="{{ turma.auxiliar_instrucao.cpf }}" selected>{{ turma.auxiliar_instrucao.nome }}</option>
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+    </div>
+</div>

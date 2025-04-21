@@ -1,14 +1,15 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Criar Nova Turma{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Criar Nova Turma</h1>
-        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para Lista</a>
+        <h1>Nova Turma</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
     </div>
-
+    
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">
@@ -16,178 +17,167 @@
             </div>
         {% endfor %}
     {% endif %}
-
+    
     <form method="post">
         {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
         
-        <div class="row">
-            <!-- Informações Básicas -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Informações Básicas</h5>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Informações Básicas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.nome %}
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
-                            {{ form.nome }}
-                            {% if form.nome.errors %}
-                                <div class="text-danger">{{ form.nome.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.curso.id_for_label }}" class="form-label">{{ form.curso.label }}</label>
-                            {{ form.curso }}
-                            {% if form.curso.errors %}
-                                <div class="text-danger">{{ form.curso.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.vagas.id_for_label }}" class="form-label">{{ form.vagas.label }}</label>
-                            {{ form.vagas }}
-                            {% if form.vagas.errors %}
-                                <div class="text-danger">{{ form.vagas.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
-                            {{ form.status }}
-                            {% if form.status.errors %}
-                                <div class="text-danger">{{ form.status.errors }}</div>
-                            {% endif %}
-                        </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.curso %}
                     </div>
                 </div>
-            </div>
-            
-            <!-- Datas e Horários -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Datas e Horários</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_inicio %}
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.data_inicio.id_for_label }}" class="form-label">{{ form.data_inicio.label }}</label>
-                                {{ form.data_inicio }}
-                                {% if form.data_inicio.errors %}
-                                    <div class="text-danger">{{ form.data_inicio.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.data_fim.id_for_label }}" class="form-label">{{ form.data_fim.label }}</label>
-                                {{ form.data_fim }}
-                                {% if form.data_fim.errors %}
-                                    <div class="text-danger">{{ form.data_fim.errors }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.horario.id_for_label }}" class="form-label">{{ form.horario.label }}</label>
-                            {{ form.horario }}
-                            {% if form.horario.errors %}
-                                <div class="text-danger">{{ form.horario.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.dias_semana.id_for_label }}" class="form-label">{{ form.dias_semana.label }}</label>
-                            {{ form.dias_semana }}
-                            {% if form.dias_semana.errors %}
-                                <div class="text-danger">{{ form.dias_semana.errors }}</div>
-                            {% endif %}
-                        </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_fim %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.vagas_totais %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.status %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.local %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        {% include 'includes/form_field.html' with field=form.descricao %}
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Instrutores -->
-        <div class="card mb-3">
-            <div class="card-header bg-success text-white">
+        <!-- Seção de Instrutoria -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Instrutoria</h5>
             </div>
             <div class="card-body">
                 <div class="row">
+                    <!-- Instrutor Principal -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor" class="form-label">Instrutor Principal</label>
                         <input type="text" id="search-instrutor" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." 
-                               autocomplete="off">
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-instrutor" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-instrutor-container" class="p-3 border rounded mt-2 d-none">
-                            <div id="selected-instrutor-info">Nenhum instrutor selecionado</div>
+                            <div id="selected-instrutor-info">
+                                Nenhum instrutor selecionado
+                            </div>
                         </div>
-                        {{ form.instrutor }}
-                        {% if form.instrutor.errors %}
-                            <div class="text-danger">{{ form.instrutor.errors }}</div>
-                        {% endif %}
+                        <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
+                        <select name="instrutor" class="form-control d-none" id="id_instrutor">
+                            <option value="">---------</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     
+                    <!-- Instrutor Auxiliar -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
                         <input type="text" id="search-instrutor-auxiliar" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." 
-                               autocomplete="off">
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 d-none">
-                            <div id="selected-instrutor-auxiliar-info">Nenhum instrutor selecionado</div>
+                            <div id="selected-instrutor-auxiliar-info">
+                                Nenhum instrutor auxiliar selecionado
+                            </div>
                         </div>
-                        {{ form.instrutor_auxiliar }}
-                        {% if form.instrutor_auxiliar.errors %}
-                            <div class="text-danger">{{ form.instrutor_auxiliar.errors }}</div>
-                        {% endif %}
+                        <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
+                        <select name="instrutor_auxiliar" class="form-control d-none" id="id_instrutor_auxiliar">
+                            <option value="">---------</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     
+                    <!-- Auxiliar de Instrução -->
                     <div class="col-md-4 mb-3">
                         <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
                         <input type="text" id="search-auxiliar-instrucao" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." 
-                               autocomplete="off">
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 d-none">
-                            <div id="selected-auxiliar-instrucao-info">Nenhum instrutor selecionado</div>
+                            <div id="selected-auxiliar-instrucao-info">
+                                Nenhum auxiliar de instrução selecionado
+                            </div>
                         </div>
-                        {{ form.auxiliar_instrucao }}
-                        {% if form.auxiliar_instrucao.errors %}
-                            <div class="text-danger">{{ form.auxiliar_instrucao.errors }}</div>
-                        {% endif %}
+                        <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
+                        <select name="auxiliar_instrucao" class="form-control d-none" id="id_auxiliar_instrucao">
+                            <option value="">---------</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor. 
+                    O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Horários</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_dias_semana" class="form-label">Dias da Semana</label>
+                            <input type="text" name="dias_semana" class="form-control" id="id_dias_semana" 
+                                   placeholder="Ex: Segunda, Quarta e Sexta">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_horario" class="form-label">Horário</label>
+                            <input type="text" name="horario" class="form-control" id="id_horario" 
+                                   placeholder="Ex: 19:00 às 21:00">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Informações Adicionais -->
-        <div class="card mb-3">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="mb-0">Informações Adicionais</h5>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Requisitos</h5>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <label for="{{ form.descricao.id_for_label }}" class="form-label">{{ form.descricao.label }}</label>
-                    {{ form.descricao }}
-                    {% if form.descricao.errors %}
-                        <div class="text-danger">{{ form.descricao.errors }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.local.id_for_label }}" class="form-label">{{ form.local.label }}</label>
-                    {{ form.local }}
-                    {% if form.local.errors %}
-                        <div class="text-danger">{{ form.local.errors }}</div>
-                    {% endif %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label for="id_pre_requisitos" class="form-label">Pré-requisitos para a turma</label>
+                            <textarea name="pre_requisitos" class="form-control" id="id_pre_requisitos" rows="3" 
+                                      placeholder="Informe os pré-requisitos necessários para participar desta turma"></textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="d-flex justify-content-between">
+        <div class="d-flex justify-content-between mb-5">
             <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">Criar Turma</button>
         </div>
@@ -196,385 +186,158 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/turmas/instrutor_search.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Obter a lista de instrutores elegíveis via AJAX no carregamento da página
-        let instrutoresElegiveis = [];
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        // Inicializar o módulo de busca de instrutores com opção para mostrar todos os alunos
+        InstrutorSearch.init(document.querySelector('[name=csrfmiddlewaretoken]').value, true);
         
-        // Função para carregar instrutores elegíveis
-        function carregarInstrutoresElegiveis() {
-            fetch('/alunos/api/search-instrutores/', {
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'X-Requested-With': 'XMLHttpRequest'
+        // Validação de datas
+        const dataInicio = document.getElementById('{{ form.data_inicio.id_for_label }}');
+        const dataFim = document.getElementById('{{ form.data_fim.id_for_label }}');
+        
+        if (dataInicio && dataFim) {
+            dataInicio.addEventListener('change', function() {
+                if (dataFim.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
+                    alert('A data de início não pode ser posterior à data de fim.');
+                    dataInicio.value = '';
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                instrutoresElegiveis = data;
-                console.log(`Carregados ${instrutoresElegiveis.length} instrutores elegíveis`);
-            })
-            .catch(error => {
-                console.error('Erro ao carregar instrutores elegíveis:', error);
+            });
+            
+            dataFim.addEventListener('change', function() {
+                if (dataInicio.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
+                    alert('A data de fim não pode ser anterior à data de início.');
+                    dataFim.value = '';
+                }
             });
         }
+
+        // Gerenciamento de horários
+        const btnAdicionarHorario = document.getElementById('adicionar_horario');
+        const tabelaHorarios = document.getElementById('tabela_horarios').querySelector('tbody');
+        const horarioJsonInput = document.getElementById('horarios_json');
+        let horarios = [];
         
-        carregarInstrutoresElegiveis();
+        // Função para atualizar o campo JSON
+        function atualizarHorariosJson() {
+            horarioJsonInput.value = JSON.stringify(horarios);
+        }
         
-        // Configurar os campos de busca de instrutores
-        setupInstructorSearch(
-            'search-instrutor',
-            'search-results-instrutor',
-            'selected-instrutor-container',
-            'selected-instrutor-info',
-            'id_instrutor'
-        );
-        
-        setupInstructorSearch(
-            'search-instrutor-auxiliar',
-            'search-results-instrutor-auxiliar',
-            'selected-instrutor-auxiliar-container',
-            'selected-instrutor-auxiliar-info',
-            'id_instrutor_auxiliar'
-        );
-        
-        setupInstructorSearch(
-            'search-auxiliar-instrucao',
-            'search-results-auxiliar-instrucao',
-            'selected-auxiliar-instrucao-container',
-            'selected-auxiliar-instrucao-info',
-            'id_auxiliar_instrucao'
-        );
-        
-        // Função para configurar a busca de instrutores
-        function setupInstructorSearch(searchId, resultsId, containerId, infoId, selectId) {
-            const searchInput = document.getElementById(searchId);
-            const searchResults = document.getElementById(resultsId);
-            const selectedContainer = document.getElementById(containerId);
-            const selectedInfo = document.getElementById(infoId);
-            const selectElement = document.getElementById(selectId);
+        // Função para adicionar um horário
+        btnAdicionarHorario.addEventListener('click', function() {
+            const diaSemana = document.getElementById('id_dia_semana');
+            const horaInicio = document.getElementById('id_hora_inicio');
+            const horaFim = document.getElementById('id_hora_fim');
             
-            // Criar um elemento para mensagens de erro
-            const errorElement = document.createElement('div');
-            errorElement.className = 'alert alert-danger mt-2 d-none';
-            selectedContainer.after(errorElement);
-            
-            let searchTimeout;
-            
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                
-                const query = this.value.trim();
-                
-                // Limpar mensagens de erro
-                errorElement.classList.add('d-none');
-                
-                // Clear results if query is too short
-                if (query.length < 2) {
-                    searchResults.innerHTML = '';
-                    searchResults.style.display = 'none';
-                    return;
-                }
-                
-                // Set a timeout to avoid making too many requests
-                searchTimeout = setTimeout(function() {
-                    // Show loading indicator
-                    searchResults.innerHTML = '<div class="list-group-item text-muted">Buscando...</div>';
-                    searchResults.style.display = 'block';
-                    
-                    // Buscar todos os alunos que correspondem à consulta
-                    fetch(`/alunos/search/?q=${encodeURIComponent(query)}`, {
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        searchResults.innerHTML = '';
-                        
-                        if (data.error) {
-                            // Handle error response
-                            searchResults.innerHTML = `<div class="list-group-item text-danger">Erro ao buscar alunos: ${data.error}</div>`;
-                            return;
-                        }
-                        
-                        if (data.length === 0) {
-                            searchResults.innerHTML = '<div class="list-group-item">Nenhum aluno encontrado</div>';
-                            return;
-                        }
-                        
-                        // Display results - mostrar todos os alunos encontrados
-                        data.forEach(aluno => {
-                            const item = document.createElement('a');
-                            item.href = '#';
-                            item.className = 'list-group-item list-group-item-action';
-                            item.innerHTML = `
-                                <div class="d-flex justify-content-between">
-                                    <div>${aluno.nome}</div>
-                                    <div class="text-muted">
-                                        <small>CPF: ${aluno.cpf}</small>
-                                        ${aluno.numero_iniciatico !== "N/A" ? `<small class="ms-2">Nº: ${aluno.numero_iniciatico}</small>` : ''}
-                                    </div>
-                                </div>
-                            `;
-                            
-                            // Add click event to select this aluno
-                            item.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                
-                                // Verificar elegibilidade após a seleção
-                                verificarElegibilidadeInstrutor(aluno);
-                            });
-                            
-                            searchResults.appendChild(item);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        searchResults.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar alunos</div>';
-                    });
-                }, 300);
-            });
-            
-            // Hide results when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                    searchResults.style.display = 'none';
-                }
-            });
-            
-            // Função para verificar se um aluno pode ser instrutor
-            function verificarElegibilidadeInstrutor(aluno) {
-                // Verificar se o aluno já foi selecionado em outro campo
-                const outrosSelects = Array.from(document.querySelectorAll('select[name^="instrutor"]')).filter(s => s.id !== selectId);
-                const jaEstaEmUso = outrosSelects.some(select => select.value === aluno.cpf);
-                
-                if (jaEstaEmUso) {
-                    errorElement.textContent = `O aluno ${aluno.nome} já está selecionado como instrutor em outro campo.`;
-                    errorElement.classList.remove('d-none');
-                    return;
-                }
-                
-                // Verificar se o aluno pode ser instrutor
-                fetch(`/alunos/api/verificar-elegibilidade-instrutor/${aluno.cpf}/`, {
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.elegivel) {
-                        // Aluno é elegível, prosseguir com a seleção
-                        selecionarInstrutor(aluno);
-                    } else {
-                        // Aluno não é elegível, mostrar mensagem de erro
-                        errorElement.innerHTML = `
-                            <strong>O aluno ${aluno.nome} não pode ser instrutor.</strong><br>
-                            Motivo: ${data.motivo || 'Não atende aos requisitos para ser instrutor.'}
-                        `;
-                        errorElement.classList.remove('d-none');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao verificar elegibilidade:', error);
-                    errorElement.textContent = `Erro ao verificar se ${aluno.nome} pode ser instrutor. Tente novamente.`;
-                    errorElement.classList.remove('d-none');
-                });
-            }
-            
-            // Função para selecionar um instrutor
-            function selecionarInstrutor(aluno) {
-                // Limpar as opções existentes no select
-                while (selectElement.options.length > 0) {
-                    selectElement.remove(0);
-                }
-                
-                // Criar e adicionar a opção para o aluno selecionado
-                const option = new Option(aluno.nome, aluno.cpf, true, true);
-                selectElement.appendChild(option);
-                
-                // Atualizar a interface
-                searchInput.value = aluno.nome;
-                selectedInfo.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>${aluno.nome}</strong><br>
-                            CPF: ${aluno.cpf}<br>
-                            ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="remove-${selectId}">
-                            <i class="fas fa-times"></i> Remover
-                        </button>
-                    </div>
-                `;
-                
-                selectedContainer.classList.remove('d-none');
-                searchResults.style.display = 'none';
-                errorElement.classList.add('d-none');
-                
-                // Adicionar evento para remover o instrutor
-                document.getElementById(`remove-${selectId}`).addEventListener('click', function() {
-                    selectElement.value = '';
-                    searchInput.value = '';
-                    selectedContainer.classList.add('d-none');
-                });
-            }
-        }        
-        // Adicionar validação ao formulário antes do envio
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(e) {
-            // Verificar se há erros visíveis
-            const errosVisiveis = document.querySelectorAll('.alert-danger:not(.d-none)');
-            if (errosVisiveis.length > 0) {
-                e.preventDefault();
-                alert('Por favor, corrija os erros antes de enviar o formulário.');
+            if (!diaSemana.value || !horaInicio.value || !horaFim.value) {
+                alert('Por favor, preencha todos os campos de horário.');
                 return;
             }
             
-            // Verificar se os instrutores são diferentes entre si
-            const instrutorPrincipal = document.getElementById('id_instrutor').value;
-            const instrutorAuxiliar = document.getElementById('id_instrutor_auxiliar').value;
-            const auxiliarInstrucao = document.getElementById('id_auxiliar_instrucao').value;
+            // Obter o texto do dia da semana
+            const diaSemanaTexto = diaSemana.options[diaSemana.selectedIndex].text;
             
-            const instrutoresSelecionados = [instrutorPrincipal, instrutorAuxiliar, auxiliarInstrucao].filter(Boolean);
-            const instrutoresUnicos = new Set(instrutoresSelecionados);
+            // Adicionar à lista de horários
+            const horario = {
+                dia: diaSemana.value,
+                dia_texto: diaSemanaTexto,
+                inicio: horaInicio.value,
+                fim: horaFim.value
+            };
             
-            if (instrutoresSelecionados.length !== instrutoresUnicos.size) {
-                e.preventDefault();
-                alert('Não é possível selecionar o mesmo aluno para diferentes funções de instrução.');
-                return;
+            horarios.push(horario);
+            
+            // Adicionar à tabela
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${diaSemanaTexto}</td>
+                <td>${horaInicio.value} - ${horaFim.value}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger remover-horario" data-index="${horarios.length - 1}">
+                        <i class="fas fa-trash"></i> Remover
+                    </button>
+                </td>
+            `;
+            tabelaHorarios.appendChild(tr);
+            
+            // Atualizar o campo JSON
+            atualizarHorariosJson();
+            
+            // Limpar campos
+            horaInicio.value = '';
+            horaFim.value = '';
+        });
+        
+        // Delegação de eventos para remover horários
+        tabelaHorarios.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remover-horario') || e.target.closest('.remover-horario')) {
+                const btn = e.target.classList.contains('remover-horario') ? e.target : e.target.closest('.remover-horario');
+                const index = btn.dataset.index;
+                
+                // Remover da lista
+                horarios.splice(index, 1);
+                
+                // Remover da tabela
+                btn.closest('tr').remove();
+                
+                // Atualizar índices dos botões restantes
+                const botoesRemover = tabelaHorarios.querySelectorAll('.remover-horario');
+                botoesRemover.forEach((btn, i) => {
+                    btn.dataset.index = i;
+                });
+                
+                // Atualizar o campo JSON
+                atualizarHorariosJson();
             }
-            
-            // Mostrar os selects antes do envio
-            document.getElementById('id_instrutor').style.display = '';
-            document.getElementById('id_instrutor_auxiliar').style.display = '';
-            document.getElementById('id_auxiliar_instrucao').style.display = '';
         });
     });
 </script>
 {% endblock %}
-// Adicionar este código no DOMContentLoaded
-const form = document.querySelector('form');
-form.addEventListener('submit', function(e) {
-    // Verificar se os instrutores selecionados estão corretamente refletidos nos selects
-    const instrutorContainer = document.getElementById('selected-instrutor-container');
-    const instrutorAuxiliarContainer = document.getElementById('selected-instrutor-auxiliar-container');
-    const auxiliarInstrucaoContainer = document.getElementById('selected-auxiliar-instrucao-container');
-    
-    // Verificar se os containers estão visíveis (ou seja, se um instrutor foi selecionado)
-    if (!instrutorContainer.classList.contains('d-none') && 
-        document.getElementById('id_instrutor').value === '') {
-        e.preventDefault();
-        alert('Erro ao processar o instrutor principal. Por favor, selecione novamente.');
-        return;
-    }
-    
-    if (!instrutorAuxiliarContainer.classList.contains('d-none') && 
-        document.getElementById('id_instrutor_auxiliar').value === '') {
-        e.preventDefault();
-        alert('Erro ao processar o instrutor auxiliar. Por favor, selecione novamente.');
-        return;
-    }
-    
-    if (!auxiliarInstrucaoContainer.classList.contains('d-none') && 
-        document.getElementById('id_auxiliar_instrucao').value === '') {
-        e.preventDefault();
-        alert('Erro ao processar o auxiliar de instrução. Por favor, selecione novamente.');
-        return;
-    }
-    
-    // Log para debug
-    console.log('Formulário enviando com valores:');
-    console.log('Instrutor:', document.getElementById('id_instrutor').value);
-    console.log('Instrutor Auxiliar:', document.getElementById('id_instrutor_auxiliar').value);
-    console.log('Auxiliar de Instrução:', document.getElementById('id_auxiliar_instrucao').value);
-});
-document.addEventListener('DOMContentLoaded', function() {
-    // Código existente...
-    
-    // Adicionar validação para a data de início
-    const dataInicioInput = document.getElementById('id_data_inicio');
-    const dataFimInput = document.getElementById('id_data_fim');
-    
-    // Criar elemento para mensagem de alerta
-    const alertaDataInicio = document.createElement('div');
-    alertaDataInicio.className = 'alert alert-warning mt-2 d-none';
-    alertaDataInicio.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Atenção: A data de início está no passado. Isso é permitido, mas certifique-se de que é intencional.';
-    dataInicioInput.parentNode.appendChild(alertaDataInicio);
-    
-    // Função para verificar se a data está no passado
-    function verificarDataPassado() {
-        const dataInicio = new Date(dataInicioInput.value);
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0); // Resetar horas para comparar apenas as datas
+<!-- Adicionar após a seção de instrutoria -->
+{% if debug_mode %}
+<div class="card mb-4">
+    <div class="card-header bg-warning">
+        <h5 class="mb-0">Modo de Depuração</h5>
+    </div>
+    <div class="card-body">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="ignore-eligibility" checked>
+            <label class="form-check-label" for="ignore-eligibility">Ignorar verificações de elegibilidade</label>
+        </div>
+        <small class="text-muted">Este modo permite selecionar qualquer aluno como instrutor, ignorando as verificações de elegibilidade.</small>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ignoreEligibilityCheckbox = document.getElementById('ignore-eligibility');
         
-        if (dataInicio < hoje) {
-            alertaDataInicio.classList.remove('d-none');
-        } else {
-            alertaDataInicio.classList.add('d-none');
-        }
-    }
-    
-    // Verificar no carregamento da página (caso seja edição)
-    if (dataInicioInput.value) {
-        verificarDataPassado();
-    }
-    
-    // Verificar quando o usuário alterar a data
-    dataInicioInput.addEventListener('change', verificarDataPassado);
-    
-    // Validação para garantir que a data de início não seja posterior à data de fim
-    function validarDatas() {
-        const dataInicio = new Date(dataInicioInput.value);
-        const dataFim = new Date(dataFimInput.value);
-        
-        if (dataInicioInput.value && dataFimInput.value && dataInicio > dataFim) {
-            dataFimInput.setCustomValidity('A data de fim não pode ser anterior à data de início');
-            // Mostrar mensagem de erro
-            const alertaDataFim = document.getElementById('alerta-data-fim') || document.createElement('div');
-            alertaDataFim.id = 'alerta-data-fim';
-            alertaDataFim.className = 'alert alert-danger mt-2';
-            alertaDataFim.textContent = 'A data de fim não pode ser anterior à data de início';
-            if (!document.getElementById('alerta-data-fim')) {
-                dataFimInput.parentNode.appendChild(alertaDataFim);
+        ignoreEligibilityCheckbox.addEventListener('change', function() {
+            // Atualizar a variável global no módulo InstrutorSearch
+            if (typeof InstrutorSearch !== 'undefined') {
+                InstrutorSearch.setIgnoreEligibility(this.checked);
+                
+                // Limpar mensagens de erro existentes
+                document.querySelectorAll('[id$="-error"]').forEach(el => {
+                    el.textContent = '';
+                    el.classList.add('d-none');
+                });
+                
+                // Mostrar mensagem
+                const message = this.checked ? 
+                    'Verificações de elegibilidade desativadas. Qualquer aluno pode ser selecionado.' : 
+                    'Verificações de elegibilidade ativadas.';
+                    
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                
+                this.closest('.card-body').appendChild(alertDiv);
             }
-        } else {
-            dataFimInput.setCustomValidity('');
-            const alertaDataFim = document.getElementById('alerta-data-fim');
-            if (alertaDataFim) {
-                alertaDataFim.remove();
-            }
-        }
-    }
-    
-    dataInicioInput.addEventListener('change', validarDatas);
-    dataFimInput.addEventListener('change', validarDatas);
-    
-    // Resto do código existente...
-});
-{% block extra_css %}
-<style>
-    .alert-warning {
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 0.8; }
-        50% { opacity: 1; }
-        100% { opacity: 0.8; }
-    }
-    
-    .date-warning-icon {
-        margin-right: 5px;
-        color: #856404;
-    }
-</style>
-{% endblock %}
+        });
+    });
+</script>
+{% endif %}

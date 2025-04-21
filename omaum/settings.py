@@ -20,7 +20,7 @@ SECRET_KEY = "django-insecure-your-secret-key-here"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -45,6 +45,11 @@ INSTALLED_APPS = [
     "relatorios.apps.RelatoriosConfig",
     "turmas.apps.TurmasConfig",
     # Adicione outros aplicativos aqui se necessário
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok.io",
+    "https://*.ngrok-free.app",
 ]
 
 MIDDLEWARE = [
@@ -110,9 +115,9 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
-
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 # Media files
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
@@ -150,3 +155,6 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # Add any additional settings specific to your project here
+# Adicionar ao final do arquivo
+# Modo de depuração para instrutores
+DEBUG_INSTRUTORES = True  # Definir como False em produção

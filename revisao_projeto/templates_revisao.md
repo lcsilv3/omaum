@@ -1,3 +1,11 @@
+# Revisão da Funcionalidade: templates
+
+## Arquivos de Template:
+
+
+### Arquivo: templates\home.html
+
+```html
 {% extends 'base.html' %}
 {% load static %}
 
@@ -175,3 +183,4 @@
     </div>
 </div>
 {% endblock %}
+```

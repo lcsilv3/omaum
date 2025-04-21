@@ -4,17 +4,16 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
-
 class Turma(models.Model):
     """
     Modelo para representar uma turma no sistema OMAUM.
     """
-
     STATUS_CHOICES = [
         ("A", "Ativa"),
         ("I", "Inativa"),
         ("C", "Concluída"),
     ]
+
     # Informações básicas
     nome = models.CharField(max_length=100, verbose_name="Nome da Turma")
     curso = models.ForeignKey(
@@ -32,15 +31,9 @@ class Turma(models.Model):
     data_fim = models.DateField(verbose_name="Data de Fim")
 
     # Informações de agendamento
-    dias_semana = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Dias da Semana"
-    )
-    local = models.CharField(
-        max_length=200, blank=True, null=True, verbose_name="Local"
-    )
-    horario = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Horário"
-    )
+    dias_semana = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dias da Semana")
+    horario = models.CharField(max_length=100, blank=True, null=True, verbose_name="Horário")
+    local = models.CharField(max_length=200, blank=True, null=True, verbose_name="Local")
 
     # Capacidade e status
     vagas = models.PositiveIntegerField(
@@ -80,6 +73,7 @@ class Turma(models.Model):
         related_name="turmas_como_auxiliar_instrucao",
         verbose_name="Auxiliar de Instrução",
     )
+
     # Campos de alerta para instrutores
     alerta_instrutor = models.BooleanField(
         default=False, verbose_name="Alerta de Instrutor"
@@ -87,6 +81,7 @@ class Turma(models.Model):
     alerta_mensagem = models.TextField(
         blank=True, null=True, verbose_name="Mensagem de Alerta"
     )
+
     # Metadados
     created_at = models.DateTimeField(
         default=timezone.now, verbose_name="Criado em"
@@ -140,11 +135,14 @@ class Turma(models.Model):
                 _("A data de fim não pode ser anterior à data de início.")
             )
 
-
-@classmethod
-def get_by_codigo(cls, codigo_turma):
-    """Método auxiliar para buscar turma por código."""
-    try:
-        return Turma.objects.get(codigo=codigo_turma)
-    except Turma.DoesNotExist:
-        return None
+    @classmethod
+    def get_by_codigo(cls, codigo_turma):
+        """Método auxiliar para buscar turma por código."""
+        try:
+            # Use o campo id em vez de codigo
+            return Turma.objects.get(id=codigo_turma)
+            
+            # Ou use o campo nome
+            # return Turma.objects.get(nome=codigo_turma)
+        except Turma.DoesNotExist:
+            return None

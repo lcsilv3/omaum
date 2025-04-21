@@ -1,37 +1,41 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required, permission_required
+from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
 from django.core.paginator import Paginator
 from importlib import import_module
 from django.core.exceptions import ValidationError
+from django.utils import timezone
+import logging
 
+logger = logging.getLogger(__name__)
 
 def get_models():
     """Obtém o modelo Aluno dinamicamente."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
-
 def get_forms():
     """Obtém o formulário AlunoForm dinamicamente."""
     alunos_forms = import_module("alunos.forms")
     return getattr(alunos_forms, "AlunoForm")
 
+def get_aluno_model():
+    """Obtém o modelo Aluno dinamicamente."""
+    alunos_module = import_module("alunos.models")
+    return getattr(alunos_module, "Aluno")
 
 @login_required
 def listar_alunos(request):
     """Lista todos os alunos cadastrados."""
     try:
         Aluno = get_models()
-
         # Obter parâmetros de busca e filtro
         query = request.GET.get("q", "")
-
+        curso_id = request.GET.get("curso", "")
         # Filtrar alunos
         alunos = Aluno.objects.all()
-
         if query:
             alunos = alunos.filter(
                 Q(nome__icontains=query)
@@ -39,27 +43,40 @@ def listar_alunos(request):
                 | Q(email__icontains=query)
                 | Q(numero_iniciatico__icontains=query)
             )
-
+        # Adicionar filtro por curso
+        if curso_id:
+            try:
+                # Importar o modelo Matricula dinamicamente
+                Matricula = import_module("matriculas.models").Matricula
+                # Filtrar alunos matriculados no curso especificado
+                alunos_ids = (
+                    Matricula.objects.filter(
+                        turma__curso__codigo_curso=curso_id
+                    )
+                    .values_list("aluno__cpf", flat=True)
+                    .distinct()
+                )
+                alunos = alunos.filter(cpf__in=alunos_ids)
+            except (ImportError, AttributeError) as e:
+                # Log do erro, mas continuar sem o filtro de curso
+                print(f"Erro ao filtrar por curso: {e}")
         # Paginação
         paginator = Paginator(alunos, 10)  # 10 alunos por página
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
-
         # Obter cursos para o filtro
         try:
             Curso = import_module("cursos.models").Curso
             cursos = Curso.objects.all()
         except:
             cursos = []
-
         context = {
             "alunos": page_obj,
             "page_obj": page_obj,
             "query": query,
             "cursos": cursos,
-            "curso_selecionado": request.GET.get("curso", ""),
+            "curso_selecionado": curso_id,
         }
-
         return render(request, "alunos/listar_alunos.html", context)
     except Exception as e:
         # Em vez de mostrar a mensagem de erro, apenas retornamos uma lista vazia
@@ -72,15 +89,14 @@ def listar_alunos(request):
                 "query": "",
                 "cursos": [],
                 "curso_selecionado": "",
+                "error_message": f"Erro ao listar alunos: {str(e)}",
             },
         )
-
 
 @login_required
 def criar_aluno(request):
     """Cria um novo aluno."""
     AlunoForm = get_forms()
-
     if request.method == "POST":
         form = AlunoForm(request.POST, request.FILES)
         if form.is_valid():
@@ -98,46 +114,37 @@ def criar_aluno(request):
             messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
         form = AlunoForm()
-
     return render(
         request, "alunos/formulario_aluno.html", {"form": form, "aluno": None}
     )
-
 
 @login_required
 def detalhar_aluno(request, cpf):
     """Exibe os detalhes de um aluno."""
     Aluno = get_models()
     aluno = get_object_or_404(Aluno, cpf=cpf)
-
     # Buscar turmas onde o aluno é instrutor
     turmas_como_instrutor = []
     turmas_como_instrutor_auxiliar = []
     turmas_como_auxiliar_instrucao = []
-
     if aluno.esta_ativo:
         from importlib import import_module
-
         try:
             # Importar o modelo Turma dinamicamente
             turmas_module = import_module("turmas.models")
             Turma = getattr(turmas_module, "Turma")
-
             # Buscar turmas ativas onde o aluno é instrutor
             turmas_como_instrutor = Turma.objects.filter(
                 instrutor=aluno, status="A"
             ).select_related("curso")
-
             turmas_como_instrutor_auxiliar = Turma.objects.filter(
                 instrutor_auxiliar=aluno, status="A"
             ).select_related("curso")
-
             turmas_como_auxiliar_instrucao = Turma.objects.filter(
                 auxiliar_instrucao=aluno, status="A"
             ).select_related("curso")
         except (ImportError, AttributeError):
             pass
-
     return render(
         request,
         "alunos/detalhar_aluno.html",
@@ -149,25 +156,20 @@ def detalhar_aluno(request, cpf):
         },
     )
 
-
 @login_required
 def editar_aluno(request, cpf):
     """Edita um aluno existente."""
     Aluno = get_models()
     AlunoForm = get_forms()
-
     aluno = get_object_or_404(Aluno, cpf=cpf)
     situacao_anterior = aluno.situacao
-
     if request.method == "POST":
         form = AlunoForm(request.POST, request.FILES, instance=aluno)
-
         # Verificar se o formulário é válido
         if form.is_valid():
             try:
                 # Verificar se a situação mudou de "ATIVO" para outra
                 nova_situacao = form.cleaned_data.get("situacao")
-
                 # Se a situação mudou e o aluno é instrutor em alguma turma
                 if (
                     situacao_anterior == "ATIVO"
@@ -185,15 +187,12 @@ def editar_aluno(request, cpf):
                             cpf=aluno.cpf,
                             nova_situacao=nova_situacao,
                         )
-
                     # Se confirmou, atualizar as turmas
                     from importlib import import_module
-
                     try:
                         # Importar o modelo Turma dinamicamente
                         turmas_module = import_module("turmas.models")
                         Turma = getattr(turmas_module, "Turma")
-
                         # Buscar turmas onde o aluno é instrutor
                         turmas_instrutor = Turma.objects.filter(
                             instrutor=aluno, status="A"
@@ -204,20 +203,17 @@ def editar_aluno(request, cpf):
                         turmas_auxiliar_instrucao = Turma.objects.filter(
                             auxiliar_instrucao=aluno, status="A"
                         )
-
                         # Atualizar as turmas
                         for turma in turmas_instrutor:
                             turma.instrutor = None
                             turma.alerta_instrutor = True
                             turma.alerta_mensagem = f"O instrutor {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
                             turma.save()
-
                         for turma in turmas_instrutor_auxiliar:
                             turma.instrutor_auxiliar = None
                             turma.alerta_instrutor = True
                             turma.alerta_mensagem = f"O instrutor auxiliar {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
                             turma.save()
-
                         for turma in turmas_auxiliar_instrucao:
                             turma.auxiliar_instrucao = None
                             turma.alerta_instrutor = True
@@ -225,7 +221,6 @@ def editar_aluno(request, cpf):
                             turma.save()
                     except (ImportError, AttributeError):
                         pass
-
                 # Salvar o aluno
                 form.save()
                 messages.success(request, "Aluno atualizado com sucesso!")
@@ -240,18 +235,15 @@ def editar_aluno(request, cpf):
             messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
         form = AlunoForm(instance=aluno)
-
     return render(
         request, "alunos/formulario_aluno.html", {"form": form, "aluno": aluno}
     )
-
 
 @login_required
 def excluir_aluno(request, cpf):
     """Exclui um aluno."""
     Aluno = get_models()
     aluno = get_object_or_404(Aluno, cpf=cpf)
-
     if request.method == "POST":
         try:
             aluno.delete()
@@ -260,9 +252,7 @@ def excluir_aluno(request, cpf):
         except Exception as e:
             messages.error(request, f"Erro ao excluir aluno: {str(e)}")
             return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
-
     return render(request, "alunos/excluir_aluno.html", {"aluno": aluno})
-
 
 @login_required
 def dashboard(request):
@@ -270,15 +260,12 @@ def dashboard(request):
     try:
         Aluno = get_models()
         total_alunos = Aluno.objects.count()
-
         # Contagem por sexo
         total_masculino = Aluno.objects.filter(sexo="M").count()
         total_feminino = Aluno.objects.filter(sexo="F").count()
         total_outros = Aluno.objects.filter(sexo="O").count()
-
         # Alunos recentes
         alunos_recentes = Aluno.objects.order_by("-created_at")[:5]
-
         context = {
             "total_alunos": total_alunos,
             "total_masculino": total_masculino,
@@ -286,12 +273,10 @@ def dashboard(request):
             "total_outros": total_outros,
             "alunos_recentes": alunos_recentes,
         }
-
         return render(request, "alunos/dashboard.html", context)
     except Exception as e:
         messages.error(request, f"Erro ao carregar dashboard: {str(e)}")
         return redirect("alunos:listar_alunos")
-
 
 @login_required
 def exportar_alunos(request):
@@ -299,13 +284,10 @@ def exportar_alunos(request):
     try:
         import csv
         from django.http import HttpResponse
-
         Aluno = get_models()
         alunos = Aluno.objects.all()
-
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="alunos.csv"'
-
         writer = csv.writer(response)
         writer.writerow(
             [
@@ -317,7 +299,6 @@ def exportar_alunos(request):
                 "Número Iniciático",
             ]
         )
-
         for aluno in alunos:
             writer.writerow(
                 [
@@ -329,12 +310,10 @@ def exportar_alunos(request):
                     aluno.numero_iniciatico,
                 ]
             )
-
         return response
     except Exception as e:
         messages.error(request, f"Erro ao exportar alunos: {str(e)}")
         return redirect("alunos:listar_alunos")
-
 
 @login_required
 def importar_alunos(request):
@@ -343,16 +322,13 @@ def importar_alunos(request):
         try:
             import csv
             from io import TextIOWrapper
-
             Aluno = get_models()
             csv_file = TextIOWrapper(
                 request.FILES["csv_file"].file, encoding="utf-8"
             )
             reader = csv.DictReader(csv_file)
-
             count = 0
             errors = []
-
             for row in reader:
                 try:
                     # Processar cada linha do CSV
@@ -398,7 +374,6 @@ def importar_alunos(request):
                     count += 1
                 except Exception as e:
                     errors.append(f"Erro na linha {count+1}: {str(e)}")
-
             if errors:
                 messages.warning(
                     request,
@@ -414,13 +389,10 @@ def importar_alunos(request):
                 messages.success(
                     request, f"{count} alunos importados com sucesso!"
                 )
-
             return redirect("alunos:listar_alunos")
         except Exception as e:
             messages.error(request, f"Erro ao importar alunos: {str(e)}")
-
     return render(request, "alunos/importar_alunos.html")
-
 
 @login_required
 def relatorio_alunos(request):
@@ -431,12 +403,10 @@ def relatorio_alunos(request):
         total_masculino = Aluno.objects.filter(sexo="M").count()
         total_feminino = Aluno.objects.filter(sexo="F").count()
         total_outros = Aluno.objects.filter(sexo="O").count()
-
         # Calcular idade média
         from django.db.models import Avg, F
         from django.db.models.functions import ExtractYear
         from django.utils import timezone
-
         current_year = timezone.now().year
         idade_media = (
             Aluno.objects.annotate(
@@ -444,7 +414,6 @@ def relatorio_alunos(request):
             ).aggregate(Avg("idade"))["idade__avg"]
             or 0
         )
-
         context = {
             "total_alunos": total_alunos,
             "total_masculino": total_masculino,
@@ -452,23 +421,10 @@ def relatorio_alunos(request):
             "total_outros": total_outros,
             "idade_media": round(idade_media, 1),
         }
-
         return render(request, "alunos/relatorio_alunos.html", context)
     except Exception as e:
         messages.error(request, f"Erro ao gerar relatório: {str(e)}")
         return redirect("alunos:listar_alunos")
-
-
-from django.http import JsonResponse
-from django.db.models import Q
-from django.contrib.auth.decorators import login_required
-
-
-def get_aluno_model():
-    """Obtém o modelo Aluno dinamicamente."""
-    alunos_module = import_module("alunos.models")
-    return getattr(alunos_module, "Aluno")
-
 
 @login_required
 def search_alunos(request):
@@ -477,9 +433,7 @@ def search_alunos(request):
         query = request.GET.get("q", "")
         if len(query) < 2:
             return JsonResponse([], safe=False)
-
         Aluno = get_aluno_model()  # Use a função existente para obter o modelo
-
         # Buscar alunos por nome, CPF ou número iniciático
         alunos = Aluno.objects.filter(
             Q(nome__icontains=query)
@@ -488,7 +442,6 @@ def search_alunos(request):
         )[
             :10
         ]  # Limitar a 10 resultados
-
         # Formatar resultados
         results = []
         for aluno in alunos:
@@ -504,33 +457,23 @@ def search_alunos(request):
                     ),
                 }
             )
-
         return JsonResponse(results, safe=False)
-
     except Exception as e:
-        import logging
-
-        logger = logging.getLogger(__name__)
         logger.error(f"Error in search_alunos: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
-
 
 @login_required
 def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
     """Confirma a remoção da instrutoria de um aluno."""
     Aluno = get_models()
     aluno = get_object_or_404(Aluno, cpf=cpf)
-
     # Importar os modelos necessários
     from importlib import import_module
-
     try:
         turmas_module = import_module("turmas.models")
         Turma = getattr(turmas_module, "Turma")
-
         cargos_module = import_module("cargos.models")
         AtribuicaoCargo = getattr(cargos_module, "AtribuicaoCargo")
-
         # Buscar turmas onde o aluno é instrutor
         turmas_instrutor = Turma.objects.filter(instrutor=aluno, status="A")
         turmas_instrutor_auxiliar = Turma.objects.filter(
@@ -539,31 +482,26 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
         turmas_auxiliar_instrucao = Turma.objects.filter(
             auxiliar_instrucao=aluno, status="A"
         )
-
         # Juntar todas as turmas
         turmas = (
             list(turmas_instrutor)
             + list(turmas_instrutor_auxiliar)
             + list(turmas_auxiliar_instrucao)
         )
-
         # Se não houver turmas, redirecionar para a edição
         if not turmas:
             return redirect("alunos:editar_aluno", cpf=aluno.cpf)
-
         # Se o método for POST, processar a confirmação
         if request.method == "POST":
             # Atualizar a situação do aluno
             aluno.situacao = nova_situacao
             aluno.save()
-
             # Atualizar as turmas e finalizar os cargos administrativos
             for turma in turmas_instrutor:
                 turma.instrutor = None
                 turma.alerta_instrutor = True
                 turma.alerta_mensagem = f"O instrutor {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
                 turma.save()
-
                 # Finalizar os cargos administrativos relacionados
                 atribuicoes = AtribuicaoCargo.objects.filter(
                     aluno=aluno,
@@ -573,13 +511,11 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
                 for atribuicao in atribuicoes:
                     atribuicao.data_fim = timezone.now().date()
                     atribuicao.save()
-
             for turma in turmas_instrutor_auxiliar:
                 turma.instrutor_auxiliar = None
                 turma.alerta_instrutor = True
                 turma.alerta_mensagem = f"O instrutor auxiliar {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
                 turma.save()
-
                 # Finalizar os cargos administrativos relacionados
                 atribuicoes = AtribuicaoCargo.objects.filter(
                     aluno=aluno,
@@ -589,13 +525,11 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
                 for atribuicao in atribuicoes:
                     atribuicao.data_fim = timezone.now().date()
                     atribuicao.save()
-
             for turma in turmas_auxiliar_instrucao:
                 turma.auxiliar_instrucao = None
                 turma.alerta_instrutor = True
                 turma.alerta_mensagem = f"O auxiliar de instrução {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
                 turma.save()
-
                 # Finalizar os cargos administrativos relacionados
                 atribuicoes = AtribuicaoCargo.objects.filter(
                     aluno=aluno,
@@ -605,13 +539,11 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
                 for atribuicao in atribuicoes:
                     atribuicao.data_fim = timezone.now().date()
                     atribuicao.save()
-
             messages.success(
                 request,
                 "Aluno atualizado com sucesso e removido das turmas como instrutor!",
             )
             return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
-
         # Renderizar a página de confirmação
         return render(
             request,
@@ -631,21 +563,18 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
         messages.error(request, f"Erro ao processar a solicitação: {str(e)}")
         return redirect("alunos:editar_aluno", cpf=aluno.cpf)
 
-
 @login_required
 def search_instrutores(request):
     """API endpoint para buscar alunos elegíveis para serem instrutores."""
     try:
         Aluno = get_aluno_model()
-
-        # Buscar apenas alunos ativos e que podem ser instrutores
-        alunos = Aluno.objects.filter(situacao="A")
-
+        # Buscar apenas alunos ativos
+        alunos = Aluno.objects.filter(situacao="ATIVO")
         # Filtrar alunos que podem ser instrutores
-        alunos_elegíveis = []
+        alunos_elegiveis = []
         for aluno in alunos:
             if aluno.pode_ser_instrutor:
-                alunos_elegíveis.append(
+                alunos_elegiveis.append(
                     {
                         "cpf": aluno.cpf,
                         "nome": aluno.nome,
@@ -657,12 +586,30 @@ def search_instrutores(request):
                         ),
                     }
                 )
-
-        return JsonResponse(alunos_elegíveis, safe=False)
-
+        # Se não houver alunos elegíveis, adicionar um log de aviso
+        if not alunos_elegiveis:
+            logger.warning(
+                "Nenhum aluno elegível para ser instrutor. Usando todos os alunos ativos."
+            )
+            # Temporariamente, retornar todos os alunos ativos
+            for aluno in alunos:
+                alunos_elegiveis.append(
+                    {
+                        "cpf": aluno.cpf,
+                        "nome": aluno.nome,
+                        "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                        "foto": (
+                            aluno.foto.url
+                            if hasattr(aluno, "foto") and aluno.foto
+                            else None
+                        ),
+                    }
+                )
+        logger.info(f"Alunos elegíveis para instrutores: {len(alunos_elegiveis)}")
+        return JsonResponse(alunos_elegiveis, safe=False)
     except Exception as e:
+        logger.error(f"Erro em search_instrutores: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
-
 
 @login_required
 def get_aluno(request, cpf):
@@ -670,7 +617,6 @@ def get_aluno(request, cpf):
     try:
         Aluno = get_aluno_model()
         aluno = get_object_or_404(Aluno, cpf=cpf)
-
         return JsonResponse(
             {
                 "success": True,
@@ -689,33 +635,166 @@ def get_aluno(request, cpf):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=404)
 
-
 @login_required
+@permission_required('alunos.view_aluno', raise_exception=True)
 def verificar_elegibilidade_instrutor(request, cpf):
     """API endpoint para verificar se um aluno pode ser instrutor."""
     try:
+        # Configurar logging
+        logger.info(f"Verificando elegibilidade do instrutor com CPF: {cpf}")
+        
         Aluno = get_aluno_model()
         aluno = get_object_or_404(Aluno, cpf=cpf)
-
+        logger.info(f"Aluno encontrado: {aluno.nome}, situação: {aluno.situacao}")
+        
         # Verificar se o aluno está ativo
-        if aluno.situacao != "A":
+        if aluno.situacao != "ATIVO":
+            logger.warning(f"Aluno {aluno.nome} não está ativo. Situação: {aluno.situacao}")
             return JsonResponse(
                 {
                     "elegivel": False,
                     "motivo": f"O aluno não está ativo. Situação atual: {aluno.get_situacao_display()}",
                 }
             )
-
+        
         # Verificar se o aluno pode ser instrutor
-        if not aluno.pode_ser_instrutor:
+        logger.info(f"Verificando método pode_ser_instrutor para {aluno.nome}")
+        if not hasattr(aluno, 'pode_ser_instrutor'):
+            logger.error(f"Método pode_ser_instrutor não encontrado para o aluno {aluno.nome}")
             return JsonResponse(
                 {
                     "elegivel": False,
-                    "motivo": "O aluno está matriculado em um curso pré-iniciático ou não atende aos requisitos para ser instrutor.",
+                    "motivo": "Erro na verificação: o método 'pode_ser_instrutor' não existe.",
                 }
             )
-
+        
+        # Tentar executar o método pode_ser_instrutor com tratamento de erro
+        try:
+            pode_ser_instrutor = aluno.pode_ser_instrutor
+            logger.info(f"Resultado de pode_ser_instrutor para {aluno.nome}: {pode_ser_instrutor}")
+            
+            if not pode_ser_instrutor:
+                # Verificar matrículas em cursos pré-iniciáticos diretamente para mensagem mais específica
+                from importlib import import_module
+                matriculas_module = import_module("matriculas.models")
+                Matricula = getattr(matriculas_module, "Matricula")
+                
+                matriculas_pre_iniciatico = Matricula.objects.filter(
+                    aluno=aluno, turma__curso__nome__icontains="Pré-iniciático"
+                )
+                
+                if matriculas_pre_iniciatico.exists():
+                    cursos = ", ".join([f"{m.turma.curso.nome}" for m in matriculas_pre_iniciatico])
+                    logger.warning(f"Aluno {aluno.nome} está matriculado em cursos pré-iniciáticos: {cursos}")
+                    return JsonResponse(
+                        {
+                            "elegivel": False,
+                            "motivo": f"O aluno está matriculado em cursos pré-iniciáticos: {cursos}",
+                        }
+                    )
+                else:
+                    logger.warning(f"Aluno {aluno.nome} não atende a outros requisitos para ser instrutor")
+                    return JsonResponse(
+                        {
+                            "elegivel": False,
+                            "motivo": "O aluno não atende aos requisitos para ser instrutor.",
+                        }
+                    )
+        except Exception as method_error:
+            import traceback
+            logger.error(f"Erro ao executar método pode_ser_instrutor: {str(method_error)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return JsonResponse(
+                {
+                    "elegivel": False,
+                    "motivo": f"Erro ao verificar requisitos de instrutor: {str(method_error)}",
+                }
+            )
+        
+        logger.info(f"Aluno {aluno.nome} é elegível para ser instrutor")
         return JsonResponse({"elegivel": True})
-
     except Exception as e:
-        return JsonResponse({"elegivel": False, "motivo": str(e)}, status=500)
+        import traceback
+        error_msg = str(e)
+        stack_trace = traceback.format_exc()
+        logger.error(f"Erro ao verificar elegibilidade: {error_msg}")
+        logger.error(f"Traceback: {stack_trace}")
+        return JsonResponse(
+            {"elegivel": False, "motivo": f"Erro na busca: {error_msg}"},
+            status=500
+        )
+@login_required
+def diagnostico_instrutores(request):
+    """
+    Página de diagnóstico para depurar problemas com a seleção de instrutores.
+    Mostra informações detalhadas sobre alunos e sua elegibilidade para serem instrutores.
+    """
+    try:
+        Aluno = get_aluno_model()
+        # Buscar todos os alunos ativos
+        alunos_ativos = Aluno.objects.filter(situacao="ATIVO")
+        
+        # Coletar informações de diagnóstico para cada aluno
+        diagnostico = []
+        for aluno in alunos_ativos:
+            info = {
+                "cpf": aluno.cpf,
+                "nome": aluno.nome,
+                "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                "situacao": aluno.get_situacao_display(),
+                "tem_metodo": hasattr(aluno, 'pode_ser_instrutor'),
+            }
+            
+            # Verificar se o método pode_ser_instrutor existe e executá-lo
+            if info["tem_metodo"]:
+                try:
+                    info["elegivel"] = aluno.pode_ser_instrutor
+                    
+                    # Se não for elegível, tentar determinar o motivo
+                    if not info["elegivel"]:
+                        # Verificar matrículas em cursos pré-iniciáticos
+                        from importlib import import_module
+                        try:
+                            matriculas_module = import_module("matriculas.models")
+                            Matricula = getattr(matriculas_module, "Matricula")
+                            
+                            matriculas_pre_iniciatico = Matricula.objects.filter(
+                                aluno=aluno, turma__curso__nome__icontains="Pré-iniciático"
+                            )
+                            
+                            if matriculas_pre_iniciatico.exists():
+                                cursos = [m.turma.curso.nome for m in matriculas_pre_iniciatico]
+                                info["motivo_inelegibilidade"] = f"Matriculado em cursos pré-iniciáticos: {', '.join(cursos)}"
+                            else:
+                                info["motivo_inelegibilidade"] = "Não atende aos requisitos (motivo desconhecido)"
+                        except Exception as e:
+                            info["motivo_inelegibilidade"] = f"Erro ao verificar matrículas: {str(e)}"
+                except Exception as e:
+                    info["erro"] = str(e)
+            
+            diagnostico.append(info)
+        
+        return render(
+            request,
+            "alunos/diagnostico_instrutores.html",
+            {
+                "diagnostico": diagnostico,
+                "total_alunos": len(alunos_ativos),
+                "total_elegiveis": sum(1 for info in diagnostico if info.get("elegivel", False)),
+            },
+        )
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        stack_trace = traceback.format_exc()
+        logger.error(f"Erro na página de diagnóstico: {error_msg}")
+        logger.error(f"Traceback: {stack_trace}")
+        
+        return render(
+            request,
+            "alunos/erro.html",
+            {
+                "erro": error_msg,
+                "traceback": stack_trace,
+            },
+        )

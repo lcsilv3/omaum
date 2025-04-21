@@ -15,20 +15,21 @@ class TurmaForm(forms.ModelForm):
     class Meta:
         model = Turma
         fields = [
-            "nome",
-            "curso",
-            "vagas",
-            "status",
-            "data_inicio",
-            "data_fim",
-            "instrutor",
-            "instrutor_auxiliar",
-            "auxiliar_instrucao",
-            "dias_semana",
-            "local",
-            "horario",
-            "descricao",
+            'nome',
+            'curso',
+            'data_inicio',
+            'data_fim',
+            'status',
+            'local',
+            'descricao',
+            'instrutor',
+            'instrutor_auxiliar',
+            'auxiliar_instrucao',
+            'dias_semana',
+            'horario',
+            'vagas',
         ]
+        
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
             "curso": forms.Select(attrs={"class": "form-select"}),
@@ -56,6 +57,7 @@ class TurmaForm(forms.ModelForm):
                 attrs={"class": "form-control", "rows": 3}
             ),
         }
+        
         help_texts = {
             "vagas": "Número máximo de alunos que podem ser matriculados na turma.",
             "data_inicio": "Data de início das aulas.",
@@ -69,29 +71,23 @@ class TurmaForm(forms.ModelForm):
         self.fields["instrutor"].required = False
         self.fields["instrutor_auxiliar"].required = False
         self.fields["auxiliar_instrucao"].required = False
-
         # Configurar os querysets para mostrar apenas alunos elegíveis
         Aluno = get_aluno_model()
         alunos_elegíveis = Aluno.objects.filter(situacao="A")
-
         # Filtrar alunos que podem ser instrutores
         alunos_instrutores = [
             aluno for aluno in alunos_elegíveis if aluno.pode_ser_instrutor
         ]
-
         # Se não houver alunos instrutores, usar todos os alunos ativos
         if not alunos_instrutores:
             print(
                 "AVISO: Nenhum aluno elegível para ser instrutor. Usando todos os alunos ativos."
             )
             alunos_instrutores = list(alunos_elegíveis)
-
         # Obter CPFs dos alunos instrutores
         cpfs_instrutores = [a.cpf for a in alunos_instrutores]
-
         # Debug
         print(f"Alunos elegíveis para instrutores: {len(cpfs_instrutores)}")
-
         # Configurar querysets
         self.fields["instrutor"].queryset = Aluno.objects.filter(
             cpf__in=cpfs_instrutores
@@ -107,22 +103,18 @@ class TurmaForm(forms.ModelForm):
         cleaned_data = super().clean()
         data_inicio = cleaned_data.get("data_inicio")
         data_fim = cleaned_data.get("data_fim")
-
         # Validar que a data de início é anterior à data de fim
         if data_inicio and data_fim and data_inicio > data_fim:
             raise ValidationError(
                 "A data de início não pode ser posterior à data de fim."
             )
-
         # Removemos a validação que impedia datas no passado:
         # if (not self.instance.pk and data_inicio and data_inicio < timezone.now().date()):
         #     raise ValidationError("A data de início não pode ser no passado para novas turmas.")
-
         # Verificar se os instrutores são diferentes entre si
         instrutor = cleaned_data.get("instrutor")
         instrutor_auxiliar = cleaned_data.get("instrutor_auxiliar")
         auxiliar_instrucao = cleaned_data.get("auxiliar_instrucao")
-
         if (
             instrutor
             and instrutor_auxiliar
@@ -132,7 +124,6 @@ class TurmaForm(forms.ModelForm):
                 "instrutor_auxiliar",
                 "O instrutor auxiliar deve ser diferente do instrutor principal.",
             )
-
         if (
             instrutor
             and auxiliar_instrucao
@@ -142,7 +133,6 @@ class TurmaForm(forms.ModelForm):
                 "auxiliar_instrucao",
                 "O auxiliar de instrução deve ser diferente do instrutor principal.",
             )
-
         if (
             instrutor_auxiliar
             and auxiliar_instrucao
@@ -152,7 +142,6 @@ class TurmaForm(forms.ModelForm):
                 "auxiliar_instrucao",
                 "O auxiliar de instrução deve ser diferente do instrutor auxiliar.",
             )
-
         return cleaned_data
 
     def clean_nome(self):
@@ -161,16 +150,12 @@ class TurmaForm(forms.ModelForm):
             # Verificar se já existe uma turma com o mesmo nome (ignorando case)
             instance_id = getattr(self.instance, "id", None)
             turmas_existentes = Turma.objects.filter(nome__iexact=nome)
-
             if instance_id:
                 turmas_existentes = turmas_existentes.exclude(id=instance_id)
-
             if turmas_existentes.exists():
                 raise ValidationError(
                     "Já existe uma turma com este nome. Por favor, escolha um nome diferente."
                 )
-
             # Opcional: normalizar o nome (por exemplo, primeira letra maiúscula)
             nome = nome.strip().capitalize()
-
         return nome

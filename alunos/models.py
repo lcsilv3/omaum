@@ -207,7 +207,6 @@ class Aluno(models.Model):
     def clean(self):
         """Validação personalizada para o modelo."""
         super().clean()
-
     class Meta:
         verbose_name = _("Aluno")
         verbose_name_plural = _("Alunos")

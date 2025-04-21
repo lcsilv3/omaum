@@ -25,4 +25,14 @@ urlpatterns = [
         name="search_instrutores",
     ),
     path("api/get-aluno/<str:cpf>/", views.get_aluno, name="get_aluno"),
-]
+    # Adicione esta linha para o novo endpoint
+    path(
+        "api/verificar-elegibilidade-instrutor/<str:cpf>/",
+        views.verificar_elegibilidade_instrutor,
+        name="verificar_elegibilidade_instrutor",
+    ),
+    path(
+        "diagnostico-instrutores/",
+        views.diagnostico_instrutores,
+        name="diagnostico_instrutores",
+    ),]

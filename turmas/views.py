@@ -3,7 +3,13 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from importlib import import_module
 from django.utils import timezone
+from django.conf import settings
 from .forms import TurmaForm
+
+def get_model(app_name, model_name):
+    """Obtém um modelo dinamicamente para evitar importações circulares."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
 
 
 def get_turma_model():
@@ -20,7 +26,6 @@ def get_aluno_model():
 def listar_turmas(request):
     Turma = get_turma_model()
     turmas = Turma.objects.all()
-
     # Preparar informações adicionais para cada turma
     turmas_com_info = []
     for turma in turmas:
@@ -30,7 +35,6 @@ def listar_turmas(request):
             or not turma.instrutor_auxiliar
             or not turma.auxiliar_instrucao
         )
-
         # Calcular vagas disponíveis
         total_alunos = (
             turma.matriculas.filter(status="A").count()
@@ -58,62 +62,49 @@ def listar_turmas(request):
 @login_required
 def criar_turma(request):
     """Cria uma nova turma."""
-    Turma = get_turma_model()
     if request.method == "POST":
         form = TurmaForm(request.POST)
         if form.is_valid():
-            # Verificar se a data de início está no passado
-            data_inicio = form.cleaned_data.get("data_inicio")
-            if data_inicio and data_inicio < timezone.now().date():
-                messages.warning(
-                    request,
-                    "A turma foi criada com uma data de início no passado. "
-                    "Certifique-se de que isso é intencional.",
-                )
-
-            turma = form.save()
+            turma = form.save(commit=False)
+            
+            # Processar horários se existirem
+            horarios_json = request.POST.get('horarios_json')
+            if horarios_json:
+                import json
+                try:
+                    turma.horarios = json.loads(horarios_json)
+                except json.JSONDecodeError:
+                    turma.horarios = []
+            
+            turma.save()
             messages.success(request, "Turma criada com sucesso!")
-            return redirect("turmas:listar_turmas")
+            return redirect("turmas:detalhar_turma", id=turma.id)
         else:
-            # Fornecer mensagens de erro mais específicas
-            if "instrutor" in form.errors:
-                messages.error(
-                    request,
-                    "Erro no instrutor principal: "
-                    + " ".join(form.errors["instrutor"]),
-                )
-            if "instrutor_auxiliar" in form.errors:
-                messages.error(
-                    request,
-                    "Erro no instrutor auxiliar: "
-                    + " ".join(form.errors["instrutor_auxiliar"]),
-                )
-            if "auxiliar_instrucao" in form.errors:
-                messages.error(
-                    request,
-                    "Erro no auxiliar de instrução: "
-                    + " ".join(form.errors["auxiliar_instrucao"]),
-                )
-
             messages.error(request, "Corrija os erros no formulário.")
     else:
         form = TurmaForm()
 
-    return render(request, "turmas/criar_turma.html", {"form": form})
+    # Obter todos os alunos ativos para o formulário
+    Aluno = get_model("alunos", "Aluno")
+    alunos = Aluno.objects.filter(situacao="ATIVO")
 
+    context = {
+        'form': form,
+        'alunos': alunos,
+        'debug_mode': getattr(settings, 'DEBUG_INSTRUTORES', False)
+    }
 
+    return render(request, "turmas/criar_turma.html", context)
 @login_required
 def detalhar_turma(request, id):
     Turma = get_turma_model()
     turma = get_object_or_404(Turma, id=id)
-
     # Verificar pendências na instrutoria
     tem_pendencia_instrutoria = (
         not turma.instrutor
         or not turma.instrutor_auxiliar
         or not turma.auxiliar_instrucao
     )
-
     # Calcular informações de matrículas
     alunos_matriculados_count = (
         turma.matriculas.filter(status="A").count()
@@ -121,14 +112,12 @@ def detalhar_turma(request, id):
         else 0
     )
     vagas_disponiveis = turma.vagas - alunos_matriculados_count
-
     # Obter matrículas ativas
     matriculas = (
         turma.matriculas.filter(status="A")
         if hasattr(turma, "matriculas")
         else []
     )
-
     context = {
         "turma": turma,
         "matriculas": matriculas,
@@ -136,38 +125,35 @@ def detalhar_turma(request, id):
         "vagas_disponiveis": vagas_disponiveis,
         "tem_pendencia_instrutoria": tem_pendencia_instrutoria,
     }
-
     return render(request, "turmas/detalhar_turma.html", context)
 
 
 @login_required
 def editar_turma(request, id):
+    """Edita uma turma existente."""
     Turma = get_turma_model()
     turma = get_object_or_404(Turma, id=id)
-
     if request.method == "POST":
         form = TurmaForm(request.POST, instance=turma)
         if form.is_valid():
             form.save()
             messages.success(request, "Turma atualizada com sucesso!")
-            return redirect("turmas:listar_turmas")
+            return redirect("turmas:detalhar_turma", id=turma.id)
+        else:
+            messages.error(request, "Corrija os erros no formulário.")
     else:
-        # Formatar as datas para o formato ISO
-        if turma.data_inicio:
-            turma.data_inicio_iso = turma.data_inicio.strftime("%Y-%m-%d")
-        if turma.data_fim:
-            turma.data_fim_iso = turma.data_fim.strftime("%Y-%m-%d")
-
         form = TurmaForm(instance=turma)
-
-    # Obter alunos para o formulário de instrutores
-    Aluno = get_aluno_model()
-    alunos = Aluno.objects.filter(situacao="A")
-
+    # Obter todos os alunos ativos para o formulário
+    Aluno = get_model("alunos", "Aluno")
+    alunos = Aluno.objects.filter(situacao="ATIVO")
     return render(
         request,
         "turmas/editar_turma.html",
-        {"form": form, "turma": turma, "alunos": alunos},
+        {
+            "form": form,
+            "turma": turma,
+            "alunos": alunos,  # Passar todos os alunos ativos para o template
+        },
     )
 
 
@@ -200,11 +186,9 @@ def matricular_aluno(request, id):
     Turma = get_turma_model()
     Aluno = get_aluno_model()
     turma = get_object_or_404(Turma, id=id)
-
     if request.method == "POST":
         aluno_cpf = request.POST.get("aluno")
         aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
-
         # Verificar se existe um modelo de Matricula
         try:
             Matricula = import_module("matriculas.models").Matricula
@@ -219,12 +203,10 @@ def matricular_aluno(request, id):
             # Fallback: adicionar diretamente à relação many-to-many se o modelo Matricula não existir
             if hasattr(turma, "alunos"):
                 turma.alunos.add(aluno)
-
         messages.success(
             request, f"Aluno {aluno.nome} matriculado com sucesso!"
         )
         return redirect("turmas:detalhar_turma", id=turma.id)
-
     # Obter alunos disponíveis para matrícula
     try:
         # Se existir um modelo de Matricula, excluir alunos já matriculados
@@ -239,14 +221,12 @@ def matricular_aluno(request, id):
             alunos_disponiveis = Aluno.objects.exclude(turmas=turma)
         else:
             alunos_disponiveis = Aluno.objects.all()
-
     # Adicionar informação de vagas disponíveis
     vagas_disponiveis = (
         turma.vagas_disponiveis
         if hasattr(turma, "vagas_disponiveis")
         else turma.vagas
     )
-
     return render(
         request,
         "turmas/matricular_aluno.html",
@@ -263,10 +243,8 @@ def cancelar_matricula(request, turma_id, aluno_cpf):
     """Cancela a matrícula de um aluno em uma turma."""
     Turma = get_turma_model()
     Aluno = get_aluno_model()
-
     turma = get_object_or_404(Turma, id=turma_id)
     aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
-
     # Verificar se o aluno está matriculado na turma
     try:
         # Importar o modelo Matricula dinamicamente
@@ -274,27 +252,22 @@ def cancelar_matricula(request, turma_id, aluno_cpf):
 
         matriculas_module = import_module("matriculas.models")
         Matricula = getattr(matriculas_module, "Matricula")
-
         matricula = Matricula.objects.get(aluno=aluno, turma=turma)
-
         if request.method == "POST":
             # Cancelar a matrícula
             matricula.status = "C"  # Cancelada
             matricula.save()
-
             messages.success(
                 request,
                 f"Matrícula do aluno {aluno.nome} na turma {turma.nome} cancelada com sucesso.",
             )
             return redirect("turmas:detalhar_turma", id=turma.id)
-
         # Se for GET, mostrar página de confirmação
         return render(
             request,
             "turmas/cancelar_matricula.html",
             {"turma": turma, "aluno": aluno},
         )
-
     except (ImportError, AttributeError) as e:
         messages.error(
             request, f"Erro ao acessar o modelo de matrículas: {str(e)}"

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Diagnóstico de Elegibilidade de Instrutores{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Diagnóstico de Elegibilidade de Instrutores</h1>
+    
+    <div class="alert alert-info">
+        <p>Esta página mostra o diagnóstico de elegibilidade de todos os alunos ativos para serem instrutores.</p>
+        <p>Total de alunos: {{ total_alunos }}</p>
+        <p>Alunos elegíveis: {{ total_elegiveis }} ({{ total_elegiveis|floatformat:1 }}%)</p>
+        <p>Alunos inelegíveis: {{ total_inelegiveis }} ({{ total_inelegiveis|floatformat:1 }}%)</p>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Filtros</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="mostrar-elegiveis" checked>
+                        <label class="form-check-label" for="mostrar-elegiveis">Mostrar alunos elegíveis</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="mostrar-inelegiveis" checked>
+                        <label class="form-check-label" for="mostrar-inelegiveis">Mostrar alunos inelegíveis</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-striped" id="tabela-diagnostico">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>CPF</th>
+                    <th>Nº Iniciático</th>
+                    <th>Situação</th>
+                    <th>Elegível</th>
+                    <th>Motivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in alunos_diagnostico %}
+                <tr class="{% if item.pode_ser_instrutor %}elegivel{% else %}inelegivel{% endif %}">
+                    <td>{{ item.aluno.nome }}</td>
+                    <td>{{ item.aluno.cpf }}</td>
+                    <td>{{ item.aluno.numero_iniciatico|default:"N/A" }}</td>
+                    <td>{{ item.aluno.get_situacao_display }}</td>
+                    <td>
+                        {% if item.pode_ser_instrutor %}
+                            <span class="badge bg-success">Sim</span>
+                        {% else %}
+                            <span class="badge bg-danger">Não</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.motivo %}
+                            {{ item.motivo }}
+                            {% if item.cursos_pre_iniciatico %}
+                                <br>
+                                <small>Cursos: {{ item.cursos_pre_iniciatico|join:", " }}</small>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">Nenhum aluno encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mostrarElegiveisCheckbox = document.getElementById('mostrar-elegiveis');
+        const mostrarInelegiveisCheckbox = document.getElementById('mostrar-inelegiveis');
+        const tabela = document.getElementById('tabela-diagnostico');
+        
+        function atualizarVisibilidade() {
+            const mostrarElegiveis = mostrarElegiveisCheckbox.checked;
+            const mostrarInelegiveis = mostrarInelegiveisCheckbox.checked;
+            
+            const linhasElegiveis = tabela.querySelectorAll('tbody tr.elegivel');
+            const linhasInelegiveis = tabela.querySelectorAll('tbody tr.inelegivel');
+            
+            linhasElegiveis.forEach(linha => {
+                linha.style.display = mostrarElegiveis ? '' : 'none';
+            });
+            
+            linhasInelegiveis.forEach(linha => {
+                linha.style.display = mostrarInelegiveis ? '' : 'none';
+            });
+        }
+        
+        mostrarElegiveisCheckbox.addEventListener('change', atualizarVisibilidade);
+        mostrarInelegiveisCheckbox.addEventListener('change', atualizarVisibilidade);
+        
+        // Inicializar
+        atualizarVisibilidade();
+    });
+</script>
+{% endblock %}
