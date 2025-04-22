@@ -28,6 +28,8 @@ E então defina os blocos necessários, como título e conteúdo:
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- CSS Personalizado -->
     <link rel="stylesheet" href="{% static 'css/extra_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/accessibility_fixes.css' %}">
+    <link rel="stylesheet" href="{% static 'css/alunos.css' %}">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
 <body>
@@ -105,10 +107,30 @@ E então defina os blocos necessários, como título e conteúdo:
 
     <!-- JavaScript Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery e jQuery Mask -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    <!-- Select2 para melhorar campos de seleção -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- JavaScript Personalizado -->
-    {% block extra_js %}{% endblock %}
-    <!-- CSRF Refresh Script -->
+    <script src="{% static 'js/alunos/mascaras.js' %}"></script>
     <script src="{% static 'js/csrf_refresh.js' %}"></script>
+    <!-- Inicialização do Select2 -->
+    <script>
+        $(document).ready(function() {
+            // Inicializar Select2 em todos os selects com a classe form-select
+            $('.form-select').select2({
+                theme: 'bootstrap4',
+                width: '100%'
+            });
+            
+            // Inicializar tooltips do Bootstrap
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

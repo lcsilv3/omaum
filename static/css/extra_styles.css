@@ -41,3 +41,16 @@
 .list-group-item .text-danger i {
     font-size: 1.1em;
 }
+.list-group {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Garantir que o container pai tenha posição relativa */
+.col-md-4 {
+    position: relative;
+}

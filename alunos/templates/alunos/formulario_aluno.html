@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}{% if aluno.id %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
+{% block title %}{% if aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{% if aluno.id %}Editar{% else %}Novo{% endif %} Aluno</h1>
+        <h1>{% if aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno</h1>
         <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">Voltar para a lista</a>
     </div>
     
@@ -17,12 +17,12 @@
         {% endfor %}
     {% endif %}
     
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" id="form-aluno">
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
                 <h5>Dados Pessoais</h5>
             </div>
             <div class="card-body">
@@ -38,19 +38,13 @@
                             <div class="col-md-6">
                                 {% include 'includes/form_field.html' with field=form.email %}
                                 {% include 'includes/form_field.html' with field=form.sexo %}
+                                {% include 'includes/form_field.html' with field=form.situacao %}
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <!-- Moldura tracejada azul brilhante sem cabeçalho -->
-                        <div class="border rounded p-3 mb-3 text-center" 
-                             style="border-style: dashed !important; 
-                                    border-color: #007bff !important; 
-                                    border-width: 2px !important;
-                                    height: 200px; 
-                                    display: flex; 
-                                    align-items: center; 
-                                    justify-content: center;">
+                        <div class="border rounded p-3 mb-3 text-center foto-container">
                             {% if aluno.foto %}
                                 <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
                                      class="img-fluid rounded" 
@@ -75,8 +69,8 @@
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-info">
+            <div class="card-header bg-info text-white">
                 <h5>Dados Iniciáticos</h5>
             </div>
             <div class="card-body">
@@ -91,8 +85,8 @@
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-secondary">
+            <div class="card-header bg-secondary text-white">
                 <h5>Nacionalidade e Naturalidade</h5>
             </div>
             <div class="card-body">
@@ -107,8 +101,8 @@
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white">
                 <h5>Endereço</h5>
             </div>
             <div class="card-body">
@@ -142,8 +136,8 @@
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark">
                 <h5>Contatos de Emergência</h5>
             </div>
             <div class="card-body">
@@ -175,8 +169,8 @@
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-danger">
+            <div class="card-header bg-danger text-white">
                 <h5>Informações Médicas</h5>
             </div>
             <div class="card-body">
@@ -209,7 +203,7 @@
         <div class="d-flex justify-content-between mb-5">
             <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">
-                {% if aluno.id %}Atualizar{% else %}Cadastrar{% endif %} Aluno
+                {% if aluno.cpf %}Atualizar Aluno{% else %}Cadastrar Aluno{% endif %}
             </button>
         </div>
     </form>
@@ -245,6 +239,15 @@
                     // Adiciona o novo preview
                     previewContainer.appendChild(preview);
                 }
+            });
+        }
+        
+        // Adicionar evento para o formulário
+        const form = document.getElementById('form-aluno');
+        if (form) {
+            form.addEventListener('submit', function() {
+                console.log('Formulário sendo enviado');
+                // Qualquer lógica adicional antes do envio pode ser adicionada aqui
             });
         }
     });

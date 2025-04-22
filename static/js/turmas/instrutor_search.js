@@ -148,23 +148,47 @@ const InstrutorSearch = (function() {
                 // Limpar resultados anteriores
                 searchResults.innerHTML = '';
                 
-                if (data.length === 0) {
+                // Verificar se há erro na resposta
+                if (data && data.error) {
+                    searchResults.innerHTML = `<div class="list-group-item text-danger">Erro na busca: ${data.error}</div>`;
+                    searchResults.style.display = 'block';
+                    return;
+                }
+                
+                // Garantir que data seja um array
+                const alunos = Array.isArray(data) ? data : [];
+                
+                if (alunos.length === 0) {
                     searchResults.innerHTML = '<div class="list-group-item">Nenhum resultado encontrado</div>';
                     searchResults.style.display = 'block';
                     return;
                 }
                 
                 // Adicionar resultados
-                data.forEach(aluno => {
+                alunos.forEach(aluno => {
                     const item = document.createElement('a');
                     item.href = '#';
-                    item.className = 'list-group-item list-group-item-action ';
+                    item.className = 'list-group-item list-group-item-action';
                     item.dataset.cpf = aluno.cpf;
                     item.dataset.nome = aluno.nome;
                     item.dataset.numero = aluno.numero_iniciatico;
                     
+                    // Incluir informações de situação se disponíveis
+                    const situacaoHtml = aluno.situacao ? 
+                        `<small class="badge bg-secondary ms-2">${aluno.situacao}</small>` : '';
+                    
                     item.innerHTML = `
-                        <strong>${aluno.nome}</strong> - Nº ${aluno.numero_iniciatico || 'N/A'} (CPF: ${aluno.cpf})
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${aluno.nome}</strong> ${situacaoHtml}
+                                </div>
+                                <div class="text-muted">
+                                    <small>CPF: ${aluno.cpf}</small>
+                                    <small class="ms-2">Nº: ${aluno.numero_iniciatico || 'N/A'}</small>
+                                </div>
+                            </div>
+                        </div>
                     `;
                     
                     item.addEventListener('click', function(e) {
@@ -185,11 +209,10 @@ const InstrutorSearch = (function() {
                 searchResults.style.display = 'block';
             })
             .catch(error => {
-                console.error(`Erro na busca de ${tipoInstrutor}: ${error.message}`);
+                console.error(`Erro na busca de ${tipoInstrutor}:`, error);
                 searchResults.innerHTML = `<div class="list-group-item text-danger">Erro na busca: ${error.message}</div>`;
                 searchResults.style.display = 'block';
-            });
-        });
+            });        });
         
         // Esconder resultados ao clicar fora
         document.addEventListener('click', function(e) {

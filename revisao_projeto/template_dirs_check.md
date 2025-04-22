@@ -4,6 +4,61 @@
 
 
 
+### Arquivo: settings.py
+
+python
+# Configuração de logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'debug.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'alunos': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'turmas': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
+# Criar diretório de logs se não existir
+import os
+os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+
+
+
 ### Arquivo: omaum\settings.py
 
 python
@@ -12,11 +67,11 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Definindo o caminho para o diret칩rio de templates
+# Definindo o caminho para o diretório de templates
 TEMPLATES_DIR = os.path.join(BASE_DIR, "omaum", "templates")
 
-# Imprimindo o caminho completo do diret칩rio de templates
-print(f"Caminho do diret칩rio de templates: {TEMPLATES_DIR}")
+# Imprimindo o caminho completo do diretório de templates
+print(f"Caminho do diretório de templates: {TEMPLATES_DIR}")
 
 # Imprimindo o caminho esperado para home.html
 print(
@@ -29,7 +84,7 @@ SECRET_KEY = "django-insecure-your-secret-key-here"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -53,7 +108,12 @@ INSTALLED_APPS = [
     "iniciacoes.apps.IniciacoesConfig",
     "relatorios.apps.RelatoriosConfig",
     "turmas.apps.TurmasConfig",
-    # Adicione outros aplicativos aqui se necess치rio
+    # Adicione outros aplicativos aqui se necessário
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok.io",
+    "https://*.ngrok-free.app",
 ]
 
 MIDDLEWARE = [
@@ -119,9 +179,9 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
-
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 # Media files
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
@@ -159,6 +219,9 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # Add any additional settings specific to your project here
+# Adicionar ao final do arquivo
+# Modo de depuração para instrutores
+DEBUG_INSTRUTORES = True  # Definir como False em produção
 
 
 
@@ -1338,6 +1401,7 @@ DEFAULT_CONFIG = Config()
   - alunos\criar_aluno.html
   - alunos\dashboard.html
   - alunos\detalhar_aluno.html
+  - alunos\diagnostico_instrutores.html
   - alunos\editar_aluno.html
   - alunos\excluir_aluno.html
   - alunos\formulario_aluno.html
@@ -1474,6 +1538,7 @@ DEFAULT_CONFIG = Config()
   - turmas\detalhar_turma.html
   - turmas\editar_turma.html
   - turmas\excluir_turma.html
+  - turmas\formulario_instrutoria.html
   - turmas\listar_alunos_matriculados.html
   - turmas\listar_turmas.html
   - turmas\matricular_aluno.html

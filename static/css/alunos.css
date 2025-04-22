@@ -1,0 +1,76 @@
+/* Estilos para o módulo de alunos */
+
+/* Cores para os cards */
+.card.border-primary {
+    border-color: #007bff !important;
+}
+
+.card.border-success {
+    border-color: #28a745 !important;
+}
+
+.card.border-info {
+    border-color: #17a2b8 !important;
+}
+
+.card.border-warning {
+    border-color: #ffc107 !important;
+}
+
+.card.border-danger {
+    border-color: #dc3545 !important;
+}
+
+.card.border-secondary {
+    border-color: #6c757d !important;
+}
+
+/* Estilos para campos de formulário */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Estilos para a foto do aluno */
+.foto-container {
+    border-style: dashed !important;
+    border-color: #007bff !important;
+    border-width: 2px !important;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Estilos para informações médicas */
+.info-medica {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+/* Estilos para badges de situação */
+.badge-situacao {
+    font-size: 0.9em;
+    padding: 5px 8px;
+}
+
+/* Estilos para listas de turmas */
+.lista-turmas {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .d-flex.justify-content-between div {
+        display: flex;
+        gap: 10px;
+    }
+}

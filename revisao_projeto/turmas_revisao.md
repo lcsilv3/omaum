@@ -23,20 +23,21 @@ class TurmaForm(forms.ModelForm):
     class Meta:
         model = Turma
         fields = [
-            "nome",
-            "curso",
-            "vagas",
-            "status",
-            "data_inicio",
-            "data_fim",
-            "instrutor",
-            "instrutor_auxiliar",
-            "auxiliar_instrucao",
-            "dias_semana",
-            "local",
-            "horario",
-            "descricao",
+            'nome',
+            'curso',
+            'data_inicio',
+            'data_fim',
+            'status',
+            'local',
+            'descricao',
+            'instrutor',
+            'instrutor_auxiliar',
+            'auxiliar_instrucao',
+            'dias_semana',
+            'horario',
+            'vagas',
         ]
+        
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
             "curso": forms.Select(attrs={"class": "form-select"}),
@@ -64,6 +65,7 @@ class TurmaForm(forms.ModelForm):
                 attrs={"class": "form-control", "rows": 3}
             ),
         }
+        
         help_texts = {
             "vagas": "Número máximo de alunos que podem ser matriculados na turma.",
             "data_inicio": "Data de início das aulas.",
@@ -77,29 +79,23 @@ class TurmaForm(forms.ModelForm):
         self.fields["instrutor"].required = False
         self.fields["instrutor_auxiliar"].required = False
         self.fields["auxiliar_instrucao"].required = False
-
         # Configurar os querysets para mostrar apenas alunos elegíveis
         Aluno = get_aluno_model()
         alunos_elegíveis = Aluno.objects.filter(situacao="A")
-
         # Filtrar alunos que podem ser instrutores
         alunos_instrutores = [
             aluno for aluno in alunos_elegíveis if aluno.pode_ser_instrutor
         ]
-
         # Se não houver alunos instrutores, usar todos os alunos ativos
         if not alunos_instrutores:
             print(
                 "AVISO: Nenhum aluno elegível para ser instrutor. Usando todos os alunos ativos."
             )
             alunos_instrutores = list(alunos_elegíveis)
-
         # Obter CPFs dos alunos instrutores
         cpfs_instrutores = [a.cpf for a in alunos_instrutores]
-
         # Debug
         print(f"Alunos elegíveis para instrutores: {len(cpfs_instrutores)}")
-
         # Configurar querysets
         self.fields["instrutor"].queryset = Aluno.objects.filter(
             cpf__in=cpfs_instrutores
@@ -115,22 +111,18 @@ class TurmaForm(forms.ModelForm):
         cleaned_data = super().clean()
         data_inicio = cleaned_data.get("data_inicio")
         data_fim = cleaned_data.get("data_fim")
-
         # Validar que a data de início é anterior à data de fim
         if data_inicio and data_fim and data_inicio > data_fim:
             raise ValidationError(
                 "A data de início não pode ser posterior à data de fim."
             )
-
         # Removemos a validação que impedia datas no passado:
         # if (not self.instance.pk and data_inicio and data_inicio < timezone.now().date()):
         #     raise ValidationError("A data de início não pode ser no passado para novas turmas.")
-
         # Verificar se os instrutores são diferentes entre si
         instrutor = cleaned_data.get("instrutor")
         instrutor_auxiliar = cleaned_data.get("instrutor_auxiliar")
         auxiliar_instrucao = cleaned_data.get("auxiliar_instrucao")
-
         if (
             instrutor
             and instrutor_auxiliar
@@ -140,7 +132,6 @@ class TurmaForm(forms.ModelForm):
                 "instrutor_auxiliar",
                 "O instrutor auxiliar deve ser diferente do instrutor principal.",
             )
-
         if (
             instrutor
             and auxiliar_instrucao
@@ -150,7 +141,6 @@ class TurmaForm(forms.ModelForm):
                 "auxiliar_instrucao",
                 "O auxiliar de instrução deve ser diferente do instrutor principal.",
             )
-
         if (
             instrutor_auxiliar
             and auxiliar_instrucao
@@ -160,7 +150,6 @@ class TurmaForm(forms.ModelForm):
                 "auxiliar_instrucao",
                 "O auxiliar de instrução deve ser diferente do instrutor auxiliar.",
             )
-
         return cleaned_data
 
     def clean_nome(self):
@@ -169,20 +158,15 @@ class TurmaForm(forms.ModelForm):
             # Verificar se já existe uma turma com o mesmo nome (ignorando case)
             instance_id = getattr(self.instance, "id", None)
             turmas_existentes = Turma.objects.filter(nome__iexact=nome)
-
             if instance_id:
                 turmas_existentes = turmas_existentes.exclude(id=instance_id)
-
             if turmas_existentes.exists():
                 raise ValidationError(
                     "Já existe uma turma com este nome. Por favor, escolha um nome diferente."
                 )
-
             # Opcional: normalizar o nome (por exemplo, primeira letra maiúscula)
             nome = nome.strip().capitalize()
-
         return nome
-
 
 
 ## Arquivos views.py:
@@ -196,7 +180,13 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from importlib import import_module
 from django.utils import timezone
+from django.conf import settings
 from .forms import TurmaForm
+
+def get_model(app_name, model_name):
+    """Obtém um modelo dinamicamente para evitar importações circulares."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
 
 
 def get_turma_model():
@@ -213,7 +203,6 @@ def get_aluno_model():
 def listar_turmas(request):
     Turma = get_turma_model()
     turmas = Turma.objects.all()
-
     # Preparar informações adicionais para cada turma
     turmas_com_info = []
     for turma in turmas:
@@ -223,7 +212,6 @@ def listar_turmas(request):
             or not turma.instrutor_auxiliar
             or not turma.auxiliar_instrucao
         )
-
         # Calcular vagas disponíveis
         total_alunos = (
             turma.matriculas.filter(status="A").count()
@@ -251,62 +239,49 @@ def listar_turmas(request):
 @login_required
 def criar_turma(request):
     """Cria uma nova turma."""
-    Turma = get_turma_model()
     if request.method == "POST":
         form = TurmaForm(request.POST)
         if form.is_valid():
-            # Verificar se a data de início está no passado
-            data_inicio = form.cleaned_data.get("data_inicio")
-            if data_inicio and data_inicio < timezone.now().date():
-                messages.warning(
-                    request,
-                    "A turma foi criada com uma data de início no passado. "
-                    "Certifique-se de que isso é intencional.",
-                )
-
-            turma = form.save()
+            turma = form.save(commit=False)
+            
+            # Processar horários se existirem
+            horarios_json = request.POST.get('horarios_json')
+            if horarios_json:
+                import json
+                try:
+                    turma.horarios = json.loads(horarios_json)
+                except json.JSONDecodeError:
+                    turma.horarios = []
+            
+            turma.save()
             messages.success(request, "Turma criada com sucesso!")
-            return redirect("turmas:listar_turmas")
+            return redirect("turmas:detalhar_turma", id=turma.id)
         else:
-            # Fornecer mensagens de erro mais específicas
-            if "instrutor" in form.errors:
-                messages.error(
-                    request,
-                    "Erro no instrutor principal: "
-                    + " ".join(form.errors["instrutor"]),
-                )
-            if "instrutor_auxiliar" in form.errors:
-                messages.error(
-                    request,
-                    "Erro no instrutor auxiliar: "
-                    + " ".join(form.errors["instrutor_auxiliar"]),
-                )
-            if "auxiliar_instrucao" in form.errors:
-                messages.error(
-                    request,
-                    "Erro no auxiliar de instrução: "
-                    + " ".join(form.errors["auxiliar_instrucao"]),
-                )
-
             messages.error(request, "Corrija os erros no formulário.")
     else:
         form = TurmaForm()
 
-    return render(request, "turmas/criar_turma.html", {"form": form})
+    # Obter todos os alunos ativos para o formulário
+    Aluno = get_model("alunos", "Aluno")
+    alunos = Aluno.objects.filter(situacao="ATIVO")
 
+    context = {
+        'form': form,
+        'alunos': alunos,
+        'debug_mode': getattr(settings, 'DEBUG_INSTRUTORES', False)
+    }
 
+    return render(request, "turmas/criar_turma.html", context)
 @login_required
 def detalhar_turma(request, id):
     Turma = get_turma_model()
     turma = get_object_or_404(Turma, id=id)
-
     # Verificar pendências na instrutoria
     tem_pendencia_instrutoria = (
         not turma.instrutor
         or not turma.instrutor_auxiliar
         or not turma.auxiliar_instrucao
     )
-
     # Calcular informações de matrículas
     alunos_matriculados_count = (
         turma.matriculas.filter(status="A").count()
@@ -314,14 +289,12 @@ def detalhar_turma(request, id):
         else 0
     )
     vagas_disponiveis = turma.vagas - alunos_matriculados_count
-
     # Obter matrículas ativas
     matriculas = (
         turma.matriculas.filter(status="A")
         if hasattr(turma, "matriculas")
         else []
     )
-
     context = {
         "turma": turma,
         "matriculas": matriculas,
@@ -329,38 +302,35 @@ def detalhar_turma(request, id):
         "vagas_disponiveis": vagas_disponiveis,
         "tem_pendencia_instrutoria": tem_pendencia_instrutoria,
     }
-
     return render(request, "turmas/detalhar_turma.html", context)
 
 
 @login_required
 def editar_turma(request, id):
+    """Edita uma turma existente."""
     Turma = get_turma_model()
     turma = get_object_or_404(Turma, id=id)
-
     if request.method == "POST":
         form = TurmaForm(request.POST, instance=turma)
         if form.is_valid():
             form.save()
             messages.success(request, "Turma atualizada com sucesso!")
-            return redirect("turmas:listar_turmas")
+            return redirect("turmas:detalhar_turma", id=turma.id)
+        else:
+            messages.error(request, "Corrija os erros no formulário.")
     else:
-        # Formatar as datas para o formato ISO
-        if turma.data_inicio:
-            turma.data_inicio_iso = turma.data_inicio.strftime("%Y-%m-%d")
-        if turma.data_fim:
-            turma.data_fim_iso = turma.data_fim.strftime("%Y-%m-%d")
-
         form = TurmaForm(instance=turma)
-
-    # Obter alunos para o formulário de instrutores
-    Aluno = get_aluno_model()
-    alunos = Aluno.objects.filter(situacao="A")
-
+    # Obter todos os alunos ativos para o formulário
+    Aluno = get_model("alunos", "Aluno")
+    alunos = Aluno.objects.filter(situacao="ATIVO")
     return render(
         request,
         "turmas/editar_turma.html",
-        {"form": form, "turma": turma, "alunos": alunos},
+        {
+            "form": form,
+            "turma": turma,
+            "alunos": alunos,  # Passar todos os alunos ativos para o template
+        },
     )
 
 
@@ -393,11 +363,9 @@ def matricular_aluno(request, id):
     Turma = get_turma_model()
     Aluno = get_aluno_model()
     turma = get_object_or_404(Turma, id=id)
-
     if request.method == "POST":
         aluno_cpf = request.POST.get("aluno")
         aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
-
         # Verificar se existe um modelo de Matricula
         try:
             Matricula = import_module("matriculas.models").Matricula
@@ -412,12 +380,10 @@ def matricular_aluno(request, id):
             # Fallback: adicionar diretamente à relação many-to-many se o modelo Matricula não existir
             if hasattr(turma, "alunos"):
                 turma.alunos.add(aluno)
-
         messages.success(
             request, f"Aluno {aluno.nome} matriculado com sucesso!"
         )
         return redirect("turmas:detalhar_turma", id=turma.id)
-
     # Obter alunos disponíveis para matrícula
     try:
         # Se existir um modelo de Matricula, excluir alunos já matriculados
@@ -432,14 +398,12 @@ def matricular_aluno(request, id):
             alunos_disponiveis = Aluno.objects.exclude(turmas=turma)
         else:
             alunos_disponiveis = Aluno.objects.all()
-
     # Adicionar informação de vagas disponíveis
     vagas_disponiveis = (
         turma.vagas_disponiveis
         if hasattr(turma, "vagas_disponiveis")
         else turma.vagas
     )
-
     return render(
         request,
         "turmas/matricular_aluno.html",
@@ -456,10 +420,8 @@ def cancelar_matricula(request, turma_id, aluno_cpf):
     """Cancela a matrícula de um aluno em uma turma."""
     Turma = get_turma_model()
     Aluno = get_aluno_model()
-
     turma = get_object_or_404(Turma, id=turma_id)
     aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
-
     # Verificar se o aluno está matriculado na turma
     try:
         # Importar o modelo Matricula dinamicamente
@@ -467,27 +429,22 @@ def cancelar_matricula(request, turma_id, aluno_cpf):
 
         matriculas_module = import_module("matriculas.models")
         Matricula = getattr(matriculas_module, "Matricula")
-
         matricula = Matricula.objects.get(aluno=aluno, turma=turma)
-
         if request.method == "POST":
             # Cancelar a matrícula
             matricula.status = "C"  # Cancelada
             matricula.save()
-
             messages.success(
                 request,
                 f"Matrícula do aluno {aluno.nome} na turma {turma.nome} cancelada com sucesso.",
             )
             return redirect("turmas:detalhar_turma", id=turma.id)
-
         # Se for GET, mostrar página de confirmação
         return render(
             request,
             "turmas/cancelar_matricula.html",
             {"turma": turma, "aluno": aluno},
         )
-
     except (ImportError, AttributeError) as e:
         messages.error(
             request, f"Erro ao acessar o modelo de matrículas: {str(e)}"
@@ -550,17 +507,16 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
-
 class Turma(models.Model):
     """
     Modelo para representar uma turma no sistema OMAUM.
     """
-
     STATUS_CHOICES = [
         ("A", "Ativa"),
         ("I", "Inativa"),
         ("C", "Concluída"),
     ]
+
     # Informações básicas
     nome = models.CharField(max_length=100, verbose_name="Nome da Turma")
     curso = models.ForeignKey(
@@ -578,15 +534,9 @@ class Turma(models.Model):
     data_fim = models.DateField(verbose_name="Data de Fim")
 
     # Informações de agendamento
-    dias_semana = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Dias da Semana"
-    )
-    local = models.CharField(
-        max_length=200, blank=True, null=True, verbose_name="Local"
-    )
-    horario = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Horário"
-    )
+    dias_semana = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dias da Semana")
+    horario = models.CharField(max_length=100, blank=True, null=True, verbose_name="Horário")
+    local = models.CharField(max_length=200, blank=True, null=True, verbose_name="Local")
 
     # Capacidade e status
     vagas = models.PositiveIntegerField(
@@ -626,6 +576,7 @@ class Turma(models.Model):
         related_name="turmas_como_auxiliar_instrucao",
         verbose_name="Auxiliar de Instrução",
     )
+
     # Campos de alerta para instrutores
     alerta_instrutor = models.BooleanField(
         default=False, verbose_name="Alerta de Instrutor"
@@ -633,6 +584,7 @@ class Turma(models.Model):
     alerta_mensagem = models.TextField(
         blank=True, null=True, verbose_name="Mensagem de Alerta"
     )
+
     # Metadados
     created_at = models.DateTimeField(
         default=timezone.now, verbose_name="Criado em"
@@ -686,15 +638,17 @@ class Turma(models.Model):
                 _("A data de fim não pode ser anterior à data de início.")
             )
 
-
-@classmethod
-def get_by_codigo(cls, codigo_turma):
-    """Método auxiliar para buscar turma por código."""
-    try:
-        return Turma.objects.get(codigo=codigo_turma)
-    except Turma.DoesNotExist:
-        return None
-
+    @classmethod
+    def get_by_codigo(cls, codigo_turma):
+        """Método auxiliar para buscar turma por código."""
+        try:
+            # Use o campo id em vez de codigo
+            return Turma.objects.get(id=codigo_turma)
+            
+            # Ou use o campo nome
+            # return Turma.objects.get(nome=codigo_turma)
+        except Turma.DoesNotExist:
+            return None
 
 
 ## Arquivos de Template:
@@ -856,16 +810,17 @@ html
 
 html
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Criar Nova Turma{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Criar Nova Turma</h1>
-        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para Lista</a>
+        <h1>Nova Turma</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
     </div>
-
+    
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">
@@ -873,178 +828,167 @@ html
             </div>
         {% endfor %}
     {% endif %}
-
+    
     <form method="post">
         {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
         
-        <div class="row">
-            <!-- Informações Básicas -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Informações Básicas</h5>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Informações Básicas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.nome %}
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
-                            {{ form.nome }}
-                            {% if form.nome.errors %}
-                                <div class="text-danger">{{ form.nome.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.curso.id_for_label }}" class="form-label">{{ form.curso.label }}</label>
-                            {{ form.curso }}
-                            {% if form.curso.errors %}
-                                <div class="text-danger">{{ form.curso.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.vagas.id_for_label }}" class="form-label">{{ form.vagas.label }}</label>
-                            {{ form.vagas }}
-                            {% if form.vagas.errors %}
-                                <div class="text-danger">{{ form.vagas.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
-                            {{ form.status }}
-                            {% if form.status.errors %}
-                                <div class="text-danger">{{ form.status.errors }}</div>
-                            {% endif %}
-                        </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.curso %}
                     </div>
                 </div>
-            </div>
-            
-            <!-- Datas e Horários -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Datas e Horários</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_inicio %}
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.data_inicio.id_for_label }}" class="form-label">{{ form.data_inicio.label }}</label>
-                                {{ form.data_inicio }}
-                                {% if form.data_inicio.errors %}
-                                    <div class="text-danger">{{ form.data_inicio.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.data_fim.id_for_label }}" class="form-label">{{ form.data_fim.label }}</label>
-                                {{ form.data_fim }}
-                                {% if form.data_fim.errors %}
-                                    <div class="text-danger">{{ form.data_fim.errors }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.horario.id_for_label }}" class="form-label">{{ form.horario.label }}</label>
-                            {{ form.horario }}
-                            {% if form.horario.errors %}
-                                <div class="text-danger">{{ form.horario.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.dias_semana.id_for_label }}" class="form-label">{{ form.dias_semana.label }}</label>
-                            {{ form.dias_semana }}
-                            {% if form.dias_semana.errors %}
-                                <div class="text-danger">{{ form.dias_semana.errors }}</div>
-                            {% endif %}
-                        </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_fim %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.vagas_totais %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.status %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.local %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        {% include 'includes/form_field.html' with field=form.descricao %}
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Instrutores -->
-        <div class="card mb-3">
-            <div class="card-header bg-success text-white">
+        <!-- Seção de Instrutoria -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Instrutoria</h5>
             </div>
             <div class="card-body">
                 <div class="row">
+                    <!-- Instrutor Principal -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor" class="form-label">Instrutor Principal</label>
                         <input type="text" id="search-instrutor" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." 
-                               autocomplete="off">
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-instrutor" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-instrutor-container" class="p-3 border rounded mt-2 d-none">
-                            <div id="selected-instrutor-info">Nenhum instrutor selecionado</div>
+                            <div id="selected-instrutor-info">
+                                Nenhum instrutor selecionado
+                            </div>
                         </div>
-                        {{ form.instrutor }}
-                        {% if form.instrutor.errors %}
-                            <div class="text-danger">{{ form.instrutor.errors }}</div>
-                        {% endif %}
+                        <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
+                        <select name="instrutor" class="form-control d-none" id="id_instrutor">
+                            <option value="">---------</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     
+                    <!-- Instrutor Auxiliar -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
                         <input type="text" id="search-instrutor-auxiliar" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." 
-                               autocomplete="off">
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 d-none">
-                            <div id="selected-instrutor-auxiliar-info">Nenhum instrutor selecionado</div>
+                            <div id="selected-instrutor-auxiliar-info">
+                                Nenhum instrutor auxiliar selecionado
+                            </div>
                         </div>
-                        {{ form.instrutor_auxiliar }}
-                        {% if form.instrutor_auxiliar.errors %}
-                            <div class="text-danger">{{ form.instrutor_auxiliar.errors }}</div>
-                        {% endif %}
+                        <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
+                        <select name="instrutor_auxiliar" class="form-control d-none" id="id_instrutor_auxiliar">
+                            <option value="">---------</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     
+                    <!-- Auxiliar de Instrução -->
                     <div class="col-md-4 mb-3">
                         <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
                         <input type="text" id="search-auxiliar-instrucao" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." 
-                               autocomplete="off">
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 d-none">
-                            <div id="selected-auxiliar-instrucao-info">Nenhum instrutor selecionado</div>
+                            <div id="selected-auxiliar-instrucao-info">
+                                Nenhum auxiliar de instrução selecionado
+                            </div>
                         </div>
-                        {{ form.auxiliar_instrucao }}
-                        {% if form.auxiliar_instrucao.errors %}
-                            <div class="text-danger">{{ form.auxiliar_instrucao.errors }}</div>
-                        {% endif %}
+                        <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
+                        <select name="auxiliar_instrucao" class="form-control d-none" id="id_auxiliar_instrucao">
+                            <option value="">---------</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor. 
+                    O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Horários</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_dias_semana" class="form-label">Dias da Semana</label>
+                            <input type="text" name="dias_semana" class="form-control" id="id_dias_semana" 
+                                   placeholder="Ex: Segunda, Quarta e Sexta">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_horario" class="form-label">Horário</label>
+                            <input type="text" name="horario" class="form-control" id="id_horario" 
+                                   placeholder="Ex: 19:00 às 21:00">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Informações Adicionais -->
-        <div class="card mb-3">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="mb-0">Informações Adicionais</h5>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Requisitos</h5>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <label for="{{ form.descricao.id_for_label }}" class="form-label">{{ form.descricao.label }}</label>
-                    {{ form.descricao }}
-                    {% if form.descricao.errors %}
-                        <div class="text-danger">{{ form.descricao.errors }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.local.id_for_label }}" class="form-label">{{ form.local.label }}</label>
-                    {{ form.local }}
-                    {% if form.local.errors %}
-                        <div class="text-danger">{{ form.local.errors }}</div>
-                    {% endif %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label for="id_pre_requisitos" class="form-label">Pré-requisitos para a turma</label>
+                            <textarea name="pre_requisitos" class="form-control" id="id_pre_requisitos" rows="3" 
+                                      placeholder="Informe os pré-requisitos necessários para participar desta turma"></textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="d-flex justify-content-between">
+        <div class="d-flex justify-content-between mb-5">
             <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">Criar Turma</button>
         </div>
@@ -1053,388 +997,161 @@ html
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/turmas/instrutor_search.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Obter a lista de instrutores elegíveis via AJAX no carregamento da página
-        let instrutoresElegiveis = [];
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        // Inicializar o módulo de busca de instrutores com opção para mostrar todos os alunos
+        InstrutorSearch.init(document.querySelector('[name=csrfmiddlewaretoken]').value, true);
         
-        // Função para carregar instrutores elegíveis
-        function carregarInstrutoresElegiveis() {
-            fetch('/alunos/api/search-instrutores/', {
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'X-Requested-With': 'XMLHttpRequest'
+        // Validação de datas
+        const dataInicio = document.getElementById('{{ form.data_inicio.id_for_label }}');
+        const dataFim = document.getElementById('{{ form.data_fim.id_for_label }}');
+        
+        if (dataInicio && dataFim) {
+            dataInicio.addEventListener('change', function() {
+                if (dataFim.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
+                    alert('A data de início não pode ser posterior à data de fim.');
+                    dataInicio.value = '';
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                instrutoresElegiveis = data;
-                console.log(`Carregados ${instrutoresElegiveis.length} instrutores elegíveis`);
-            })
-            .catch(error => {
-                console.error('Erro ao carregar instrutores elegíveis:', error);
+            });
+            
+            dataFim.addEventListener('change', function() {
+                if (dataInicio.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
+                    alert('A data de fim não pode ser anterior à data de início.');
+                    dataFim.value = '';
+                }
             });
         }
+
+        // Gerenciamento de horários
+        const btnAdicionarHorario = document.getElementById('adicionar_horario');
+        const tabelaHorarios = document.getElementById('tabela_horarios').querySelector('tbody');
+        const horarioJsonInput = document.getElementById('horarios_json');
+        let horarios = [];
         
-        carregarInstrutoresElegiveis();
+        // Função para atualizar o campo JSON
+        function atualizarHorariosJson() {
+            horarioJsonInput.value = JSON.stringify(horarios);
+        }
         
-        // Configurar os campos de busca de instrutores
-        setupInstructorSearch(
-            'search-instrutor',
-            'search-results-instrutor',
-            'selected-instrutor-container',
-            'selected-instrutor-info',
-            'id_instrutor'
-        );
-        
-        setupInstructorSearch(
-            'search-instrutor-auxiliar',
-            'search-results-instrutor-auxiliar',
-            'selected-instrutor-auxiliar-container',
-            'selected-instrutor-auxiliar-info',
-            'id_instrutor_auxiliar'
-        );
-        
-        setupInstructorSearch(
-            'search-auxiliar-instrucao',
-            'search-results-auxiliar-instrucao',
-            'selected-auxiliar-instrucao-container',
-            'selected-auxiliar-instrucao-info',
-            'id_auxiliar_instrucao'
-        );
-        
-        // Função para configurar a busca de instrutores
-        function setupInstructorSearch(searchId, resultsId, containerId, infoId, selectId) {
-            const searchInput = document.getElementById(searchId);
-            const searchResults = document.getElementById(resultsId);
-            const selectedContainer = document.getElementById(containerId);
-            const selectedInfo = document.getElementById(infoId);
-            const selectElement = document.getElementById(selectId);
+        // Função para adicionar um horário
+        btnAdicionarHorario.addEventListener('click', function() {
+            const diaSemana = document.getElementById('id_dia_semana');
+            const horaInicio = document.getElementById('id_hora_inicio');
+            const horaFim = document.getElementById('id_hora_fim');
             
-            // Criar um elemento para mensagens de erro
-            const errorElement = document.createElement('div');
-            errorElement.className = 'alert alert-danger mt-2 d-none';
-            selectedContainer.after(errorElement);
-            
-            let searchTimeout;
-            
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                
-                const query = this.value.trim();
-                
-                // Limpar mensagens de erro
-                errorElement.classList.add('d-none');
-                
-                // Clear results if query is too short
-                if (query.length < 2) {
-                    searchResults.innerHTML = '';
-                    searchResults.style.display = 'none';
-                    return;
-                }
-                
-                // Set a timeout to avoid making too many requests
-                searchTimeout = setTimeout(function() {
-                    // Show loading indicator
-                    searchResults.innerHTML = '<div class="list-group-item text-muted">Buscando...</div>';
-                    searchResults.style.display = 'block';
-                    
-                    // Buscar todos os alunos que correspondem à consulta
-                    fetch(`/alunos/search/?q=${encodeURIComponent(query)}`, {
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        searchResults.innerHTML = '';
-                        
-                        if (data.error) {
-                            // Handle error response
-                            searchResults.innerHTML = `<div class="list-group-item text-danger">Erro ao buscar alunos: ${data.error}</div>`;
-                            return;
-                        }
-                        
-                        if (data.length === 0) {
-                            searchResults.innerHTML = '<div class="list-group-item">Nenhum aluno encontrado</div>';
-                            return;
-                        }
-                        
-                        // Display results - mostrar todos os alunos encontrados
-                        data.forEach(aluno => {
-                            const item = document.createElement('a');
-                            item.href = '#';
-                            item.className = 'list-group-item list-group-item-action';
-                            item.innerHTML = `
-                                <div class="d-flex justify-content-between">
-                                    <div>${aluno.nome}</div>
-                                    <div class="text-muted">
-                                        <small>CPF: ${aluno.cpf}</small>
-                                        ${aluno.numero_iniciatico !== "N/A" ? `<small class="ms-2">Nº: ${aluno.numero_iniciatico}</small>` : ''}
-                                    </div>
-                                </div>
-                            `;
-                            
-                            // Add click event to select this aluno
-                            item.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                
-                                // Verificar elegibilidade após a seleção
-                                verificarElegibilidadeInstrutor(aluno);
-                            });
-                            
-                            searchResults.appendChild(item);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        searchResults.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar alunos</div>';
-                    });
-                }, 300);
-            });
-            
-            // Hide results when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                    searchResults.style.display = 'none';
-                }
-            });
-            
-            // Função para verificar se um aluno pode ser instrutor
-            function verificarElegibilidadeInstrutor(aluno) {
-                // Verificar se o aluno já foi selecionado em outro campo
-                const outrosSelects = Array.from(document.querySelectorAll('select[name^="instrutor"]')).filter(s => s.id !== selectId);
-                const jaEstaEmUso = outrosSelects.some(select => select.value === aluno.cpf);
-                
-                if (jaEstaEmUso) {
-                    errorElement.textContent = `O aluno ${aluno.nome} já está selecionado como instrutor em outro campo.`;
-                    errorElement.classList.remove('d-none');
-                    return;
-                }
-                
-                // Verificar se o aluno pode ser instrutor
-                fetch(`/alunos/api/verificar-elegibilidade-instrutor/${aluno.cpf}/`, {
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.elegivel) {
-                        // Aluno é elegível, prosseguir com a seleção
-                        selecionarInstrutor(aluno);
-                    } else {
-                        // Aluno não é elegível, mostrar mensagem de erro
-                        errorElement.innerHTML = `
-                            <strong>O aluno ${aluno.nome} não pode ser instrutor.</strong><br>
-                            Motivo: ${data.motivo || 'Não atende aos requisitos para ser instrutor.'}
-                        `;
-                        errorElement.classList.remove('d-none');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao verificar elegibilidade:', error);
-                    errorElement.textContent = `Erro ao verificar se ${aluno.nome} pode ser instrutor. Tente novamente.`;
-                    errorElement.classList.remove('d-none');
-                });
-            }
-            
-            // Função para selecionar um instrutor
-            function selecionarInstrutor(aluno) {
-                // Limpar as opções existentes no select
-                while (selectElement.options.length > 0) {
-                    selectElement.remove(0);
-                }
-                
-                // Criar e adicionar a opção para o aluno selecionado
-                const option = new Option(aluno.nome, aluno.cpf, true, true);
-                selectElement.appendChild(option);
-                
-                // Atualizar a interface
-                searchInput.value = aluno.nome;
-                selectedInfo.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>${aluno.nome}</strong><br>
-                            CPF: ${aluno.cpf}<br>
-                            ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="remove-${selectId}">
-                            <i class="fas fa-times"></i> Remover
-                        </button>
-                    </div>
-                `;
-                
-                selectedContainer.classList.remove('d-none');
-                searchResults.style.display = 'none';
-                errorElement.classList.add('d-none');
-                
-                // Adicionar evento para remover o instrutor
-                document.getElementById(`remove-${selectId}`).addEventListener('click', function() {
-                    selectElement.value = '';
-                    searchInput.value = '';
-                    selectedContainer.classList.add('d-none');
-                });
-            }
-        }        
-        // Adicionar validação ao formulário antes do envio
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(e) {
-            // Verificar se há erros visíveis
-            const errosVisiveis = document.querySelectorAll('.alert-danger:not(.d-none)');
-            if (errosVisiveis.length > 0) {
-                e.preventDefault();
-                alert('Por favor, corrija os erros antes de enviar o formulário.');
+            if (!diaSemana.value || !horaInicio.value || !horaFim.value) {
+                alert('Por favor, preencha todos os campos de horário.');
                 return;
             }
             
-            // Verificar se os instrutores são diferentes entre si
-            const instrutorPrincipal = document.getElementById('id_instrutor').value;
-            const instrutorAuxiliar = document.getElementById('id_instrutor_auxiliar').value;
-            const auxiliarInstrucao = document.getElementById('id_auxiliar_instrucao').value;
+            // Obter o texto do dia da semana
+            const diaSemanaTexto = diaSemana.options[diaSemana.selectedIndex].text;
             
-            const instrutoresSelecionados = [instrutorPrincipal, instrutorAuxiliar, auxiliarInstrucao].filter(Boolean);
-            const instrutoresUnicos = new Set(instrutoresSelecionados);
+            // Adicionar à lista de horários
+            const horario = {
+                dia: diaSemana.value,
+                dia_texto: diaSemanaTexto,
+                inicio: horaInicio.value,
+                fim: horaFim.value
+            };
             
-            if (instrutoresSelecionados.length !== instrutoresUnicos.size) {
-                e.preventDefault();
-                alert('Não é possível selecionar o mesmo aluno para diferentes funções de instrução.');
-                return;
+            horarios.push(horario);
+            
+            // Adicionar à tabela
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${diaSemanaTexto}</td>
+                <td>${horaInicio.value} - ${horaFim.value}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger remover-horario" data-index="${horarios.length - 1}">
+                        <i class="fas fa-trash"></i> Remover
+                    </button>
+                </td>
+            `;
+            tabelaHorarios.appendChild(tr);
+            
+            // Atualizar o campo JSON
+            atualizarHorariosJson();
+            
+            // Limpar campos
+            horaInicio.value = '';
+            horaFim.value = '';
+        });
+        
+        // Delegação de eventos para remover horários
+        tabelaHorarios.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remover-horario') || e.target.closest('.remover-horario')) {
+                const btn = e.target.classList.contains('remover-horario') ? e.target : e.target.closest('.remover-horario');
+                const index = btn.dataset.index;
+                
+                // Remover da lista
+                horarios.splice(index, 1);
+                
+                // Remover da tabela
+                btn.closest('tr').remove();
+                
+                // Atualizar índices dos botões restantes
+                const botoesRemover = tabelaHorarios.querySelectorAll('.remover-horario');
+                botoesRemover.forEach((btn, i) => {
+                    btn.dataset.index = i;
+                });
+                
+                // Atualizar o campo JSON
+                atualizarHorariosJson();
             }
-            
-            // Mostrar os selects antes do envio
-            document.getElementById('id_instrutor').style.display = '';
-            document.getElementById('id_instrutor_auxiliar').style.display = '';
-            document.getElementById('id_auxiliar_instrucao').style.display = '';
         });
     });
 </script>
 {% endblock %}
-// Adicionar este código no DOMContentLoaded
-const form = document.querySelector('form');
-form.addEventListener('submit', function(e) {
-    // Verificar se os instrutores selecionados estão corretamente refletidos nos selects
-    const instrutorContainer = document.getElementById('selected-instrutor-container');
-    const instrutorAuxiliarContainer = document.getElementById('selected-instrutor-auxiliar-container');
-    const auxiliarInstrucaoContainer = document.getElementById('selected-auxiliar-instrucao-container');
-    
-    // Verificar se os containers estão visíveis (ou seja, se um instrutor foi selecionado)
-    if (!instrutorContainer.classList.contains('d-none') && 
-        document.getElementById('id_instrutor').value === '') {
-        e.preventDefault();
-        alert('Erro ao processar o instrutor principal. Por favor, selecione novamente.');
-        return;
-    }
-    
-    if (!instrutorAuxiliarContainer.classList.contains('d-none') && 
-        document.getElementById('id_instrutor_auxiliar').value === '') {
-        e.preventDefault();
-        alert('Erro ao processar o instrutor auxiliar. Por favor, selecione novamente.');
-        return;
-    }
-    
-    if (!auxiliarInstrucaoContainer.classList.contains('d-none') && 
-        document.getElementById('id_auxiliar_instrucao').value === '') {
-        e.preventDefault();
-        alert('Erro ao processar o auxiliar de instrução. Por favor, selecione novamente.');
-        return;
-    }
-    
-    // Log para debug
-    console.log('Formulário enviando com valores:');
-    console.log('Instrutor:', document.getElementById('id_instrutor').value);
-    console.log('Instrutor Auxiliar:', document.getElementById('id_instrutor_auxiliar').value);
-    console.log('Auxiliar de Instrução:', document.getElementById('id_auxiliar_instrucao').value);
-});
-document.addEventListener('DOMContentLoaded', function() {
-    // Código existente...
-    
-    // Adicionar validação para a data de início
-    const dataInicioInput = document.getElementById('id_data_inicio');
-    const dataFimInput = document.getElementById('id_data_fim');
-    
-    // Criar elemento para mensagem de alerta
-    const alertaDataInicio = document.createElement('div');
-    alertaDataInicio.className = 'alert alert-warning mt-2 d-none';
-    alertaDataInicio.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Atenção: A data de início está no passado. Isso é permitido, mas certifique-se de que é intencional.';
-    dataInicioInput.parentNode.appendChild(alertaDataInicio);
-    
-    // Função para verificar se a data está no passado
-    function verificarDataPassado() {
-        const dataInicio = new Date(dataInicioInput.value);
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0); // Resetar horas para comparar apenas as datas
+<!-- Adicionar após a seção de instrutoria -->
+{% if debug_mode %}
+<div class="card mb-4">
+    <div class="card-header bg-warning">
+        <h5 class="mb-0">Modo de Depuração</h5>
+    </div>
+    <div class="card-body">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="ignore-eligibility" checked>
+            <label class="form-check-label" for="ignore-eligibility">Ignorar verificações de elegibilidade</label>
+        </div>
+        <small class="text-muted">Este modo permite selecionar qualquer aluno como instrutor, ignorando as verificações de elegibilidade.</small>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ignoreEligibilityCheckbox = document.getElementById('ignore-eligibility');
         
-        if (dataInicio < hoje) {
-            alertaDataInicio.classList.remove('d-none');
-        } else {
-            alertaDataInicio.classList.add('d-none');
-        }
-    }
-    
-    // Verificar no carregamento da página (caso seja edição)
-    if (dataInicioInput.value) {
-        verificarDataPassado();
-    }
-    
-    // Verificar quando o usuário alterar a data
-    dataInicioInput.addEventListener('change', verificarDataPassado);
-    
-    // Validação para garantir que a data de início não seja posterior à data de fim
-    function validarDatas() {
-        const dataInicio = new Date(dataInicioInput.value);
-        const dataFim = new Date(dataFimInput.value);
-        
-        if (dataInicioInput.value && dataFimInput.value && dataInicio > dataFim) {
-            dataFimInput.setCustomValidity('A data de fim não pode ser anterior à data de início');
-            // Mostrar mensagem de erro
-            const alertaDataFim = document.getElementById('alerta-data-fim') || document.createElement('div');
-            alertaDataFim.id = 'alerta-data-fim';
-            alertaDataFim.className = 'alert alert-danger mt-2';
-            alertaDataFim.textContent = 'A data de fim não pode ser anterior à data de início';
-            if (!document.getElementById('alerta-data-fim')) {
-                dataFimInput.parentNode.appendChild(alertaDataFim);
+        ignoreEligibilityCheckbox.addEventListener('change', function() {
+            // Atualizar a variável global no módulo InstrutorSearch
+            if (typeof InstrutorSearch !== 'undefined') {
+                InstrutorSearch.setIgnoreEligibility(this.checked);
+                
+                // Limpar mensagens de erro existentes
+                document.querySelectorAll('[id$="-error"]').forEach(el => {
+                    el.textContent = '';
+                    el.classList.add('d-none');
+                });
+                
+                // Mostrar mensagem
+                const message = this.checked ? 
+                    'Verificações de elegibilidade desativadas. Qualquer aluno pode ser selecionado.' : 
+                    'Verificações de elegibilidade ativadas.';
+                    
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                
+                this.closest('.card-body').appendChild(alertDiv);
             }
-        } else {
-            dataFimInput.setCustomValidity('');
-            const alertaDataFim = document.getElementById('alerta-data-fim');
-            if (alertaDataFim) {
-                alertaDataFim.remove();
-            }
-        }
-    }
-    
-    dataInicioInput.addEventListener('change', validarDatas);
-    dataFimInput.addEventListener('change', validarDatas);
-    
-    // Resto do código existente...
-});
-{% block extra_css %}
-<style>
-    .alert-warning {
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 0.8; }
-        50% { opacity: 1; }
-        100% { opacity: 0.8; }
-    }
-    
-    .date-warning-icon {
-        margin-right: 5px;
-        color: #856404;
-    }
-</style>
-{% endblock %}
+        });
+    });
+</script>
+{% endif %}
 
 
 
@@ -1774,7 +1491,21 @@ html
     // Adicione aqui qualquer JavaScript específico para esta página
 </script>
 {% endblock %}
-
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Horários</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Dias da Semana:</strong> {{ turma.dias_semana|default:"Não informado" }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Horário:</strong> {{ turma.horario|default:"Não informado" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
@@ -1782,14 +1513,15 @@ html
 
 html
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Editar Turma: {{ turma.nome }}{% endblock %}
+{% block title %}Editar Turma{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Editar Turma: {{ turma.nome }}</h1>
-        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para Lista</a>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
     </div>
     
     {% if messages %}
@@ -1802,6 +1534,7 @@ html
     
     <form method="post">
         {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
         
         <div class="card mb-4">
             <div class="card-header">
@@ -1810,195 +1543,205 @@ html
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <!-- Nome da Turma -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
-                            {{ form.nome }}
-                            {% if form.nome.help_text %}
-                                <small class="form-text text-muted">{{ form.nome.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.nome.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.nome %}
                     </div>
                     <div class="col-md-6">
-                        <!-- Curso -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.curso.id_for_label }}">{{ form.curso.label }}</label>
-                            {{ form.curso }}
-                            {% if form.curso.help_text %}
-                                <small class="form-text text-muted">{{ form.curso.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.curso.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.curso %}
                     </div>
                 </div>
-                
                 <div class="row">
-                    <div class="col-md-3">
-                        <!-- Data de Início -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.data_inicio.id_for_label }}">{{ form.data_inicio.label }}</label>
-                            <input type="date" name="data_inicio" value="{{ turma.data_inicio|date:'Y-m-d' }}" class="form-control" required id="id_data_inicio">
-                            {% if form.data_inicio.help_text %}
-                                <small class="form-text text-muted">{{ form.data_inicio.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.data_inicio.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_inicio %}
                     </div>
-                    <div class="col-md-3">
-                        <!-- Data de Fim -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.data_fim.id_for_label }}">{{ form.data_fim.label }}</label>
-                            <input type="date" name="data_fim" value="{{ turma.data_fim|date:'Y-m-d' }}" class="form-control" required id="id_data_fim">
-                            {% if form.data_fim.help_text %}
-                                <small class="form-text text-muted">{{ form.data_fim.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.data_fim.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <!-- Vagas -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.vagas.id_for_label }}">{{ form.vagas.label }}</label>
-                            {{ form.vagas }}
-                            {% if form.vagas.help_text %}
-                                <small class="form-text text-muted">{{ form.vagas.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.vagas.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <!-- Status -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
-                            {{ form.status }}
-                            {% if form.status.help_text %}
-                                <small class="form-text text-muted">{{ form.status.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.status.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_fim %}
                     </div>
                 </div>
-                
                 <div class="row">
                     <div class="col-md-4">
-                        <!-- Local -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.local.id_for_label }}">{{ form.local.label }}</label>
-                            {{ form.local }}
-                            {% if form.local.help_text %}
-                                <small class="form-text text-muted">{{ form.local.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.local.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.vagas_totais %}
                     </div>
                     <div class="col-md-4">
-                        <!-- Dias da Semana -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.dias_semana.id_for_label }}">{{ form.dias_semana.label }}</label>
-                            {{ form.dias_semana }}
-                            {% if form.dias_semana.help_text %}
-                                <small class="form-text text-muted">{{ form.dias_semana.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.dias_semana.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.status %}
                     </div>
                     <div class="col-md-4">
-                        <!-- Horário -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.horario.id_for_label }}">{{ form.horario.label }}</label>
-                            {{ form.horario }}
-                            {% if form.horario.help_text %}
-                                <small class="form-text text-muted">{{ form.horario.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.horario.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.local %}
                     </div>
                 </div>
-                
-                <!-- Descrição -->
-                <div class="form-group mb-3">
-                    <label for="{{ form.descricao.id_for_label }}">{{ form.descricao.label }}</label>
-                    {{ form.descricao }}
-                    {% if form.descricao.help_text %}
-                        <small class="form-text text-muted">{{ form.descricao.help_text }}</small>
-                    {% endif %}
-                    {% for error in form.descricao.errors %}
-                        <div class="alert alert-danger mt-1">{{ error }}</div>
-                    {% endfor %}
+                <div class="row">
+                    <div class="col-md-12">
+                        {% include 'includes/form_field.html' with field=form.descricao %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção de Instrutoria -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Instrutoria</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Instrutor Principal -->
+                    <div class="col-md-4 mb-3">
+                        <label for="search-instrutor" class="form-label">Instrutor Principal</label>
+                        <input type="text" id="search-instrutor" class="form-control" 
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-instrutor-container" class="p-3 border rounded mt-2 {% if not turma.instrutor %}d-none{% endif %}">
+                            <div id="selected-instrutor-info">
+                                {% if turma.instrutor %}
+                                    {% if turma.instrutor.foto %}
+                                        <img src="{{ turma.instrutor.foto.url }}" alt="Foto de {{ turma.instrutor.nome }}" 
+                                             class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-secondary me-2 d-inline-flex align-items-center justify-content-center" 
+                                             style="width: 40px; height: 40px; color: white;">{{ turma.instrutor.nome|first|upper }}</div>
+                                    {% endif %}
+                                    <strong>{{ turma.instrutor.nome }}</strong>
+                                    {% if turma.instrutor.numero_iniciatico %}
+                                        - Nº {{ turma.instrutor.numero_iniciatico }}
+                                    {% endif %}
+                                    (CPF: {{ turma.instrutor.cpf|slice:":3" }}.{{ turma.instrutor.cpf|slice:"3:6" }}.{{ turma.instrutor.cpf|slice:"6:9" }}-{{ turma.instrutor.cpf|slice:"9:" }})
+                                    <button type="button" class="btn btn-sm btn-danger float-end" 
+                                            onclick="InstrutorSearch.removeAluno('id_instrutor', 'selected-instrutor-container', 'selected-instrutor-info', 'instrutor-error', 'instrutor')">Remover</button>
+                                {% else %}
+                                    Nenhum instrutor selecionado
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
+                        <select name="instrutor" class="form-control d-none" id="id_instrutor">
+                            <option value="">---------</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}" {% if turma.instrutor and turma.instrutor.cpf == aluno.cpf %}selected{% endif %}>{{ aluno.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Instrutor Auxiliar -->
+                    <div class="col-md-4 mb-3">
+                        <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
+                        <input type="text" id="search-instrutor-auxiliar" class="form-control" 
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 {% if not turma.instrutor_auxiliar %}d-none{% endif %}">
+                            <div id="selected-instrutor-auxiliar-info">
+                                {% if turma.instrutor_auxiliar %}
+                                    {% if turma.instrutor_auxiliar.foto %}
+                                        <img src="{{ turma.instrutor_auxiliar.foto.url }}" alt="Foto de {{ turma.instrutor_auxiliar.nome }}" 
+                                             class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-secondary me-2 d-inline-flex align-items-center justify-content-center" 
+                                             style="width: 40px; height: 40px; color: white;">{{ turma.instrutor_auxiliar.nome|first|upper }}</div>
+                                    {% endif %}
+                                    <strong>{{ turma.instrutor_auxiliar.nome }}</strong>
+                                    {% if turma.instrutor_auxiliar.numero_iniciatico %}
+                                        - Nº {{ turma.instrutor_auxiliar.numero_iniciatico }}
+                                    {% endif %}
+                                    (CPF: {{ turma.instrutor_auxiliar.cpf|slice:":3" }}.{{ turma.instrutor_auxiliar.cpf|slice:"3:6" }}.{{ turma.instrutor_auxiliar.cpf|slice:"6:9" }}-{{ turma.instrutor_auxiliar.cpf|slice:"9:" }})
+                                    <button type="button" class="btn btn-sm btn-danger float-end" 
+                                            onclick="InstrutorSearch.removeAluno('id_instrutor_auxiliar', 'selected-instrutor-auxiliar-container', 'selected-instrutor-auxiliar-info', 'instrutor-auxiliar-error', 'instrutor auxiliar')">Remover</button>
+                                {% else %}
+                                    Nenhum instrutor auxiliar selecionado
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
+                        <select name="instrutor_auxiliar" class="form-control d-none" id="id_instrutor_auxiliar">
+                            <option value="">---------</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}" {% if turma.instrutor_auxiliar and turma.instrutor_auxiliar.cpf == aluno.cpf %}selected{% endif %}>{{ aluno.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Auxiliar de Instrução -->
+                    <div class="col-md-4 mb-3">
+                        <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
+                        <input type="text" id="search-auxiliar-instrucao" class="form-control" 
+                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 {% if not turma.auxiliar_instrucao %}d-none{% endif %}">
+                            <div id="selected-auxiliar-instrucao-info">
+                                {% if turma.auxiliar_instrucao %}
+                                    {% if turma.auxiliar_instrucao.foto %}
+                                        <img src="{{ turma.auxiliar_instrucao.foto.url }}" alt="Foto de {{ turma.auxiliar_instrucao.nome }}" 
+                                             class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-secondary me-2 d-inline-flex align-items-center justify-content-center" 
+                                             style="width: 40px; height: 40px; color: white;">{{ turma.auxiliar_instrucao.nome|first|upper }}</div>
+                                    {% endif %}
+                                    <strong>{{ turma.auxiliar_instrucao.nome }}</strong>
+                                    {% if turma.auxiliar_instrucao.numero_iniciatico %}
+                                        - Nº {{ turma.auxiliar_instrucao.numero_iniciatico }}
+                                    {% endif %}
+                                    (CPF: {{ turma.auxiliar_instrucao.cpf|slice:":3" }}.{{ turma.auxiliar_instrucao.cpf|slice:"3:6" }}.{{ turma.auxiliar_instrucao.cpf|slice:"6:9" }}-{{ turma.auxiliar_instrucao.cpf|slice:"9:" }})
+                                    <button type="button" class="btn btn-sm btn-danger float-end" 
+                                            onclick="InstrutorSearch.removeAluno('id_auxiliar_instrucao', 'selected-auxiliar-instrucao-container', 'selected-auxiliar-instrucao-info', 'auxiliar-instrucao-error', 'auxiliar de instrução')">Remover</button>
+                                {% else %}
+                                    Nenhum auxiliar de instrução selecionado
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
+                        <select name="auxiliar_instrucao" class="form-control d-none" id="id_auxiliar_instrucao">
+                            <option value="">---------</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}" {% if turma.auxiliar_instrucao and turma.auxiliar_instrucao.cpf == aluno.cpf %}selected{% endif %}>{{ aluno.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor. 
+                    O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
                 </div>
             </div>
         </div>
         
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Instrutoria</h5>
+                <h5 class="mb-0">Horários</h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4">
-                        <!-- Instrutor Principal -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.instrutor.id_for_label }}">{{ form.instrutor.label }}</label>
-                            {{ form.instrutor }}
-                            {% if form.instrutor.help_text %}
-                                <small class="form-text text-muted">{{ form.instrutor.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.instrutor.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_dias_semana" class="form-label">Dias da Semana</label>
+                            <input type="text" name="dias_semana" class="form-control" id="id_dias_semana" 
+                                   value="{{ turma.dias_semana|default:'' }}"
+                                   placeholder="Ex: Segunda, Quarta e Sexta">
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <!-- Instrutor Auxiliar -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.instrutor_auxiliar.id_for_label }}">{{ form.instrutor_auxiliar.label }}</label>
-                            {{ form.instrutor_auxiliar }}
-                            {% if form.instrutor_auxiliar.help_text %}
-                                <small class="form-text text-muted">{{ form.instrutor_auxiliar.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.instrutor_auxiliar.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <!-- Auxiliar de Instrução -->
-                        <div class="form-group mb-3">
-                            <label for="{{ form.auxiliar_instrucao.id_for_label }}">{{ form.auxiliar_instrucao.label }}</label>
-                            {{ form.auxiliar_instrucao }}
-                            {% if form.auxiliar_instrucao.help_text %}
-                                <small class="form-text text-muted">{{ form.auxiliar_instrucao.help_text }}</small>
-                            {% endif %}
-                            {% for error in form.auxiliar_instrucao.errors %}
-                                <div class="alert alert-danger mt-1">{{ error }}</div>
-                            {% endfor %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_horario" class="form-label">Horário</label>
+                            <input type="text" name="horario" class="form-control" id="id_horario" 
+                                   value="{{ turma.horario|default:'' }}"
+                                   placeholder="Ex: 19:00 às 21:00">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="d-flex justify-content-between">
-            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Requisitos</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        {% include 'includes/form_field.html' with field=form.requisitos %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mb-5">
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">Atualizar Turma</button>
         </div>
     </form>
@@ -2006,22 +1749,11 @@ html
 {% endblock %}
 
 {% block extra_js %}
-<!-- JavaScript adicional para o formulário de edição de turma -->
+<script src="{% static 'js/turmas/instrutor_search.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Transformar os selects em select2 para melhor experiência de busca
-        if (typeof $.fn.select2 !== 'undefined') {
-            $('#id_instrutor, #id_instrutor_auxiliar, #id_auxiliar_instrucao').select2({
-                placeholder: 'Selecione um instrutor',
-                allowClear: true,
-                width: '100%'
-            });
-            
-            $('#id_curso').select2({
-                placeholder: 'Selecione um curso',
-                width: '100%'
-            });
-        }
+        // Inicializar o módulo de busca de instrutores com opção para mostrar todos os alunos
+        InstrutorSearch.init(document.querySelector('[name=csrfmiddlewaretoken]').value, true);
         
         // Validação de datas
         const dataInicio = document.getElementById('{{ form.data_inicio.id_for_label }}');
@@ -2045,7 +1777,6 @@ html
     });
 </script>
 {% endblock %}
-
 
 
 
@@ -2082,6 +1813,131 @@ html
 {% endblock %}
 
 
+
+
+
+### Arquivo: turmas\templates\turmas\formulario_instrutoria.html
+
+html
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Instrutoria</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Instrutor Principal -->
+            <div class="col-md-4 mb-3">
+                <label for="search-instrutor" class="form-label">Instrutor Principal</label>
+                <input type="text" id="search-instrutor" class="form-control" 
+                       placeholder="Digite parte do CPF, nome ou número iniciático..." 
+                       autocomplete="off"
+                       value="{{ turma.instrutor.nome|default:'' }}">
+                <div id="search-results-instrutor" class="list-group mt-2" style="display: none;"></div>
+                <div id="selected-instrutor-container" class="p-3 border rounded mt-2 {% if not turma.instrutor %}d-none{% endif %}">
+                    <div id="selected-instrutor-info">
+                        {% if turma.instrutor %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ turma.instrutor.nome }}</strong><br>
+                                    CPF: {{ turma.instrutor.cpf }}<br>
+                                    {% if turma.instrutor.numero_iniciatico %}
+                                        Número Iniciático: {{ turma.instrutor.numero_iniciatico }}
+                                    {% endif %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="remove-id_instrutor">
+                                    <i class="fas fa-times"></i> Remover
+                                </button>
+                            </div>
+                        {% else %}
+                            Nenhum instrutor selecionado
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="alert alert-danger mt-2 d-none"></div>
+                <select name="instrutor" class="form-control d-none" id="id_instrutor">
+                    <option value="">---------</option>
+                    {% if turma.instrutor %}
+                        <option value="{{ turma.instrutor.cpf }}" selected>{{ turma.instrutor.nome }}</option>
+                    {% endif %}
+                </select>
+            </div>
+            
+            <!-- Instrutor Auxiliar -->
+            <div class="col-md-4 mb-3">
+                <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
+                <input type="text" id="search-instrutor-auxiliar" class="form-control" 
+                       placeholder="Digite parte do CPF, nome ou número iniciático..." 
+                       autocomplete="off"
+                       value="{{ turma.instrutor_auxiliar.nome|default:'' }}">
+                <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
+                <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 {% if not turma.instrutor_auxiliar %}d-none{% endif %}">
+                    <div id="selected-instrutor-auxiliar-info">
+                        {% if turma.instrutor_auxiliar %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ turma.instrutor_auxiliar.nome }}</strong><br>
+                                    CPF: {{ turma.instrutor_auxiliar.cpf }}<br>
+                                    {% if turma.instrutor_auxiliar.numero_iniciatico %}
+                                        Número Iniciático: {{ turma.instrutor_auxiliar.numero_iniciatico }}
+                                    {% endif %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="remove-id_instrutor_auxiliar">
+                                    <i class="fas fa-times"></i> Remover
+                                </button>
+                            </div>
+                        {% else %}
+                            Nenhum instrutor auxiliar selecionado
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="alert alert-danger mt-2 d-none"></div>
+                <select name="instrutor_auxiliar" class="form-control d-none" id="id_instrutor_auxiliar">
+                    <option value="">---------</option>
+                    {% if turma.instrutor_auxiliar %}
+                        <option value="{{ turma.instrutor_auxiliar.cpf }}" selected>{{ turma.instrutor_auxiliar.nome }}</option>
+                    {% endif %}
+                </select>
+            </div>
+            
+            <!-- Auxiliar de Instrução -->
+            <div class="col-md-4 mb-3">
+                <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
+                <input type="text" id="search-auxiliar-instrucao" class="form-control" 
+                       placeholder="Digite parte do CPF, nome ou número iniciático..." 
+                       autocomplete="off"
+                       value="{{ turma.auxiliar_instrucao.nome|default:'' }}">
+                <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
+                <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 {% if not turma.auxiliar_instrucao %}d-none{% endif %}">
+                    <div id="selected-auxiliar-instrucao-info">
+                        {% if turma.auxiliar_instrucao %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ turma.auxiliar_instrucao.nome }}</strong><br>
+                                    CPF: {{ turma.auxiliar_instrucao.cpf }}<br>
+                                    {% if turma.auxiliar_instrucao.numero_iniciatico %}
+                                        Número Iniciático: {{ turma.auxiliar_instrucao.numero_iniciatico }}
+                                    {% endif %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="remove-id_auxiliar_instrucao">
+                                    <i class="fas fa-times"></i> Remover
+                                </button>
+                            </div>
+                        {% else %}
+                            Nenhum auxiliar de instrução selecionado
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="alert alert-danger mt-2 d-none"></div>
+                <select name="auxiliar_instrucao" class="form-control d-none" id="id_auxiliar_instrucao">
+                    <option value="">---------</option>
+                    {% if turma.auxiliar_instrucao %}
+                        <option value="{{ turma.auxiliar_instrucao.cpf }}" selected>{{ turma.auxiliar_instrucao.nome }}</option>
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 

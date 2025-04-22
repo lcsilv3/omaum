@@ -52,6 +52,8 @@
                             <th>CPF</th>
                             <th>Nº Iniciático</th>
                             <th>Email</th>
+                            <th>Situação</th>
+                            <th>Cursos</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -76,6 +78,18 @@
                                 <td>{{ aluno.cpf }}</td>
                                 <td>{{ aluno.numero_iniciatico|default:"N/A" }}</td>
                                 <td>{{ aluno.email }}</td>
+                                <td>{{ aluno.get_situacao_display }}</td>
+                                <td>
+                                    {% if aluno.cursos %}
+                                        <ul class="list-unstyled mb-0">
+                                            {% for curso in aluno.cursos %}
+                                                <li>{{ curso }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <span class="text-muted">Nenhum curso</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if aluno.cpf %}
                                         <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info">Detalhes</a>
@@ -88,16 +102,12 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center">
+                                <td colspan="7" class="text-center">
                                     <p class="my-3">Nenhum aluno cadastrado.</p>
                                 </td>
                             </tr>
                         {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer">
+                    </tbody>                </table>            </div>        </div>        <div class="card-footer">
             <p class="text-muted mb-0">Total: {{ page_obj.paginator.count|default:"0" }} aluno(s)</p>
             {% if page_obj.has_other_pages %}
                 <nav aria-label="Paginação">
