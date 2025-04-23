@@ -73,6 +73,7 @@ def collect_root_files(project_root, output_dir):
             for f in os.listdir(project_root)
             if os.path.isfile(os.path.join(project_root, f))
             and not f.startswith(".")
+            and f != "db.sqlite3"  # Excluir o arquivo db.sqlite3
         ]
 
         for file in root_files:

@@ -25,14 +25,51 @@ class AlunoForm(forms.ModelForm):
     cpf_validator = RegexValidator(
         r"^\d{11}$", "O CPF deve conter exatamente 11 dígitos numéricos."
     )
+    
+    celular_validator = RegexValidator(
+        r"^\d{10,11}$", "O número de celular deve ter entre 10 e 11 dígitos."
+    )
+    
+    cep_validator = RegexValidator(
+        r"^\d{8}$", "O CEP deve conter exatamente 8 dígitos numéricos."
+    )
 
     # Campos com validação adicional
     cpf = forms.CharField(
         validators=[cpf_validator],
         widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Somente números"}
+            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "11"}
         ),
     )
+    
+    celular_primeiro_contato = forms.CharField(
+        validators=[celular_validator],
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "11"}
+        ),
+    )
+    
+    celular_segundo_contato = forms.CharField(
+        required=False,
+        validators=[celular_validator],
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "11"}
+        ),
+    )
+    
+    cep = forms.CharField(
+        validators=[cep_validator],
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "8"}
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Converter o formato da data para YYYY-MM-DD se estiver editando um aluno existente
+        if self.instance and self.instance.pk and self.instance.data_nascimento:
+            # Converter para o formato esperado pelo input type="date"
+            self.initial['data_nascimento'] = self.instance.data_nascimento.strftime('%Y-%m-%d')
 
     class Meta:
         model = get_aluno_model()
@@ -72,7 +109,8 @@ class AlunoForm(forms.ModelForm):
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
             "data_nascimento": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
+                attrs={"class": "form-control", "type": "date"},
+                format="%Y-%m-%d"
             ),
             "hora_nascimento": forms.TimeInput(
                 attrs={"class": "form-control", "type": "time"}
@@ -97,25 +135,13 @@ class AlunoForm(forms.ModelForm):
             "bairro": forms.TextInput(attrs={"class": "form-control"}),
             "cidade": forms.TextInput(attrs={"class": "form-control"}),
             "estado": forms.TextInput(attrs={"class": "form-control"}),
-            "cep": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Somente números",
-                }
-            ),
             "nome_primeiro_contato": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "celular_primeiro_contato": forms.TextInput(
                 attrs={"class": "form-control"}
             ),
             "tipo_relacionamento_primeiro_contato": forms.TextInput(
                 attrs={"class": "form-control"}
             ),
             "nome_segundo_contato": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "celular_segundo_contato": forms.TextInput(
                 attrs={"class": "form-control"}
             ),
             "tipo_relacionamento_segundo_contato": forms.TextInput(
@@ -178,6 +204,8 @@ class AlunoForm(forms.ModelForm):
             "fator_rh": "Positivo (+) ou Negativo (-)",
             "alergias": "Liste todas as alergias conhecidas. Deixe em branco se não houver.",
             "condicoes_medicas_gerais": "Descreva condições médicas relevantes. Deixe em branco se não houver.",
+            "celular_primeiro_contato": "Digite apenas números (DDD + número).",
+            "celular_segundo_contato": "Digite apenas números (DDD + número).",
         }
 
     def clean_cpf(self):
@@ -193,10 +221,49 @@ class AlunoForm(forms.ModelForm):
                     "O CPF deve conter exatamente 11 dígitos."
                 )
 
-            # Aqui você poderia adicionar uma validação mais complexa do CPF
-            # como verificar os dígitos verificadores
-
         return cpf
+
+    def clean_cep(self):
+        """Validação personalizada para o campo CEP."""
+        cep = self.cleaned_data.get("cep")
+        if cep:
+            # Remove caracteres não numéricos
+            cep = "".join(filter(str.isdigit, cep))
+
+            # Verifica se tem 8 dígitos
+            if len(cep) != 8:
+                raise forms.ValidationError(
+                    "O CEP deve conter exatamente 8 dígitos."
+                )
+        return cep
+    
+    def clean_celular_primeiro_contato(self):
+        """Validação personalizada para o campo celular_primeiro_contato."""
+        celular = self.cleaned_data.get("celular_primeiro_contato")
+        if celular:
+            # Remove caracteres não numéricos
+            celular = "".join(filter(str.isdigit, celular))
+            
+            # Verifica se tem entre 10 e 11 dígitos
+            if len(celular) < 10 or len(celular) > 11:
+                raise forms.ValidationError(
+                    "O número de celular deve ter entre 10 e 11 dígitos."
+                )
+        return celular
+    
+    def clean_celular_segundo_contato(self):
+        """Validação personalizada para o campo celular_segundo_contato."""
+        celular = self.cleaned_data.get("celular_segundo_contato")
+        if celular:
+            # Remove caracteres não numéricos
+            celular = "".join(filter(str.isdigit, celular))
+            
+            # Verifica se tem entre 10 e 11 dígitos
+            if len(celular) < 10 or len(celular) > 11:
+                raise forms.ValidationError(
+                    "O número de celular deve ter entre 10 e 11 dígitos."
+                )
+        return celular
 
     def clean_nome(self):
         """Validação personalizada para o campo nome."""
@@ -229,20 +296,6 @@ class AlunoForm(forms.ModelForm):
                 if Aluno.objects.filter(email=email).exists():
                     raise forms.ValidationError("Este e-mail já está em uso.")
         return email
-
-    def clean_cep(self):
-        """Validação personalizada para o campo CEP."""
-        cep = self.cleaned_data.get("cep")
-        if cep:
-            # Remove caracteres não numéricos
-            cep = "".join(filter(str.isdigit, cep))
-
-            # Verifica se tem 8 dígitos
-            if len(cep) != 8:
-                raise forms.ValidationError(
-                    "O CEP deve conter exatamente 8 dígitos."
-                )
-        return cep
 
     def clean_situacao(self):
         """Validação personalizada para o campo situacao."""
@@ -333,20 +386,24 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def get_models():
     """Obtém o modelo Aluno dinamicamente."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
+
 
 def get_forms():
     """Obtém o formulário AlunoForm dinamicamente."""
     alunos_forms = import_module("alunos.forms")
     return getattr(alunos_forms, "AlunoForm")
 
+
 def get_aluno_model():
     """Obtém o modelo Aluno dinamicamente."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
+
 
 @login_required
 def listar_alunos(request):
@@ -382,8 +439,25 @@ def listar_alunos(request):
             except (ImportError, AttributeError) as e:
                 # Log do erro, mas continuar sem o filtro de curso
                 print(f"Erro ao filtrar por curso: {e}")
+        
+        # Para cada aluno, buscar os cursos em que está matriculado
+        alunos_com_cursos = []
+        for aluno in alunos:
+            try:
+                # Importar o modelo Matricula dinamicamente
+                Matricula = import_module("matriculas.models").Matricula
+                # Buscar matrículas do aluno
+                matriculas = Matricula.objects.filter(aluno=aluno)
+                # Extrair nomes dos cursos
+                cursos = [m.turma.curso.nome for m in matriculas]
+                # Adicionar informação de cursos ao aluno
+                aluno.cursos = cursos
+            except:
+                aluno.cursos = []
+            alunos_com_cursos.append(aluno)
+        
         # Paginação
-        paginator = Paginator(alunos, 10)  # 10 alunos por página
+        paginator = Paginator(alunos_com_cursos, 10)  # 10 alunos por página
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
         # Obter cursos para o filtro
@@ -415,6 +489,7 @@ def listar_alunos(request):
             },
         )
 
+
 @login_required
 def criar_aluno(request):
     """Cria um novo aluno."""
@@ -445,10 +520,12 @@ def detalhar_aluno(request, cpf):
     """Exibe os detalhes de um aluno."""
     Aluno = get_models()
     aluno = get_object_or_404(Aluno, cpf=cpf)
+    
     # Buscar turmas onde o aluno é instrutor
     turmas_como_instrutor = []
     turmas_como_instrutor_auxiliar = []
     turmas_como_auxiliar_instrucao = []
+    
     if aluno.esta_ativo:
         from importlib import import_module
         try:
@@ -467,6 +544,40 @@ def detalhar_aluno(request, cpf):
             ).select_related("curso")
         except (ImportError, AttributeError):
             pass
+    
+    # Buscar matrículas do aluno
+    matriculas = []
+    try:
+        # Importar o modelo Matricula dinamicamente
+        matriculas_module = import_module("matriculas.models")
+        Matricula = getattr(matriculas_module, "Matricula")
+        # Buscar matrículas do aluno
+        matriculas = Matricula.objects.filter(aluno=aluno).select_related("turma__curso")
+    except (ImportError, AttributeError):
+        pass
+    
+    # Buscar atividades acadêmicas do aluno
+    atividades_academicas = []
+    try:
+        # Importar o modelo Frequencia dinamicamente
+        frequencias_module = import_module("frequencias.models")
+        Frequencia = getattr(frequencias_module, "Frequencia")
+        # Buscar frequências do aluno
+        atividades_academicas = Frequencia.objects.filter(aluno=aluno).select_related("atividade").order_by("-data")
+    except (ImportError, AttributeError):
+        pass
+    
+    # Buscar atividades ritualísticas do aluno
+    atividades_ritualisticas = []
+    try:
+        # Importar o modelo AtividadeRitualistica dinamicamente
+        atividades_module = import_module("atividades.models")
+        AtividadeRitualistica = getattr(atividades_module, "AtividadeRitualistica")
+        # Buscar atividades ritualísticas do aluno
+        atividades_ritualisticas = AtividadeRitualistica.objects.filter(participantes=aluno).order_by("-data")
+    except (ImportError, AttributeError):
+        pass
+    
     return render(
         request,
         "alunos/detalhar_aluno.html",
@@ -475,8 +586,12 @@ def detalhar_aluno(request, cpf):
             "turmas_como_instrutor": turmas_como_instrutor,
             "turmas_como_instrutor_auxiliar": turmas_como_instrutor_auxiliar,
             "turmas_como_auxiliar_instrucao": turmas_como_auxiliar_instrucao,
+            "matriculas": matriculas,
+            "atividades_academicas": atividades_academicas,
+            "atividades_ritualisticas": atividades_ritualisticas,
         },
     )
+
 
 @login_required
 def editar_aluno(request, cpf):
@@ -484,82 +599,21 @@ def editar_aluno(request, cpf):
     Aluno = get_models()
     AlunoForm = get_forms()
     aluno = get_object_or_404(Aluno, cpf=cpf)
-    situacao_anterior = aluno.situacao
+    
     if request.method == "POST":
         form = AlunoForm(request.POST, request.FILES, instance=aluno)
-        # Verificar se o formulário é válido
         if form.is_valid():
-            try:
-                # Verificar se a situação mudou de "ATIVO" para outra
-                nova_situacao = form.cleaned_data.get("situacao")
-                # Se a situação mudou e o aluno é instrutor em alguma turma
-                if (
-                    situacao_anterior == "ATIVO"
-                    and nova_situacao != "ATIVO"
-                    and hasattr(form, "aluno_e_instrutor")
-                ):
-                    # Verificar se o usuário confirmou a remoção da instrutoria
-                    if (
-                        request.POST.get("confirmar_remocao_instrutoria")
-                        != "1"
-                    ):
-                        # Redirecionar para a página de confirmação
-                        return redirect(
-                            "alunos:confirmar_remocao_instrutoria",
-                            cpf=aluno.cpf,
-                            nova_situacao=nova_situacao,
-                        )
-                    # Se confirmou, atualizar as turmas
-                    from importlib import import_module
-                    try:
-                        # Importar o modelo Turma dinamicamente
-                        turmas_module = import_module("turmas.models")
-                        Turma = getattr(turmas_module, "Turma")
-                        # Buscar turmas onde o aluno é instrutor
-                        turmas_instrutor = Turma.objects.filter(
-                            instrutor=aluno, status="A"
-                        )
-                        turmas_instrutor_auxiliar = Turma.objects.filter(
-                            instrutor_auxiliar=aluno, status="A"
-                        )
-                        turmas_auxiliar_instrucao = Turma.objects.filter(
-                            auxiliar_instrucao=aluno, status="A"
-                        )
-                        # Atualizar as turmas
-                        for turma in turmas_instrutor:
-                            turma.instrutor = None
-                            turma.alerta_instrutor = True
-                            turma.alerta_mensagem = f"O instrutor {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
-                            turma.save()
-                        for turma in turmas_instrutor_auxiliar:
-                            turma.instrutor_auxiliar = None
-                            turma.alerta_instrutor = True
-                            turma.alerta_mensagem = f"O instrutor auxiliar {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
-                            turma.save()
-                        for turma in turmas_auxiliar_instrucao:
-                            turma.auxiliar_instrucao = None
-                            turma.alerta_instrutor = True
-                            turma.alerta_mensagem = f"O auxiliar de instrução {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
-                            turma.save()
-                    except (ImportError, AttributeError):
-                        pass
-                # Salvar o aluno
-                form.save()
-                messages.success(request, "Aluno atualizado com sucesso!")
-                return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
-            except ValidationError as e:
-                for field, errors in e.message_dict.items():
-                    for error in errors:
-                        form.add_error(field, error)
-            except Exception as e:
-                messages.error(request, f"Erro ao atualizar aluno: {str(e)}")
-        else:
-            messages.error(request, "Por favor, corrija os erros abaixo.")
+            form.save()
+            messages.success(request, "Aluno atualizado com sucesso!")
+            return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
     else:
         form = AlunoForm(instance=aluno)
+    
+    # Certifique-se de que 'aluno' está sendo passado para o template
     return render(
         request, "alunos/formulario_aluno.html", {"form": form, "aluno": aluno}
     )
+
 
 @login_required
 def excluir_aluno(request, cpf):
@@ -575,6 +629,7 @@ def excluir_aluno(request, cpf):
             messages.error(request, f"Erro ao excluir aluno: {str(e)}")
             return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
     return render(request, "alunos/excluir_aluno.html", {"aluno": aluno})
+
 
 @login_required
 def dashboard(request):
@@ -599,6 +654,7 @@ def dashboard(request):
     except Exception as e:
         messages.error(request, f"Erro ao carregar dashboard: {str(e)}")
         return redirect("alunos:listar_alunos")
+
 
 @login_required
 def exportar_alunos(request):
@@ -636,6 +692,7 @@ def exportar_alunos(request):
     except Exception as e:
         messages.error(request, f"Erro ao exportar alunos: {str(e)}")
         return redirect("alunos:listar_alunos")
+
 
 @login_required
 def importar_alunos(request):
@@ -716,6 +773,7 @@ def importar_alunos(request):
             messages.error(request, f"Erro ao importar alunos: {str(e)}")
     return render(request, "alunos/importar_alunos.html")
 
+
 @login_required
 def relatorio_alunos(request):
     """Exibe um relatório com estatísticas sobre os alunos."""
@@ -761,41 +819,37 @@ def search_alunos(request):
             Q(nome__icontains=query)
             | Q(cpf__icontains=query)
             | Q(numero_iniciatico__icontains=query)
-        )[
-            :10
-        ]  # Limitar a 10 resultados
+        )[:10]  # Limitar a 10 resultados
         # Formatar resultados
         results = []
         for aluno in alunos:
-            results.append(
-                {
-                    "cpf": aluno.cpf,
-                    "nome": aluno.nome,
-                    "numero_iniciatico": aluno.numero_iniciatico or "N/A",
-                    "foto": (
-                        aluno.foto.url
-                        if hasattr(aluno, "foto") and aluno.foto
-                        else None
-                    ),
-                }
-            )
+            results.append({
+                "cpf": aluno.cpf,
+                "nome": aluno.nome,
+                "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                "foto": aluno.foto.url if hasattr(aluno, "foto") and aluno.foto else None,
+                "situacao": aluno.get_situacao_display() if hasattr(aluno, "get_situacao_display") else ""
+            })
         return JsonResponse(results, safe=False)
     except Exception as e:
         logger.error(f"Error in search_alunos: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
 
-@login_required
 def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
     """Confirma a remoção da instrutoria de um aluno."""
+    from django.utils import timezone    from django.shortcuts import get_object_or_404, redirect, render
+    from django.contrib import messages
+    from importlib import import_module
+
     Aluno = get_models()
     aluno = get_object_or_404(Aluno, cpf=cpf)
-    # Importar os modelos necessários
-    from importlib import import_module
+    
     try:
         turmas_module = import_module("turmas.models")
         Turma = getattr(turmas_module, "Turma")
         cargos_module = import_module("cargos.models")
         AtribuicaoCargo = getattr(cargos_module, "AtribuicaoCargo")
+        
         # Buscar turmas onde o aluno é instrutor
         turmas_instrutor = Turma.objects.filter(instrutor=aluno, status="A")
         turmas_instrutor_auxiliar = Turma.objects.filter(
@@ -804,20 +858,24 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
         turmas_auxiliar_instrucao = Turma.objects.filter(
             auxiliar_instrucao=aluno, status="A"
         )
+        
         # Juntar todas as turmas
         turmas = (
             list(turmas_instrutor)
             + list(turmas_instrutor_auxiliar)
             + list(turmas_auxiliar_instrucao)
         )
+        
         # Se não houver turmas, redirecionar para a edição
         if not turmas:
             return redirect("alunos:editar_aluno", cpf=aluno.cpf)
+            
         # Se o método for POST, processar a confirmação
         if request.method == "POST":
             # Atualizar a situação do aluno
             aluno.situacao = nova_situacao
             aluno.save()
+            
             # Atualizar as turmas e finalizar os cargos administrativos
             for turma in turmas_instrutor:
                 turma.instrutor = None
@@ -833,6 +891,7 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
                 for atribuicao in atribuicoes:
                     atribuicao.data_fim = timezone.now().date()
                     atribuicao.save()
+                    
             for turma in turmas_instrutor_auxiliar:
                 turma.instrutor_auxiliar = None
                 turma.alerta_instrutor = True
@@ -847,6 +906,7 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
                 for atribuicao in atribuicoes:
                     atribuicao.data_fim = timezone.now().date()
                     atribuicao.save()
+                    
             for turma in turmas_auxiliar_instrucao:
                 turma.auxiliar_instrucao = None
                 turma.alerta_instrutor = True
@@ -861,11 +921,13 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
                 for atribuicao in atribuicoes:
                     atribuicao.data_fim = timezone.now().date()
                     atribuicao.save()
+                    
             messages.success(
                 request,
                 "Aluno atualizado com sucesso e removido das turmas como instrutor!",
             )
             return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
+            
         # Renderizar a página de confirmação
         return render(
             request,
@@ -889,49 +951,52 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
 def search_instrutores(request):
     """API endpoint para buscar alunos elegíveis para serem instrutores."""
     try:
+        query = request.GET.get("q", "")
         Aluno = get_aluno_model()
         # Buscar apenas alunos ativos
         alunos = Aluno.objects.filter(situacao="ATIVO")
+        
+        # Se houver uma consulta, filtrar por ela
+        if query and len(query) >= 2:
+            alunos = alunos.filter(
+                Q(nome__icontains=query)
+                | Q(cpf__icontains=query)
+                | Q(numero_iniciatico__icontains=query)
+            )
+        
         # Filtrar alunos que podem ser instrutores
         alunos_elegiveis = []
-        for aluno in alunos:
-            if aluno.pode_ser_instrutor:
-                alunos_elegiveis.append(
-                    {
-                        "cpf": aluno.cpf,
-                        "nome": aluno.nome,
-                        "numero_iniciatico": aluno.numero_iniciatico or "N/A",
-                        "foto": (
-                            aluno.foto.url
-                            if hasattr(aluno, "foto") and aluno.foto
-                            else None
-                        ),
-                    }
-                )
-        # Se não houver alunos elegíveis, adicionar um log de aviso
-        if not alunos_elegiveis:
-            logger.warning(
-                "Nenhum aluno elegível para ser instrutor. Usando todos os alunos ativos."
-            )
-            # Temporariamente, retornar todos os alunos ativos
-            for aluno in alunos:
-                alunos_elegiveis.append(
-                    {
-                        "cpf": aluno.cpf,
-                        "nome": aluno.nome,
-                        "numero_iniciatico": aluno.numero_iniciatico or "N/A",
-                        "foto": (
-                            aluno.foto.url
-                            if hasattr(aluno, "foto") and aluno.foto
-                            else None
-                        ),
-                    }
-                )
+        for aluno in alunos[:10]:  # Limitar a 10 resultados
+            # Buscar matrículas do aluno
+            matriculas = []
+            try:
+                Matricula = import_module("matriculas.models").Matricula
+                matriculas_obj = Matricula.objects.filter(aluno=aluno)
+                matriculas = [f"{m.turma.curso.nome} ({m.turma.nome})" for m in matriculas_obj]
+            except (ImportError, AttributeError):
+                pass
+            
+            # Verificar se o aluno pode ser instrutor
+            pode_ser_instrutor = getattr(aluno, 'pode_ser_instrutor', False)
+            
+            alunos_elegiveis.append({
+                "cpf": aluno.cpf,
+                "nome": aluno.nome,
+                "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                "foto": aluno.foto.url if hasattr(aluno, "foto") and aluno.foto else None,
+                "situacao": aluno.get_situacao_display(),
+                "situacao_codigo": aluno.situacao,
+                "esta_ativo": aluno.esta_ativo,
+                "matriculas": matriculas,
+                "elegivel": pode_ser_instrutor
+            })
+        
         logger.info(f"Alunos elegíveis para instrutores: {len(alunos_elegiveis)}")
         return JsonResponse(alunos_elegiveis, safe=False)
     except Exception as e:
         logger.error(f"Erro em search_instrutores: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
+
 
 @login_required
 def get_aluno(request, cpf):
@@ -956,6 +1021,7 @@ def get_aluno(request, cpf):
         )
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=404)
+
 
 @login_required
 @permission_required('alunos.view_aluno', raise_exception=True)
@@ -1045,6 +1111,8 @@ def verificar_elegibilidade_instrutor(request, cpf):
             {"elegivel": False, "motivo": f"Erro na busca: {error_msg}"},
             status=500
         )
+
+
 @login_required
 def diagnostico_instrutores(request):
     """
@@ -1122,6 +1190,7 @@ def diagnostico_instrutores(request):
         )
 
 
+
 ## Arquivos urls.py:
 
 
@@ -1166,6 +1235,7 @@ urlpatterns = [
         views.diagnostico_instrutores,
         name="diagnostico_instrutores",
     ),]
+
 
 
 ## Arquivos models.py:
@@ -1383,6 +1453,9 @@ class Aluno(models.Model):
     def clean(self):
         """Validação personalizada para o modelo."""
         super().clean()
+    def save(self, *args, **kwargs):
+        # Verificar se há alguma lógica aqui que possa estar impedindo o salvamento
+        super().save(*args, **kwargs)
     class Meta:
         verbose_name = _("Aluno")
         verbose_name_plural = _("Alunos")
@@ -1633,6 +1706,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 html
 {% extends 'base.html' %}
+{% load alunos_extras %}
 
 {% block title %}Detalhes do Aluno: {{ aluno.nome }}{% endblock %}
 
@@ -1655,8 +1729,8 @@ html
         {% endfor %}
     {% endif %}
     
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="card mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
             <h5>Dados Pessoais</h5>
         </div>
         <div class="card-body">
@@ -1664,7 +1738,7 @@ html
                 <div class="col-md-8">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>CPF:</strong> {{ aluno.cpf }}</p>
+                            <p><strong>CPF:</strong> <span class="cpf-mask">{{ aluno.cpf }}</span></p>
                             <p><strong>Nome:</strong> {{ aluno.nome }}</p>
                             <p><strong>Data de Nascimento:</strong> {{ aluno.data_nascimento|date:"d/m/Y" }}</p>
                             <p><strong>Hora de Nascimento:</strong> {{ aluno.hora_nascimento|time:"H:i" }}</p>
@@ -1672,6 +1746,19 @@ html
                         <div class="col-md-6">
                             <p><strong>Email:</strong> {{ aluno.email }}</p>
                             <p><strong>Sexo:</strong> {{ aluno.get_sexo_display }}</p>
+                            <p><strong>Situação:</strong> 
+                                {% if aluno.situacao == 'ATIVO' %}
+                                    <span class="badge bg-success">{{ aluno.get_situacao_display }}</span>
+                                {% elif aluno.situacao == 'AFASTADO' %}
+                                    <span class="badge bg-warning">{{ aluno.get_situacao_display }}</span>
+                                {% elif aluno.situacao == 'EXCLUIDO' %}
+                                    <span class="badge bg-danger">{{ aluno.get_situacao_display }}</span>
+                                {% elif aluno.situacao == 'FALECIDO' %}
+                                    <span class="badge bg-dark">{{ aluno.get_situacao_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ aluno.get_situacao_display }}</span>
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -1681,14 +1768,18 @@ html
                          style="border-style: dashed !important; 
                                 border-color: #007bff !important; 
                                 border-width: 2px !important;
-                                height: 200px; 
+                                min-height: 120px;
+                                max-height: 200px;
                                 display: flex; 
                                 align-items: center; 
-                                justify-content: center;">
+                                justify-content: center;
+                                overflow: hidden;">
                         {% if aluno.foto %}
                             <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
                                  class="img-fluid rounded" 
-                                 style="max-width: 120px; max-height: 160px; object-fit: cover;">
+                                 style="max-width: 100%; 
+                                        max-height: 180px; 
+                                        object-fit: contain;">
                         {% else %}
                             <div class="text-muted">Sem foto</div>
                         {% endif %}
@@ -1699,8 +1790,8 @@ html
     </div>
     
     {% if aluno.esta_ativo %}
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white">
             <h5>Instrutoria</h5>
         </div>
         <div class="card-body">
@@ -1755,24 +1846,24 @@ html
     </div>
     {% endif %}
     
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="card mb-4 border-info">
+        <div class="card-header bg-info text-white">
             <h5>Dados Iniciáticos</h5>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <p><strong>Número Iniciático:</strong> {{ aluno.numero_iniciatico }}</p>
+                    <p><strong>Número Iniciático:</strong> {{ aluno.numero_iniciatico|default:"Não informado" }}</p>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Nome Iniciático:</strong> {{ aluno.nome_iniciatico }}</p>
+                    <p><strong>Nome Iniciático:</strong> {{ aluno.nome_iniciatico|default:"Não informado" }}</p>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="card mb-4 border-secondary">
+        <div class="card-header bg-secondary text-white">
             <h5>Nacionalidade e Naturalidade</h5>
         </div>
         <div class="card-body">
@@ -1787,38 +1878,44 @@ html
         </div>
     </div>
     
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="card mb-4 border-secondary">
+        <div class="card-header bg-secondary text-white">
             <h5>Endereço</h5>
         </div>
         <div class="card-body">
             <p><strong>Endereço Completo:</strong> {{ aluno.rua }}, {{ aluno.numero_imovel }}
                 {% if aluno.complemento %}, {{ aluno.complemento }}{% endif %}
-                - {{ aluno.bairro }}, {{ aluno.cidade }}/{{ aluno.estado }} - CEP: {{ aluno.cep }}</p>
+                - {{ aluno.bairro }}, {{ aluno.cidade }}/{{ aluno.estado }} - CEP: <span class="cep-mask">{{ aluno.cep }}</span></p>
         </div>
     </div>
     
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="card mb-4 border-warning">
+        <div class="card-header bg-warning text-dark">
             <h5>Contatos de Emergência</h5>
         </div>
         <div class="card-body">
-            <h6>Primeiro Contato</h6>
-            <p><strong>Nome:</strong> {{ aluno.nome_primeiro_contato }}</p>
-            <p><strong>Celular:</strong> {{ aluno.celular_primeiro_contato }}</p>
-            <p><strong>Relacionamento:</strong> {{ aluno.tipo_relacionamento_primeiro_contato }}</p>
-            
-            {% if aluno.nome_segundo_contato %}
-                <h6 class="mt-3">Segundo Contato</h6>
-                <p><strong>Nome:</strong> {{ aluno.nome_segundo_contato }}</p>
-                <p><strong>Celular:</strong> {{ aluno.celular_segundo_contato }}</p>
-                <p><strong>Relacionamento:</strong> {{ aluno.tipo_relacionamento_segundo_contato }}</p>
-            {% endif %}
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Primeiro Contato</h6>
+                    <p><strong>Nome:</strong> {{ aluno.nome_primeiro_contato }}</p>
+                    <p><strong>Celular:</strong> <span class="celular-mask">{{ aluno.celular_primeiro_contato }}</span></p>
+                    <p><strong>Relacionamento:</strong> {{ aluno.tipo_relacionamento_primeiro_contato }}</p>
+                </div>
+                
+                {% if aluno.nome_segundo_contato %}
+                <div class="col-md-6">
+                    <h6>Segundo Contato</h6>
+                    <p><strong>Nome:</strong> {{ aluno.nome_segundo_contato }}</p>
+                    <p><strong>Celular:</strong> <span class="celular-mask">{{ aluno.celular_segundo_contato }}</span></p>
+                    <p><strong>Relacionamento:</strong> {{ aluno.tipo_relacionamento_segundo_contato }}</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
     
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="card mb-4 border-danger">
+        <div class="card-header bg-danger text-white">
             <h5>Informações Médicas</h5>
         </div>
         <div class="card-body">
@@ -1839,10 +1936,16 @@ html
             
             <div class="row mt-3">
                 <div class="col-md-6">
-                    <p><strong>Alergias:</strong> {{ aluno.alergias|default:"Nenhuma" }}</p>
+                    <h6>Alergias:</h6>
+                    <div class="p-2 bg-light rounded">
+                        {{ aluno.alergias|default:"Nenhuma"|linebreaks }}
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Condições Médicas:</strong> {{ aluno.condicoes_medicas_gerais|default:"Nenhuma" }}</p>
+                    <h6>Condições Médicas:</h6>
+                    <div class="p-2 bg-light rounded">
+                        {{ aluno.condicoes_medicas_gerais|default:"Nenhuma"|linebreaks }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -1858,6 +1961,37 @@ html
 </div>
 {% endblock %}
 
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+<script>
+    $(document).ready(function(){
+        // Aplicar máscaras para exibição
+        $('.cpf-mask').each(function(){
+            var cpf = $(this).text().trim();
+            if(cpf.length === 11) {
+                $(this).text(cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4"));
+            }
+        });
+        
+        $('.cep-mask').each(function(){
+            var cep = $(this).text().trim();
+            if(cep.length === 8) {
+                $(this).text(cep.replace(/(\d{5})(\d{3})/, "$1-$2"));
+            }
+        });
+        
+        $('.celular-mask').each(function(){
+            var celular = $(this).text().trim();
+            if(celular.length === 11) {
+                $(this).text(celular.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3"));
+            } else if(celular.length === 10) {
+                $(this).text(celular.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3"));
+            }
+        });
+    });
+</script>
+{% endblock %}
 
 
 
@@ -2053,12 +2187,12 @@ html
 html
 {% extends 'base.html' %}
 
-{% block title %}{% if aluno.id %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
+{% block title %}{% if aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{% if aluno.id %}Editar{% else %}Novo{% endif %} Aluno</h1>
+        <h1>{% if aluno and aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno</h1>
         <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">Voltar para a lista</a>
     </div>
     
@@ -2070,12 +2204,19 @@ html
         {% endfor %}
     {% endif %}
     
-    <form method="post" enctype="multipart/form-data">
+    <!-- Adicionar ID ao formulário para facilitar a seleção no JavaScript -->
+    <form method="post" enctype="multipart/form-data" id="form-aluno">
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <!-- Adicionar logo após a abertura da tag <form> -->
+        <div class="alert alert-info">
+            <p><strong>Atenção:</strong> Preencha todos os campos obrigatórios e certifique-se de que a data de nascimento está preenchida.</p>
+            <p>Os campos com formato específico (CPF, CEP, telefones) serão automaticamente ajustados ao salvar.</p>
+        </div>
+        
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
                 <h5>Dados Pessoais</h5>
             </div>
             <div class="card-body">
@@ -2091,6 +2232,7 @@ html
                             <div class="col-md-6">
                                 {% include 'includes/form_field.html' with field=form.email %}
                                 {% include 'includes/form_field.html' with field=form.sexo %}
+                                {% include 'includes/form_field.html' with field=form.situacao %}
                             </div>
                         </div>
                     </div>
@@ -2100,14 +2242,18 @@ html
                              style="border-style: dashed !important; 
                                     border-color: #007bff !important; 
                                     border-width: 2px !important;
-                                    height: 200px; 
+                                    min-height: 120px;
+                                    max-height: 200px;
                                     display: flex; 
                                     align-items: center; 
-                                    justify-content: center;">
+                                    justify-content: center;
+                                    overflow: hidden;">
                             {% if aluno.foto %}
                                 <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
                                      class="img-fluid rounded" 
-                                     style="max-width: 120px; max-height: 160px; object-fit: cover;">
+                                     style="max-width: 100%; 
+                                            max-height: 180px; 
+                                            object-fit: contain;">
                             {% else %}
                                 <div class="text-muted">Sem foto</div>
                             {% endif %}
@@ -2128,8 +2274,8 @@ html
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-info">
+            <div class="card-header bg-info text-white">
                 <h5>Dados Iniciáticos</h5>
             </div>
             <div class="card-body">
@@ -2144,8 +2290,8 @@ html
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-secondary">
+            <div class="card-header bg-secondary text-white">
                 <h5>Nacionalidade e Naturalidade</h5>
             </div>
             <div class="card-body">
@@ -2160,8 +2306,8 @@ html
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white">
                 <h5>Endereço</h5>
             </div>
             <div class="card-body">
@@ -2195,8 +2341,8 @@ html
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark">
                 <h5>Contatos de Emergência</h5>
             </div>
             <div class="card-body">
@@ -2228,8 +2374,8 @@ html
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-danger">
+            <div class="card-header bg-danger text-white">
                 <h5>Informações Médicas</h5>
             </div>
             <div class="card-body">
@@ -2261,8 +2407,8 @@ html
         
         <div class="d-flex justify-content-between mb-5">
             <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">
-                {% if aluno.id %}Atualizar{% else %}Cadastrar{% endif %} Aluno
+            <button type="submit" class="btn btn-primary" id="btn-salvar">
+                {% if aluno and aluno.cpf %}Atualizar{% else %}Cadastrar{% endif %} Aluno
             </button>
         </div>
     </form>
@@ -2271,32 +2417,34 @@ html
 
 {% block extra_js %}
 <script>
-    // Script para pré-visualização da imagem quando o usuário seleciona uma foto
     document.addEventListener('DOMContentLoaded', function() {
-        const fotoInput = document.getElementById('{{ form.foto.id_for_label }}');
-        if (fotoInput) {
+        const fotoInput = document.getElementById('id_foto');
+        const fotoContainer = document.querySelector('.border.rounded.p-3.mb-3.text-center');
+        
+        if (fotoInput && fotoContainer) {
             fotoInput.addEventListener('change', function() {
                 if (this.files && this.files[0]) {
-                    const preview = document.createElement('img');
-                    preview.className = 'img-fluid mt-2 rounded';
-                    preview.style.maxHeight = '200px';
+                    // Limpar o conteúdo atual do container
+                    fotoContainer.innerHTML = '';
                     
+                    // Criar a imagem de preview
+                    const preview = document.createElement('img');
+                    preview.className = 'img-fluid rounded';
+                    preview.style.maxWidth = '100%';
+                    preview.style.maxHeight = '180px';
+                    preview.style.objectFit = 'contain';
+                    
+                    // Configurar o leitor de arquivo
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         preview.src = e.target.result;
+                        preview.alt = 'Preview da foto';
                     }
                     
                     reader.readAsDataURL(this.files[0]);
                     
-                    // Remove qualquer preview anterior
-                    const previewContainer = fotoInput.parentNode;
-                    const existingPreview = previewContainer.querySelector('img');
-                    if (existingPreview) {
-                        previewContainer.removeChild(existingPreview);
-                    }
-                    
-                    // Adiciona o novo preview
-                    previewContainer.appendChild(preview);
+                    // Adicionar a imagem ao container
+                    fotoContainer.appendChild(preview);
                 }
             });
         }
@@ -2403,6 +2551,8 @@ html
                             <th>CPF</th>
                             <th>Nº Iniciático</th>
                             <th>Email</th>
+                            <th>Situação</th>
+                            <th>Cursos</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -2427,6 +2577,18 @@ html
                                 <td>{{ aluno.cpf }}</td>
                                 <td>{{ aluno.numero_iniciatico|default:"N/A" }}</td>
                                 <td>{{ aluno.email }}</td>
+                                <td>{{ aluno.get_situacao_display }}</td>
+                                <td>
+                                    {% if aluno.cursos %}
+                                        <ul class="list-unstyled mb-0">
+                                            {% for curso in aluno.cursos %}
+                                                <li>{{ curso }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <span class="text-muted">Nenhum curso</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if aluno.cpf %}
                                         <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info">Detalhes</a>
@@ -2439,16 +2601,12 @@ html
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center">
+                                <td colspan="7" class="text-center">
                                     <p class="my-3">Nenhum aluno cadastrado.</p>
                                 </td>
                             </tr>
                         {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer">
+                    </tbody>                </table>            </div>        </div>        <div class="card-footer">
             <p class="text-muted mb-0">Total: {{ page_obj.paginator.count|default:"0" }} aluno(s)</p>
             {% if page_obj.has_other_pages %}
                 <nav aria-label="Paginação">

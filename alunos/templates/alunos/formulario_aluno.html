@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{% if aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno</h1>
+        <h1>{% if aluno and aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno</h1>
         <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">Voltar para a lista</a>
     </div>
     
@@ -17,9 +17,16 @@
         {% endfor %}
     {% endif %}
     
+    <!-- Adicionar ID ao formulário para facilitar a seleção no JavaScript -->
     <form method="post" enctype="multipart/form-data" id="form-aluno">
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
+        
+        <!-- Adicionar logo após a abertura da tag <form> -->
+        <div class="alert alert-info">
+            <p><strong>Atenção:</strong> Preencha todos os campos obrigatórios e certifique-se de que a data de nascimento está preenchida.</p>
+            <p>Os campos com formato específico (CPF, CEP, telefones) serão automaticamente ajustados ao salvar.</p>
+        </div>
         
         <div class="card mb-4 border-primary">
             <div class="card-header bg-primary text-white">
@@ -44,11 +51,25 @@
                     </div>
                     <div class="col-md-4">
                         <!-- Moldura tracejada azul brilhante sem cabeçalho -->
-                        <div class="border rounded p-3 mb-3 text-center foto-container">
+                        <div class="border rounded p-3 mb-3 text-center" 
+                             style="border-style: dashed !important; 
+                                    border-color: #007bff !important; 
+                                    border-width: 2px !important;
+                                    width: 200px;  /* Largura fixa para o contêiner */
+                                    height: 200px; /* Altura fixa para o contêiner */
+                                    display: flex; 
+                                    align-items: center; 
+                                    justify-content: center;
+                                    overflow: hidden;
+                                    margin: 0 auto;">
                             {% if aluno.foto %}
                                 <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                     class="img-fluid rounded" 
-                                     style="max-width: 120px; max-height: 160px; object-fit: cover;">
+                                     style="max-width: 180px;
+                                            max-height: 180px;
+                                            width: auto;
+                                            height: auto;
+                                            object-fit: contain;
+                                            display: block;">
                             {% else %}
                                 <div class="text-muted">Sem foto</div>
                             {% endif %}
@@ -202,8 +223,8 @@
         
         <div class="d-flex justify-content-between mb-5">
             <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">
-                {% if aluno.cpf %}Atualizar Aluno{% else %}Cadastrar Aluno{% endif %}
+            <button type="submit" class="btn btn-primary" id="btn-salvar">
+                {% if aluno and aluno.cpf %}Atualizar{% else %}Cadastrar{% endif %} Aluno
             </button>
         </div>
     </form>
@@ -212,43 +233,86 @@
 
 {% block extra_js %}
 <script>
-    // Script para pré-visualização da imagem quando o usuário seleciona uma foto
     document.addEventListener('DOMContentLoaded', function() {
-        const fotoInput = document.getElementById('{{ form.foto.id_for_label }}');
-        if (fotoInput) {
+        const fotoInput = document.getElementById('id_foto');
+        const fotoContainer = document.querySelector('.border.rounded.p-3.mb-3.text-center');
+        
+        if (fotoInput && fotoContainer) {
             fotoInput.addEventListener('change', function() {
                 if (this.files && this.files[0]) {
-                    const preview = document.createElement('img');
-                    preview.className = 'img-fluid mt-2 rounded';
-                    preview.style.maxHeight = '200px';
+                    // Limpar o conteúdo atual do container
+                    fotoContainer.innerHTML = '';
                     
+                    // Limpar mensagens de erro relacionadas à foto
+                    const errorMessages = fotoInput.parentElement.querySelectorAll('.alert.alert-danger');
+                    errorMessages.forEach(function(errorMsg) {
+                        errorMsg.style.display = 'none';
+                    });
+                    
+                    // Criar a imagem de preview
+                    const preview = document.createElement('img');
+                    preview.style.maxWidth = '180px';
+                    preview.style.maxHeight = '180px';
+                    preview.style.width = 'auto';
+                    preview.style.height = 'auto';
+                    preview.style.objectFit = 'contain';
+                    preview.style.display = 'block';
+                    
+                    // Configurar o leitor de arquivo
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         preview.src = e.target.result;
+                        preview.alt = 'Preview da foto';
                     }
                     
                     reader.readAsDataURL(this.files[0]);
                     
-                    // Remove qualquer preview anterior
-                    const previewContainer = fotoInput.parentNode;
-                    const existingPreview = previewContainer.querySelector('img');
-                    if (existingPreview) {
-                        previewContainer.removeChild(existingPreview);
-                    }
+                    // Adicionar a imagem ao container
+                    fotoContainer.appendChild(preview);
                     
-                    // Adiciona o novo preview
-                    previewContainer.appendChild(preview);
+                    // Adicionar uma mensagem de sucesso temporária
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'alert alert-success mt-2';
+                    successMsg.textContent = 'Nova imagem selecionada com sucesso!';
+                    fotoInput.parentElement.appendChild(successMsg);
+                    
+                    // Remover a mensagem de sucesso após 3 segundos
+                    setTimeout(function() {
+                        successMsg.remove();
+                    }, 3000);
                 }
             });
         }
         
-        // Adicionar evento para o formulário
-        const form = document.getElementById('form-aluno');
-        if (form) {
-            form.addEventListener('submit', function() {
-                console.log('Formulário sendo enviado');
-                // Qualquer lógica adicional antes do envio pode ser adicionada aqui
-            });
+        // Verificar se há mensagem "Atualmente:" e ajustar o layout
+        const currentImageText = document.querySelector('.form-group a');
+        if (currentImageText) {
+            const clearCheckbox = document.querySelector('input[name="foto-clear"]');
+            const clearLabel = document.querySelector('label[for="foto-clear_id"]');
+            
+            if (clearCheckbox && clearLabel) {
+                // Melhorar o layout da opção de limpar
+                const clearContainer = document.createElement('div');
+                clearContainer.className = 'form-check mt-2';
+                
+                clearCheckbox.className = 'form-check-input';
+                clearLabel.className = 'form-check-label';
+                
+                clearContainer.appendChild(clearCheckbox);
+                clearContainer.appendChild(clearLabel);
+                
+                // Substituir o texto "Atualmente:" por um layout mais limpo
+                const currentImageContainer = document.createElement('div');
+                currentImageContainer.className = 'mb-2';
+                currentImageContainer.innerHTML = '<strong>Imagem atual:</strong> ';
+                currentImageContainer.appendChild(currentImageText.cloneNode(true));
+                
+                // Substituir os elementos originais
+                const parentElement = clearCheckbox.parentElement;
+                parentElement.innerHTML = '';
+                parentElement.appendChild(currentImageContainer);
+                parentElement.appendChild(clearContainer);
+            }
         }
     });
 </script>

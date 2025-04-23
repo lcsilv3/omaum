@@ -207,6 +207,9 @@ class Aluno(models.Model):
     def clean(self):
         """Validação personalizada para o modelo."""
         super().clean()
+    def save(self, *args, **kwargs):
+        # Verificar se há alguma lógica aqui que possa estar impedindo o salvamento
+        super().save(*args, **kwargs)
     class Meta:
         verbose_name = _("Aluno")
         verbose_name_plural = _("Alunos")

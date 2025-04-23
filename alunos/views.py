@@ -62,7 +62,7 @@ def listar_alunos(request):
                 )
                 alunos = alunos.filter(cpf__in=alunos_ids)
             except (ImportError, AttributeError) as e:
-                # Log do erro, mas continuar sem o filtro de curso
+                # Logar o erro, mas continuar sem o filtro de curso
                 print(f"Erro ao filtrar por curso: {e}")
         
         # Para cada aluno, buscar os cursos em que está matriculado
@@ -139,7 +139,6 @@ def criar_aluno(request):
     return render(
         request, "alunos/formulario_aluno.html", {"form": form, "aluno": None}
     )
-
 
 @login_required
 def detalhar_aluno(request, cpf):
@@ -222,99 +221,31 @@ def detalhar_aluno(request, cpf):
 @login_required
 def editar_aluno(request, cpf):
     """Edita um aluno existente."""
-    logger.info(f"Iniciando edição do aluno com CPF: {cpf}")
-    
     Aluno = get_models()
     AlunoForm = get_forms()
     aluno = get_object_or_404(Aluno, cpf=cpf)
-    situacao_anterior = aluno.situacao
     
     if request.method == "POST":
-        logger.info(f"Recebendo dados POST para edição do aluno {cpf}")
         form = AlunoForm(request.POST, request.FILES, instance=aluno)
-        
-        # Verificar se o formulário é válido
         if form.is_valid():
-            logger.info("Formulário válido, tentando salvar")
             try:
-                # Verificar se a situação mudou de "ATIVO" para outra
-                nova_situacao = form.cleaned_data.get("situacao")
-                # Se a situação mudou e o aluno é instrutor em alguma turma
-                if (
-                    situacao_anterior == "ATIVO"
-                    and nova_situacao != "ATIVO"
-                    and hasattr(form, "aluno_e_instrutor")
-                ):
-                    # Verificar se o usuário confirmou a remoção da instrutoria
-                    if (
-                        request.POST.get("confirmar_remocao_instrutoria")
-                        != "1"
-                    ):
-                        # Redirecionar para a página de confirmação
-                        return redirect(
-                            "alunos:confirmar_remocao_instrutoria",
-                            cpf=aluno.cpf,
-                            nova_situacao=nova_situacao,
-                        )
-                    # Se confirmou, atualizar as turmas
-                    from importlib import import_module
-                    try:
-                        # Importar o modelo Turma dinamicamente
-                        turmas_module = import_module("turmas.models")
-                        Turma = getattr(turmas_module, "Turma")
-                        # Buscar turmas onde o aluno é instrutor
-                        turmas_instrutor = Turma.objects.filter(
-                            instrutor=aluno, status="A"
-                        )
-                        turmas_instrutor_auxiliar = Turma.objects.filter(
-                            instrutor_auxiliar=aluno, status="A"
-                        )
-                        turmas_auxiliar_instrucao = Turma.objects.filter(
-                            auxiliar_instrucao=aluno, status="A"
-                        )
-                        # Atualizar as turmas
-                        for turma in turmas_instrutor:
-                            turma.instrutor = None
-                            turma.alerta_instrutor = True
-                            turma.alerta_mensagem = f"O instrutor {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
-                            turma.save()
-                        for turma in turmas_instrutor_auxiliar:
-                            turma.instrutor_auxiliar = None
-                            turma.alerta_instrutor = True
-                            turma.alerta_mensagem = f"O instrutor auxiliar {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
-                            turma.save()
-                        for turma in turmas_auxiliar_instrucao:
-                            turma.auxiliar_instrucao = None
-                            turma.alerta_instrutor = True
-                            turma.alerta_mensagem = f"O auxiliar de instrução {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
-                            turma.save()
-                    except (ImportError, AttributeError) as e:
-                        logger.error(f"Erro ao atualizar turmas: {str(e)}")
-                
-                # Salvar o aluno
-                aluno = form.save()
-                logger.info(f"Aluno {aluno.nome} atualizado com sucesso. Nome iniciático: {aluno.nome_iniciatico}")
+                form.save()
                 messages.success(request, "Aluno atualizado com sucesso!")
-                
-                # ALTERAÇÃO PRINCIPAL: Redirecionar para a listagem de alunos
-                return redirect("alunos:listar_alunos")
-            except ValidationError as e:
-                logger.error(f"Erro de validação ao atualizar aluno: {str(e)}")
-                for field, errors in e.message_dict.items():
-                    for error in errors:
-                        form.add_error(field, error)
+                return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
             except Exception as e:
-                logger.error(f"Erro ao atualizar aluno: {str(e)}")
                 messages.error(request, f"Erro ao atualizar aluno: {str(e)}")
         else:
-            logger.warning(f"Formulário inválido. Erros: {form.errors}")
-            messages.error(request, "Por favor, corrija os erros abaixo.")
+            # Verificar se há erros específicos para a foto
+            if 'foto' in form.errors:
+                messages.warning(request, "Há problemas com a imagem enviada. Por favor, selecione outra imagem.")
     else:
         form = AlunoForm(instance=aluno)
     
+    # Certifique-se de que 'aluno' está sendo passado para o template
     return render(
         request, "alunos/formulario_aluno.html", {"form": form, "aluno": aluno}
     )
+
 
 @login_required
 def excluir_aluno(request, cpf):
@@ -368,7 +299,7 @@ def exportar_alunos(request):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="alunos.csv"'
         writer = csv.writer(response)
-        writer.writerow(
+        writer.writerow
             [
                 "CPF",
                 "Nome",
@@ -426,7 +357,7 @@ def importar_alunos(request):
                             "Número Iniciático", ""
                         ).strip(),
                         nome_iniciatico=row.get(
-                            "Nome Iniciático", row.get("Nome", "")
+                            "Nome Iniciático", row.get("Nome", "",
                         ).strip(),
                         nacionalidade=row.get(
                             "Nacionalidade", "Brasileira"
@@ -586,7 +517,7 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
                 # Finalizar os cargos administrativos relacionados
                 atribuicoes = AtribuicaoCargo.objects.filter(
                     aluno=aluno,
-                    cargo__nome__icontains="Instrutor Principal",
+                    cargo__nome__icontains="Instrutor Principal")
                     data_fim__isnull=True,
                 )
                 for atribuicao in atribuicoes:
@@ -843,7 +774,7 @@ def diagnostico_instrutores(request):
                     
                     # Se não for elegível, tentar determinar o motivo
                     if not info["elegivel"]:
-                        # Verificar matrículas em cursos pré-iniciáticos
+                        # Verificar matrículas em cursos pré-iniciaticos
                         from importlib import import_module
                         try:
                             matriculas_module = import_module("matriculas.models")

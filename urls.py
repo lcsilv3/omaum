@@ -2,13 +2,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
 from django.conf import settings
-from django.conf.urls.static import static
+from django.conf.urls.static import static  # Adicione esta importação
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path(
-        "", include("core.urls")
-    ),  # Inclui as URLs do core, incluindo a página inicial
+    path("", include("core.urls")),
     path("alunos/", include("alunos.urls")),
     path("atividades/", include("atividades.urls")),
     path("cargos/", include("cargos.urls")),
@@ -36,10 +34,12 @@ urlpatterns += [
     ),
 ]
 
-# Adicione no final do arquivo
+# Adicione este bloco no final do arquivo
 if settings.DEBUG:
     import debug_toolbar
+
     urlpatterns += [
         path("__debug__/", include(debug_toolbar.urls)),
     ]
+    # Adicione esta linha para servir arquivos de mídia durante o desenvolvimento
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

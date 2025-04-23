@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load alunos_extras %}
 
 {% block title %}Detalhes do Aluno: {{ aluno.nome }}{% endblock %}
 
@@ -60,14 +61,21 @@
                          style="border-style: dashed !important; 
                                 border-color: #007bff !important; 
                                 border-width: 2px !important;
-                                height: 200px; 
+                                width: 200px;  /* Largura fixa para o contêiner */
+                                height: 200px; /* Altura fixa para o contêiner */
                                 display: flex; 
                                 align-items: center; 
-                                justify-content: center;">
+                                justify-content: center;
+                                overflow: hidden;
+                                margin: 0 auto;">
                         {% if aluno.foto %}
                             <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                 class="img-fluid rounded" 
-                                 style="max-width: 120px; max-height: 160px; object-fit: cover;">
+                                 style="max-width: 180px;
+                                        max-height: 180px;
+                                        width: auto;
+                                        height: auto;
+                                        object-fit: contain;
+                                        display: block;">
                         {% else %}
                             <div class="text-muted">Sem foto</div>
                         {% endif %}

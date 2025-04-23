@@ -17,14 +17,51 @@ class AlunoForm(forms.ModelForm):
     cpf_validator = RegexValidator(
         r"^\d{11}$", "O CPF deve conter exatamente 11 dígitos numéricos."
     )
+    
+    celular_validator = RegexValidator(
+        r"^\d{10,11}$", "O número de celular deve ter entre 10 e 11 dígitos."
+    )
+    
+    cep_validator = RegexValidator(
+        r"^\d{8}$", "O CEP deve conter exatamente 8 dígitos numéricos."
+    )
 
     # Campos com validação adicional
     cpf = forms.CharField(
         validators=[cpf_validator],
         widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Somente números"}
+            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "11"}
         ),
     )
+    
+    celular_primeiro_contato = forms.CharField(
+        validators=[celular_validator],
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "11"}
+        ),
+    )
+    
+    celular_segundo_contato = forms.CharField(
+        required=False,
+        validators=[celular_validator],
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "11"}
+        ),
+    )
+    
+    cep = forms.CharField(
+        validators=[cep_validator],
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "8"}
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Converter o formato da data para YYYY-MM-DD se estiver editando um aluno existente
+        if self.instance and self.instance.pk and self.instance.data_nascimento:
+            # Converter para o formato esperado pelo input type="date"
+            self.initial['data_nascimento'] = self.instance.data_nascimento.strftime('%Y-%m-%d')
 
     class Meta:
         model = get_aluno_model()
@@ -64,7 +101,8 @@ class AlunoForm(forms.ModelForm):
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
             "data_nascimento": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
+                attrs={"class": "form-control", "type": "date"},
+                format="%Y-%m-%d"
             ),
             "hora_nascimento": forms.TimeInput(
                 attrs={"class": "form-control", "type": "time"}
@@ -89,25 +127,13 @@ class AlunoForm(forms.ModelForm):
             "bairro": forms.TextInput(attrs={"class": "form-control"}),
             "cidade": forms.TextInput(attrs={"class": "form-control"}),
             "estado": forms.TextInput(attrs={"class": "form-control"}),
-            "cep": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Somente números",
-                }
-            ),
             "nome_primeiro_contato": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "celular_primeiro_contato": forms.TextInput(
                 attrs={"class": "form-control"}
             ),
             "tipo_relacionamento_primeiro_contato": forms.TextInput(
                 attrs={"class": "form-control"}
             ),
             "nome_segundo_contato": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "celular_segundo_contato": forms.TextInput(
                 attrs={"class": "form-control"}
             ),
             "tipo_relacionamento_segundo_contato": forms.TextInput(
@@ -170,6 +196,8 @@ class AlunoForm(forms.ModelForm):
             "fator_rh": "Positivo (+) ou Negativo (-)",
             "alergias": "Liste todas as alergias conhecidas. Deixe em branco se não houver.",
             "condicoes_medicas_gerais": "Descreva condições médicas relevantes. Deixe em branco se não houver.",
+            "celular_primeiro_contato": "Digite apenas números (DDD + número).",
+            "celular_segundo_contato": "Digite apenas números (DDD + número).",
         }
 
     def clean_cpf(self):
@@ -185,10 +213,49 @@ class AlunoForm(forms.ModelForm):
                     "O CPF deve conter exatamente 11 dígitos."
                 )
 
-            # Aqui você poderia adicionar uma validação mais complexa do CPF
-            # como verificar os dígitos verificadores
-
         return cpf
+
+    def clean_cep(self):
+        """Validação personalizada para o campo CEP."""
+        cep = self.cleaned_data.get("cep")
+        if cep:
+            # Remove caracteres não numéricos
+            cep = "".join(filter(str.isdigit, cep))
+
+            # Verifica se tem 8 dígitos
+            if len(cep) != 8:
+                raise forms.ValidationError(
+                    "O CEP deve conter exatamente 8 dígitos."
+                )
+        return cep
+    
+    def clean_celular_primeiro_contato(self):
+        """Validação personalizada para o campo celular_primeiro_contato."""
+        celular = self.cleaned_data.get("celular_primeiro_contato")
+        if celular:
+            # Remove caracteres não numéricos
+            celular = "".join(filter(str.isdigit, celular))
+            
+            # Verifica se tem entre 10 e 11 dígitos
+            if len(celular) < 10 or len(celular) > 11:
+                raise forms.ValidationError(
+                    "O número de celular deve ter entre 10 e 11 dígitos."
+                )
+        return celular
+    
+    def clean_celular_segundo_contato(self):
+        """Validação personalizada para o campo celular_segundo_contato."""
+        celular = self.cleaned_data.get("celular_segundo_contato")
+        if celular:
+            # Remove caracteres não numéricos
+            celular = "".join(filter(str.isdigit, celular))
+            
+            # Verifica se tem entre 10 e 11 dígitos
+            if len(celular) < 10 or len(celular) > 11:
+                raise forms.ValidationError(
+                    "O número de celular deve ter entre 10 e 11 dígitos."
+                )
+        return celular
 
     def clean_nome(self):
         """Validação personalizada para o campo nome."""
@@ -221,20 +288,6 @@ class AlunoForm(forms.ModelForm):
                 if Aluno.objects.filter(email=email).exists():
                     raise forms.ValidationError("Este e-mail já está em uso.")
         return email
-
-    def clean_cep(self):
-        """Validação personalizada para o campo CEP."""
-        cep = self.cleaned_data.get("cep")
-        if cep:
-            # Remove caracteres não numéricos
-            cep = "".join(filter(str.isdigit, cep))
-
-            # Verifica se tem 8 dígitos
-            if len(cep) != 8:
-                raise forms.ValidationError(
-                    "O CEP deve conter exatamente 8 dígitos."
-                )
-        return cep
 
     def clean_situacao(self):
         """Validação personalizada para o campo situacao."""
