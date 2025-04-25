@@ -11,7 +11,8 @@ class Turma(models.Model):
     STATUS_CHOICES = [
         ("A", "Ativa"),
         ("I", "Inativa"),
-        ("C", "Concluída"),
+        ("C", "Cancelada"),
+        ("F", "Finalizada"),
     ]
 
     # Informações básicas

@@ -1,16 +1,23 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block title %}Diagnóstico de Elegibilidade de Instrutores{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Diagnóstico de Elegibilidade de Instrutores</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Diagnóstico de Elegibilidade de Instrutores</h1>
+        <div>
+            <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
     
     <div class="alert alert-info">
         <p>Esta página mostra o diagnóstico de elegibilidade de todos os alunos ativos para serem instrutores.</p>
         <p>Total de alunos: {{ total_alunos }}</p>
-        <p>Alunos elegíveis: {{ total_elegiveis }} ({{ total_elegiveis|floatformat:1 }}%)</p>
-        <p>Alunos inelegíveis: {{ total_inelegiveis }} ({{ total_inelegiveis|floatformat:1 }}%)</p>
+        <p>Alunos elegíveis: {{ alunos_elegiveis }} ({{ porcentagem_elegiveis }}%)</p>
+        <p>Alunos inelegíveis: {{ alunos_inelegiveis }} ({{ porcentagem_inelegiveis }}%)</p>
     </div>
     
     <div class="card mb-4">
@@ -49,29 +56,19 @@
             </thead>
             <tbody>
                 {% for item in alunos_diagnostico %}
-                <tr class="{% if item.pode_ser_instrutor %}elegivel{% else %}inelegivel{% endif %}">
+                <tr class="{% if item.elegivel %}elegivel{% else %}inelegivel{% endif %}">
                     <td>{{ item.aluno.nome }}</td>
                     <td>{{ item.aluno.cpf }}</td>
                     <td>{{ item.aluno.numero_iniciatico|default:"N/A" }}</td>
                     <td>{{ item.aluno.get_situacao_display }}</td>
                     <td>
-                        {% if item.pode_ser_instrutor %}
+                        {% if item.elegivel %}
                             <span class="badge bg-success">Sim</span>
                         {% else %}
                             <span class="badge bg-danger">Não</span>
                         {% endif %}
                     </td>
-                    <td>
-                        {% if item.motivo %}
-                            {{ item.motivo }}
-                            {% if item.cursos_pre_iniciatico %}
-                                <br>
-                                <small>Cursos: {{ item.cursos_pre_iniciatico|join:", " }}</small>
-                            {% endif %}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
+                    <td>{{ item.motivo }}</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -80,6 +77,13 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    
+    <!-- Botão de voltar no final da página -->
+    <div class="mt-4 text-center">
+        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Lista de Alunos
+        </a>
     </div>
 </div>
 

@@ -1,56 +1,52 @@
-.list-group {
-    position: absolute;
-    z-index: 1000;
-    width: 100%;
-    max-height: 300px;
-    overflow-y: auto;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+/* Adicionar estas regras para corrigir problemas de z-index e posicionamento */
+.select2-container {
+    z-index: 1050;
 }
 
-.list-group-item-action:hover {
-    background-color: #f8f9fa;
+.select2-container--open .select2-dropdown {
+    z-index: 1051;
 }
 
-/* Garantir que o container do instrutor selecionado tenha a mesma largura do campo de pesquisa */
-.selected-instructor-container {
-    background-color: #f8f9fa;
-    border-radius: 4px;
-    padding: 10px;
-    margin-top: 10px;
-    width: 100%; /* Garante que ocupe toda a largura disponível */
-    box-sizing: border-box; /* Inclui padding e border na largura total */
-}
-
-/* Estilo para a informação do instrutor selecionado */
-.selected-instructor-info {
-    font-size: 0.9rem;
-    word-break: break-word; /* Evita que textos longos quebrem o layout */
-}
-/* Estilos para itens não elegíveis na busca de instrutores */
-.list-group-item.ineligible {
-    opacity: 0.7;
-    background-color: #fff0f0;
-    cursor: not-allowed;
-}
-
-.list-group-item.ineligible:hover {
-    background-color: #ffe0e0;
-}
-
-/* Estilo para o ícone X vermelho */
-.list-group-item .text-danger i {
-    font-size: 1.1em;
-}
-.list-group {
-    position: absolute;
-    z-index: 1000;
-    width: 100%;
-    max-height: 300px;
-    overflow-y: auto;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+/* Corrigir o posicionamento do dropdown em relação ao campo de busca */
+.select2-container--bootstrap4 .select2-dropdown {
+    border-color: #ced4da;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
 /* Garantir que o container pai tenha posição relativa */
-.col-md-4 {
+.select2-container--bootstrap4 {
+    width: 100% !important;
+}
+
+/* Melhorar a aparência dos itens selecionados */
+.select2-container--bootstrap4 .select2-selection--single {
+    height: calc(1.5em + 0.75rem + 2px) !important;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+/* Corrigir o problema de sobreposição com outros elementos */
+.select2-container--bootstrap4 .select2-selection__arrow {
+    height: 38px !important;
+}
+
+/* Garantir que os resultados da busca apareçam corretamente */
+.list-group {
+    position: absolute;
+    z-index: 1060;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Corrigir posicionamento dos containers de seleção */
+#selected-instrutor-container,
+#selected-instrutor-auxiliar-container,
+#selected-auxiliar-instrucao-container {
     position: relative;
+    margin-top: 10px;
+    width: 100%;
 }

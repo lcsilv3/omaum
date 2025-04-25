@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Turmas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-dashboard {
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    
+    .card-dashboard:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-card {
+        border-left: 4px solid;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-card-primary {
+        border-left-color: #4e73df;
+    }
+    
+    .stat-card-success {
+        border-left-color: #1cc88a;
+    }
+    
+    .stat-card-info {
+        border-left-color: #36b9cc;
+    }
+    
+    .stat-card-warning {
+        border-left-color: #f6c23e;
+    }
+    
+    .stat-card-danger {
+        border-left-color: #e74a3b;
+    }
+    
+    .stat-card-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #5a5c69;
+    }
+    
+    .stat-card-label {
+        font-size: 0.8rem;
+        color: #858796;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+    
+    .stat-card-icon {
+        font-size: 2rem;
+        opacity: 0.3;
+        color: #dddfeb;
+    }
+    
+    .progress-sm {
+        height: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <h1 class="mb-3 mb-md-0">Dashboard de Turmas</h1>
+        
+        <div class="btn-group">
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'turmas:relatorio_turmas' %}" class="btn btn-warning">
+                <i class="fas fa-chart-bar"></i> Relatório Detalhado
+            </a>
+        </div>
+    </div>
+    
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card stat-card-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-card-value">{{ total_turmas }}</div>
+                        <div class="stat-card-label">Total de Turmas</div>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card stat-card-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-card-value">{{ turmas_ativas }}</div>
+                        <div class="stat-card-label">Turmas Ativas</div>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card stat-card-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-card-value">{{ turmas_planejadas }}</div>
+                        <div class="stat-card-label">Turmas Planejadas</div>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card stat-card-warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-card-value">{{ turmas_concluidas }}</div>
+                        <div class="stat-card-label">Turmas Concluídas</div>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-flag-checkered"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <!-- Gráfico de Status -->
+        <div class="col-lg-6 mb-4">
+            <div class="card card-dashboard">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Distribuição por Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico de Cursos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card card-dashboard">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Turmas por Curso</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar">
+                        <canvas id="cursosChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Turmas Recentes e Turmas com Vagas -->
+    <div class="row">
+        <!-- Turmas Recentes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card card-dashboard">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Turmas Recentes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Curso</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for turma in turmas_recentes %}
+                                <tr>
+                                    <td>{{ turma.nome }}</td>
+                                    <td>{{ turma.curso.nome }}</td>
+                                    <td>
+                                        {% if turma.status == 'ATIVA' %}
+                                            <span class="badge bg-success">Ativa</span>
+                                        {% elif turma.status == 'PLANEJADA' %}
+                                            <span class="badge bg-info">Planejada</span>
+                                        {% elif turma.status == 'CONCLUIDA' %}
+                                            <span class="badge bg-secondary">Concluída</span>
+                                        {% elif turma.status == 'CANCELADA' %}
+                                            <span class="badge bg-danger">Cancelada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Nenhuma turma encontrada</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Turmas com Vagas -->
+        <div class="col-lg-6 mb-4">
+            <div class="card card-dashboard">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Turmas com Vagas Disponíveis</h6>
+                </div>
+                <div class="card-body">
+                    {% if turmas_com_vagas %}
+                        {% for item in turmas_com_vagas %}
+                            <h4 class="small font-weight-bold">
+                                {{ item.turma.nome }} 
+                                <span class="float-end">{{ item.vagas_disponiveis }} vagas</span>
+                            </h4>
+                            <div class="progress mb-4">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ item.percentual_ocupacao }}%"
+                                    aria-valuenow="{{ item.percentual_ocupacao }}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-center">Nenhuma turma com vagas disponíveis</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dados para o gráfico de status
+        const statusData = {
+            labels: [{% for item in dados_status %}'{{ item.status }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for item in dados_status %}{{ item.quantidade }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: [{% for item in dados_status %}'{{ item.cor }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                hoverBackgroundColor: [{% for item in dados_status %}'{{ item.cor }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }]
+        };
+        
+        // Configuração do gráfico de status
+        const statusConfig = {
+            type: 'doughnut',
+            data: statusData,
+            options: {
+                maintainAspectRatio: false,
+                tooltips: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10,
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom'
+                },
+                cutoutPercentage: 70,
+            },
+        };
+        
+        // Renderizar gráfico de status
+        const statusChart = new Chart(
+            document.getElementById('statusChart'),
+            statusConfig
+        );
+        
+        // Dados para o gráfico de cursos
+        const cursosData = {
+            labels: [{% for item in dados_cursos %}'{{ item.curso }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: "Turmas",
+                backgroundColor: [{% for item in dados_cursos %}'{{ item.cor }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                hoverBackgroundColor: [{% for item in dados_cursos %}'{{ item.cor }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                data: [{% for item in dados_cursos %}{{ item.quantidade }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            }]
+        };
+        
+        // Configuração do gráfico de cursos
+        const cursosConfig = {
+            type: 'bar',
+            data: cursosData,
+            options: {
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 25,
+                        top: 25,
+                        bottom: 0
+                    }
+                },
+                scales: {
+                    xAxes: [{
+                        gridLines: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 6
+                        },
+                        maxBarThickness: 25,
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            min: 0,
+                            maxTicksLimit: 5,
+                            padding: 10,
+                        },
+                        gridLines: {
+                            color: "rgb(234, 236, 244)",
+                            zeroLineColor: "rgb(234, 236, 244)",
+                            drawBorder: false,
+                            borderDash: [2],
+                            zeroLineBorderDash: [2]
+                        }
+                    }],
+                },
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    titleMarginBottom: 10,
+                    titleFontColor: '#6e707e',
+                    titleFontSize: 14,
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10,
+                },
+            }
+        };
+        
+        // Renderizar gráfico de cursos
+        const cursosChart = new Chart(
+            document.getElementById('cursosChart'),
+            cursosConfig
+        );
+    });
+</script>
+{% endblock %}

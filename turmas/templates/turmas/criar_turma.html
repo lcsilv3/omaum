@@ -3,11 +3,146 @@
 
 {% block title %}Criar Nova Turma{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Garantir que o dropdown do Select2 seja visível */
+    .select2-container--bootstrap4 .select2-dropdown {
+        z-index: 9999 !important;
+    }
+    
+    /* Corrigir a altura do select */
+    .select2-container .select2-selection--single {
+        height: calc(1.5em + 0.75rem + 2px) !important;
+    }
+    
+    /* Garantir que o dropdown apareça acima de outros elementos */
+    .select2-container--open {
+        z-index: 9999 !important;
+    }
+    
+    /* Remover o tracinho do select e manter só a setinha */
+    .select2-selection__placeholder {
+        display: none !important;
+    }
+    
+    /* Container de dias da semana - estilo igual ao select2 */
+    .dias-semana-select {
+        width: 100%;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        min-height: 38px;
+        padding: 0.375rem 0.75rem;
+        background-color: #fff;
+        cursor: pointer;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .dias-semana-select:hover {
+        border-color: #adb5bd;
+    }
+    
+    .dias-semana-select.focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .dias-semana-container {
+        display: none;
+        position: absolute;
+        width: 100%;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 9999;
+        background-color: #fff;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .dias-semana-item {
+        display: block;
+        padding: 0.5rem 1rem;
+        width: 100%;
+        text-align: left;
+        border: none;
+        background: none;
+        cursor: pointer;
+    }
+    
+    .dias-semana-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .dias-semana-item.selected {
+        background-color: #e9ecef;
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .dias-semana-item input {
+        margin-right: 8px;
+    }
+    
+    /* Corrigir setas nos containers de escolha */
+    .select2-selection__arrow {
+        height: 100% !important;
+        position: absolute !important;
+        right: 1px !important;
+        top: 0 !important;
+    }
+    
+    /* Estilo para o dropdown arrow customizado */
+    .dropdown-arrow {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-style: solid;
+        border-width: 5px 5px 0 5px;
+        border-color: #888 transparent transparent transparent;
+        pointer-events: none;
+    }
+    
+    /* Estilos para a lista de resultados de busca */
+    .list-group-item-action {
+        transition: background-color 0.15s ease-in-out;
+    }
+    
+    .list-group-item-action:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* Estilo para container de aluno selecionado */
+    #selected-instrutor-container,
+    #selected-instrutor-auxiliar-container,
+    #selected-auxiliar-instrucao-container {
+        background-color: #f8f9fa;
+    }
+    
+    /* IMPORTANTE: Esconder completamente os selects originais */
+    #id_instrutor,
+    #id_instrutor_auxiliar,
+    #id_auxiliar_instrucao {
+        display: none !important;
+    }
+    
+    /* Esconder os botões duplicados de limpar seleção */
+    #id_instrutor + button,
+    #id_instrutor_auxiliar + button,
+    #id_auxiliar_instrucao + button,
+    #selected-instrutor-container + button,
+    #selected-instrutor-auxiliar-container + button,
+    #selected-auxiliar-instrucao-container + button {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Nova Turma</h1>
-        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
+        <h1>Criar Nova Turma</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar</a>
     </div>
     
     {% if messages %}
@@ -18,53 +153,219 @@
         {% endfor %}
     {% endif %}
     
-    <form method="post">
+    {% if form.errors %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                <strong>Erro:</strong>
+                <ul>
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endif %}
+    
+    <form method="post" id="turma-form">
         {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <!-- Informações Básicas - Com fundo primary -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Informações Básicas</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
+                        <div class="mb-3">
+                            <label for="id_nome" class="form-label">Nome da Turma</label>
+                            <input type="text" name="nome" value="{{ form.nome.value|default:'' }}" class="form-control {% if form.nome.errors %}is-invalid{% endif %}" maxlength="100" required id="id_nome">
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.nome.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.nome.help_text %}
+                                <small class="form-text text-muted">{{ form.nome.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.curso %}
+                        <!-- Campo curso personalizado sem tracinhos -->
+                        <div class="mb-3">
+                            <label for="id_curso" class="form-label">Curso</label>
+                            <select name="curso" id="id_curso" class="form-select curso-select" required>
+                                {% for curso in cursos %}
+                                    <option value="{{ curso.codigo_curso }}">
+                                        {{ curso.codigo_curso }} - {{ curso.nome }}
+                                    </option>
+                                {% empty %}
+                                    <option value="">Nenhum curso disponível</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.curso.help_text %}
+                                <small class="form-text text-muted">{{ form.curso.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_inicio %}
+                        <div class="mb-3">
+                            <label for="{{ form.data_inicio.id_for_label }}" class="form-label">Data de Início</label>
+                            <input type="date" name="data_inicio" id="id_data_inicio" class="form-control">
+                            {% if form.data_inicio.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.data_inicio.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_fim %}
+                        <div class="mb-3">
+                            <label for="{{ form.data_fim.id_for_label }}" class="form-label">Data de Término</label>
+                            <input type="date" name="data_fim" id="id_data_fim" class="form-control">
+                            {% if form.data_fim.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.data_fim.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.vagas_totais %}
+                        <div class="mb-3">
+                            <label for="id_vagas" class="form-label">Número de Vagas</label>
+                            <input type="number" name="vagas" value="{{ form.vagas.value|default:'30' }}" class="form-control{% if form.vagas.errors %} is-invalid{% endif %}" min="0" required id="id_vagas">
+                            {% if form.vagas.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.vagas.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.vagas.help_text %}
+                                <small class="form-text text-muted">{{ form.vagas.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.status %}
+                        <!-- Campo status customizado com valores limitados -->
+                        <div class="mb-3">
+                            <label for="id_status" class="form-label">Status</label>
+                            <select name="status" id="id_status" class="form-select" required>
+                                <option value="A" {% if form.status.value == 'A' or not form.status.value %}selected{% endif %}>Ativa</option>
+                                <option value="I" {% if form.status.value == 'I' %}selected{% endif %}>Inativa</option>
+                                <option value="C" {% if form.status.value == 'C' %}selected{% endif %}>Cancelada</option>
+                                <option value="F" {% if form.status.value == 'F' %}selected{% endif %}>Finalizada</option>
+                            </select>
+                            {% if form.status.help_text %}
+                                <small class="form-text text-muted">{{ form.status.help_text }}</small>
+                            {% endif %}
+                            <!-- Alerta para data fim obrigatória quando Finalizada -->
+                            <div id="alerta-data-fim" class="alert alert-warning mt-2" style="display:none;">
+                                <i class="fas fa-exclamation-triangle"></i> Quando o status é "Finalizada", a Data de Término é obrigatória.
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.local %}
+                        <div class="mb-3">
+                            <label for="id_local" class="form-label">Local</label>
+                            <input type="text" name="local" value="{{ form.local.value|default:'' }}" class="form-control{% if form.local.errors %} is-invalid{% endif %}" maxlength="200" id="id_local">
+                            {% if form.local.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.local.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Dias da semana estilo select2 -->
+                        <div class="mb-3">
+                            <label class="form-label">Dias da Semana</label>
+                            <input type="hidden" name="dias_semana" id="dias_semana_hidden" value="">
+                            
+                            <div class="position-relative">
+                                <div class="dias-semana-select" id="dias-semana-display">
+                                    <span id="dias-semana-texto">
+                                        {% if form.dias_semana.value %}
+                                            {{ form.dias_semana.value }}
+                                        {% else %}
+                                            Selecione os dias da semana
+                                        {% endif %}
+                                    </span>
+                                    <span class="dropdown-arrow"></span>
+                                </div>
+                                
+                                <div class="dias-semana-container" id="dias-semana-dropdown" style="display: none;">
+                                    <div class="dia-semana-item" data-dia="Segunda">
+                                        <input type="checkbox" id="dia_segunda">
+                                        Segunda
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Terça">
+                                        <input type="checkbox" id="dia_terca">
+                                        Terça
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Quarta">
+                                        <input type="checkbox" id="dia_quarta">
+                                        Quarta
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Quinta">
+                                        <input type="checkbox" id="dia_quinta">
+                                        Quinta
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Sexta">
+                                        <input type="checkbox" id="dia_sexta">
+                                        Sexta
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Sábado">
+                                        <input type="checkbox" id="dia_sabado">
+                                        Sábado
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Domingo">
+                                        <input type="checkbox" id="dia_domingo">
+                                        Domingo
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Selecione os dias da semana em que ocorrerão as aulas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_horario" class="form-label">Horário</label>
+                            <input type="text" name="horario" value="{{ form.horario.value|default:'' }}" class="form-control{% if form.horario.errors %} is-invalid{% endif %}" maxlength="100" id="id_horario">
+                            {% if form.horario.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.horario.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.horario.help_text %}
+                                <small class="form-text text-muted">{{ form.horario.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
+                        <div class="mb-3">
+                            <label for="id_descricao" class="form-label">Descrição</label>
+                            <textarea name="descricao" cols="40" rows="3" class="form-control{% if form.descricao.errors %} is-invalid{% endif %}" id="id_descricao">{{ form.descricao.value|default:'' }}</textarea>
+                            {% if form.descricao.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.descricao.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- Seção de Instrutoria -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white">
                 <h5 class="mb-0">Instrutoria</h5>
             </div>
             <div class="card-body">
@@ -72,28 +373,22 @@
                     <!-- Instrutor Principal -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor" class="form-label">Instrutor Principal</label>
-                        <input type="text" id="search-instrutor" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
-                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none;"></div>
+                        <input type="text" id="search-instrutor" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none"></div>
                         <div id="selected-instrutor-container" class="p-3 border rounded mt-2 d-none">
                             <div id="selected-instrutor-info">
                                 Nenhum instrutor selecionado
                             </div>
                         </div>
                         <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
-                        <select name="instrutor" class="form-control d-none" id="id_instrutor">
-                            <option value="">---------</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
-                            {% endfor %}
-                        </select>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.instrutor }}
                     </div>
                     
                     <!-- Instrutor Auxiliar -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
-                        <input type="text" id="search-instrutor-auxiliar" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <input type="text" id="search-instrutor-auxiliar" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 d-none">
                             <div id="selected-instrutor-auxiliar-info">
@@ -101,19 +396,14 @@
                             </div>
                         </div>
                         <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
-                        <select name="instrutor_auxiliar" class="form-control d-none" id="id_instrutor_auxiliar">
-                            <option value="">---------</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
-                            {% endfor %}
-                        </select>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.instrutor_auxiliar }}
                     </div>
                     
                     <!-- Auxiliar de Instrução -->
                     <div class="col-md-4 mb-3">
                         <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
-                        <input type="text" id="search-auxiliar-instrucao" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <input type="text" id="search-auxiliar-instrucao" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 d-none">
                             <div id="selected-auxiliar-instrucao-info">
@@ -121,223 +411,98 @@
                             </div>
                         </div>
                         <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
-                        <select name="auxiliar_instrucao" class="form-control d-none" id="id_auxiliar_instrucao">
-                            <option value="">---------</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
-                            {% endfor %}
-                        </select>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.auxiliar_instrucao }}
                     </div>
                 </div>
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor. 
-                    O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
+                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
+                    O sistema verificará a elegibil
+                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
+                    O sistema verificará a elegibilidade do aluno para a função de instrutor.
                 </div>
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Horários</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="id_dias_semana" class="form-label">Dias da Semana</label>
-                            <input type="text" name="dias_semana" class="form-control" id="id_dias_semana" 
-                                   placeholder="Ex: Segunda, Quarta e Sexta">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="id_horario" class="form-label">Horário</label>
-                            <input type="text" name="horario" class="form-control" id="id_horario" 
-                                   placeholder="Ex: 19:00 às 21:00">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Requisitos</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="mb-3">
-                            <label for="id_pre_requisitos" class="form-label">Pré-requisitos para a turma</label>
-                            <textarea name="pre_requisitos" class="form-control" id="id_pre_requisitos" rows="3" 
-                                      placeholder="Informe os pré-requisitos necessários para participar desta turma"></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="d-flex justify-content-between mb-5">
+        <div class="d-flex justify-content-between">
             <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Criar Turma</button>
+            <button type="submit" class="btn btn-primary">Salvar Turma</button>
         </div>
     </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/turmas/instrutor_search.js' %}"></script>
+<script src="{% static 'js/modules/instrutor-search.js' %}"></script>
+<script src="{% static 'js/turmas/form_fix.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar o módulo de busca de instrutores com opção para mostrar todos os alunos
-        InstrutorSearch.init(document.querySelector('[name=csrfmiddlewaretoken]').value, true);
-        
-        // Validação de datas
-        const dataInicio = document.getElementById('{{ form.data_inicio.id_for_label }}');
-        const dataFim = document.getElementById('{{ form.data_fim.id_for_label }}');
-        
-        if (dataInicio && dataFim) {
-            dataInicio.addEventListener('change', function() {
-                if (dataFim.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
-                    alert('A data de início não pode ser posterior à data de fim.');
-                    dataInicio.value = '';
-                }
-            });
-            
-            dataFim.addEventListener('change', function() {
-                if (dataInicio.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
-                    alert('A data de fim não pode ser anterior à data de início.');
-                    dataFim.value = '';
-                }
-            });
-        }
-
-        // Gerenciamento de horários
-        const btnAdicionarHorario = document.getElementById('adicionar_horario');
-        const tabelaHorarios = document.getElementById('tabela_horarios').querySelector('tbody');
-        const horarioJsonInput = document.getElementById('horarios_json');
-        let horarios = [];
-        
-        // Função para atualizar o campo JSON
-        function atualizarHorariosJson() {
-            horarioJsonInput.value = JSON.stringify(horarios);
-        }
-        
-        // Função para adicionar um horário
-        btnAdicionarHorario.addEventListener('click', function() {
-            const diaSemana = document.getElementById('id_dia_semana');
-            const horaInicio = document.getElementById('id_hora_inicio');
-            const horaFim = document.getElementById('id_hora_fim');
-            
-            if (!diaSemana.value || !horaInicio.value || !horaFim.value) {
-                alert('Por favor, preencha todos os campos de horário.');
-                return;
-            }
-            
-            // Obter o texto do dia da semana
-            const diaSemanaTexto = diaSemana.options[diaSemana.selectedIndex].text;
-            
-            // Adicionar à lista de horários
-            const horario = {
-                dia: diaSemana.value,
-                dia_texto: diaSemanaTexto,
-                inicio: horaInicio.value,
-                fim: horaFim.value
-            };
-            
-            horarios.push(horario);
-            
-            // Adicionar à tabela
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${diaSemanaTexto}</td>
-                <td>${horaInicio.value} - ${horaFim.value}</td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger remover-horario" data-index="${horarios.length - 1}">
-                        <i class="fas fa-trash"></i> Remover
-                    </button>
-                </td>
-            `;
-            tabelaHorarios.appendChild(tr);
-            
-            // Atualizar o campo JSON
-            atualizarHorariosJson();
-            
-            // Limpar campos
-            horaInicio.value = '';
-            horaFim.value = '';
+        // Inicializar Select2 para o campo de curso
+        $('.curso-select').select2({
+            theme: 'bootstrap4',
+            placeholder: 'Selecione um curso',
+            width: '100%'
         });
         
-        // Delegação de eventos para remover horários
-        tabelaHorarios.addEventListener('click', function(e) {
-            if (e.target.classList.contains('remover-horario') || e.target.closest('.remover-horario')) {
-                const btn = e.target.classList.contains('remover-horario') ? e.target : e.target.closest('.remover-horario');
-                const index = btn.dataset.index;
-                
-                // Remover da lista
-                horarios.splice(index, 1);
-                
-                // Remover da tabela
-                btn.closest('tr').remove();
-                
-                // Atualizar índices dos botões restantes
-                const botoesRemover = tabelaHorarios.querySelectorAll('.remover-horario');
-                botoesRemover.forEach((btn, i) => {
-                    btn.dataset.index = i;
+        // Inicializar componente de dias da semana
+        if (typeof DiasSemana !== 'undefined') {
+            DiasSemana.init();
+            
+            // Definir os dias da semana selecionados
+            var diasSelecionados = '{{ form.dias_semana.value|default:"" }}';
+            if (diasSelecionados) {
+                console.log('Definindo dias selecionados: ', diasSelecionados);
+                var diasArray = diasSelecionados.split(',').map(function(dia) {
+                    return dia.trim();
                 });
                 
-                // Atualizar o campo JSON
-                atualizarHorariosJson();
+                // Marcar os checkboxes correspondentes
+                diasArray.forEach(function(dia) {
+                    dia = dia.charAt(0).toUpperCase() + dia.slice(1).toLowerCase();
+                    var checkbox = document.getElementById('dia_' + dia.toLowerCase());
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+                
+                // Atualizar texto visível
+                document.getElementById('dias-semana-texto').textContent = diasSelecionados;
             }
+        } else {
+            console.error('Módulo DiasSemana não encontrado!');
+        }
+        
+        // Inicializar busca de instrutores
+        if (typeof InstrutorSearch !== 'undefined') {
+            var csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            InstrutorSearch.init(csrftoken, false);
+        } else {
+            console.error('Módulo InstrutorSearch não encontrado!');
+        }
+        
+        // Ocultar botões "Limpar seleção" duplicados gerados pelo JS
+        document.querySelectorAll('.btn-limpar-duplicada').forEach(function(btn) {
+            btn.style.display = 'none';
         });
+        
+        // Verificar status e mostrar alerta para data fim obrigatória
+        var statusField = document.getElementById('id_status');
+        var alertaDataFim = document.getElementById('alerta-data-fim');
+        
+        if (statusField && alertaDataFim) {
+            statusField.addEventListener('change', function() {
+                if (this.value === 'F') {
+                    alertaDataFim.style.display = 'block';
+                } else {
+                    alertaDataFim.style.display = 'none';
+                }
+            });
+            
+            // Verificar status inicial
+            if (statusField.value === 'F') {
+                alertaDataFim.style.display = 'block';
+            }
+        }
     });
 </script>
 {% endblock %}
-<!-- Adicionar após a seção de instrutoria -->
-{% if debug_mode %}
-<div class="card mb-4">
-    <div class="card-header bg-warning">
-        <h5 class="mb-0">Modo de Depuração</h5>
-    </div>
-    <div class="card-body">
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="ignore-eligibility" checked>
-            <label class="form-check-label" for="ignore-eligibility">Ignorar verificações de elegibilidade</label>
-        </div>
-        <small class="text-muted">Este modo permite selecionar qualquer aluno como instrutor, ignorando as verificações de elegibilidade.</small>
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const ignoreEligibilityCheckbox = document.getElementById('ignore-eligibility');
-        
-        ignoreEligibilityCheckbox.addEventListener('change', function() {
-            // Atualizar a variável global no módulo InstrutorSearch
-            if (typeof InstrutorSearch !== 'undefined') {
-                InstrutorSearch.setIgnoreEligibility(this.checked);
-                
-                // Limpar mensagens de erro existentes
-                document.querySelectorAll('[id$="-error"]').forEach(el => {
-                    el.textContent = '';
-                    el.classList.add('d-none');
-                });
-                
-                // Mostrar mensagem
-                const message = this.checked ? 
-                    'Verificações de elegibilidade desativadas. Qualquer aluno pode ser selecionado.' : 
-                    'Verificações de elegibilidade ativadas.';
-                    
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
-                alertDiv.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                `;
-                
-                this.closest('.card-body').appendChild(alertDiv);
-            }
-        });
-    });
-</script>
-{% endif %}

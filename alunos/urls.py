@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import api_views
 
 app_name = "alunos"
 
@@ -25,14 +26,19 @@ urlpatterns = [
         name="search_instrutores",
     ),
     path("api/get-aluno/<str:cpf>/", views.get_aluno, name="get_aluno"),
-    # Adicione esta linha para o novo endpoint
     path(
-        "api/verificar-elegibilidade-instrutor/<str:cpf>/",
-        views.verificar_elegibilidade_instrutor,
+        "api/detalhes/<str:cpf>/",
+        views.get_aluno_detalhes,
+        name="get_aluno_detalhes"
+    ),
+    path(
+        "api/verificar-elegibilidade/<str:cpf>/",
+        api_views.verificar_elegibilidade_endpoint,
         name="verificar_elegibilidade_instrutor",
     ),
     path(
         "diagnostico-instrutores/",
         views.diagnostico_instrutores,
         name="diagnostico_instrutores",
-    ),]
+    ),
+]

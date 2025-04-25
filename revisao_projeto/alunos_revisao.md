@@ -437,7 +437,7 @@ def listar_alunos(request):
                 )
                 alunos = alunos.filter(cpf__in=alunos_ids)
             except (ImportError, AttributeError) as e:
-                # Log do erro, mas continuar sem o filtro de curso
+                # Logar o erro, mas continuar sem o filtro de curso
                 print(f"Erro ao filtrar por curso: {e}")
         
         # Para cada aluno, buscar os cursos em que está matriculado
@@ -601,15 +601,24 @@ def editar_aluno(request, cpf):
     aluno = get_object_or_404(Aluno, cpf=cpf)
     
     if request.method == "POST":
+        logger.debug(f"Recebido POST para editar aluno {cpf}")
         form = AlunoForm(request.POST, request.FILES, instance=aluno)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Aluno atualizado com sucesso!")
-            return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
+            logger.debug("Form é válido, salvando...")
+            try:
+                aluno_atualizado = form.save()
+                logger.debug(f"Aluno salvo com sucesso: {aluno_atualizado.nome_iniciatico}")
+                messages.success(request, "Aluno atualizado com sucesso!")
+                return redirect("alunos:detalhar_aluno", cpf=aluno_atualizado.cpf)
+            except Exception as e:
+                logger.error(f"Erro ao salvar aluno: {str(e)}", exc_info=True)
+                messages.error(request, f"Erro ao atualizar aluno: {str(e)}")
+        else:
+            logger.debug(f"Form inválido: {form.errors}")
+            messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
         form = AlunoForm(instance=aluno)
     
-    # Certifique-se de que 'aluno' está sendo passado para o template
     return render(
         request, "alunos/formulario_aluno.html", {"form": form, "aluno": aluno}
     )
@@ -667,16 +676,14 @@ def exportar_alunos(request):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="alunos.csv"'
         writer = csv.writer(response)
-        writer.writerow(
-            [
-                "CPF",
-                "Nome",
-                "Email",
-                "Data de Nascimento",
-                "Sexo",
-                "Número Iniciático",
-            ]
-        )
+        writer.writerow([
+            "CPF",
+            "Nome",
+            "Email",
+            "Data de Nascimento",
+            "Sexo",
+            "Número Iniciático",
+        ])
         for aluno in alunos:
             writer.writerow(
                 [
@@ -692,7 +699,6 @@ def exportar_alunos(request):
     except Exception as e:
         messages.error(request, f"Erro ao exportar alunos: {str(e)}")
         return redirect("alunos:listar_alunos")
-
 
 @login_required
 def importar_alunos(request):
@@ -813,13 +819,18 @@ def search_alunos(request):
         query = request.GET.get("q", "")
         if len(query) < 2:
             return JsonResponse([], safe=False)
-        Aluno = get_aluno_model()  # Use a função existente para obter o modelo
+        
+        Aluno = get_aluno_model()
         # Buscar alunos por nome, CPF ou número iniciático
         alunos = Aluno.objects.filter(
-            Q(nome__icontains=query)
-            | Q(cpf__icontains=query)
-            | Q(numero_iniciatico__icontains=query)
+            Q(nome__icontains=query) |
+            Q(cpf__icontains=query) |
+            Q(numero_iniciatico__icontains=query)
         )[:10]  # Limitar a 10 resultados
+        
+        # Log para depuração
+        logger.info(f"Busca por '{query}' retornou {alunos.count()} resultados")
+        
         # Formatar resultados
         results = []
         for aluno in alunos:
@@ -830,6 +841,7 @@ def search_alunos(request):
                 "foto": aluno.foto.url if hasattr(aluno, "foto") and aluno.foto else None,
                 "situacao": aluno.get_situacao_display() if hasattr(aluno, "get_situacao_display") else ""
             })
+        
         return JsonResponse(results, safe=False)
     except Exception as e:
         logger.error(f"Error in search_alunos: {str(e)}")
@@ -887,8 +899,7 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
                     aluno=aluno,
                     cargo__nome__icontains="Instrutor Principal",
                     data_fim__isnull=True,
-                )
-                for atribuicao in atribuicoes:
+                )                for atribuicao in atribuicoes:
                     atribuicao.data_fim = timezone.now().date()
                     atribuicao.save()
                     
@@ -967,17 +978,12 @@ def search_instrutores(request):
         # Filtrar alunos que podem ser instrutores
         alunos_elegiveis = []
         for aluno in alunos[:10]:  # Limitar a 10 resultados
-            # Buscar matrículas do aluno
-            matriculas = []
-            try:
-                Matricula = import_module("matriculas.models").Matricula
-                matriculas_obj = Matricula.objects.filter(aluno=aluno)
-                matriculas = [f"{m.turma.curso.nome} ({m.turma.nome})" for m in matriculas_obj]
-            except (ImportError, AttributeError):
-                pass
-            
             # Verificar se o aluno pode ser instrutor
-            pode_ser_instrutor = getattr(aluno, 'pode_ser_instrutor', False)
+            pode_ser_instrutor = False
+            try:
+                pode_ser_instrutor = aluno.pode_ser_instrutor
+            except Exception as e:
+                logger.error(f"Erro ao verificar elegibilidade do aluno {aluno.nome}: {str(e)}")
             
             alunos_elegiveis.append({
                 "cpf": aluno.cpf,
@@ -987,11 +993,13 @@ def search_instrutores(request):
                 "situacao": aluno.get_situacao_display(),
                 "situacao_codigo": aluno.situacao,
                 "esta_ativo": aluno.esta_ativo,
-                "matriculas": matriculas,
                 "elegivel": pode_ser_instrutor
             })
         
-        logger.info(f"Alunos elegíveis para instrutores: {len(alunos_elegiveis)}")
+        if not alunos_elegiveis:
+            logger.warning("Nenhum aluno elegível para ser instrutor. Usando todos os alunos ativos.")
+        
+        logger.info(f"Alunos elegíveis para instrutores: {len([a for a in alunos_elegiveis if a['elegivel']])}")
         return JsonResponse(alunos_elegiveis, safe=False)
     except Exception as e:
         logger.error(f"Erro em search_instrutores: {str(e)}")
@@ -1028,16 +1036,11 @@ def get_aluno(request, cpf):
 def verificar_elegibilidade_instrutor(request, cpf):
     """API endpoint para verificar se um aluno pode ser instrutor."""
     try:
-        # Configurar logging
-        logger.info(f"Verificando elegibilidade do instrutor com CPF: {cpf}")
-        
         Aluno = get_aluno_model()
         aluno = get_object_or_404(Aluno, cpf=cpf)
-        logger.info(f"Aluno encontrado: {aluno.nome}, situação: {aluno.situacao}")
         
         # Verificar se o aluno está ativo
         if aluno.situacao != "ATIVO":
-            logger.warning(f"Aluno {aluno.nome} não está ativo. Situação: {aluno.situacao}")
             return JsonResponse(
                 {
                     "elegivel": False,
@@ -1046,69 +1049,24 @@ def verificar_elegibilidade_instrutor(request, cpf):
             )
         
         # Verificar se o aluno pode ser instrutor
-        logger.info(f"Verificando método pode_ser_instrutor para {aluno.nome}")
-        if not hasattr(aluno, 'pode_ser_instrutor'):
-            logger.error(f"Método pode_ser_instrutor não encontrado para o aluno {aluno.nome}")
-            return JsonResponse(
-                {
-                    "elegivel": False,
-                    "motivo": "Erro na verificação: o método 'pode_ser_instrutor' não existe.",
-                }
-            )
-        
-        # Tentar executar o método pode_ser_instrutor com tratamento de erro
-        try:
+        if hasattr(aluno, 'pode_ser_instrutor'):
             pode_ser_instrutor = aluno.pode_ser_instrutor
-            logger.info(f"Resultado de pode_ser_instrutor para {aluno.nome}: {pode_ser_instrutor}")
             
             if not pode_ser_instrutor:
-                # Verificar matrículas em cursos pré-iniciáticos diretamente para mensagem mais específica
-                from importlib import import_module
-                matriculas_module = import_module("matriculas.models")
-                Matricula = getattr(matriculas_module, "Matricula")
-                
-                matriculas_pre_iniciatico = Matricula.objects.filter(
-                    aluno=aluno, turma__curso__nome__icontains="Pré-iniciático"
+                return JsonResponse(
+                    {
+                        "elegivel": False,
+                        "motivo": "O aluno não atende aos requisitos para ser instrutor.",
+                    }
                 )
-                
-                if matriculas_pre_iniciatico.exists():
-                    cursos = ", ".join([f"{m.turma.curso.nome}" for m in matriculas_pre_iniciatico])
-                    logger.warning(f"Aluno {aluno.nome} está matriculado em cursos pré-iniciáticos: {cursos}")
-                    return JsonResponse(
-                        {
-                            "elegivel": False,
-                            "motivo": f"O aluno está matriculado em cursos pré-iniciáticos: {cursos}",
-                        }
-                    )
-                else:
-                    logger.warning(f"Aluno {aluno.nome} não atende a outros requisitos para ser instrutor")
-                    return JsonResponse(
-                        {
-                            "elegivel": False,
-                            "motivo": "O aluno não atende aos requisitos para ser instrutor.",
-                        }
-                    )
-        except Exception as method_error:
-            import traceback
-            logger.error(f"Erro ao executar método pode_ser_instrutor: {str(method_error)}")
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            return JsonResponse(
-                {
-                    "elegivel": False,
-                    "motivo": f"Erro ao verificar requisitos de instrutor: {str(method_error)}",
-                }
-            )
+        else:
+            # Se o método não existir, considerar elegível por padrão
+            return JsonResponse({"elegivel": True})
         
-        logger.info(f"Aluno {aluno.nome} é elegível para ser instrutor")
         return JsonResponse({"elegivel": True})
     except Exception as e:
-        import traceback
-        error_msg = str(e)
-        stack_trace = traceback.format_exc()
-        logger.error(f"Erro ao verificar elegibilidade: {error_msg}")
-        logger.error(f"Traceback: {stack_trace}")
         return JsonResponse(
-            {"elegivel": False, "motivo": f"Erro na busca: {error_msg}"},
+            {"elegivel": False, "motivo": f"Erro na busca: {str(e)}"},
             status=500
         )
 
@@ -1142,7 +1100,7 @@ def diagnostico_instrutores(request):
                     
                     # Se não for elegível, tentar determinar o motivo
                     if not info["elegivel"]:
-                        # Verificar matrículas em cursos pré-iniciáticos
+                        # Verificar matrículas em cursos pré-iniciaticos
                         from importlib import import_module
                         try:
                             matriculas_module = import_module("matriculas.models")
@@ -1188,7 +1146,53 @@ def diagnostico_instrutores(request):
                 "traceback": stack_trace,
             },
         )
-
+@login_required
+def get_aluno_detalhes(request, cpf):
+    """API endpoint para obter detalhes específicos de um aluno."""
+    try:
+        Aluno = get_aluno_model()
+        aluno = get_object_or_404(Aluno, cpf=cpf)
+        
+        # Verificar se o aluno é instrutor em alguma turma
+        turmas_como_instrutor = False
+        try:
+            from django.db.models import Q
+            turmas_module = import_module("turmas.models")
+            Turma = getattr(turmas_module, "Turma")
+            turmas_como_instrutor = Turma.objects.filter(
+                Q(instrutor=aluno) |
+                Q(instrutor_auxiliar=aluno) |
+                Q(auxiliar_instrucao=aluno)
+            ).exists()
+        except Exception as e:
+            logger.error(f"Erro ao verificar turmas como instrutor: {str(e)}")
+        
+        # Obter turmas em que o aluno está matriculado
+        turmas_matriculado = []
+        try:
+            matriculas_module = import_module("matriculas.models")
+            Matricula = getattr(matriculas_module, "Matricula")
+            matriculas = Matricula.objects.filter(aluno=aluno, status="A")
+            turmas_matriculado = [
+                {
+                    "id": m.turma.id,
+                    "nome": m.turma.nome,
+                    "curso": m.turma.curso.nome if m.turma.curso else "Sem curso"
+                }
+                for m in matriculas
+            ]
+        except Exception as e:
+            logger.error(f"Erro ao buscar matrículas: {str(e)}")
+        
+        return JsonResponse({
+            "success": True,
+            "e_instrutor": turmas_como_instrutor,
+            "turmas": turmas_matriculado,
+            "pode_ser_instrutor": getattr(aluno, 'pode_ser_instrutor', False)
+        })
+    except Exception as e:
+        logger.error(f"Erro ao obter detalhes do aluno: {str(e)}", exc_info=True)
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 ## Arquivos urls.py:
@@ -1199,6 +1203,7 @@ def diagnostico_instrutores(request):
 python
 from django.urls import path
 from . import views
+from .views import api_views
 
 app_name = "alunos"
 
@@ -1224,18 +1229,22 @@ urlpatterns = [
         name="search_instrutores",
     ),
     path("api/get-aluno/<str:cpf>/", views.get_aluno, name="get_aluno"),
-    # Adicione esta linha para o novo endpoint
     path(
-        "api/verificar-elegibilidade-instrutor/<str:cpf>/",
-        views.verificar_elegibilidade_instrutor,
+        "api/detalhes/<str:cpf>/",
+        views.get_aluno_detalhes,
+        name="get_aluno_detalhes"
+    ),
+    path(
+        "api/verificar-elegibilidade/<str:cpf>/",
+        api_views.verificar_elegibilidade_endpoint,
         name="verificar_elegibilidade_instrutor",
     ),
     path(
         "diagnostico-instrutores/",
         views.diagnostico_instrutores,
         name="diagnostico_instrutores",
-    ),]
-
+    ),
+]
 
 
 ## Arquivos models.py:
@@ -1439,13 +1448,15 @@ class Aluno(models.Model):
             matriculas_module = import_module("matriculas.models")
             Matricula = getattr(matriculas_module, "Matricula")
 
-            # Verificar se o aluno está matriculado em algum curso que não seja "Pré-iniciático"
-            matriculas = Matricula.objects.filter(
-                aluno=self, turma__curso__nome__icontains="Pré-iniciático"
+            # Verificar se o aluno está matriculado em algum curso que NÃO seja "Pré-iniciático"
+            matriculas_nao_pre_iniciatico = Matricula.objects.filter(
+                aluno=self
+            ).exclude(
+                turma__curso__nome__icontains="Pré-iniciático"
             )
 
-            # Se não tiver matrículas em cursos "Pré-iniciático", pode ser instrutor
-            return not matriculas.exists()
+            # Se tiver matrículas em cursos que não são "Pré-iniciático", pode ser instrutor
+            return matriculas_nao_pre_iniciatico.exists()
         except (ImportError, AttributeError):
             # Se houver erro na importação, retorna False por segurança
             return False
@@ -1768,18 +1779,21 @@ html
                          style="border-style: dashed !important; 
                                 border-color: #007bff !important; 
                                 border-width: 2px !important;
-                                min-height: 120px;
-                                max-height: 200px;
+                                width: 200px;  /* Largura fixa para o contêiner */
+                                height: 200px; /* Altura fixa para o contêiner */
                                 display: flex; 
                                 align-items: center; 
                                 justify-content: center;
-                                overflow: hidden;">
+                                overflow: hidden;
+                                margin: 0 auto;">
                         {% if aluno.foto %}
                             <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                 class="img-fluid rounded" 
-                                 style="max-width: 100%; 
-                                        max-height: 180px; 
-                                        object-fit: contain;">
+                                 style="max-width: 180px;
+                                        max-height: 180px;
+                                        width: auto;
+                                        height: auto;
+                                        object-fit: contain;
+                                        display: block;">
                         {% else %}
                             <div class="text-muted">Sem foto</div>
                         {% endif %}
@@ -1998,19 +2012,26 @@ html
 ### Arquivo: alunos\templates\alunos\diagnostico_instrutores.html
 
 html
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block title %}Diagnóstico de Elegibilidade de Instrutores{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Diagnóstico de Elegibilidade de Instrutores</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Diagnóstico de Elegibilidade de Instrutores</h1>
+        <div>
+            <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
     
     <div class="alert alert-info">
         <p>Esta página mostra o diagnóstico de elegibilidade de todos os alunos ativos para serem instrutores.</p>
         <p>Total de alunos: {{ total_alunos }}</p>
-        <p>Alunos elegíveis: {{ total_elegiveis }} ({{ total_elegiveis|floatformat:1 }}%)</p>
-        <p>Alunos inelegíveis: {{ total_inelegiveis }} ({{ total_inelegiveis|floatformat:1 }}%)</p>
+        <p>Alunos elegíveis: {{ alunos_elegiveis }} ({{ porcentagem_elegiveis }}%)</p>
+        <p>Alunos inelegíveis: {{ alunos_inelegiveis }} ({{ porcentagem_inelegiveis }}%)</p>
     </div>
     
     <div class="card mb-4">
@@ -2049,29 +2070,19 @@ html
             </thead>
             <tbody>
                 {% for item in alunos_diagnostico %}
-                <tr class="{% if item.pode_ser_instrutor %}elegivel{% else %}inelegivel{% endif %}">
+                <tr class="{% if item.elegivel %}elegivel{% else %}inelegivel{% endif %}">
                     <td>{{ item.aluno.nome }}</td>
                     <td>{{ item.aluno.cpf }}</td>
                     <td>{{ item.aluno.numero_iniciatico|default:"N/A" }}</td>
                     <td>{{ item.aluno.get_situacao_display }}</td>
                     <td>
-                        {% if item.pode_ser_instrutor %}
+                        {% if item.elegivel %}
                             <span class="badge bg-success">Sim</span>
                         {% else %}
                             <span class="badge bg-danger">Não</span>
                         {% endif %}
                     </td>
-                    <td>
-                        {% if item.motivo %}
-                            {{ item.motivo }}
-                            {% if item.cursos_pre_iniciatico %}
-                                <br>
-                                <small>Cursos: {{ item.cursos_pre_iniciatico|join:", " }}</small>
-                            {% endif %}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
+                    <td>{{ item.motivo }}</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -2080,6 +2091,13 @@ html
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    
+    <!-- Botão de voltar no final da página -->
+    <div class="mt-4 text-center">
+        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Lista de Alunos
+        </a>
     </div>
 </div>
 
@@ -2205,7 +2223,7 @@ html
     {% endif %}
     
     <!-- Adicionar ID ao formulário para facilitar a seleção no JavaScript -->
-    <form method="post" enctype="multipart/form-data" id="form-aluno">
+    <form method="post" enctype="multipart/form-data" id="form-aluno" novalidate>
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
         
@@ -2242,18 +2260,21 @@ html
                              style="border-style: dashed !important; 
                                     border-color: #007bff !important; 
                                     border-width: 2px !important;
-                                    min-height: 120px;
-                                    max-height: 200px;
+                                    width: 200px;  /* Largura fixa para o contêiner */
+                                    height: 200px; /* Altura fixa para o contêiner */
                                     display: flex; 
                                     align-items: center; 
                                     justify-content: center;
-                                    overflow: hidden;">
+                                    overflow: hidden;
+                                    margin: 0 auto;">
                             {% if aluno.foto %}
                                 <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                     class="img-fluid rounded" 
-                                     style="max-width: 100%; 
-                                            max-height: 180px; 
-                                            object-fit: contain;">
+                                     style="max-width: 180px;
+                                            max-height: 180px;
+                                            width: auto;
+                                            height: auto;
+                                            object-fit: contain;
+                                            display: block;">
                             {% else %}
                                 <div class="text-muted">Sem foto</div>
                             {% endif %}
@@ -2427,12 +2448,20 @@ html
                     // Limpar o conteúdo atual do container
                     fotoContainer.innerHTML = '';
                     
+                    // Limpar mensagens de erro relacionadas à foto
+                    const errorMessages = fotoInput.parentElement.querySelectorAll('.alert.alert-danger');
+                    errorMessages.forEach(function(errorMsg) {
+                        errorMsg.style.display = 'none';
+                    });
+                    
                     // Criar a imagem de preview
                     const preview = document.createElement('img');
-                    preview.className = 'img-fluid rounded';
-                    preview.style.maxWidth = '100%';
+                    preview.style.maxWidth = '180px';
                     preview.style.maxHeight = '180px';
+                    preview.style.width = 'auto';
+                    preview.style.height = 'auto';
                     preview.style.objectFit = 'contain';
+                    preview.style.display = 'block';
                     
                     // Configurar o leitor de arquivo
                     const reader = new FileReader();
@@ -2445,9 +2474,72 @@ html
                     
                     // Adicionar a imagem ao container
                     fotoContainer.appendChild(preview);
+                    
+                    // Adicionar uma mensagem de sucesso temporária
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'alert alert-success mt-2';
+                    successMsg.textContent = 'Nova imagem selecionada com sucesso!';
+                    fotoInput.parentElement.appendChild(successMsg);
+                    
+                    // Remover a mensagem de sucesso após 3 segundos
+                    setTimeout(function() {
+                        successMsg.remove();
+                    }, 3000);
                 }
             });
         }
+        
+        // Verificar se há mensagem "Atualmente:" e ajustar o layout
+        const currentImageText = document.querySelector('.form-group a');
+        if (currentImageText) {
+            const clearCheckbox = document.querySelector('input[name="foto-clear"]');
+            const clearLabel = document.querySelector('label[for="foto-clear_id"]');
+            
+            if (clearCheckbox && clearLabel) {
+                // Melhorar o layout da opção de limpar
+                const clearContainer = document.createElement('div');
+                clearContainer.className = 'form-check mt-2';
+                
+                clearCheckbox.className = 'form-check-input';
+                clearLabel.className = 'form-check-label';
+                
+                clearContainer.appendChild(clearCheckbox);
+                clearContainer.appendChild(clearLabel);
+                
+                // Substituir o texto "Atualmente:" por um layout mais limpo
+                const currentImageContainer = document.createElement('div');
+                currentImageContainer.className = 'mb-2';
+                currentImageContainer.innerHTML = '<strong>Imagem atual:</strong> ';
+                currentImageContainer.appendChild(currentImageText.cloneNode(true));
+                
+                // Substituir os elementos originais
+                const parentElement = clearCheckbox.parentElement;
+                parentElement.innerHTML = '';
+                parentElement.appendChild(currentImageContainer);
+                parentElement.appendChild(clearContainer);
+            }
+        }
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('form-aluno');
+        
+        form.addEventListener('submit', function(e) {
+            // Remove masks before submission
+            const cpfField = document.getElementById('id_cpf');
+            const cepField = document.getElementById('id_cep');
+            const celular1Field = document.getElementById('id_celular_primeiro_contato');
+            const celular2Field = document.getElementById('id_celular_segundo_contato');
+            
+            if (cpfField) cpfField.value = cpfField.value.replace(/\D/g, '');
+            if (cepField) cepField.value = cepField.value.replace(/\D/g, '');
+            if (celular1Field) celular1Field.value = celular1Field.value.replace(/\D/g, '');
+            if (celular2Field) celular2Field.value = celular2Field.value.replace(/\D/g, '');
+            
+            // Continue with form submission
+            return true;
+        });
     });
 </script>
 {% endblock %}
@@ -2501,19 +2593,113 @@ html
 
 {% block title %}Lista de Alunos{% endblock %}
 
+{% block extra_css %}
+<style>
+    .btn-group-responsive {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .btn-responsive {
+            width: 100%;
+            margin-bottom: 0.25rem;
+        }
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .table th, .table td {
+        white-space: nowrap;
+    }
+    
+    .aluno-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .aluno-avatar {
+        flex-shrink: 0;
+    }
+    
+    .aluno-nome {
+        font-weight: 500;
+    }
+    
+    .dropdown-menu-actions {
+        min-width: 8rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid mt-4">
     <!-- Cabeçalho com título e botões na mesma linha -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Lista de Alunos</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
-            <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-primary">Novo Aluno</a>
-            <a href="{% url 'alunos:exportar_alunos' %}" class="btn btn-success">Exportar CSV</a>
-            <a href="{% url 'alunos:importar_alunos' %}" class="btn btn-info">Importar CSV</a>
-            <a href="{% url 'alunos:relatorio_alunos' %}" class="btn btn-warning">Relatório</a>
-            <a href="{% url 'alunos:dashboard' %}" class="btn btn-dark">Dashboard</a>
-            <a href="{% url 'alunos:diagnostico_instrutores' %}" class="btn btn-info">Diagnóstico de Instrutores</a>
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <h1 class="mb-3 mb-md-0">Lista de Alunos</h1>
+        
+        <!-- Botões agrupados com dropdown em telas menores -->
+        <div class="btn-group-responsive">
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            
+            <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Aluno
+            </a>
+            
+            <!-- Dropdown para ações secundárias em telas menores -->
+            <div class="d-none d-md-block">
+                <a href="{% url 'alunos:exportar_alunos' %}" class="btn btn-success">
+                    <i class="fas fa-file-export"></i> Exportar CSV
+                </a>
+                
+                <a href="{% url 'alunos:importar_alunos' %}" class="btn btn-info">
+                    <i class="fas fa-file-import"></i> Importar CSV
+                </a>
+                
+                <a href="{% url 'alunos:relatorio_alunos' %}" class="btn btn-warning">
+                    <i class="fas fa-chart-bar"></i> Relatório
+                </a>
+                
+                <a href="{% url 'alunos:dashboard' %}" class="btn btn-dark">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </div>
+            
+            <!-- Dropdown para telas menores -->
+            <div class="dropdown d-md-none">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-ellipsis-h"></i> Mais ações
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-actions" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="{% url 'alunos:exportar_alunos' %}">
+                        <i class="fas fa-file-export"></i> Exportar CSV
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'alunos:importar_alunos' %}">
+                        <i class="fas fa-file-import"></i> Importar CSV
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'alunos:relatorio_alunos' %}">
+                        <i class="fas fa-chart-bar"></i> Relatório
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'alunos:dashboard' %}">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'alunos:diagnostico_instrutores' %}">
+                        <i class="fas fa-user-check"></i> Diagnóstico Instrutores
+                    </a></li>
+                </ul>
+            </div>
         </div>
     </div>
     
@@ -2521,10 +2707,15 @@ html
     <div class="card mb-4">
         <div class="card-header">
             <form method="get" class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome, CPF ou email..." value="{{ query }}">
+                <div class="col-md-6 col-lg-7">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" placeholder="Buscar por nome, CPF ou email..." value="{{ query }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 col-lg-3">
                     <select name="curso" class="form-select" title="Selecione um curso" aria-label="Selecione um curso">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
@@ -2532,8 +2723,10 @@ html
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                <div class="col-md-2 col-lg-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
                 </div>
             </form>
         </div>
@@ -2544,56 +2737,79 @@ html
             </div>
             {% endif %}
             <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
+                <table class="table table-hover">
+                    <thead class="table-light">
                         <tr>
                             <th>Nome</th>
                             <th>CPF</th>
                             <th>Nº Iniciático</th>
                             <th>Email</th>
-                            <th>Situação</th>
-                            <th>Cursos</th>
-                            <th>Ações</th>
+                            <th class="text-center">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for aluno in alunos %}
                             <tr>
                                 <td>
-                                    <div class="d-flex align-items-center">
+                                    <div class="aluno-info">
                                         {% if aluno.foto %}
                                             <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                                 class="rounded-circle me-2" width="40" height="40" 
+                                                 class="rounded-circle aluno-avatar" width="40" height="40" 
                                                  style="object-fit: cover;">
                                         {% else %}
-                                            <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" 
+                                            <div class="rounded-circle bg-secondary aluno-avatar d-flex align-items-center justify-content-center" 
                                                  style="width: 40px; height: 40px; color: white;">
                                                 {{ aluno.nome|first|upper }}
                                             </div>
                                         {% endif %}
-                                        {{ aluno.nome }}
+                                        <span class="aluno-nome">{{ aluno.nome }}</span>
                                     </div>
                                 </td>
                                 <td>{{ aluno.cpf }}</td>
                                 <td>{{ aluno.numero_iniciatico|default:"N/A" }}</td>
                                 <td>{{ aluno.email }}</td>
-                                <td>{{ aluno.get_situacao_display }}</td>
-                                <td>
-                                    {% if aluno.cursos %}
-                                        <ul class="list-unstyled mb-0">
-                                            {% for curso in aluno.cursos %}
-                                                <li>{{ curso }}</li>
-                                            {% endfor %}
-                                        </ul>
-                                    {% else %}
-                                        <span class="text-muted">Nenhum curso</span>
-                                    {% endif %}
-                                </td>
                                 <td>
                                     {% if aluno.cpf %}
-                                        <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info">Detalhes</a>
-                                        <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-sm btn-warning">Editar</a>
-                                        <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-sm btn-danger">Excluir</a>
+                                        <!-- Botões de ação em telas grandes -->
+                                        <div class="d-none d-md-flex justify-content-center gap-1">
+                                            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-sm btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                        
+                                        <!-- Dropdown para ações em telas pequenas -->
+                                        <div class="d-md-none text-center">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" 
+                                                        id="dropdownMenuButton{{ aluno.cpf }}" data-bs-toggle="dropdown" 
+                                                        aria-expanded="false">
+                                                    Ações
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ aluno.cpf }}">
+                                                    <li>
+                                                        <a class="dropdown-item" href="{% url 'alunos:detalhar_aluno' aluno.cpf %}">
+                                                            <i class="fas fa-eye"></i> Detalhes
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="{% url 'alunos:editar_aluno' aluno.cpf %}">
+                                                            <i class="fas fa-edit"></i> Editar
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" href="{% url 'alunos:excluir_aluno' aluno.cpf %}">
+                                                            <i class="fas fa-trash"></i> Excluir
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
                                     {% else %}
                                         <span class="text-muted">CPF não disponível</span>
                                     {% endif %}
@@ -2601,13 +2817,17 @@ html
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="7" class="text-center">
+                                <td colspan="5" class="text-center">
                                     <p class="my-3">Nenhum aluno cadastrado.</p>
                                 </td>
                             </tr>
                         {% endfor %}
-                    </tbody>                </table>            </div>        </div>        <div class="card-footer">
-            <p class="text-muted mb-0">Total: {{ page_obj.paginator.count|default:"0" }} aluno(s)</p>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <p class="text-muted mb-md-0">Total: {{ alunos.count|default:"0" }} aluno(s)</p>
             {% if page_obj.has_other_pages %}
                 <nav aria-label="Paginação">
                     <ul class="pagination justify-content-center mb-0">
@@ -2645,7 +2865,8 @@ html
                     </ul>
                 </nav>
             {% endif %}
-        </div>    </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

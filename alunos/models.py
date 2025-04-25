@@ -193,13 +193,15 @@ class Aluno(models.Model):
             matriculas_module = import_module("matriculas.models")
             Matricula = getattr(matriculas_module, "Matricula")
 
-            # Verificar se o aluno está matriculado em algum curso que não seja "Pré-iniciático"
-            matriculas = Matricula.objects.filter(
-                aluno=self, turma__curso__nome__icontains="Pré-iniciático"
+            # Verificar se o aluno está matriculado em algum curso que NÃO seja "Pré-iniciático"
+            matriculas_nao_pre_iniciatico = Matricula.objects.filter(
+                aluno=self
+            ).exclude(
+                turma__curso__nome__icontains="Pré-iniciático"
             )
 
-            # Se não tiver matrículas em cursos "Pré-iniciático", pode ser instrutor
-            return not matriculas.exists()
+            # Se tiver matrículas em cursos que não são "Pré-iniciático", pode ser instrutor
+            return matriculas_nao_pre_iniciatico.exists()
         except (ImportError, AttributeError):
             # Se houver erro na importação, retorna False por segurança
             return False

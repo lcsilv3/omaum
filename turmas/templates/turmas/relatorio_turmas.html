@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Turmas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-counter {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 20px;
+        background-color: #fff;
+        height: 100%;
+        border-radius: 5px;
+        transition: .3s linear all;
+    }
+    
+    .card-counter.primary {
+        background-color: #007bff;
+        color: #FFF;
+    }
+    
+    .card-counter.success {
+        background-color: #28a745;
+        color: #FFF;
+    }
+    
+    .card-counter.info {
+        background-color: #17a2b8;
+        color: #FFF;
+    }
+    
+    .card-counter.warning {
+        background-color: #ffc107;
+        color: #FFF;
+    }
+    
+    .card-counter.danger {
+        background-color: #dc3545;
+        color: #FFF;
+    }
+    
+    .card-counter i {
+        font-size: 4em;
+        opacity: 0.3;
+    }
+    
+    .card-counter .count-numbers {
+        position: absolute;
+        right: 35px;
+        top: 20px;
+        font-size: 32px;
+        display: block;
+    }
+    
+    .card-counter .count-name {
+        position: absolute;
+        right: 35px;
+        top: 65px;
+        font-style: italic;
+        text-transform: capitalize;
+        opacity: 0.7;
+        display: block;
+    }
+    
+    .progress-bar-container {
+        height: 25px;
+        margin-bottom: 10px;
+    }
+    
+    .progress-bar-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <h1 class="mb-3 mb-md-0">Relatório de Turmas</h1>
+        
+        <div class="btn-group">
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'turmas:exportar_turmas' %}" class="btn btn-success">
+                <i class="fas fa-file-export"></i> Exportar CSV
+            </a>
+            <a href="{% url 'turmas:exportar_turmas' %}?formato=excel" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </a>
+        </div>
+    </div>
+    
+    <!-- Resumo Geral -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Resumo Geral</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card-counter primary">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span class="count-numbers">{{ total_turmas }}</span>
+                                <span class="count-name">Total de Turmas</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2 mb-3">
+                            <div class="card-counter success">
+                                <i class="fas fa-check-circle"></i>
+                                <span class="count-numbers">{{ turmas_ativas }}</span>
+                                <span class="count-name">Ativas</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2 mb-3">
+                            <div class="card-counter info">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span class="count-numbers">{{ turmas_planejadas }}</span>
+                                <span class="count-name">Planejadas</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2 mb-3">
+                            <div class="card-counter secondary">
+                                <i class="fas fa-flag-checkered"></i>
+                                <span class="count-numbers">{{ turmas_concluidas }}</span>
+                                <span class="count-name">Concluídas</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2 mb-3">
+                            <div class="card-counter danger">
+                                <i class="fas fa-ban"></i>
+                                <span class="count-numbers">{{ turmas_canceladas }}</span>
+                                <span class="count-name">Canceladas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estatísticas por Curso -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Estatísticas por Curso</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Curso</th>
+                                    <th>Total de Turmas</th>
+                                    <th>Turmas Ativas</th>
+                                    <th>Turmas Planejadas</th>
+                                    <th>Turmas Concluídas</th>
+                                    <th>Média de Alunos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for estatistica in estatisticas_cursos %}
+                                <tr>
+                                    <td>{{ estatistica.curso.nome }}</td>
+                                    <td>{{ estatistica.total_turmas }}</td>
+                                    <td>{{ estatistica.turmas_ativas }}</td>
+                                    <td>{{ estatistica.turmas_planejadas }}</td>
+                                    <td>{{ estatistica.turmas_concluidas }}</td>
+                                    <td>{{ estatistica.media_alunos }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">Nenhum dado disponível</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Turmas Populares e Instrutores -->
+    <div class="row">
+        <!-- Turmas com mais alunos -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Turmas com Mais Alunos</h5>
+                </div>
+                <div class="card-body">
+                    {% if turmas_populares %}
+                        {% for turma in turmas_populares %}
+                            <div class="mb-3">
+                                <div class="progress-bar-label">
+                                    <span><strong>{{ turma.nome }}</strong> ({{ turma.curso.nome }})</span>
+                                    <span>{{ turma.total_alunos }} alunos</span>
+                                </div>
+                                <div class="progress progress-bar-container">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ turma.total_alunos|div:turma.vagas|mul:100 }}%" 
+                                         aria-valuenow="{{ turma.total_alunos }}" aria-valuemin="0" 
+                                         aria-valuemax="{{ turma.vagas }}">
+                                        {{ turma.total_alunos }}/{{ turma.vagas }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-center">Nenhuma turma encontrada</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instrutores com mais turmas -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">Instrutores Mais Ativos</h5>
+                </div>
+                <div class="card-body">
+                    {% if estatisticas_instrutores %}
+                        {% for estatistica in estatisticas_instrutores %}
+                            <div class="mb-3">
+                                <div class="progress-bar-label">
+                                    <span><strong>{{ estatistica.instrutor.nome }}</strong></span>
+                                    <span>{{ estatistica.total_turmas }} turmas</span>
+                                </div>
+                                <div class="progress progress-bar-container">
+                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                         style="width: {{ estatistica.turmas_como_instrutor|div:estatistica.total_turmas|mul:100 }}%" 
+                                         aria-valuenow="{{ estatistica.turmas_como_instrutor }}" 
+                                         aria-valuemin="0" aria-valuemax="{{ estatistica.total_turmas }}">
+                                        {{ estatistica.turmas_como_instrutor }} como instrutor
+                                    </div>
+                                    <div class="progress-bar bg-info" role="progressbar" 
+                                         style="width: {{ estatistica.turmas_como_auxiliar|div:estatistica.total_turmas|mul:100 }}%" 
+                                         aria-valuenow="{{ estatistica.turmas_como_auxiliar }}" 
+                                         aria-valuemin="0" aria-valuemax="{{ estatistica.total_turmas }}">
+                                        {{ estatistica.turmas_como_auxiliar }} como auxiliar
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-center">Nenhum instrutor encontrado</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filtros personalizados para os cálculos nas barras de progresso
+    function div(a, b) {
+        return a / b;
+    }
+    
+    function mul(a, b) {
+        return a * b;
+    }
+</script>
+{% endblock %}

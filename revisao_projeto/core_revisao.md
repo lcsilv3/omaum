@@ -340,6 +340,8 @@ class ConfiguracaoSistemaForm(forms.ModelForm):
 ### Arquivo: core\views.py
 
 python
+# Remover o decorador require_http_methods e simplificar a função de logout
+
 """
 Core Views
 
@@ -396,7 +398,9 @@ def entrar(request):
                 adicionar_mensagem(
                     request, "sucesso", "Login realizado com sucesso!"
                 )
-                return redirect("core:pagina_inicial")
+                # Verificar se há um next na URL e redirecionar para lá
+                next_url = request.GET.get('next', '/')
+                return redirect(next_url)
             else:
                 adicionar_mensagem(
                     request, "erro", "Nome de usuário ou senha inválidos."
@@ -470,6 +474,7 @@ def atualizar_configuracao(request):
     )
 
 
+# Remover o decorador require_http_methods que estava causando o erro
 def sair(request):
     """Realiza o logout do usuário"""
     if request.user.is_authenticated:
@@ -501,24 +506,6 @@ def csrf_check(request):
 ### Arquivo: core\urls.py
 
 python
-"""
-Core URLs Configuration
-
-Este arquivo define as URLs para o aplicativo 'core' do projeto OMAUM.
-Localização: core/urls.py
-
-Uso:
-- Define os padrões de URL para as views do aplicativo core.
-- Utiliza o namespace 'core' para evitar conflitos de nomes com outros aplicativos.
-- É incluído no arquivo de URLs principal do projeto (omaum/urls.py).
-
-As URLs definidas aqui são responsáveis pelas funcionalidades centrais do sistema,
-como página inicial, login, logout, painel de controle, etc.
-
-Para incluir estas URLs no arquivo principal, use:
-path('', include('core.urls', namespace='core')),
-"""
-
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
@@ -532,7 +519,7 @@ urlpatterns = [
         auth_views.LoginView.as_view(template_name="registration/login.html"),
         name="entrar",
     ),
-    path("sair/", auth_views.LogoutView.as_view(next_page="/"), name="sair"),
+    path("sair/", views.sair, name="sair"),
     path("painel-controle/", views.painel_controle, name="painel_controle"),
     path(
         "atualizar-configuracao/",
@@ -545,57 +532,6 @@ urlpatterns = [
     ),  # Redireciona diretamente para a view
 ]
 
-
-
-
-### Arquivo: urls.py
-
-python
-from django.contrib import admin
-from django.urls import path, include
-from django.views.generic import RedirectView
-from django.conf import settings
-from django.conf.urls.static import static  # Adicione esta importação
-
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("", include("core.urls")),
-    path("alunos/", include("alunos.urls")),
-    path("atividades/", include("atividades.urls")),
-    path("cargos/", include("cargos.urls")),
-    path("cursos/", include("cursos.urls")),
-    path("frequencias/", include("frequencias.urls")),
-    path("iniciacoes/", include("iniciacoes.urls")),
-    path("presencas/", include("presencas.urls")),
-    path("punicoes/", include("punicoes.urls")),
-    path("relatorios/", include("relatorios.urls", namespace="relatorios")),
-    path("turmas/", include("turmas.urls")),
-]
-
-from django.contrib.auth import views as auth_views
-
-urlpatterns += [
-    path(
-        "accounts/login/",
-        auth_views.LoginView.as_view(template_name="registration/login.html"),
-        name="login",
-    ),
-    path(
-        "accounts/logout/",
-        auth_views.LogoutView.as_view(next_page="/"),
-        name="logout",
-    ),
-]
-
-# Adicione este bloco no final do arquivo
-if settings.DEBUG:
-    import debug_toolbar
-
-    urlpatterns += [
-        path("__debug__/", include(debug_toolbar.urls)),
-    ]
-    # Adicione esta linha para servir arquivos de mídia durante o desenvolvimento
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
 ## Arquivos models.py:

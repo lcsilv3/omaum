@@ -18,7 +18,7 @@
     {% endif %}
     
     <!-- Adicionar ID ao formulário para facilitar a seleção no JavaScript -->
-    <form method="post" enctype="multipart/form-data" id="form-aluno">
+    <form method="post" enctype="multipart/form-data" id="form-aluno" novalidate>
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
         
@@ -314,6 +314,27 @@
                 parentElement.appendChild(clearContainer);
             }
         }
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('form-aluno');
+        
+        form.addEventListener('submit', function(e) {
+            // Remove masks before submission
+            const cpfField = document.getElementById('id_cpf');
+            const cepField = document.getElementById('id_cep');
+            const celular1Field = document.getElementById('id_celular_primeiro_contato');
+            const celular2Field = document.getElementById('id_celular_segundo_contato');
+            
+            if (cpfField) cpfField.value = cpfField.value.replace(/\D/g, '');
+            if (cepField) cepField.value = cepField.value.replace(/\D/g, '');
+            if (celular1Field) celular1Field.value = celular1Field.value.replace(/\D/g, '');
+            if (celular2Field) celular2Field.value = celular2Field.value.replace(/\D/g, '');
+            
+            // Continue with form submission
+            return true;
+        });
     });
 </script>
 {% endblock %}

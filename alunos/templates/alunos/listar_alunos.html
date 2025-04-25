@@ -2,19 +2,113 @@
 
 {% block title %}Lista de Alunos{% endblock %}
 
+{% block extra_css %}
+<style>
+    .btn-group-responsive {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .btn-responsive {
+            width: 100%;
+            margin-bottom: 0.25rem;
+        }
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .table th, .table td {
+        white-space: nowrap;
+    }
+    
+    .aluno-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .aluno-avatar {
+        flex-shrink: 0;
+    }
+    
+    .aluno-nome {
+        font-weight: 500;
+    }
+    
+    .dropdown-menu-actions {
+        min-width: 8rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid mt-4">
     <!-- Cabeçalho com título e botões na mesma linha -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Lista de Alunos</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
-            <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-primary">Novo Aluno</a>
-            <a href="{% url 'alunos:exportar_alunos' %}" class="btn btn-success">Exportar CSV</a>
-            <a href="{% url 'alunos:importar_alunos' %}" class="btn btn-info">Importar CSV</a>
-            <a href="{% url 'alunos:relatorio_alunos' %}" class="btn btn-warning">Relatório</a>
-            <a href="{% url 'alunos:dashboard' %}" class="btn btn-dark">Dashboard</a>
-            <a href="{% url 'alunos:diagnostico_instrutores' %}" class="btn btn-info">Diagnóstico de Instrutores</a>
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <h1 class="mb-3 mb-md-0">Lista de Alunos</h1>
+        
+        <!-- Botões agrupados com dropdown em telas menores -->
+        <div class="btn-group-responsive">
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            
+            <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Aluno
+            </a>
+            
+            <!-- Dropdown para ações secundárias em telas menores -->
+            <div class="d-none d-md-block">
+                <a href="{% url 'alunos:exportar_alunos' %}" class="btn btn-success">
+                    <i class="fas fa-file-export"></i> Exportar CSV
+                </a>
+                
+                <a href="{% url 'alunos:importar_alunos' %}" class="btn btn-info">
+                    <i class="fas fa-file-import"></i> Importar CSV
+                </a>
+                
+                <a href="{% url 'alunos:relatorio_alunos' %}" class="btn btn-warning">
+                    <i class="fas fa-chart-bar"></i> Relatório
+                </a>
+                
+                <a href="{% url 'alunos:dashboard' %}" class="btn btn-dark">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </div>
+            
+            <!-- Dropdown para telas menores -->
+            <div class="dropdown d-md-none">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-ellipsis-h"></i> Mais ações
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-actions" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="{% url 'alunos:exportar_alunos' %}">
+                        <i class="fas fa-file-export"></i> Exportar CSV
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'alunos:importar_alunos' %}">
+                        <i class="fas fa-file-import"></i> Importar CSV
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'alunos:relatorio_alunos' %}">
+                        <i class="fas fa-chart-bar"></i> Relatório
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'alunos:dashboard' %}">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'alunos:diagnostico_instrutores' %}">
+                        <i class="fas fa-user-check"></i> Diagnóstico Instrutores
+                    </a></li>
+                </ul>
+            </div>
         </div>
     </div>
     
@@ -22,10 +116,15 @@
     <div class="card mb-4">
         <div class="card-header">
             <form method="get" class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome, CPF ou email..." value="{{ query }}">
+                <div class="col-md-6 col-lg-7">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" placeholder="Buscar por nome, CPF ou email..." value="{{ query }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 col-lg-3">
                     <select name="curso" class="form-select" title="Selecione um curso" aria-label="Selecione um curso">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
@@ -33,8 +132,10 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                <div class="col-md-2 col-lg-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
                 </div>
             </form>
         </div>
@@ -45,56 +146,79 @@
             </div>
             {% endif %}
             <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
+                <table class="table table-hover">
+                    <thead class="table-light">
                         <tr>
                             <th>Nome</th>
                             <th>CPF</th>
                             <th>Nº Iniciático</th>
                             <th>Email</th>
-                            <th>Situação</th>
-                            <th>Cursos</th>
-                            <th>Ações</th>
+                            <th class="text-center">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for aluno in alunos %}
                             <tr>
                                 <td>
-                                    <div class="d-flex align-items-center">
+                                    <div class="aluno-info">
                                         {% if aluno.foto %}
                                             <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                                 class="rounded-circle me-2" width="40" height="40" 
+                                                 class="rounded-circle aluno-avatar" width="40" height="40" 
                                                  style="object-fit: cover;">
                                         {% else %}
-                                            <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" 
+                                            <div class="rounded-circle bg-secondary aluno-avatar d-flex align-items-center justify-content-center" 
                                                  style="width: 40px; height: 40px; color: white;">
                                                 {{ aluno.nome|first|upper }}
                                             </div>
                                         {% endif %}
-                                        {{ aluno.nome }}
+                                        <span class="aluno-nome">{{ aluno.nome }}</span>
                                     </div>
                                 </td>
                                 <td>{{ aluno.cpf }}</td>
                                 <td>{{ aluno.numero_iniciatico|default:"N/A" }}</td>
                                 <td>{{ aluno.email }}</td>
-                                <td>{{ aluno.get_situacao_display }}</td>
-                                <td>
-                                    {% if aluno.cursos %}
-                                        <ul class="list-unstyled mb-0">
-                                            {% for curso in aluno.cursos %}
-                                                <li>{{ curso }}</li>
-                                            {% endfor %}
-                                        </ul>
-                                    {% else %}
-                                        <span class="text-muted">Nenhum curso</span>
-                                    {% endif %}
-                                </td>
                                 <td>
                                     {% if aluno.cpf %}
-                                        <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info">Detalhes</a>
-                                        <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-sm btn-warning">Editar</a>
-                                        <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-sm btn-danger">Excluir</a>
+                                        <!-- Botões de ação em telas grandes -->
+                                        <div class="d-none d-md-flex justify-content-center gap-1">
+                                            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-sm btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                        
+                                        <!-- Dropdown para ações em telas pequenas -->
+                                        <div class="d-md-none text-center">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" 
+                                                        id="dropdownMenuButton{{ aluno.cpf }}" data-bs-toggle="dropdown" 
+                                                        aria-expanded="false">
+                                                    Ações
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ aluno.cpf }}">
+                                                    <li>
+                                                        <a class="dropdown-item" href="{% url 'alunos:detalhar_aluno' aluno.cpf %}">
+                                                            <i class="fas fa-eye"></i> Detalhes
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="{% url 'alunos:editar_aluno' aluno.cpf %}">
+                                                            <i class="fas fa-edit"></i> Editar
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" href="{% url 'alunos:excluir_aluno' aluno.cpf %}">
+                                                            <i class="fas fa-trash"></i> Excluir
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
                                     {% else %}
                                         <span class="text-muted">CPF não disponível</span>
                                     {% endif %}
@@ -102,13 +226,17 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="7" class="text-center">
+                                <td colspan="5" class="text-center">
                                     <p class="my-3">Nenhum aluno cadastrado.</p>
                                 </td>
                             </tr>
                         {% endfor %}
-                    </tbody>                </table>            </div>        </div>        <div class="card-footer">
-            <p class="text-muted mb-0">Total: {{ page_obj.paginator.count|default:"0" }} aluno(s)</p>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <p class="text-muted mb-md-0">Total: {{ alunos.count|default:"0" }} aluno(s)</p>
             {% if page_obj.has_other_pages %}
                 <nav aria-label="Paginação">
                     <ul class="pagination justify-content-center mb-0">
@@ -146,6 +274,7 @@
                     </ul>
                 </nav>
             {% endif %}
-        </div>    </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

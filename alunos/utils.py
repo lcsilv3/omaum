@@ -38,3 +38,32 @@ def get_atribuicao_cargo_model():
     except (ImportError, AttributeError) as e:
         logger.error(f"Erro ao obter modelo AtribuicaoCargo: {e}")
         return None
+
+def verificar_elegibilidade_instrutor(aluno):
+    """
+    Verifica se um aluno é elegível para ser instrutor.
+    
+    Args:
+        aluno: Objeto Aluno a ser verificado
+        
+    Returns:
+        Tupla (elegivel, motivo) onde elegivel é um booleano e motivo é uma string
+    """
+    # Verificar se o aluno está ativo
+    if aluno.situacao != 'ATIVO':
+        return False, "Aluno não está ativo"
+    
+    # Verificar se o aluno tem número iniciático
+    if not aluno.numero_iniciatico:
+        return False, "Aluno não possui número iniciático"
+    
+    # Verificar se o aluno tem email (para contato)
+    if not aluno.email:
+        return False, "Aluno não possui email cadastrado"
+    
+    # Verificar se o aluno tem telefone (para contato)
+    if not aluno.celular_primeiro_contato:
+        return False, "Aluno não possui telefone cadastrado"
+    
+    # Se passou por todas as verificações, é elegível
+    return True, "Elegível para ser instrutor"

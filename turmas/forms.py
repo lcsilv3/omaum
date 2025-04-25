@@ -1,35 +1,42 @@
 from django import forms
-from .models import Turma
-from django.core.exceptions import ValidationError
-from django.utils import timezone
 from importlib import import_module
+from django.utils import timezone
+
+
+def get_turma_model():
+    """Obtém o modelo Turma dinamicamente para evitar importações circulares."""
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
 
 
 def get_aluno_model():
-    """Obtém o modelo Aluno dinamicamente."""
+    """Obtém o modelo Aluno dinamicamente para evitar importações circulares."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
 
 class TurmaForm(forms.ModelForm):
+    """
+    Formulário para criação e edição de turmas.
+    """
+
     class Meta:
-        model = Turma
+        model = get_turma_model()
         fields = [
-            'nome',
-            'curso',
-            'data_inicio',
-            'data_fim',
-            'status',
-            'local',
-            'descricao',
-            'instrutor',
-            'instrutor_auxiliar',
-            'auxiliar_instrucao',
-            'dias_semana',
-            'horario',
-            'vagas',
+            "nome",
+            "curso",
+            "vagas",
+            "status",
+            "data_inicio",
+            "data_fim",
+            "instrutor",
+            "instrutor_auxiliar",
+            "auxiliar_instrucao",
+            "dias_semana",
+            "local",
+            "horario",
+            "descricao",
         ]
-        
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
             "curso": forms.Select(attrs={"class": "form-select"}),
@@ -37,18 +44,19 @@ class TurmaForm(forms.ModelForm):
                 attrs={"class": "form-control", "min": "1"}
             ),
             "status": forms.Select(attrs={"class": "form-select"}),
+            # Melhoria nos widgets de data para garantir o formato correto
             "data_inicio": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),
             "data_fim": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),
-            "instrutor": forms.Select(attrs={"class": "form-control"}),
+            "instrutor": forms.Select(attrs={"class": "form-select"}),
             "instrutor_auxiliar": forms.Select(
-                attrs={"class": "form-control"}
+                attrs={"class": "form-select"}
             ),
             "auxiliar_instrucao": forms.Select(
-                attrs={"class": "form-control"}
+                attrs={"class": "form-select"}
             ),
             "dias_semana": forms.TextInput(attrs={"class": "form-control"}),
             "local": forms.TextInput(attrs={"class": "form-control"}),
@@ -57,105 +65,103 @@ class TurmaForm(forms.ModelForm):
                 attrs={"class": "form-control", "rows": 3}
             ),
         }
-        
+        labels = {
+            "nome": "Nome da Turma",
+            "curso": "Curso",
+            "vagas": "Número de Vagas",
+            "status": "Status",
+            "data_inicio": "Data de Início",
+            "data_fim": "Data de Término",
+            "instrutor": "Instrutor Principal",
+            "instrutor_auxiliar": "Instrutor Auxiliar",
+            "auxiliar_instrucao": "Auxiliar de Instrução",
+            "dias_semana": "Dias da Semana",
+            "local": "Local",
+            "horario": "Horário",
+            "descricao": "Descrição",
+        }
         help_texts = {
-            "vagas": "Número máximo de alunos que podem ser matriculados na turma.",
-            "data_inicio": "Data de início das aulas.",
-            "data_fim": "Data prevista para o término das aulas.",
-            "status": "Status atual da turma.",
+            "nome": "Digite um nome descritivo para a turma.",
+            "vagas": "Quantidade máxima de alunos na turma.",
+            "status": "Situação atual da turma.",
+            "data_inicio": "Data prevista para início do curso.",
+            "data_fim": "Data prevista para término do curso.",
+            "dias_semana": "Exemplo: 'Segunda, Quarta e Sexta' ou 'Terças e Quintas'.",
+            "horario": "Exemplo: '19h às 21h'.",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Tornar os campos de instrutores opcionais
-        self.fields["instrutor"].required = False
+        
+        # Filtrar apenas alunos ativos para os campos de instrutor
+        aluno_model = get_aluno_model()
+        alunos_ativos = aluno_model.objects.filter(situacao="ATIVO")
+        
+        self.fields["instrutor"].queryset = alunos_ativos
+        self.fields["instrutor_auxiliar"].queryset = alunos_ativos
+        self.fields["auxiliar_instrucao"].queryset = alunos_ativos
+        
+        # Tornar os campos de instrutor auxiliar e auxiliar de instrução opcionais
         self.fields["instrutor_auxiliar"].required = False
         self.fields["auxiliar_instrucao"].required = False
-        # Configurar os querysets para mostrar apenas alunos elegíveis
-        Aluno = get_aluno_model()
-        alunos_elegíveis = Aluno.objects.filter(situacao="A")
-        # Filtrar alunos que podem ser instrutores
-        alunos_instrutores = [
-            aluno for aluno in alunos_elegíveis if aluno.pode_ser_instrutor
-        ]
-        # Se não houver alunos instrutores, usar todos os alunos ativos
-        if not alunos_instrutores:
-            print(
-                "AVISO: Nenhum aluno elegível para ser instrutor. Usando todos os alunos ativos."
-            )
-            alunos_instrutores = list(alunos_elegíveis)
-        # Obter CPFs dos alunos instrutores
-        cpfs_instrutores = [a.cpf for a in alunos_instrutores]
-        # Debug
-        print(f"Alunos elegíveis para instrutores: {len(cpfs_instrutores)}")
-        # Configurar querysets
-        self.fields["instrutor"].queryset = Aluno.objects.filter(
-            cpf__in=cpfs_instrutores
-        )
-        self.fields["instrutor_auxiliar"].queryset = Aluno.objects.filter(
-            cpf__in=cpfs_instrutores
-        )
-        self.fields["auxiliar_instrucao"].queryset = Aluno.objects.filter(
-            cpf__in=cpfs_instrutores
-        )
+        
+        # Melhorias para garantir que as datas apareçam corretamente na edição
+        if self.instance and self.instance.pk:
+            if self.instance.data_inicio:
+                # Garantir que a data esteja no formato correto para o campo de entrada
+                self.initial['data_inicio'] = self.instance.data_inicio.strftime('%Y-%m-%d')
+            
+            if self.instance.data_fim:
+                # Garantir que a data esteja no formato correto para o campo de entrada
+                self.initial['data_fim'] = self.instance.data_fim.strftime('%Y-%m-%d')
 
     def clean(self):
+        """Validação adicional dos campos do formulário."""
         cleaned_data = super().clean()
         data_inicio = cleaned_data.get("data_inicio")
         data_fim = cleaned_data.get("data_fim")
-        # Validar que a data de início é anterior à data de fim
-        if data_inicio and data_fim and data_inicio > data_fim:
-            raise ValidationError(
-                "A data de início não pode ser posterior à data de fim."
+        
+        # Validar que a data de início seja hoje ou no futuro
+        if data_inicio and data_inicio < timezone.localdate():
+            self.add_error(
+                "data_inicio", 
+                "A data de início não pode ser anterior à data atual."
             )
-        # Removemos a validação que impedia datas no passado:
-        # if (not self.instance.pk and data_inicio and data_inicio < timezone.now().date()):
-        #     raise ValidationError("A data de início não pode ser no passado para novas turmas.")
-        # Verificar se os instrutores são diferentes entre si
+        
+        # Validar que a data de término seja depois da data de início
+        if data_inicio and data_fim and data_fim < data_inicio:
+            self.add_error(
+                "data_fim", 
+                "A data de término deve ser posterior à data de início."
+            )
+        
+        # Validar que o instrutor principal não seja também instrutor auxiliar ou auxiliar de instrução
         instrutor = cleaned_data.get("instrutor")
         instrutor_auxiliar = cleaned_data.get("instrutor_auxiliar")
         auxiliar_instrucao = cleaned_data.get("auxiliar_instrucao")
-        if (
-            instrutor
-            and instrutor_auxiliar
-            and instrutor == instrutor_auxiliar
-        ):
+        
+        if instrutor and instrutor_auxiliar and instrutor == instrutor_auxiliar:
             self.add_error(
-                "instrutor_auxiliar",
-                "O instrutor auxiliar deve ser diferente do instrutor principal.",
+                "instrutor_auxiliar", 
+                "O instrutor auxiliar não pode ser o mesmo que o instrutor principal."
             )
-        if (
-            instrutor
-            and auxiliar_instrucao
-            and instrutor == auxiliar_instrucao
-        ):
+        
+        if instrutor and auxiliar_instrucao and instrutor == auxiliar_instrucao:
             self.add_error(
-                "auxiliar_instrucao",
-                "O auxiliar de instrução deve ser diferente do instrutor principal.",
+                "auxiliar_instrucao", 
+                "O auxiliar de instrução não pode ser o mesmo que o instrutor principal."
             )
-        if (
-            instrutor_auxiliar
-            and auxiliar_instrucao
-            and instrutor_auxiliar == auxiliar_instrucao
-        ):
+        
+        # Validar que instrutor auxiliar e auxiliar de instrução não sejam a mesma pessoa
+        if instrutor_auxiliar and auxiliar_instrucao and instrutor_auxiliar == auxiliar_instrucao:
             self.add_error(
-                "auxiliar_instrucao",
-                "O auxiliar de instrução deve ser diferente do instrutor auxiliar.",
+                "auxiliar_instrucao", 
+                "O auxiliar de instrução não pode ser o mesmo que o instrutor auxiliar."
             )
+        
+        # Verificar se há vagas e se o número é positivo
+        vagas = cleaned_data.get("vagas")
+        if vagas is not None and vagas <= 0:
+            self.add_error("vagas", "O número de vagas deve ser maior que zero.")
+        
         return cleaned_data
-
-    def clean_nome(self):
-        nome = self.cleaned_data.get("nome")
-        if nome:
-            # Verificar se já existe uma turma com o mesmo nome (ignorando case)
-            instance_id = getattr(self.instance, "id", None)
-            turmas_existentes = Turma.objects.filter(nome__iexact=nome)
-            if instance_id:
-                turmas_existentes = turmas_existentes.exclude(id=instance_id)
-            if turmas_existentes.exists():
-                raise ValidationError(
-                    "Já existe uma turma com este nome. Por favor, escolha um nome diferente."
-                )
-            # Opcional: normalizar o nome (por exemplo, primeira letra maiúscula)
-            nome = nome.strip().capitalize()
-        return nome

@@ -1,3 +1,5 @@
+# Remover o decorador require_http_methods e simplificar a função de logout
+
 """
 Core Views
 
@@ -54,7 +56,9 @@ def entrar(request):
                 adicionar_mensagem(
                     request, "sucesso", "Login realizado com sucesso!"
                 )
-                return redirect("core:pagina_inicial")
+                # Verificar se há um next na URL e redirecionar para lá
+                next_url = request.GET.get('next', '/')
+                return redirect(next_url)
             else:
                 adicionar_mensagem(
                     request, "erro", "Nome de usuário ou senha inválidos."
@@ -128,6 +132,7 @@ def atualizar_configuracao(request):
     )
 
 
+# Remover o decorador require_http_methods que estava causando o erro
 def sair(request):
     """Realiza o logout do usuário"""
     if request.user.is_authenticated:

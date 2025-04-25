@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Detalhes da Turma: {{ turma.nome }}{% endblock %}
 
@@ -21,13 +22,15 @@
             {% endif %}
         </div>
     </div>
-
+    
     {% if tem_pendencia_instrutoria %}
     <div class="alert alert-danger text-center mb-4 blink">
         <h5 class="mb-0"><strong>Pendência na Instrutoria</strong></h5>
     </div>
-    {% endif %}    
-    <!-- Card de informações da turma com layout em colunas -->    <div class="card mb-4">
+    {% endif %}
+    
+    <!-- Card de informações da turma com layout em colunas -->
+    <div class="card mb-4 border-primary">
         <div class="card-header bg-primary text-white">
             <h5 class="card-title mb-0">Informações da Turma</h5>
         </div>
@@ -61,7 +64,11 @@
                     </div>
                     <div class="mb-3">
                         <h6 class="text-muted">Data de Término</h6>
-                        <p>{{ turma.data_fim|date:"d/m/Y" }}</p>
+                        <p>{{ turma.data_fim|date:"d/m/Y"|default:"Não definida" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">Local</h6>
+                        <p>{{ turma.local|default:"Não informado" }}</p>
                     </div>
                 </div>
                 
@@ -87,16 +94,28 @@
                             
                             <!-- Barra de progresso -->
                             <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-primary" role="progressbar" 
-                                     style="width: {% widthratio alunos_matriculados_count turma.vagas 100 %}%;" 
-                                     aria-valuenow="{{ alunos_matriculados_count }}" 
-                                     aria-valuemin="0" 
+                                <div class="progress-bar bg-primary" role="progressbar"
+                                     style="width: {% widthratio alunos_matriculados_count turma.vagas 100 %}%;"
+                                     aria-valuenow="{{ alunos_matriculados_count }}"
+                                     aria-valuemin="0"
                                      aria-valuemax="{{ turma.vagas }}">
                                 </div>
                             </div>
                             <small class="text-muted">{% widthratio alunos_matriculados_count turma.vagas 100 %}% ocupado</small>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Linha para Dias da Semana e Horário -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Dias da Semana</h6>
+                    <p>{{ turma.dias_semana|default:"Não informado" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">Horário</h6>
+                    <p>{{ turma.horario|default:"Não informado" }}</p>
                 </div>
             </div>
             
@@ -112,11 +131,12 @@
         </div>
     </div>
     
-    <!-- Card de instrutores - Alterar aqui -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
+    <!-- Card de instrutores -->
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white">
             <h5 class="card-title mb-0">Instrutoria</h5>
-        </div>        <div class="card-body">
+        </div>
+        <div class="card-body">
             <div class="row">
                 <!-- Instrutor Principal -->
                 <div class="col-md-4">
@@ -128,10 +148,10 @@
                             {% if turma.instrutor %}
                                 <div class="mb-3">
                                     {% if turma.instrutor.foto %}
-                                        <img src="{{ turma.instrutor.foto.url }}" alt="Foto de {{ turma.instrutor.nome }}" 
+                                        <img src="{{ turma.instrutor.foto.url }}" alt="Foto de {{ turma.instrutor.nome }}"
                                              class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
                                     {% else %}
-                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" 
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto"
                                              style="width: 100px; height: 100px; font-size: 36px;">
                                             {{ turma.instrutor.nome|first|upper }}
                                         </div>
@@ -162,10 +182,10 @@
                             {% if turma.instrutor_auxiliar %}
                                 <div class="mb-3">
                                     {% if turma.instrutor_auxiliar.foto %}
-                                        <img src="{{ turma.instrutor_auxiliar.foto.url }}" alt="Foto de {{ turma.instrutor_auxiliar.nome }}" 
+                                        <img src="{{ turma.instrutor_auxiliar.foto.url }}" alt="Foto de {{ turma.instrutor_auxiliar.nome }}"
                                              class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
                                     {% else %}
-                                        <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center mx-auto" 
+                                        <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center mx-auto"
                                              style="width: 100px; height: 100px; font-size: 36px;">
                                             {{ turma.instrutor_auxiliar.nome|first|upper }}
                                         </div>
@@ -186,7 +206,7 @@
                     </div>
                 </div>
                 
-                <!-- Auxiliar de Instrução (Adicionar esta coluna) -->
+                <!-- Auxiliar de Instrução -->
                 <div class="col-md-4">
                     <div class="card h-100">
                         <div class="card-header bg-light">
@@ -196,10 +216,10 @@
                             {% if turma.auxiliar_instrucao %}
                                 <div class="mb-3">
                                     {% if turma.auxiliar_instrucao.foto %}
-                                        <img src="{{ turma.auxiliar_instrucao.foto.url }}" alt="Foto de {{ turma.auxiliar_instrucao.nome }}" 
+                                        <img src="{{ turma.auxiliar_instrucao.foto.url }}" alt="Foto de {{ turma.auxiliar_instrucao.nome }}"
                                              class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
                                     {% else %}
-                                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto" 
+                                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto"
                                              style="width: 100px; height: 100px; font-size: 36px;">
                                             {{ turma.auxiliar_instrucao.nome|first|upper }}
                                         </div>
@@ -224,10 +244,12 @@
     </div>
     
     <!-- Card de alunos matriculados -->
-    <div class="card mb-4">
+    <div class="card mb-4 border-primary">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Alunos Matriculados</h5>
-            <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-primary">Matricular Aluno</a>
+            <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-light">
+                <i class="fas fa-user-plus"></i> Matricular Aluno
+            </a>
         </div>
         <div class="card-body">
             {% if matriculas %}
@@ -246,7 +268,7 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" 
+                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2"
                                              style="width: 32px; height: 32px; font-size: 14px;">
                                             {{ matricula.aluno.nome|first|upper }}
                                         </div>
@@ -259,7 +281,7 @@
                                     <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.cpf %}" class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i> Ver
                                     </a>
-                                    <a href="{% url 'turmas:cancelar_matricula' turma.id matricula.aluno.cpf %}" 
+                                    <a href="{% url 'turmas:cancelar_matricula' turma.id matricula.aluno.cpf %}"
                                        class="btn btn-sm btn-danger"
                                        onclick="return confirm('Tem certeza que deseja cancelar esta matrícula?');">
                                         <i class="fas fa-times"></i> Cancelar
@@ -293,35 +315,34 @@
     .bg-gradient-primary {
         background: linear-gradient(to right, #0d6efd, #0a58ca);
     }
-
     .bg-primary.bg-opacity-10 {
         background-color: rgba(13, 110, 253, 0.1) !important;
     }
-
     .bg-success.bg-opacity-10 {
         background-color: rgba(25, 135, 84, 0.1) !important;
     }
-
     .bg-info.bg-opacity-10 {
         background-color: rgba(13, 202, 240, 0.1) !important;
     }
-
     .rounded-circle {
         border-radius: 50% !important;
     }
-
     .progress {
         overflow: hidden;
         background-color: #e9ecef;
     }
-
     .card {
         transition: all 0.3s ease;
     }
-
     .card:hover {
         transform: translateY(-2px);
         box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+    }
+    .blink {
+        animation: blinker 1s linear infinite;
+    }
+    @keyframes blinker {
+        50% { opacity: 0.5; }
     }
 </style>
 {% endblock %}
@@ -331,18 +352,3 @@
     // Adicione aqui qualquer JavaScript específico para esta página
 </script>
 {% endblock %}
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">Horários</h5>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <p><strong>Dias da Semana:</strong> {{ turma.dias_semana|default:"Não informado" }}</p>
-            </div>
-            <div class="col-md-6">
-                <p><strong>Horário:</strong> {{ turma.horario|default:"Não informado" }}</p>
-            </div>
-        </div>
-    </div>
-</div>

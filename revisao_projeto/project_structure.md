@@ -6,6 +6,7 @@ omaum/
     .cspell.json
     .editorconfig
     .gitignore
+    .prettierignore
     .pylintrc
     collect_code.py
     collect_django_files.py
@@ -13,16 +14,12 @@ omaum/
     cspell.json
     Cursos.JPG
     db.sqlite3
-    Erros na edição de alunos.docx
-    Erros na edição de alunos.txt
     manage.py
     pyproject.toml
     README.md
     requirements-dev.txt
     requirements.txt
     script_revisao_projeto.py
-    settings.py
-    urls.py
     .git/
         COMMIT_EDITMSG
         config
@@ -68,8 +65,10 @@ omaum/
                 2c544a43ac4281fdbbe31ec7f239307d595e3e
                 93ef83bba80115ec99486485a37147194fe6ac
                 c01de6ffd0bed2f9179ac17f79ccc3f4bc1887
+                d72201f41a2c7a4b9f3027442563a452413905
                 f9682db08b6967dde949aa502a52288d49bc44
             01/
+                1c1ea86c8cff55f4fec4637974cbb646a1496e
                 332d896ab5887be78e125a8bf34170172a5c11
                 4058b0865263872b98f0f109b487074915ca08
                 488a4f7fcccffd0c64d9f6dee0d6979f9a266b
@@ -128,6 +127,7 @@ omaum/
                 a2485d42493a199be7e752f05c05fb3f6da5ad
             08/
                 36ee334bfd6bae44f7dc3ad68cbaa4d8b3e1c5
+                46a197325e11d24aef2a1d1625f2eca395ae7b
                 ddfec4c3a228b896355e69e921c44f1a0b96d5
             09/
                 007d2136f9b1a2cda21f81999efcb7cc6938e0
@@ -185,6 +185,7 @@ omaum/
                 8f955ce60ddae131f7ef0d25a1812b1230fc00
                 9499b5831f0cae2772fe3f66467b1e1d37ed75
                 9999bd7be2b0e0f7b2831f65a920a26246e636
+                9d0a683432913f36d1c77609eabc7fb963dcc6
                 c2bb3ecfb64acad2529465841a01986bcbb2af
                 cdcf8ae4ebcddd2d9fe1c52a889579e5cf5f4e
                 d13b8baa8b5832590eaf8dd38feb7388abff5f
@@ -210,6 +211,7 @@ omaum/
                 f6c2915a7cbd15ef262c3caed33aaabce08fa7
             12/
                 21a2ff87f889d85cd4d7fd60b306d6be98b250
+                2dcef115483869a7451d0201b7834f69a89675
                 4999208fa9e2766bce54e691001ba278776b77
                 516f9132a31e076d0f85a84cc1fe4a78701293
                 854af5909286cb2b1df0b71e57c54016e59b0b
@@ -302,6 +304,7 @@ omaum/
                 58d55737ef309c32cf60ee46ce0d4b6a9e63ba
                 6644033c09c14f9c6e07fa3ef7d3dabf7c9e67
                 841c44d3d546df398f00cc152e5bd9d82b4967
+                c225fa2031c8b467aea298bba9094f11f2ff77
                 dd2e5d3397dc880c4f0b1244b9b01579c15271
                 e00984919b96a49eefaf2e0235d80bd679c0e3
                 e5d37e16a045aa02fa7406031a5e75cdfbd0c1
@@ -496,6 +499,7 @@ omaum/
                 37bd693a32049caa68d1a30e5424bf8ce3d21a
                 63b26f0646ea97ab9ac8aaf5616ee26c06660a
                 92eefee98051fd9f5ce46dd5ef25d3c70ee2e5
+                9e12bd889ed0262d20a553c8aa1acf3f1f1505
                 b73b95b10243c650ea920df4a64af34bf75665
                 f71a548fa5810b9d0dda505fd6c8df55c20967
                 fd12bab5a9f67735e6c24cda5d3e0d38cf8411
@@ -589,6 +593,7 @@ omaum/
                 b673f60c82bd6e3e68c36c2a4820d66998443a
                 b8d90bc8a78a49a4a48a56aba6fd3a6f9164e8
                 be5281faeeb1d5e9103d2ce54dc731de63c103
+                cac337cce44556bc8b95f0cebb5b5d837d2081
                 fd2b37df56b175e967ca395a709846beb7b27d
                 ffcebffb05a84bd1a7588f1423f51497e50cef
             3d/
@@ -616,6 +621,7 @@ omaum/
                 f56a30bc33c1663bf59c13fbbb7ae6ebce1ee4
             40/
                 00cdeb0a0e6466c090ffce94e38c2611d8dcb2
+                1bb0875cc5502f8f76b827f474fbafd545d2f0
                 2b6ac139a7d1d659c02dfce7e3972b598b61d8
                 35927b6d8462977e1ee76e2f09ed572009e321
                 3b751b51cdcfa9603086ba8dde4b065050e1b4
@@ -739,6 +745,7 @@ omaum/
                 2972335f152a948deb79f6a7280aeb90ec3e2a
                 5229599956d5c4b05e358ce103eb7ee13dc754
                 5cc9912a6f82f0738803897c86d300e9cc908e
+                791caf20a446f175d6af556f57772de0ecb476
                 9f16c8af6a0e87b637a93c3af720d828e1cae2
                 afdbcc3288b1e257080072e7203c28db8551f4
                 c2a87bf68129be6d440c6fc38be522440ad951
@@ -801,6 +808,7 @@ omaum/
                 65f97584cac7b5662040fd768316a3e8c76360
                 7b8b5c90e0ca472dc24b469177499b7441a5fa
                 aeb013e3a2090679995902fb08b6b429d33496
+                b483a20d081df300ea0f6a497e24a651bf9a79
                 b6591cc00a58e8bea7b058b9bb0117245443ec
                 d2ffe16266b23dc7f53b038b3fc5930ae9ecc9
             58/
@@ -1080,6 +1088,7 @@ omaum/
                 7df0fbdf711c3a3e76db4e140e914e72249ce4
                 8d0da47aaf8d28364327741b7bd07699165afb
                 bb10123e80fcb85b1a6cdf88660bf2d52fb69a
+                faa44631fccbc4fddf6811d375783e1b07e147
                 fb4701d57ee39aa1811795fabc8c698e9b726a
             7c/
                 2d04aa97a9ca9ec256bb6703919ce1b2a26e24
@@ -1159,6 +1168,7 @@ omaum/
             85/
                 06d4ef60a2c1c4dd0705856dd0d874ba38c158
                 2d1614204e0b264b9f9abb878cc1e22409f3a7
+                32ef278f960af8d9450ad4cfc8cae78b842488
                 36528351413f5d5b599fbafcf98a185489e7f4
                 d71fbd690826c4e9a7f02e072067729b73154a
                 e5e76522d17ee92ae6ddaab45a544d4ec5e5b7
@@ -1178,6 +1188,7 @@ omaum/
                 270ffe2c95ed3b4ceaf010c83f82d977d33e7d
                 4633d380ba3e50beb8cbb17d6f44fa7512fd2b
                 9e4533f95f68b71ccbb183696e69ff60c3bb21
+                f13a89f514c2d53912a85a58f45f0ed781fadd
             89/
                 1264e89effafa8f02cad3a3b7b4fbc1a5a6647
                 39b3c799665a06e396764a455e88583f3e908d
@@ -1219,6 +1230,7 @@ omaum/
                 e019b66f4ab806f97647ca20115d0e7f32ca1f
                 e35c389375bde60fb8273e7287091cd5fc76ef
             8f/
+                06344d099f0bc99318857e3fe940a9e47f161e
                 06a9be06b9d4404d86acca3c32d06519cb846f
                 2aa79b3185befd068716c819d9ce4db920d422
                 4bba41e83668ed37cf18fc5ebc68e75bdcc0e8
@@ -1228,8 +1240,10 @@ omaum/
                 dc0b0c704781bddb0b74029df4e703aea448c7
                 e52653e2f5a39fb238812bf9f1653aac44c522
                 e71ab660d3ab1ee0df7edce1da55e0a4aeefdf
+                eb7c8ae7aa317144dfe68ac9c9aef155d1b223
             90/
                 05ab93f754bcceddcff75a171cfef86188c632
+                0cab0c4793eca80e9cf630e0550336afd35b2a
                 0e5201d24facf477592dfc92789545f6e20812
                 71a1e8b85e989828155f9e1a5f7441632c4432
                 f1f880fa5030b8a44486e268f2e91e9a580193
@@ -1368,6 +1382,7 @@ omaum/
                 03a454226ef9117eddd6c6d7c27aa7adde8f37
                 189480842f203fcd06e4a41e2c421c161bee0c
                 3e485bc9519c867a5bd2401602ca37ba14ee16
+                5993b1df479ffb8ed56c7993ebf818d28efc05
                 7f79c10dfb884ca6a95a928c41e0c70af9e156
                 a7bcce3fe3255c81bb8fb8bece5fe6b9befdf9
             a3/
@@ -1446,6 +1461,7 @@ omaum/
                 7cb4b4ef4d975c1db189ee19cc2381a7911bbf
                 8bee53355054bfb71622b5bf46593746e44a02
                 98536baa8a9073b698fd3e9f3ef8c3c534a4de
+                a00c3c78a216da1b1cc6a67be7487dc3b89395
                 c8ea68ea14fd92c7405f9f8c0d06f50cb476cd
             ae/
                 85e309998fae38e24e62dd486908c0e0997dd6
@@ -1482,6 +1498,7 @@ omaum/
             b4/
                 280830fe1cd9b948466f26fa3d81716a4bfc63
                 785d16df25e696f5185c4b4ba8fe5cc73e8422
+                a9756a9b7befe70e45508356a17c3ec67ce24b
                 cee5e8ad4a28bf4a61a48907b6b45c3a92e539
             b5/
                 0e40fa76b11ebf1f6f76c3b12dd29d90d020a5
@@ -1510,6 +1527,7 @@ omaum/
                 9e188c930a180fd4e414e92bf62d2da267a805
                 de5db974cd9623f030ea8187704cf1fa6e1214
                 ed0e964b06898983435fbb24c9004b41e725ac
+                f2c803f138bb03605fe308cb649605e76c447a
             b8/
                 3551b159a6b884584019a4e68236dde33022dd
                 60edae18a8fc0fb4698e488125649cd3bda1b3
@@ -1828,6 +1846,7 @@ omaum/
                 e6ac0889a851644e4e3c5c176a325e78493864
             e0/
                 31e4d8e036e55a1514bab87c5a13f474374a4b
+                61ec97f1f83e82399a6a47b5b7756fe7edf6ab
                 c1c8c932146b52a4944ef5a1c15e1afe4f30b1
                 c759d4cddfae397918903996c3dfbc96a97a83
                 ded9ca11fcaae59ca58dff774c481c2b61d78a
@@ -1851,6 +1870,7 @@ omaum/
                 669f97e936d415734e9e01196b72f6aca0b7ff
                 6fe19267d08787cafeca802de835004692b235
                 70173c71632f2a933362377bd8263656f1eae5
+                7917eeb3fbd6dff0c5f23be4686345b830aad5
                 c5e29423b846224b4f07ba31cf77d50579ee3e
                 c9d8c92935a2974c63cb5d908be8c2f5eb7c4f
                 f409079d3eef8c8774d9efd975382df14ea2e0
@@ -1873,6 +1893,7 @@ omaum/
             e5/
                 1d8ed36bf8d5e134263015d46a631257c8b6f6
                 562ff02e9bda08c76e8998b010582a1724c91a
+                6831a4faedc996c3f90ce36757afe93f799fe3
                 8944b3f2ddb4d8b56016979a497a55caadc99c
             e6/
                 0ccb0b511b3418d6cef2cd79da3d70a783b7a6
@@ -1913,6 +1934,7 @@ omaum/
                 fe568a8f64c83002454357daa68f758030a1cf
             eb/
                 6af51ce4c87d56fc5a89ee0bab08f40900d9f4
+                7588e6f6f0b9f011549fe00538cf1d79661ea0
                 8a476c8b78547c9d745d6bb42f1a42e8619341
                 af2e48a9b4a83c0c3a62c9f66ca2b6463dedca
                 df240bb1ef8966eb1cf7f7fcb16954ea26d148
@@ -1951,6 +1973,7 @@ omaum/
                 2b2772fb97878e5a289a9bb284661f5a923ca5
                 57c3fdbde9e56d4369e430daf601721c8b5759
                 9c765ac971765c2f01fb41c1e3c70126c9e1a1
+                aaca9053ebeaeb3fb733abb95037976b05586d
                 f2c20514ceecbf7e0d16818debbe4b9ee9017b
             f0/
                 0290a1a01f49507a10cba65e65de8a179f963d
@@ -2013,6 +2036,7 @@ omaum/
                 c97a561dadfd3af0a2fd8314fda57ea6b878b4
                 f9d19287f3ad38cfe0709970301c3c915916af
             f7/
+                3782f8b93caaf82c0094066e0242e4c4a20218
                 4fc26f3d71aab3db7280a50a7daec0c4ac3787
                 8408f6d785c8ed6e341d40eb4f3d83a48bfdf7
                 aa35cc1414ba4c08558f8d942b7ef5c6b842aa
@@ -2020,6 +2044,7 @@ omaum/
             f8/
                 27ab75e5aad9f666736bd0073852b2626a54db
                 3168c1253ded043e5579939e4d8750eea528e2
+                94b3c181296d9570e50caec8b504af754939a2
                 9803955bb65fd9dab704a61dfd27526e7d22a4
                 db1bd0430f02b03095122f60cdbdafddfaf454
                 dce93172f82f593653886bd2e0fa4006905cc6
@@ -2050,6 +2075,7 @@ omaum/
                 eeb08fbeef40f9d24138344f288c015dae3b6d
                 f4811ee8c634f52d404ed01e23d2b22493c4bc
             fc/
+                0c9453082bca8ba42b1a5618b7a3d42962ef1c
                 0f68fd3af23fe05ae61fac330c70b7ad4bd37a
                 756ce026aec3365c1cdf9e1a97bf97ea638557
                 a4ff260a6890d6c783205dad9ddd34f73ba78e
@@ -2385,8 +2411,11 @@ omaum/
     media/
         alunos/
             fotos/
+                1000231581.jpg
                 84284d4a-a157-42e6-98cf-72549685a283-1_all_7936.jpg
+                aline.jpeg
                 Foto_rosto1_Luis_Carlos_da_Silva.jpg
+                Foto_rosto1_Luis_Carlos_da_Silva_DO5yGrs.jpg
                 Foto_rosto_Luis_Carlos_da_Silva.jpg
     migrations_backup/
         alunos/
@@ -2560,7 +2589,6 @@ omaum/
         punicoes_revisao.md
         relatorios_revisao.md
         root_files_revisao.md
-        root_files_revisao.md.bak
         templates_revisao.md
         template_dirs_check.md
         turmas_revisao.md
@@ -2580,22 +2608,34 @@ omaum/
         verificar_configs.py
         verificar_views.py
     static/
-        favicon.ico
         css/
             accessibility_fixes.css
             alunos.css
             extra_styles.css
             Piscar.css
-            style.css
+            styles.css
+            turmas.css
+            components/
+                dias-semana.css
+        img/
+            favicon.ico
+            logo.png
         js/
             aluno-search.js
             csrf_refresh.js
-            instrutor_search.js
+            inicializar_select2.js
             alunos/
                 mascaras.js
+            components/
+                dias-semana.js
+            modules/
+                dias-semana.js
+                instrutor-search.js
             turmas/
-                instrutor_search.js
+                form.js
+                form_fix.js
     templates/
+        base.html
         includes/
             form_errors.html
             form_field.html
@@ -2654,6 +2694,7 @@ omaum/
                 cancelar_matricula.html
                 confirmar_cancelamento_matricula.html
                 criar_turma.html
+                dashboard.html
                 detalhar_turma.html
                 editar_turma.html
                 excluir_turma.html
@@ -2661,7 +2702,11 @@ omaum/
                 listar_alunos_matriculados.html
                 listar_turmas.html
                 matricular_aluno.html
+                relatorio_turmas.html
                 turma_form.html
+        templatetags/
+            turmas_extras.py
+            __init__.py
         tests/
             test_models.py
             test_views.py

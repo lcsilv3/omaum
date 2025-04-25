@@ -6,51 +6,48 @@
 ### Arquivo: omaum\urls.py
 
 python
+"""
+Configuração de URLs do projeto OMAUM.
+
+A lista `urlpatterns` roteia URLs para views. Para mais informações, consulte:
+    https://docs.djangoproject.com/en/5.1/topics/http/urls/
+"""
+
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path(
-        "", include("core.urls")
-    ),  # Inclui as URLs do core, incluindo a p√°gina inicial
-    path("alunos/", include("alunos.urls")),
-    path("atividades/", include("atividades.urls")),
-    path("cargos/", include("cargos.urls")),
-    path("cursos/", include("cursos.urls")),
-    path("frequencias/", include("frequencias.urls")),
-    path("iniciacoes/", include("iniciacoes.urls")),
-    path("presencas/", include("presencas.urls")),
-    path("punicoes/", include("punicoes.urls")),
+    path("", include("core.urls", namespace="core")),
+    path("alunos/", include("alunos.urls", namespace="alunos")),
+    path("atividades/", include("atividades.urls", namespace="atividades")),
+    path("cargos/", include("cargos.urls", namespace="cargos")),
+    path("cursos/", include("cursos.urls", namespace="cursos")),
+    path("frequencias/", include("frequencias.urls", namespace="frequencias")),
+    path("iniciacoes/", include("iniciacoes.urls", namespace="iniciacoes")),
+    path("matriculas/", include("matriculas.urls", namespace="matriculas")),
+    path("notas/", include("notas.urls", namespace="notas")),
+    path("pagamentos/", include("pagamentos.urls", namespace="pagamentos")),
+    path("presencas/", include("presencas.urls", namespace="presencas")),
+    path("punicoes/", include("punicoes.urls", namespace="punicoes")),
     path("relatorios/", include("relatorios.urls", namespace="relatorios")),
-    path("turmas/", include("turmas.urls")),
+    path("turmas/", include("turmas.urls", namespace="turmas")),
+    # URLs de autenticação do Django
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
 
-from django.contrib.auth import views as auth_views
-
-urlpatterns += [
-    path(
-        "accounts/login/",
-        auth_views.LoginView.as_view(template_name="registration/login.html"),
-        name="login",
-    ),
-    path(
-        "accounts/logout/",
-        auth_views.LogoutView.as_view(next_page="/"),
-        name="logout",
-    ),
-]
-
-# Adicione no final do arquivo
+# Configurações para ambiente de desenvolvimento
 if settings.DEBUG:
+    # Adicionar URLs do Django Debug Toolbar
     import debug_toolbar
     urlpatterns += [
         path("__debug__/", include(debug_toolbar.urls)),
     ]
+    # Servir arquivos de mídia em desenvolvimento
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 
 
 ## Arquivos de Template:
@@ -186,142 +183,267 @@ html
 ### Arquivo: omaum\templates\base.html
 
 html
+<!DOCTYPE html>
 {% load static %}
-{% comment %}
-Este é o template base para o projeto OMAUM.
-Localização: omaum/templates/base.html
-
-Uso:
-Este template serve como base para todas as outras páginas do projeto.
-Ele contém a estrutura HTML comum, incluindo cabeçalho, rodapé, e blocos
-que podem ser sobrescritos pelos templates filhos.
-
-Para usar este template em outras páginas, comece o template filho com:
-{% extends "base.html" %}
-
-E então defina os blocos necessários, como título e conteúdo:
-{% block title %}Título da Página{% endblock %}
-{% block content %}
-    <!-- Conteúdo específico da página aqui -->
-{% endblock %}
-{% endcomment %}<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema OMAUM{% endblock %}</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- CSS Personalizado -->
-    <link rel="stylesheet" href="{% static 'css/extra_styles.css' %}">
-    <link rel="stylesheet" href="{% static 'css/accessibility_fixes.css' %}">
-    <link rel="stylesheet" href="{% static 'css/alunos.css' %}">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{% block title %}OMAUM - Sistema de Gestão de Iniciados{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome 5 -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    
+    <!-- Select2 CSS com tema Bootstrap 4 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+    
+    <!-- CSS Global do Projeto -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    
+    <!-- CSS de componentes globais -->
+    <link rel="stylesheet" href="{% static 'css/components/dias-semana.css' %}">
+    
+    <!-- CSS específico da página -->
+    {% block extra_css %}{% endblock %}
+    
+    <!-- jQuery (obrigatório para Bootstrap JS, Select2 e jQuery Mask) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Pré-carregamento de scripts essenciais -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js" defer></script>
+    
+    <!-- Scripts adicionais da página no head -->
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <!-- Cabeçalho -->
-    <header class="bg-dark text-white p-3">
-        <div class="container">
-            <nav class="navbar navbar-expand-lg navbar-dark">
-                <a class="navbar-brand" href="{% url 'core:pagina_inicial' %}">OMAUM</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Menu de navegação">
+    <!-- Cabeçalho/Barra de Navegação -->
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="{% url 'core:pagina_inicial' %}">
+                    <img src="{% static 'img/logo.png' %}" alt="OMAUM Logo" height="40">
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+                
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'pagina_inicial' %}active{% endif %}" 
+                               href="{% url 'core:pagina_inicial' %}">
+                                <i class="fas fa-home"></i> Início
+                            </a>
+                        </li>
+                        
                         {% if user.is_authenticated %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'alunos:listar_alunos' %}">Alunos</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'cursos:listar_cursos' %}">Cursos</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'atividades:listar_atividades_academicas' %}">Atividades Acadêmicas</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'atividades:listar_atividades_ritualisticas' %}">Atividades Ritualísticas</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'turmas:listar_turmas' %}">Turmas</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'iniciacoes:listar_iniciacoes' %}">Iniciações</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'cargos:listar_cargos' %}">Cargos</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'frequencias:listar_frequencias' %}">Frequências</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'presencas:listar_presencas' %}">Presenças</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'punicoes:listar_punicoes' %}">Punições</a></li>
-                            {% if user.is_staff %}
-                                <li class="nav-item"><a class="nav-link" href="{% url 'core:painel_controle' %}">Painel de Controle</a></li>
-                            {% endif %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'alunos' %}active{% endif %}" 
+                                   href="{% url 'alunos:listar_alunos' %}">
+                                    <i class="fas fa-user-graduate"></i> Alunos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'cursos' %}active{% endif %}" 
+                                   href="{% url 'cursos:listar_cursos' %}">
+                                    <i class="fas fa-book"></i> Cursos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'turmas' %}active{% endif %}" 
+                                   href="{% url 'turmas:listar_turmas' %}">
+                                    <i class="fas fa-users"></i> Turmas
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'matriculas' %}active{% endif %}" 
+                                   href="{% url 'matriculas:listar_matriculas' %}">
+                                    <i class="fas fa-clipboard-list"></i> Matrículas
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAtividades" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                   <i class="fas fa-calendar-alt"></i> Atividades
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownAtividades">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'atividades:listar_atividades_academicas' %}">
+                                            <i class="fas fa-school"></i> Acadêmicas
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'atividades:listar_atividades_ritualisticas' %}">
+                                            <i class="fas fa-pray"></i> Ritualísticas
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'frequencias' %}active{% endif %}" 
+                                   href="{% url 'frequencias:listar_frequencias' %}">
+                                    <i class="fas fa-check-square"></i> Frequências
+                                </a>
+                            </li>
                         {% endif %}
                     </ul>
-                    <div class="navbar-nav">
+                    
+                    <ul class="navbar-nav">
                         {% if user.is_authenticated %}
-                            <span class="nav-item nav-link">Olá, {{ user.username }}</span>
-                            <a class="nav-link" href="{% url 'core:sair' %}">Sair</a>
+                            {% if user.is_staff %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'core:painel_controle' %}">
+                                        <i class="fas fa-cog"></i> Painel de Controle
+                                    </a>
+                                </li>
+                            {% endif %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                   <i class="fas fa-user-circle"></i> {{ user.username }}
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="#">Meu Perfil</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" action="{% url 'core:sair' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-sign-out-alt"></i> Sair
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
                         {% else %}
-                            <a class="nav-link" href="{% url 'core:entrar' %}">Entrar</a>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'core:entrar' %}">
+                                    <i class="fas fa-sign-in-alt"></i> Entrar
+                                </a>
+                            </li>
                         {% endif %}
-                    </div>
+                    </ul>
                 </div>
-            </nav>
-        </div>
-    </header>
-
-    <!-- Mensagens -->
-    <div class="container mt-3">
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+        </nav>
+    </header>
+    
+    <!-- Mensagens do sistema (flash messages) -->
+    <div class="message-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                </div>
             {% endfor %}
-        </div>
         {% endif %}
     </div>
-
-    <!-- Conteúdo Principal -->
-    <main class="container py-4">
+    
+    <!-- Conteúdo principal -->
+    <main id="main-content" class="py-4">
         {% block content %}{% endblock %}
     </main>
-
+    
     <!-- Rodapé -->
-    <footer class="bg-dark text-white p-3 mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <p>© 2025 OMAUM - Todos os direitos reservados</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p>Versão 1.0</p>
-                </div>
-            </div>
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">© {% now "Y" %} OMAUM - Sistema de Gestão de Iniciados</span>
         </div>
     </footer>
-
-    <!-- JavaScript Bootstrap -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- jQuery e jQuery Mask -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-    <!-- Select2 para melhorar campos de seleção -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- JavaScript Personalizado -->
-    <script src="{% static 'js/alunos/mascaras.js' %}"></script>
-    <script src="{% static 'js/csrf_refresh.js' %}"></script>
-    <!-- Inicialização do Select2 -->
+    
+    <!-- Scripts de componentes globais -->
+    <script src="{% static 'js/modules/dias-semana.js' %}"></script>
+    
+    <!-- Scripts específicos da página -->
+    {% block extra_js %}{% endblock %}
+    
+    <!-- Script global do sistema -->
     <script>
-        $(document).ready(function() {
-            // Inicializar Select2 em todos os selects com a classe form-select
-            $('.form-select').select2({
-                theme: 'bootstrap4',
-                width: '100%'
+        // Inicialização global do site
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar tooltips do Bootstrap
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
             });
             
-            // Inicializar tooltips do Bootstrap
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
+            // Inicializar popovers do Bootstrap
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
             });
+            
+            // Verificação CSRF para AJAX
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
+            // Configuração global do AJAX para incluir o token CSRF
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                    }
+                }
+            });
+            
+            // Verificação periódica do token CSRF para sessões longas
+            setInterval(function() {
+                $.get("{% url 'core:csrf_check' %}");
+            }, 3600000); // A cada hora
+            
+            // Aplicar máscaras globais
+            if (typeof $.fn.mask === 'function') {
+                $('.cpf-mask').mask('000.000.000-00');
+                $('.cep-mask').mask('00000-000');
+                $('.phone-mask').mask('(00) 0000-00009');
+                $('.phone-mask').blur(function(event) {
+                    if($(this).val().length == 15){
+                        $('.phone-mask').mask('(00) 00000-0009');
+                    } else {
+                        $('.phone-mask').mask('(00) 0000-00009');
+                    }
+                });
+                $('.date-mask').mask('00/00/0000');
+                $('.time-mask').mask('00:00 às 00:00');
+            }
+            
+            // Inicialização global do Select2
+            if (typeof $.fn.select2 === 'function') {
+                $('.select2').select2({
+                    theme: 'bootstrap4',
+                    width: '100%'
+                });
+            }
         });
     </script>
-    {% block extra_js %}{% endblock %}
+    <script src="{% static 'js/inicializar_select2.js' %}"></script>
 </body>
 </html>
+
 
 
 
@@ -360,7 +482,7 @@ html
 {% block title %}OMAUM - Página Inicial{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
 <div class="container mt-4">
     <div class="jumbotron">
         <h1 class="display-4">Sistema de Gestão de Pessoal</h1>

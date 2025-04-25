@@ -80,78 +80,52 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
         logger.error(f"Erro ao confirmar remoção de instrutoria: {str(e)}")
         return redirect("alunos:editar_aluno", cpf=aluno.cpf)
 
+from importlib import import_module
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+# Importar a função de verificação de elegibilidade
+from alunos.utils import verificar_elegibilidade_instrutor
+
 @login_required
 def diagnostico_instrutores(request):
-    """
-    Página de diagnóstico para depurar problemas com a seleção de instrutores.
-    Mostra informações detalhadas sobre alunos e sua elegibilidade para serem instrutores.
-    """
-    try:
-        Aluno = get_aluno_model()
-        # Buscar todos os alunos ativos
-        alunos_ativos = Aluno.objects.filter(situacao="ATIVO")
-        
-        # Coletar informações de diagnóstico para cada aluno
-        diagnostico = []
-        for aluno in alunos_ativos:
-            info = {
-                "cpf": aluno.cpf,
-                "nome": aluno.nome,
-                "numero_iniciatico": aluno.numero_iniciatico or "N/A",
-                "situacao": aluno.get_situacao_display(),
-                "tem_metodo": hasattr(aluno, 'pode_ser_instrutor'),
-            }
-            
-            # Verificar se o método pode_ser_instrutor existe e executá-lo
-            if info["tem_metodo"]:
-                try:
-                    info["elegivel"] = aluno.pode_ser_instrutor
-                    
-                    # Se não for elegível, tentar determinar o motivo
-                    if not info["elegivel"]:
-                        # Verificar matrículas em cursos pré-iniciáticos
-                        from importlib import import_module
-                        try:
-                            matriculas_module = import_module("matriculas.models")
-                            Matricula = getattr(matriculas_module, "Matricula")
-                            
-                            matriculas_pre_iniciatico = Matricula.objects.filter(
-                                aluno=aluno, turma__curso__nome__icontains="Pré-iniciático"
-                            )
-                            
-                            if matriculas_pre_iniciatico.exists():
-                                cursos = [m.turma.curso.nome for m in matriculas_pre_iniciatico]
-                                info["motivo_inelegibilidade"] = f"Matriculado em cursos pré-iniciáticos: {', '.join(cursos)}"
-                            else:
-                                info["motivo_inelegibilidade"] = "Não atende aos requisitos (motivo desconhecido)"
-                        except Exception as e:
-                            info["motivo_inelegibilidade"] = f"Erro ao verificar matrículas: {str(e)}"
-                except Exception as e:
-                    info["erro"] = str(e)
-            
-            diagnostico.append(info)
-        
-        return render(
-            request,
-            "alunos/diagnostico_instrutores.html",
-            {
-                "diagnostico": diagnostico,
-                "total_alunos": len(alunos_ativos),
-                "total_elegiveis": sum(1 for info in diagnostico if info.get("elegivel", False)),
-            },
-        )
-    except Exception as e:
-        import traceback
-        error_msg = str(e)
-        stack_trace = traceback.format_exc()
-        logger.error(f"Erro na página de diagnóstico: {error_msg}")
-        logger.error(f"Traceback: {stack_trace}")
-        
-        return render(
-            request,
-            "alunos/erro.html",
-            {
-                "erro": error_msg,
-                "traceback": stack_trace,
-            },
-        )
+    """Exibe um diagnóstico de elegibilidade de todos os alunos ativos para serem instrutores."""
+    # Importar o modelo Aluno dinamicamente para evitar importações circulares
+    alunos_module = import_module('alunos.models')
+    Aluno = alunos_module.Aluno
+    
+    # Obter todos os alunos ativos
+    alunos_ativos = Aluno.objects.filter(situacao='ATIVO')
+    
+    # Verificar elegibilidade de cada aluno
+    alunos_diagnostico = []
+    alunos_elegiveis = 0
+    
+    for aluno in alunos_ativos:
+        elegivel, motivo = verificar_elegibilidade_instrutor(aluno)
+        alunos_diagnostico.append({
+            'aluno': aluno,
+            'elegivel': elegivel,
+            'motivo': motivo
+        })
+        if elegivel:
+            alunos_elegiveis += 1
+    
+    # Calcular total de alunos inelegíveis
+    total_alunos = len(alunos_ativos)
+    alunos_inelegiveis = total_alunos - alunos_elegiveis
+    
+    # Calcular porcentagens
+    porcentagem_elegiveis = (alunos_elegiveis / total_alunos * 100) if total_alunos > 0 else 0
+    porcentagem_inelegiveis = (alunos_inelegiveis / total_alunos * 100) if total_alunos > 0 else 0
+    
+    context = {
+        'alunos_diagnostico': alunos_diagnostico,
+        'total_alunos': total_alunos,
+        'alunos_elegiveis': alunos_elegiveis,
+        'alunos_inelegiveis': alunos_inelegiveis,
+        'porcentagem_elegiveis': round(porcentagem_elegiveis, 1),
+        'porcentagem_inelegiveis': round(porcentagem_inelegiveis, 1),
+    }
+    
+    return render(request, 'alunos/diagnostico_instrutores.html', context)

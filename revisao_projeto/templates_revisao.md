@@ -3,6 +3,13 @@
 ## Arquivos de Template:
 
 
+### Arquivo: templates\base.html
+
+html
+
+
+
+
 ### Arquivo: templates\includes\form_errors.html
 
 html

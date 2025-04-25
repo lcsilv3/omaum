@@ -7,37 +7,44 @@
 
 python
 from django import forms
-from .models import Turma
-from django.core.exceptions import ValidationError
-from django.utils import timezone
 from importlib import import_module
+from django.utils import timezone
+
+
+def get_turma_model():
+    """Obtém o modelo Turma dinamicamente para evitar importações circulares."""
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
 
 
 def get_aluno_model():
-    """Obtém o modelo Aluno dinamicamente."""
+    """Obtém o modelo Aluno dinamicamente para evitar importações circulares."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
 
 class TurmaForm(forms.ModelForm):
+    """
+    Formulário para criação e edição de turmas.
+    """
+
     class Meta:
-        model = Turma
+        model = get_turma_model()
         fields = [
-            'nome',
-            'curso',
-            'data_inicio',
-            'data_fim',
-            'status',
-            'local',
-            'descricao',
-            'instrutor',
-            'instrutor_auxiliar',
-            'auxiliar_instrucao',
-            'dias_semana',
-            'horario',
-            'vagas',
+            "nome",
+            "curso",
+            "vagas",
+            "status",
+            "data_inicio",
+            "data_fim",
+            "instrutor",
+            "instrutor_auxiliar",
+            "auxiliar_instrucao",
+            "dias_semana",
+            "local",
+            "horario",
+            "descricao",
         ]
-        
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
             "curso": forms.Select(attrs={"class": "form-select"}),
@@ -45,18 +52,19 @@ class TurmaForm(forms.ModelForm):
                 attrs={"class": "form-control", "min": "1"}
             ),
             "status": forms.Select(attrs={"class": "form-select"}),
+            # Melhoria nos widgets de data para garantir o formato correto
             "data_inicio": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),
             "data_fim": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),
-            "instrutor": forms.Select(attrs={"class": "form-control"}),
+            "instrutor": forms.Select(attrs={"class": "form-select"}),
             "instrutor_auxiliar": forms.Select(
-                attrs={"class": "form-control"}
+                attrs={"class": "form-select"}
             ),
             "auxiliar_instrucao": forms.Select(
-                attrs={"class": "form-control"}
+                attrs={"class": "form-select"}
             ),
             "dias_semana": forms.TextInput(attrs={"class": "form-control"}),
             "local": forms.TextInput(attrs={"class": "form-control"}),
@@ -65,108 +73,107 @@ class TurmaForm(forms.ModelForm):
                 attrs={"class": "form-control", "rows": 3}
             ),
         }
-        
+        labels = {
+            "nome": "Nome da Turma",
+            "curso": "Curso",
+            "vagas": "Número de Vagas",
+            "status": "Status",
+            "data_inicio": "Data de Início",
+            "data_fim": "Data de Término",
+            "instrutor": "Instrutor Principal",
+            "instrutor_auxiliar": "Instrutor Auxiliar",
+            "auxiliar_instrucao": "Auxiliar de Instrução",
+            "dias_semana": "Dias da Semana",
+            "local": "Local",
+            "horario": "Horário",
+            "descricao": "Descrição",
+        }
         help_texts = {
-            "vagas": "Número máximo de alunos que podem ser matriculados na turma.",
-            "data_inicio": "Data de início das aulas.",
-            "data_fim": "Data prevista para o término das aulas.",
-            "status": "Status atual da turma.",
+            "nome": "Digite um nome descritivo para a turma.",
+            "vagas": "Quantidade máxima de alunos na turma.",
+            "status": "Situação atual da turma.",
+            "data_inicio": "Data prevista para início do curso.",
+            "data_fim": "Data prevista para término do curso.",
+            "dias_semana": "Exemplo: 'Segunda, Quarta e Sexta' ou 'Terças e Quintas'.",
+            "horario": "Exemplo: '19h às 21h'.",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Tornar os campos de instrutores opcionais
-        self.fields["instrutor"].required = False
+        
+        # Filtrar apenas alunos ativos para os campos de instrutor
+        aluno_model = get_aluno_model()
+        alunos_ativos = aluno_model.objects.filter(situacao="ATIVO")
+        
+        self.fields["instrutor"].queryset = alunos_ativos
+        self.fields["instrutor_auxiliar"].queryset = alunos_ativos
+        self.fields["auxiliar_instrucao"].queryset = alunos_ativos
+        
+        # Tornar os campos de instrutor auxiliar e auxiliar de instrução opcionais
         self.fields["instrutor_auxiliar"].required = False
         self.fields["auxiliar_instrucao"].required = False
-        # Configurar os querysets para mostrar apenas alunos elegíveis
-        Aluno = get_aluno_model()
-        alunos_elegíveis = Aluno.objects.filter(situacao="A")
-        # Filtrar alunos que podem ser instrutores
-        alunos_instrutores = [
-            aluno for aluno in alunos_elegíveis if aluno.pode_ser_instrutor
-        ]
-        # Se não houver alunos instrutores, usar todos os alunos ativos
-        if not alunos_instrutores:
-            print(
-                "AVISO: Nenhum aluno elegível para ser instrutor. Usando todos os alunos ativos."
-            )
-            alunos_instrutores = list(alunos_elegíveis)
-        # Obter CPFs dos alunos instrutores
-        cpfs_instrutores = [a.cpf for a in alunos_instrutores]
-        # Debug
-        print(f"Alunos elegíveis para instrutores: {len(cpfs_instrutores)}")
-        # Configurar querysets
-        self.fields["instrutor"].queryset = Aluno.objects.filter(
-            cpf__in=cpfs_instrutores
-        )
-        self.fields["instrutor_auxiliar"].queryset = Aluno.objects.filter(
-            cpf__in=cpfs_instrutores
-        )
-        self.fields["auxiliar_instrucao"].queryset = Aluno.objects.filter(
-            cpf__in=cpfs_instrutores
-        )
+        
+        # Melhorias para garantir que as datas apareçam corretamente na edição
+        if self.instance and self.instance.pk:
+            if self.instance.data_inicio:
+                # Garantir que a data esteja no formato correto para o campo de entrada
+                self.initial['data_inicio'] = self.instance.data_inicio.strftime('%Y-%m-%d')
+            
+            if self.instance.data_fim:
+                # Garantir que a data esteja no formato correto para o campo de entrada
+                self.initial['data_fim'] = self.instance.data_fim.strftime('%Y-%m-%d')
 
     def clean(self):
+        """Validação adicional dos campos do formulário."""
         cleaned_data = super().clean()
         data_inicio = cleaned_data.get("data_inicio")
         data_fim = cleaned_data.get("data_fim")
-        # Validar que a data de início é anterior à data de fim
-        if data_inicio and data_fim and data_inicio > data_fim:
-            raise ValidationError(
-                "A data de início não pode ser posterior à data de fim."
+        
+        # Validar que a data de início seja hoje ou no futuro
+        if data_inicio and data_inicio < timezone.localdate():
+            self.add_error(
+                "data_inicio", 
+                "A data de início não pode ser anterior à data atual."
             )
-        # Removemos a validação que impedia datas no passado:
-        # if (not self.instance.pk and data_inicio and data_inicio < timezone.now().date()):
-        #     raise ValidationError("A data de início não pode ser no passado para novas turmas.")
-        # Verificar se os instrutores são diferentes entre si
+        
+        # Validar que a data de término seja depois da data de início
+        if data_inicio and data_fim and data_fim < data_inicio:
+            self.add_error(
+                "data_fim", 
+                "A data de término deve ser posterior à data de início."
+            )
+        
+        # Validar que o instrutor principal não seja também instrutor auxiliar ou auxiliar de instrução
         instrutor = cleaned_data.get("instrutor")
         instrutor_auxiliar = cleaned_data.get("instrutor_auxiliar")
         auxiliar_instrucao = cleaned_data.get("auxiliar_instrucao")
-        if (
-            instrutor
-            and instrutor_auxiliar
-            and instrutor == instrutor_auxiliar
-        ):
+        
+        if instrutor and instrutor_auxiliar and instrutor == instrutor_auxiliar:
             self.add_error(
-                "instrutor_auxiliar",
-                "O instrutor auxiliar deve ser diferente do instrutor principal.",
+                "instrutor_auxiliar", 
+                "O instrutor auxiliar não pode ser o mesmo que o instrutor principal."
             )
-        if (
-            instrutor
-            and auxiliar_instrucao
-            and instrutor == auxiliar_instrucao
-        ):
+        
+        if instrutor and auxiliar_instrucao and instrutor == auxiliar_instrucao:
             self.add_error(
-                "auxiliar_instrucao",
-                "O auxiliar de instrução deve ser diferente do instrutor principal.",
+                "auxiliar_instrucao", 
+                "O auxiliar de instrução não pode ser o mesmo que o instrutor principal."
             )
-        if (
-            instrutor_auxiliar
-            and auxiliar_instrucao
-            and instrutor_auxiliar == auxiliar_instrucao
-        ):
+        
+        # Validar que instrutor auxiliar e auxiliar de instrução não sejam a mesma pessoa
+        if instrutor_auxiliar and auxiliar_instrucao and instrutor_auxiliar == auxiliar_instrucao:
             self.add_error(
-                "auxiliar_instrucao",
-                "O auxiliar de instrução deve ser diferente do instrutor auxiliar.",
+                "auxiliar_instrucao", 
+                "O auxiliar de instrução não pode ser o mesmo que o instrutor auxiliar."
             )
+        
+        # Verificar se há vagas e se o número é positivo
+        vagas = cleaned_data.get("vagas")
+        if vagas is not None and vagas <= 0:
+            self.add_error("vagas", "O número de vagas deve ser maior que zero.")
+        
         return cleaned_data
 
-    def clean_nome(self):
-        nome = self.cleaned_data.get("nome")
-        if nome:
-            # Verificar se já existe uma turma com o mesmo nome (ignorando case)
-            instance_id = getattr(self.instance, "id", None)
-            turmas_existentes = Turma.objects.filter(nome__iexact=nome)
-            if instance_id:
-                turmas_existentes = turmas_existentes.exclude(id=instance_id)
-            if turmas_existentes.exists():
-                raise ValidationError(
-                    "Já existe uma turma com este nome. Por favor, escolha um nome diferente."
-                )
-            # Opcional: normalizar o nome (por exemplo, primeira letra maiúscula)
-            nome = nome.strip().capitalize()
-        return nome
 
 
 ## Arquivos views.py:
@@ -175,13 +182,21 @@ class TurmaForm(forms.ModelForm):
 ### Arquivo: turmas\views.py
 
 python
+import csv
+import io
+import xlsxwriter
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from importlib import import_module
+from django.db.models import Count, Q, Avg
 from django.utils import timezone
-from django.conf import settings
-from .forms import TurmaForm
+from importlib import import_module
+
+from .models import Turma
+from cursos.models import Curso
+from alunos.models import Aluno
+from matriculas.models import Matricula
 
 def get_model(app_name, model_name):
     """Obtém um modelo dinamicamente para evitar importações circulares."""
@@ -242,36 +257,35 @@ def criar_turma(request):
     if request.method == "POST":
         form = TurmaForm(request.POST)
         if form.is_valid():
-            turma = form.save(commit=False)
-            
-            # Processar horários se existirem
-            horarios_json = request.POST.get('horarios_json')
-            if horarios_json:
-                import json
-                try:
-                    turma.horarios = json.loads(horarios_json)
-                except json.JSONDecodeError:
-                    turma.horarios = []
-            
-            turma.save()
+            turma = form.save()
             messages.success(request, "Turma criada com sucesso!")
             return redirect("turmas:detalhar_turma", id=turma.id)
-        else:
-            messages.error(request, "Corrija os erros no formulário.")
     else:
         form = TurmaForm()
-
-    # Obter todos os alunos ativos para o formulário
-    Aluno = get_model("alunos", "Aluno")
-    alunos = Aluno.objects.filter(situacao="ATIVO")
-
-    context = {
-        'form': form,
-        'alunos': alunos,
-        'debug_mode': getattr(settings, 'DEBUG_INSTRUTORES', False)
-    }
-
-    return render(request, "turmas/criar_turma.html", context)
+    
+    # Obter todos os alunos ativos para o contexto
+    try:
+        Aluno = import_module("alunos.models").Aluno
+        alunos = Aluno.objects.filter(situacao="ATIVO")
+    except (ImportError, AttributeError):
+        alunos = []
+    
+    # Certifique-se de que os cursos estão sendo carregados
+    from cursos.models import Curso
+    cursos = Curso.objects.all().order_by('codigo_curso')
+    
+    # Adicione um log para depuração
+    print(f"Carregando {len(cursos)} cursos")
+    
+    return render(
+        request,
+        "turmas/criar_turma.html",
+        {
+            "form": form,
+            "alunos": alunos,
+            "cursos": cursos,
+        },
+    )
 @login_required
 def detalhar_turma(request, id):
     Turma = get_turma_model()
@@ -358,7 +372,7 @@ def listar_alunos_matriculados(request, id):
 
 
 @login_required
-def matricular_aluno(request, id):
+def matricular_aluno(request, turma_id):
     """Matricula um aluno em uma turma específica."""
     Turma = get_turma_model()
     Aluno = get_aluno_model()
@@ -457,6 +471,266 @@ def cancelar_matricula(request, turma_id, aluno_cpf):
         )
         return redirect("turmas:detalhar_turma", id=turma.id)
 
+@login_required
+def exportar_turmas(request):
+    """Exporta os dados das turmas para um arquivo CSV ou Excel."""
+    formato = request.GET.get('formato', 'csv')
+    
+    # Filtros
+    query = request.GET.get('q', '')
+    curso_id = request.GET.get('curso', '')
+    status = request.GET.get('status', '')
+    
+    # Consulta base
+    turmas = Turma.objects.all()
+    
+    # Aplicar filtros
+    if query:
+        turmas = turmas.filter(
+            Q(nome__icontains=query) | 
+            Q(instrutor__nome__icontains=query) |
+            Q(curso__nome__icontains=query)
+        )
+    
+    if curso_id:
+        turmas = turmas.filter(curso__codigo_curso=curso_id)
+    
+    if status:
+        turmas = turmas.filter(status=status)
+    
+    # Ordenar
+    turmas = turmas.order_by('nome')
+    
+    # Definir nome do arquivo
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"turmas_export_{timestamp}"
+    
+    if formato == 'excel':
+        # Exportar para Excel
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        worksheet = workbook.add_worksheet()
+        
+        # Estilos
+        header_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#F0F0F0',
+            'border': 1
+        })
+        
+        # Cabeçalhos
+        headers = [
+            'ID', 'Nome', 'Curso', 'Vagas', 'Status', 'Data Início', 
+            'Data Fim', 'Instrutor', 'Instrutor Auxiliar', 'Local', 'Horário'
+        ]
+        
+        for col_num, header in enumerate(headers):
+            worksheet.write(0, col_num, header, header_format)
+        
+        # Dados
+        for row_num, turma in enumerate(turmas, 1):
+            worksheet.write(row_num, 0, turma.id)
+            worksheet.write(row_num, 1, turma.nome)
+            worksheet.write(row_num, 2, turma.curso.nome if turma.curso else '')
+            worksheet.write(row_num, 3, turma.vagas)
+            worksheet.write(row_num, 4, turma.get_status_display())
+            worksheet.write(row_num, 5, turma.data_inicio.strftime('%d/%m/%Y') if turma.data_inicio else '')
+            worksheet.write(row_num, 6, turma.data_fim.strftime('%d/%m/%Y') if turma.data_fim else '')
+            worksheet.write(row_num, 7, turma.instrutor.nome if turma.instrutor else '')
+            worksheet.write(row_num, 8, turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else '')
+            worksheet.write(row_num, 9, turma.local or '')
+            worksheet.write(row_num, 10, turma.horario or '')
+        
+        # Ajustar largura das colunas
+        for i, header in enumerate(headers):
+            worksheet.set_column(i, i, len(header) + 5)
+        
+        workbook.close()
+        output.seek(0)
+        
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
+        return response
+    else:
+        # Exportar para CSV
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'ID', 'Nome', 'Curso', 'Vagas', 'Status', 'Data Início', 
+            'Data Fim', 'Instrutor', 'Instrutor Auxiliar', 'Local', 'Horário'
+        ])
+        
+        for turma in turmas:
+            writer.writerow([
+                turma.id,
+                turma.nome,
+                turma.curso.nome if turma.curso else '',
+                turma.vagas,
+                turma.get_status_display(),
+                turma.data_inicio.strftime('%d/%m/%Y') if turma.data_inicio else '',
+                turma.data_fim.strftime('%d/%m/%Y') if turma.data_fim else '',
+                turma.instrutor.nome if turma.instrutor else '',
+                turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else '',
+                turma.local or '',
+                turma.horario or ''
+            ])
+        
+        return response
+
+@login_required
+def relatorio_turmas(request):
+    """Gera relatórios sobre as turmas."""
+    # Estatísticas gerais
+    total_turmas = Turma.objects.count()
+    turmas_ativas = Turma.objects.filter(status='ATIVA').count()
+    turmas_planejadas = Turma.objects.filter(status='PLANEJADA').count()
+    turmas_concluidas = Turma.objects.filter(status='CONCLUIDA').count()
+    turmas_canceladas = Turma.objects.filter(status='CANCELADA').count()
+    
+    # Estatísticas por curso
+    cursos = Curso.objects.all()
+    estatisticas_cursos = []
+    
+    for curso in cursos:
+        turmas_curso = Turma.objects.filter(curso=curso)
+        total_turmas_curso = turmas_curso.count()
+        
+        if total_turmas_curso > 0:
+            turmas_ativas_curso = turmas_curso.filter(status='ATIVA').count()
+            turmas_planejadas_curso = turmas_curso.filter(status='PLANEJADA').count()
+            turmas_concluidas_curso = turmas_curso.filter(status='CONCLUIDA').count()
+            
+            # Calcular média de alunos por turma
+            total_alunos = 0
+            for turma in turmas_curso:
+                total_alunos += Matricula.objects.filter(turma=turma, ativa=True).count()
+            
+            media_alunos = total_alunos / total_turmas_curso if total_turmas_curso > 0 else 0
+            
+            estatisticas_cursos.append({
+                'curso': curso,
+                'total_turmas': total_turmas_curso,
+                'turmas_ativas': turmas_ativas_curso,
+                'turmas_planejadas': turmas_planejadas_curso,
+                'turmas_concluidas': turmas_concluidas_curso,
+                'media_alunos': round(media_alunos, 1)
+            })
+    
+    # Turmas com mais alunos
+    turmas_populares = Turma.objects.annotate(
+        total_alunos=Count('matricula', filter=Q(matricula__ativa=True))
+    ).order_by('-total_alunos')[:5]
+    
+    # Instrutores com mais turmas
+    instrutores_ativos = Aluno.objects.filter(
+        Q(turma_instrutor__isnull=False) | 
+        Q(turma_instrutor_auxiliar__isnull=False)
+    ).distinct()
+    
+    estatisticas_instrutores = []
+    for instrutor in instrutores_ativos:
+        turmas_como_instrutor = Turma.objects.filter(instrutor=instrutor).count()
+        turmas_como_auxiliar = Turma.objects.filter(instrutor_auxiliar=instrutor).count()
+        total_turmas_instrutor = turmas_como_instrutor + turmas_como_auxiliar
+        
+        if total_turmas_instrutor > 0:
+            estatisticas_instrutores.append({
+                'instrutor': instrutor,
+                'turmas_como_instrutor': turmas_como_instrutor,
+                'turmas_como_auxiliar': turmas_como_auxiliar,
+                'total_turmas': total_turmas_instrutor
+            })
+    
+    estatisticas_instrutores.sort(key=lambda x: x['total_turmas'], reverse=True)
+    estatisticas_instrutores = estatisticas_instrutores[:5]
+    
+    context = {
+        'total_turmas': total_turmas,
+        'turmas_ativas': turmas_ativas,
+        'turmas_planejadas': turmas_planejadas,
+        'turmas_concluidas': turmas_concluidas,
+        'turmas_canceladas': turmas_canceladas,
+        'estatisticas_cursos': estatisticas_cursos,
+        'turmas_populares': turmas_populares,
+        'estatisticas_instrutores': estatisticas_instrutores
+    }
+    
+    return render(request, 'turmas/relatorio_turmas.html', context)
+
+@login_required
+def dashboard_turmas(request):
+    """Exibe um dashboard com informações sobre as turmas."""
+    # Estatísticas gerais
+    total_turmas = Turma.objects.count()
+    turmas_ativas = Turma.objects.filter(status='ATIVA').count()
+    turmas_planejadas = Turma.objects.filter(status='PLANEJADA').count()
+    turmas_concluidas = Turma.objects.filter(status='CONCLUIDA').count()
+    turmas_canceladas = Turma.objects.filter(status='CANCELADA').count()
+    
+    # Dados para gráfico de status
+    dados_status = [
+        {'status': 'Ativas', 'quantidade': turmas_ativas, 'cor': '#28a745'},
+        {'status': 'Planejadas', 'quantidade': turmas_planejadas, 'cor': '#17a2b8'},
+        {'status': 'Concluídas', 'quantidade': turmas_concluidas, 'cor': '#6c757d'},
+        {'status': 'Canceladas', 'quantidade': turmas_canceladas, 'cor': '#dc3545'}
+    ]
+    
+    # Turmas por curso
+    cursos = Curso.objects.all()
+    dados_cursos = []
+    
+    cores_cursos = [
+        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+        '#5a5c69', '#858796', '#f8f9fc', '#d1d3e2', '#b7b9cc'
+    ]
+    
+    for i, curso in enumerate(cursos):
+        total_turmas_curso = Turma.objects.filter(curso=curso).count()
+        if total_turmas_curso > 0:
+            dados_cursos.append({
+                'curso': curso.nome,
+                'quantidade': total_turmas_curso,
+                'cor': cores_cursos[i % len(cores_cursos)]
+            })
+    
+    # Turmas recentes
+    turmas_recentes = Turma.objects.order_by('-id')[:5]
+    
+    # Turmas com vagas disponíveis
+    turmas_com_vagas = []
+    for turma in Turma.objects.filter(status='ATIVA'):
+        total_matriculados = Matricula.objects.filter(turma=turma, ativa=True).count()
+        vagas_disponiveis = turma.vagas - total_matriculados
+        
+        if vagas_disponiveis > 0:
+            turmas_com_vagas.append({
+                'turma': turma,
+                'vagas_disponiveis': vagas_disponiveis,
+                'percentual_ocupacao': (total_matriculados / turma.vagas) * 100
+            })
+    
+    turmas_com_vagas.sort(key=lambda x: x['vagas_disponiveis'], reverse=True)
+    turmas_com_vagas = turmas_com_vagas[:5]
+    
+    context = {
+        'total_turmas': total_turmas,
+        'turmas_ativas': turmas_ativas,
+        'turmas_planejadas': turmas_planejadas,
+        'turmas_concluidas': turmas_concluidas,
+        'turmas_canceladas': turmas_canceladas,
+        'dados_status': dados_status,
+        'dados_cursos': dados_cursos,
+        'turmas_recentes': turmas_recentes,
+        'turmas_com_vagas': turmas_com_vagas
+    }
+    
+    return render(request, 'turmas/dashboard.html', context)
+
 
 
 ## Arquivos urls.py:
@@ -473,24 +747,15 @@ app_name = "turmas"
 urlpatterns = [
     path("", views.listar_turmas, name="listar_turmas"),
     path("criar/", views.criar_turma, name="criar_turma"),
-    path("<int:id>/", views.detalhar_turma, name="detalhar_turma"),
-    path("<int:id>/editar/", views.editar_turma, name="editar_turma"),
-    path("<int:id>/excluir/", views.excluir_turma, name="excluir_turma"),
-    path(
-        "<int:id>/alunos/",
-        views.listar_alunos_matriculados,
-        name="listar_alunos_matriculados",
-    ),
-    path(
-        "<int:turma_id>/matricular/",
-        views.matricular_aluno,
-        name="matricular_aluno",
-    ),
-    path(
-        "<int:turma_id>/cancelar-matricula/<str:aluno_cpf>/",
-        views.cancelar_matricula,
-        name="cancelar_matricula",
-    ),
+    path("<int:turma_id>/", views.detalhar_turma, name="detalhar_turma"),
+    path("<int:turma_id>/editar/", views.editar_turma, name="editar_turma"),
+    path("<int:turma_id>/excluir/", views.excluir_turma, name="excluir_turma"),
+    path("<int:turma_id>/alunos/", views.listar_alunos_matriculados, name="listar_alunos_matriculados"),
+    path("<int:turma_id>/matricular/", views.matricular_aluno, name="matricular_aluno"),
+    path("<int:turma_id>/cancelar-matricula/<str:aluno_cpf>/", views.cancelar_matricula, name="cancelar_matricula"),
+    path("exportar/", views.exportar_turmas, name="exportar_turmas"),
+    path("relatorio/", views.relatorio_turmas, name="relatorio_turmas"),
+    path("dashboard/", views.dashboard_turmas, name="dashboard"),
 ]
 
 
@@ -514,7 +779,8 @@ class Turma(models.Model):
     STATUS_CHOICES = [
         ("A", "Ativa"),
         ("I", "Inativa"),
-        ("C", "Concluída"),
+        ("C", "Cancelada"),
+        ("F", "Finalizada"),
     ]
 
     # Informações básicas
@@ -814,11 +1080,146 @@ html
 
 {% block title %}Criar Nova Turma{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Garantir que o dropdown do Select2 seja visível */
+    .select2-container--bootstrap4 .select2-dropdown {
+        z-index: 9999 !important;
+    }
+    
+    /* Corrigir a altura do select */
+    .select2-container .select2-selection--single {
+        height: calc(1.5em + 0.75rem + 2px) !important;
+    }
+    
+    /* Garantir que o dropdown apareça acima de outros elementos */
+    .select2-container--open {
+        z-index: 9999 !important;
+    }
+    
+    /* Remover o tracinho do select e manter só a setinha */
+    .select2-selection__placeholder {
+        display: none !important;
+    }
+    
+    /* Container de dias da semana - estilo igual ao select2 */
+    .dias-semana-select {
+        width: 100%;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        min-height: 38px;
+        padding: 0.375rem 0.75rem;
+        background-color: #fff;
+        cursor: pointer;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .dias-semana-select:hover {
+        border-color: #adb5bd;
+    }
+    
+    .dias-semana-select.focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .dias-semana-container {
+        display: none;
+        position: absolute;
+        width: 100%;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 9999;
+        background-color: #fff;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .dias-semana-item {
+        display: block;
+        padding: 0.5rem 1rem;
+        width: 100%;
+        text-align: left;
+        border: none;
+        background: none;
+        cursor: pointer;
+    }
+    
+    .dias-semana-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .dias-semana-item.selected {
+        background-color: #e9ecef;
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .dias-semana-item input {
+        margin-right: 8px;
+    }
+    
+    /* Corrigir setas nos containers de escolha */
+    .select2-selection__arrow {
+        height: 100% !important;
+        position: absolute !important;
+        right: 1px !important;
+        top: 0 !important;
+    }
+    
+    /* Estilo para o dropdown arrow customizado */
+    .dropdown-arrow {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-style: solid;
+        border-width: 5px 5px 0 5px;
+        border-color: #888 transparent transparent transparent;
+        pointer-events: none;
+    }
+    
+    /* Estilos para a lista de resultados de busca */
+    .list-group-item-action {
+        transition: background-color 0.15s ease-in-out;
+    }
+    
+    .list-group-item-action:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* Estilo para container de aluno selecionado */
+    #selected-instrutor-container,
+    #selected-instrutor-auxiliar-container,
+    #selected-auxiliar-instrucao-container {
+        background-color: #f8f9fa;
+    }
+    
+    /* IMPORTANTE: Esconder completamente os selects originais */
+    #id_instrutor,
+    #id_instrutor_auxiliar,
+    #id_auxiliar_instrucao {
+        display: none !important;
+    }
+    
+    /* Esconder os botões duplicados de limpar seleção */
+    #id_instrutor + button,
+    #id_instrutor_auxiliar + button,
+    #id_auxiliar_instrucao + button,
+    #selected-instrutor-container + button,
+    #selected-instrutor-auxiliar-container + button,
+    #selected-auxiliar-instrucao-container + button {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Nova Turma</h1>
-        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
+        <h1>Criar Nova Turma</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar</a>
     </div>
     
     {% if messages %}
@@ -829,53 +1230,219 @@ html
         {% endfor %}
     {% endif %}
     
-    <form method="post">
+    {% if form.errors %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                <strong>Erro:</strong>
+                <ul>
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endif %}
+    
+    <form method="post" id="turma-form">
         {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <!-- Informações Básicas - Com fundo primary -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Informações Básicas</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
+                        <div class="mb-3">
+                            <label for="id_nome" class="form-label">Nome da Turma</label>
+                            <input type="text" name="nome" value="{{ form.nome.value|default:'' }}" class="form-control {% if form.nome.errors %}is-invalid{% endif %}" maxlength="100" required id="id_nome">
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.nome.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.nome.help_text %}
+                                <small class="form-text text-muted">{{ form.nome.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.curso %}
+                        <!-- Campo curso personalizado sem tracinhos -->
+                        <div class="mb-3">
+                            <label for="id_curso" class="form-label">Curso</label>
+                            <select name="curso" id="id_curso" class="form-select curso-select" required>
+                                {% for curso in cursos %}
+                                    <option value="{{ curso.codigo_curso }}">
+                                        {{ curso.codigo_curso }} - {{ curso.nome }}
+                                    </option>
+                                {% empty %}
+                                    <option value="">Nenhum curso disponível</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.curso.help_text %}
+                                <small class="form-text text-muted">{{ form.curso.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_inicio %}
+                        <div class="mb-3">
+                            <label for="{{ form.data_inicio.id_for_label }}" class="form-label">Data de Início</label>
+                            <input type="date" name="data_inicio" id="id_data_inicio" class="form-control">
+                            {% if form.data_inicio.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.data_inicio.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_fim %}
+                        <div class="mb-3">
+                            <label for="{{ form.data_fim.id_for_label }}" class="form-label">Data de Término</label>
+                            <input type="date" name="data_fim" id="id_data_fim" class="form-control">
+                            {% if form.data_fim.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.data_fim.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.vagas_totais %}
+                        <div class="mb-3">
+                            <label for="id_vagas" class="form-label">Número de Vagas</label>
+                            <input type="number" name="vagas" value="{{ form.vagas.value|default:'30' }}" class="form-control{% if form.vagas.errors %} is-invalid{% endif %}" min="0" required id="id_vagas">
+                            {% if form.vagas.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.vagas.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.vagas.help_text %}
+                                <small class="form-text text-muted">{{ form.vagas.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.status %}
+                        <!-- Campo status customizado com valores limitados -->
+                        <div class="mb-3">
+                            <label for="id_status" class="form-label">Status</label>
+                            <select name="status" id="id_status" class="form-select" required>
+                                <option value="A" {% if form.status.value == 'A' or not form.status.value %}selected{% endif %}>Ativa</option>
+                                <option value="I" {% if form.status.value == 'I' %}selected{% endif %}>Inativa</option>
+                                <option value="C" {% if form.status.value == 'C' %}selected{% endif %}>Cancelada</option>
+                                <option value="F" {% if form.status.value == 'F' %}selected{% endif %}>Finalizada</option>
+                            </select>
+                            {% if form.status.help_text %}
+                                <small class="form-text text-muted">{{ form.status.help_text }}</small>
+                            {% endif %}
+                            <!-- Alerta para data fim obrigatória quando Finalizada -->
+                            <div id="alerta-data-fim" class="alert alert-warning mt-2" style="display:none;">
+                                <i class="fas fa-exclamation-triangle"></i> Quando o status é "Finalizada", a Data de Término é obrigatória.
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.local %}
+                        <div class="mb-3">
+                            <label for="id_local" class="form-label">Local</label>
+                            <input type="text" name="local" value="{{ form.local.value|default:'' }}" class="form-control{% if form.local.errors %} is-invalid{% endif %}" maxlength="200" id="id_local">
+                            {% if form.local.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.local.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Dias da semana estilo select2 -->
+                        <div class="mb-3">
+                            <label class="form-label">Dias da Semana</label>
+                            <input type="hidden" name="dias_semana" id="dias_semana_hidden" value="">
+                            
+                            <div class="position-relative">
+                                <div class="dias-semana-select" id="dias-semana-display">
+                                    <span id="dias-semana-texto">
+                                        {% if form.dias_semana.value %}
+                                            {{ form.dias_semana.value }}
+                                        {% else %}
+                                            Selecione os dias da semana
+                                        {% endif %}
+                                    </span>
+                                    <span class="dropdown-arrow"></span>
+                                </div>
+                                
+                                <div class="dias-semana-container" id="dias-semana-dropdown" style="display: none;">
+                                    <div class="dia-semana-item" data-dia="Segunda">
+                                        <input type="checkbox" id="dia_segunda">
+                                        Segunda
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Terça">
+                                        <input type="checkbox" id="dia_terca">
+                                        Terça
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Quarta">
+                                        <input type="checkbox" id="dia_quarta">
+                                        Quarta
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Quinta">
+                                        <input type="checkbox" id="dia_quinta">
+                                        Quinta
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Sexta">
+                                        <input type="checkbox" id="dia_sexta">
+                                        Sexta
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Sábado">
+                                        <input type="checkbox" id="dia_sabado">
+                                        Sábado
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Domingo">
+                                        <input type="checkbox" id="dia_domingo">
+                                        Domingo
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Selecione os dias da semana em que ocorrerão as aulas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_horario" class="form-label">Horário</label>
+                            <input type="text" name="horario" value="{{ form.horario.value|default:'' }}" class="form-control{% if form.horario.errors %} is-invalid{% endif %}" maxlength="100" id="id_horario">
+                            {% if form.horario.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.horario.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.horario.help_text %}
+                                <small class="form-text text-muted">{{ form.horario.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
+                        <div class="mb-3">
+                            <label for="id_descricao" class="form-label">Descrição</label>
+                            <textarea name="descricao" cols="40" rows="3" class="form-control{% if form.descricao.errors %} is-invalid{% endif %}" id="id_descricao">{{ form.descricao.value|default:'' }}</textarea>
+                            {% if form.descricao.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.descricao.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- Seção de Instrutoria -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white">
                 <h5 class="mb-0">Instrutoria</h5>
             </div>
             <div class="card-body">
@@ -883,28 +1450,22 @@ html
                     <!-- Instrutor Principal -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor" class="form-label">Instrutor Principal</label>
-                        <input type="text" id="search-instrutor" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
-                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none;"></div>
+                        <input type="text" id="search-instrutor" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none"></div>
                         <div id="selected-instrutor-container" class="p-3 border rounded mt-2 d-none">
                             <div id="selected-instrutor-info">
                                 Nenhum instrutor selecionado
                             </div>
                         </div>
                         <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
-                        <select name="instrutor" class="form-control d-none" id="id_instrutor">
-                            <option value="">---------</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
-                            {% endfor %}
-                        </select>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.instrutor }}
                     </div>
                     
                     <!-- Instrutor Auxiliar -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
-                        <input type="text" id="search-instrutor-auxiliar" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <input type="text" id="search-instrutor-auxiliar" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 d-none">
                             <div id="selected-instrutor-auxiliar-info">
@@ -912,19 +1473,14 @@ html
                             </div>
                         </div>
                         <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
-                        <select name="instrutor_auxiliar" class="form-control d-none" id="id_instrutor_auxiliar">
-                            <option value="">---------</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
-                            {% endfor %}
-                        </select>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.instrutor_auxiliar }}
                     </div>
                     
                     <!-- Auxiliar de Instrução -->
                     <div class="col-md-4 mb-3">
                         <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
-                        <input type="text" id="search-auxiliar-instrucao" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <input type="text" id="search-auxiliar-instrucao" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 d-none">
                             <div id="selected-auxiliar-instrucao-info">
@@ -932,226 +1488,491 @@ html
                             </div>
                         </div>
                         <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
-                        <select name="auxiliar_instrucao" class="form-control d-none" id="id_auxiliar_instrucao">
-                            <option value="">---------</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
-                            {% endfor %}
-                        </select>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.auxiliar_instrucao }}
                     </div>
                 </div>
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor. 
-                    O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
+                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
+                    O sistema verificará a elegibil
+                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
+                    O sistema verificará a elegibilidade do aluno para a função de instrutor.
                 </div>
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Horários</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="id_dias_semana" class="form-label">Dias da Semana</label>
-                            <input type="text" name="dias_semana" class="form-control" id="id_dias_semana" 
-                                   placeholder="Ex: Segunda, Quarta e Sexta">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="id_horario" class="form-label">Horário</label>
-                            <input type="text" name="horario" class="form-control" id="id_horario" 
-                                   placeholder="Ex: 19:00 às 21:00">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Requisitos</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="mb-3">
-                            <label for="id_pre_requisitos" class="form-label">Pré-requisitos para a turma</label>
-                            <textarea name="pre_requisitos" class="form-control" id="id_pre_requisitos" rows="3" 
-                                      placeholder="Informe os pré-requisitos necessários para participar desta turma"></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="d-flex justify-content-between mb-5">
+        <div class="d-flex justify-content-between">
             <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Criar Turma</button>
+            <button type="submit" class="btn btn-primary">Salvar Turma</button>
         </div>
     </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/turmas/instrutor_search.js' %}"></script>
+<script src="{% static 'js/modules/instrutor-search.js' %}"></script>
+<script src="{% static 'js/turmas/form_fix.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar o módulo de busca de instrutores com opção para mostrar todos os alunos
-        InstrutorSearch.init(document.querySelector('[name=csrfmiddlewaretoken]').value, true);
-        
-        // Validação de datas
-        const dataInicio = document.getElementById('{{ form.data_inicio.id_for_label }}');
-        const dataFim = document.getElementById('{{ form.data_fim.id_for_label }}');
-        
-        if (dataInicio && dataFim) {
-            dataInicio.addEventListener('change', function() {
-                if (dataFim.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
-                    alert('A data de início não pode ser posterior à data de fim.');
-                    dataInicio.value = '';
-                }
-            });
-            
-            dataFim.addEventListener('change', function() {
-                if (dataInicio.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
-                    alert('A data de fim não pode ser anterior à data de início.');
-                    dataFim.value = '';
-                }
-            });
-        }
-
-        // Gerenciamento de horários
-        const btnAdicionarHorario = document.getElementById('adicionar_horario');
-        const tabelaHorarios = document.getElementById('tabela_horarios').querySelector('tbody');
-        const horarioJsonInput = document.getElementById('horarios_json');
-        let horarios = [];
-        
-        // Função para atualizar o campo JSON
-        function atualizarHorariosJson() {
-            horarioJsonInput.value = JSON.stringify(horarios);
-        }
-        
-        // Função para adicionar um horário
-        btnAdicionarHorario.addEventListener('click', function() {
-            const diaSemana = document.getElementById('id_dia_semana');
-            const horaInicio = document.getElementById('id_hora_inicio');
-            const horaFim = document.getElementById('id_hora_fim');
-            
-            if (!diaSemana.value || !horaInicio.value || !horaFim.value) {
-                alert('Por favor, preencha todos os campos de horário.');
-                return;
-            }
-            
-            // Obter o texto do dia da semana
-            const diaSemanaTexto = diaSemana.options[diaSemana.selectedIndex].text;
-            
-            // Adicionar à lista de horários
-            const horario = {
-                dia: diaSemana.value,
-                dia_texto: diaSemanaTexto,
-                inicio: horaInicio.value,
-                fim: horaFim.value
-            };
-            
-            horarios.push(horario);
-            
-            // Adicionar à tabela
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${diaSemanaTexto}</td>
-                <td>${horaInicio.value} - ${horaFim.value}</td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger remover-horario" data-index="${horarios.length - 1}">
-                        <i class="fas fa-trash"></i> Remover
-                    </button>
-                </td>
-            `;
-            tabelaHorarios.appendChild(tr);
-            
-            // Atualizar o campo JSON
-            atualizarHorariosJson();
-            
-            // Limpar campos
-            horaInicio.value = '';
-            horaFim.value = '';
+        // Inicializar Select2 para o campo de curso
+        $('.curso-select').select2({
+            theme: 'bootstrap4',
+            placeholder: 'Selecione um curso',
+            width: '100%'
         });
         
-        // Delegação de eventos para remover horários
-        tabelaHorarios.addEventListener('click', function(e) {
-            if (e.target.classList.contains('remover-horario') || e.target.closest('.remover-horario')) {
-                const btn = e.target.classList.contains('remover-horario') ? e.target : e.target.closest('.remover-horario');
-                const index = btn.dataset.index;
-                
-                // Remover da lista
-                horarios.splice(index, 1);
-                
-                // Remover da tabela
-                btn.closest('tr').remove();
-                
-                // Atualizar índices dos botões restantes
-                const botoesRemover = tabelaHorarios.querySelectorAll('.remover-horario');
-                botoesRemover.forEach((btn, i) => {
-                    btn.dataset.index = i;
+        // Inicializar componente de dias da semana
+        if (typeof DiasSemana !== 'undefined') {
+            DiasSemana.init();
+            
+            // Definir os dias da semana selecionados
+            var diasSelecionados = '{{ form.dias_semana.value|default:"" }}';
+            if (diasSelecionados) {
+                console.log('Definindo dias selecionados: ', diasSelecionados);
+                var diasArray = diasSelecionados.split(',').map(function(dia) {
+                    return dia.trim();
                 });
                 
-                // Atualizar o campo JSON
-                atualizarHorariosJson();
+                // Marcar os checkboxes correspondentes
+                diasArray.forEach(function(dia) {
+                    dia = dia.charAt(0).toUpperCase() + dia.slice(1).toLowerCase();
+                    var checkbox = document.getElementById('dia_' + dia.toLowerCase());
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+                
+                // Atualizar texto visível
+                document.getElementById('dias-semana-texto').textContent = diasSelecionados;
             }
+        } else {
+            console.error('Módulo DiasSemana não encontrado!');
+        }
+        
+        // Inicializar busca de instrutores
+        if (typeof InstrutorSearch !== 'undefined') {
+            var csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            InstrutorSearch.init(csrftoken, false);
+        } else {
+            console.error('Módulo InstrutorSearch não encontrado!');
+        }
+        
+        // Ocultar botões "Limpar seleção" duplicados gerados pelo JS
+        document.querySelectorAll('.btn-limpar-duplicada').forEach(function(btn) {
+            btn.style.display = 'none';
         });
+        
+        // Verificar status e mostrar alerta para data fim obrigatória
+        var statusField = document.getElementById('id_status');
+        var alertaDataFim = document.getElementById('alerta-data-fim');
+        
+        if (statusField && alertaDataFim) {
+            statusField.addEventListener('change', function() {
+                if (this.value === 'F') {
+                    alertaDataFim.style.display = 'block';
+                } else {
+                    alertaDataFim.style.display = 'none';
+                }
+            });
+            
+            // Verificar status inicial
+            if (statusField.value === 'F') {
+                alertaDataFim.style.display = 'block';
+            }
+        }
     });
 </script>
 {% endblock %}
-<!-- Adicionar após a seção de instrutoria -->
-{% if debug_mode %}
-<div class="card mb-4">
-    <div class="card-header bg-warning">
-        <h5 class="mb-0">Modo de Depuração</h5>
-    </div>
-    <div class="card-body">
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="ignore-eligibility" checked>
-            <label class="form-check-label" for="ignore-eligibility">Ignorar verificações de elegibilidade</label>
+
+
+
+
+### Arquivo: turmas\templates\turmas\dashboard.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Turmas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-dashboard {
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    
+    .card-dashboard:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-card {
+        border-left: 4px solid;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-card-primary {
+        border-left-color: #4e73df;
+    }
+    
+    .stat-card-success {
+        border-left-color: #1cc88a;
+    }
+    
+    .stat-card-info {
+        border-left-color: #36b9cc;
+    }
+    
+    .stat-card-warning {
+        border-left-color: #f6c23e;
+    }
+    
+    .stat-card-danger {
+        border-left-color: #e74a3b;
+    }
+    
+    .stat-card-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #5a5c69;
+    }
+    
+    .stat-card-label {
+        font-size: 0.8rem;
+        color: #858796;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+    
+    .stat-card-icon {
+        font-size: 2rem;
+        opacity: 0.3;
+        color: #dddfeb;
+    }
+    
+    .progress-sm {
+        height: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <h1 class="mb-3 mb-md-0">Dashboard de Turmas</h1>
+        
+        <div class="btn-group">
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'turmas:relatorio_turmas' %}" class="btn btn-warning">
+                <i class="fas fa-chart-bar"></i> Relatório Detalhado
+            </a>
         </div>
-        <small class="text-muted">Este modo permite selecionar qualquer aluno como instrutor, ignorando as verificações de elegibilidade.</small>
+    </div>
+    
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card stat-card-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-card-value">{{ total_turmas }}</div>
+                        <div class="stat-card-label">Total de Turmas</div>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card stat-card-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-card-value">{{ turmas_ativas }}</div>
+                        <div class="stat-card-label">Turmas Ativas</div>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card stat-card-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-card-value">{{ turmas_planejadas }}</div>
+                        <div class="stat-card-label">Turmas Planejadas</div>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card stat-card-warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-card-value">{{ turmas_concluidas }}</div>
+                        <div class="stat-card-label">Turmas Concluídas</div>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-flag-checkered"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <!-- Gráfico de Status -->
+        <div class="col-lg-6 mb-4">
+            <div class="card card-dashboard">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Distribuição por Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico de Cursos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card card-dashboard">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Turmas por Curso</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar">
+                        <canvas id="cursosChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Turmas Recentes e Turmas com Vagas -->
+    <div class="row">
+        <!-- Turmas Recentes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card card-dashboard">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Turmas Recentes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Curso</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for turma in turmas_recentes %}
+                                <tr>
+                                    <td>{{ turma.nome }}</td>
+                                    <td>{{ turma.curso.nome }}</td>
+                                    <td>
+                                        {% if turma.status == 'ATIVA' %}
+                                            <span class="badge bg-success">Ativa</span>
+                                        {% elif turma.status == 'PLANEJADA' %}
+                                            <span class="badge bg-info">Planejada</span>
+                                        {% elif turma.status == 'CONCLUIDA' %}
+                                            <span class="badge bg-secondary">Concluída</span>
+                                        {% elif turma.status == 'CANCELADA' %}
+                                            <span class="badge bg-danger">Cancelada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Nenhuma turma encontrada</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Turmas com Vagas -->
+        <div class="col-lg-6 mb-4">
+            <div class="card card-dashboard">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Turmas com Vagas Disponíveis</h6>
+                </div>
+                <div class="card-body">
+                    {% if turmas_com_vagas %}
+                        {% for item in turmas_com_vagas %}
+                            <h4 class="small font-weight-bold">
+                                {{ item.turma.nome }} 
+                                <span class="float-end">{{ item.vagas_disponiveis }} vagas</span>
+                            </h4>
+                            <div class="progress mb-4">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ item.percentual_ocupacao }}%"
+                                    aria-valuenow="{{ item.percentual_ocupacao }}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-center">Nenhuma turma com vagas disponíveis</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const ignoreEligibilityCheckbox = document.getElementById('ignore-eligibility');
+        // Dados para o gráfico de status
+        const statusData = {
+            labels: [{% for item in dados_status %}'{{ item.status }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for item in dados_status %}{{ item.quantidade }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: [{% for item in dados_status %}'{{ item.cor }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                hoverBackgroundColor: [{% for item in dados_status %}'{{ item.cor }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }]
+        };
         
-        ignoreEligibilityCheckbox.addEventListener('change', function() {
-            // Atualizar a variável global no módulo InstrutorSearch
-            if (typeof InstrutorSearch !== 'undefined') {
-                InstrutorSearch.setIgnoreEligibility(this.checked);
-                
-                // Limpar mensagens de erro existentes
-                document.querySelectorAll('[id$="-error"]').forEach(el => {
-                    el.textContent = '';
-                    el.classList.add('d-none');
-                });
-                
-                // Mostrar mensagem
-                const message = this.checked ? 
-                    'Verificações de elegibilidade desativadas. Qualquer aluno pode ser selecionado.' : 
-                    'Verificações de elegibilidade ativadas.';
-                    
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
-                alertDiv.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                `;
-                
-                this.closest('.card-body').appendChild(alertDiv);
+        // Configuração do gráfico de status
+        const statusConfig = {
+            type: 'doughnut',
+            data: statusData,
+            options: {
+                maintainAspectRatio: false,
+                tooltips: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10,
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom'
+                },
+                cutoutPercentage: 70,
+            },
+        };
+        
+        // Renderizar gráfico de status
+        const statusChart = new Chart(
+            document.getElementById('statusChart'),
+            statusConfig
+        );
+        
+        // Dados para o gráfico de cursos
+        const cursosData = {
+            labels: [{% for item in dados_cursos %}'{{ item.curso }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: "Turmas",
+                backgroundColor: [{% for item in dados_cursos %}'{{ item.cor }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                hoverBackgroundColor: [{% for item in dados_cursos %}'{{ item.cor }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                data: [{% for item in dados_cursos %}{{ item.quantidade }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            }]
+        };
+        
+        // Configuração do gráfico de cursos
+        const cursosConfig = {
+            type: 'bar',
+            data: cursosData,
+            options: {
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 25,
+                        top: 25,
+                        bottom: 0
+                    }
+                },
+                scales: {
+                    xAxes: [{
+                        gridLines: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 6
+                        },
+                        maxBarThickness: 25,
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            min: 0,
+                            maxTicksLimit: 5,
+                            padding: 10,
+                        },
+                        gridLines: {
+                            color: "rgb(234, 236, 244)",
+                            zeroLineColor: "rgb(234, 236, 244)",
+                            drawBorder: false,
+                            borderDash: [2],
+                            zeroLineBorderDash: [2]
+                        }
+                    }],
+                },
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    titleMarginBottom: 10,
+                    titleFontColor: '#6e707e',
+                    titleFontSize: 14,
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10,
+                },
             }
-        });
+        };
+        
+        // Renderizar gráfico de cursos
+        const cursosChart = new Chart(
+            document.getElementById('cursosChart'),
+            cursosConfig
+        );
     });
 </script>
-{% endif %}
+{% endblock %}
 
 
 
@@ -1159,6 +1980,7 @@ html
 
 html
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Detalhes da Turma: {{ turma.nome }}{% endblock %}
 
@@ -1181,13 +2003,15 @@ html
             {% endif %}
         </div>
     </div>
-
+    
     {% if tem_pendencia_instrutoria %}
     <div class="alert alert-danger text-center mb-4 blink">
         <h5 class="mb-0"><strong>Pendência na Instrutoria</strong></h5>
     </div>
-    {% endif %}    
-    <!-- Card de informações da turma com layout em colunas -->    <div class="card mb-4">
+    {% endif %}
+    
+    <!-- Card de informações da turma com layout em colunas -->
+    <div class="card mb-4 border-primary">
         <div class="card-header bg-primary text-white">
             <h5 class="card-title mb-0">Informações da Turma</h5>
         </div>
@@ -1221,7 +2045,11 @@ html
                     </div>
                     <div class="mb-3">
                         <h6 class="text-muted">Data de Término</h6>
-                        <p>{{ turma.data_fim|date:"d/m/Y" }}</p>
+                        <p>{{ turma.data_fim|date:"d/m/Y"|default:"Não definida" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">Local</h6>
+                        <p>{{ turma.local|default:"Não informado" }}</p>
                     </div>
                 </div>
                 
@@ -1247,16 +2075,28 @@ html
                             
                             <!-- Barra de progresso -->
                             <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-primary" role="progressbar" 
-                                     style="width: {% widthratio alunos_matriculados_count turma.vagas 100 %}%;" 
-                                     aria-valuenow="{{ alunos_matriculados_count }}" 
-                                     aria-valuemin="0" 
+                                <div class="progress-bar bg-primary" role="progressbar"
+                                     style="width: {% widthratio alunos_matriculados_count turma.vagas 100 %}%;"
+                                     aria-valuenow="{{ alunos_matriculados_count }}"
+                                     aria-valuemin="0"
                                      aria-valuemax="{{ turma.vagas }}">
                                 </div>
                             </div>
                             <small class="text-muted">{% widthratio alunos_matriculados_count turma.vagas 100 %}% ocupado</small>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Linha para Dias da Semana e Horário -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Dias da Semana</h6>
+                    <p>{{ turma.dias_semana|default:"Não informado" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">Horário</h6>
+                    <p>{{ turma.horario|default:"Não informado" }}</p>
                 </div>
             </div>
             
@@ -1272,11 +2112,12 @@ html
         </div>
     </div>
     
-    <!-- Card de instrutores - Alterar aqui -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
+    <!-- Card de instrutores -->
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white">
             <h5 class="card-title mb-0">Instrutoria</h5>
-        </div>        <div class="card-body">
+        </div>
+        <div class="card-body">
             <div class="row">
                 <!-- Instrutor Principal -->
                 <div class="col-md-4">
@@ -1288,10 +2129,10 @@ html
                             {% if turma.instrutor %}
                                 <div class="mb-3">
                                     {% if turma.instrutor.foto %}
-                                        <img src="{{ turma.instrutor.foto.url }}" alt="Foto de {{ turma.instrutor.nome }}" 
+                                        <img src="{{ turma.instrutor.foto.url }}" alt="Foto de {{ turma.instrutor.nome }}"
                                              class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
                                     {% else %}
-                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" 
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto"
                                              style="width: 100px; height: 100px; font-size: 36px;">
                                             {{ turma.instrutor.nome|first|upper }}
                                         </div>
@@ -1322,10 +2163,10 @@ html
                             {% if turma.instrutor_auxiliar %}
                                 <div class="mb-3">
                                     {% if turma.instrutor_auxiliar.foto %}
-                                        <img src="{{ turma.instrutor_auxiliar.foto.url }}" alt="Foto de {{ turma.instrutor_auxiliar.nome }}" 
+                                        <img src="{{ turma.instrutor_auxiliar.foto.url }}" alt="Foto de {{ turma.instrutor_auxiliar.nome }}"
                                              class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
                                     {% else %}
-                                        <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center mx-auto" 
+                                        <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center mx-auto"
                                              style="width: 100px; height: 100px; font-size: 36px;">
                                             {{ turma.instrutor_auxiliar.nome|first|upper }}
                                         </div>
@@ -1346,7 +2187,7 @@ html
                     </div>
                 </div>
                 
-                <!-- Auxiliar de Instrução (Adicionar esta coluna) -->
+                <!-- Auxiliar de Instrução -->
                 <div class="col-md-4">
                     <div class="card h-100">
                         <div class="card-header bg-light">
@@ -1356,10 +2197,10 @@ html
                             {% if turma.auxiliar_instrucao %}
                                 <div class="mb-3">
                                     {% if turma.auxiliar_instrucao.foto %}
-                                        <img src="{{ turma.auxiliar_instrucao.foto.url }}" alt="Foto de {{ turma.auxiliar_instrucao.nome }}" 
+                                        <img src="{{ turma.auxiliar_instrucao.foto.url }}" alt="Foto de {{ turma.auxiliar_instrucao.nome }}"
                                              class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
                                     {% else %}
-                                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto" 
+                                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto"
                                              style="width: 100px; height: 100px; font-size: 36px;">
                                             {{ turma.auxiliar_instrucao.nome|first|upper }}
                                         </div>
@@ -1384,10 +2225,12 @@ html
     </div>
     
     <!-- Card de alunos matriculados -->
-    <div class="card mb-4">
+    <div class="card mb-4 border-primary">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Alunos Matriculados</h5>
-            <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-primary">Matricular Aluno</a>
+            <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-light">
+                <i class="fas fa-user-plus"></i> Matricular Aluno
+            </a>
         </div>
         <div class="card-body">
             {% if matriculas %}
@@ -1406,7 +2249,7 @@ html
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" 
+                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2"
                                              style="width: 32px; height: 32px; font-size: 14px;">
                                             {{ matricula.aluno.nome|first|upper }}
                                         </div>
@@ -1419,7 +2262,7 @@ html
                                     <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.cpf %}" class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i> Ver
                                     </a>
-                                    <a href="{% url 'turmas:cancelar_matricula' turma.id matricula.aluno.cpf %}" 
+                                    <a href="{% url 'turmas:cancelar_matricula' turma.id matricula.aluno.cpf %}"
                                        class="btn btn-sm btn-danger"
                                        onclick="return confirm('Tem certeza que deseja cancelar esta matrícula?');">
                                         <i class="fas fa-times"></i> Cancelar
@@ -1453,35 +2296,34 @@ html
     .bg-gradient-primary {
         background: linear-gradient(to right, #0d6efd, #0a58ca);
     }
-
     .bg-primary.bg-opacity-10 {
         background-color: rgba(13, 110, 253, 0.1) !important;
     }
-
     .bg-success.bg-opacity-10 {
         background-color: rgba(25, 135, 84, 0.1) !important;
     }
-
     .bg-info.bg-opacity-10 {
         background-color: rgba(13, 202, 240, 0.1) !important;
     }
-
     .rounded-circle {
         border-radius: 50% !important;
     }
-
     .progress {
         overflow: hidden;
         background-color: #e9ecef;
     }
-
     .card {
         transition: all 0.3s ease;
     }
-
     .card:hover {
         transform: translateY(-2px);
         box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+    }
+    .blink {
+        animation: blinker 1s linear infinite;
+    }
+    @keyframes blinker {
+        50% { opacity: 0.5; }
     }
 </style>
 {% endblock %}
@@ -1491,21 +2333,7 @@ html
     // Adicione aqui qualquer JavaScript específico para esta página
 </script>
 {% endblock %}
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">Horários</h5>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <p><strong>Dias da Semana:</strong> {{ turma.dias_semana|default:"Não informado" }}</p>
-            </div>
-            <div class="col-md-6">
-                <p><strong>Horário:</strong> {{ turma.horario|default:"Não informado" }}</p>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 
 
@@ -1515,13 +2343,148 @@ html
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Editar Turma{% endblock %}
+{% block title %}Editar Turma: {{ turma.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Garantir que o dropdown do Select2 seja visível */
+    .select2-container--bootstrap4 .select2-dropdown {
+        z-index: 9999 !important;
+    }
+    
+    /* Corrigir a altura do select */
+    .select2-container .select2-selection--single {
+        height: calc(1.5em + 0.75rem + 2px) !important;
+    }
+    
+    /* Garantir que o dropdown apareça acima de outros elementos */
+    .select2-container--open {
+        z-index: 9999 !important;
+    }
+    
+    /* Remover o tracinho do select e manter só a setinha */
+    .select2-selection__placeholder {
+        display: none !important;
+    }
+    
+    /* Container de dias da semana - estilo igual ao select2 */
+    .dias-semana-select {
+        width: 100%;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        min-height: 38px;
+        padding: 0.375rem 0.75rem;
+        background-color: #fff;
+        cursor: pointer;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .dias-semana-select:hover {
+        border-color: #adb5bd;
+    }
+    
+    .dias-semana-select.focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .dias-semana-container {
+        display: none;
+        position: absolute;
+        width: 100%;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 9999;
+        background-color: #fff;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .dias-semana-item {
+        display: block;
+        padding: 0.5rem 1rem;
+        width: 100%;
+        text-align: left;
+        border: none;
+        background: none;
+        cursor: pointer;
+    }
+    
+    .dias-semana-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .dias-semana-item.selected {
+        background-color: #e9ecef;
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .dias-semana-item input {
+        margin-right: 8px;
+    }
+    
+    /* Corrigir setas nos containers de escolha */
+    .select2-selection__arrow {
+        height: 100% !important;
+        position: absolute !important;
+        right: 1px !important;
+        top: 0 !important;
+    }
+    
+    /* Estilo para o dropdown arrow customizado */
+    .dropdown-arrow {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-style: solid;
+        border-width: 5px 5px 0 5px;
+        border-color: #888 transparent transparent transparent;
+        pointer-events: none;
+    }
+    
+    /* Estilos para a lista de resultados de busca */
+    .list-group-item-action {
+        transition: background-color 0.15s ease-in-out;
+    }
+    
+    .list-group-item-action:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* Estilo para container de aluno selecionado */
+    #selected-instrutor-container,
+    #selected-instrutor-auxiliar-container,
+    #selected-auxiliar-instrucao-container {
+        background-color: #f8f9fa;
+    }
+    
+    /* IMPORTANTE: Esconder completamente os selects originais */
+    #id_instrutor, 
+    #id_instrutor_auxiliar, 
+    #id_auxiliar_instrucao {
+        display: none !important;
+    }
+    
+    /* Esconder os botões duplicados de limpar seleção */
+    #id_instrutor + button, 
+    #id_instrutor_auxiliar + button, 
+    #id_auxiliar_instrucao + button,
+    #selected-instrutor-container + button,
+    #selected-instrutor-auxiliar-container + button,
+    #selected-auxiliar-instrucao-container + button {
+        display: none !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Editar Turma: {{ turma.nome }}</h1>
-        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
+        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar para Detalhes</a>
     </div>
     
     {% if messages %}
@@ -1532,53 +2495,231 @@ html
         {% endfor %}
     {% endif %}
     
+    {% if form.errors %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                <strong>Erro:</strong>
+                <ul>
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endif %}
+    
     <form method="post">
         {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
         
-        <div class="card mb-4">
-            <div class="card-header">
+        <!-- Informações Básicas - Com fundo primary -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Informações Básicas</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
+                        <div class="mb-3">
+                            <label for="id_nome" class="form-label">Nome da Turma</label>
+                            <input type="text" name="nome" value="{{ form.nome.value|default:'' }}" class="form-control {% if form.nome.errors %}is-invalid{% endif %}" maxlength="100" required id="id_nome">
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.nome.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.nome.help_text %}
+                                <small class="form-text text-muted">{{ form.nome.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.curso %}
+                        <!-- Campo curso personalizado sem tracinhos -->
+                        <div class="mb-3">
+                            <label for="id_curso" class="form-label">Curso</label>
+                            <select name="curso" id="id_curso" class="form-select curso-select" required>
+                                {% for choice in form.curso.field.choices %}
+                                    {% if choice.0 %}
+                                        <option value="{{ choice.0 }}" {% if form.curso.value|stringformat:"s" == choice.0|stringformat:"s" %}selected{% endif %}>
+                                            {{ choice.1 }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% if form.curso.help_text %}
+                                <small class="form-text text-muted">{{ form.curso.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_inicio %}
+                        <div class="mb-3">
+                            <label for="{{ form.data_inicio.id_for_label }}" class="form-label">Data de Início</label>
+                            {% if turma.data_inicio %}
+                            <input type="date" name="data_inicio" id="id_data_inicio" class="form-control" 
+                                   value="{{ turma.data_inicio|date:'Y-m-d' }}">
+                            {% else %}
+                            <input type="date" name="data_inicio" id="id_data_inicio" class="form-control">
+                            {% endif %}
+                            {% if form.data_inicio.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.data_inicio.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Data atual: {{ turma.data_inicio|date:"d/m/Y" }}</small>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_fim %}
+                        <div class="mb-3">
+                            <label for="{{ form.data_fim.id_for_label }}" class="form-label">Data de Término</label>
+                            {% if turma.data_fim %}
+                            <input type="date" name="data_fim" id="id_data_fim" class="form-control" 
+                                   value="{{ turma.data_fim|date:'Y-m-d' }}">
+                            {% else %}
+                            <input type="date" name="data_fim" id="id_data_fim" class="form-control">
+                            {% endif %}
+                            {% if form.data_fim.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.data_fim.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Data atual: {% if turma.data_fim %}{{ turma.data_fim|date:"d/m/Y" }}{% else %}Não definida{% endif %}</small>
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.vagas_totais %}
+                        <div class="mb-3">
+                            <label for="id_vagas" class="form-label">Número de Vagas</label>
+                            <input type="number" name="vagas" value="{{ form.vagas.value }}" class="form-control{% if form.vagas.errors %} is-invalid{% endif %}" min="0" required id="id_vagas">
+                            {% if form.vagas.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.vagas.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.vagas.help_text %}
+                                <small class="form-text text-muted">{{ form.vagas.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.status %}
+                        <!-- Campo status customizado com valores limitados -->
+                        <div class="mb-3">
+                            <label for="id_status" class="form-label">Status</label>
+                            <select name="status" id="id_status" class="form-select" required>
+                                <option value="A" {% if form.status.value == 'A' %}selected{% endif %}>Ativa</option>
+                                <option value="I" {% if form.status.value == 'I' %}selected{% endif %}>Inativa</option>
+                                <option value="C" {% if form.status.value == 'C' %}selected{% endif %}>Cancelada</option>
+                                <option value="F" {% if form.status.value == 'F' %}selected{% endif %}>Finalizada</option>
+                            </select>
+                            {% if form.status.help_text %}
+                                <small class="form-text text-muted">{{ form.status.help_text }}</small>
+                            {% endif %}
+                            <!-- Alerta para data fim obrigatória quando Finalizada -->
+                            <div id="alerta-data-fim" class="alert alert-warning mt-2" style="display:none;">
+                                <i class="fas fa-exclamation-triangle"></i> Quando o status é "Finalizada", a Data de Término é obrigatória.
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.local %}
+                        <div class="mb-3">
+                            <label for="id_local" class="form-label">Local</label>
+                            <input type="text" name="local" value="{{ form.local.value }}" class="form-control{% if form.local.errors %} is-invalid{% endif %}" maxlength="200" id="id_local">
+                            {% if form.local.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.local.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Dias da semana estilo select2 -->
+                        <div class="mb-3">
+                            <label class="form-label">Dias da Semana</label>
+                            <input type="hidden" name="dias_semana" id="dias_semana_hidden" value="sábado">
+                            
+                            <div class="position-relative">
+                                <div class="dias-semana-select" id="dias-semana-display">
+                                    <span id="dias-semana-texto">
+                                        {% if form.dias_semana.value %}
+                                            {{ form.dias_semana.value }}
+                                        {% else %}
+                                            Selecione os dias da semana
+                                        {% endif %}
+                                    </span>
+                                    <span class="dropdown-arrow"></span>
+                                </div>
+                                
+                                <div class="dias-semana-container" id="dias-semana-dropdown" style="display: none;">
+                                    <div class="dia-semana-item" data-dia="Segunda">
+                                        <input type="checkbox" id="dia_segunda">
+                                        Segunda
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Terça">
+                                        <input type="checkbox" id="dia_terca">
+                                        Terça
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Quarta">
+                                        <input type="checkbox" id="dia_quarta">
+                                        Quarta
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Quinta">
+                                        <input type="checkbox" id="dia_quinta">
+                                        Quinta
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Sexta">
+                                        <input type="checkbox" id="dia_sexta">
+                                        Sexta
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Sábado">
+                                        <input type="checkbox" id="dia_sabado">
+                                        Sábado
+                                    </div>
+                                    <div class="dia-semana-item" data-dia="Domingo">
+                                        <input type="checkbox" id="dia_domingo">
+                                        Domingo
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Selecione os dias da semana em que ocorrerão as aulas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_horario" class="form-label">Horário</label>
+                            <input type="text" name="horario" value="{{ form.horario.value }}" class="form-control{% if form.horario.errors %} is-invalid{% endif %}" maxlength="100" id="id_horario">
+                            {% if form.horario.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.horario.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.horario.help_text %}
+                                <small class="form-text text-muted">{{ form.horario.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
+                        <div class="mb-3">
+                            <label for="id_descricao" class="form-label">Descrição</label>
+                            <textarea name="descricao" cols="40" rows="3" class="form-control{% if form.descricao.errors %} is-invalid{% endif %}" id="id_descricao">{{ form.descricao.value }}</textarea>
+                            {% if form.descricao.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.descricao.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Seção de Instrutoria -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
+        <!-- Seção de Instrutoria - Agora com a resolução dos problemas de exibição -->
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white">
                 <h5 class="mb-0">Instrutoria</h5>
             </div>
             <div class="card-body">
@@ -1586,156 +2727,83 @@ html
                     <!-- Instrutor Principal -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor" class="form-label">Instrutor Principal</label>
-                        <input type="text" id="search-instrutor" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
-                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none;"></div>
-                        <div id="selected-instrutor-container" class="p-3 border rounded mt-2 {% if not turma.instrutor %}d-none{% endif %}">
+                        <input type="text" id="search-instrutor" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off"
+                               value="{% if turma.instrutor %}{{ turma.instrutor.nome }}{% endif %}">
+                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none"></div>
+                        <div id="selected-instrutor-container" class="p-3 border rounded mt-2">
                             <div id="selected-instrutor-info">
-                                {% if turma.instrutor %}
-                                    {% if turma.instrutor.foto %}
-                                        <img src="{{ turma.instrutor.foto.url }}" alt="Foto de {{ turma.instrutor.nome }}" 
-                                             class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
-                                    {% else %}
-                                        <div class="rounded-circle bg-secondary me-2 d-inline-flex align-items-center justify-content-center" 
-                                             style="width: 40px; height: 40px; color: white;">{{ turma.instrutor.nome|first|upper }}</div>
-                                    {% endif %}
-                                    <strong>{{ turma.instrutor.nome }}</strong>
-                                    {% if turma.instrutor.numero_iniciatico %}
-                                        - Nº {{ turma.instrutor.numero_iniciatico }}
-                                    {% endif %}
-                                    (CPF: {{ turma.instrutor.cpf|slice:":3" }}.{{ turma.instrutor.cpf|slice:"3:6" }}.{{ turma.instrutor.cpf|slice:"6:9" }}-{{ turma.instrutor.cpf|slice:"9:" }})
-                                    <button type="button" class="btn btn-sm btn-danger float-end" 
-                                            onclick="InstrutorSearch.removeAluno('id_instrutor', 'selected-instrutor-container', 'selected-instrutor-info', 'instrutor-error', 'instrutor')">Remover</button>
-                                {% else %}
-                                    Nenhum instrutor selecionado
-                                {% endif %}
+                                <strong>{{ aluno.nome }}</strong><br>
+                                CPF: {{ aluno.cpf }}<br>
+                                Número Iniciático: {{ aluno.numero_iniciatico|default:"N/A" }}<br>
+                                <span class="badge bg-{{ aluno.situacao_class }}">{{ aluno.get_situacao_display }}</span>
+                                <div class="mt-2 small">
+                                    <div><strong>Status como instrutor:</strong> <span id="instrutor-status"></span></div>
+                                    <div class="mt-1"><strong>Turmas:</strong> <span id="instrutor-turmas"></span></div>
+                                </div>
                             </div>
                         </div>
                         <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
-                        <select name="instrutor" class="form-control d-none" id="id_instrutor">
-                            <option value="">---------</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}" {% if turma.instrutor and turma.instrutor.cpf == aluno.cpf %}selected{% endif %}>{{ aluno.nome }}</option>
-                            {% endfor %}
-                        </select>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.instrutor }}
                     </div>
                     
                     <!-- Instrutor Auxiliar -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
-                        <input type="text" id="search-instrutor-auxiliar" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <input type="text" id="search-instrutor-auxiliar" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off"
+                               value="{% if turma.instrutor_auxiliar %}{{ turma.instrutor_auxiliar.nome }}{% endif %}">
                         <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 {% if not turma.instrutor_auxiliar %}d-none{% endif %}">
                             <div id="selected-instrutor-auxiliar-info">
                                 {% if turma.instrutor_auxiliar %}
-                                    {% if turma.instrutor_auxiliar.foto %}
-                                        <img src="{{ turma.instrutor_auxiliar.foto.url }}" alt="Foto de {{ turma.instrutor_auxiliar.nome }}" 
-                                             class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
-                                    {% else %}
-                                        <div class="rounded-circle bg-secondary me-2 d-inline-flex align-items-center justify-content-center" 
-                                             style="width: 40px; height: 40px; color: white;">{{ turma.instrutor_auxiliar.nome|first|upper }}</div>
-                                    {% endif %}
-                                    <strong>{{ turma.instrutor_auxiliar.nome }}</strong>
-                                    {% if turma.instrutor_auxiliar.numero_iniciatico %}
-                                        - Nº {{ turma.instrutor_auxiliar.numero_iniciatico }}
-                                    {% endif %}
-                                    (CPF: {{ turma.instrutor_auxiliar.cpf|slice:":3" }}.{{ turma.instrutor_auxiliar.cpf|slice:"3:6" }}.{{ turma.instrutor_auxiliar.cpf|slice:"6:9" }}-{{ turma.instrutor_auxiliar.cpf|slice:"9:" }})
-                                    <button type="button" class="btn btn-sm btn-danger float-end" 
-                                            onclick="InstrutorSearch.removeAluno('id_instrutor_auxiliar', 'selected-instrutor-auxiliar-container', 'selected-instrutor-auxiliar-info', 'instrutor-auxiliar-error', 'instrutor auxiliar')">Remover</button>
+                                    <strong>{{ turma.instrutor_auxiliar.nome }}</strong><br>
+                                    CPF: {{ turma.instrutor_auxiliar.cpf }}<br>
+                                    Número Iniciático: {{ turma.instrutor_auxiliar.numero_iniciatico|default:"N/A" }}<br>
+                                    <span class="badge bg-{{ turma.instrutor_auxiliar.situacao_class }}">{{ turma.instrutor_auxiliar.get_situacao_display }}</span>
+                                    <div class="mt-2 small">
+                                        <div><strong>Status como instrutor:</strong> <span id="instrutor-auxiliar-status"></span></div>
+                                        <div class="mt-1"><strong>Turmas:</strong> <span id="instrutor-auxiliar-turmas"></span></div>
+                                    </div>
                                 {% else %}
                                     Nenhum instrutor auxiliar selecionado
                                 {% endif %}
                             </div>
                         </div>
                         <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
-                        <select name="instrutor_auxiliar" class="form-control d-none" id="id_instrutor_auxiliar">
-                            <option value="">---------</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}" {% if turma.instrutor_auxiliar and turma.instrutor_auxiliar.cpf == aluno.cpf %}selected{% endif %}>{{ aluno.nome }}</option>
-                            {% endfor %}
-                        </select>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.instrutor_auxiliar }}
                     </div>
                     
                     <!-- Auxiliar de Instrução -->
                     <div class="col-md-4 mb-3">
                         <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
-                        <input type="text" id="search-auxiliar-instrucao" class="form-control" 
-                               placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <input type="text" id="search-auxiliar-instrucao" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off"
+                               value="{% if turma.auxiliar_instrucao %}{{ turma.auxiliar_instrucao.nome }}{% endif %}">
                         <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
                         <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 {% if not turma.auxiliar_instrucao %}d-none{% endif %}">
                             <div id="selected-auxiliar-instrucao-info">
                                 {% if turma.auxiliar_instrucao %}
-                                    {% if turma.auxiliar_instrucao.foto %}
-                                        <img src="{{ turma.auxiliar_instrucao.foto.url }}" alt="Foto de {{ turma.auxiliar_instrucao.nome }}" 
-                                             class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
-                                    {% else %}
-                                        <div class="rounded-circle bg-secondary me-2 d-inline-flex align-items-center justify-content-center" 
-                                             style="width: 40px; height: 40px; color: white;">{{ turma.auxiliar_instrucao.nome|first|upper }}</div>
-                                    {% endif %}
-                                    <strong>{{ turma.auxiliar_instrucao.nome }}</strong>
-                                    {% if turma.auxiliar_instrucao.numero_iniciatico %}
-                                        - Nº {{ turma.auxiliar_instrucao.numero_iniciatico }}
-                                    {% endif %}
-                                    (CPF: {{ turma.auxiliar_instrucao.cpf|slice:":3" }}.{{ turma.auxiliar_instrucao.cpf|slice:"3:6" }}.{{ turma.auxiliar_instrucao.cpf|slice:"6:9" }}-{{ turma.auxiliar_instrucao.cpf|slice:"9:" }})
-                                    <button type="button" class="btn btn-sm btn-danger float-end" 
-                                            onclick="InstrutorSearch.removeAluno('id_auxiliar_instrucao', 'selected-auxiliar-instrucao-container', 'selected-auxiliar-instrucao-info', 'auxiliar-instrucao-error', 'auxiliar de instrução')">Remover</button>
+                                    <strong>{{ turma.auxiliar_instrucao.nome }}</strong><br>
+                                    CPF: {{ turma.auxiliar_instrucao.cpf }}<br>
+                                    Número Iniciático: {{ turma.auxiliar_instrucao.numero_iniciatico|default:"N/A" }}<br>
+                                    <span class="badge bg-{{ turma.auxiliar_instrucao.situacao_class }}">{{ turma.auxiliar_instrucao.get_situacao_display }}</span>
+                                    <div class="mt-2 small">
+                                        <div><strong>Status como instrutor:</strong> <span id="auxiliar-instrucao-status"></span></div>
+                                        <div class="mt-1"><strong>Turmas:</strong> <span id="auxiliar-instrucao-turmas"></span></div>
+                                    </div>
                                 {% else %}
                                     Nenhum auxiliar de instrução selecionado
                                 {% endif %}
                             </div>
                         </div>
                         <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
-                        <select name="auxiliar_instrucao" class="form-control d-none" id="id_auxiliar_instrucao">
-                            <option value="">---------</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}" {% if turma.auxiliar_instrucao and turma.auxiliar_instrucao.cpf == aluno.cpf %}selected{% endif %}>{{ aluno.nome }}</option>
-                            {% endfor %}
-                        </select>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.auxiliar_instrucao }}
                     </div>
                 </div>
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor. 
+                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
                     O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Horários</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="id_dias_semana" class="form-label">Dias da Semana</label>
-                            <input type="text" name="dias_semana" class="form-control" id="id_dias_semana" 
-                                   value="{{ turma.dias_semana|default:'' }}"
-                                   placeholder="Ex: Segunda, Quarta e Sexta">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="id_horario" class="form-label">Horário</label>
-                            <input type="text" name="horario" class="form-control" id="id_horario" 
-                                   value="{{ turma.horario|default:'' }}"
-                                   placeholder="Ex: 19:00 às 21:00">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Requisitos</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.requisitos %}
-                    </div>
                 </div>
             </div>
         </div>
@@ -1749,34 +2817,70 @@ html
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/turmas/instrutor_search.js' %}"></script>
+<!-- Adicionando jQuery apenas se não estiver disponível -->
 <script>
+    if (typeof jQuery === 'undefined') {
+        document.write('<script src="https://code.jquery.com/jquery-3.6.0.min.js"><\/script>');
+    }
+</script>
+
+<!-- Carregando os scripts necessários -->
+<script src="{% static 'js/modules/instrutor-search.js' %}"></script>
+<script src="{% static 'js/modules/dias-semana.js' %}"></script>
+<script>
+    // Script local para inicializar os componentes
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar o módulo de busca de instrutores com opção para mostrar todos os alunos
-        InstrutorSearch.init(document.querySelector('[name=csrfmiddlewaretoken]').value, true);
-        
-        // Validação de datas
-        const dataInicio = document.getElementById('{{ form.data_inicio.id_for_label }}');
-        const dataFim = document.getElementById('{{ form.data_fim.id_for_label }}');
-        
-        if (dataInicio && dataFim) {
-            dataInicio.addEventListener('change', function() {
-                if (dataFim.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
-                    alert('A data de início não pode ser posterior à data de fim.');
-                    dataInicio.value = '';
-                }
-            });
+        // Inicializar dias da semana
+        if (typeof DiasSemana !== 'undefined') {
+            console.log('Inicializando DiasSemana');
+            DiasSemana.init();
             
-            dataFim.addEventListener('change', function() {
-                if (dataInicio.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
-                    alert('A data de fim não pode ser anterior à data de início.');
-                    dataFim.value = '';
-                }
-            });
+            // Definir os dias da semana selecionados
+            var diasSelecionados = '{{ form.dias_semana.value|default:"" }}';
+            if (diasSelecionados) {
+                console.log('Definindo dias selecionados: ', diasSelecionados);
+                var diasArray = diasSelecionados.split(',').map(function(dia) {
+                    return dia.trim();
+                });
+                
+                // Marcar os checkboxes correspondentes
+                diasArray.forEach(function(dia) {
+                    dia = dia.charAt(0).toUpperCase() + dia.slice(1).toLowerCase();
+                    var checkbox = document.getElementById('dia_' + dia.toLowerCase());
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+                
+                // Atualizar texto visível
+                document.getElementById('dias-semana-texto').textContent = diasSelecionados;
+            }
+        } else {
+            console.error('Módulo DiasSemana não encontrado!');
+        }
+        
+        // Inicializar busca de instrutores
+        if (typeof InstrutorSearch !== 'undefined') {
+            var csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            InstrutorSearch.init(csrftoken, false);
+        } else {
+            console.error('Módulo InstrutorSearch não encontrado!');
+        }
+        
+        // Ocultar botões "Limpar seleção" duplicados gerados pelo JS
+        document.querySelectorAll('.btn-limpar-duplicada').forEach(function(btn) {
+            btn.style.display = 'none';
+        });
+        
+        // Remover validação incorreta da data de início
+        var dataInicioField = document.getElementById('id_data_inicio');
+        if (dataInicioField) {
+            dataInicioField.min = ""; // Remove restrição de data mínima
         }
     });
 </script>
 {% endblock %}
+
 
 
 
@@ -2454,6 +3558,288 @@ html
 </script>
 {% endblock %}
 
+
+
+
+### Arquivo: turmas\templates\turmas\relatorio_turmas.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Turmas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-counter {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 20px;
+        background-color: #fff;
+        height: 100%;
+        border-radius: 5px;
+        transition: .3s linear all;
+    }
+    
+    .card-counter.primary {
+        background-color: #007bff;
+        color: #FFF;
+    }
+    
+    .card-counter.success {
+        background-color: #28a745;
+        color: #FFF;
+    }
+    
+    .card-counter.info {
+        background-color: #17a2b8;
+        color: #FFF;
+    }
+    
+    .card-counter.warning {
+        background-color: #ffc107;
+        color: #FFF;
+    }
+    
+    .card-counter.danger {
+        background-color: #dc3545;
+        color: #FFF;
+    }
+    
+    .card-counter i {
+        font-size: 4em;
+        opacity: 0.3;
+    }
+    
+    .card-counter .count-numbers {
+        position: absolute;
+        right: 35px;
+        top: 20px;
+        font-size: 32px;
+        display: block;
+    }
+    
+    .card-counter .count-name {
+        position: absolute;
+        right: 35px;
+        top: 65px;
+        font-style: italic;
+        text-transform: capitalize;
+        opacity: 0.7;
+        display: block;
+    }
+    
+    .progress-bar-container {
+        height: 25px;
+        margin-bottom: 10px;
+    }
+    
+    .progress-bar-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <h1 class="mb-3 mb-md-0">Relatório de Turmas</h1>
+        
+        <div class="btn-group">
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'turmas:exportar_turmas' %}" class="btn btn-success">
+                <i class="fas fa-file-export"></i> Exportar CSV
+            </a>
+            <a href="{% url 'turmas:exportar_turmas' %}?formato=excel" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </a>
+        </div>
+    </div>
+    
+    <!-- Resumo Geral -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Resumo Geral</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card-counter primary">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span class="count-numbers">{{ total_turmas }}</span>
+                                <span class="count-name">Total de Turmas</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2 mb-3">
+                            <div class="card-counter success">
+                                <i class="fas fa-check-circle"></i>
+                                <span class="count-numbers">{{ turmas_ativas }}</span>
+                                <span class="count-name">Ativas</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2 mb-3">
+                            <div class="card-counter info">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span class="count-numbers">{{ turmas_planejadas }}</span>
+                                <span class="count-name">Planejadas</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2 mb-3">
+                            <div class="card-counter secondary">
+                                <i class="fas fa-flag-checkered"></i>
+                                <span class="count-numbers">{{ turmas_concluidas }}</span>
+                                <span class="count-name">Concluídas</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2 mb-3">
+                            <div class="card-counter danger">
+                                <i class="fas fa-ban"></i>
+                                <span class="count-numbers">{{ turmas_canceladas }}</span>
+                                <span class="count-name">Canceladas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estatísticas por Curso -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Estatísticas por Curso</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Curso</th>
+                                    <th>Total de Turmas</th>
+                                    <th>Turmas Ativas</th>
+                                    <th>Turmas Planejadas</th>
+                                    <th>Turmas Concluídas</th>
+                                    <th>Média de Alunos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for estatistica in estatisticas_cursos %}
+                                <tr>
+                                    <td>{{ estatistica.curso.nome }}</td>
+                                    <td>{{ estatistica.total_turmas }}</td>
+                                    <td>{{ estatistica.turmas_ativas }}</td>
+                                    <td>{{ estatistica.turmas_planejadas }}</td>
+                                    <td>{{ estatistica.turmas_concluidas }}</td>
+                                    <td>{{ estatistica.media_alunos }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">Nenhum dado disponível</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Turmas Populares e Instrutores -->
+    <div class="row">
+        <!-- Turmas com mais alunos -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Turmas com Mais Alunos</h5>
+                </div>
+                <div class="card-body">
+                    {% if turmas_populares %}
+                        {% for turma in turmas_populares %}
+                            <div class="mb-3">
+                                <div class="progress-bar-label">
+                                    <span><strong>{{ turma.nome }}</strong> ({{ turma.curso.nome }})</span>
+                                    <span>{{ turma.total_alunos }} alunos</span>
+                                </div>
+                                <div class="progress progress-bar-container">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ turma.total_alunos|div:turma.vagas|mul:100 }}%" 
+                                         aria-valuenow="{{ turma.total_alunos }}" aria-valuemin="0" 
+                                         aria-valuemax="{{ turma.vagas }}">
+                                        {{ turma.total_alunos }}/{{ turma.vagas }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-center">Nenhuma turma encontrada</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instrutores com mais turmas -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">Instrutores Mais Ativos</h5>
+                </div>
+                <div class="card-body">
+                    {% if estatisticas_instrutores %}
+                        {% for estatistica in estatisticas_instrutores %}
+                            <div class="mb-3">
+                                <div class="progress-bar-label">
+                                    <span><strong>{{ estatistica.instrutor.nome }}</strong></span>
+                                    <span>{{ estatistica.total_turmas }} turmas</span>
+                                </div>
+                                <div class="progress progress-bar-container">
+                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                         style="width: {{ estatistica.turmas_como_instrutor|div:estatistica.total_turmas|mul:100 }}%" 
+                                         aria-valuenow="{{ estatistica.turmas_como_instrutor }}" 
+                                         aria-valuemin="0" aria-valuemax="{{ estatistica.total_turmas }}">
+                                        {{ estatistica.turmas_como_instrutor }} como instrutor
+                                    </div>
+                                    <div class="progress-bar bg-info" role="progressbar" 
+                                         style="width: {{ estatistica.turmas_como_auxiliar|div:estatistica.total_turmas|mul:100 }}%" 
+                                         aria-valuenow="{{ estatistica.turmas_como_auxiliar }}" 
+                                         aria-valuemin="0" aria-valuemax="{{ estatistica.total_turmas }}">
+                                        {{ estatistica.turmas_como_auxiliar }} como auxiliar
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-center">Nenhum instrutor encontrado</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filtros personalizados para os cálculos nas barras de progresso
+    function div(a, b) {
+        return a / b;
+    }
+    
+    function mul(a, b) {
+        return a * b;
+    }
+</script>
+{% endblock %}
 
 
 
