@@ -4,10 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from importlib import import_module
+from django.urls import reverse
 
 
 def get_model(app_name, model_name):
     """Obtém um modelo dinamicamente para evitar importações circulares."""
+    from importlib import import_module
     module = import_module(f"{app_name}.models")
     return getattr(module, model_name)
 
@@ -108,4 +110,36 @@ def cancelar_matricula(request, id):
 
     return render(
         request, "matriculas/cancelar_matricula.html", {"matricula": matricula}
+    )
+
+
+@login_required
+def cancelar_matricula_por_turma_aluno(request, turma_id, aluno_cpf):
+    """Cancela uma matrícula identificada pela turma e pelo CPF do aluno."""
+    Matricula = get_model("matriculas", "Matricula")
+    Aluno = get_model("alunos", "Aluno")
+    Turma = get_model("turmas", "Turma")
+    
+    # Obter os objetos necessários
+    aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
+    turma = get_object_or_404(Turma, id=turma_id)
+    matricula = get_object_or_404(Matricula, aluno=aluno, turma=turma)
+    
+    if request.method == "POST":
+        matricula.status = "C"  # Cancelada
+        matricula.save()
+        messages.success(
+            request,
+            f"Matrícula de {aluno.nome} na turma {turma.nome} cancelada com sucesso."
+        )
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+    
+    # Para requisições GET, exibir página de confirmação
+    return render(
+        request, 
+        "matriculas/cancelar_matricula.html", 
+        {
+            "matricula": matricula,
+            "return_url": reverse("turmas:detalhar_turma", args=[turma_id])
+        }
     )

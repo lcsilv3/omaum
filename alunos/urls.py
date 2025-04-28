@@ -22,13 +22,13 @@ urlpatterns = [
     ),
     path(
         "api/search-instrutores/",
-        views.search_instrutores,
+        api_views.search_instrutores,
         name="search_instrutores",
     ),
     path("api/get-aluno/<str:cpf>/", views.get_aluno, name="get_aluno"),
     path(
         "api/detalhes/<str:cpf>/",
-        views.get_aluno_detalhes,
+        api_views.get_aluno_detalhes,
         name="get_aluno_detalhes"
     ),
     path(

@@ -9,13 +9,12 @@ python
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from importlib import import_module
 
+# Importar a função utilitária centralizada
+from .utils import get_model_dynamically
 
-def get_model(app_name, model_name):
-    """Obtém um modelo dinamicamente para evitar importações circulares."""
-    module = import_module(f"{app_name}.models")
-    return getattr(module, model_name)
+# Substituir a função get_model pela função utilitária centralizada
+get_model = get_model_dynamically
 
 
 class AlunoForm(forms.ModelForm):

@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Turmas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard de Turmas</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para Lista</a>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Turmas</h5>
+                    <p class="card-text display-4">{{ total_turmas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Turmas Ativas</h5>
+                    <p class="card-text display-4">{{ turmas_ativas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Turmas Concluídas</h5>
+                    <p class="card-text display-4">{{ turmas_concluidas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Turmas Canceladas</h5>
+                    <p class="card-text display-4">{{ turmas_canceladas }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Turmas Recentes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Curso</th>
+                                    <th>Data de Início</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for turma in turmas_recentes %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
+                                        </td>
+                                        <td>{{ turma.curso.nome }}</td>
+                                        <td>{{ turma.data_inicio|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <span class="badge {% if turma.status == 'A' %}bg-success{% elif turma.status == 'C' %}bg-info{% else %}bg-danger{% endif %}">
+                                                {{ turma.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">Nenhuma turma encontrada</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Turmas Mais Populares</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Curso</th>
+                                    <th>Alunos</th>
+                                    <th>Vagas Disponíveis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in turmas_populares %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'turmas:detalhar_turma' item.turma.id %}">{{ item.turma.nome }}</a>
+                                        </td>
+                                        <td>{{ item.turma.curso.nome }}</td>
+                                        <td>{{ item.alunos_count }}</td>
+                                        <td>{{ item.vagas_disponiveis }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">Nenhuma turma encontrada</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Distribuição de Turmas por Curso</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="turmasPorCursoChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var ctx = document.getElementById('turmasPorCursoChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ dados_grafico.labels|safe }},
+                datasets: [{
+                    label: 'Número de Turmas',
+                    data: {{ dados_grafico.data|safe }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

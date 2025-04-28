@@ -102,7 +102,6 @@ def criar_form_atividade_ritualistica():
 ### Arquivo: atividades\views.py
 
 python
-import importlib
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -110,6 +109,10 @@ from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.http import HttpResponse
+import importlib
+
+# Importar a função utilitária centralizada
+from core.utils import get_model_dynamically, get_form_dynamically
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -131,14 +134,12 @@ def get_return_url(request, default_url):
 
 def get_form_class(form_name):
     """Importa dinamicamente uma classe de formulário para evitar importações circulares."""
-    forms_module = importlib.import_module("atividades.forms")
-    return getattr(forms_module, form_name)
+    return get_form_dynamically("atividades", form_name)
 
 
-def get_model_class(model_name, module_name="atividades.models"):
+def get_model_class(model_name, module_name="atividades"):
     """Importa dinamicamente uma classe de modelo para evitar importações circulares."""
-    models_module = importlib.import_module(module_name)
-    return getattr(models_module, model_name)
+    return get_model_dynamically(module_name, model_name)
 
 
 @login_required
@@ -358,7 +359,7 @@ def criar_atividade_ritualistica(request):
                 ):
                     # Obter todos os alunos da turma e adicioná-los à atividade
                     Aluno = get_model_class(
-                        "Aluno", module_name="alunos.models"
+                        "Aluno", module_name="alunos"
                     )
                     alunos_da_turma = Aluno.objects.filter(
                         turmas=atividade.turma
@@ -415,7 +416,7 @@ def editar_atividade_ritualistica(request, pk):
                     atividade.participantes.clear()
                     # Obter todos os alunos da turma e adicioná-los à atividade
                     Aluno = get_model_class(
-                        "Aluno", module_name="alunos.models"
+                        "Aluno", module_name="alunos"
                     )
                     alunos_da_turma = Aluno.objects.filter(
                         turmas=atividade.turma
@@ -516,10 +517,17 @@ def detalhar_atividade_ritualistica(request, pk):
         "return_url", reverse("atividades:listar_atividades_ritualisticas")
     )
 
+    # Calcular o total de participantes para exibição
+    total_participantes = atividade.participantes.count()
+
     return render(
         request,
         "atividades/detalhar_atividade_ritualistica.html",
-        {"atividade": atividade, "return_url": return_url},
+        {
+            "atividade": atividade, 
+            "return_url": return_url,
+            "total_participantes": total_participantes
+        },
     )
 
 
@@ -536,9 +544,7 @@ from . import views
 app_name = "atividades"  # Definindo o namespace
 
 urlpatterns = [
-    path(
-        "", views.listar_atividades, name="listar_atividades"
-    ),  # Alterado de 'listar' para 'listar_atividades'
+    path("", views.listar_atividades, name="listar_atividades"),
     # Atividades Acadêmicas
     path(
         "academicas/",
@@ -1823,7 +1829,6 @@ html
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Lista de Atividades Acadêmicas</h1>
         <div>
-            <!-- Use uma URL específica em vez de javascript:history.back() -->
             <a href="{% url 'core:pagina_inicial' %}" class="btn btn-secondary me-2">Página Inicial</a>
             
             <!-- Botão para criar nova atividade acadêmica com URL de retorno -->
@@ -1860,13 +1865,19 @@ html
                         {% for atividade in atividades %}
                             <tr>
                                 <td>{{ atividade.nome }}</td>
-                                <td>{{ atividade.descrição }}</td>
+                                <td>{{ atividade.responsavel|default:"Não informado" }}</td>
                                 <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
-                                <td>{{ atividade.get_status_display }}</td>
                                 <td>
-                                    <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
-                                    <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning">Editar</a>
-                                    <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger">Excluir</a>                                </td>                            </tr>
+                                    <span class="badge {% if atividade.status == 'agendada' %}bg-warning{% elif atividade.status == 'em_andamento' %}bg-info{% elif atividade.status == 'concluida' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ atividade.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da atividade">Detalhes</a>
+                                    <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar informações da atividade">Editar</a>
+                                    <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir esta atividade">Excluir</a>
+                                </td>
+                            </tr>
                         {% empty %}
                             <tr>
                                 <td colspan="5" class="text-center">
@@ -1979,9 +1990,11 @@ html
                                 <td>{{ atividade.local }}</td>
                                 <td>{{ atividade.turma }}</td>
                                 <td>
-                                    <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
-                                    <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-warning">Editar</a>
-                                    <a href="{% url 'atividades:excluir_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-danger">Excluir</a>                                </td>                            </tr>
+                                    <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da atividade">Detalhes</a>
+                                    <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar informações da atividade">Editar</a>
+                                    <a href="{% url 'atividades:excluir_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir esta atividade">Excluir</a>
+                                </td>
+                            </tr>
                         {% empty %}
                             <tr>
                                 <td colspan="6" class="text-center">

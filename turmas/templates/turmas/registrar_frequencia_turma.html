@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Frequência - {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Registrar Frequência</h1>
+        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar para Turma</a>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{{ turma.nome }} - {{ turma.curso.nome }}</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="data_atividade" class="form-label">Data da Atividade</label>
+                    <input type="date" class="form-control" id="data_atividade" name="data_atividade" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="atividade" class="form-label">Atividade</label>
+                    <select class="form-select" id="atividade" name="atividade" required>
+                        <option value="">Selecione uma atividade</option>
+                        {% for atividade in atividades %}
+                            <option value="{{ atividade.id }}">{{ atividade.nome }} - {{ atividade.data_inicio|date:"d/m/Y" }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <h5 class="mt-4 mb-3">Lista de Alunos</h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Presente</th>
+                                <th>Justificativa (se ausente)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aluno in alunos %}
+                                <tr>
+                                    <td>{{ aluno.nome }}</td>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="presentes" value="{{ aluno.cpf }}" id="presente_{{ aluno.cpf }}" checked>
+                                            <label class="form-check-label" for="presente_{{ aluno.cpf }}">
+                                                Presente
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <textarea class="form-control" name="justificativa_{{ aluno.cpf }}" rows="1" placeholder="Justificativa para ausência"></textarea>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center">Nenhum aluno matriculado nesta turma.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Registrar Frequência</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

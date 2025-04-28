@@ -1,69 +1,43 @@
 from django import forms
 from importlib import import_module
-from django.utils import timezone
 
-
-def get_turma_model():
-    """Obtém o modelo Turma dinamicamente para evitar importações circulares."""
-    turmas_module = import_module("turmas.models")
-    return getattr(turmas_module, "Turma")
-
-
+# Adicionar esta função para obter o modelo Aluno dinamicamente
 def get_aluno_model():
-    """Obtém o modelo Aluno dinamicamente para evitar importações circulares."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
+# Adicionar esta função para obter o modelo Turma dinamicamente
+def get_turma_model():
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
+
+# Adicionar esta função para obter o modelo Curso dinamicamente
+def get_curso_model():
+    cursos_module = import_module("cursos.models")
+    return getattr(cursos_module, "Curso")
 
 class TurmaForm(forms.ModelForm):
-    """
-    Formulário para criação e edição de turmas.
-    """
-
     class Meta:
         model = get_turma_model()
         fields = [
-            "nome",
-            "curso",
-            "vagas",
-            "status",
-            "data_inicio",
-            "data_fim",
-            "instrutor",
-            "instrutor_auxiliar",
-            "auxiliar_instrucao",
-            "dias_semana",
-            "local",
-            "horario",
-            "descricao",
+            "nome", "curso", "vagas", "status", "data_inicio", "data_fim",
+            "instrutor", "instrutor_auxiliar", "auxiliar_instrucao",
+            "dias_semana", "local", "horario", "descricao"
         ]
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
             "curso": forms.Select(attrs={"class": "form-select"}),
-            "vagas": forms.NumberInput(
-                attrs={"class": "form-control", "min": "1"}
-            ),
+            "vagas": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
             "status": forms.Select(attrs={"class": "form-select"}),
-            # Melhoria nos widgets de data para garantir o formato correto
-            "data_inicio": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
-            ),
-            "data_fim": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
-            ),
-            "instrutor": forms.Select(attrs={"class": "form-select"}),
-            "instrutor_auxiliar": forms.Select(
-                attrs={"class": "form-select"}
-            ),
-            "auxiliar_instrucao": forms.Select(
-                attrs={"class": "form-select"}
-            ),
+            "data_inicio": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "data_fim": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "instrutor": forms.Select(attrs={"class": "form-control"}),
+            "instrutor_auxiliar": forms.Select(attrs={"class": "form-control"}),
+            "auxiliar_instrucao": forms.Select(attrs={"class": "form-control"}),
             "dias_semana": forms.TextInput(attrs={"class": "form-control"}),
             "local": forms.TextInput(attrs={"class": "form-control"}),
             "horario": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
+            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
         labels = {
             "nome": "Nome da Turma",

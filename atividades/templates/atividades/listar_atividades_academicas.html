@@ -8,7 +8,6 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Lista de Atividades Acadêmicas</h1>
         <div>
-            <!-- Use uma URL específica em vez de javascript:history.back() -->
             <a href="{% url 'core:pagina_inicial' %}" class="btn btn-secondary me-2">Página Inicial</a>
             
             <!-- Botão para criar nova atividade acadêmica com URL de retorno -->
@@ -45,13 +44,19 @@
                         {% for atividade in atividades %}
                             <tr>
                                 <td>{{ atividade.nome }}</td>
-                                <td>{{ atividade.descrição }}</td>
+                                <td>{{ atividade.responsavel|default:"Não informado" }}</td>
                                 <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
-                                <td>{{ atividade.get_status_display }}</td>
                                 <td>
-                                    <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
-                                    <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning">Editar</a>
-                                    <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger">Excluir</a>                                </td>                            </tr>
+                                    <span class="badge {% if atividade.status == 'agendada' %}bg-warning{% elif atividade.status == 'em_andamento' %}bg-info{% elif atividade.status == 'concluida' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ atividade.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da atividade">Detalhes</a>
+                                    <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar informações da atividade">Editar</a>
+                                    <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir esta atividade">Excluir</a>
+                                </td>
+                            </tr>
                         {% empty %}
                             <tr>
                                 <td colspan="5" class="text-center">

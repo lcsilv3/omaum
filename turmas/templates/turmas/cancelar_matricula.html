@@ -7,14 +7,14 @@
     <h1>Cancelar Matrícula</h1>
     
     <div class="alert alert-warning">
-        <p>Você está prestes a cancelar a matrícula do aluno <strong>{{ aluno.nome }}</strong> na turma <strong>{{ turma.nome }}</strong>.</p>
+        <p>Você está prestes a cancelar a matrícula do aluno <strong>{{ matricula.aluno.nome }}</strong> na turma <strong>{{ matricula.turma.nome }}</strong>.</p>
         <p>Esta ação não pode ser desfeita. Deseja continuar?</p>
     </div>
     
     <form method="post">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger">Confirmar Cancelamento</button>
-        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar</a>
+        <a href="{{ return_url }}" class="btn btn-secondary">Voltar</a>
     </form>
 </div>
 {% endblock %}

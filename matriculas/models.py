@@ -18,7 +18,7 @@ class Matricula(models.Model):
         "turmas.Turma",
         on_delete=models.CASCADE,
         verbose_name="Turma",
-        related_name="matriculas",  # Relacionamento reverso padrão
+        related_name="matriculas",
     )
     data_matricula = models.DateField(verbose_name="Data da Matrícula")
     ativa = models.BooleanField(default=True, verbose_name="Matrícula Ativa")
@@ -52,14 +52,4 @@ class Matricula(models.Model):
         ):  # Only for new enrollments
             raise ValidationError(
                 {"turma": _("Não há vagas disponíveis nesta turma.")}
-            )
-
-        # Check if student's course matches the class's course
-        if (
-            hasattr(self.aluno, "curso")
-            and hasattr(self.turma, "curso")
-            and self.aluno.curso != self.turma.curso
-        ):
-            raise ValidationError(
-                {"aluno": _("O aluno deve pertencer ao mesmo curso da turma.")}
             )

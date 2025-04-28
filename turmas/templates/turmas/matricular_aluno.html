@@ -1,191 +1,182 @@
 {% extends 'base.html' %}
-{% load static %}
-<!-- Modificar os links para usar turma.id em vez de turma.codigo_turma -->
-<a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar para Turma</a>
-{% block title %}Matricular Aluno na Turma: {{ turma.nome }}{% endblock %}
+
+{% block title %}Matricular Aluno na Turma{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <h1>Matricular Aluno na Turma: {{ turma.nome }}</h1>
     
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
     <div class="card mb-4">
         <div class="card-header">
-            <h5 class="mb-0">Informações da Turma</h5>
+            <h5>Informações da Turma</h5>
         </div>
         <div class="card-body">
-            <p><strong>Nome da Turma:</strong> {{ turma.nome }}</p>
+            <p><strong>Nome:</strong> {{ turma.nome }}</p>
             <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
-            <p><strong>Período:</strong> {{ turma.data_inicio|date:"d/m/Y" }} a {{ turma.data_fim|date:"d/m/Y" }}</p>
-            <p><strong>Vagas Disponíveis:</strong> {{ vagas_disponiveis }}</p>
+            <p><strong>Vagas Disponíveis:</strong> {{ turma.vagas_disponiveis }}</p>
         </div>
     </div>
     
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Selecionar Aluno para Matrícula</h5>
-        </div>
-        <div class="card-body">
-            <!-- Search input with autocomplete -->
-            <div class="mb-4">
-                {% csrf_token %}  <!-- Make sure you have this for AJAX requests -->
-                <label for="search-aluno" class="form-label">Buscar Aluno:</label>
-                <input type="text" id="search-aluno" class="form-control"
-                       placeholder="Digite parte do CPF, nome ou número iniciático..."
-                       autocomplete="off">
-                <div id="search-results" class="list-group mt-2">
-                    <!-- Results will be populated here dynamically -->
+    <form method="post" id="matricula-form">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="aluno-search" class="form-label">Buscar Aluno</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="aluno-search" placeholder="Digite o nome, CPF ou número iniciático do aluno...">
+                <button class="btn btn-outline-secondary" type="button" id="limpar-aluno">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="aluno-results" class="list-group mt-2 d-none"></div>
+            <div id="aluno-selected" class="mt-2 d-none">
+                <div class="card">
+                    <div class="card-body d-flex align-items-center">
+                        <div id="aluno-avatar" class="me-3">
+                            <!-- Avatar do aluno será inserido aqui -->
+                        </div>
+                        <div>
+                            <h5 id="aluno-nome" class="mb-1"></h5>
+                            <p id="aluno-info" class="mb-0 text-muted"></p>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <form method="post" id="matricula-form">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="aluno" class="form-label">Aluno Selecionado:</label>
-                    <div id="selected-aluno-container" class="p-3 border rounded mb-2 d-none">
-                        <div id="selected-aluno-info">Nenhum aluno selecionado</div>
-                    </div>
-                    <input type="hidden" name="aluno" id="aluno-id" required>
-                </div>
-                <button type="submit" class="btn btn-primary" id="submit-btn" disabled>Matricular</button>
-                <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
-            </form>
+            <input type="hidden" name="aluno" id="aluno-id" required>
         </div>
-    </div>
-    
-    <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary mt-3">Voltar para Detalhes da Turma</a>
+        
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Matricular Aluno</button>
+        </div>
+    </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('search-aluno');
-        const searchResults = document.getElementById('search-results');
-        const selectedAlunoContainer = document.getElementById('selected-aluno-container');
-        const selectedAlunoInfo = document.getElementById('selected-aluno-info');
-        const alunoIdField = document.getElementById('aluno-id');
-        const submitBtn = document.getElementById('submit-btn');
+        const alunoSearch = document.getElementById('aluno-search');
+        const alunoResults = document.getElementById('aluno-results');
+        const alunoSelected = document.getElementById('aluno-selected');
+        const alunoId = document.getElementById('aluno-id');
+        const alunoNome = document.getElementById('aluno-nome');
+        const alunoInfo = document.getElementById('aluno-info');
+        const alunoAvatar = document.getElementById('aluno-avatar');
+        const limparAluno = document.getElementById('limpar-aluno');
+        const form = document.getElementById('matricula-form');
         
         let searchTimeout;
         
-        // Get CSRF token
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
-        // Add CSRF token to all fetch requests
-        const originalFetch = window.fetch;
-        window.fetch = function(url, options = {}) {
-            if (url.startsWith('/')) {
-                options.headers = options.headers || {};
-                options.headers['X-CSRFToken'] = csrftoken;
-            }
-            return originalFetch(url, options);
-        };
-        
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            
-            const query = this.value.trim();
-            
-            // Clear results if query is too short
+        // Função para buscar alunos
+        function buscarAlunos(query) {
             if (query.length < 2) {
-                searchResults.innerHTML = '';
-                searchResults.classList.add('d-none');
+                alunoResults.classList.add('d-none');
                 return;
             }
             
-            // Set a timeout to avoid making too many requests
-            searchTimeout = setTimeout(function() {
-                // Show loading indicator
-                searchResults.innerHTML = '<div class="list-group-item text-muted">Buscando...</div>';
-                searchResults.classList.remove('d-none');
-                
-                fetch(`/alunos/search/?q=${encodeURIComponent(query)}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Erro na requisição');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        searchResults.innerHTML = '';
-                        
-                        if (data.error) {
-                            // Handle error response
-                            searchResults.innerHTML = `<div class="list-group-item text-danger">${data.error}</div>`;
-                            return;
-                        }
-                        
-                        if (data.length === 0) {
-                            searchResults.innerHTML = '<div class="list-group-item">Nenhum aluno encontrado</div>';
-                            return;
-                        }
-                        
-                        // Display results
+            fetch(`/alunos/search/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    alunoResults.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        const noResult = document.createElement('div');
+                        noResult.className = 'list-group-item';
+                        noResult.textContent = 'Nenhum aluno encontrado';
+                        alunoResults.appendChild(noResult);
+                    } else {
                         data.forEach(aluno => {
                             const item = document.createElement('a');
                             item.href = '#';
                             item.className = 'list-group-item list-group-item-action';
+                            item.dataset.id = aluno.cpf;
+                            item.dataset.nome = aluno.nome;
+                            item.dataset.numero = aluno.numero_iniciatico;
+                            item.dataset.foto = aluno.foto || '';
+                            
+                            // Criar conteúdo do item
+                            let avatarHtml = '';
+                            if (aluno.foto) {
+                                avatarHtml = `<img src="${aluno.foto}" alt="${aluno.nome}" class="rounded-circle me-2" width="32" height="32">`;
+                            } else {
+                                avatarHtml = `<div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">${aluno.nome.charAt(0)}</div>`;
+                            }
+                            
                             item.innerHTML = `
-                                <div class="d-flex justify-content-between">
-                                    <div>${aluno.nome}</div>
-                                    <div class="text-muted">
-                                        <small>CPF: ${aluno.cpf}</small>
-                                        ${aluno.numero_iniciatico !== "N/A" ? `<small class="ms-2">Nº: ${aluno.numero_iniciatico}</small>` : ''}
-                                    </div>
+                                ${avatarHtml}
+                                <div>
+                                    <div class="fw-bold">${aluno.nome}</div>
+                                    <small class="text-muted">CPF: ${aluno.cpf} | Nº Iniciático: ${aluno.numero_iniciatico || 'N/A'}</small>
                                 </div>
                             `;
                             
-                            // Add click event to select this aluno
                             item.addEventListener('click', function(e) {
                                 e.preventDefault();
-                                selectAluno(aluno);
-                                searchResults.classList.add('d-none');
+                                selecionarAluno(this.dataset);
                             });
                             
-                            searchResults.appendChild(item);
+                            alunoResults.appendChild(item);
                         });
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        searchResults.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar alunos</div>';
-                    });
+                    }
+                    
+                    alunoResults.classList.remove('d-none');
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar alunos:', error);
+                });
+        }
+        
+        // Função para selecionar um aluno
+        function selecionarAluno(dados) {
+            alunoId.value = dados.id;
+            alunoNome.textContent = dados.nome;
+            alunoInfo.textContent = `CPF: ${dados.id} | Nº Iniciático: ${dados.numero || 'N/A'}`;
+            
+            // Configurar avatar
+            if (dados.foto) {
+                alunoAvatar.innerHTML = `<img src="${dados.foto}" alt="${dados.nome}" class="rounded-circle" width="48" height="48">`;
+            } else {
+                alunoAvatar.innerHTML = `<div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 20px;">${dados.nome.charAt(0)}</div>`;
+            }
+            
+            // Mostrar seleção e esconder resultados
+            alunoSelected.classList.remove('d-none');
+            alunoResults.classList.add('d-none');
+            alunoSearch.value = '';
+        }
+        
+        // Função para limpar seleção
+        function limparSelecao() {
+            alunoId.value = '';
+            alunoSelected.classList.add('d-none');
+            alunoSearch.value = '';
+            alunoResults.classList.add('d-none');
+        }
+        
+        // Event listeners
+        alunoSearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                buscarAlunos(this.value);
             }, 300);
         });
         
-        // Hide results when clicking outside
+        limparAluno.addEventListener('click', limparSelecao);
+        
+        // Fechar resultados ao clicar fora
         document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                searchResults.classList.add('d-none');
+            if (!alunoSearch.contains(e.target) && !alunoResults.contains(e.target)) {
+                alunoResults.classList.add('d-none');
             }
         });
         
-        // Function to select an aluno
-        function selectAluno(aluno) {
-            // Update the hidden input with the selected aluno's CPF
-            alunoIdField.value = aluno.cpf;
-            
-            // Update the search input with the selected aluno's name
-            searchInput.value = aluno.nome;
-            
-            // Show the selected aluno info
-            selectedAlunoInfo.innerHTML = `
-                <strong>${aluno.nome}</strong><br>
-                CPF: ${aluno.cpf}<br>
-                ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
-            `;
-            
-            // Show the container and enable the submit button
-            selectedAlunoContainer.classList.remove('d-none');
-            submitBtn.disabled = false;
-        }
+        // Validar formulário antes de enviar
+        form.addEventListener('submit', function(e) {
+            if (!alunoId.value) {
+                e.preventDefault();
+                alert('Por favor, selecione um aluno para matricular.');
+            }
+        });
     });
 </script>
 {% endblock %}

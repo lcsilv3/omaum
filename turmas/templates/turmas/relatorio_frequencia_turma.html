@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Frequência - {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Relatório de Frequência</h1>
+        <div>
+            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary me-2">Voltar para Turma</a>
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="fas fa-print"></i> Imprimir Relatório
+            </button>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{{ turma.nome }} - {{ turma.curso.nome }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Instrutor:</strong> {{ turma.instrutor.nome|default:"Não definido" }}</p>
+                    <p><strong>Instrutor Auxiliar:</strong> {{ turma.instrutor_auxiliar.nome|default:"Não definido" }}</p>
+                    <p><strong>Auxiliar de Instrução:</strong> {{ turma.auxiliar_instrucao.nome|default:"Não definido" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Data de Início:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
+                    <p><strong>Data de Término:</strong> {{ turma.data_fim|date:"d/m/Y"|default:"Não definida" }}</p>
+                    <p><strong>Total de Alunos:</strong> {{ alunos|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if dados_frequencia %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Resumo de Frequência</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Presenças</th>
+                                <th>Total de Atividades</th>
+                                <th>Percentual</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dado in dados_frequencia %}
+                                <tr>
+                                    <td>{{ dado.aluno.nome }}</td>
+                                    <td>{{ dado.total_presencas }}</td>
+                                    <td>{{ dado.total_atividades }}</td>
+                                    <td>{{ dado.percentual_presenca|floatformat:1 }}%</td>
+                                    <td>
+                                        {% if dado.percentual_presenca >= 75 %}
+                                            <span class="badge bg-success">Aprovado</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Reprovado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Detalhamento por Atividade</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                {% for data in datas_atividades %}
+                                    <th>{{ data|date:"d/m/Y" }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dado in dados_frequencia %}
+                                <tr>
+                                    <td>{{ dado.aluno.nome }}</td>
+                                    {% for data in datas_atividades %}
+                                        <td class="text-center">
+                                            {% for freq in dado.frequencias %}
+                                                {% if freq.atividade.data_inicio.date == data %}
+                                                    {% if freq.presente %}
+                                                        <span class="text-success"><i class="fas fa-check"></i></span>
+                                                    {% else %}
+                                                        <span class="text-danger"><i class="fas fa-times"></i></span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <p>Não há dados de frequência disponíveis para esta turma.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

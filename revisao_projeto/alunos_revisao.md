@@ -1225,13 +1225,13 @@ urlpatterns = [
     ),
     path(
         "api/search-instrutores/",
-        views.search_instrutores,
+        api_views.search_instrutores,
         name="search_instrutores",
     ),
     path("api/get-aluno/<str:cpf>/", views.get_aluno, name="get_aluno"),
     path(
         "api/detalhes/<str:cpf>/",
-        views.get_aluno_detalhes,
+        api_views.get_aluno_detalhes,
         name="get_aluno_detalhes"
     ),
     path(
@@ -2770,46 +2770,9 @@ html
                                 <td>{{ aluno.email }}</td>
                                 <td>
                                     {% if aluno.cpf %}
-                                        <!-- Botões de ação em telas grandes -->
-                                        <div class="d-none d-md-flex justify-content-center gap-1">
-                                            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-sm btn-warning">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-sm btn-danger">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </div>
-                                        
-                                        <!-- Dropdown para ações em telas pequenas -->
-                                        <div class="d-md-none text-center">
-                                            <div class="dropdown">
-                                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" 
-                                                        id="dropdownMenuButton{{ aluno.cpf }}" data-bs-toggle="dropdown" 
-                                                        aria-expanded="false">
-                                                    Ações
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ aluno.cpf }}">
-                                                    <li>
-                                                        <a class="dropdown-item" href="{% url 'alunos:detalhar_aluno' aluno.cpf %}">
-                                                            <i class="fas fa-eye"></i> Detalhes
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item" href="{% url 'alunos:editar_aluno' aluno.cpf %}">
-                                                            <i class="fas fa-edit"></i> Editar
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item text-danger" href="{% url 'alunos:excluir_aluno' aluno.cpf %}">
-                                                            <i class="fas fa-trash"></i> Excluir
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
+                                        <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info" title="Ver detalhes completos do aluno">Detalhes</a>
+                                        <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-sm btn-warning" title="Editar informações do aluno">Editar</a>
+                                        <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-sm btn-danger" title="Excluir este aluno">Excluir</a>
                                     {% else %}
                                         <span class="text-muted">CPF não disponível</span>
                                     {% endif %}

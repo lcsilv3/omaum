@@ -1,148 +1,122 @@
 {% extends 'base.html' %}
 
+{% block title %}Lista de Presenças{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <h1>Lista de Presenças</h1>
+    <!-- Cabeçalho com título e botões na mesma linha -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Lista de Presenças</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
+            <a href="{% url 'presencas:registrar_presenca' %}" class="btn btn-primary">Registrar Presença</a>
+            <a href="{% url 'presencas:relatorio_presencas' %}" class="btn btn-info">Relatório</a>
+        </div>
+    </div>
     
-    <!-- Filtros -->
+    <!-- Barra de busca e filtros -->
     <div class="card mb-4">
         <div class="card-header">
-            <h5 class="mb-0">Filtros</h5>
-        </div>
-        <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="aluno" class="form-label">Aluno</label>
-                    <select name="aluno" id="aluno" class="form-select">
-                        <option value="">Todos</option>
-                        {% for aluno in alunos %}
-                            <option value="{{ aluno.id }}" {% if aluno_id == aluno.id|stringformat:"s" %}selected{% endif %}>{{ aluno.nome }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="col-md-4">
+                    <input type="text" name="q" class="form-control" placeholder="Buscar por aluno ou turma..." value="{{ query }}">
                 </div>
                 <div class="col-md-3">
-                    <label for="turma" class="form-label">Turma</label>
-                    <select name="turma" id="turma" class="form-select">
-                        <option value="">Todas</option>
+                    <select name="turma" class="form-select">
+                        <option value="">Todas as turmas</option>
                         {% for turma in turmas %}
-                            <option value="{{ turma.id }}" {% if turma_id == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.id }}</option>
+                            <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == turma_selecionada %}selected{% endif %}>{{ turma.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="data_inicio" class="form-label">Data Início</label>
-                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                    <input type="date" name="data" class="form-control" value="{{ data_selecionada }}">
                 </div>
-                <div class="col-md-3">
-                    <label for="data_fim" class="form-label">Data Fim</label>
-                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">Filtrar</button>
-                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">Limpar Filtros</a>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
                 </div>
             </form>
         </div>
-    </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Turma</th>
+                            <th>Data</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for presenca in presencas %}
+                            <tr>
+                                <td>{{ presenca.aluno.nome }}</td>
+                                <td>{{ presenca.turma.nome }}</td>
+                                <td>{{ presenca.data|date:"d/m/Y" }}</td>
+                                <td>
+                                    <span class="badge {% if presenca.status == 'PRESENTE' %}bg-success{% elif presenca.status == 'AUSENTE' %}bg-danger{% elif presenca.status == 'JUSTIFICADO' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {{ presenca.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'presencas:detalhar_presenca' presenca.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da presença">Detalhes</a>
+                                    <a href="{% url 'presencas:editar_presenca' presenca.id %}" class="btn btn-sm btn-warning" title="Editar informações da presença">Editar</a>
+                                    <a href="{% url 'presencas:excluir_presenca' presenca.id %}" class="btn btn-sm btn-danger" title="Excluir este registro de presença">Excluir</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <p class="my-3">Nenhum registro de presença encontrado.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <p class="text-muted mb-0">Total: {{ presencas.count|default:"0" }} registro(s)</p>
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginação">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&turma={{ turma_selecionada }}&data={{ data_selecionada }}">Anterior</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Anterior</span>
+                            </li>
+                        {% endif %}
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Aluno</th>
-                <th>Turma</th>
-                <th>Data</th>
-                <th>Presente</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for presenca in presencas %}
-            <tr>
-                <td>{{ presenca.aluno.nome }}</td>
-                <td>{{ presenca.turma.nome }}</td>
-                <td>{{ presenca.data|date:"d/m/Y" }}</td>
-                <td>{% if presenca.presente %}Sim{% else %}Não{% endif %}</td>
-                <td>
-                    <a href="{% url 'presencas:editar_presenca' presenca.id %}" class="btn btn-sm btn-warning">Editar</a>
-                    <a href="{% url 'presencas:excluir_presenca' presenca.id %}" class="btn btn-sm btn-danger">Excluir</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5">Nenhuma presença registrada.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}&q={{ query }}&turma={{ turma_selecionada }}&data={{ data_selecionada }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
 
-    <!-- Paginação -->
-    {% if presencas.paginator.num_pages > 1 %}
-    <nav aria-label="Navegação de página">
-        <ul class="pagination justify-content-center">
-            {% if presencas.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}" aria-label="Primeira">
-                        <span aria-hidden="true">««</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ presencas.previous_page_number }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}" aria-label="Anterior">
-                        <span aria-hidden="true">«</span>
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Primeira">
-                        <span aria-hidden="true">««</span>
-                    </a>
-                </li>
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Anterior">
-                        <span aria-hidden="true">«</span>
-                    </a>
-                </li>
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&turma={{ turma_selecionada }}&data={{ data_selecionada }}">Próxima</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Próxima</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
             {% endif %}
-
-            {% for i in presencas.paginator.page_range %}
-                {% if presencas.number == i %}
-                    <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
-                {% elif i > presencas.number|add:'-3' and i < presencas.number|add:'3' %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ i }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">{{ i }}</a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-
-            {% if presencas.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ presencas.next_page_number }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}" aria-label="Próxima">
-                        <span aria-hidden="true">»</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ presencas.paginator.num_pages }}{% if aluno_id %}&aluno={{ aluno_id }}{% endif %}{% if turma_id %}&turma={{ turma_id }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}" aria-label="Última">
-                        <span aria-hidden="true">»»</span>
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Próxima">
-                        <span aria-hidden="true">»</span>
-                    </a>
-                </li>
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Última">
-                        <span aria-hidden="true">»»</span>
-                    </a>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-
-    <div class="mt-3">
-        <a href="{% url 'presencas:registrar_presenca' %}" class="btn btn-primary">Registrar Nova Presença</a>
-        <a href="{% url 'presencas:relatorio_presencas' %}" class="btn btn-info">Gerar Relatório</a>
+        </div>
     </div>
 </div>
 {% endblock %}

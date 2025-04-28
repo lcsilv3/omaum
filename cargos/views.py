@@ -1,25 +1,21 @@
-import importlib
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+# Importar a função utilitária centralizada
+from core.utils import get_model_dynamically, get_form_dynamically
+
+# Importar o formulário diretamente, pois está no mesmo aplicativo
 from .forms import AtribuirCargoForm
 from .models import AtribuicaoCargo
 
+def get_cargo_administrativo_model():
+    """Obtém o modelo CargoAdministrativo dinamicamente."""
+    return get_model_dynamically("cargos", "CargoAdministrativo")
 
-# Função para obter modelos usando importlib
-def get_models():
-    CargoAdministrativo = importlib.import_module(
-        "cargos.models"
-    ).CargoAdministrativo
-    return CargoAdministrativo
-
-
-# Função para obter formulários usando importlib
-def get_forms():
-    CargoAdministrativoForm = importlib.import_module(
-        "cargos.formulario_cargo"
-    ).CargoAdministrativoForm
-    return CargoAdministrativoForm
+def get_cargo_administrativo_form():
+    """Obtém o formulário CargoAdministrativoForm dinamicamente."""
+    return get_form_dynamically("cargos", "CargoAdministrativoForm")
 
 
 @login_required

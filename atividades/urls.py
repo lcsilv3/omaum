@@ -4,9 +4,7 @@ from . import views
 app_name = "atividades"  # Definindo o namespace
 
 urlpatterns = [
-    path(
-        "", views.listar_atividades, name="listar_atividades"
-    ),  # Alterado de 'listar' para 'listar_atividades'
+    path("", views.listar_atividades, name="listar_atividades"),
     # Atividades Acadêmicas
     path(
         "academicas/",

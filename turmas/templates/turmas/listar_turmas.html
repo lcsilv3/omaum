@@ -4,166 +4,122 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Lista de Turmas</h1>
-
-    <form method="get" class="mb-3">
-        <div class="row">
-            <div class="col-md-4">
-                <input type="text" name="q" class="form-control" placeholder="Buscar turmas..." value="{{ query }}">
+    <!-- Cabeçalho com título e botões na mesma linha -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Lista de Turmas</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
+            <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary">Nova Turma</a>
+        </div>
+    </div>
+    
+    <!-- Barra de busca e filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome, curso ou instrutor..." value="{{ query }}">
+                </div>
+                <div class="col-md-4">
+                    <select name="curso" class="form-select" title="Selecione um curso" aria-label="Selecione um curso">
+                        <option value="">Todos os cursos</option>
+                        {% for curso in cursos %}
+                            <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == curso_selecionado %}selected{% endif %}>{{ curso.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            {% if error_message %}
+            <div class="alert alert-danger">
+                {{ error_message }}
             </div>
-            <div class="col-md-3">
-                <select name="curso" class="form-control">
-                    <option value="">Todos os cursos</option>
-                    {% for curso in cursos %}
-                        <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == curso_selecionado %}selected{% endif %}>
-                            {{ curso.nome }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select name="status" class="form-control">
-                    <option value="">Todos os status</option>
-                    {% for status_value, status_label in opcoes_status %}
-                        <option value="{{ status_value }}" {% if status_value == status_selecionado %}selected{% endif %}>
-                            {{ status_label }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary">Filtrar</button>
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Curso</th>
+                            <th>Nome da Turma</th>
+                            <th>Instrutor</th>
+                            <th>Status</th>
+                            <th>Data Início</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for turma in turmas %}
+                            <tr>
+                                <td>{{ turma.curso.nome }}</td>
+                                <td>{{ turma.nome }}</td>
+                                <td>{{ turma.instrutor.nome|default:"Não definido" }}</td>
+                                <td>
+                                    <span class="badge {% if turma.status == 'A' %}bg-success{% elif turma.status == 'P' %}bg-info{% elif turma.status == 'C' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                        {{ turma.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ turma.data_inicio|date:"d/m/Y"|default:"-" }}</td>
+                                <td>
+                                    <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da turma">Detalhes</a>
+                                    <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning" title="Editar informações da turma">Editar</a>
+                                    <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-sm btn-danger" title="Excluir esta turma">Excluir</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <p class="my-3">Nenhuma turma cadastrada.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-    </form>
+        <div class="card-footer">
+            <p class="text-muted mb-0">Total: {{ total_turmas|default:"0" }} turma(s)</p>
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginação">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Anterior</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Anterior</span>
+                            </li>
+                        {% endif %}
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Curso</th>
-                <th>Data de Início</th>
-                <th>Data de Fim</th>
-                <th>Status</th>
-                <th>Vagas</th>
-                <th>Matrículas</th>
-                <th>Disponíveis</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for turma_info in turmas_com_info %}
-            {% with turma=turma_info.turma %}
-            <tr {% if turma.alerta_instrutor %}class="table-warning"{% endif %}>
-                <td>
-                    {{ turma.nome }}
-                    {% if turma_info.tem_pendencia_instrutoria %}
-                    <div class="alert alert-danger mt-1 mb-0 p-1 text-center blink">
-                        <small><strong>Pendência na Instrutoria</strong></small>
-                    </div>
-                    {% endif %}
-                </td>
-                <td>{{ turma.curso }}</td>
-                <td>{{ turma.data_inicio|date:"d/m/Y" }}</td>
-                <td>{{ turma.data_fim|date:"d/m/Y" }}</td>
-                <td>
-                    {% if turma.status == 'A' %}
-                        <span class="badge bg-success">{{ turma.get_status_display }}</span>
-                    {% elif turma.status == 'I' %}
-                        <span class="badge bg-warning">{{ turma.get_status_display }}</span>
-                    {% else %}
-                        <span class="badge bg-secondary">{{ turma.get_status_display }}</span>
-                    {% endif %}
-                    
-                    {% if turma.alerta_instrutor %}
-                        <span class="badge bg-danger ms-1" data-bs-toggle="tooltip" title="{{ turma.alerta_mensagem }}">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </span>
-                    {% endif %}
-                </td>
-                <td>{{ turma.vagas }}</td>
-                <td>{{ turma_info.total_alunos }}</td>
-                <td>{{ turma_info.vagas_disponiveis }}</td>
-                <td>
-                    <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info">Detalhes</a>
-                    <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning">Editar</a>
-                    <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-sm btn-danger">Excluir</a>
-                </td>
-            </tr>
-            {% endwith %}
-            {% empty %}            <tr>
-                <td colspan="9" class="text-center">Nenhuma turma encontrada.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}&q={{ query }}&curso={{ curso_selecionado }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
 
-    {% if turmas.has_other_pages %}
-    <nav>
-        <ul class="pagination">
-            {% if turmas.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ turmas.previous_page_number }}">Anterior</a></li>
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Próxima</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Próxima</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
             {% endif %}
-
-            {% for i in turmas.paginator.page_range %}
-                {% if turmas.number == i %}
-                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                {% else %}
-                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
-                {% endif %}
-            {% endfor %}
-
-            {% if turmas.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ turmas.next_page_number }}">Próxima</a></li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-
-    <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary">Criar Nova Turma</a>
+        </div>
+    </div>
 </div>
 {% endblock %}
-@login_required
-def listar_turmas(request):
-    Turma = get_turma_model()
-    turmas = Turma.objects.all()
-    
-    # Preparar informações adicionais para cada turma
-    turmas_com_info = []
-    for turma in turmas:
-        # Calcular o número de alunos matriculados
-        total_alunos = turma.matriculas.count() if hasattr(turma, 'matriculas') else 0
-        
-        # Calcular vagas disponíveis
-        vagas_disponiveis = turma.vagas - total_alunos
-        
-        turmas_com_info.append({
-            'turma': turma,
-            'total_alunos': total_alunos,
-            'vagas_disponiveis': vagas_disponiveis
-        })
-    
-    # Obter cursos para o filtro
-    try:
-        Curso = get_model_class("Curso", "cursos.models")
-        cursos = Curso.objects.all()
-    except:
-        cursos = []
-    
-    # Opções de status para o filtro
-    opcoes_status = Turma.STATUS_CHOICES
-    
-    context = {
-        'turmas_com_info': turmas_com_info,
-        'cursos': cursos,
-        'opcoes_status': opcoes_status,
-        'query': request.GET.get('q', ''),
-        'curso_selecionado': request.GET.get('curso', ''),
-        'status_selecionado': request.GET.get('status', '')
-    }
-    
-    return render(request, "turmas/listar_turmas.html", context)
-def get_model_class(model_name, module_name="turmas.models"):
-    """Importa dinamicamente uma classe de modelo para evitar importações circulares."""
-    models_module = importlib.import_module(module_name)
-    return getattr(models_module, model_name)

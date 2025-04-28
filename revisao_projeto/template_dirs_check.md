@@ -1453,6 +1453,7 @@ DEFAULT_CONFIG = Config()
   - turmas\confirmar_cancelamento_matricula.html
   - turmas\criar_turma.html
   - turmas\dashboard.html
+  - turmas\dashboard_turmas.html
   - turmas\detalhar_turma.html
   - turmas\editar_turma.html
   - turmas\excluir_turma.html
@@ -1460,6 +1461,8 @@ DEFAULT_CONFIG = Config()
   - turmas\listar_alunos_matriculados.html
   - turmas\listar_turmas.html
   - turmas\matricular_aluno.html
+  - turmas\registrar_frequencia_turma.html
+  - turmas\relatorio_frequencia_turma.html
   - turmas\relatorio_turmas.html
   - turmas\turma_form.html
 - venv\Lib\site-packages\debug_toolbar\templates

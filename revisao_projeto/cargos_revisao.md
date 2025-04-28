@@ -102,28 +102,24 @@ class AtribuirCargoForm(forms.Form):
 ### Arquivo: cargos\views.py
 
 python
-import importlib
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+# Importar a função utilitária centralizada
+from core.utils import get_model_dynamically, get_form_dynamically
+
+# Importar o formulário diretamente, pois está no mesmo aplicativo
 from .forms import AtribuirCargoForm
 from .models import AtribuicaoCargo
 
+def get_cargo_administrativo_model():
+    """Obtém o modelo CargoAdministrativo dinamicamente."""
+    return get_model_dynamically("cargos", "CargoAdministrativo")
 
-# Função para obter modelos usando importlib
-def get_models():
-    CargoAdministrativo = importlib.import_module(
-        "cargos.models"
-    ).CargoAdministrativo
-    return CargoAdministrativo
-
-
-# Função para obter formulários usando importlib
-def get_forms():
-    CargoAdministrativoForm = importlib.import_module(
-        "cargos.formulario_cargo"
-    ).CargoAdministrativoForm
-    return CargoAdministrativoForm
+def get_cargo_administrativo_form():
+    """Obtém o formulário CargoAdministrativoForm dinamicamente."""
+    return get_form_dynamically("cargos", "CargoAdministrativoForm")
 
 
 @login_required
@@ -627,73 +623,146 @@ html
 html
 {% extends 'base.html' %}
 
+{% block title %}Lista de Cargos{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-  <h1>Cargos</h1>
-  
-  <div class="d-flex justify-content-between mb-3">
-    <a href="{% url 'cargos:criar_cargo' %}" class="btn btn-primary">Novo Cargo</a>
-    <a href="{% url 'cargos:atribuir_cargo' %}" class="btn btn-success">Atribuir Cargo</a>
+  <!-- Cabeçalho com título e botões na mesma linha -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1>Lista de Cargos</h1>
+      <div>
+          <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
+          <a href="{% url 'cargos:criar_cargo' %}" class="btn btn-primary">Novo Cargo</a>
+          <a href="{% url 'cargos:atribuir_cargo' %}" class="btn btn-success">Atribuir Cargo</a>
+      </div>
   </div>
-  
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Descrição</th>
-        <th>Nível</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for cargo in cargos %}
-      <tr>
-        <td>{{ cargo.nome }}</td>
-        <td>{{ cargo.descricao|truncatechars:50 }}</td>
-        <td>{{ cargo.get_nivel_display }}</td>
-        <td>
-          <a href="{% url 'cargos:detalhar_cargo' cargo.id %}" class="btn btn-sm btn-info">Detalhes</a>
-          <a href="{% url 'cargos:editar_cargo' cargo.id %}" class="btn btn-sm btn-warning">Editar</a>
-          <a href="{% url 'cargos:excluir_cargo' cargo.id %}" class="btn btn-sm btn-danger">Excluir</a>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="4">Nenhum cargo cadastrado.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  
+    
+  <!-- Barra de busca e filtros -->
+  <div class="card mb-4">
+      <div class="card-header">
+          <form method="get" class="row g-3">
+              <div class="col-md-6">
+                  <input type="text" name="q" class="form-control" placeholder="Buscar por nome ou código..." value="{{ query }}">
+              </div>
+              <div class="col-md-2">
+                  <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+              </div>
+          </form>
+      </div>
+      <div class="card-body">
+          <div class="table-responsive">
+              <table class="table table-striped">
+                  <thead>
+                      <tr>
+                          <th>Nome</th>
+                          <th>Código</th>
+                          <th>Descrição</th>
+                          <th>Ações</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for cargo in cargos %}
+                          <tr>
+                              <td>{{ cargo.nome }}</td>
+                              <td>{{ cargo.codigo_cargo }}</td>
+                              <td>{{ cargo.descricao|truncatechars:50 }}</td>
+                              <td>
+                                  <a href="{% url 'cargos:detalhar_cargo' cargo.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos do cargo">Detalhes</a>
+                                  <a href="{% url 'cargos:editar_cargo' cargo.id %}" class="btn btn-sm btn-warning" title="Editar informações do cargo">Editar</a>
+                                  <a href="{% url 'cargos:excluir_cargo' cargo.id %}" class="btn btn-sm btn-danger" title="Excluir este cargo">Excluir</a>
+                              </td>
+                          </tr>
+                      {% empty %}
+                          <tr>
+                              <td colspan="4" class="text-center">
+                                  <p class="my-3">Nenhum cargo cadastrado.</p>
+                              </td>
+                          </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
+          </div>
+      </div>
+      <div class="card-footer">
+          <p class="text-muted mb-0">Total: {{ cargos.count|default:"0" }} cargo(s)</p>
+          {% if page_obj.has_other_pages %}
+              <nav aria-label="Paginação">
+                  <ul class="pagination justify-content-center mb-0">
+                      {% if page_obj.has_previous %}
+                          <li class="page-item">
+                              <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}">Anterior</a>
+                          </li>
+                      {% else %}
+                          <li class="page-item disabled">
+                              <span class="page-link">Anterior</span>
+                          </li>
+                      {% endif %}
+
+                      {% for num in page_obj.paginator.page_range %}
+                          {% if page_obj.number == num %}
+                              <li class="page-item active">
+                                  <span class="page-link">{{ num }}</span>
+                              </li>
+                          {% else %}
+                              <li class="page-item">
+                                  <a class="page-link" href="?page={{ num }}&q={{ query }}">{{ num }}</a>
+                              </li>
+                          {% endif %}
+                      {% endfor %}
+
+                      {% if page_obj.has_next %}
+                          <li class="page-item">
+                              <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}">Próxima</a>
+                          </li>
+                      {% else %}
+                          <li class="page-item disabled">
+                              <span class="page-link">Próxima</span>
+                          </li>
+                      {% endif %}
+                  </ul>
+              </nav>
+          {% endif %}
+      </div>
+  </div>
+    
+  <!-- Seção de Atribuições de Cargos -->
   <h2 class="mt-5">Atribuições de Cargos</h2>
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Aluno</th>
-        <th>Cargo</th>
-        <th>Data de Início</th>
-        <th>Data de Término</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for atribuicao in atribuicoes %}
-      <tr>
-        <td>{{ atribuicao.aluno.nome }}</td>
-        <td>{{ atribuicao.cargo.nome }}</td>
-        <td>{{ atribuicao.data_inicio|date:"d/m/Y" }}</td>
-        <td>{{ atribuicao.data_fim|date:"d/m/Y"|default:"Atual" }}</td>
-        <td>
-          <a href="{% url 'cargos:remover_atribuicao_cargo' atribuicao.id %}" class="btn btn-sm btn-danger">Remover</a>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5">Nenhuma atribuição de cargo cadastrada.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="card mb-4">
+      <div class="card-body">
+          <div class="table-responsive">
+              <table class="table table-striped">
+                  <thead>
+                      <tr>
+                          <th>Aluno</th>
+                          <th>Cargo</th>
+                          <th>Data de Início</th>
+                          <th>Data de Término</th>
+                          <th>Ações</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for atribuicao in atribuicoes %}
+                          <tr>
+                              <td>{{ atribuicao.aluno.nome }}</td>
+                              <td>{{ atribuicao.cargo.nome }}</td>
+                              <td>{{ atribuicao.data_inicio|date:"d/m/Y" }}</td>
+                              <td>{{ atribuicao.data_fim|date:"d/m/Y"|default:"Atual" }}</td>
+                              <td>
+                                  <a href="{% url 'cargos:remover_atribuicao_cargo' atribuicao.id %}" class="btn btn-sm btn-danger" title="Remover esta atribuição de cargo">Remover</a>
+                              </td>
+                          </tr>
+                      {% empty %}
+                          <tr>
+                              <td colspan="5" class="text-center">
+                                  <p class="my-3">Nenhuma atribuição de cargo cadastrada.</p>
+                              </td>
+                          </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
+          </div>
+      </div>
+  </div>
 </div>
 {% endblock %}
 

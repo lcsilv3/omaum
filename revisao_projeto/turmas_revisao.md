@@ -8,70 +8,44 @@
 python
 from django import forms
 from importlib import import_module
-from django.utils import timezone
 
-
-def get_turma_model():
-    """Obtém o modelo Turma dinamicamente para evitar importações circulares."""
-    turmas_module = import_module("turmas.models")
-    return getattr(turmas_module, "Turma")
-
-
+# Adicionar esta função para obter o modelo Aluno dinamicamente
 def get_aluno_model():
-    """Obtém o modelo Aluno dinamicamente para evitar importações circulares."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
+# Adicionar esta função para obter o modelo Turma dinamicamente
+def get_turma_model():
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
+
+# Adicionar esta função para obter o modelo Curso dinamicamente
+def get_curso_model():
+    cursos_module = import_module("cursos.models")
+    return getattr(cursos_module, "Curso")
 
 class TurmaForm(forms.ModelForm):
-    """
-    Formulário para criação e edição de turmas.
-    """
-
     class Meta:
         model = get_turma_model()
         fields = [
-            "nome",
-            "curso",
-            "vagas",
-            "status",
-            "data_inicio",
-            "data_fim",
-            "instrutor",
-            "instrutor_auxiliar",
-            "auxiliar_instrucao",
-            "dias_semana",
-            "local",
-            "horario",
-            "descricao",
+            "nome", "curso", "vagas", "status", "data_inicio", "data_fim",
+            "instrutor", "instrutor_auxiliar", "auxiliar_instrucao",
+            "dias_semana", "local", "horario", "descricao"
         ]
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
             "curso": forms.Select(attrs={"class": "form-select"}),
-            "vagas": forms.NumberInput(
-                attrs={"class": "form-control", "min": "1"}
-            ),
+            "vagas": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
             "status": forms.Select(attrs={"class": "form-select"}),
-            # Melhoria nos widgets de data para garantir o formato correto
-            "data_inicio": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
-            ),
-            "data_fim": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
-            ),
-            "instrutor": forms.Select(attrs={"class": "form-select"}),
-            "instrutor_auxiliar": forms.Select(
-                attrs={"class": "form-select"}
-            ),
-            "auxiliar_instrucao": forms.Select(
-                attrs={"class": "form-select"}
-            ),
+            "data_inicio": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "data_fim": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "instrutor": forms.Select(attrs={"class": "form-control"}),
+            "instrutor_auxiliar": forms.Select(attrs={"class": "form-control"}),
+            "auxiliar_instrucao": forms.Select(attrs={"class": "form-control"}),
             "dias_semana": forms.TextInput(attrs={"class": "form-control"}),
             "local": forms.TextInput(attrs={"class": "form-control"}),
             "horario": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
+            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
         labels = {
             "nome": "Nome da Turma",
@@ -182,100 +156,168 @@ class TurmaForm(forms.ModelForm):
 ### Arquivo: turmas\views.py
 
 python
-import csv
-import io
-import xlsxwriter
+"""
+Views para o módulo de Turmas.
+
+Padrão de Nomenclatura:
+- Parâmetros de ID em URLs: Usamos o formato 'modelo_id' (ex: turma_id, aluno_id) 
+  para maior clareza e para evitar ambiguidades em views que manipulam múltiplos modelos.
+- Nos templates, continuamos passando o atributo 'id' do objeto (ex: turma.id), 
+  mas nas views e URLs usamos nomes mais descritivos.
+"""
+
+from django.db.models import Q
 from django.http import HttpResponse
-from django.shortcuts import render, get_object_or_404, redirect
+import csv
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q, Avg
+from django.db.models import Count, Q
 from django.utils import timezone
+from django.core.paginator import Paginator
 from importlib import import_module
 
-from .models import Turma
-from cursos.models import Curso
-from alunos.models import Aluno
-from matriculas.models import Matricula
+# Importar a função utilitária centralizada
+from core.utils import get_model_dynamically
 
 def get_model(app_name, model_name):
     """Obtém um modelo dinamicamente para evitar importações circulares."""
+    from importlib import import_module
     module = import_module(f"{app_name}.models")
     return getattr(module, model_name)
 
+def get_aluno_model():
+    return get_model_dynamically("alunos", "Aluno")
 
 def get_turma_model():
-    turmas_module = import_module("turmas.models")
-    return getattr(turmas_module, "Turma")
+    return get_model_dynamically("turmas", "Turma")
 
+def get_curso_model():
+    """Obtém o modelo Curso dinamicamente."""
+    return get_model_dynamically("cursos", "Curso")
 
-def get_aluno_model():
-    alunos_module = import_module("alunos.models")
-    return getattr(alunos_module, "Aluno")
+def get_matricula_model():
+    """Obtém o modelo Matricula dinamicamente."""
+    return get_model_dynamically("matriculas", "Matricula")
 
+def get_atividade_academica_model():
+    """Obtém o modelo AtividadeAcademica dinamicamente."""
+    return get_model_dynamically("atividades", "AtividadeAcademica")
+
+def get_frequencia_model():
+    """Obtém o modelo Frequencia dinamicamente."""
+    return get_model_dynamically("frequencias", "Frequencia")
+
+def get_turma_form():
+    """Obtém o formulário TurmaForm dinamicamente."""
+    from importlib import import_module
+    try:
+        forms_module = import_module("turmas.forms")
+        return getattr(forms_module, "TurmaForm")
+    except (ImportError, AttributeError) as e:
+        print(f"Erro ao importar TurmaForm: {e}")
+        # Fallback para o formulário da core, se existir
+        try:
+            core_forms = import_module("core.forms")
+            return getattr(core_forms, "TurmaForm")
+        except (ImportError, AttributeError) as e:
+            print(f"Erro ao importar TurmaForm da core: {e}")
+            return None
 
 @login_required
 def listar_turmas(request):
-    Turma = get_turma_model()
-    turmas = Turma.objects.all()
-    # Preparar informações adicionais para cada turma
-    turmas_com_info = []
-    for turma in turmas:
-        # Verificar pendências na instrutoria
-        tem_pendencia_instrutoria = (
-            not turma.instrutor
-            or not turma.instrutor_auxiliar
-            or not turma.auxiliar_instrucao
-        )
-        # Calcular vagas disponíveis
-        total_alunos = (
-            turma.matriculas.filter(status="A").count()
-            if hasattr(turma, "matriculas")
-            else 0
-        )
-        vagas_disponiveis = turma.vagas - total_alunos
-
-        turmas_com_info.append(
+    """Lista todas as turmas cadastradas."""
+    try:
+        # Alterar estas linhas para usar get_model_dynamically em vez de get_model
+        Turma = get_model_dynamically("turmas", "Turma")
+        Curso = get_model_dynamically("cursos", "Curso")
+        
+        # Obter parâmetros de busca e filtro
+        query = request.GET.get("q", "")
+        curso_id = request.GET.get("curso", "")
+        
+        # Filtrar turmas
+        turmas = Turma.objects.all().select_related('curso', 'instrutor')
+        
+        if query:
+            turmas = turmas.filter(
+                Q(nome__icontains=query) |
+                Q(curso__nome__icontains=query) |
+                Q(instrutor__nome__icontains=query)
+            )
+        
+        if curso_id:
+            turmas = turmas.filter(curso__codigo_curso=curso_id)
+        
+        # Ordenar turmas por status, nome do curso e nome da turma
+        turmas = turmas.order_by('status', 'curso__nome', 'nome')
+        
+        # Paginação
+        paginator = Paginator(turmas, 10)  # 10 turmas por página
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+        
+        # Obter cursos para o filtro
+        cursos = Curso.objects.all().order_by('nome')
+        
+        context = {
+            "turmas": page_obj,
+            "page_obj": page_obj,
+            "query": query,
+            "cursos": cursos,
+            "curso_selecionado": curso_id,
+            "total_turmas": turmas.count(),
+        }
+        
+        return render(request, "turmas/listar_turmas.html", context)
+    except Exception as e:
+        # Em vez de mostrar a mensagem de erro, apenas retornamos uma lista vazia
+        return render(
+            request,
+            "turmas/listar_turmas.html",
             {
-                "turma": turma,
-                "total_alunos": total_alunos,
-                "vagas_disponiveis": vagas_disponiveis,
-                "tem_pendencia_instrutoria": tem_pendencia_instrutoria,
-            }
+                "turmas": [],
+                "page_obj": None,
+                "query": "",
+                "cursos": [],
+                "curso_selecionado": "",
+                "error_message": f"Erro ao listar turmas: {str(e)}",
+            },
         )
-
-    return render(
-        request,
-        "turmas/listar_turmas.html",
-        {"turmas_com_info": turmas_com_info},
-    )
-
 
 @login_required
 def criar_turma(request):
     """Cria uma nova turma."""
+    # Obter o formulário dinamicamente
+    TurmaForm = get_turma_form()
+    
+    # Verificar se o formulário foi encontrado
+    if TurmaForm is None:
+        messages.error(request, "Erro ao carregar o formulário de turma. Contate o administrador.")
+        return redirect("turmas:listar_turmas")
+    
     if request.method == "POST":
         form = TurmaForm(request.POST)
         if form.is_valid():
             turma = form.save()
             messages.success(request, "Turma criada com sucesso!")
-            return redirect("turmas:detalhar_turma", id=turma.id)
+            return redirect("turmas:detalhar_turma", turma_id=turma.id)
     else:
         form = TurmaForm()
     
     # Obter todos os alunos ativos para o contexto
     try:
-        Aluno = import_module("alunos.models").Aluno
+        Aluno = get_aluno_model()
         alunos = Aluno.objects.filter(situacao="ATIVO")
     except (ImportError, AttributeError):
         alunos = []
     
     # Certifique-se de que os cursos estão sendo carregados
-    from cursos.models import Curso
-    cursos = Curso.objects.all().order_by('codigo_curso')
-    
-    # Adicione um log para depuração
-    print(f"Carregando {len(cursos)} cursos")
+    try:
+        Curso = get_curso_model()
+        cursos = Curso.objects.all().order_by('codigo_curso')
+    except (ImportError, AttributeError):
+        cursos = []
     
     return render(
         request,
@@ -286,10 +328,12 @@ def criar_turma(request):
             "cursos": cursos,
         },
     )
+
 @login_required
-def detalhar_turma(request, id):
+def detalhar_turma(request, turma_id):
+    """Exibe os detalhes de uma turma."""
     Turma = get_turma_model()
-    turma = get_object_or_404(Turma, id=id)
+    turma = get_object_or_404(Turma, id=turma_id)
     # Verificar pendências na instrutoria
     tem_pendencia_instrutoria = (
         not turma.instrutor
@@ -318,25 +362,35 @@ def detalhar_turma(request, id):
     }
     return render(request, "turmas/detalhar_turma.html", context)
 
-
 @login_required
-def editar_turma(request, id):
+def editar_turma(request, turma_id):
     """Edita uma turma existente."""
+    # Obter o formulário dinamicamente
+    TurmaForm = get_turma_form()
+    
+    # Verificar se o formulário foi encontrado
+    if TurmaForm is None:
+        messages.error(request, "Erro ao carregar o formulário de turma. Contate o administrador.")
+        return redirect("turmas:listar_turmas")
+    
     Turma = get_turma_model()
-    turma = get_object_or_404(Turma, id=id)
+    turma = get_object_or_404(Turma, id=turma_id)
     if request.method == "POST":
         form = TurmaForm(request.POST, instance=turma)
         if form.is_valid():
             form.save()
             messages.success(request, "Turma atualizada com sucesso!")
-            return redirect("turmas:detalhar_turma", id=turma.id)
+            return redirect("turmas:detalhar_turma", turma_id=turma.id)
         else:
             messages.error(request, "Corrija os erros no formulário.")
     else:
         form = TurmaForm(instance=turma)
     # Obter todos os alunos ativos para o formulário
-    Aluno = get_model("alunos", "Aluno")
-    alunos = Aluno.objects.filter(situacao="ATIVO")
+    try:
+        Aluno = get_aluno_model()
+        alunos = Aluno.objects.filter(situacao="ATIVO")
+    except (ImportError, AttributeError):
+        alunos = []
     return render(
         request,
         "turmas/editar_turma.html",
@@ -347,390 +401,589 @@ def editar_turma(request, id):
         },
     )
 
-
 @login_required
-def excluir_turma(request, id):
+def excluir_turma(request, turma_id):
     Turma = get_turma_model()
-    turma = get_object_or_404(Turma, id=id)
+    turma = get_object_or_404(Turma, id=turma_id)
     if request.method == "POST":
         turma.delete()
         messages.success(request, "Turma excluída com sucesso!")
         return redirect("turmas:listar_turmas")
     return render(request, "turmas/excluir_turma.html", {"turma": turma})
 
-
 @login_required
-def listar_alunos_matriculados(request, id):
+def listar_alunos_turma(request, turma_id):
+    """Lista todos os alunos matriculados em uma turma específica."""
     Turma = get_turma_model()
-    turma = get_object_or_404(Turma, id=id)
-    alunos = turma.alunos.all() if hasattr(turma, "alunos") else []
-    return render(
-        request,
-        "turmas/listar_alunos_matriculados.html",
-        {"turma": turma, "alunos": alunos},
-    )
-
-
-@login_required
-def matricular_aluno(request, turma_id):
-    """Matricula um aluno em uma turma específica."""
-    Turma = get_turma_model()
-    Aluno = get_aluno_model()
-    turma = get_object_or_404(Turma, id=id)
-    if request.method == "POST":
-        aluno_cpf = request.POST.get("aluno")
-        aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
-        # Verificar se existe um modelo de Matricula
-        try:
-            Matricula = import_module("matriculas.models").Matricula
-            # Criar uma matrícula em vez de adicionar diretamente à relação many-to-many
-            Matricula.objects.create(
-                aluno=aluno,
-                turma=turma,
-                data_matricula=timezone.now().date(),
-                status="A",  # Ativa
-            )
-        except (ImportError, AttributeError):
-            # Fallback: adicionar diretamente à relação many-to-many se o modelo Matricula não existir
-            if hasattr(turma, "alunos"):
-                turma.alunos.add(aluno)
-        messages.success(
-            request, f"Aluno {aluno.nome} matriculado com sucesso!"
-        )
-        return redirect("turmas:detalhar_turma", id=turma.id)
-    # Obter alunos disponíveis para matrícula
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    # Obter alunos matriculados na turma
     try:
-        # Se existir um modelo de Matricula, excluir alunos já matriculados
-        Matricula = import_module("matriculas.models").Matricula
-        alunos_matriculados = Matricula.objects.filter(
-            turma=turma, status="A"
-        ).values_list("aluno__cpf", flat=True)
-        alunos_disponiveis = Aluno.objects.exclude(cpf__in=alunos_matriculados)
+        Matricula = get_matricula_model()
+        matriculas = Matricula.objects.filter(turma=turma, status="A").select_related('aluno')
+        alunos = [matricula.aluno for matricula in matriculas]
     except (ImportError, AttributeError):
-        # Fallback
-        if hasattr(turma, "alunos"):
-            alunos_disponiveis = Aluno.objects.exclude(turmas=turma)
-        else:
-            alunos_disponiveis = Aluno.objects.all()
-    # Adicionar informação de vagas disponíveis
-    vagas_disponiveis = (
-        turma.vagas_disponiveis
-        if hasattr(turma, "vagas_disponiveis")
-        else turma.vagas
-    )
+        # Fallback caso o modelo Matricula não esteja disponível
+        alunos = []
+    
     return render(
         request,
-        "turmas/matricular_aluno.html",
+        "turmas/listar_alunos_turma.html",
         {
             "turma": turma,
-            "alunos": alunos_disponiveis,
-            "vagas_disponiveis": vagas_disponiveis,
+            "alunos": alunos,
         },
     )
 
+@login_required
+def matricular_aluno(request, turma_id):
+    """Matricula um aluno na turma."""
+    Turma = get_model("turmas", "Turma")
+    Aluno = get_model("alunos", "Aluno")
+    Matricula = get_model("matriculas", "Matricula")
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    if request.method == "POST":
+        aluno_cpf = request.POST.get("aluno")
+        if not aluno_cpf:
+            messages.error(request, "Selecione um aluno para matricular.")
+            return redirect("turmas:matricular_aluno", turma_id=turma_id)
+        
+        aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
+        
+        # Verificar se já existe matrícula
+        if Matricula.objects.filter(aluno=aluno, turma=turma).exists():
+            messages.warning(
+                request,
+                f"O aluno {aluno.nome} já está matriculado nesta turma."
+            )
+            return redirect("turmas:detalhar_turma", turma_id=turma_id)
+        
+        # Verificar se há vagas disponíveis
+        if turma.vagas_disponiveis <= 0:
+            messages.error(
+                request,
+                "Não há vagas disponíveis nesta turma."
+            )
+            return redirect("turmas:detalhar_turma", turma_id=turma_id)
+        
+        try:
+            matricula = Matricula(
+                aluno=aluno,
+                turma=turma,
+                data_matricula=timezone.now().date(),
+                ativa=True,
+                status="A",  # Ativa
+            )
+            matricula.save()
+            messages.success(
+                request,
+                f"Aluno {aluno.nome} matriculado com sucesso na turma {turma.nome}."
+            )
+        except Exception as e:
+            messages.error(request, f"Erro ao matricular aluno: {str(e)}")
+        
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+    
+    # Para requisições GET, exibir formulário de matrícula
+    alunos = Aluno.objects.filter(situacao="ATIVO")
+    return render(
+        request,
+        "turmas/matricular_aluno.html",
+        {"turma": turma, "alunos": alunos}
+    )
 
 @login_required
-def cancelar_matricula(request, turma_id, aluno_cpf):
-    """Cancela a matrícula de um aluno em uma turma."""
+def remover_aluno_turma(request, turma_id, aluno_id):
+    """Remove um aluno de uma turma."""
     Turma = get_turma_model()
     Aluno = get_aluno_model()
+    
     turma = get_object_or_404(Turma, id=turma_id)
-    aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
-    # Verificar se o aluno está matriculado na turma
+    aluno = get_object_or_404(Aluno, cpf=aluno_id)
+    
     try:
-        # Importar o modelo Matricula dinamicamente
-        from importlib import import_module
-
-        matriculas_module = import_module("matriculas.models")
-        Matricula = getattr(matriculas_module, "Matricula")
-        matricula = Matricula.objects.get(aluno=aluno, turma=turma)
+        Matricula = get_matricula_model()
+        # Verificar se o aluno está matriculado na turma
+        matricula = get_object_or_404(Matricula, aluno=aluno, turma=turma, status="A")
+        
         if request.method == "POST":
             # Cancelar a matrícula
             matricula.status = "C"  # Cancelada
             matricula.save()
+            
             messages.success(
                 request,
-                f"Matrícula do aluno {aluno.nome} na turma {turma.nome} cancelada com sucesso.",
+                f"Aluno {aluno.nome} removido da turma {turma.nome} com sucesso."
             )
-            return redirect("turmas:detalhar_turma", id=turma.id)
-        # Se for GET, mostrar página de confirmação
+            return redirect("turmas:detalhar_turma", turma_id=turma_id)
+        
         return render(
             request,
-            "turmas/cancelar_matricula.html",
+            "turmas/confirmar_remocao_aluno.html",
             {"turma": turma, "aluno": aluno},
         )
     except (ImportError, AttributeError) as e:
-        messages.error(
-            request, f"Erro ao acessar o modelo de matrículas: {str(e)}"
-        )
-        return redirect("turmas:detalhar_turma", id=turma.id)
-    except Matricula.DoesNotExist:
-        messages.error(
+        messages.error(request, f"Erro ao acessar o modelo de matrículas: {str(e)}")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+
+@login_required
+def atualizar_instrutores(request, turma_id):
+    """Atualiza os instrutores de uma turma."""
+    Turma = get_turma_model()
+    Aluno = get_aluno_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    if request.method == "POST":
+        instrutor_cpf = request.POST.get("instrutor")
+        instrutor_auxiliar_cpf = request.POST.get("instrutor_auxiliar")
+        auxiliar_instrucao_cpf = request.POST.get("auxiliar_instrucao")
+        
+        # Atualizar instrutor principal
+        if instrutor_cpf:
+            instrutor = get_object_or_404(Aluno, cpf=instrutor_cpf)
+            turma.instrutor = instrutor
+        
+        # Atualizar instrutor auxiliar
+        if instrutor_auxiliar_cpf:
+            instrutor_auxiliar = get_object_or_404(Aluno, cpf=instrutor_auxiliar_cpf)
+            turma.instrutor_auxiliar = instrutor_auxiliar
+        
+        # Atualizar auxiliar de instrução
+        if auxiliar_instrucao_cpf:
+            auxiliar_instrucao = get_object_or_404(Aluno, cpf=auxiliar_instrucao_cpf)
+            turma.auxiliar_instrucao = auxiliar_instrucao
+        
+        turma.save()
+        messages.success(request, "Instrutores atualizados com sucesso!")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+    
+    # Obter alunos elegíveis para serem instrutores
+    try:
+        alunos_elegiveis = Aluno.objects.filter(situacao="ATIVO")
+    except (ImportError, AttributeError):
+        alunos_elegiveis = []
+    
+    return render(
+        request,
+        "turmas/atualizar_instrutores.html",
+        {
+            "turma": turma,
+            "alunos_elegiveis": alunos_elegiveis,
+        },
+    )
+
+@login_required
+def remover_instrutor(request, turma_id, tipo):
+    """Remove um instrutor de uma turma."""
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    if request.method == "POST":
+        if tipo == "principal":
+            instrutor_nome = turma.instrutor.nome if turma.instrutor else "Não definido"
+            turma.instrutor = None
+            messages.success(request, f"Instrutor principal {instrutor_nome} removido com sucesso.")
+        elif tipo == "auxiliar":
+            instrutor_nome = turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else "Não definido"
+            turma.instrutor_auxiliar = None
+            messages.success(request, f"Instrutor auxiliar {instrutor_nome} removido com sucesso.")
+        elif tipo == "auxiliar_instrucao":
+            instrutor_nome = turma.auxiliar_instrucao.nome if turma.auxiliar_instrucao else "Não definido"
+            turma.auxiliar_instrucao = None
+            messages.success(request, f"Auxiliar de instrução {instrutor_nome} removido com sucesso.")
+        
+        turma.save()
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+    
+    # Determinar qual instrutor será removido
+    instrutor_a_remover = None
+    titulo = ""
+    if tipo == "principal" and turma.instrutor:
+        instrutor_a_remover = turma.instrutor
+        titulo = "Remover Instrutor Principal"
+    elif tipo == "auxiliar" and turma.instrutor_auxiliar:
+        instrutor_a_remover = turma.instrutor_auxiliar
+        titulo = "Remover Instrutor Auxiliar"
+    elif tipo == "auxiliar_instrucao" and turma.auxiliar_instrucao:
+        instrutor_a_remover = turma.auxiliar_instrucao
+        titulo = "Remover Auxiliar de Instrução"
+    
+    if not instrutor_a_remover:
+        messages.warning(request, "Não há instrutor para remover.")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+    
+    return render(
+        request,
+        "turmas/confirmar_remocao_instrutor.html",
+        {
+            "turma": turma,
+            "instrutor": instrutor_a_remover,
+            "tipo": tipo,
+            "titulo": titulo,
+        },
+    )
+
+@login_required
+def listar_atividades_turma(request, turma_id):
+    """Lista todas as atividades de uma turma."""
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    try:
+        AtividadeAcademica = get_atividade_academica_model()
+        atividades = AtividadeAcademica.objects.filter(turma=turma).order_by('-data_inicio')
+    except (ImportError, AttributeError):
+        atividades = []
+    
+    return render(
+        request,
+        "turmas/listar_atividades_turma.html",
+        {
+            "turma": turma,
+            "atividades": atividades,
+        },
+    )
+
+@login_required
+def adicionar_atividade_turma(request, turma_id):
+    """Adiciona uma atividade a uma turma."""
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    try:
+        # Importar o formulário AtividadeAcademicaForm dinamicamente
+        from importlib import import_module
+        forms_module = import_module("atividades.forms")
+        AtividadeAcademicaForm = getattr(forms_module, "AtividadeAcademicaForm")
+        
+        if request.method == "POST":
+            form = AtividadeAcademicaForm(request.POST)
+            if form.is_valid():
+                atividade = form.save(commit=False)
+                atividade.turma = turma
+                atividade.save()
+                messages.success(request, "Atividade adicionada com sucesso!")
+                return redirect("turmas:listar_atividades_turma", turma_id=turma_id)
+        else:
+            # Pré-selecionar a turma no formulário
+            form = AtividadeAcademicaForm(initial={"turma": turma})
+        
+        return render(
             request,
-            f"O aluno {aluno.nome} não está matriculado na turma {turma.nome}.",
+            "turmas/adicionar_atividade_turma.html",
+            {
+                "turma": turma,
+                "form": form,
+            },
         )
-        return redirect("turmas:detalhar_turma", id=turma.id)
+    except (ImportError, AttributeError) as e:
+        messages.error(request, f"Erro ao carregar o formulário de atividade: {str(e)}")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+
+@login_required
+def registrar_frequencia_turma(request, turma_id):
+    """Registra a frequência dos alunos em uma atividade da turma."""
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    try:
+        # Obter matrículas ativas
+        Matricula = get_matricula_model()
+        matriculas = Matricula.objects.filter(turma=turma, status="A").select_related('aluno')
+        alunos = [matricula.aluno for matricula in matriculas]
+        
+        # Obter atividades da turma
+        AtividadeAcademica = get_atividade_academica_model()
+        atividades = AtividadeAcademica.objects.filter(turma=turma).order_by('-data_inicio')
+        
+        if request.method == "POST":
+            atividade_id = request.POST.get("atividade")
+            if not atividade_id:
+                messages.error(request, "Selecione uma atividade para registrar a frequência.")
+                return redirect("turmas:registrar_frequencia_turma", turma_id=turma_id)
+            
+            atividade = get_object_or_404(AtividadeAcademica, id=atividade_id)
+            presentes = request.POST.getlist("presentes")
+            
+            # Obter modelo de Frequencia
+            Frequencia = get_frequencia_model()
+            
+            # Registrar frequência para cada aluno
+            for aluno in alunos:
+                presente = aluno.cpf in presentes
+                justificativa = request.POST.get(f"justificativa_{aluno.cpf}", "")
+                
+                # Verificar se já existe registro para este aluno nesta atividade
+                frequencia, created = Frequencia.objects.update_or_create(
+                    aluno=aluno,
+                    atividade=atividade,
+                    defaults={
+                        'presente': presente,
+                        'justificativa': justificativa if not presente else "",
+                    }
+                )
+            
+            messages.success(request, "Frequência registrada com sucesso!")
+            return redirect("turmas:detalhar_turma", turma_id=turma_id)
+        
+        return render(
+            request,
+            "turmas/registrar_frequencia_turma.html",
+            {
+                "turma": turma,
+                "alunos": alunos,
+                "atividades": atividades,
+            },
+        )
+    
+    except (ImportError, AttributeError) as e:
+        messages.error(request, f"Erro ao registrar frequência: {str(e)}")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+
+@login_required
+def relatorio_frequencia_turma(request, turma_id):
+    """Gera um relatório de frequência para uma turma específica."""
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    try:
+        # Obter matrículas ativas
+        Matricula = get_matricula_model()
+        matriculas = Matricula.objects.filter(turma=turma, status="A").select_related('aluno')
+        alunos = [matricula.aluno for matricula in matriculas]
+        
+        # Obter frequências
+        Frequencia = get_frequencia_model()
+        
+        # Obter datas das atividades da turma
+        AtividadeAcademica = get_atividade_academica_model()
+        atividades = AtividadeAcademica.objects.filter(turma=turma).order_by('data_inicio')
+        datas_atividades = [atividade.data_inicio.date() for atividade in atividades]
+        
+        # Preparar dados para o relatório
+        dados_frequencia = []
+        for aluno in alunos:
+            frequencias_aluno = Frequencia.objects.filter(
+                aluno=aluno,
+                atividade__turma=turma
+            )
+            
+            # Calcular estatísticas
+            total_presencas = frequencias_aluno.filter(presente=True).count()
+            total_atividades = atividades.count()
+            
+            if total_atividades > 0:
+                percentual_presenca = (total_presencas / total_atividades) * 100
+            else:
+                percentual_presenca = 0
+            
+            dados_frequencia.append({
+                'aluno': aluno,
+                'total_presencas': total_presencas,
+                'total_atividades': total_atividades,
+                'percentual_presenca': percentual_presenca,
+                'frequencias': frequencias_aluno
+            })
+        
+        context = {
+            'turma': turma,
+            'alunos': alunos,
+            'datas_atividades': datas_atividades,
+            'dados_frequencia': dados_frequencia,
+        }
+        
+        return render(request, 'turmas/relatorio_frequencia_turma.html', context)
+    
+    except (ImportError, AttributeError) as e:
+        messages.error(request, f"Erro ao gerar relatório de frequência: {str(e)}")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
 
 @login_required
 def exportar_turmas(request):
-    """Exporta os dados das turmas para um arquivo CSV ou Excel."""
-    formato = request.GET.get('formato', 'csv')
-    
-    # Filtros
-    query = request.GET.get('q', '')
-    curso_id = request.GET.get('curso', '')
-    status = request.GET.get('status', '')
-    
-    # Consulta base
-    turmas = Turma.objects.all()
-    
-    # Aplicar filtros
-    if query:
-        turmas = turmas.filter(
-            Q(nome__icontains=query) | 
-            Q(instrutor__nome__icontains=query) |
-            Q(curso__nome__icontains=query)
-        )
-    
-    if curso_id:
-        turmas = turmas.filter(curso__codigo_curso=curso_id)
-    
-    if status:
-        turmas = turmas.filter(status=status)
-    
-    # Ordenar
-    turmas = turmas.order_by('nome')
-    
-    # Definir nome do arquivo
-    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-    filename = f"turmas_export_{timestamp}"
-    
-    if formato == 'excel':
-        # Exportar para Excel
-        output = io.BytesIO()
-        workbook = xlsxwriter.Workbook(output)
-        worksheet = workbook.add_worksheet()
+    """Exporta os dados das turmas para um arquivo CSV."""
+    try:
+        import csv
+        from django.http import HttpResponse
+        from django.utils import timezone
         
-        # Estilos
-        header_format = workbook.add_format({
-            'bold': True,
-            'bg_color': '#F0F0F0',
-            'border': 1
-        })
+        Turma = get_turma_model()
+        turmas = Turma.objects.all()
         
-        # Cabeçalhos
-        headers = [
-            'ID', 'Nome', 'Curso', 'Vagas', 'Status', 'Data Início', 
-            'Data Fim', 'Instrutor', 'Instrutor Auxiliar', 'Local', 'Horário'
-        ]
-        
-        for col_num, header in enumerate(headers):
-            worksheet.write(0, col_num, header, header_format)
-        
-        # Dados
-        for row_num, turma in enumerate(turmas, 1):
-            worksheet.write(row_num, 0, turma.id)
-            worksheet.write(row_num, 1, turma.nome)
-            worksheet.write(row_num, 2, turma.curso.nome if turma.curso else '')
-            worksheet.write(row_num, 3, turma.vagas)
-            worksheet.write(row_num, 4, turma.get_status_display())
-            worksheet.write(row_num, 5, turma.data_inicio.strftime('%d/%m/%Y') if turma.data_inicio else '')
-            worksheet.write(row_num, 6, turma.data_fim.strftime('%d/%m/%Y') if turma.data_fim else '')
-            worksheet.write(row_num, 7, turma.instrutor.nome if turma.instrutor else '')
-            worksheet.write(row_num, 8, turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else '')
-            worksheet.write(row_num, 9, turma.local or '')
-            worksheet.write(row_num, 10, turma.horario or '')
-        
-        # Ajustar largura das colunas
-        for i, header in enumerate(headers):
-            worksheet.set_column(i, i, len(header) + 5)
-        
-        workbook.close()
-        output.seek(0)
-        
-        response = HttpResponse(
-            output.read(),
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
-        return response
-    else:
-        # Exportar para CSV
+        # Criar resposta HTTP com cabeçalho para download de arquivo CSV
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        response['Content-Disposition'] = f'attachment; filename="turmas_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
         
+        # Criar escritor CSV
         writer = csv.writer(response)
+        
+        # Escrever cabeçalho
         writer.writerow([
-            'ID', 'Nome', 'Curso', 'Vagas', 'Status', 'Data Início', 
-            'Data Fim', 'Instrutor', 'Instrutor Auxiliar', 'Local', 'Horário'
+            'ID', 'Nome', 'Curso', 'Status', 'Vagas',
+            'Data Início', 'Data Fim', 'Instrutor',
+            'Instrutor Auxiliar', 'Auxiliar de Instrução',
+            'Dias da Semana', 'Local', 'Horário'
         ])
         
+        # Escrever dados das turmas
         for turma in turmas:
             writer.writerow([
                 turma.id,
                 turma.nome,
-                turma.curso.nome if turma.curso else '',
-                turma.vagas,
+                turma.curso.nome if turma.curso else 'N/A',
                 turma.get_status_display(),
-                turma.data_inicio.strftime('%d/%m/%Y') if turma.data_inicio else '',
-                turma.data_fim.strftime('%d/%m/%Y') if turma.data_fim else '',
-                turma.instrutor.nome if turma.instrutor else '',
-                turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else '',
-                turma.local or '',
-                turma.horario or ''
+                turma.vagas,
+                turma.data_inicio.strftime('%d/%m/%Y') if turma.data_inicio else 'N/A',
+                turma.data_fim.strftime('%d/%m/%Y') if turma.data_fim else 'N/A',
+                turma.instrutor.nome if turma.instrutor else 'N/A',
+                turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else 'N/A',
+                turma.auxiliar_instrucao.nome if turma.auxiliar_instrucao else 'N/A',
+                turma.dias_semana,
+                turma.local,
+                turma.horario
             ])
         
         return response
+    
+    except Exception as e:
+        messages.error(request, f"Erro ao exportar turmas: {str(e)}")
+        return redirect("turmas:listar_turmas")
 
 @login_required
 def relatorio_turmas(request):
-    """Gera relatórios sobre as turmas."""
-    # Estatísticas gerais
-    total_turmas = Turma.objects.count()
-    turmas_ativas = Turma.objects.filter(status='ATIVA').count()
-    turmas_planejadas = Turma.objects.filter(status='PLANEJADA').count()
-    turmas_concluidas = Turma.objects.filter(status='CONCLUIDA').count()
-    turmas_canceladas = Turma.objects.filter(status='CANCELADA').count()
-    
-    # Estatísticas por curso
-    cursos = Curso.objects.all()
-    estatisticas_cursos = []
-    
-    for curso in cursos:
-        turmas_curso = Turma.objects.filter(curso=curso)
-        total_turmas_curso = turmas_curso.count()
+    """Gera um relatório com estatísticas sobre as turmas."""
+    try:
+        Turma = get_turma_model()
         
-        if total_turmas_curso > 0:
-            turmas_ativas_curso = turmas_curso.filter(status='ATIVA').count()
-            turmas_planejadas_curso = turmas_curso.filter(status='PLANEJADA').count()
-            turmas_concluidas_curso = turmas_curso.filter(status='CONCLUIDA').count()
-            
-            # Calcular média de alunos por turma
-            total_alunos = 0
-            for turma in turmas_curso:
-                total_alunos += Matricula.objects.filter(turma=turma, ativa=True).count()
-            
-            media_alunos = total_alunos / total_turmas_curso if total_turmas_curso > 0 else 0
-            
-            estatisticas_cursos.append({
-                'curso': curso,
-                'total_turmas': total_turmas_curso,
-                'turmas_ativas': turmas_ativas_curso,
-                'turmas_planejadas': turmas_planejadas_curso,
-                'turmas_concluidas': turmas_concluidas_curso,
-                'media_alunos': round(media_alunos, 1)
-            })
-    
-    # Turmas com mais alunos
-    turmas_populares = Turma.objects.annotate(
-        total_alunos=Count('matricula', filter=Q(matricula__ativa=True))
-    ).order_by('-total_alunos')[:5]
-    
-    # Instrutores com mais turmas
-    instrutores_ativos = Aluno.objects.filter(
-        Q(turma_instrutor__isnull=False) | 
-        Q(turma_instrutor_auxiliar__isnull=False)
-    ).distinct()
-    
-    estatisticas_instrutores = []
-    for instrutor in instrutores_ativos:
-        turmas_como_instrutor = Turma.objects.filter(instrutor=instrutor).count()
-        turmas_como_auxiliar = Turma.objects.filter(instrutor_auxiliar=instrutor).count()
-        total_turmas_instrutor = turmas_como_instrutor + turmas_como_auxiliar
+        # Estatísticas gerais
+        total_turmas = Turma.objects.count()
+        turmas_ativas = Turma.objects.filter(status='A').count()
+        turmas_concluidas = Turma.objects.filter(status='C').count()
+        turmas_canceladas = Turma.objects.filter(status='X').count()
         
-        if total_turmas_instrutor > 0:
-            estatisticas_instrutores.append({
-                'instrutor': instrutor,
-                'turmas_como_instrutor': turmas_como_instrutor,
-                'turmas_como_auxiliar': turmas_como_auxiliar,
-                'total_turmas': total_turmas_instrutor
-            })
+        # Turmas por curso
+        Curso = get_curso_model()
+        cursos = Curso.objects.all()
+        
+        turmas_por_curso = []
+        for curso in cursos:
+            count = Turma.objects.filter(curso=curso).count()
+            if count > 0:
+                turmas_por_curso.append({
+                    'curso': curso,
+                    'count': count,
+                    'percentage': (count / total_turmas * 100) if total_turmas > 0 else 0
+                })
+        
+        # Turmas por instrutor
+        Aluno = get_aluno_model()
+        instrutores = Aluno.objects.filter(
+            Q(turma_instrutor__isnull=False) |
+            Q(turma_instrutor_auxiliar__isnull=False) |
+            Q(turma_auxiliar_instrucao__isnull=False)
+        ).distinct()
+        
+        turmas_por_instrutor = []
+        for instrutor in instrutores:
+            count_principal = Turma.objects.filter(instrutor=instrutor).count()
+            count_auxiliar = Turma.objects.filter(instrutor_auxiliar=instrutor).count()
+            count_aux_instrucao = Turma.objects.filter(auxiliar_instrucao=instrutor).count()
+            
+            if count_principal > 0 or count_auxiliar > 0 or count_aux_instrucao > 0:
+                turmas_por_instrutor.append({
+                    'instrutor': instrutor,
+                    'count_principal': count_principal,
+                    'count_auxiliar': count_auxiliar,
+                    'count_aux_instrucao': count_aux_instrucao,
+                    'total': count_principal + count_auxiliar + count_aux_instrucao
+                })
+        
+        # Ordenar por total de turmas
+        turmas_por_instrutor.sort(key=lambda x: x['total'], reverse=True)
+        
+        context = {
+            'total_turmas': total_turmas,
+            'turmas_ativas': turmas_ativas,
+            'turmas_concluidas': turmas_concluidas,
+            'turmas_canceladas': turmas_canceladas,
+            'turmas_por_curso': turmas_por_curso,
+            'turmas_por_instrutor': turmas_por_instrutor
+        }
+        
+        return render(request, 'turmas/relatorio_turmas.html', context)
     
-    estatisticas_instrutores.sort(key=lambda x: x['total_turmas'], reverse=True)
-    estatisticas_instrutores = estatisticas_instrutores[:5]
-    
-    context = {
-        'total_turmas': total_turmas,
-        'turmas_ativas': turmas_ativas,
-        'turmas_planejadas': turmas_planejadas,
-        'turmas_concluidas': turmas_concluidas,
-        'turmas_canceladas': turmas_canceladas,
-        'estatisticas_cursos': estatisticas_cursos,
-        'turmas_populares': turmas_populares,
-        'estatisticas_instrutores': estatisticas_instrutores
-    }
-    
-    return render(request, 'turmas/relatorio_turmas.html', context)
+    except Exception as e:
+        messages.error(request, f"Erro ao gerar relatório de turmas: {str(e)}")
+        return redirect("turmas:listar_turmas")
 
 @login_required
 def dashboard_turmas(request):
-    """Exibe um dashboard com informações sobre as turmas."""
-    # Estatísticas gerais
-    total_turmas = Turma.objects.count()
-    turmas_ativas = Turma.objects.filter(status='ATIVA').count()
-    turmas_planejadas = Turma.objects.filter(status='PLANEJADA').count()
-    turmas_concluidas = Turma.objects.filter(status='CONCLUIDA').count()
-    turmas_canceladas = Turma.objects.filter(status='CANCELADA').count()
-    
-    # Dados para gráfico de status
-    dados_status = [
-        {'status': 'Ativas', 'quantidade': turmas_ativas, 'cor': '#28a745'},
-        {'status': 'Planejadas', 'quantidade': turmas_planejadas, 'cor': '#17a2b8'},
-        {'status': 'Concluídas', 'quantidade': turmas_concluidas, 'cor': '#6c757d'},
-        {'status': 'Canceladas', 'quantidade': turmas_canceladas, 'cor': '#dc3545'}
-    ]
-    
-    # Turmas por curso
-    cursos = Curso.objects.all()
-    dados_cursos = []
-    
-    cores_cursos = [
-        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
-        '#5a5c69', '#858796', '#f8f9fc', '#d1d3e2', '#b7b9cc'
-    ]
-    
-    for i, curso in enumerate(cursos):
-        total_turmas_curso = Turma.objects.filter(curso=curso).count()
-        if total_turmas_curso > 0:
-            dados_cursos.append({
-                'curso': curso.nome,
-                'quantidade': total_turmas_curso,
-                'cor': cores_cursos[i % len(cores_cursos)]
-            })
-    
-    # Turmas recentes
-    turmas_recentes = Turma.objects.order_by('-id')[:5]
-    
-    # Turmas com vagas disponíveis
-    turmas_com_vagas = []
-    for turma in Turma.objects.filter(status='ATIVA'):
-        total_matriculados = Matricula.objects.filter(turma=turma, ativa=True).count()
-        vagas_disponiveis = turma.vagas - total_matriculados
+    """Exibe um dashboard com informações e estatísticas sobre as turmas."""
+    try:
+        Turma = get_turma_model()
         
-        if vagas_disponiveis > 0:
-            turmas_com_vagas.append({
+        # Estatísticas gerais
+        total_turmas = Turma.objects.count()
+        turmas_ativas = Turma.objects.filter(status='A').count()
+        turmas_concluidas = Turma.objects.filter(status='C').count()
+        turmas_canceladas = Turma.objects.filter(status='X').count()
+        
+        # Turmas recentes
+        turmas_recentes = Turma.objects.order_by('-data_inicio')[:5]
+        
+        # Turmas com mais alunos
+        Matricula = get_matricula_model()
+        
+        turmas_com_contagem = []
+        for turma in Turma.objects.filter(status='A'):
+            count = Matricula.objects.filter(turma=turma, status='A').count()
+            turmas_com_contagem.append({
                 'turma': turma,
-                'vagas_disponiveis': vagas_disponiveis,
-                'percentual_ocupacao': (total_matriculados / turma.vagas) * 100
+                'alunos_count': count,
+                'vagas_disponiveis': turma.vagas - count if turma.vagas > count else 0
             })
+        
+        # Ordenar por número de alunos
+        turmas_com_contagem.sort(key=lambda x: x['alunos_count'], reverse=True)
+        turmas_populares = turmas_com_contagem[:5]
+        
+        # Turmas por curso (para gráfico)
+        Curso = get_curso_model()
+        cursos = Curso.objects.all()
+        
+        dados_grafico = {
+            'labels': [],
+            'data': []
+        }
+        
+        for curso in cursos:
+            count = Turma.objects.filter(curso=curso).count()
+            if count > 0:
+                dados_grafico['labels'].append(curso.nome)
+                dados_grafico['data'].append(count)
+        
+        context = {
+            'total_turmas': total_turmas,
+            'turmas_ativas': turmas_ativas,
+            'turmas_concluidas': turmas_concluidas,
+            'turmas_canceladas': turmas_canceladas,
+            'turmas_recentes': turmas_recentes,
+            'turmas_populares': turmas_populares,
+            'dados_grafico': dados_grafico
+        }
+        
+        return render(request, 'turmas/dashboard_turmas.html', context)
     
-    turmas_com_vagas.sort(key=lambda x: x['vagas_disponiveis'], reverse=True)
-    turmas_com_vagas = turmas_com_vagas[:5]
-    
-    context = {
-        'total_turmas': total_turmas,
-        'turmas_ativas': turmas_ativas,
-        'turmas_planejadas': turmas_planejadas,
-        'turmas_concluidas': turmas_concluidas,
-        'turmas_canceladas': turmas_canceladas,
-        'dados_status': dados_status,
-        'dados_cursos': dados_cursos,
-        'turmas_recentes': turmas_recentes,
-        'turmas_com_vagas': turmas_com_vagas
-    }
-    
-    return render(request, 'turmas/dashboard.html', context)
-
+    except Exception as e:
+        messages.error(request, f"Erro ao carregar dashboard de turmas: {str(e)}")
+        return redirect("turmas:listar_turmas")
 
 
 ## Arquivos urls.py:
@@ -739,23 +992,52 @@ def dashboard_turmas(request):
 ### Arquivo: turmas\urls.py
 
 python
+"""
+Configuração de URLs para o módulo de Turmas.
+
+Padrão de Nomenclatura:
+- Usamos 'turma_id' como nome do parâmetro nas URLs para identificar o ID da turma
+- Para URLs que envolvem múltiplos modelos, usamos nomes específicos para cada ID
+  (ex: 'turma_id', 'aluno_cpf')
+
+Exemplos:
+- path('<int:turma_id>/', views.detalhar_turma, name='detalhar_turma')
+- path('<int:turma_id>/cancelar-matricula/<str:aluno_cpf>/', views.cancelar_matricula, name='cancelar_matricula')
+"""
 from django.urls import path
 from . import views
 
 app_name = "turmas"
 
 urlpatterns = [
+    # URLs existentes
     path("", views.listar_turmas, name="listar_turmas"),
     path("criar/", views.criar_turma, name="criar_turma"),
     path("<int:turma_id>/", views.detalhar_turma, name="detalhar_turma"),
     path("<int:turma_id>/editar/", views.editar_turma, name="editar_turma"),
     path("<int:turma_id>/excluir/", views.excluir_turma, name="excluir_turma"),
-    path("<int:turma_id>/alunos/", views.listar_alunos_matriculados, name="listar_alunos_matriculados"),
+    
+    # URLs para gerenciamento de alunos na turma
+    path("<int:turma_id>/alunos/", views.listar_alunos_turma, name="listar_alunos_turma"),
     path("<int:turma_id>/matricular/", views.matricular_aluno, name="matricular_aluno"),
-    path("<int:turma_id>/cancelar-matricula/<str:aluno_cpf>/", views.cancelar_matricula, name="cancelar_matricula"),
+    path("<int:turma_id>/remover-aluno/<str:aluno_id>/", views.remover_aluno_turma, name="remover_aluno_turma"),
+    
+    # URLs para gerenciamento de instrutores
+    path("<int:turma_id>/instrutores/", views.atualizar_instrutores, name="atualizar_instrutores"),
+    path("<int:turma_id>/remover-instrutor/<str:tipo>/", views.remover_instrutor, name="remover_instrutor"),
+    
+    # URLs para gerenciamento de atividades
+    path("<int:turma_id>/atividades/", views.listar_atividades_turma, name="listar_atividades_turma"),
+    path("<int:turma_id>/adicionar-atividade/", views.adicionar_atividade_turma, name="adicionar_atividade_turma"),
+    
+    # URLs para frequência
+    path("<int:turma_id>/registrar-frequencia/", views.registrar_frequencia_turma, name="registrar_frequencia_turma"),
+    path("<int:turma_id>/relatorio-frequencia/", views.relatorio_frequencia_turma, name="relatorio_frequencia_turma"),
+    
+    # URLs para exportação e relatórios
     path("exportar/", views.exportar_turmas, name="exportar_turmas"),
     path("relatorio/", views.relatorio_turmas, name="relatorio_turmas"),
-    path("dashboard/", views.dashboard_turmas, name="dashboard"),
+    path("dashboard/", views.dashboard_turmas, name="dashboard_turmas"),
 ]
 
 
@@ -1021,14 +1303,14 @@ html
     <h1>Cancelar Matrícula</h1>
     
     <div class="alert alert-warning">
-        <p>Você está prestes a cancelar a matrícula do aluno <strong>{{ aluno.nome }}</strong> na turma <strong>{{ turma.nome }}</strong>.</p>
+        <p>Você está prestes a cancelar a matrícula do aluno <strong>{{ matricula.aluno.nome }}</strong> na turma <strong>{{ matricula.turma.nome }}</strong>.</p>
         <p>Esta ação não pode ser desfeita. Deseja continuar?</p>
     </div>
     
     <form method="post">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger">Confirmar Cancelamento</button>
-        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar</a>
+        <a href="{{ return_url }}" class="btn btn-secondary">Voltar</a>
     </form>
 </div>
 {% endblock %}
@@ -1078,148 +1360,35 @@ html
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Criar Nova Turma{% endblock %}
+{% block title %}Nova Turma{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Garantir que o dropdown do Select2 seja visível */
-    .select2-container--bootstrap4 .select2-dropdown {
-        z-index: 9999 !important;
-    }
-    
-    /* Corrigir a altura do select */
-    .select2-container .select2-selection--single {
-        height: calc(1.5em + 0.75rem + 2px) !important;
-    }
-    
-    /* Garantir que o dropdown apareça acima de outros elementos */
-    .select2-container--open {
-        z-index: 9999 !important;
-    }
-    
-    /* Remover o tracinho do select e manter só a setinha */
-    .select2-selection__placeholder {
-        display: none !important;
-    }
-    
-    /* Container de dias da semana - estilo igual ao select2 */
-    .dias-semana-select {
-        width: 100%;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        min-height: 38px;
-        padding: 0.375rem 0.75rem;
-        background-color: #fff;
-        cursor: pointer;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    }
-    
-    .dias-semana-select:hover {
-        border-color: #adb5bd;
-    }
-    
-    .dias-semana-select.focus {
-        border-color: #80bdff;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-    
-    .dias-semana-container {
+    /* Ocultar os selects originais */
+    #id_instrutor, #id_instrutor_auxiliar, #id_auxiliar_instrucao {
         display: none;
-        position: absolute;
-        width: 100%;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 9999;
-        background-color: #fff;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     }
     
-    .dias-semana-item {
-        display: block;
-        padding: 0.5rem 1rem;
-        width: 100%;
-        text-align: left;
-        border: none;
-        background: none;
+    /* Estilo para os resultados da busca */
+    .list-group-item-action {
         cursor: pointer;
     }
     
-    .dias-semana-item:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .dias-semana-item.selected {
-        background-color: #e9ecef;
-        font-weight: bold;
-        color: #495057;
-    }
-    
-    .dias-semana-item input {
-        margin-right: 8px;
-    }
-    
-    /* Corrigir setas nos containers de escolha */
-    .select2-selection__arrow {
-        height: 100% !important;
-        position: absolute !important;
-        right: 1px !important;
-        top: 0 !important;
-    }
-    
-    /* Estilo para o dropdown arrow customizado */
-    .dropdown-arrow {
-        position: absolute;
-        right: 8px;
-        top: 50%;
-        transform: translateY(-50%);
-        border-style: solid;
-        border-width: 5px 5px 0 5px;
-        border-color: #888 transparent transparent transparent;
-        pointer-events: none;
-    }
-    
-    /* Estilos para a lista de resultados de busca */
-    .list-group-item-action {
-        transition: background-color 0.15s ease-in-out;
-    }
-    
-    .list-group-item-action:hover {
-        background-color: #f8f9fa;
-    }
-    
-    /* Estilo para container de aluno selecionado */
-    #selected-instrutor-container,
-    #selected-instrutor-auxiliar-container,
-    #selected-auxiliar-instrucao-container {
-        background-color: #f8f9fa;
-    }
-    
-    /* IMPORTANTE: Esconder completamente os selects originais */
-    #id_instrutor,
-    #id_instrutor_auxiliar,
-    #id_auxiliar_instrucao {
-        display: none !important;
-    }
-    
-    /* Esconder os botões duplicados de limpar seleção */
-    #id_instrutor + button,
-    #id_instrutor_auxiliar + button,
-    #id_auxiliar_instrucao + button,
-    #selected-instrutor-container + button,
-    #selected-instrutor-auxiliar-container + button,
-    #selected-auxiliar-instrucao-container + button {
-        display: none !important;
+    /* Estilo para o contêiner de instrutor selecionado */
+    .selected-instrutor {
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Criar Nova Turma</h1>
-        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar</a>
+        <h1>Nova Turma</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
     </div>
     
     {% if messages %}
@@ -1230,220 +1399,61 @@ html
         {% endfor %}
     {% endif %}
     
-    {% if form.errors %}
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                <strong>Erro:</strong>
-                <ul>
-                    {% for error in form.non_field_errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-    {% endif %}
-    
-    <form method="post" id="turma-form">
+    <form method="post">
         {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
         
-        <!-- Informações Básicas - Com fundo primary -->
-        <div class="card mb-4 border-primary">
+        <div class="card mb-4">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Informações Básicas</h5>
+                <h5>Informações Básicas</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="id_nome" class="form-label">Nome da Turma</label>
-                            <input type="text" name="nome" value="{{ form.nome.value|default:'' }}" class="form-control {% if form.nome.errors %}is-invalid{% endif %}" maxlength="100" required id="id_nome">
-                            {% if form.nome.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.nome.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                            {% if form.nome.help_text %}
-                                <small class="form-text text-muted">{{ form.nome.help_text }}</small>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.nome %}
                     </div>
                     <div class="col-md-6">
-                        <!-- Campo curso personalizado sem tracinhos -->
-                        <div class="mb-3">
-                            <label for="id_curso" class="form-label">Curso</label>
-                            <select name="curso" id="id_curso" class="form-select curso-select" required>
-                                {% for curso in cursos %}
-                                    <option value="{{ curso.codigo_curso }}">
-                                        {{ curso.codigo_curso }} - {{ curso.nome }}
-                                    </option>
-                                {% empty %}
-                                    <option value="">Nenhum curso disponível</option>
-                                {% endfor %}
-                            </select>
-                            {% if form.curso.help_text %}
-                                <small class="form-text text-muted">{{ form.curso.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="{{ form.data_inicio.id_for_label }}" class="form-label">Data de Início</label>
-                            <input type="date" name="data_inicio" id="id_data_inicio" class="form-control">
-                            {% if form.data_inicio.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.data_inicio.errors %}{{ error }}{% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="{{ form.data_fim.id_for_label }}" class="form-label">Data de Término</label>
-                            <input type="date" name="data_fim" id="id_data_fim" class="form-control">
-                            {% if form.data_fim.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.data_fim.errors %}{{ error }}{% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.curso %}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="id_vagas" class="form-label">Número de Vagas</label>
-                            <input type="number" name="vagas" value="{{ form.vagas.value|default:'30' }}" class="form-control{% if form.vagas.errors %} is-invalid{% endif %}" min="0" required id="id_vagas">
-                            {% if form.vagas.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.vagas.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                            {% if form.vagas.help_text %}
-                                <small class="form-text text-muted">{{ form.vagas.help_text }}</small>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.vagas %}
                     </div>
                     <div class="col-md-4">
-                        <!-- Campo status customizado com valores limitados -->
-                        <div class="mb-3">
-                            <label for="id_status" class="form-label">Status</label>
-                            <select name="status" id="id_status" class="form-select" required>
-                                <option value="A" {% if form.status.value == 'A' or not form.status.value %}selected{% endif %}>Ativa</option>
-                                <option value="I" {% if form.status.value == 'I' %}selected{% endif %}>Inativa</option>
-                                <option value="C" {% if form.status.value == 'C' %}selected{% endif %}>Cancelada</option>
-                                <option value="F" {% if form.status.value == 'F' %}selected{% endif %}>Finalizada</option>
-                            </select>
-                            {% if form.status.help_text %}
-                                <small class="form-text text-muted">{{ form.status.help_text }}</small>
-                            {% endif %}
-                            <!-- Alerta para data fim obrigatória quando Finalizada -->
-                            <div id="alerta-data-fim" class="alert alert-warning mt-2" style="display:none;">
-                                <i class="fas fa-exclamation-triangle"></i> Quando o status é "Finalizada", a Data de Término é obrigatória.
-                            </div>
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.status %}
                     </div>
                     <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="id_local" class="form-label">Local</label>
-                            <input type="text" name="local" value="{{ form.local.value|default:'' }}" class="form-control{% if form.local.errors %} is-invalid{% endif %}" maxlength="200" id="id_local">
-                            {% if form.local.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.local.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.dias_semana %}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <!-- Dias da semana estilo select2 -->
-                        <div class="mb-3">
-                            <label class="form-label">Dias da Semana</label>
-                            <input type="hidden" name="dias_semana" id="dias_semana_hidden" value="">
-                            
-                            <div class="position-relative">
-                                <div class="dias-semana-select" id="dias-semana-display">
-                                    <span id="dias-semana-texto">
-                                        {% if form.dias_semana.value %}
-                                            {{ form.dias_semana.value }}
-                                        {% else %}
-                                            Selecione os dias da semana
-                                        {% endif %}
-                                    </span>
-                                    <span class="dropdown-arrow"></span>
-                                </div>
-                                
-                                <div class="dias-semana-container" id="dias-semana-dropdown" style="display: none;">
-                                    <div class="dia-semana-item" data-dia="Segunda">
-                                        <input type="checkbox" id="dia_segunda">
-                                        Segunda
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Terça">
-                                        <input type="checkbox" id="dia_terca">
-                                        Terça
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Quarta">
-                                        <input type="checkbox" id="dia_quarta">
-                                        Quarta
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Quinta">
-                                        <input type="checkbox" id="dia_quinta">
-                                        Quinta
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Sexta">
-                                        <input type="checkbox" id="dia_sexta">
-                                        Sexta
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Sábado">
-                                        <input type="checkbox" id="dia_sabado">
-                                        Sábado
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Domingo">
-                                        <input type="checkbox" id="dia_domingo">
-                                        Domingo
-                                    </div>
-                                </div>
-                            </div>
-                            <small class="form-text text-muted">Selecione os dias da semana em que ocorrerão as aulas</small>
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.data_inicio %}
                     </div>
                     <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="id_horario" class="form-label">Horário</label>
-                            <input type="text" name="horario" value="{{ form.horario.value|default:'' }}" class="form-control{% if form.horario.errors %} is-invalid{% endif %}" maxlength="100" id="id_horario">
-                            {% if form.horario.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.horario.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                            {% if form.horario.help_text %}
-                                <small class="form-text text-muted">{{ form.horario.help_text }}</small>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.data_fim %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.local %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.horario %}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="mb-3">
-                            <label for="id_descricao" class="form-label">Descrição</label>
-                            <textarea name="descricao" cols="40" rows="3" class="form-control{% if form.descricao.errors %} is-invalid{% endif %}" id="id_descricao">{{ form.descricao.value|default:'' }}</textarea>
-                            {% if form.descricao.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.descricao.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.descricao %}
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Seção de Instrutoria -->
-        <div class="card mb-4 border-success">
+        <div class="card mb-4">
             <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Instrutoria</h5>
+                <h5>Instrutores</h5>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -1494,94 +1504,21 @@ html
                 </div>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
-                    O sistema verificará a elegibil
-                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
-                    O sistema verificará a elegibilidade do aluno para a função de instrutor.
+                    O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
                 </div>
             </div>
         </div>
         
-        <div class="d-flex justify-content-between">
+        <div class="d-flex justify-content-between mb-5">
             <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Salvar Turma</button>
+            <button type="submit" class="btn btn-primary">Criar Turma</button>
         </div>
     </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/modules/instrutor-search.js' %}"></script>
-<script src="{% static 'js/turmas/form_fix.js' %}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar Select2 para o campo de curso
-        $('.curso-select').select2({
-            theme: 'bootstrap4',
-            placeholder: 'Selecione um curso',
-            width: '100%'
-        });
-        
-        // Inicializar componente de dias da semana
-        if (typeof DiasSemana !== 'undefined') {
-            DiasSemana.init();
-            
-            // Definir os dias da semana selecionados
-            var diasSelecionados = '{{ form.dias_semana.value|default:"" }}';
-            if (diasSelecionados) {
-                console.log('Definindo dias selecionados: ', diasSelecionados);
-                var diasArray = diasSelecionados.split(',').map(function(dia) {
-                    return dia.trim();
-                });
-                
-                // Marcar os checkboxes correspondentes
-                diasArray.forEach(function(dia) {
-                    dia = dia.charAt(0).toUpperCase() + dia.slice(1).toLowerCase();
-                    var checkbox = document.getElementById('dia_' + dia.toLowerCase());
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
-                });
-                
-                // Atualizar texto visível
-                document.getElementById('dias-semana-texto').textContent = diasSelecionados;
-            }
-        } else {
-            console.error('Módulo DiasSemana não encontrado!');
-        }
-        
-        // Inicializar busca de instrutores
-        if (typeof InstrutorSearch !== 'undefined') {
-            var csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            InstrutorSearch.init(csrftoken, false);
-        } else {
-            console.error('Módulo InstrutorSearch não encontrado!');
-        }
-        
-        // Ocultar botões "Limpar seleção" duplicados gerados pelo JS
-        document.querySelectorAll('.btn-limpar-duplicada').forEach(function(btn) {
-            btn.style.display = 'none';
-        });
-        
-        // Verificar status e mostrar alerta para data fim obrigatória
-        var statusField = document.getElementById('id_status');
-        var alertaDataFim = document.getElementById('alerta-data-fim');
-        
-        if (statusField && alertaDataFim) {
-            statusField.addEventListener('change', function() {
-                if (this.value === 'F') {
-                    alertaDataFim.style.display = 'block';
-                } else {
-                    alertaDataFim.style.display = 'none';
-                }
-            });
-            
-            // Verificar status inicial
-            if (statusField.value === 'F') {
-                alertaDataFim.style.display = 'block';
-            }
-        }
-    });
-</script>
+<script src="{% static 'js/instrutor_search.js' %}"></script>
 {% endblock %}
 
 
@@ -1976,6 +1913,187 @@ html
 
 
 
+### Arquivo: turmas\templates\turmas\dashboard_turmas.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Turmas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard de Turmas</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para Lista</a>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Turmas</h5>
+                    <p class="card-text display-4">{{ total_turmas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Turmas Ativas</h5>
+                    <p class="card-text display-4">{{ turmas_ativas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Turmas Concluídas</h5>
+                    <p class="card-text display-4">{{ turmas_concluidas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Turmas Canceladas</h5>
+                    <p class="card-text display-4">{{ turmas_canceladas }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Turmas Recentes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Curso</th>
+                                    <th>Data de Início</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for turma in turmas_recentes %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
+                                        </td>
+                                        <td>{{ turma.curso.nome }}</td>
+                                        <td>{{ turma.data_inicio|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <span class="badge {% if turma.status == 'A' %}bg-success{% elif turma.status == 'C' %}bg-info{% else %}bg-danger{% endif %}">
+                                                {{ turma.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">Nenhuma turma encontrada</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Turmas Mais Populares</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Curso</th>
+                                    <th>Alunos</th>
+                                    <th>Vagas Disponíveis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in turmas_populares %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'turmas:detalhar_turma' item.turma.id %}">{{ item.turma.nome }}</a>
+                                        </td>
+                                        <td>{{ item.turma.curso.nome }}</td>
+                                        <td>{{ item.alunos_count }}</td>
+                                        <td>{{ item.vagas_disponiveis }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">Nenhuma turma encontrada</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Distribuição de Turmas por Curso</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="turmasPorCursoChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var ctx = document.getElementById('turmasPorCursoChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ dados_grafico.labels|safe }},
+                datasets: [{
+                    label: 'Número de Turmas',
+                    data: {{ dados_grafico.data|safe }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+
+
 ### Arquivo: turmas\templates\turmas\detalhar_turma.html
 
 html
@@ -2262,7 +2380,7 @@ html
                                     <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.cpf %}" class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i> Ver
                                     </a>
-                                    <a href="{% url 'turmas:cancelar_matricula' turma.id matricula.aluno.cpf %}"
+                                    <a href="{% url 'matriculas:cancelar_matricula_por_turma_aluno' turma.id matricula.aluno.cpf %}"
                                        class="btn btn-sm btn-danger"
                                        onclick="return confirm('Tem certeza que deseja cancelar esta matrícula?');">
                                         <i class="fas fa-times"></i> Cancelar
@@ -2343,148 +2461,35 @@ html
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Editar Turma: {{ turma.nome }}{% endblock %}
+{% block title %}Editar Turma{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Garantir que o dropdown do Select2 seja visível */
-    .select2-container--bootstrap4 .select2-dropdown {
-        z-index: 9999 !important;
-    }
-    
-    /* Corrigir a altura do select */
-    .select2-container .select2-selection--single {
-        height: calc(1.5em + 0.75rem + 2px) !important;
-    }
-    
-    /* Garantir que o dropdown apareça acima de outros elementos */
-    .select2-container--open {
-        z-index: 9999 !important;
-    }
-    
-    /* Remover o tracinho do select e manter só a setinha */
-    .select2-selection__placeholder {
-        display: none !important;
-    }
-    
-    /* Container de dias da semana - estilo igual ao select2 */
-    .dias-semana-select {
-        width: 100%;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        min-height: 38px;
-        padding: 0.375rem 0.75rem;
-        background-color: #fff;
-        cursor: pointer;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    }
-    
-    .dias-semana-select:hover {
-        border-color: #adb5bd;
-    }
-    
-    .dias-semana-select.focus {
-        border-color: #80bdff;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-    
-    .dias-semana-container {
+    /* Ocultar os selects originais */
+    #id_instrutor, #id_instrutor_auxiliar, #id_auxiliar_instrucao {
         display: none;
-        position: absolute;
-        width: 100%;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 9999;
-        background-color: #fff;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     }
     
-    .dias-semana-item {
-        display: block;
-        padding: 0.5rem 1rem;
-        width: 100%;
-        text-align: left;
-        border: none;
-        background: none;
+    /* Estilo para os resultados da busca */
+    .list-group-item-action {
         cursor: pointer;
     }
     
-    .dias-semana-item:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .dias-semana-item.selected {
-        background-color: #e9ecef;
-        font-weight: bold;
-        color: #495057;
-    }
-    
-    .dias-semana-item input {
-        margin-right: 8px;
-    }
-    
-    /* Corrigir setas nos containers de escolha */
-    .select2-selection__arrow {
-        height: 100% !important;
-        position: absolute !important;
-        right: 1px !important;
-        top: 0 !important;
-    }
-    
-    /* Estilo para o dropdown arrow customizado */
-    .dropdown-arrow {
-        position: absolute;
-        right: 8px;
-        top: 50%;
-        transform: translateY(-50%);
-        border-style: solid;
-        border-width: 5px 5px 0 5px;
-        border-color: #888 transparent transparent transparent;
-        pointer-events: none;
-    }
-    
-    /* Estilos para a lista de resultados de busca */
-    .list-group-item-action {
-        transition: background-color 0.15s ease-in-out;
-    }
-    
-    .list-group-item-action:hover {
-        background-color: #f8f9fa;
-    }
-    
-    /* Estilo para container de aluno selecionado */
-    #selected-instrutor-container,
-    #selected-instrutor-auxiliar-container,
-    #selected-auxiliar-instrucao-container {
-        background-color: #f8f9fa;
-    }
-    
-    /* IMPORTANTE: Esconder completamente os selects originais */
-    #id_instrutor, 
-    #id_instrutor_auxiliar, 
-    #id_auxiliar_instrucao {
-        display: none !important;
-    }
-    
-    /* Esconder os botões duplicados de limpar seleção */
-    #id_instrutor + button, 
-    #id_instrutor_auxiliar + button, 
-    #id_auxiliar_instrucao + button,
-    #selected-instrutor-container + button,
-    #selected-instrutor-auxiliar-container + button,
-    #selected-auxiliar-instrucao-container + button {
-        display: none !important;
+    /* Estilo para o contêiner de instrutor selecionado */
+    .selected-instrutor {
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Editar Turma: {{ turma.nome }}</h1>
-        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar para Detalhes</a>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
     </div>
     
     {% if messages %}
@@ -2495,251 +2500,74 @@ html
         {% endfor %}
     {% endif %}
     
-    {% if form.errors %}
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                <strong>Erro:</strong>
-                <ul>
-                    {% for error in form.non_field_errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-    {% endif %}
-    
     <form method="post">
         {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
         
-        <!-- Informações Básicas - Com fundo primary -->
-        <div class="card mb-4 border-primary">
+        <!-- Seção de Informações Básicas -->
+        <div class="card mb-4">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Informações Básicas</h5>
+                <h5>Informações Básicas</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="id_nome" class="form-label">Nome da Turma</label>
-                            <input type="text" name="nome" value="{{ form.nome.value|default:'' }}" class="form-control {% if form.nome.errors %}is-invalid{% endif %}" maxlength="100" required id="id_nome">
-                            {% if form.nome.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.nome.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                            {% if form.nome.help_text %}
-                                <small class="form-text text-muted">{{ form.nome.help_text }}</small>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.nome %}
                     </div>
                     <div class="col-md-6">
-                        <!-- Campo curso personalizado sem tracinhos -->
-                        <div class="mb-3">
-                            <label for="id_curso" class="form-label">Curso</label>
-                            <select name="curso" id="id_curso" class="form-select curso-select" required>
-                                {% for choice in form.curso.field.choices %}
-                                    {% if choice.0 %}
-                                        <option value="{{ choice.0 }}" {% if form.curso.value|stringformat:"s" == choice.0|stringformat:"s" %}selected{% endif %}>
-                                            {{ choice.1 }}
-                                        </option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
-                            {% if form.curso.help_text %}
-                                <small class="form-text text-muted">{{ form.curso.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="{{ form.data_inicio.id_for_label }}" class="form-label">Data de Início</label>
-                            {% if turma.data_inicio %}
-                            <input type="date" name="data_inicio" id="id_data_inicio" class="form-control" 
-                                   value="{{ turma.data_inicio|date:'Y-m-d' }}">
-                            {% else %}
-                            <input type="date" name="data_inicio" id="id_data_inicio" class="form-control">
-                            {% endif %}
-                            {% if form.data_inicio.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.data_inicio.errors %}{{ error }}{% endfor %}
-                            </div>
-                            {% endif %}
-                            <small class="form-text text-muted">Data atual: {{ turma.data_inicio|date:"d/m/Y" }}</small>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="{{ form.data_fim.id_for_label }}" class="form-label">Data de Término</label>
-                            {% if turma.data_fim %}
-                            <input type="date" name="data_fim" id="id_data_fim" class="form-control" 
-                                   value="{{ turma.data_fim|date:'Y-m-d' }}">
-                            {% else %}
-                            <input type="date" name="data_fim" id="id_data_fim" class="form-control">
-                            {% endif %}
-                            {% if form.data_fim.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.data_fim.errors %}{{ error }}{% endfor %}
-                            </div>
-                            {% endif %}
-                            <small class="form-text text-muted">Data atual: {% if turma.data_fim %}{{ turma.data_fim|date:"d/m/Y" }}{% else %}Não definida{% endif %}</small>
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.curso %}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="id_vagas" class="form-label">Número de Vagas</label>
-                            <input type="number" name="vagas" value="{{ form.vagas.value }}" class="form-control{% if form.vagas.errors %} is-invalid{% endif %}" min="0" required id="id_vagas">
-                            {% if form.vagas.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.vagas.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                            {% if form.vagas.help_text %}
-                                <small class="form-text text-muted">{{ form.vagas.help_text }}</small>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.vagas %}
                     </div>
                     <div class="col-md-4">
-                        <!-- Campo status customizado com valores limitados -->
-                        <div class="mb-3">
-                            <label for="id_status" class="form-label">Status</label>
-                            <select name="status" id="id_status" class="form-select" required>
-                                <option value="A" {% if form.status.value == 'A' %}selected{% endif %}>Ativa</option>
-                                <option value="I" {% if form.status.value == 'I' %}selected{% endif %}>Inativa</option>
-                                <option value="C" {% if form.status.value == 'C' %}selected{% endif %}>Cancelada</option>
-                                <option value="F" {% if form.status.value == 'F' %}selected{% endif %}>Finalizada</option>
-                            </select>
-                            {% if form.status.help_text %}
-                                <small class="form-text text-muted">{{ form.status.help_text }}</small>
-                            {% endif %}
-                            <!-- Alerta para data fim obrigatória quando Finalizada -->
-                            <div id="alerta-data-fim" class="alert alert-warning mt-2" style="display:none;">
-                                <i class="fas fa-exclamation-triangle"></i> Quando o status é "Finalizada", a Data de Término é obrigatória.
-                            </div>
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.status %}
                     </div>
                     <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="id_local" class="form-label">Local</label>
-                            <input type="text" name="local" value="{{ form.local.value }}" class="form-control{% if form.local.errors %} is-invalid{% endif %}" maxlength="200" id="id_local">
-                            {% if form.local.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.local.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.dias_semana %}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <!-- Dias da semana estilo select2 -->
-                        <div class="mb-3">
-                            <label class="form-label">Dias da Semana</label>
-                            <input type="hidden" name="dias_semana" id="dias_semana_hidden" value="sábado">
-                            
-                            <div class="position-relative">
-                                <div class="dias-semana-select" id="dias-semana-display">
-                                    <span id="dias-semana-texto">
-                                        {% if form.dias_semana.value %}
-                                            {{ form.dias_semana.value }}
-                                        {% else %}
-                                            Selecione os dias da semana
-                                        {% endif %}
-                                    </span>
-                                    <span class="dropdown-arrow"></span>
-                                </div>
-                                
-                                <div class="dias-semana-container" id="dias-semana-dropdown" style="display: none;">
-                                    <div class="dia-semana-item" data-dia="Segunda">
-                                        <input type="checkbox" id="dia_segunda">
-                                        Segunda
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Terça">
-                                        <input type="checkbox" id="dia_terca">
-                                        Terça
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Quarta">
-                                        <input type="checkbox" id="dia_quarta">
-                                        Quarta
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Quinta">
-                                        <input type="checkbox" id="dia_quinta">
-                                        Quinta
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Sexta">
-                                        <input type="checkbox" id="dia_sexta">
-                                        Sexta
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Sábado">
-                                        <input type="checkbox" id="dia_sabado">
-                                        Sábado
-                                    </div>
-                                    <div class="dia-semana-item" data-dia="Domingo">
-                                        <input type="checkbox" id="dia_domingo">
-                                        Domingo
-                                    </div>
-                                </div>
-                            </div>
-                            <small class="form-text text-muted">Selecione os dias da semana em que ocorrerão as aulas</small>
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.data_inicio %}
                     </div>
                     <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="id_horario" class="form-label">Horário</label>
-                            <input type="text" name="horario" value="{{ form.horario.value }}" class="form-control{% if form.horario.errors %} is-invalid{% endif %}" maxlength="100" id="id_horario">
-                            {% if form.horario.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.horario.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                            {% if form.horario.help_text %}
-                                <small class="form-text text-muted">{{ form.horario.help_text }}</small>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.data_fim %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.local %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.horario %}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="mb-3">
-                            <label for="id_descricao" class="form-label">Descrição</label>
-                            <textarea name="descricao" cols="40" rows="3" class="form-control{% if form.descricao.errors %} is-invalid{% endif %}" id="id_descricao">{{ form.descricao.value }}</textarea>
-                            {% if form.descricao.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.descricao.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
+                        {% include 'includes/form_field.html' with field=form.descricao %}
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Seção de Instrutoria - Agora com a resolução dos problemas de exibição -->
-        <div class="card mb-4 border-success">
+        <!-- Seção de Instrutores -->
+        <div class="card mb-4">
             <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Instrutoria</h5>
+                <h5>Instrutores</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <!-- Instrutor Principal -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor" class="form-label">Instrutor Principal</label>
-                        <input type="text" id="search-instrutor" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off"
-                               value="{% if turma.instrutor %}{{ turma.instrutor.nome }}{% endif %}">
+                        <input type="text" id="search-instrutor" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-instrutor" class="list-group mt-2" style="display: none"></div>
-                        <div id="selected-instrutor-container" class="p-3 border rounded mt-2">
+                        <div id="selected-instrutor-container" class="p-3 border rounded mt-2 d-none">
                             <div id="selected-instrutor-info">
-                                <strong>{{ aluno.nome }}</strong><br>
-                                CPF: {{ aluno.cpf }}<br>
-                                Número Iniciático: {{ aluno.numero_iniciatico|default:"N/A" }}<br>
-                                <span class="badge bg-{{ aluno.situacao_class }}">{{ aluno.get_situacao_display }}</span>
-                                <div class="mt-2 small">
-                                    <div><strong>Status como instrutor:</strong> <span id="instrutor-status"></span></div>
-                                    <div class="mt-1"><strong>Turmas:</strong> <span id="instrutor-turmas"></span></div>
-                                </div>
+                                Nenhum instrutor selecionado
                             </div>
                         </div>
                         <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
@@ -2750,23 +2578,11 @@ html
                     <!-- Instrutor Auxiliar -->
                     <div class="col-md-4 mb-3">
                         <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
-                        <input type="text" id="search-instrutor-auxiliar" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off"
-                               value="{% if turma.instrutor_auxiliar %}{{ turma.instrutor_auxiliar.nome }}{% endif %}">
+                        <input type="text" id="search-instrutor-auxiliar" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
-                        <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 {% if not turma.instrutor_auxiliar %}d-none{% endif %}">
+                        <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 d-none">
                             <div id="selected-instrutor-auxiliar-info">
-                                {% if turma.instrutor_auxiliar %}
-                                    <strong>{{ turma.instrutor_auxiliar.nome }}</strong><br>
-                                    CPF: {{ turma.instrutor_auxiliar.cpf }}<br>
-                                    Número Iniciático: {{ turma.instrutor_auxiliar.numero_iniciatico|default:"N/A" }}<br>
-                                    <span class="badge bg-{{ turma.instrutor_auxiliar.situacao_class }}">{{ turma.instrutor_auxiliar.get_situacao_display }}</span>
-                                    <div class="mt-2 small">
-                                        <div><strong>Status como instrutor:</strong> <span id="instrutor-auxiliar-status"></span></div>
-                                        <div class="mt-1"><strong>Turmas:</strong> <span id="instrutor-auxiliar-turmas"></span></div>
-                                    </div>
-                                {% else %}
-                                    Nenhum instrutor auxiliar selecionado
-                                {% endif %}
+                                Nenhum instrutor auxiliar selecionado
                             </div>
                         </div>
                         <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
@@ -2777,23 +2593,11 @@ html
                     <!-- Auxiliar de Instrução -->
                     <div class="col-md-4 mb-3">
                         <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
-                        <input type="text" id="search-auxiliar-instrucao" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off"
-                               value="{% if turma.auxiliar_instrucao %}{{ turma.auxiliar_instrucao.nome }}{% endif %}">
+                        <input type="text" id="search-auxiliar-instrucao" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
                         <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
-                        <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 {% if not turma.auxiliar_instrucao %}d-none{% endif %}">
+                        <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 d-none">
                             <div id="selected-auxiliar-instrucao-info">
-                                {% if turma.auxiliar_instrucao %}
-                                    <strong>{{ turma.auxiliar_instrucao.nome }}</strong><br>
-                                    CPF: {{ turma.auxiliar_instrucao.cpf }}<br>
-                                    Número Iniciático: {{ turma.auxiliar_instrucao.numero_iniciatico|default:"N/A" }}<br>
-                                    <span class="badge bg-{{ turma.auxiliar_instrucao.situacao_class }}">{{ turma.auxiliar_instrucao.get_situacao_display }}</span>
-                                    <div class="mt-2 small">
-                                        <div><strong>Status como instrutor:</strong> <span id="auxiliar-instrucao-status"></span></div>
-                                        <div class="mt-1"><strong>Turmas:</strong> <span id="auxiliar-instrucao-turmas"></span></div>
-                                    </div>
-                                {% else %}
-                                    Nenhum auxiliar de instrução selecionado
-                                {% endif %}
+                                Nenhum auxiliar de instrução selecionado
                             </div>
                         </div>
                         <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
@@ -2817,68 +2621,7 @@ html
 {% endblock %}
 
 {% block extra_js %}
-<!-- Adicionando jQuery apenas se não estiver disponível -->
-<script>
-    if (typeof jQuery === 'undefined') {
-        document.write('<script src="https://code.jquery.com/jquery-3.6.0.min.js"><\/script>');
-    }
-</script>
-
-<!-- Carregando os scripts necessários -->
-<script src="{% static 'js/modules/instrutor-search.js' %}"></script>
-<script src="{% static 'js/modules/dias-semana.js' %}"></script>
-<script>
-    // Script local para inicializar os componentes
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar dias da semana
-        if (typeof DiasSemana !== 'undefined') {
-            console.log('Inicializando DiasSemana');
-            DiasSemana.init();
-            
-            // Definir os dias da semana selecionados
-            var diasSelecionados = '{{ form.dias_semana.value|default:"" }}';
-            if (diasSelecionados) {
-                console.log('Definindo dias selecionados: ', diasSelecionados);
-                var diasArray = diasSelecionados.split(',').map(function(dia) {
-                    return dia.trim();
-                });
-                
-                // Marcar os checkboxes correspondentes
-                diasArray.forEach(function(dia) {
-                    dia = dia.charAt(0).toUpperCase() + dia.slice(1).toLowerCase();
-                    var checkbox = document.getElementById('dia_' + dia.toLowerCase());
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
-                });
-                
-                // Atualizar texto visível
-                document.getElementById('dias-semana-texto').textContent = diasSelecionados;
-            }
-        } else {
-            console.error('Módulo DiasSemana não encontrado!');
-        }
-        
-        // Inicializar busca de instrutores
-        if (typeof InstrutorSearch !== 'undefined') {
-            var csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            InstrutorSearch.init(csrftoken, false);
-        } else {
-            console.error('Módulo InstrutorSearch não encontrado!');
-        }
-        
-        // Ocultar botões "Limpar seleção" duplicados gerados pelo JS
-        document.querySelectorAll('.btn-limpar-duplicada').forEach(function(btn) {
-            btn.style.display = 'none';
-        });
-        
-        // Remover validação incorreta da data de início
-        var dataInicioField = document.getElementById('id_data_inicio');
-        if (dataInicioField) {
-            dataInicioField.min = ""; // Remove restrição de data mínima
-        }
-    });
-</script>
+<script src="{% static 'js/instrutor_search.js' %}"></script>
 {% endblock %}
 
 
@@ -3197,169 +2940,126 @@ html
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Lista de Turmas</h1>
-
-    <form method="get" class="mb-3">
-        <div class="row">
-            <div class="col-md-4">
-                <input type="text" name="q" class="form-control" placeholder="Buscar turmas..." value="{{ query }}">
+    <!-- Cabeçalho com título e botões na mesma linha -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Lista de Turmas</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
+            <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary">Nova Turma</a>
+        </div>
+    </div>
+    
+    <!-- Barra de busca e filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome, curso ou instrutor..." value="{{ query }}">
+                </div>
+                <div class="col-md-4">
+                    <select name="curso" class="form-select" title="Selecione um curso" aria-label="Selecione um curso">
+                        <option value="">Todos os cursos</option>
+                        {% for curso in cursos %}
+                            <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == curso_selecionado %}selected{% endif %}>{{ curso.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            {% if error_message %}
+            <div class="alert alert-danger">
+                {{ error_message }}
             </div>
-            <div class="col-md-3">
-                <select name="curso" class="form-control">
-                    <option value="">Todos os cursos</option>
-                    {% for curso in cursos %}
-                        <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == curso_selecionado %}selected{% endif %}>
-                            {{ curso.nome }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select name="status" class="form-control">
-                    <option value="">Todos os status</option>
-                    {% for status_value, status_label in opcoes_status %}
-                        <option value="{{ status_value }}" {% if status_value == status_selecionado %}selected{% endif %}>
-                            {{ status_label }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary">Filtrar</button>
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Curso</th>
+                            <th>Nome da Turma</th>
+                            <th>Instrutor</th>
+                            <th>Status</th>
+                            <th>Data Início</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for turma in turmas %}
+                            <tr>
+                                <td>{{ turma.curso.nome }}</td>
+                                <td>{{ turma.nome }}</td>
+                                <td>{{ turma.instrutor.nome|default:"Não definido" }}</td>
+                                <td>
+                                    <span class="badge {% if turma.status == 'A' %}bg-success{% elif turma.status == 'P' %}bg-info{% elif turma.status == 'C' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                        {{ turma.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ turma.data_inicio|date:"d/m/Y"|default:"-" }}</td>
+                                <td>
+                                    <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da turma">Detalhes</a>
+                                    <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning" title="Editar informações da turma">Editar</a>
+                                    <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-sm btn-danger" title="Excluir esta turma">Excluir</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <p class="my-3">Nenhuma turma cadastrada.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-    </form>
+        <div class="card-footer">
+            <p class="text-muted mb-0">Total: {{ total_turmas|default:"0" }} turma(s)</p>
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginação">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Anterior</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Anterior</span>
+                            </li>
+                        {% endif %}
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Curso</th>
-                <th>Data de Início</th>
-                <th>Data de Fim</th>
-                <th>Status</th>
-                <th>Vagas</th>
-                <th>Matrículas</th>
-                <th>Disponíveis</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for turma_info in turmas_com_info %}
-            {% with turma=turma_info.turma %}
-            <tr {% if turma.alerta_instrutor %}class="table-warning"{% endif %}>
-                <td>
-                    {{ turma.nome }}
-                    {% if turma_info.tem_pendencia_instrutoria %}
-                    <div class="alert alert-danger mt-1 mb-0 p-1 text-center blink">
-                        <small><strong>Pendência na Instrutoria</strong></small>
-                    </div>
-                    {% endif %}
-                </td>
-                <td>{{ turma.curso }}</td>
-                <td>{{ turma.data_inicio|date:"d/m/Y" }}</td>
-                <td>{{ turma.data_fim|date:"d/m/Y" }}</td>
-                <td>
-                    {% if turma.status == 'A' %}
-                        <span class="badge bg-success">{{ turma.get_status_display }}</span>
-                    {% elif turma.status == 'I' %}
-                        <span class="badge bg-warning">{{ turma.get_status_display }}</span>
-                    {% else %}
-                        <span class="badge bg-secondary">{{ turma.get_status_display }}</span>
-                    {% endif %}
-                    
-                    {% if turma.alerta_instrutor %}
-                        <span class="badge bg-danger ms-1" data-bs-toggle="tooltip" title="{{ turma.alerta_mensagem }}">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </span>
-                    {% endif %}
-                </td>
-                <td>{{ turma.vagas }}</td>
-                <td>{{ turma_info.total_alunos }}</td>
-                <td>{{ turma_info.vagas_disponiveis }}</td>
-                <td>
-                    <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info">Detalhes</a>
-                    <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning">Editar</a>
-                    <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-sm btn-danger">Excluir</a>
-                </td>
-            </tr>
-            {% endwith %}
-            {% empty %}            <tr>
-                <td colspan="9" class="text-center">Nenhuma turma encontrada.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}&q={{ query }}&curso={{ curso_selecionado }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
 
-    {% if turmas.has_other_pages %}
-    <nav>
-        <ul class="pagination">
-            {% if turmas.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ turmas.previous_page_number }}">Anterior</a></li>
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Próxima</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Próxima</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
             {% endif %}
-
-            {% for i in turmas.paginator.page_range %}
-                {% if turmas.number == i %}
-                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                {% else %}
-                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
-                {% endif %}
-            {% endfor %}
-
-            {% if turmas.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ turmas.next_page_number }}">Próxima</a></li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-
-    <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary">Criar Nova Turma</a>
+        </div>
+    </div>
 </div>
 {% endblock %}
-@login_required
-def listar_turmas(request):
-    Turma = get_turma_model()
-    turmas = Turma.objects.all()
-    
-    # Preparar informações adicionais para cada turma
-    turmas_com_info = []
-    for turma in turmas:
-        # Calcular o número de alunos matriculados
-        total_alunos = turma.matriculas.count() if hasattr(turma, 'matriculas') else 0
-        
-        # Calcular vagas disponíveis
-        vagas_disponiveis = turma.vagas - total_alunos
-        
-        turmas_com_info.append({
-            'turma': turma,
-            'total_alunos': total_alunos,
-            'vagas_disponiveis': vagas_disponiveis
-        })
-    
-    # Obter cursos para o filtro
-    try:
-        Curso = get_model_class("Curso", "cursos.models")
-        cursos = Curso.objects.all()
-    except:
-        cursos = []
-    
-    # Opções de status para o filtro
-    opcoes_status = Turma.STATUS_CHOICES
-    
-    context = {
-        'turmas_com_info': turmas_com_info,
-        'cursos': cursos,
-        'opcoes_status': opcoes_status,
-        'query': request.GET.get('q', ''),
-        'curso_selecionado': request.GET.get('curso', ''),
-        'status_selecionado': request.GET.get('status', '')
-    }
-    
-    return render(request, "turmas/listar_turmas.html", context)
-def get_model_class(model_name, module_name="turmas.models"):
-    """Importa dinamicamente uma classe de modelo para evitar importações circulares."""
-    models_module = importlib.import_module(module_name)
-    return getattr(models_module, model_name)
+
 
 
 
@@ -3367,197 +3067,399 @@ def get_model_class(model_name, module_name="turmas.models"):
 
 html
 {% extends 'base.html' %}
-{% load static %}
-<!-- Modificar os links para usar turma.id em vez de turma.codigo_turma -->
-<a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar para Turma</a>
-{% block title %}Matricular Aluno na Turma: {{ turma.nome }}{% endblock %}
+
+{% block title %}Matricular Aluno na Turma{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <h1>Matricular Aluno na Turma: {{ turma.nome }}</h1>
     
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
     <div class="card mb-4">
         <div class="card-header">
-            <h5 class="mb-0">Informações da Turma</h5>
+            <h5>Informações da Turma</h5>
         </div>
         <div class="card-body">
-            <p><strong>Nome da Turma:</strong> {{ turma.nome }}</p>
+            <p><strong>Nome:</strong> {{ turma.nome }}</p>
             <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
-            <p><strong>Período:</strong> {{ turma.data_inicio|date:"d/m/Y" }} a {{ turma.data_fim|date:"d/m/Y" }}</p>
-            <p><strong>Vagas Disponíveis:</strong> {{ vagas_disponiveis }}</p>
+            <p><strong>Vagas Disponíveis:</strong> {{ turma.vagas_disponiveis }}</p>
         </div>
     </div>
     
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Selecionar Aluno para Matrícula</h5>
-        </div>
-        <div class="card-body">
-            <!-- Search input with autocomplete -->
-            <div class="mb-4">
-                {% csrf_token %}  <!-- Make sure you have this for AJAX requests -->
-                <label for="search-aluno" class="form-label">Buscar Aluno:</label>
-                <input type="text" id="search-aluno" class="form-control"
-                       placeholder="Digite parte do CPF, nome ou número iniciático..."
-                       autocomplete="off">
-                <div id="search-results" class="list-group mt-2">
-                    <!-- Results will be populated here dynamically -->
+    <form method="post" id="matricula-form">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="aluno-search" class="form-label">Buscar Aluno</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="aluno-search" placeholder="Digite o nome, CPF ou número iniciático do aluno...">
+                <button class="btn btn-outline-secondary" type="button" id="limpar-aluno">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="aluno-results" class="list-group mt-2 d-none"></div>
+            <div id="aluno-selected" class="mt-2 d-none">
+                <div class="card">
+                    <div class="card-body d-flex align-items-center">
+                        <div id="aluno-avatar" class="me-3">
+                            <!-- Avatar do aluno será inserido aqui -->
+                        </div>
+                        <div>
+                            <h5 id="aluno-nome" class="mb-1"></h5>
+                            <p id="aluno-info" class="mb-0 text-muted"></p>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <form method="post" id="matricula-form">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="aluno" class="form-label">Aluno Selecionado:</label>
-                    <div id="selected-aluno-container" class="p-3 border rounded mb-2 d-none">
-                        <div id="selected-aluno-info">Nenhum aluno selecionado</div>
-                    </div>
-                    <input type="hidden" name="aluno" id="aluno-id" required>
-                </div>
-                <button type="submit" class="btn btn-primary" id="submit-btn" disabled>Matricular</button>
-                <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
-            </form>
+            <input type="hidden" name="aluno" id="aluno-id" required>
         </div>
-    </div>
-    
-    <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary mt-3">Voltar para Detalhes da Turma</a>
+        
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Matricular Aluno</button>
+        </div>
+    </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('search-aluno');
-        const searchResults = document.getElementById('search-results');
-        const selectedAlunoContainer = document.getElementById('selected-aluno-container');
-        const selectedAlunoInfo = document.getElementById('selected-aluno-info');
-        const alunoIdField = document.getElementById('aluno-id');
-        const submitBtn = document.getElementById('submit-btn');
+        const alunoSearch = document.getElementById('aluno-search');
+        const alunoResults = document.getElementById('aluno-results');
+        const alunoSelected = document.getElementById('aluno-selected');
+        const alunoId = document.getElementById('aluno-id');
+        const alunoNome = document.getElementById('aluno-nome');
+        const alunoInfo = document.getElementById('aluno-info');
+        const alunoAvatar = document.getElementById('aluno-avatar');
+        const limparAluno = document.getElementById('limpar-aluno');
+        const form = document.getElementById('matricula-form');
         
         let searchTimeout;
         
-        // Get CSRF token
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
-        // Add CSRF token to all fetch requests
-        const originalFetch = window.fetch;
-        window.fetch = function(url, options = {}) {
-            if (url.startsWith('/')) {
-                options.headers = options.headers || {};
-                options.headers['X-CSRFToken'] = csrftoken;
-            }
-            return originalFetch(url, options);
-        };
-        
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            
-            const query = this.value.trim();
-            
-            // Clear results if query is too short
+        // Função para buscar alunos
+        function buscarAlunos(query) {
             if (query.length < 2) {
-                searchResults.innerHTML = '';
-                searchResults.classList.add('d-none');
+                alunoResults.classList.add('d-none');
                 return;
             }
             
-            // Set a timeout to avoid making too many requests
-            searchTimeout = setTimeout(function() {
-                // Show loading indicator
-                searchResults.innerHTML = '<div class="list-group-item text-muted">Buscando...</div>';
-                searchResults.classList.remove('d-none');
-                
-                fetch(`/alunos/search/?q=${encodeURIComponent(query)}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Erro na requisição');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        searchResults.innerHTML = '';
-                        
-                        if (data.error) {
-                            // Handle error response
-                            searchResults.innerHTML = `<div class="list-group-item text-danger">${data.error}</div>`;
-                            return;
-                        }
-                        
-                        if (data.length === 0) {
-                            searchResults.innerHTML = '<div class="list-group-item">Nenhum aluno encontrado</div>';
-                            return;
-                        }
-                        
-                        // Display results
+            fetch(`/alunos/search/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    alunoResults.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        const noResult = document.createElement('div');
+                        noResult.className = 'list-group-item';
+                        noResult.textContent = 'Nenhum aluno encontrado';
+                        alunoResults.appendChild(noResult);
+                    } else {
                         data.forEach(aluno => {
                             const item = document.createElement('a');
                             item.href = '#';
                             item.className = 'list-group-item list-group-item-action';
+                            item.dataset.id = aluno.cpf;
+                            item.dataset.nome = aluno.nome;
+                            item.dataset.numero = aluno.numero_iniciatico;
+                            item.dataset.foto = aluno.foto || '';
+                            
+                            // Criar conteúdo do item
+                            let avatarHtml = '';
+                            if (aluno.foto) {
+                                avatarHtml = `<img src="${aluno.foto}" alt="${aluno.nome}" class="rounded-circle me-2" width="32" height="32">`;
+                            } else {
+                                avatarHtml = `<div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">${aluno.nome.charAt(0)}</div>`;
+                            }
+                            
                             item.innerHTML = `
-                                <div class="d-flex justify-content-between">
-                                    <div>${aluno.nome}</div>
-                                    <div class="text-muted">
-                                        <small>CPF: ${aluno.cpf}</small>
-                                        ${aluno.numero_iniciatico !== "N/A" ? `<small class="ms-2">Nº: ${aluno.numero_iniciatico}</small>` : ''}
-                                    </div>
+                                ${avatarHtml}
+                                <div>
+                                    <div class="fw-bold">${aluno.nome}</div>
+                                    <small class="text-muted">CPF: ${aluno.cpf} | Nº Iniciático: ${aluno.numero_iniciatico || 'N/A'}</small>
                                 </div>
                             `;
                             
-                            // Add click event to select this aluno
                             item.addEventListener('click', function(e) {
                                 e.preventDefault();
-                                selectAluno(aluno);
-                                searchResults.classList.add('d-none');
+                                selecionarAluno(this.dataset);
                             });
                             
-                            searchResults.appendChild(item);
+                            alunoResults.appendChild(item);
                         });
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        searchResults.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar alunos</div>';
-                    });
+                    }
+                    
+                    alunoResults.classList.remove('d-none');
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar alunos:', error);
+                });
+        }
+        
+        // Função para selecionar um aluno
+        function selecionarAluno(dados) {
+            alunoId.value = dados.id;
+            alunoNome.textContent = dados.nome;
+            alunoInfo.textContent = `CPF: ${dados.id} | Nº Iniciático: ${dados.numero || 'N/A'}`;
+            
+            // Configurar avatar
+            if (dados.foto) {
+                alunoAvatar.innerHTML = `<img src="${dados.foto}" alt="${dados.nome}" class="rounded-circle" width="48" height="48">`;
+            } else {
+                alunoAvatar.innerHTML = `<div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 20px;">${dados.nome.charAt(0)}</div>`;
+            }
+            
+            // Mostrar seleção e esconder resultados
+            alunoSelected.classList.remove('d-none');
+            alunoResults.classList.add('d-none');
+            alunoSearch.value = '';
+        }
+        
+        // Função para limpar seleção
+        function limparSelecao() {
+            alunoId.value = '';
+            alunoSelected.classList.add('d-none');
+            alunoSearch.value = '';
+            alunoResults.classList.add('d-none');
+        }
+        
+        // Event listeners
+        alunoSearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                buscarAlunos(this.value);
             }, 300);
         });
         
-        // Hide results when clicking outside
+        limparAluno.addEventListener('click', limparSelecao);
+        
+        // Fechar resultados ao clicar fora
         document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                searchResults.classList.add('d-none');
+            if (!alunoSearch.contains(e.target) && !alunoResults.contains(e.target)) {
+                alunoResults.classList.add('d-none');
             }
         });
         
-        // Function to select an aluno
-        function selectAluno(aluno) {
-            // Update the hidden input with the selected aluno's CPF
-            alunoIdField.value = aluno.cpf;
-            
-            // Update the search input with the selected aluno's name
-            searchInput.value = aluno.nome;
-            
-            // Show the selected aluno info
-            selectedAlunoInfo.innerHTML = `
-                <strong>${aluno.nome}</strong><br>
-                CPF: ${aluno.cpf}<br>
-                ${aluno.numero_iniciatico !== "N/A" ? `Número Iniciático: ${aluno.numero_iniciatico}` : ''}
-            `;
-            
-            // Show the container and enable the submit button
-            selectedAlunoContainer.classList.remove('d-none');
-            submitBtn.disabled = false;
-        }
+        // Validar formulário antes de enviar
+        form.addEventListener('submit', function(e) {
+            if (!alunoId.value) {
+                e.preventDefault();
+                alert('Por favor, selecione um aluno para matricular.');
+            }
+        });
     });
 </script>
 {% endblock %}
 
+
+
+
+### Arquivo: turmas\templates\turmas\registrar_frequencia_turma.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Registrar Frequência - {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Registrar Frequência</h1>
+        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar para Turma</a>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{{ turma.nome }} - {{ turma.curso.nome }}</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="data_atividade" class="form-label">Data da Atividade</label>
+                    <input type="date" class="form-control" id="data_atividade" name="data_atividade" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="atividade" class="form-label">Atividade</label>
+                    <select class="form-select" id="atividade" name="atividade" required>
+                        <option value="">Selecione uma atividade</option>
+                        {% for atividade in atividades %}
+                            <option value="{{ atividade.id }}">{{ atividade.nome }} - {{ atividade.data_inicio|date:"d/m/Y" }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <h5 class="mt-4 mb-3">Lista de Alunos</h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Presente</th>
+                                <th>Justificativa (se ausente)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aluno in alunos %}
+                                <tr>
+                                    <td>{{ aluno.nome }}</td>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="presentes" value="{{ aluno.cpf }}" id="presente_{{ aluno.cpf }}" checked>
+                                            <label class="form-check-label" for="presente_{{ aluno.cpf }}">
+                                                Presente
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <textarea class="form-control" name="justificativa_{{ aluno.cpf }}" rows="1" placeholder="Justificativa para ausência"></textarea>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center">Nenhum aluno matriculado nesta turma.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Registrar Frequência</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: turmas\templates\turmas\relatorio_frequencia_turma.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Frequência - {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Relatório de Frequência</h1>
+        <div>
+            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary me-2">Voltar para Turma</a>
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="fas fa-print"></i> Imprimir Relatório
+            </button>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{{ turma.nome }} - {{ turma.curso.nome }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Instrutor:</strong> {{ turma.instrutor.nome|default:"Não definido" }}</p>
+                    <p><strong>Instrutor Auxiliar:</strong> {{ turma.instrutor_auxiliar.nome|default:"Não definido" }}</p>
+                    <p><strong>Auxiliar de Instrução:</strong> {{ turma.auxiliar_instrucao.nome|default:"Não definido" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Data de Início:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
+                    <p><strong>Data de Término:</strong> {{ turma.data_fim|date:"d/m/Y"|default:"Não definida" }}</p>
+                    <p><strong>Total de Alunos:</strong> {{ alunos|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if dados_frequencia %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Resumo de Frequência</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Presenças</th>
+                                <th>Total de Atividades</th>
+                                <th>Percentual</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dado in dados_frequencia %}
+                                <tr>
+                                    <td>{{ dado.aluno.nome }}</td>
+                                    <td>{{ dado.total_presencas }}</td>
+                                    <td>{{ dado.total_atividades }}</td>
+                                    <td>{{ dado.percentual_presenca|floatformat:1 }}%</td>
+                                    <td>
+                                        {% if dado.percentual_presenca >= 75 %}
+                                            <span class="badge bg-success">Aprovado</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Reprovado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Detalhamento por Atividade</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                {% for data in datas_atividades %}
+                                    <th>{{ data|date:"d/m/Y" }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dado in dados_frequencia %}
+                                <tr>
+                                    <td>{{ dado.aluno.nome }}</td>
+                                    {% for data in datas_atividades %}
+                                        <td class="text-center">
+                                            {% for freq in dado.frequencias %}
+                                                {% if freq.atividade.data_inicio.date == data %}
+                                                    {% if freq.presente %}
+                                                        <span class="text-success"><i class="fas fa-check"></i></span>
+                                                    {% else %}
+                                                        <span class="text-danger"><i class="fas fa-times"></i></span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <p>Não há dados de frequência disponíveis para esta turma.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
 
 
 
@@ -3641,83 +3543,57 @@ html
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-        <h1 class="mb-3 mb-md-0">Relatório de Turmas</h1>
-        
-        <div class="btn-group">
-            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-            <a href="{% url 'turmas:exportar_turmas' %}" class="btn btn-success">
-                <i class="fas fa-file-export"></i> Exportar CSV
-            </a>
-            <a href="{% url 'turmas:exportar_turmas' %}?formato=excel" class="btn btn-success">
-                <i class="fas fa-file-excel"></i> Exportar Excel
-            </a>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Relatório de Turmas</h1>
+        <div>
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary me-2">Voltar para Lista</a>
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="fas fa-print"></i> Imprimir Relatório
+            </button>
         </div>
     </div>
     
-    <!-- Resumo Geral -->
     <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Resumo Geral</h5>
-                </div>
+        <div class="col-md-3">
+            <div class="card text-center">
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="card-counter primary">
-                                <i class="fas fa-chalkboard-teacher"></i>
-                                <span class="count-numbers">{{ total_turmas }}</span>
-                                <span class="count-name">Total de Turmas</span>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-2 mb-3">
-                            <div class="card-counter success">
-                                <i class="fas fa-check-circle"></i>
-                                <span class="count-numbers">{{ turmas_ativas }}</span>
-                                <span class="count-name">Ativas</span>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-2 mb-3">
-                            <div class="card-counter info">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span class="count-numbers">{{ turmas_planejadas }}</span>
-                                <span class="count-name">Planejadas</span>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-2 mb-3">
-                            <div class="card-counter secondary">
-                                <i class="fas fa-flag-checkered"></i>
-                                <span class="count-numbers">{{ turmas_concluidas }}</span>
-                                <span class="count-name">Concluídas</span>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-2 mb-3">
-                            <div class="card-counter danger">
-                                <i class="fas fa-ban"></i>
-                                <span class="count-numbers">{{ turmas_canceladas }}</span>
-                                <span class="count-name">Canceladas</span>
-                            </div>
-                        </div>
-                    </div>
+                    <h5 class="card-title">Total de Turmas</h5>
+                    <p class="card-text display-4">{{ total_turmas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Turmas Ativas</h5>
+                    <p class="card-text display-4">{{ turmas_ativas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Turmas Concluídas</h5>
+                    <p class="card-text display-4">{{ turmas_concluidas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Turmas Canceladas</h5>
+                    <p class="card-text display-4">{{ turmas_canceladas }}</p>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Estatísticas por Curso -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Estatísticas por Curso</h5>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Turmas por Curso</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -3725,27 +3601,21 @@ html
                             <thead>
                                 <tr>
                                     <th>Curso</th>
-                                    <th>Total de Turmas</th>
-                                    <th>Turmas Ativas</th>
-                                    <th>Turmas Planejadas</th>
-                                    <th>Turmas Concluídas</th>
-                                    <th>Média de Alunos</th>
+                                    <th>Quantidade</th>
+                                    <th>Percentual</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for estatistica in estatisticas_cursos %}
-                                <tr>
-                                    <td>{{ estatistica.curso.nome }}</td>
-                                    <td>{{ estatistica.total_turmas }}</td>
-                                    <td>{{ estatistica.turmas_ativas }}</td>
-                                    <td>{{ estatistica.turmas_planejadas }}</td>
-                                    <td>{{ estatistica.turmas_concluidas }}</td>
-                                    <td>{{ estatistica.media_alunos }}</td>
-                                </tr>
+                                {% for item in turmas_por_curso %}
+                                    <tr>
+                                        <td>{{ item.curso.nome }}</td>
+                                        <td>{{ item.count }}</td>
+                                        <td>{{ item.percentage|floatformat:1 }}%</td>
+                                    </tr>
                                 {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center">Nenhum dado disponível</td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="3" class="text-center">Nenhum dado disponível</td>
+                                    </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -3753,74 +3623,41 @@ html
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Turmas Populares e Instrutores -->
-    <div class="row">
-        <!-- Turmas com mais alunos -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Turmas com Mais Alunos</h5>
-                </div>
-                <div class="card-body">
-                    {% if turmas_populares %}
-                        {% for turma in turmas_populares %}
-                            <div class="mb-3">
-                                <div class="progress-bar-label">
-                                    <span><strong>{{ turma.nome }}</strong> ({{ turma.curso.nome }})</span>
-                                    <span>{{ turma.total_alunos }} alunos</span>
-                                </div>
-                                <div class="progress progress-bar-container">
-                                    <div class="progress-bar bg-success" role="progressbar" 
-                                         style="width: {{ turma.total_alunos|div:turma.vagas|mul:100 }}%" 
-                                         aria-valuenow="{{ turma.total_alunos }}" aria-valuemin="0" 
-                                         aria-valuemax="{{ turma.vagas }}">
-                                        {{ turma.total_alunos }}/{{ turma.vagas }}
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-center">Nenhuma turma encontrada</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
         
-        <!-- Instrutores com mais turmas -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-warning text-white">
-                    <h5 class="mb-0">Instrutores Mais Ativos</h5>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Turmas por Instrutor</h5>
                 </div>
                 <div class="card-body">
-                    {% if estatisticas_instrutores %}
-                        {% for estatistica in estatisticas_instrutores %}
-                            <div class="mb-3">
-                                <div class="progress-bar-label">
-                                    <span><strong>{{ estatistica.instrutor.nome }}</strong></span>
-                                    <span>{{ estatistica.total_turmas }} turmas</span>
-                                </div>
-                                <div class="progress progress-bar-container">
-                                    <div class="progress-bar bg-warning" role="progressbar" 
-                                         style="width: {{ estatistica.turmas_como_instrutor|div:estatistica.total_turmas|mul:100 }}%" 
-                                         aria-valuenow="{{ estatistica.turmas_como_instrutor }}" 
-                                         aria-valuemin="0" aria-valuemax="{{ estatistica.total_turmas }}">
-                                        {{ estatistica.turmas_como_instrutor }} como instrutor
-                                    </div>
-                                    <div class="progress-bar bg-info" role="progressbar" 
-                                         style="width: {{ estatistica.turmas_como_auxiliar|div:estatistica.total_turmas|mul:100 }}%" 
-                                         aria-valuenow="{{ estatistica.turmas_como_auxiliar }}" 
-                                         aria-valuemin="0" aria-valuemax="{{ estatistica.total_turmas }}">
-                                        {{ estatistica.turmas_como_auxiliar }} como auxiliar
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-center">Nenhum instrutor encontrado</p>
-                    {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Instrutor</th>
+                                    <th>Principal</th>
+                                    <th>Auxiliar</th>
+                                    <th>Aux. Instrução</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in turmas_por_instrutor %}
+                                    <tr>
+                                        <td>{{ item.instrutor.nome }}</td>
+                                        <td>{{ item.count_principal }}</td>
+                                        <td>{{ item.count_auxiliar }}</td>
+                                        <td>{{ item.count_aux_instrucao }}</td>
+                                        <td>{{ item.total }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">Nenhum dado disponível</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

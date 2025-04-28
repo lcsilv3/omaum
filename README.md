@@ -71,3 +71,24 @@ Agora, vamos corrigir o problema específico que você encontrou no arquivo `scr
 # Por:
 ("base.html", r"omaum\templates\base.html"),
 ("home.html", r"omaum\templates\home.html"),
+
+## Convenções de Código
+
+### Nomenclatura de Parâmetros em URLs e Views
+
+Para manter o código claro e evitar ambiguidades, seguimos estas convenções:
+
+1. **Parâmetros de ID em URLs e Views**:
+   - Usamos o formato `modelo_id` (ex: `turma_id`, `aluno_id`, `curso_id`)
+   - Exemplo: `def detalhar_turma(request, turma_id):`
+
+2. **Referências em Templates**:
+   - Nos templates, continuamos usando o atributo `id` do objeto
+   - Exemplo: `{% url 'turmas:detalhar_turma' turma.id %}`
+
+3. **Múltiplos IDs em uma mesma View**:
+   - Quando uma view precisa de múltiplos IDs, cada um tem seu próprio nome descritivo
+   - Exemplo: `def cancelar_matricula(request, turma_id, aluno_cpf):`
+
+Esta convenção torna o código mais legível, facilita a manutenção e reduz a chance de erros quando o sistema cresce e se torna mais complexo.
+```

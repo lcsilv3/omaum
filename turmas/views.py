@@ -1,97 +1,165 @@
-import csv
-import io
-import xlsxwriter
+"""
+Views para o módulo de Turmas.
+
+Padrão de Nomenclatura:
+- Parâmetros de ID em URLs: Usamos o formato 'modelo_id' (ex: turma_id, aluno_id) 
+  para maior clareza e para evitar ambiguidades em views que manipulam múltiplos modelos.
+- Nos templates, continuamos passando o atributo 'id' do objeto (ex: turma.id), 
+  mas nas views e URLs usamos nomes mais descritivos.
+"""
+
+from django.db.models import Q
 from django.http import HttpResponse
-from django.shortcuts import render, get_object_or_404, redirect
+import csv
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q, Avg
+from django.db.models import Count, Q
 from django.utils import timezone
+from django.core.paginator import Paginator
 from importlib import import_module
 
-from .models import Turma
-from cursos.models import Curso
-from alunos.models import Aluno
-from matriculas.models import Matricula
+# Importar a função utilitária centralizada
+from core.utils import get_model_dynamically
 
 def get_model(app_name, model_name):
     """Obtém um modelo dinamicamente para evitar importações circulares."""
+    from importlib import import_module
     module = import_module(f"{app_name}.models")
     return getattr(module, model_name)
 
+def get_aluno_model():
+    return get_model_dynamically("alunos", "Aluno")
 
 def get_turma_model():
-    turmas_module = import_module("turmas.models")
-    return getattr(turmas_module, "Turma")
+    return get_model_dynamically("turmas", "Turma")
 
+def get_curso_model():
+    """Obtém o modelo Curso dinamicamente."""
+    return get_model_dynamically("cursos", "Curso")
 
-def get_aluno_model():
-    alunos_module = import_module("alunos.models")
-    return getattr(alunos_module, "Aluno")
+def get_matricula_model():
+    """Obtém o modelo Matricula dinamicamente."""
+    return get_model_dynamically("matriculas", "Matricula")
 
+def get_atividade_academica_model():
+    """Obtém o modelo AtividadeAcademica dinamicamente."""
+    return get_model_dynamically("atividades", "AtividadeAcademica")
+
+def get_frequencia_model():
+    """Obtém o modelo Frequencia dinamicamente."""
+    return get_model_dynamically("frequencias", "Frequencia")
+
+def get_turma_form():
+    """Obtém o formulário TurmaForm dinamicamente."""
+    from importlib import import_module
+    try:
+        forms_module = import_module("turmas.forms")
+        return getattr(forms_module, "TurmaForm")
+    except (ImportError, AttributeError) as e:
+        print(f"Erro ao importar TurmaForm: {e}")
+        # Fallback para o formulário da core, se existir
+        try:
+            core_forms = import_module("core.forms")
+            return getattr(core_forms, "TurmaForm")
+        except (ImportError, AttributeError) as e:
+            print(f"Erro ao importar TurmaForm da core: {e}")
+            return None
 
 @login_required
 def listar_turmas(request):
-    Turma = get_turma_model()
-    turmas = Turma.objects.all()
-    # Preparar informações adicionais para cada turma
-    turmas_com_info = []
-    for turma in turmas:
-        # Verificar pendências na instrutoria
-        tem_pendencia_instrutoria = (
-            not turma.instrutor
-            or not turma.instrutor_auxiliar
-            or not turma.auxiliar_instrucao
-        )
-        # Calcular vagas disponíveis
-        total_alunos = (
-            turma.matriculas.filter(status="A").count()
-            if hasattr(turma, "matriculas")
-            else 0
-        )
-        vagas_disponiveis = turma.vagas - total_alunos
-
-        turmas_com_info.append(
+    """Lista todas as turmas cadastradas."""
+    try:
+        # Alterar estas linhas para usar get_model_dynamically em vez de get_model
+        Turma = get_model_dynamically("turmas", "Turma")
+        Curso = get_model_dynamically("cursos", "Curso")
+        
+        # Obter parâmetros de busca e filtro
+        query = request.GET.get("q", "")
+        curso_id = request.GET.get("curso", "")
+        
+        # Filtrar turmas
+        turmas = Turma.objects.all().select_related('curso', 'instrutor')
+        
+        if query:
+            turmas = turmas.filter(
+                Q(nome__icontains=query) |
+                Q(curso__nome__icontains=query) |
+                Q(instrutor__nome__icontains=query)
+            )
+        
+        if curso_id:
+            turmas = turmas.filter(curso__codigo_curso=curso_id)
+        
+        # Ordenar turmas por status, nome do curso e nome da turma
+        turmas = turmas.order_by('status', 'curso__nome', 'nome')
+        
+        # Paginação
+        paginator = Paginator(turmas, 10)  # 10 turmas por página
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+        
+        # Obter cursos para o filtro
+        cursos = Curso.objects.all().order_by('nome')
+        
+        context = {
+            "turmas": page_obj,
+            "page_obj": page_obj,
+            "query": query,
+            "cursos": cursos,
+            "curso_selecionado": curso_id,
+            "total_turmas": turmas.count(),
+        }
+        
+        return render(request, "turmas/listar_turmas.html", context)
+    except Exception as e:
+        # Em vez de mostrar a mensagem de erro, apenas retornamos uma lista vazia
+        return render(
+            request,
+            "turmas/listar_turmas.html",
             {
-                "turma": turma,
-                "total_alunos": total_alunos,
-                "vagas_disponiveis": vagas_disponiveis,
-                "tem_pendencia_instrutoria": tem_pendencia_instrutoria,
-            }
+                "turmas": [],
+                "page_obj": None,
+                "query": "",
+                "cursos": [],
+                "curso_selecionado": "",
+                "error_message": f"Erro ao listar turmas: {str(e)}",
+            },
         )
-
-    return render(
-        request,
-        "turmas/listar_turmas.html",
-        {"turmas_com_info": turmas_com_info},
-    )
-
 
 @login_required
 def criar_turma(request):
     """Cria uma nova turma."""
+    # Obter o formulário dinamicamente
+    TurmaForm = get_turma_form()
+    
+    # Verificar se o formulário foi encontrado
+    if TurmaForm is None:
+        messages.error(request, "Erro ao carregar o formulário de turma. Contate o administrador.")
+        return redirect("turmas:listar_turmas")
+    
     if request.method == "POST":
         form = TurmaForm(request.POST)
         if form.is_valid():
             turma = form.save()
             messages.success(request, "Turma criada com sucesso!")
-            return redirect("turmas:detalhar_turma", id=turma.id)
+            return redirect("turmas:detalhar_turma", turma_id=turma.id)
     else:
         form = TurmaForm()
     
     # Obter todos os alunos ativos para o contexto
     try:
-        Aluno = import_module("alunos.models").Aluno
+        Aluno = get_aluno_model()
         alunos = Aluno.objects.filter(situacao="ATIVO")
     except (ImportError, AttributeError):
         alunos = []
     
     # Certifique-se de que os cursos estão sendo carregados
-    from cursos.models import Curso
-    cursos = Curso.objects.all().order_by('codigo_curso')
-    
-    # Adicione um log para depuração
-    print(f"Carregando {len(cursos)} cursos")
+    try:
+        Curso = get_curso_model()
+        cursos = Curso.objects.all().order_by('codigo_curso')
+    except (ImportError, AttributeError):
+        cursos = []
     
     return render(
         request,
@@ -102,10 +170,12 @@ def criar_turma(request):
             "cursos": cursos,
         },
     )
+
 @login_required
-def detalhar_turma(request, id):
+def detalhar_turma(request, turma_id):
+    """Exibe os detalhes de uma turma."""
     Turma = get_turma_model()
-    turma = get_object_or_404(Turma, id=id)
+    turma = get_object_or_404(Turma, id=turma_id)
     # Verificar pendências na instrutoria
     tem_pendencia_instrutoria = (
         not turma.instrutor
@@ -134,25 +204,35 @@ def detalhar_turma(request, id):
     }
     return render(request, "turmas/detalhar_turma.html", context)
 
-
 @login_required
-def editar_turma(request, id):
+def editar_turma(request, turma_id):
     """Edita uma turma existente."""
+    # Obter o formulário dinamicamente
+    TurmaForm = get_turma_form()
+    
+    # Verificar se o formulário foi encontrado
+    if TurmaForm is None:
+        messages.error(request, "Erro ao carregar o formulário de turma. Contate o administrador.")
+        return redirect("turmas:listar_turmas")
+    
     Turma = get_turma_model()
-    turma = get_object_or_404(Turma, id=id)
+    turma = get_object_or_404(Turma, id=turma_id)
     if request.method == "POST":
         form = TurmaForm(request.POST, instance=turma)
         if form.is_valid():
             form.save()
             messages.success(request, "Turma atualizada com sucesso!")
-            return redirect("turmas:detalhar_turma", id=turma.id)
+            return redirect("turmas:detalhar_turma", turma_id=turma.id)
         else:
             messages.error(request, "Corrija os erros no formulário.")
     else:
         form = TurmaForm(instance=turma)
     # Obter todos os alunos ativos para o formulário
-    Aluno = get_model("alunos", "Aluno")
-    alunos = Aluno.objects.filter(situacao="ATIVO")
+    try:
+        Aluno = get_aluno_model()
+        alunos = Aluno.objects.filter(situacao="ATIVO")
+    except (ImportError, AttributeError):
+        alunos = []
     return render(
         request,
         "turmas/editar_turma.html",
@@ -163,386 +243,586 @@ def editar_turma(request, id):
         },
     )
 
-
 @login_required
-def excluir_turma(request, id):
+def excluir_turma(request, turma_id):
     Turma = get_turma_model()
-    turma = get_object_or_404(Turma, id=id)
+    turma = get_object_or_404(Turma, id=turma_id)
     if request.method == "POST":
         turma.delete()
         messages.success(request, "Turma excluída com sucesso!")
         return redirect("turmas:listar_turmas")
     return render(request, "turmas/excluir_turma.html", {"turma": turma})
 
-
 @login_required
-def listar_alunos_matriculados(request, id):
+def listar_alunos_turma(request, turma_id):
+    """Lista todos os alunos matriculados em uma turma específica."""
     Turma = get_turma_model()
-    turma = get_object_or_404(Turma, id=id)
-    alunos = turma.alunos.all() if hasattr(turma, "alunos") else []
-    return render(
-        request,
-        "turmas/listar_alunos_matriculados.html",
-        {"turma": turma, "alunos": alunos},
-    )
-
-
-@login_required
-def matricular_aluno(request, turma_id):
-    """Matricula um aluno em uma turma específica."""
-    Turma = get_turma_model()
-    Aluno = get_aluno_model()
-    turma = get_object_or_404(Turma, id=id)
-    if request.method == "POST":
-        aluno_cpf = request.POST.get("aluno")
-        aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
-        # Verificar se existe um modelo de Matricula
-        try:
-            Matricula = import_module("matriculas.models").Matricula
-            # Criar uma matrícula em vez de adicionar diretamente à relação many-to-many
-            Matricula.objects.create(
-                aluno=aluno,
-                turma=turma,
-                data_matricula=timezone.now().date(),
-                status="A",  # Ativa
-            )
-        except (ImportError, AttributeError):
-            # Fallback: adicionar diretamente à relação many-to-many se o modelo Matricula não existir
-            if hasattr(turma, "alunos"):
-                turma.alunos.add(aluno)
-        messages.success(
-            request, f"Aluno {aluno.nome} matriculado com sucesso!"
-        )
-        return redirect("turmas:detalhar_turma", id=turma.id)
-    # Obter alunos disponíveis para matrícula
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    # Obter alunos matriculados na turma
     try:
-        # Se existir um modelo de Matricula, excluir alunos já matriculados
-        Matricula = import_module("matriculas.models").Matricula
-        alunos_matriculados = Matricula.objects.filter(
-            turma=turma, status="A"
-        ).values_list("aluno__cpf", flat=True)
-        alunos_disponiveis = Aluno.objects.exclude(cpf__in=alunos_matriculados)
+        Matricula = get_matricula_model()
+        matriculas = Matricula.objects.filter(turma=turma, status="A").select_related('aluno')
+        alunos = [matricula.aluno for matricula in matriculas]
     except (ImportError, AttributeError):
-        # Fallback
-        if hasattr(turma, "alunos"):
-            alunos_disponiveis = Aluno.objects.exclude(turmas=turma)
-        else:
-            alunos_disponiveis = Aluno.objects.all()
-    # Adicionar informação de vagas disponíveis
-    vagas_disponiveis = (
-        turma.vagas_disponiveis
-        if hasattr(turma, "vagas_disponiveis")
-        else turma.vagas
-    )
+        # Fallback caso o modelo Matricula não esteja disponível
+        alunos = []
+    
     return render(
         request,
-        "turmas/matricular_aluno.html",
+        "turmas/listar_alunos_turma.html",
         {
             "turma": turma,
-            "alunos": alunos_disponiveis,
-            "vagas_disponiveis": vagas_disponiveis,
+            "alunos": alunos,
         },
     )
 
+@login_required
+def matricular_aluno(request, turma_id):
+    """Matricula um aluno na turma."""
+    Turma = get_model("turmas", "Turma")
+    Aluno = get_model("alunos", "Aluno")
+    Matricula = get_model("matriculas", "Matricula")
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    if request.method == "POST":
+        aluno_cpf = request.POST.get("aluno")
+        if not aluno_cpf:
+            messages.error(request, "Selecione um aluno para matricular.")
+            return redirect("turmas:matricular_aluno", turma_id=turma_id)
+        
+        aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
+        
+        # Verificar se já existe matrícula
+        if Matricula.objects.filter(aluno=aluno, turma=turma).exists():
+            messages.warning(
+                request,
+                f"O aluno {aluno.nome} já está matriculado nesta turma."
+            )
+            return redirect("turmas:detalhar_turma", turma_id=turma_id)
+        
+        # Verificar se há vagas disponíveis
+        if turma.vagas_disponiveis <= 0:
+            messages.error(
+                request,
+                "Não há vagas disponíveis nesta turma."
+            )
+            return redirect("turmas:detalhar_turma", turma_id=turma_id)
+        
+        try:
+            matricula = Matricula(
+                aluno=aluno,
+                turma=turma,
+                data_matricula=timezone.now().date(),
+                ativa=True,
+                status="A",  # Ativa
+            )
+            matricula.save()
+            messages.success(
+                request,
+                f"Aluno {aluno.nome} matriculado com sucesso na turma {turma.nome}."
+            )
+        except Exception as e:
+            messages.error(request, f"Erro ao matricular aluno: {str(e)}")
+        
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+    
+    # Para requisições GET, exibir formulário de matrícula
+    alunos = Aluno.objects.filter(situacao="ATIVO")
+    return render(
+        request,
+        "turmas/matricular_aluno.html",
+        {"turma": turma, "alunos": alunos}
+    )
 
 @login_required
-def cancelar_matricula(request, turma_id, aluno_cpf):
-    """Cancela a matrícula de um aluno em uma turma."""
+def remover_aluno_turma(request, turma_id, aluno_id):
+    """Remove um aluno de uma turma."""
     Turma = get_turma_model()
     Aluno = get_aluno_model()
+    
     turma = get_object_or_404(Turma, id=turma_id)
-    aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
-    # Verificar se o aluno está matriculado na turma
+    aluno = get_object_or_404(Aluno, cpf=aluno_id)
+    
     try:
-        # Importar o modelo Matricula dinamicamente
-        from importlib import import_module
-
-        matriculas_module = import_module("matriculas.models")
-        Matricula = getattr(matriculas_module, "Matricula")
-        matricula = Matricula.objects.get(aluno=aluno, turma=turma)
+        Matricula = get_matricula_model()
+        # Verificar se o aluno está matriculado na turma
+        matricula = get_object_or_404(Matricula, aluno=aluno, turma=turma, status="A")
+        
         if request.method == "POST":
             # Cancelar a matrícula
             matricula.status = "C"  # Cancelada
             matricula.save()
+            
             messages.success(
                 request,
-                f"Matrícula do aluno {aluno.nome} na turma {turma.nome} cancelada com sucesso.",
+                f"Aluno {aluno.nome} removido da turma {turma.nome} com sucesso."
             )
-            return redirect("turmas:detalhar_turma", id=turma.id)
-        # Se for GET, mostrar página de confirmação
+            return redirect("turmas:detalhar_turma", turma_id=turma_id)
+        
         return render(
             request,
-            "turmas/cancelar_matricula.html",
+            "turmas/confirmar_remocao_aluno.html",
             {"turma": turma, "aluno": aluno},
         )
     except (ImportError, AttributeError) as e:
-        messages.error(
-            request, f"Erro ao acessar o modelo de matrículas: {str(e)}"
-        )
-        return redirect("turmas:detalhar_turma", id=turma.id)
-    except Matricula.DoesNotExist:
-        messages.error(
+        messages.error(request, f"Erro ao acessar o modelo de matrículas: {str(e)}")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+
+@login_required
+def atualizar_instrutores(request, turma_id):
+    """Atualiza os instrutores de uma turma."""
+    Turma = get_turma_model()
+    Aluno = get_aluno_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    if request.method == "POST":
+        instrutor_cpf = request.POST.get("instrutor")
+        instrutor_auxiliar_cpf = request.POST.get("instrutor_auxiliar")
+        auxiliar_instrucao_cpf = request.POST.get("auxiliar_instrucao")
+        
+        # Atualizar instrutor principal
+        if instrutor_cpf:
+            instrutor = get_object_or_404(Aluno, cpf=instrutor_cpf)
+            turma.instrutor = instrutor
+        
+        # Atualizar instrutor auxiliar
+        if instrutor_auxiliar_cpf:
+            instrutor_auxiliar = get_object_or_404(Aluno, cpf=instrutor_auxiliar_cpf)
+            turma.instrutor_auxiliar = instrutor_auxiliar
+        
+        # Atualizar auxiliar de instrução
+        if auxiliar_instrucao_cpf:
+            auxiliar_instrucao = get_object_or_404(Aluno, cpf=auxiliar_instrucao_cpf)
+            turma.auxiliar_instrucao = auxiliar_instrucao
+        
+        turma.save()
+        messages.success(request, "Instrutores atualizados com sucesso!")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+    
+    # Obter alunos elegíveis para serem instrutores
+    try:
+        alunos_elegiveis = Aluno.objects.filter(situacao="ATIVO")
+    except (ImportError, AttributeError):
+        alunos_elegiveis = []
+    
+    return render(
+        request,
+        "turmas/atualizar_instrutores.html",
+        {
+            "turma": turma,
+            "alunos_elegiveis": alunos_elegiveis,
+        },
+    )
+
+@login_required
+def remover_instrutor(request, turma_id, tipo):
+    """Remove um instrutor de uma turma."""
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    if request.method == "POST":
+        if tipo == "principal":
+            instrutor_nome = turma.instrutor.nome if turma.instrutor else "Não definido"
+            turma.instrutor = None
+            messages.success(request, f"Instrutor principal {instrutor_nome} removido com sucesso.")
+        elif tipo == "auxiliar":
+            instrutor_nome = turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else "Não definido"
+            turma.instrutor_auxiliar = None
+            messages.success(request, f"Instrutor auxiliar {instrutor_nome} removido com sucesso.")
+        elif tipo == "auxiliar_instrucao":
+            instrutor_nome = turma.auxiliar_instrucao.nome if turma.auxiliar_instrucao else "Não definido"
+            turma.auxiliar_instrucao = None
+            messages.success(request, f"Auxiliar de instrução {instrutor_nome} removido com sucesso.")
+        
+        turma.save()
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+    
+    # Determinar qual instrutor será removido
+    instrutor_a_remover = None
+    titulo = ""
+    if tipo == "principal" and turma.instrutor:
+        instrutor_a_remover = turma.instrutor
+        titulo = "Remover Instrutor Principal"
+    elif tipo == "auxiliar" and turma.instrutor_auxiliar:
+        instrutor_a_remover = turma.instrutor_auxiliar
+        titulo = "Remover Instrutor Auxiliar"
+    elif tipo == "auxiliar_instrucao" and turma.auxiliar_instrucao:
+        instrutor_a_remover = turma.auxiliar_instrucao
+        titulo = "Remover Auxiliar de Instrução"
+    
+    if not instrutor_a_remover:
+        messages.warning(request, "Não há instrutor para remover.")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+    
+    return render(
+        request,
+        "turmas/confirmar_remocao_instrutor.html",
+        {
+            "turma": turma,
+            "instrutor": instrutor_a_remover,
+            "tipo": tipo,
+            "titulo": titulo,
+        },
+    )
+
+@login_required
+def listar_atividades_turma(request, turma_id):
+    """Lista todas as atividades de uma turma."""
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    try:
+        AtividadeAcademica = get_atividade_academica_model()
+        atividades = AtividadeAcademica.objects.filter(turma=turma).order_by('-data_inicio')
+    except (ImportError, AttributeError):
+        atividades = []
+    
+    return render(
+        request,
+        "turmas/listar_atividades_turma.html",
+        {
+            "turma": turma,
+            "atividades": atividades,
+        },
+    )
+
+@login_required
+def adicionar_atividade_turma(request, turma_id):
+    """Adiciona uma atividade a uma turma."""
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    try:
+        # Importar o formulário AtividadeAcademicaForm dinamicamente
+        from importlib import import_module
+        forms_module = import_module("atividades.forms")
+        AtividadeAcademicaForm = getattr(forms_module, "AtividadeAcademicaForm")
+        
+        if request.method == "POST":
+            form = AtividadeAcademicaForm(request.POST)
+            if form.is_valid():
+                atividade = form.save(commit=False)
+                atividade.turma = turma
+                atividade.save()
+                messages.success(request, "Atividade adicionada com sucesso!")
+                return redirect("turmas:listar_atividades_turma", turma_id=turma_id)
+        else:
+            # Pré-selecionar a turma no formulário
+            form = AtividadeAcademicaForm(initial={"turma": turma})
+        
+        return render(
             request,
-            f"O aluno {aluno.nome} não está matriculado na turma {turma.nome}.",
+            "turmas/adicionar_atividade_turma.html",
+            {
+                "turma": turma,
+                "form": form,
+            },
         )
-        return redirect("turmas:detalhar_turma", id=turma.id)
+    except (ImportError, AttributeError) as e:
+        messages.error(request, f"Erro ao carregar o formulário de atividade: {str(e)}")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+
+@login_required
+def registrar_frequencia_turma(request, turma_id):
+    """Registra a frequência dos alunos em uma atividade da turma."""
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    try:
+        # Obter matrículas ativas
+        Matricula = get_matricula_model()
+        matriculas = Matricula.objects.filter(turma=turma, status="A").select_related('aluno')
+        alunos = [matricula.aluno for matricula in matriculas]
+        
+        # Obter atividades da turma
+        AtividadeAcademica = get_atividade_academica_model()
+        atividades = AtividadeAcademica.objects.filter(turma=turma).order_by('-data_inicio')
+        
+        if request.method == "POST":
+            atividade_id = request.POST.get("atividade")
+            if not atividade_id:
+                messages.error(request, "Selecione uma atividade para registrar a frequência.")
+                return redirect("turmas:registrar_frequencia_turma", turma_id=turma_id)
+            
+            atividade = get_object_or_404(AtividadeAcademica, id=atividade_id)
+            presentes = request.POST.getlist("presentes")
+            
+            # Obter modelo de Frequencia
+            Frequencia = get_frequencia_model()
+            
+            # Registrar frequência para cada aluno
+            for aluno in alunos:
+                presente = aluno.cpf in presentes
+                justificativa = request.POST.get(f"justificativa_{aluno.cpf}", "")
+                
+                # Verificar se já existe registro para este aluno nesta atividade
+                frequencia, created = Frequencia.objects.update_or_create(
+                    aluno=aluno,
+                    atividade=atividade,
+                    defaults={
+                        'presente': presente,
+                        'justificativa': justificativa if not presente else "",
+                    }
+                )
+            
+            messages.success(request, "Frequência registrada com sucesso!")
+            return redirect("turmas:detalhar_turma", turma_id=turma_id)
+        
+        return render(
+            request,
+            "turmas/registrar_frequencia_turma.html",
+            {
+                "turma": turma,
+                "alunos": alunos,
+                "atividades": atividades,
+            },
+        )
+    
+    except (ImportError, AttributeError) as e:
+        messages.error(request, f"Erro ao registrar frequência: {str(e)}")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
+
+@login_required
+def relatorio_frequencia_turma(request, turma_id):
+    """Gera um relatório de frequência para uma turma específica."""
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    try:
+        # Obter matrículas ativas
+        Matricula = get_matricula_model()
+        matriculas = Matricula.objects.filter(turma=turma, status="A").select_related('aluno')
+        alunos = [matricula.aluno for matricula in matriculas]
+        
+        # Obter frequências
+        Frequencia = get_frequencia_model()
+        
+        # Obter datas das atividades da turma
+        AtividadeAcademica = get_atividade_academica_model()
+        atividades = AtividadeAcademica.objects.filter(turma=turma).order_by('data_inicio')
+        datas_atividades = [atividade.data_inicio.date() for atividade in atividades]
+        
+        # Preparar dados para o relatório
+        dados_frequencia = []
+        for aluno in alunos:
+            frequencias_aluno = Frequencia.objects.filter(
+                aluno=aluno,
+                atividade__turma=turma
+            )
+            
+            # Calcular estatísticas
+            total_presencas = frequencias_aluno.filter(presente=True).count()
+            total_atividades = atividades.count()
+            
+            if total_atividades > 0:
+                percentual_presenca = (total_presencas / total_atividades) * 100
+            else:
+                percentual_presenca = 0
+            
+            dados_frequencia.append({
+                'aluno': aluno,
+                'total_presencas': total_presencas,
+                'total_atividades': total_atividades,
+                'percentual_presenca': percentual_presenca,
+                'frequencias': frequencias_aluno
+            })
+        
+        context = {
+            'turma': turma,
+            'alunos': alunos,
+            'datas_atividades': datas_atividades,
+            'dados_frequencia': dados_frequencia,
+        }
+        
+        return render(request, 'turmas/relatorio_frequencia_turma.html', context)
+    
+    except (ImportError, AttributeError) as e:
+        messages.error(request, f"Erro ao gerar relatório de frequência: {str(e)}")
+        return redirect("turmas:detalhar_turma", turma_id=turma_id)
 
 @login_required
 def exportar_turmas(request):
-    """Exporta os dados das turmas para um arquivo CSV ou Excel."""
-    formato = request.GET.get('formato', 'csv')
-    
-    # Filtros
-    query = request.GET.get('q', '')
-    curso_id = request.GET.get('curso', '')
-    status = request.GET.get('status', '')
-    
-    # Consulta base
-    turmas = Turma.objects.all()
-    
-    # Aplicar filtros
-    if query:
-        turmas = turmas.filter(
-            Q(nome__icontains=query) | 
-            Q(instrutor__nome__icontains=query) |
-            Q(curso__nome__icontains=query)
-        )
-    
-    if curso_id:
-        turmas = turmas.filter(curso__codigo_curso=curso_id)
-    
-    if status:
-        turmas = turmas.filter(status=status)
-    
-    # Ordenar
-    turmas = turmas.order_by('nome')
-    
-    # Definir nome do arquivo
-    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-    filename = f"turmas_export_{timestamp}"
-    
-    if formato == 'excel':
-        # Exportar para Excel
-        output = io.BytesIO()
-        workbook = xlsxwriter.Workbook(output)
-        worksheet = workbook.add_worksheet()
+    """Exporta os dados das turmas para um arquivo CSV."""
+    try:
+        import csv
+        from django.http import HttpResponse
+        from django.utils import timezone
         
-        # Estilos
-        header_format = workbook.add_format({
-            'bold': True,
-            'bg_color': '#F0F0F0',
-            'border': 1
-        })
+        Turma = get_turma_model()
+        turmas = Turma.objects.all()
         
-        # Cabeçalhos
-        headers = [
-            'ID', 'Nome', 'Curso', 'Vagas', 'Status', 'Data Início', 
-            'Data Fim', 'Instrutor', 'Instrutor Auxiliar', 'Local', 'Horário'
-        ]
-        
-        for col_num, header in enumerate(headers):
-            worksheet.write(0, col_num, header, header_format)
-        
-        # Dados
-        for row_num, turma in enumerate(turmas, 1):
-            worksheet.write(row_num, 0, turma.id)
-            worksheet.write(row_num, 1, turma.nome)
-            worksheet.write(row_num, 2, turma.curso.nome if turma.curso else '')
-            worksheet.write(row_num, 3, turma.vagas)
-            worksheet.write(row_num, 4, turma.get_status_display())
-            worksheet.write(row_num, 5, turma.data_inicio.strftime('%d/%m/%Y') if turma.data_inicio else '')
-            worksheet.write(row_num, 6, turma.data_fim.strftime('%d/%m/%Y') if turma.data_fim else '')
-            worksheet.write(row_num, 7, turma.instrutor.nome if turma.instrutor else '')
-            worksheet.write(row_num, 8, turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else '')
-            worksheet.write(row_num, 9, turma.local or '')
-            worksheet.write(row_num, 10, turma.horario or '')
-        
-        # Ajustar largura das colunas
-        for i, header in enumerate(headers):
-            worksheet.set_column(i, i, len(header) + 5)
-        
-        workbook.close()
-        output.seek(0)
-        
-        response = HttpResponse(
-            output.read(),
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
-        return response
-    else:
-        # Exportar para CSV
+        # Criar resposta HTTP com cabeçalho para download de arquivo CSV
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        response['Content-Disposition'] = f'attachment; filename="turmas_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
         
+        # Criar escritor CSV
         writer = csv.writer(response)
+        
+        # Escrever cabeçalho
         writer.writerow([
-            'ID', 'Nome', 'Curso', 'Vagas', 'Status', 'Data Início', 
-            'Data Fim', 'Instrutor', 'Instrutor Auxiliar', 'Local', 'Horário'
+            'ID', 'Nome', 'Curso', 'Status', 'Vagas',
+            'Data Início', 'Data Fim', 'Instrutor',
+            'Instrutor Auxiliar', 'Auxiliar de Instrução',
+            'Dias da Semana', 'Local', 'Horário'
         ])
         
+        # Escrever dados das turmas
         for turma in turmas:
             writer.writerow([
                 turma.id,
                 turma.nome,
-                turma.curso.nome if turma.curso else '',
-                turma.vagas,
+                turma.curso.nome if turma.curso else 'N/A',
                 turma.get_status_display(),
-                turma.data_inicio.strftime('%d/%m/%Y') if turma.data_inicio else '',
-                turma.data_fim.strftime('%d/%m/%Y') if turma.data_fim else '',
-                turma.instrutor.nome if turma.instrutor else '',
-                turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else '',
-                turma.local or '',
-                turma.horario or ''
+                turma.vagas,
+                turma.data_inicio.strftime('%d/%m/%Y') if turma.data_inicio else 'N/A',
+                turma.data_fim.strftime('%d/%m/%Y') if turma.data_fim else 'N/A',
+                turma.instrutor.nome if turma.instrutor else 'N/A',
+                turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else 'N/A',
+                turma.auxiliar_instrucao.nome if turma.auxiliar_instrucao else 'N/A',
+                turma.dias_semana,
+                turma.local,
+                turma.horario
             ])
         
         return response
+    
+    except Exception as e:
+        messages.error(request, f"Erro ao exportar turmas: {str(e)}")
+        return redirect("turmas:listar_turmas")
 
 @login_required
 def relatorio_turmas(request):
-    """Gera relatórios sobre as turmas."""
-    # Estatísticas gerais
-    total_turmas = Turma.objects.count()
-    turmas_ativas = Turma.objects.filter(status='ATIVA').count()
-    turmas_planejadas = Turma.objects.filter(status='PLANEJADA').count()
-    turmas_concluidas = Turma.objects.filter(status='CONCLUIDA').count()
-    turmas_canceladas = Turma.objects.filter(status='CANCELADA').count()
-    
-    # Estatísticas por curso
-    cursos = Curso.objects.all()
-    estatisticas_cursos = []
-    
-    for curso in cursos:
-        turmas_curso = Turma.objects.filter(curso=curso)
-        total_turmas_curso = turmas_curso.count()
+    """Gera um relatório com estatísticas sobre as turmas."""
+    try:
+        Turma = get_turma_model()
         
-        if total_turmas_curso > 0:
-            turmas_ativas_curso = turmas_curso.filter(status='ATIVA').count()
-            turmas_planejadas_curso = turmas_curso.filter(status='PLANEJADA').count()
-            turmas_concluidas_curso = turmas_curso.filter(status='CONCLUIDA').count()
-            
-            # Calcular média de alunos por turma
-            total_alunos = 0
-            for turma in turmas_curso:
-                total_alunos += Matricula.objects.filter(turma=turma, ativa=True).count()
-            
-            media_alunos = total_alunos / total_turmas_curso if total_turmas_curso > 0 else 0
-            
-            estatisticas_cursos.append({
-                'curso': curso,
-                'total_turmas': total_turmas_curso,
-                'turmas_ativas': turmas_ativas_curso,
-                'turmas_planejadas': turmas_planejadas_curso,
-                'turmas_concluidas': turmas_concluidas_curso,
-                'media_alunos': round(media_alunos, 1)
-            })
-    
-    # Turmas com mais alunos
-    turmas_populares = Turma.objects.annotate(
-        total_alunos=Count('matricula', filter=Q(matricula__ativa=True))
-    ).order_by('-total_alunos')[:5]
-    
-    # Instrutores com mais turmas
-    instrutores_ativos = Aluno.objects.filter(
-        Q(turma_instrutor__isnull=False) | 
-        Q(turma_instrutor_auxiliar__isnull=False)
-    ).distinct()
-    
-    estatisticas_instrutores = []
-    for instrutor in instrutores_ativos:
-        turmas_como_instrutor = Turma.objects.filter(instrutor=instrutor).count()
-        turmas_como_auxiliar = Turma.objects.filter(instrutor_auxiliar=instrutor).count()
-        total_turmas_instrutor = turmas_como_instrutor + turmas_como_auxiliar
+        # Estatísticas gerais
+        total_turmas = Turma.objects.count()
+        turmas_ativas = Turma.objects.filter(status='A').count()
+        turmas_concluidas = Turma.objects.filter(status='C').count()
+        turmas_canceladas = Turma.objects.filter(status='X').count()
         
-        if total_turmas_instrutor > 0:
-            estatisticas_instrutores.append({
-                'instrutor': instrutor,
-                'turmas_como_instrutor': turmas_como_instrutor,
-                'turmas_como_auxiliar': turmas_como_auxiliar,
-                'total_turmas': total_turmas_instrutor
-            })
+        # Turmas por curso
+        Curso = get_curso_model()
+        cursos = Curso.objects.all()
+        
+        turmas_por_curso = []
+        for curso in cursos:
+            count = Turma.objects.filter(curso=curso).count()
+            if count > 0:
+                turmas_por_curso.append({
+                    'curso': curso,
+                    'count': count,
+                    'percentage': (count / total_turmas * 100) if total_turmas > 0 else 0
+                })
+        
+        # Turmas por instrutor
+        Aluno = get_aluno_model()
+        instrutores = Aluno.objects.filter(
+            Q(turma_instrutor__isnull=False) |
+            Q(turma_instrutor_auxiliar__isnull=False) |
+            Q(turma_auxiliar_instrucao__isnull=False)
+        ).distinct()
+        
+        turmas_por_instrutor = []
+        for instrutor in instrutores:
+            count_principal = Turma.objects.filter(instrutor=instrutor).count()
+            count_auxiliar = Turma.objects.filter(instrutor_auxiliar=instrutor).count()
+            count_aux_instrucao = Turma.objects.filter(auxiliar_instrucao=instrutor).count()
+            
+            if count_principal > 0 or count_auxiliar > 0 or count_aux_instrucao > 0:
+                turmas_por_instrutor.append({
+                    'instrutor': instrutor,
+                    'count_principal': count_principal,
+                    'count_auxiliar': count_auxiliar,
+                    'count_aux_instrucao': count_aux_instrucao,
+                    'total': count_principal + count_auxiliar + count_aux_instrucao
+                })
+        
+        # Ordenar por total de turmas
+        turmas_por_instrutor.sort(key=lambda x: x['total'], reverse=True)
+        
+        context = {
+            'total_turmas': total_turmas,
+            'turmas_ativas': turmas_ativas,
+            'turmas_concluidas': turmas_concluidas,
+            'turmas_canceladas': turmas_canceladas,
+            'turmas_por_curso': turmas_por_curso,
+            'turmas_por_instrutor': turmas_por_instrutor
+        }
+        
+        return render(request, 'turmas/relatorio_turmas.html', context)
     
-    estatisticas_instrutores.sort(key=lambda x: x['total_turmas'], reverse=True)
-    estatisticas_instrutores = estatisticas_instrutores[:5]
-    
-    context = {
-        'total_turmas': total_turmas,
-        'turmas_ativas': turmas_ativas,
-        'turmas_planejadas': turmas_planejadas,
-        'turmas_concluidas': turmas_concluidas,
-        'turmas_canceladas': turmas_canceladas,
-        'estatisticas_cursos': estatisticas_cursos,
-        'turmas_populares': turmas_populares,
-        'estatisticas_instrutores': estatisticas_instrutores
-    }
-    
-    return render(request, 'turmas/relatorio_turmas.html', context)
+    except Exception as e:
+        messages.error(request, f"Erro ao gerar relatório de turmas: {str(e)}")
+        return redirect("turmas:listar_turmas")
 
 @login_required
 def dashboard_turmas(request):
-    """Exibe um dashboard com informações sobre as turmas."""
-    # Estatísticas gerais
-    total_turmas = Turma.objects.count()
-    turmas_ativas = Turma.objects.filter(status='ATIVA').count()
-    turmas_planejadas = Turma.objects.filter(status='PLANEJADA').count()
-    turmas_concluidas = Turma.objects.filter(status='CONCLUIDA').count()
-    turmas_canceladas = Turma.objects.filter(status='CANCELADA').count()
-    
-    # Dados para gráfico de status
-    dados_status = [
-        {'status': 'Ativas', 'quantidade': turmas_ativas, 'cor': '#28a745'},
-        {'status': 'Planejadas', 'quantidade': turmas_planejadas, 'cor': '#17a2b8'},
-        {'status': 'Concluídas', 'quantidade': turmas_concluidas, 'cor': '#6c757d'},
-        {'status': 'Canceladas', 'quantidade': turmas_canceladas, 'cor': '#dc3545'}
-    ]
-    
-    # Turmas por curso
-    cursos = Curso.objects.all()
-    dados_cursos = []
-    
-    cores_cursos = [
-        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
-        '#5a5c69', '#858796', '#f8f9fc', '#d1d3e2', '#b7b9cc'
-    ]
-    
-    for i, curso in enumerate(cursos):
-        total_turmas_curso = Turma.objects.filter(curso=curso).count()
-        if total_turmas_curso > 0:
-            dados_cursos.append({
-                'curso': curso.nome,
-                'quantidade': total_turmas_curso,
-                'cor': cores_cursos[i % len(cores_cursos)]
-            })
-    
-    # Turmas recentes
-    turmas_recentes = Turma.objects.order_by('-id')[:5]
-    
-    # Turmas com vagas disponíveis
-    turmas_com_vagas = []
-    for turma in Turma.objects.filter(status='ATIVA'):
-        total_matriculados = Matricula.objects.filter(turma=turma, ativa=True).count()
-        vagas_disponiveis = turma.vagas - total_matriculados
+    """Exibe um dashboard com informações e estatísticas sobre as turmas."""
+    try:
+        Turma = get_turma_model()
         
-        if vagas_disponiveis > 0:
-            turmas_com_vagas.append({
+        # Estatísticas gerais
+        total_turmas = Turma.objects.count()
+        turmas_ativas = Turma.objects.filter(status='A').count()
+        turmas_concluidas = Turma.objects.filter(status='C').count()
+        turmas_canceladas = Turma.objects.filter(status='X').count()
+        
+        # Turmas recentes
+        turmas_recentes = Turma.objects.order_by('-data_inicio')[:5]
+        
+        # Turmas com mais alunos
+        Matricula = get_matricula_model()
+        
+        turmas_com_contagem = []
+        for turma in Turma.objects.filter(status='A'):
+            count = Matricula.objects.filter(turma=turma, status='A').count()
+            turmas_com_contagem.append({
                 'turma': turma,
-                'vagas_disponiveis': vagas_disponiveis,
-                'percentual_ocupacao': (total_matriculados / turma.vagas) * 100
+                'alunos_count': count,
+                'vagas_disponiveis': turma.vagas - count if turma.vagas > count else 0
             })
+        
+        # Ordenar por número de alunos
+        turmas_com_contagem.sort(key=lambda x: x['alunos_count'], reverse=True)
+        turmas_populares = turmas_com_contagem[:5]
+        
+        # Turmas por curso (para gráfico)
+        Curso = get_curso_model()
+        cursos = Curso.objects.all()
+        
+        dados_grafico = {
+            'labels': [],
+            'data': []
+        }
+        
+        for curso in cursos:
+            count = Turma.objects.filter(curso=curso).count()
+            if count > 0:
+                dados_grafico['labels'].append(curso.nome)
+                dados_grafico['data'].append(count)
+        
+        context = {
+            'total_turmas': total_turmas,
+            'turmas_ativas': turmas_ativas,
+            'turmas_concluidas': turmas_concluidas,
+            'turmas_canceladas': turmas_canceladas,
+            'turmas_recentes': turmas_recentes,
+            'turmas_populares': turmas_populares,
+            'dados_grafico': dados_grafico
+        }
+        
+        return render(request, 'turmas/dashboard_turmas.html', context)
     
-    turmas_com_vagas.sort(key=lambda x: x['vagas_disponiveis'], reverse=True)
-    turmas_com_vagas = turmas_com_vagas[:5]
-    
-    context = {
-        'total_turmas': total_turmas,
-        'turmas_ativas': turmas_ativas,
-        'turmas_planejadas': turmas_planejadas,
-        'turmas_concluidas': turmas_concluidas,
-        'turmas_canceladas': turmas_canceladas,
-        'dados_status': dados_status,
-        'dados_cursos': dados_cursos,
-        'turmas_recentes': turmas_recentes,
-        'turmas_com_vagas': turmas_com_vagas
-    }
-    
-    return render(request, 'turmas/dashboard.html', context)
+    except Exception as e:
+        messages.error(request, f"Erro ao carregar dashboard de turmas: {str(e)}")
+        return redirect("turmas:listar_turmas")
