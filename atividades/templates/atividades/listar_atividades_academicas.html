@@ -37,6 +37,7 @@
                             <th>Responsável</th>
                             <th>Data de Início</th>
                             <th>Status</th>
+                            <th>Turmas</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -50,6 +51,17 @@
                                     <span class="badge {% if atividade.status == 'agendada' %}bg-warning{% elif atividade.status == 'em_andamento' %}bg-info{% elif atividade.status == 'concluida' %}bg-success{% else %}bg-secondary{% endif %}">
                                         {{ atividade.get_status_display }}
                                     </span>
+                                </td>
+                                <td>
+                                    {% if atividade.turmas.count > 3 %}
+                                        {{ atividade.turmas.count }} turmas
+                                    {% else %}
+                                        {% for turma in atividade.turmas.all %}
+                                            {{ turma.nome }}{% if not forloop.last %}, {% endif %}
+                                        {% empty %}
+                                            Nenhuma turma
+                                        {% endfor %}
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da atividade">Detalhes</a>

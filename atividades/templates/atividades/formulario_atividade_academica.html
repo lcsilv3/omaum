@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Criar Nova Atividade Acadêmica{% endblock %}
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nova{% endif %} Atividade Acadêmica{% endblock %}
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -59,20 +59,44 @@
             </div>
         </div>
         
+        <!-- Nova seção para Turmas -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Turmas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        {% include 'includes/form_field.html' with field=form.turmas %}
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <div class="form-check">
+                            {{ form.todas_turmas }}
+                            <label class="form-check-label" for="{{ form.todas_turmas.id_for_label }}">
+                                {{ form.todas_turmas.label }}
+                            </label>
+                            <small class="form-text text-muted">
+                                Marque esta opção para aplicar esta atividade a todas as turmas ativas automaticamente.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="card mb-4">
             <div class="card-header">
                 <h5>Classificação</h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.tipo_atividade %}
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.status %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.turma %}
                     </div>
                 </div>
             </div>
@@ -87,4 +111,50 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const todasTurmasCheckbox = document.getElementById('{{ form.todas_turmas.id_for_label }}');
+        const turmasSelect = document.getElementById('{{ form.turmas.id_for_label }}');
+        
+        function toggleTurmasField() {
+            if (todasTurmasCheckbox.checked) {
+                turmasSelect.disabled = true;
+                // Adicionar uma mensagem informativa
+                if (!document.getElementById('turmas-info')) {
+                    const infoDiv = document.createElement('div');
+                    infoDiv.id = 'turmas-info';
+                    infoDiv.className = 'alert alert-info mt-2';
+                    infoDiv.textContent = 'Todas as turmas ativas serão incluídas automaticamente.';
+                    turmasSelect.parentNode.appendChild(infoDiv);
+                }
+            } else {
+                turmasSelect.disabled = false;
+                // Remover a mensagem informativa se existir
+                const infoDiv = document.getElementById('turmas-info');
+                if (infoDiv) {
+                    infoDiv.remove();
+                }
+            }
+        }
+        
+        // Inicializar
+        toggleTurmasField();
+        
+        // Adicionar listener para mudanças
+        todasTurmasCheckbox.addEventListener('change', toggleTurmasField);
+        
+        // Inicializar Select2 para o campo de turmas
+        if (typeof $.fn.select2 === 'function') {
+            $(turmasSelect).select2({
+                theme: 'bootstrap4',
+                placeholder: 'Selecione as turmas',
+                allowClear: true,
+                width: '100%'
+            });
+        }
+    });
+</script>
 {% endblock %}

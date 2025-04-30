@@ -16,16 +16,27 @@
                     <p><strong>Descrição:</strong> {{ atividade.descricao|default:"Não informada" }}</p>
                     <p><strong>Data de Início:</strong> {{ atividade.data_inicio|date:"d/m/Y H:i" }}</p>
                     <p><strong>Data de Término:</strong> {{ atividade.data_fim|date:"d/m/Y H:i"|default:"Não definida" }}</p>
+                    <p><strong>Responsável:</strong> {{ atividade.responsavel|default:"Não informado" }}</p>
+                    <p><strong>Local:</strong> {{ atividade.local|default:"Não informado" }}</p>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Turma:</strong> {{ atividade.turma.nome }}</p>
-                    <p><strong>Status:</strong> 
-                        {% if atividade.ativa %}
-                            <span class="badge bg-success">Ativa</span>
-                        {% else %}
-                            <span class="badge bg-danger">Inativa</span>
-                        {% endif %}
-                    </p>
+                    <p><strong>Tipo:</strong> {{ atividade.get_tipo_atividade_display }}</p>
+                    <p><strong>Status:</strong> {{ atividade.get_status_display }}</p>
+                    
+                    <!-- Mostrar todas as turmas associadas -->
+                    <p><strong>Turmas:</strong></p>
+                    <ul class="list-group">
+                        {% for turma in atividade.turmas.all %}
+                            <li class="list-group-item">
+                                <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
+                                {% if turma.curso %}
+                                    - {{ turma.curso.nome }}
+                                {% endif %}
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">Nenhuma turma associada</li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
             
@@ -33,7 +44,8 @@
                 <a href="{% url 'atividades:editar_atividade_academica' atividade.pk %}?return_url={{ request.path|urlencode }}" class="btn btn-primary">Editar</a>
                 <a href="{% url 'atividades:confirmar_exclusao_academica' atividade.pk %}?return_url={{ request.path|urlencode }}" class="btn btn-danger">Excluir</a>
                 <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Voltar para Lista</a>
-            </div>        </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

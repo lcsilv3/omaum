@@ -22,9 +22,25 @@ def get_atividade_ritualistica_model():
 
 
 class AtividadeAcademicaForm(forms.ModelForm):
+    todas_turmas = forms.BooleanField(
+        required=False, 
+        label="Aplicar para todas as turmas ativas", 
+        initial=False
+    )
+    
     class Meta:
         model = get_atividade_academica_model()
-        fields = ["nome", "descricao", "data_inicio", "data_fim", "turma"]
+        fields = [
+            "nome", 
+            "descricao", 
+            "data_inicio", 
+            "data_fim", 
+            "turmas",  # Novo campo
+            "responsavel", 
+            "local", 
+            "tipo_atividade", 
+            "status"
+        ]
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
             "descricao": forms.Textarea(
@@ -36,7 +52,11 @@ class AtividadeAcademicaForm(forms.ModelForm):
             "data_fim": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),
-            "turma": forms.Select(attrs={"class": "form-control"}),
+            "turmas": forms.SelectMultiple(attrs={"class": "form-control select2"}),
+            "responsavel": forms.TextInput(attrs={"class": "form-control"}),
+            "local": forms.TextInput(attrs={"class": "form-control"}),
+            "tipo_atividade": forms.Select(attrs={"class": "form-control"}),
+            "status": forms.Select(attrs={"class": "form-control"}),
         }
 
 

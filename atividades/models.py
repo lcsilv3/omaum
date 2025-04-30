@@ -92,10 +92,22 @@ class AtividadeAcademica(models.Model):
         default="agendada",
         verbose_name="Status",
     )
+    
+    # Mantemos o campo original para compatibilidade
     turma = models.ForeignKey(
         "turmas.Turma",
         on_delete=models.CASCADE,
+        related_name="atividades_academicas_single",
+        null=True,
+        blank=True,
+    )
+    
+    # Novo campo para múltiplas turmas
+    turmas = models.ManyToManyField(
+        "turmas.Turma",
         related_name="atividades_academicas",
+        verbose_name="Turmas",
+        blank=True,
     )
 
     def __str__(self):
