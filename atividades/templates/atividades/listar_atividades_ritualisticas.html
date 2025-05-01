@@ -7,11 +7,24 @@
     <!-- Cabeçalho com título e botões na mesma linha -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Lista de Atividades Ritualísticas</h1>
-        <div>
-            <a href="{% url 'core:pagina_inicial' %}" class="btn btn-secondary me-2">Página Inicial</a>
+        <div class="btn-group">
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
             <!-- Botão para criar nova atividade ritualística -->
-            <a href="{% url 'atividades:criar_atividade_ritualistica' %}?return_url={{ request.path|urlencode }}" class="btn btn-primary">
-                Nova Atividade Ritualística
+            <a href="{% url 'atividades:criar_atividade_ritualistica' %}?return_url={{ request.path|urlencode }}" class="btn btn-primary me-2">
+                <i class="fas fa-plus"></i> Nova Atividade
+            </a>
+            
+            <!-- Botões para as novas funcionalidades -->
+            <a href="{% url 'atividades:calendario_atividades' %}" class="btn btn-info me-2">
+                <i class="fas fa-calendar-alt"></i> Calendário
+            </a>
+            
+            <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-success me-2">
+                <i class="fas fa-chart-bar"></i> Dashboard
+            </a>
+            
+            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning">
+                <i class="fas fa-file-alt"></i> Relatórios
             </a>
         </div>
     </div>    
@@ -52,6 +65,8 @@
                                     <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da atividade">Detalhes</a>
                                     <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar informações da atividade">Editar</a>
                                     <a href="{% url 'atividades:excluir_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir esta atividade">Excluir</a>
+                                    <!-- Novo botão para copiar atividade -->
+                                    <a href="{% url 'atividades:copiar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-secondary" title="Criar uma cópia desta atividade">Copiar</a>
                                 </td>
                             </tr>
                         {% empty %}

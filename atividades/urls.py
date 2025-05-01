@@ -36,6 +36,11 @@ urlpatterns = [
         views.confirmar_exclusao_academica,
         name="confirmar_exclusao_academica",
     ),
+    path(
+        "academicas/<int:id>/copiar/",
+        views.copiar_atividade_academica,
+        name="copiar_atividade_academica",
+    ),
     # Atividades Ritualísticas
     path(
         "ritualisticas/",
@@ -67,4 +72,17 @@ urlpatterns = [
         views.confirmar_exclusao_ritualistica,
         name="confirmar_exclusao_ritualistica",
     ),
+    path(
+        "ritualisticas/<int:id>/copiar/",
+        views.copiar_atividade_ritualistica,
+        name="copiar_atividade_ritualistica",
+    ),
+    # Novas funcionalidades
+    path("relatorio/", views.relatorio_atividades, name="relatorio_atividades"),
+    path("exportar/<str:formato>/", views.exportar_atividades, name="exportar_atividades"),
+    path("calendario/", views.calendario_atividades, name="calendario_atividades"),
+    path("dashboard/", views.dashboard_atividades, name="dashboard_atividades"),
+    # APIs
+    path("api/eventos/", views.api_eventos_calendario, name="api_eventos_calendario"),
+    path("api/evento/<int:evento_id>/", views.api_detalhe_evento, name="api_detalhe_evento"),
 ]

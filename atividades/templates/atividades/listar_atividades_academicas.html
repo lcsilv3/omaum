@@ -3,123 +3,106 @@
 {% block title %}Lista de Atividades Acadêmicas{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Cabeçalho com título e botões na mesma linha -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Lista de Atividades Acadêmicas</h1>
-        <div>
-            <a href="{% url 'core:pagina_inicial' %}" class="btn btn-secondary me-2">Página Inicial</a>
-            
-            <!-- Botão para criar nova atividade acadêmica com URL de retorno -->
-            <a href="{% url 'atividades:criar_atividade_academica' %}?return_url={{ request.path|urlencode }}" class="btn btn-primary">
-                Nova Atividade Acadêmica
-            </a>
+<main id="main-content" class="py-4">
+    <div class="container mt-4">
+        <!-- Cabeçalho com título e botões na mesma linha -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1>Lista de Atividades Acadêmicas</h1>
+            <div class="btn-group">
+                <a href="/" class="btn btn-secondary me-2">Página Inicial</a>
+                
+                <!-- Botão para criar nova atividade acadêmica com URL de retorno -->
+                <a href="/atividades/academicas/criar/?return_url=/atividades/academicas/" class="btn btn-primary me-2">
+                    <i class="fas fa-plus"></i> Nova Atividade
+                </a>
+                
+                <!-- Botões para as novas funcionalidades -->
+                <a href="/atividades/calendario/" class="btn btn-info me-2">
+                    <i class="fas fa-calendar-alt"></i> Calendário
+                </a>
+                
+                <a href="/atividades/dashboard/" class="btn btn-success me-2">
+                    <i class="fas fa-chart-bar"></i> Dashboard
+                </a>
+                
+                <a href="/atividades/relatorio/" class="btn btn-warning">
+                    <i class="fas fa-file-alt"></i> Relatórios
+                </a>
+            </div>
         </div>
-    </div>    
-    <!-- Barra de busca e filtros -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <form method="get" class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por título, descrição ou responsável..." value="{{ query }}">
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-                </div>
-            </form>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Título</th>
-                            <th>Responsável</th>
-                            <th>Data de Início</th>
-                            <th>Status</th>
-                            <th>Turmas</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for atividade in atividades %}
+        
+        <!-- Barra de busca e filtros -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <form method="get" class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" name="q" class="form-control" placeholder="Buscar por título, descrição ou responsável..." value="">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
                             <tr>
-                                <td>{{ atividade.nome }}</td>
-                                <td>{{ atividade.responsavel|default:"Não informado" }}</td>
-                                <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+                                <th>Título</th>
+                                <th>Responsável</th>
+                                <th>Data de Início</th>
+                                <th>Status</th>
+                                <th>Turmas</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Plenilúnio</td>
+                                <td>Não informado</td>
+                                <td>26/10/2026</td>
                                 <td>
-                                    <span class="badge {% if atividade.status == 'agendada' %}bg-warning{% elif atividade.status == 'em_andamento' %}bg-info{% elif atividade.status == 'concluida' %}bg-success{% else %}bg-secondary{% endif %}">
-                                        {{ atividade.get_status_display }}
+                                    <span class="badge bg-warning">
+                                        Agendada
                                     </span>
                                 </td>
                                 <td>
-                                    {% if atividade.turmas.count > 3 %}
-                                        {{ atividade.turmas.count }} turmas
-                                    {% else %}
-                                        {% for turma in atividade.turmas.all %}
-                                            {{ turma.nome }}{% if not forloop.last %}, {% endif %}
-                                        {% empty %}
-                                            Nenhuma turma
-                                        {% endfor %}
-                                    {% endif %}
+                                    Turma A
                                 </td>
                                 <td>
-                                    <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da atividade">Detalhes</a>
-                                    <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar informações da atividade">Editar</a>
-                                    <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir esta atividade">Excluir</a>
+                                    <a href="/atividades/academicas/detalhar/2/" class="btn btn-sm btn-info" title="Ver detalhes completos da atividade">Detalhes</a>
+                                    <a href="/atividades/academicas/editar/2/" class="btn btn-sm btn-warning" title="Editar informações da atividade">Editar</a>
+                                    <a href="/atividades/academicas/excluir/2/" class="btn btn-sm btn-danger" title="Excluir esta atividade">Excluir</a>
+                                    <a href="/atividades/academicas/2/copiar/" class="btn btn-sm btn-secondary" title="Criar uma cópia desta atividade">Copiar</a>
                                 </td>
                             </tr>
-                        {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center">
-                                    <p class="my-3">Nenhuma atividade acadêmica cadastrada.</p>
+                                <td>Aula</td>
+                                <td>Não informado</td>
+                                <td>26/10/2024</td>
+                                <td>
+                                    <span class="badge bg-warning">
+                                        Agendada
+                                    </span>
+                                </td>
+                                <td>
+                                    Turma A
+                                </td>
+                                <td>
+                                    <a href="/atividades/academicas/detalhar/1/" class="btn btn-sm btn-info" title="Ver detalhes completos da atividade">Detalhes</a>
+                                    <a href="/atividades/academicas/editar/1/" class="btn btn-sm btn-warning" title="Editar informações da atividade">Editar</a>
+                                    <a href="/atividades/academicas/excluir/1/" class="btn btn-sm btn-danger" title="Excluir esta atividade">Excluir</a>
+                                    <a href="/atividades/academicas/1/copiar/" class="btn btn-sm btn-secondary" title="Criar uma cópia desta atividade">Copiar</a>
                                 </td>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <p class="text-muted mb-0">Total: 2 atividade(s)</p>
             </div>
         </div>
-        <div class="card-footer">
-            <p class="text-muted mb-0">Total: {{ atividades.count|default:"0" }} atividade(s)</p>
-            {% if page_obj.has_other_pages %}
-                <nav aria-label="Paginação">
-                    <ul class="pagination justify-content-center mb-0">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}">Anterior</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Anterior</span>
-                            </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                            {% else %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}&q={{ query }}">{{ num }}</a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}">Próxima</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Próxima</span>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
-        </div>
     </div>
-</div>
+</main>
 {% endblock %}

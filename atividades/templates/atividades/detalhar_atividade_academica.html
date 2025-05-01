@@ -43,6 +43,8 @@
             <div class="mt-3">
                 <a href="{% url 'atividades:editar_atividade_academica' atividade.pk %}?return_url={{ request.path|urlencode }}" class="btn btn-primary">Editar</a>
                 <a href="{% url 'atividades:confirmar_exclusao_academica' atividade.pk %}?return_url={{ request.path|urlencode }}" class="btn btn-danger">Excluir</a>
+                <!-- Novo botão para copiar atividade -->
+                <a href="{% url 'atividades:copiar_atividade_academica' atividade.id %}" class="btn btn-secondary">Copiar</a>
                 <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Voltar para Lista</a>
             </div>
         </div>

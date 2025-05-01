@@ -1328,10 +1328,17 @@ DEFAULT_CONFIG = Config()
   - alunos\relatorio_alunos.html
 - atividades\templates
   Arquivos:
+  - atividades\calendario_atividades.html
+  - atividades\confirmar_copia_academica.html
+  - atividades\confirmar_copia_ritualistica.html
   - atividades\confirmar_exclusao_academica.html
   - atividades\confirmar_exclusao_ritualistica.html
+  - atividades\copiar_atividade_academica.html
+  - atividades\copiar_atividade_ritualistica.html
   - atividades\criar_atividade_academica.html
   - atividades\criar_atividade_ritualistica.html
+  - atividades\dashboard.html
+  - atividades\dashboard_atividades.html
   - atividades\detalhar_atividade_academica.html
   - atividades\detalhar_atividade_ritualistica.html
   - atividades\editar_atividade_academica.html
@@ -1344,6 +1351,9 @@ DEFAULT_CONFIG = Config()
   - atividades\listar_atividades.html
   - atividades\listar_atividades_academicas.html
   - atividades\listar_atividades_ritualisticas.html
+  - atividades\registrar_frequencia.html
+  - atividades\relatorio_atividades.html
+  - atividades\visualizar_frequencia.html
 - cargos\templates
   Arquivos:
   - cargos\atribuir_cargo.html

@@ -1,42 +1,53 @@
-from django.contrib import messages
-from .models import LogAtividade
+import logging
 from importlib import import_module
+from django.contrib import messages
+from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 def get_model_dynamically(app_name, model_name):
     """
-    Obtém um modelo dinamicamente para evitar importações circulares.
+    Importa dinamicamente um modelo para evitar importações circulares.
     
     Args:
-        app_name (str): Nome do aplicativo Django (ex: 'alunos', 'turmas')
-        model_name (str): Nome da classe do modelo (ex: 'Aluno', 'Turma')
+        app_name (str): Nome do aplicativo Django
+        model_name (str): Nome do modelo a ser importado
         
     Returns:
-        Model: A classe do modelo solicitada
+        Model: Classe do modelo Django
         
     Raises:
         ImportError: Se o módulo não puder ser importado
         AttributeError: Se o modelo não existir no módulo
     """
-    module = import_module(f"{app_name}.models")
-    return getattr(module, model_name)
+    try:
+        module = import_module(f"{app_name}.models")
+        return getattr(module, model_name)
+    except (ImportError, AttributeError) as e:
+        logger.error(f"Erro ao importar modelo {model_name} do app {app_name}: {str(e)}")
+        raise
 
 def get_form_dynamically(app_name, form_name):
     """
-    Obtém um formulário dinamicamente para evitar importações circulares.
+    Importa dinamicamente um formulário para evitar importações circulares.
     
     Args:
-        app_name (str): Nome do aplicativo Django (ex: 'alunos', 'turmas')
-        form_name (str): Nome da classe do formulário (ex: 'AlunoForm', 'TurmaForm')
+        app_name (str): Nome do aplicativo Django
+        form_name (str): Nome do formulário a ser importado
         
     Returns:
-        Form: A classe do formulário solicitada
+        Form: Classe do formulário Django
         
     Raises:
         ImportError: Se o módulo não puder ser importado
         AttributeError: Se o formulário não existir no módulo
     """
-    module = import_module(f"{app_name}.forms")
-    return getattr(module, form_name)
+    try:
+        module = import_module(f"{app_name}.forms")
+        return getattr(module, form_name)
+    except (ImportError, AttributeError) as e:
+        logger.error(f"Erro ao importar formulário {form_name} do app {app_name}: {str(e)}")
+        raise
 
 def get_view_dynamically(app_name, view_name):
     """
@@ -58,58 +69,71 @@ def get_view_dynamically(app_name, view_name):
 
 def registrar_log(request, acao, tipo="INFO", detalhes=None):
     """
-    Registra uma ação no log de atividades do sistema
-
+    Registra uma ação no log de atividades do sistema.
+    
     Args:
         request: O objeto request do Django
-        acao: Descrição da ação realizada
-        tipo: Tipo de log (INFO, AVISO, ERRO, DEBUG)
-        detalhes: Detalhes adicionais sobre a ação
+        acao (str): Descrição da ação realizada
+        tipo (str): Tipo de log (INFO, AVISO, ERRO, DEBUG)
+        detalhes (str, optional): Detalhes adicionais sobre a ação
     """
-    usuario = (
-        request.user.username if request.user.is_authenticated else "Anônimo"
-    )
-
-    LogAtividade.objects.create(
-        usuario=usuario, acao=acao, tipo=tipo, detalhes=detalhes
-    )
-
+    try:
+        from core.models import LogAtividade
+        
+        usuario = request.user.username if request.user.is_authenticated else "Anônimo"
+        
+        LogAtividade.objects.create(
+            usuario=usuario,
+            acao=acao,
+            tipo=tipo,
+            data=timezone.now(),
+            detalhes=detalhes
+        )
+    except Exception as e:
+        logger.error(f"Erro ao registrar log: {str(e)}")
 
 def adicionar_mensagem(request, tipo, texto):
     """
-    Adiciona uma mensagem para o usuário
-
+    Adiciona uma mensagem flash para o usuário.
+    
     Args:
         request: O objeto request do Django
-        tipo: Tipo de mensagem (success, error, warning, info)
-        texto: Texto da mensagem
+        tipo (str): Tipo de mensagem (sucesso, info, aviso, erro)
+        texto (str): Texto da mensagem
     """
     tipos_mensagem = {
         "sucesso": messages.SUCCESS,
-        "erro": messages.ERROR,
-        "aviso": messages.WARNING,
         "info": messages.INFO,
+        "aviso": messages.WARNING,
+        "erro": messages.ERROR,
     }
-
-    nivel = tipos_mensagem.get(tipo, messages.INFO)
+    
+    nivel = tipos_mensagem.get(tipo.lower(), messages.INFO)
     messages.add_message(request, nivel, texto)
-
 
 def garantir_configuracao_sistema():
     """
     Garante que exista pelo menos uma configuração do sistema.
-    Retorna a configuração existente ou cria uma nova.
+    Se não existir, cria uma com valores padrão.
+    
+    Returns:
+        ConfiguracaoSistema: Objeto de configuração do sistema
     """
-    from .models import ConfiguracaoSistema
-
-    config, criado = ConfiguracaoSistema.objects.get_or_create(
-        pk=1,
-        defaults={
-            "nome_sistema": "Sistema de Gestão de Iniciados da OmAum",
-            "versao": "1.0.0",
-            "manutencao_ativa": False,
-            "mensagem_manutencao": "Sistema em manutenção. Tente novamente mais tarde.",
-        },
-    )
-
-    return config
+    try:
+        from core.models import ConfiguracaoSistema
+        
+        config, created = ConfiguracaoSistema.objects.get_or_create(
+            id=1,
+            defaults={
+                "nome_sistema": "OMAUM",
+                "versao": "1.0.0",
+                "data_atualizacao": timezone.now(),
+                "manutencao_ativa": False,
+                "mensagem_manutencao": "Sistema em manutenção. Tente novamente mais tarde."
+            }
+        )
+        
+        return config
+    except Exception as e:
+        logger.error(f"Erro ao garantir configuração do sistema: {str(e)}")
+        raise

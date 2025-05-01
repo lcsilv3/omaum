@@ -39,3 +39,36 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('jQuery ou Select2 não estão disponíveis. A inicialização global do Select2 foi ignorada.');
     }
 });
+
+// Adicionar este script para garantir que o Select2 seja inicializado corretamente
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar Select2 para campos de seleção múltipla
+    if (typeof $.fn.select2 === 'function') {
+        $('.form-control[multiple]').select2({
+            theme: 'bootstrap4',
+            placeholder: 'Selecione as opções',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        // Desabilitar o campo de turmas quando "todas as turmas" estiver marcado
+        const todasTurmasCheckbox = document.getElementById('id_todas_turmas');
+        const turmasSelect = document.getElementById('id_turmas');
+        
+        if (todasTurmasCheckbox && turmasSelect) {
+            function toggleTurmasField() {
+                if (todasTurmasCheckbox.checked) {
+                    $(turmasSelect).prop('disabled', true).trigger('change');
+                } else {
+                    $(turmasSelect).prop('disabled', false).trigger('change');
+                }
+            }
+            
+            // Inicializar
+            toggleTurmasField();
+            
+            // Adicionar listener para mudanças
+            todasTurmasCheckbox.addEventListener('change', toggleTurmasField);
+        }
+    }
+});
