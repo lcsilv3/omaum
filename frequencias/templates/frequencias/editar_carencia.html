@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Carência{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">Editar Carência</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center">
+                            {% if carencia.aluno.foto %}
+                            <img src="{{ carencia.aluno.foto.url }}" alt="{{ carencia.aluno.nome }}" 
+                                 class="rounded-circle me-3" width="60" height="60">
+                            {% else %}
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width: 60px; height: 60px; color: white; font-size: 24px;">
+                                {{ carencia.aluno.nome|first|upper }}
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="mb-1">{{ carencia.aluno.nome }}</h5>
+                                <p class="mb-0 text-muted">{{ carencia.aluno.cpf }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <p><strong>Frequência Mensal:</strong> {{ carencia.frequencia_mensal.turma.nome }} - {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}</p>
+                            <p><strong>Percentual de Presença:</strong> {{ carencia.percentual_presenca }}%</p>
+                            <p><strong>Percentual Mínimo Exigido:</strong> {{ carencia.frequencia_mensal.percentual_minimo }}%</p>
+                            <p><strong>Déficit:</strong> {{ carencia.frequencia_mensal.percentual_minimo|subtract:carencia.percentual_presenca|floatformat:1 }}%</p>
+                        </div>
+                    </div>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.observacoes.id_for_label }}" class="form-label">{{ form.observacoes.label }}</label>
+                            {{ form.observacoes }}
+                            {% if form.observacoes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.observacoes.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.observacoes.help_text %}
+                            <div class="form-text">{{ form.observacoes.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.status.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.status.help_text %}
+                            <div class="form-text">{{ form.status.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3" id="data_resolucao_container" style="display: none;">
+                            <label for="{{ form.data_resolucao.id_for_label }}" class="form-label">{{ form.data_resolucao.label }}</label>
+                            {{ form.data_resolucao }}
+                            {% if form.data_resolucao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.data_resolucao.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.data_resolucao.help_text %}
+                            <div class="form-text">{{ form.data_resolucao.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'frequencias:detalhar_frequencia_mensal' carencia.frequencia_mensal.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mostrar/ocultar campo de data de resolução com base no status
+        const statusSelect = document.getElementById('id_status');
+        const dataResolucaoContainer = document.getElementById('data_resolucao_container');
+        
+        function toggleDataResolucao() {
+            if (statusSelect.value === 'RESOLVIDO') {
+                dataResolucaoContainer.style.display = 'block';
+                document.getElementById('id_data_resolucao').setAttribute('required', 'required');
+            } else {
+                dataResolucaoContainer.style.display = 'none';
+                document.getElementById('id_data_resolucao').removeAttribute('required');
+            }
+        }
+        
+        // Executar na inicialização
+        toggleDataResolucao();
+        
+        // Adicionar evento de mudança
+        statusSelect.addEventListener('change', toggleDataResolucao);
+    });
+</script>
+{% endblock %}

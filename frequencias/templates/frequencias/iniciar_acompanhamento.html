@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Acompanhamento de Carência{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Iniciar Acompanhamento de Carência</h1>
+        <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    <!-- Informações da carência -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Informações da Carência</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Aluno:</strong> {{ carencia.aluno.nome }}</p>
+                    <p><strong>Curso:</strong> {{ carencia.frequencia_mensal.turma.curso.nome }}</p>
+                    <p><strong>Turma:</strong> {{ carencia.frequencia_mensal.turma.nome }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Período:</strong> {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}</p>
+                    <p><strong>Percentual de Presença:</strong> {{ carencia.percentual_presenca }}%</p>
+                    <p><strong>Status Atual:</strong> {{ carencia.get_status_display }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de acompanhamento -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Iniciar Acompanhamento</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea class="form-control" id="observacoes" name="observacoes" rows="5" required></textarea>
+                    <div class="form-text">Descreva as ações que serão tomadas para acompanhar esta carência.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="prazo_resolucao" class="form-label">Prazo Estimado para Resolução</label>
+                    <input type="date" class="form-control" id="prazo_resolucao" name="prazo_resolucao" 
+                           min="{{ data_atual|date:'Y-m-d' }}" required>
+                    <div class="form-text">Defina um prazo para a resolução desta carência.</div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="criar_notificacao" name="criar_notificacao" checked>
+                    <label class="form-check-label" for="criar_notificacao">
+                        Criar notificação para o aluno
+                    </label>
+                </div>
+                
+                <div id="notificacao_fields" class="border p-3 rounded mb-3">
+                    <h6>Dados da Notificação</h6>
+                    
+                    <div class="mb-3">
+                        <label for="assunto" class="form-label">Assunto</label>
+                        <input type="text" class="form-control" id="assunto" name="assunto" 
+                               value="Notificação de Carência - {{ carencia.frequencia_mensal.turma.curso.nome }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mensagem" class="form-label">Mensagem</label>
+                        <textarea class="form-control" id="mensagem" name="mensagem" rows="5">Prezado(a) {{ carencia.aluno.nome }},
+
+Identificamos que sua frequência no curso {{ carencia.frequencia_mensal.turma.curso.nome }}, turma {{ carencia.frequencia_mensal.turma.nome }}, no período de {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }} está abaixo do mínimo necessário (75%).
+
+Seu percentual atual de presença é de {{ carencia.percentual_presenca }}%.
+
+Por favor, entre em contato com a secretaria para regularizar sua situação.
+
+Atenciosamente,
+Equipe OMAUM</textarea>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="enviar_agora" name="enviar_agora" checked>
+                        <label class="form-check-label" for="enviar_agora">
+                            Enviar notificação imediatamente
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-clock"></i> Iniciar Acompanhamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const criarNotificacaoCheckbox = document.getElementById('criar_notificacao');
+        const notificacaoFields = document.getElementById('notificacao_fields');
+        
+        criarNotificacaoCheckbox.addEventListener('change', function() {
+            notificacaoFields.style.display = this.checked ? 'block' : 'none';
+        });
+        
+        // Definir prazo padrão para 7 dias a partir de hoje
+        const prazoInput = document.getElementById('prazo_resolucao');
+        if (prazoInput) {
+            const hoje = new Date();
+            const prazo = new Date(hoje);
+            prazo.setDate(hoje.getDate() + 7);
+            
+            const ano = prazo.getFullYear();
+            const mes = String(prazo.getMonth() + 1).padStart(2, '0');
+            const dia = String(prazo.getDate()).padStart(2, '0');
+            
+            prazoInput.value = `${ano}-${mes}-${dia}`;
+        }
+    });
+</script>
+{% endblock %}

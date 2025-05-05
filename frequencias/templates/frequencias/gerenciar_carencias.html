@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Carências{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gerenciar Carências</h1>
+        <div>
+            <a href="{% url 'frequencias:detalhar_frequencia_mensal' frequencia.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Informações da frequência -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Informações da Frequência</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <p><strong>Turma:</strong> {{ frequencia.turma.nome }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Mês/Ano:</strong> {{ frequencia.get_mes_display }}/{{ frequencia.ano }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Percentual Mínimo:</strong> {{ frequencia.percentual_minimo }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de alunos com carência -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Alunos com Carência</h5>
+        </div>
+        <div class="card-body">
+            {% if carencias %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Aluno</th>
+                                <th class="text-center">Presenças</th>
+                                <th class="text-center">Percentual</th>
+                                <th class="text-center">Carências</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for carencia in carencias %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if carencia.aluno.foto %}
+                                                <img src="{{ carencia.aluno.foto.url }}" alt="Foto de {{ carencia.aluno.nome }}" 
+                                                    class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
+                                            {% else %}
+                                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" 
+                                                    style="width: 40px; height: 40px; color: white;">
+                                                    {{ carencia.aluno.nome|first|upper }}
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <div>{{ carencia.aluno.nome }}</div>
+                                                <small class="text-muted">{{ carencia.aluno.cpf }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {{ carencia.total_presencas }}/{{ carencia.total_atividades }}
+                                    </td>
+                                    <td class="text-center">
+                                        {{ carencia.percentual_presenca|floatformat:1 }}%
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger">{{ carencia.numero_carencias }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <form method="post" action="{% url 'frequencias:atualizar_carencia' carencia.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="liberado" value="true">
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="fas fa-check"></i> Liberar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i> Não há alunos com carência nesta frequência.
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'frequencias:detalhar_frequencia_mensal' frequencia.id %}" class="btn btn-secondary">
+                Voltar
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

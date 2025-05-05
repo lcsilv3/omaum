@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Notificação{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Editar Notificação</h1>
+        <a href="{% url 'frequencias:detalhar_notificacao' notificacao.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    {% if notificacao.status != 'PENDENTE' %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> Esta notificação já foi enviada e não pode ser editada.
+    </div>
+    {% else %}
+    
+    <!-- Informações da carência -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Informações da Carência</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Aluno:</strong> {{ notificacao.carencia.aluno.nome }}</p>
+                    <p><strong>CPF:</strong> {{ notificacao.carencia.aluno.cpf }}</p>
+                    <p><strong>Email:</strong> {{ notificacao.carencia.aluno.email }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Turma:</strong> {{ notificacao.carencia.frequencia_mensal.turma.nome }}</p>
+                    <p><strong>Curso:</strong> {{ notificacao.carencia.frequencia_mensal.turma.curso.nome }}</p>
+                    <p><strong>Período:</strong> {{ notificacao.carencia.frequencia_mensal.get_mes_display }}/{{ notificacao.carencia.frequencia_mensal.ano }}</p>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <h6>Percentual de Presença:</h6>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-danger" role="progressbar" 
+                         style="width: {{ notificacao.carencia.percentual_presenca }}%;" 
+                         aria-valuenow="{{ notificacao.carencia.percentual_presenca }}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                        {{ notificacao.carencia.percentual_presenca }}%
+                    </div>
+                </div>
+                <small class="text-muted">Mínimo exigido: 75%</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de edição -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Editar Notificação</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="assunto" class="form-label">Assunto</label>
+                    <input type="text" class="form-control" id="assunto" name="assunto" 
+                           value="{{ notificacao.assunto }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="mensagem" class="form-label">Mensagem</label>
+                    <textarea class="form-control" id="mensagem" name="mensagem" rows="10" required>{{ notificacao.mensagem }}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="anexos" class="form-label">Anexos (opcional)</label>
+                    <input type="file" class="form-control" id="anexos" name="anexos" multiple>
+                </div>
+                
+                {% if notificacao.anexos.all %}
+                <div class="mb-3">
+                    <label class="form-label">Anexos Atuais</label>
+                    <ul class="list-group">
+                        {% for anexo in notificacao.anexos.all %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ anexo.nome }}</span>
+                            <div>
+                                <a href="{{ anexo.arquivo.url }}" class="btn btn-sm btn-outline-primary me-2" download>
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="remover_anexo_{{ anexo.id }}" 
+                                           name="remover_anexos" value="{{ anexo.id }}">
+                                    <label class="form-check-label" for="remover_anexo_{{ anexo.id }}">Remover</label>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'frequencias:detalhar_notificacao' notificacao.id %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <div>
+                        <button type="submit" class="btn btn-warning me-2" name="action" value="salvar">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                        <button type="submit" class="btn btn-primary" name="action" value="salvar_enviar">
+                            <i class="fas fa-paper-plane"></i> Salvar e Enviar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modelos de mensagem -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Modelos de Mensagem</h5>
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="accordionModelos">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                            Modelo 1: Notificação Padrão
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionModelos">
+                        <div class="accordion-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>Assunto: Notificação de Carência de Frequência</strong>
+                                <button class="btn btn-sm btn-outline-primary usar-modelo" data-modelo="1">
+                                    <i class="fas fa-copy"></i> Usar este modelo
+                                </button>
+                            </div>
+                            <pre class="bg-light p-3 rounded">Prezado(a) {{ notificacao.carencia.aluno.nome }},
+
+Esperamos que esteja bem. Estamos entrando em contato para informar que foi identificada uma carência de frequência em suas aulas do curso {{ notificacao.carencia.frequencia_mensal.turma.curso.nome }}, na turma {{ notificacao.carencia.frequencia_mensal.turma.nome }}, durante o período de {{ notificacao.carencia.frequencia_mensal.get_mes_display }}/{{ notificacao.carencia.frequencia_mensal.ano }}.
+
+Seu percentual de presença no período foi de {{ notificacao.carencia.percentual_presenca }}%, abaixo do mínimo exigido de 75%.
+
+Gostaríamos de lembrá-lo(a) que a frequência regular é fundamental para o bom aproveitamento do curso e constitui um dos requisitos para aprovação.
+
+Solicitamos que entre em contato conosco para justificar as ausências e discutir possíveis alternativas para compensação das aulas perdidas.
+
+Estamos à disposição para quaisquer esclarecimentos.
+
+Atenciosamente,
+Equipe Pedagógica</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            Modelo 2: Notificação com Urgência
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionModelos">
+                        <div class="accordion-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>Assunto: URGENTE - Notificação de Carência de Frequência</strong>
+                                <button class="btn btn-sm btn-outline-primary usar-modelo" data-modelo="2">
+                                    <i class="fas fa-copy"></i> Usar este modelo
+                                </button>
+                            </div>
+                            <pre class="bg-light p-3 rounded">Prezado(a) {{ notificacao.carencia.aluno.nome }},
+
+NOTIFICAÇÃO URGENTE
+
+Identificamos uma situação crítica em relação à sua frequência no curso {{ notificacao.carencia.frequencia_mensal.turma.curso.nome }}, turma {{ notificacao.carencia.frequencia_mensal.turma.nome }}.
+
+Seu percentual de presença no período de {{ notificacao.carencia.frequencia_mensal.get_mes_display }}/{{ notificacao.carencia.frequencia_mensal.ano }} foi de apenas {{ notificacao.carencia.percentual_presenca }}%, muito abaixo do mínimo exigido de 75%.
+
+Esta situação coloca em risco sua aprovação no curso e, caso não seja regularizada com urgência, poderá resultar em reprovação por frequência insuficiente.
+
+Solicitamos seu comparecimento à secretaria no prazo máximo de 3 dias úteis para apresentar justificativas e discutir medidas de recuperação.
+
+Caso já possua justificativas para as ausências (atestados médicos ou outros documentos), favor responder a este e-mail com os documentos anexados.
+
+Atenciosamente,
+Coordenação Pedagógica</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            Modelo 3: Notificação com Opções de Recuperação
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionModelos">
+                        <div class="accordion-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>Assunto: Notificação de Carência e Opções de Recuperação</strong>
+                                <button class="btn btn-sm btn-outline-primary usar-modelo" data-modelo="3">
+                                    <i class="fas fa-copy"></i> Usar este modelo
+                                </button>
+                            </div>
+                            <pre class="bg-light p-3 rounded">Prezado(a) {{ notificacao.carencia.aluno.nome }},
+
+Esperamos que esteja bem. Estamos entrando em contato para informar que foi identificada uma carência de frequência em suas aulas do curso {{ notificacao.carencia.frequencia_mensal.turma.curso.nome }}, na turma {{ notificacao.carencia.frequencia_mensal.turma.nome }}, durante o período de {{ notificacao.carencia.frequencia_mensal.get_mes_display }}/{{ notificacao.carencia.frequencia_mensal.ano }}.
+
+Seu percentual de presença no período foi de {{ notificacao.carencia.percentual_presenca }}%, abaixo do mínimo exigido de 75%.
+
+Para regularizar sua situação, oferecemos as seguintes opções de recuperação:
+
+1. Participação em aulas de reposição nos dias XX/XX e XX/XX, das XX:XX às XX:XX.
+2. Realização de trabalho complementar sobre os temas abordados nas aulas perdidas.
+3. Participação em atividades extras programadas para os dias XX/XX.
+
+Solicitamos que entre em contato conosco até o dia XX/XX para informar qual opção deseja seguir.
+
+Lembramos que a regularização da frequência é fundamental para a continuidade no curso e para o aproveitamento adequado do conteúdo.
+
+Estamos à disposição para quaisquer esclarecimentos.
+
+Atenciosamente,
+Equipe Pedagógica</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Manipuladores para os botões de modelo
+        const botoesModelo = document.querySelectorAll('.usar-modelo');
+        const campoAssunto = document.getElementById('assunto');
+        const campoMensagem = document.getElementById('mensagem');
+        
+        // Modelos de assunto
+        const assuntosModelo = {
+            "1": "Notificação de Carência de Frequência",
+            "2": "URGENTE - Notificação de Carência de Frequência",
+            "3": "Notificação de Carência e Opções de Recuperação"
+        };
+        
+        // Função para obter o texto do modelo
+        function obterTextoModelo(modeloId) {
+            const acordeao = document.querySelector(`#collapse${modeloId} pre`);
+            return acordeao ? acordeao.textContent.trim() : '';
+        }
+        
+        // Adicionar evento de clique aos botões de modelo
+        botoesModelo.forEach(botao => {
+            botao.addEventListener('click', function() {
+                const modeloId = this.getAttribute('data-modelo');
+                
+                // Confirmar antes de substituir o conteúdo atual
+                if (campoMensagem.value.trim() !== '') {
+                    if (!confirm('Isso substituirá o conteúdo atual da mensagem. Deseja continuar?')) {
+                        return;
+                    }
+                }
+                
+                // Preencher os campos com o modelo selecionado
+                campoAssunto.value = assuntosModelo[modeloId] || '';
+                campoMensagem.value = obterTextoModelo(modeloId);
+                
+                // Fechar o acordeão
+                const accordion = bootstrap.Collapse.getInstance(document.querySelector(`#collapse${modeloId}`));
+                if (accordion) {
+                    accordion.hide();
+                }
+                
+                // Rolar até o formulário
+                document.querySelector('.card-header.bg-warning').scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

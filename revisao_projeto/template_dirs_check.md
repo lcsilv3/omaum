@@ -1379,14 +1379,36 @@ DEFAULT_CONFIG = Config()
   - cursos\listar_cursos.html
 - frequencias\templates
   Arquivos:
+  - frequencias\criar_notificacao.html
+  - frequencias\dashboard.html
+  - frequencias\detalhar_carencia.html
   - frequencias\detalhar_frequencia.html
+  - frequencias\detalhar_frequencia_mensal.html
+  - frequencias\detalhar_notificacao.html
+  - frequencias\editar_carencia.html
   - frequencias\editar_frequencia.html
+  - frequencias\editar_notificacao.html
+  - frequencias\enviar_notificacao.html
   - frequencias\estatisticas_frequencia.html
   - frequencias\excluir_frequencia.html
+  - frequencias\excluir_frequencia_mensal.html
+  - frequencias\filtro_painel_frequencias.html
+  - frequencias\formulario_frequencia_mensal.html
+  - frequencias\gerar_frequencia_mensal.html
+  - frequencias\gerenciar_carencias.html
+  - frequencias\historico_frequencia.html
+  - frequencias\iniciar_acompanhamento.html
+  - frequencias\listar_carencias.html
   - frequencias\listar_frequencias.html
+  - frequencias\notificacoes_carencia.html
+  - frequencias\painel_frequencias.html
   - frequencias\registrar_frequencia.html
   - frequencias\registrar_frequencia_turma.html
+  - frequencias\relatorio_carencias.html
   - frequencias\relatorio_frequencias.html
+  - frequencias\resolver_carencia.html
+  - frequencias\responder_notificacao.html
+  - frequencias\visualizar_resposta.html
 - iniciacoes\templates
   Arquivos:
   - iniciacoes\criar_grau.html
@@ -1434,8 +1456,13 @@ DEFAULT_CONFIG = Config()
   - presencas\detalhar_presenca.html
   - presencas\editar_presenca.html
   - presencas\excluir_presenca.html
+  - presencas\formulario_presenca.html
+  - presencas\formulario_presencas_multiplas.html
+  - presencas\formulario_presencas_multiplas_passo1.html
+  - presencas\formulario_presencas_multiplas_passo2.html
   - presencas\listar_presencas.html
   - presencas\registrar_presenca.html
+  - presencas\registrar_presenca_multipla.html
   - presencas\relatorio_presencas.html
 - punicoes\templates
   Arquivos:

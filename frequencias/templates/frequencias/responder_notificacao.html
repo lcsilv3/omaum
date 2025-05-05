@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Responder Notificação{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Responder Notificação</h1>
+        <a href="{% url 'frequencias:detalhar_notificacao' notificacao.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    <!-- Informações da notificação original -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Notificação Original</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <h6>Assunto:</h6>
+                <p>{{ notificacao.assunto }}</p>
+            </div>
+            
+            <div class="mb-3">
+                <h6>Mensagem:</h6>
+                <div class="p-3 bg-light rounded border">
+                    {{ notificacao.mensagem|linebreaks }}
+                </div>
+            </div>
+            
+            {% if notificacao.anexos.all %}
+            <div>
+                <h6>Anexos:</h6>
+                <ul class="list-group">
+                    {% for anexo in notificacao.anexos.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ anexo.nome }}</span>
+                        <a href="{{ anexo.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Formulário de resposta -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Sua Resposta</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="assunto" class="form-label">Assunto</label>
+                    <input type="text" class="form-control" id="assunto" name="assunto" 
+                           value="RE: {{ notificacao.assunto }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="mensagem" class="form-label">Mensagem</label>
+                    <textarea class="form-control" id="mensagem" name="mensagem" rows="10" required></textarea>
+                    <div class="form-text">Explique a situação e forneça justificativas para as faltas, se possível.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="anexos" class="form-label">Anexos (opcional)</label>
+                    <input type="file" class="form-control" id="anexos" name="anexos" multiple>
+                    <div class="form-text">Você pode anexar atestados médicos, declarações ou outros documentos que justifiquem suas ausências.</div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="solicitar_compensacao" name="solicitar_compensacao">
+                    <label class="form-check-label" for="solicitar_compensacao">
+                        Solicitar opções de compensação de faltas
+                    </label>
+                    <div class="form-text">Marque esta opção se deseja solicitar atividades para compensar as faltas.</div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'frequencias:detalhar_notificacao' notificacao.id %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-paper-plane"></i> Enviar Resposta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Dicas para justificativas -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Dicas para Justificativas</h5>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>Seja claro e objetivo ao explicar os motivos das faltas.</li>
+                <li>Anexe documentos comprobatórios sempre que possível (atestados médicos, declarações, etc.).</li>
+                <li>Se as faltas foram por motivos de saúde, mencione o período e o tratamento realizado.</li>
+                <li>Caso tenha problemas de transporte ou trabalho, explique a situação detalhadamente.</li>
+                <li>Demonstre seu interesse em recuperar o conteúdo perdido e melhorar sua frequência.</li>
+                <li>Se necessário, solicite uma reunião presencial para discutir sua situação.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

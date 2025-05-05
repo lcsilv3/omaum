@@ -1,3 +1,12 @@
+'''
+# Revisão da Funcionalidade: frequencias
+
+## Arquivos forms.py:
+
+
+### Arquivo: frequencias\templates\frequencias\relatorio_frequencias.html
+
+html
 {% extends 'base.html' %}
 
 {% block title %}Relatório de Frequências{% endblock %}
@@ -610,3 +619,538 @@
     });
 </script>
 {% endblock %}
+
+
+
+
+### Arquivo: frequencias\templates\frequencias\resolver_carencia.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Resolver Carência{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Resolver Carência</h1>
+        <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    <!-- Informações da carência -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Informações da Carência</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Aluno:</strong> {{ carencia.aluno.nome }}</p>
+                    <p><strong>Curso:</strong> {{ carencia.frequencia_mensal.turma.curso.nome }}</p>
+                    <p><strong>Turma:</strong> {{ carencia.frequencia_mensal.turma.nome }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Período:</strong> {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}</p>
+                    <p><strong>Percentual de Presença:</strong> {{ carencia.percentual_presenca }}%</p>
+                    <p><strong>Status Atual:</strong> {{ carencia.get_status_display }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de resolução -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Resolução da Carência</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="motivo_resolucao" class="form-label">Motivo da Resolução</label>
+                    <select class="form-select" id="motivo_resolucao" name="motivo_resolucao" required>
+                        <option value="" selected disabled>Selecione um motivo</option>
+                        <option value="COMPENSACAO">Compensação de Faltas</option>
+                        <option value="ATESTADO">Apresentação de Atestado</option>
+                        <option value="AJUSTE_FREQUENCIA">Ajuste na Frequência</option>
+                        <option value="DESISTENCIA">Desistência do Aluno</option>
+                        <option value="OUTRO">Outro Motivo</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="observacoes_resolucao" class="form-label">Observações</label>
+                    <textarea class="form-control" id="observacoes_resolucao" name="observacoes_resolucao" rows="5" required></textarea>
+                    <div class="form-text">Descreva detalhadamente como a carência foi resolvida.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="documentos" class="form-label">Documentos Comprobatórios (opcional)</label>
+                    <input type="file" class="form-control" id="documentos" name="documentos" multiple>
+                    <div class="form-text">Anexe atestados, comprovantes ou outros documentos relevantes.</div>
+                </div>
+                
+                {% if carencia.notificacao %}
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="notificar_aluno" name="notificar_aluno" checked>
+                    <label class="form-check-label" for="notificar_aluno">
+                        Notificar aluno sobre a resolução da carência
+                    </label>
+                </div>
+                
+                <div class="mb-3" id="mensagem_notificacao_div">
+                    <label for="mensagem_notificacao" class="form-label">Mensagem para o Aluno</label>
+                    <textarea class="form-control" id="mensagem_notificacao" name="mensagem_notificacao" rows="4">Prezado(a) {{ carencia.aluno.nome }},
+
+Informamos que a situação de carência referente ao curso {{ carencia.frequencia_mensal.turma.curso.nome }}, turma {{ carencia.frequencia_mensal.turma.nome }}, período {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}, foi resolvida.
+
+Atenciosamente,
+Equipe OMAUM</textarea>
+                </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-circle"></i> Confirmar Resolução
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const notificarCheckbox = document.getElementById('notificar_aluno');
+        const mensagemDiv = document.getElementById('mensagem_notificacao_div');
+        
+        if (notificarCheckbox && mensagemDiv) {
+            notificarCheckbox.addEventListener('change', function() {
+                mensagemDiv.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
+        const motivoSelect = document.getElementById('motivo_resolucao');
+        const observacoesTextarea = document.getElementById('observacoes_resolucao');
+        
+        if (motivoSelect && observacoesTextarea) {
+            motivoSelect.addEventListener('change', function() {
+                const motivo = this.value;
+                let textoBase = '';
+                
+                switch(motivo) {
+                    case 'COMPENSACAO':
+                        textoBase = 'O aluno realizou atividades de compensação de faltas, conforme acordado com o instrutor da turma.';
+                        break;
+                    case 'ATESTADO':
+                        textoBase = 'O aluno apresentou atestado médico/declaração que justifica as faltas no período.';
+                        break;
+                    case 'AJUSTE_FREQUENCIA':
+                        textoBase = 'Foi realizado um ajuste na frequência do aluno após verificação dos registros.';
+                        break;
+                    case 'DESISTENCIA':
+                        textoBase = 'O aluno formalizou sua desistência do curso.';
+                        break;
+                    case 'OUTRO':
+                        textoBase = 'Descreva detalhadamente o motivo da resolução da carência.';
+                        break;
+                }
+                
+                observacoesTextarea.value = textoBase;
+            });
+        }
+    });
+</script>
+{% endblock %}
+
+
+
+### Arquivo: frequencias\templates\frequencias\responder_notificacao.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Responder Notificação{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Responder Notificação</h1>
+        <a href="{% url 'frequencias:detalhar_notificacao' notificacao.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    <!-- Informações da notificação original -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Notificação Original</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <h6>Assunto:</h6>
+                <p>{{ notificacao.assunto }}</p>
+            </div>
+            
+            <div class="mb-3">
+                <h6>Mensagem:</h6>
+                <div class="p-3 bg-light rounded border">
+                    {{ notificacao.mensagem|linebreaks }}
+                </div>
+            </div>
+            
+            {% if notificacao.anexos.all %}
+            <div>
+                <h6>Anexos:</h6>
+                <ul class="list-group">
+                    {% for anexo in notificacao.anexos.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ anexo.nome }}</span>
+                        <a href="{{ anexo.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Formulário de resposta -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Sua Resposta</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="assunto" class="form-label">Assunto</label>
+                    <input type="text" class="form-control" id="assunto" name="assunto" 
+                           value="RE: {{ notificacao.assunto }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="mensagem" class="form-label">Mensagem</label>
+                    <textarea class="form-control" id="mensagem" name="mensagem" rows="10" required></textarea>
+                    <div class="form-text">Explique a situação e forneça justificativas para as faltas, se possível.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="anexos" class="form-label">Anexos (opcional)</label>
+                    <input type="file" class="form-control" id="anexos" name="anexos" multiple>
+                    <div class="form-text">Você pode anexar atestados médicos, declarações ou outros documentos que justifiquem suas ausências.</div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="solicitar_compensacao" name="solicitar_compensacao">
+                    <label class="form-check-label" for="solicitar_compensacao">
+                        Solicitar opções de compensação de faltas
+                    </label>
+                    <div class="form-text">Marque esta opção se deseja solicitar atividades para compensar as faltas.</div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'frequencias:detalhar_notificacao' notificacao.id %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-paper-plane"></i> Enviar Resposta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Dicas para justificativas -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Dicas para Justificativas</h5>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>Seja claro e objetivo ao explicar os motivos das faltas.</li>
+                <li>Anexe documentos comprobatórios sempre que possível (atestados médicos, declarações, etc.).</li>
+                <li>Se as faltas foram por motivos de saúde, mencione o período e o tratamento realizado.</li>
+                <li>Caso tenha problemas de transporte ou trabalho, explique a situação detalhadamente.</li>
+                <li>Demonstre seu interesse em recuperar o conteúdo perdido e melhorar sua frequência.</li>
+                <li>Se necessário, solicite uma reunião presencial para discutir sua situação.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: frequencias\templates\frequencias\visualizar_resposta.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Resposta da Notificação{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Resposta da Notificação</h1>
+        <a href="{% url 'frequencias:detalhar_notificacao' notificacao.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    <!-- Informações da notificação -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Informações da Notificação</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Aluno:</strong> {{ notificacao.carencia.aluno.nome }}</p>
+                    <p><strong>Turma:</strong> {{ notificacao.carencia.frequencia_mensal.turma.nome }}</p>
+                    <p><strong>Período:</strong> {{ notificacao.carencia.frequencia_mensal.get_mes_display }}/{{ notificacao.carencia.frequencia_mensal.ano }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Data de Envio:</strong> {{ notificacao.data_envio|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Data de Leitura:</strong> {{ notificacao.data_leitura|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Data de Resposta:</strong> {{ notificacao.data_resposta|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resposta do aluno -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Resposta do Aluno</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <h6>Assunto:</h6>
+                <p>{{ resposta.assunto }}</p>
+            </div>
+            
+            <div>
+                <h6>Mensagem:</h6>
+                <div class="p-3 bg-light rounded border">
+                    {{ resposta.mensagem|linebreaks }}
+                </div>
+            </div>
+            
+            {% if resposta.anexos.all %}
+            <div class="mt-3">
+                <h6>Anexos:</h6>
+                <ul class="list-group">
+                    {% for anexo in resposta.anexos.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ anexo.nome }}</span>
+                        <a href="{{ anexo.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Formulário de resposta ao aluno -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Responder ao Aluno</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="assunto" class="form-label">Assunto</label>
+                    <input type="text" class="form-control" id="assunto" name="assunto" 
+                           value="Re: {{ resposta.assunto }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="mensagem" class="form-label">Mensagem</label>
+                    <textarea class="form-control" id="mensagem" name="mensagem" rows="6" required></textarea>
+                    <div class="form-text">Escreva sua resposta ao aluno.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="anexos" class="form-label">Anexos (opcional)</label>
+                    <input type="file" class="form-control" id="anexos" name="anexos" multiple>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="resolver_carencia" name="resolver_carencia">
+                    <label class="form-check-label" for="resolver_carencia">
+                        Marcar carência como resolvida
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Enviar Resposta
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Histórico de comunicações -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Histórico de Comunicações</h5>
+        </div>
+        <div class="card-body">
+            <div class="chat-container">
+                <!-- Notificação original -->
+                <div class="chat-message outgoing">
+                    <div class="message-header">
+                        <strong>Você</strong> <span class="text-muted">{{ notificacao.data_envio|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="message-content">
+                        <h6>{{ notificacao.assunto }}</h6>
+                        <div class="message-body">
+                            {{ notificacao.mensagem|linebreaks }}
+                        </div>
+                        {% if notificacao.anexos.all %}
+                        <div class="message-attachments">
+                            <strong>Anexos:</strong>
+                            <ul>
+                                {% for anexo in notificacao.anexos.all %}
+                                <li>
+                                    <a href="{{ anexo.arquivo.url }}" download>{{ anexo.nome }}</a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Resposta do aluno -->
+                <div class="chat-message incoming">
+                    <div class="message-header">
+                        <strong>{{ notificacao.carencia.aluno.nome }}</strong> <span class="text-muted">{{ notificacao.data_resposta|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="message-content">
+                        <h6>{{ resposta.assunto }}</h6>
+                        <div class="message-body">
+                            {{ resposta.mensagem|linebreaks }}
+                        </div>
+                        {% if resposta.anexos.all %}
+                        <div class="message-attachments">
+                            <strong>Anexos:</strong>
+                            <ul>
+                                {% for anexo in resposta.anexos.all %}
+                                <li>
+                                    <a href="{{ anexo.arquivo.url }}" download>{{ anexo.nome }}</a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Respostas anteriores -->
+                {% for mensagem in historico_mensagens %}
+                <div class="chat-message {% if mensagem.enviado_por_sistema %}outgoing{% else %}incoming{% endif %}">
+                    <div class="message-header">
+                        <strong>{% if mensagem.enviado_por_sistema %}Você{% else %}{{ notificacao.carencia.aluno.nome }}{% endif %}</strong> 
+                        <span class="text-muted">{{ mensagem.data_envio|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="message-content">
+                        <h6>{{ mensagem.assunto }}</h6>
+                        <div class="message-body">
+                            {{ mensagem.mensagem|linebreaks }}
+                        </div>
+                        {% if mensagem.anexos.all %}
+                        <div class="message-attachments">
+                            <strong>Anexos:</strong>
+                            <ul>
+                                {% for anexo in mensagem.anexos.all %}
+                                <li>
+                                    <a href="{{ anexo.arquivo.url }}" download>{{ anexo.nome }}</a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botões de ação -->
+    <div class="d-flex justify-content-between mb-5">
+        <a href="{% url 'frequencias:detalhar_notificacao' notificacao.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+        
+        <div>
+            {% if notificacao.carencia.status != 'RESOLVIDO' %}
+            <a href="{% url 'frequencias:resolver_carencia' notificacao.carencia.id %}" class="btn btn-success">
+                <i class="fas fa-check-circle"></i> Resolver Carência
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos para o chat */
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .chat-message {
+        max-width: 80%;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+    
+    .outgoing {
+        align-self: flex-end;
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196f3;
+    }
+    
+    .incoming {
+        align-self: flex-start;
+        background-color: #f5f5f5;
+        border-left: 4px solid #9e9e9e;
+    }
+    
+    .message-header {
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .message-body {
+        white-space: pre-line;
+    }
+    
+    .message-attachments {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px dashed rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+
+'''

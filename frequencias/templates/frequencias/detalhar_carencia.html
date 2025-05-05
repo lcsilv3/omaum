@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Carência{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Detalhes da Carência</h1>
+        <div>
+            <a href="{% url 'frequencias:listar_carencias' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Lista de Carências
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Status da carência -->
+    <div class="alert 
+        {% if carencia.status == 'PENDENTE' %}alert-danger
+        {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}alert-warning
+        {% elif carencia.status == 'RESOLVIDO' %}alert-success
+        {% endif %}">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="alert-heading mb-1">
+                    {% if carencia.status == 'PENDENTE' %}
+                    <i class="fas fa-exclamation-circle"></i> Carência Pendente
+                    {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}
+                    <i class="fas fa-clock"></i> Carência em Acompanhamento
+                    {% elif carencia.status == 'RESOLVIDO' %}
+                    <i class="fas fa-check-circle"></i> Carência Resolvida
+                    {% endif %}
+                </h5>
+                <p class="mb-0">
+                    {% if carencia.status == 'PENDENTE' %}
+                    Esta carência foi identificada em {{ carencia.data_identificacao|date:"d/m/Y" }} e ainda não foi tratada.
+                    {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}
+                    Esta carência está sendo acompanhada desde {{ carencia.data_acompanhamento|date:"d/m/Y" }}.
+                    {% elif carencia.status == 'RESOLVIDO' %}
+                    Esta carência foi resolvida em {{ carencia.data_resolucao|date:"d/m/Y" }}.
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                {% if carencia.status == 'PENDENTE' %}
+                <a href="{% url 'frequencias:iniciar_acompanhamento' carencia.id %}" class="btn btn-warning">
+                    <i class="fas fa-clock"></i> Iniciar Acompanhamento
+                </a>
+                {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}
+                <a href="{% url 'frequencias:resolver_carencia' carencia.id %}" class="btn btn-success">
+                    <i class="fas fa-check"></i> Resolver Carência
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações do aluno -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Informações do Aluno</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        {% if carencia.aluno.foto %}
+                        <img src="{{ carencia.aluno.foto.url }}" alt="{{ carencia.aluno.nome }}" 
+                             class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
+                        {% else %}
+                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+                             style="width: 60px; height: 60px; color: white; font-size: 1.5rem;">
+                            {{ carencia.aluno.nome|first|upper }}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h5 class="mb-1">{{ carencia.aluno.nome }}</h5>
+                            <p class="mb-0">{{ carencia.aluno.email }}</p>
+                            <p class="mb-0">CPF: {{ carencia.aluno.cpf }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="{% url 'alunos:detalhar_aluno' carencia.aluno.cpf %}" class="btn btn-outline-primary">
+                        <i class="fas fa-user"></i> Ver Perfil Completo
+                    </a>
+                    <a href="{% url 'frequencias:historico_frequencia' carencia.aluno.cpf %}" class="btn btn-outline-info">
+                        <i class="fas fa-history"></i> Histórico de Frequência
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações da frequência -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Informações da Frequência</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Curso:</strong> {{ carencia.frequencia_mensal.turma.curso.nome }}</p>
+                    <p><strong>Turma:</strong> {{ carencia.frequencia_mensal.turma.nome }}</p>
+                    <p><strong>Período:</strong> {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Total de Aulas:</strong> {{ carencia.frequencia_mensal.total_aulas }}</p>
+                    <p><strong>Presenças:</strong> {{ carencia.frequencia_mensal.presencas }}</p>
+                    <p><strong>Faltas:</strong> {{ carencia.frequencia_mensal.faltas }}</p>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <h6>Percentual de Presença:</h6>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-danger" role="progressbar" 
+                         style="width: {{ carencia.percentual_presenca }}%;" 
+                         aria-valuenow="{{ carencia.percentual_presenca }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ carencia.percentual_presenca|floatformat:1 }}%
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                    <small class="text-muted">0%</small>
+                    <small class="text-danger">Mínimo: 75%</small>
+                    <small class="text-muted">100%</small>
+                </div>
+            </div>
+            
+            <div class="mt-3 text-end">
+                <a href="{% url 'frequencias:detalhar_frequencia_mensal' carencia.frequencia_mensal.id %}" class="btn btn-outline-info">
+                    <i class="fas fa-calendar-alt"></i> Ver Detalhes da Frequência Mensal
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notificações -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Notificações</h5>
+                {% if not carencia.notificacao and carencia.status != 'RESOLVIDO' %}
+                <a href="{% url 'frequencias:criar_notificacao' carencia.id %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Criar Notificação
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            {% if carencia.notificacao %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">{{ carencia.notificacao.assunto }}</h6>
+                        <span class="badge 
+                            {% if carencia.notificacao.status == 'PENDENTE' %}bg-secondary
+                            {% elif carencia.notificacao.status == 'ENVIADA' %}bg-info
+                            {% elif carencia.notificacao.status == 'LIDA' %}bg-primary
+                            {% elif carencia.notificacao.status == 'RESPONDIDA' %}bg-success
+                            {% endif %}">
+                            {{ carencia.notificacao.get_status_display }}
+                        </span>
+                    </div>
+                    <p class="mb-2">{{ carencia.notificacao.mensagem|truncatechars:150 }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Criada em: {{ carencia.notificacao.data_criacao|date:"d/m/Y H:i" }}
+                            {% if carencia.notificacao.data_envio %}
+                            | Enviada em: {{ carencia.notificacao.data_envio|date:"d/m/Y H:i" }}
+                            {% endif %}
+                        </small>
+                        <a href="{% url 'frequencias:detalhar_notificacao' carencia.notificacao.id %}" class="btn btn-sm btn-outline-primary">
+                            Ver Detalhes
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle"></i> Nenhuma notificação foi criada para esta carência.
+                {% if carencia.status != 'RESOLVIDO' %}
+                <a href="{% url 'frequencias:criar_notificacao' carencia.id %}" class="btn btn-sm btn-primary ms-2">
+                    Criar Notificação
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Resolução (se resolvida) -->
+    {% if carencia.status == 'RESOLVIDO' %}
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Resolução da Carência</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <h6>Motivo da Resolução:</h6>
+                <p class="mb-0">{{ carencia.get_motivo_resolucao_display }}</p>
+            </div>
+            
+            <div class="mb-3">
+                <h6>Observações:</h6>
+                <div class="p-3 bg-light rounded border">
+                    {{ carencia.observacoes_resolucao|linebreaks }}
+                </div>
+            </div>
+            
+            {% if carencia.documentos_resolucao.all %}
+            <div>
+                <h6>Documentos:</h6>
+                <ul class="list-group">
+                    {% for documento in carencia.documentos_resolucao.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ documento.nome }}</span>
+                        <a href="{{ documento.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div class="mt-3">
+                <p class="text-muted mb-0">
+                    <small>Resolvida por: {{ carencia.resolvido_por.get_full_name|default:carencia.resolvido_por.username }} em {{ carencia.data_resolucao|date:"d/m/Y H:i" }}</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Ações -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Ações</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+                {% if carencia.status == 'PENDENTE' %}
+                <a href="{% url 'frequencias:iniciar_acompanhamento' carencia.id %}" class="btn btn-warning">
+                    <i class="fas fa-clock"></i> Iniciar Acompanhamento
+                </a>
+                {% endif %}
+                
+                {% if carencia.status != 'RESOLVIDO' %}
+                <a href="{% url 'frequencias:resolver_carencia' carencia.id %}" class="btn btn-success">
+                    <i class="fas fa-check"></i> Resolver Carência
+                </a>
+                {% endif %}
+                
+                {% if not carencia.notificacao and carencia.status != 'RESOLVIDO' %}
+                <a href="{% url 'frequencias:criar_notificacao' carencia.id %}" class="btn btn-primary">
+                    <i class="fas fa-envelope"></i> Criar Notificação
+                </a>
+                {% endif %}
+                
+                <a href="{% url 'frequencias:historico_frequencia' carencia.aluno.cpf %}" class="btn btn-info">
+                    <i class="fas fa-history"></i> Ver Histórico de Frequência
+                </a>
+                
+                <a href="{% url 'alunos:detalhar_aluno' carencia.aluno.cpf %}" class="btn btn-primary">
+                    <i class="fas fa-user"></i> Ver Perfil do Aluno
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Histórico de ações -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Histórico de Ações</h5>
+        </div>
+        <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-exclamation-circle text-danger"></i> 
+                            <strong>Carência identificada</strong>
+                            {% if carencia.identificado_por %}
+                            por {{ carencia.identificado_por.get_full_name|default:carencia.identificado_por.username }}
+                            {% endif %}
+                        </div>
+                        <div>{{ carencia.data_identificacao|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </li>
+                
+                {% if carencia.data_acompanhamento %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-clock text-warning"></i> 
+                            <strong>Acompanhamento iniciado</strong>
+                            {% if carencia.acompanhado_por %}
+                            por {{ carencia.acompanhado_por.get_full_name|default:carencia.acompanhado_por.username }}
+                            {% endif %}
+                        </div>
+                        <div>{{ carencia.data_acompanhamento|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if carencia.notificacao %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-envelope text-primary"></i> 
+                            <strong>Notificação criada</strong>
+                            {% if carencia.notificacao.criado_por %}
+                            por {{ carencia.notificacao.criado_por.get_full_name|default:carencia.notificacao.criado_por.username }}
+                            {% endif %}
+                        </div>
+                        <div>{{ carencia.notificacao.data_criacao|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </li>
+                
+                {% if carencia.notificacao.data_envio %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-paper-plane text-info"></i> 
+                            <strong>Notificação enviada</strong>
+                            {% if carencia.notificacao.enviado_por %}
+                            por {{ carencia.notificacao.enviado_por.get_full_name|default:carencia.notificacao.enviado_por.username }}
+                            {% endif %}
+                        </div>
+                        <div>{{ carencia.notificacao.data_envio|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if carencia.notificacao.data_leitura %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-envelope-open text-primary"></i> 
+                            <strong>Notificação lida</strong> pelo aluno
+                        </div>
+                        <div>{{ carencia.notificacao.data_leitura|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if carencia.notificacao.data_resposta %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-reply text-success"></i> 
+                            <strong>Notificação respondida</strong> pelo aluno
+                        </div>
+                        <div>{{ carencia.notificacao.data_resposta|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </li>
+                {% endif %}
+                {% endif %}
+                
+                {% if carencia.data_resolucao %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-check-circle text-success"></i> 
+                            <strong>Carência resolvida</strong>
+                            {% if carencia.resolvido_por %}
+                            por {{ carencia.resolvido_por.get_full_name|default:carencia.resolvido_por.username }}
+                            {% endif %}
+                        </div>
+                        <div>{{ carencia.data_resolucao|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    {% if carencia.observacoes_resolucao %}
+                    <div class="mt-1 text-muted">
+                        <small>{{ carencia.observacoes_resolucao|truncatewords:20 }}</small>
+                    </div>
+                    {% endif %}
+                </li>
+                {% endif %}
+                
+                {% for log in carencia.logs.all %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas {{ log.get_icone }} {{ log.get_cor }}"></i> 
+                            <strong>{{ log.acao }}</strong>
+                            {% if log.usuario %}
+                            por {{ log.usuario.get_full_name|default:log.usuario.username }}
+                            {% endif %}
+                        </div>
+                        <div>{{ log.data|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    {% if log.detalhes %}
+                    <div class="mt-1 text-muted">
+                        <small>{{ log.detalhes }}</small>
+                    </div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Notificação{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Detalhes da Notificação</h1>
+        <div>
+            {% if notificacao.carencia %}
+            <a href="{% url 'frequencias:detalhar_carencia' notificacao.carencia.id %}" class="btn btn-secondary me-2">
+                <i class="fas fa-exclamation-triangle"></i> Ver Carência
+            </a>
+            {% endif %}
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Status da notificação -->
+    <div class="alert 
+        {% if notificacao.status == 'PENDENTE' %}alert-secondary
+        {% elif notificacao.status == 'ENVIADA' %}alert-info
+        {% elif notificacao.status == 'LIDA' %}alert-primary
+        {% elif notificacao.status == 'RESPONDIDA' %}alert-success
+        {% endif %}">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="alert-heading mb-1">
+                    {% if notificacao.status == 'PENDENTE' %}
+                    <i class="fas fa-clock"></i> Notificação Pendente
+                    {% elif notificacao.status == 'ENVIADA' %}
+                    <i class="fas fa-paper-plane"></i> Notificação Enviada
+                    {% elif notificacao.status == 'LIDA' %}
+                    <i class="fas fa-envelope-open"></i> Notificação Lida
+                    {% elif notificacao.status == 'RESPONDIDA' %}
+                    <i class="fas fa-reply"></i> Notificação Respondida
+                    {% endif %}
+                </h5>
+                <p class="mb-0">
+                    {% if notificacao.status == 'PENDENTE' %}
+                    Esta notificação ainda não foi enviada ao aluno.
+                    {% elif notificacao.status == 'ENVIADA' %}
+                    Esta notificação foi enviada em {{ notificacao.data_envio|date:"d/m/Y H:i" }}.
+                    {% elif notificacao.status == 'LIDA' %}
+                    Esta notificação foi lida pelo aluno em {{ notificacao.data_leitura|date:"d/m/Y H:i" }}.
+                    {% elif notificacao.status == 'RESPONDIDA' %}
+                    Esta notificação foi respondida pelo aluno em {{ notificacao.data_resposta|date:"d/m/Y H:i" }}.
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                {% if notificacao.status == 'PENDENTE' %}
+                <a href="{% url 'frequencias:enviar_notificacao' notificacao.id %}" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Enviar Agora
+                </a>
+                {% elif notificacao.status == 'ENVIADA' or notificacao.status == 'LIDA' %}
+                <a href="{% url 'frequencias:reenviar_notificacao' notificacao.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-sync"></i> Reenviar
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações do destinatário -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Destinatário</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                {% if notificacao.aluno.foto %}
+                <img src="{{ notificacao.aluno.foto.url }}" alt="{{ notificacao.aluno.nome }}" 
+                     class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
+                {% else %}
+                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+                     style="width: 60px; height: 60px; color: white; font-size: 1.5rem;">
+                    {{ notificacao.aluno.nome|first|upper }}
+                </div>
+                {% endif %}
+                <div>
+                    <h5 class="mb-1">{{ notificacao.aluno.nome }}</h5>
+                    <p class="mb-0">{{ notificacao.aluno.email }}</p>
+                    {% if notificacao.aluno.celular_primeiro_contato %}
+                    <p class="mb-0">{{ notificacao.aluno.celular_primeiro_contato }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Conteúdo da notificação -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Conteúdo da Notificação</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <h6>Assunto:</h6>
+                <p class="mb-0">{{ notificacao.assunto }}</p>
+            </div>
+            
+            <div class="mb-3">
+                <h6>Mensagem:</h6>
+                <div class="p-3 bg-light rounded border">
+                    {{ notificacao.mensagem|linebreaks }}
+                </div>
+            </div>
+            
+            {% if notificacao.anexos.all %}
+            <div>
+                <h6>Anexos:</h6>
+                <ul class="list-group">
+                    {% for anexo in notificacao.anexos.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ anexo.nome }}</span>
+                        <a href="{{ anexo.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div class="mt-3">
+                <p class="text-muted mb-0">
+                    <small>Criada por: {{ notificacao.criado_por.get_full_name|default:notificacao.criado_por.username }} em {{ notificacao.data_criacao|date:"d/m/Y H:i" }}</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resposta do aluno (se houver) -->
+    {% if notificacao.resposta %}
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Resposta do Aluno</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <h6>Assunto:</h6>
+                <p class="mb-0">{{ notificacao.resposta.assunto }}</p>
+            </div>
+            
+            <div class="mb-3">
+                <h6>Mensagem:</h6>
+                <div class="p-3 bg-light rounded border">
+                    {{ notificacao.resposta.mensagem|linebreaks }}
+                </div>
+            </div>
+            
+            {% if notificacao.resposta.anexos.all %}
+            <div>
+                <h6>Anexos:</h6>
+                <ul class="list-group">
+                    {% for anexo in notificacao.resposta.anexos.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ anexo.nome }}</span>
+                        <a href="{{ anexo.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div class="mt-3">
+                <p class="text-muted mb-0">
+                    <small>Respondido em: {{ notificacao.data_resposta|date:"d/m/Y H:i" }}</small>
+                </p>
+            </div>
+            
+            {% if notificacao.resposta.solicitar_compensacao %}
+            <div class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-circle"></i> O aluno solicitou opções de compensação de faltas.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Ações -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Ações</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+                {% if notificacao.status == 'PENDENTE' %}
+                <a href="{% url 'frequencias:editar_notificacao' notificacao.id %}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Editar Notificação
+                </a>
+                <a href="{% url 'frequencias:enviar_notificacao' notificacao.id %}" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Enviar Notificação
+                </a>
+                {% elif notificacao.status == 'ENVIADA' or notificacao.status == 'LIDA' %}
+                <a href="{% url 'frequencias:reenviar_notificacao' notificacao.id %}" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> Reenviar Notificação
+                </a>
+                {% endif %}
+                
+                {% if notificacao.status == 'RESPONDIDA' %}
+                <a href="{% url 'frequencias:responder_aluno' notificacao.id %}" class="btn btn-success">
+                    <i class="fas fa-reply"></i> Responder ao Aluno
+                </a>
+                {% endif %}
+                
+                {% if notificacao.carencia and notificacao.carencia.status != 'RESOLVIDO' %}
+                <a href="{% url 'frequencias:resolver_carencia' notificacao.carencia.id %}" class="btn btn-success">
+                    <i class="fas fa-check"></i> Resolver Carência
+                </a>
+                {% endif %}
+                
+                <a href="{% url 'frequencias:historico_frequencia' notificacao.aluno.cpf %}" class="btn btn-info">
+                    <i class="fas fa-history"></i> Ver Histórico de Frequência
+                </a>
+                
+                <a href="{% url 'alunos:detalhar_aluno' notificacao.aluno.cpf %}" class="btn btn-primary">
+                    <i class="fas fa-user"></i> Ver Perfil do Aluno
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Histórico de ações -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Histórico de Ações</h5>
+        </div>
+        <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-plus-circle text-success"></i> 
+                            <strong>Notificação criada</strong> por {{ notificacao.criado_por.get_full_name|default:notificacao.criado_por.username }}
+                        </div>
+                        <div>{{ notificacao.data_criacao|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </li>
+                
+                {% if notificacao.data_envio %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-paper-plane text-primary"></i> 
+                            <strong>Notificação enviada</strong>
+                            {% if notificacao.enviado_por %}
+                            por {{ notificacao.enviado_por.get_full_name|default:notificacao.enviado_por.username }}
+                            {% endif %}
+                        </div>
+                        <div>{{ notificacao.data_envio|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if notificacao.data_leitura %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-envelope-open text-info"></i> 
+                            <strong>Notificação lida</strong> pelo aluno
+                        </div>
+                        <div>{{ notificacao.data_leitura|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if notificacao.data_resposta %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-reply text-success"></i> 
+                            <strong>Notificação respondida</strong> pelo aluno
+                        </div>
+                        <div>{{ notificacao.data_resposta|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% for log in notificacao.logs.all %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas {{ log.get_icone }} {{ log.get_cor }}"></i> 
+                            <strong>{{ log.acao }}</strong>
+                            {% if log.usuario %}
+                            por {{ log.usuario.get_full_name|default:log.usuario.username }}
+                            {% endif %}
+                        </div>
+                        <div>{{ log.data|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    {% if log.detalhes %}
+                    <div class="mt-1 text-muted">
+                        <small>{{ log.detalhes }}</small>
+                    </div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

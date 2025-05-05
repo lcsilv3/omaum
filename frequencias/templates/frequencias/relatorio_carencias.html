@@ -1,0 +1,404 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Carências{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Relatório de Carências</h1>
+        <div>
+            <a href="{% url 'frequencias:listar_carencias' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar para Lista
+            </a>
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir Relatório
+            </button>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4 d-print-none">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="periodo_inicio" class="form-label">Período Início</label>
+                    <input type="month" class="form-control" id="periodo_inicio" name="periodo_inicio" 
+                           value="{{ filtros.periodo_inicio|default:'' }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="periodo_fim" class="form-label">Período Fim</label>
+                    <input type="month" class="form-control" id="periodo_fim" name="periodo_fim" 
+                           value="{{ filtros.periodo_fim|default:'' }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="curso" class="form-label">Curso</label>
+                    <select class="form-select" id="curso" name="curso">
+                        <option value="">Todos os cursos</option>
+                        {% for curso in cursos %}
+                        <option value="{{ curso.codigo_curso }}" {% if filtros.curso == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
+                            {{ curso.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Gerar Relatório
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Resumo -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Resumo</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Total de Carências</h6>
+                            <h2 class="display-4">{{ stats.total }}</h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card h-100 border-danger">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-danger">Pendentes</h6>
+                            <h2 class="display-4">{{ stats.pendentes }}</h2>
+                            <p class="mb-0">{{ stats.percentual_pendentes|floatformat:1 }}%</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card h-100 border-warning">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-warning">Em Acompanhamento</h6>
+                            <h2 class="display-4">{{ stats.em_acompanhamento }}</h2>
+                            <p class="mb-0">{{ stats.percentual_em_acompanhamento|floatformat:1 }}%</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card h-100 border-success">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-success">Resolvidas</h6>
+                            <h2 class="display-4">{{ stats.resolvidas }}</h2>
+                            <p class="mb-0">{{ stats.percentual_resolvidas|floatformat:1 }}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Carências por Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Carências por Curso</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="cursoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Carências por Mês</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="mesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Tempo Médio de Resolução</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="tempoResolucaoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabela de Carências por Curso -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Carências por Curso</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Curso</th>
+                            <th class="text-center">Pendentes</th>
+                            <th class="text-center">Em Acompanhamento</th>
+                            <th class="text-center">Resolvidas</th>
+                            <th class="text-center">Total</th>
+                            <th class="text-center">% Resolução</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for curso in carencias_por_curso %}
+                        <tr>
+                            <td>{{ curso.nome }}</td>
+                            <td class="text-center">{{ curso.pendentes }}</td>
+                            <td class="text-center">{{ curso.em_acompanhamento }}</td>
+                            <td class="text-center">{{ curso.resolvidas }}</td>
+                            <td class="text-center">{{ curso.total }}</td>
+                            <td class="text-center">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 8px; max-width: 100px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ curso.percentual_resolucao }}%;" 
+                                             aria-valuenow="{{ curso.percentual_resolucao }}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <span>{{ curso.percentual_resolucao|floatformat:1 }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-3">Nenhum dado disponível</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabela de Carências por Mês -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Carências por Mês</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mês/Ano</th>
+                            <th class="text-center">Pendentes</th>
+                            <th class="text-center">Em Acompanhamento</th>
+                            <th class="text-center">Resolvidas</th>
+                            <th class="text-center">Total</th>
+                            <th class="text-center">% Resolução</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mes in carencias_por_mes %}
+                        <tr>
+                            <td>{{ mes.nome }}</td>
+                            <td class="text-center">{{ mes.pendentes }}</td>
+                            <td class="text-center">{{ mes.em_acompanhamento }}</td>
+                            <td class="text-center">{{ mes.resolvidas }}</td>
+                            <td class="text-center">{{ mes.total }}</td>
+                            <td class="text-center">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 8px; max-width: 100px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ mes.percentual_resolucao }}%;" 
+                                             aria-valuenow="{{ mes.percentual_resolucao }}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <span>{{ mes.percentual_resolucao|floatformat:1 }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-3">Nenhum dado disponível</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rodapé do relatório -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <p class="mb-0 text-muted">Relatório gerado em: {{ data_geracao|date:"d/m/Y H:i" }}</p>
+                </div>
+                <div>
+                    <p class="mb-0 text-muted">Período: 
+                        {% if filtros.periodo_inicio %}{{ filtros.periodo_inicio_formatado }}{% else %}Início{% endif %} 
+                        até 
+                        {% if filtros.periodo_fim %}{{ filtros.periodo_fim_formatado }}{% else %}Atual{% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dados para os gráficos
+        const statusData = {
+            labels: ['Pendentes', 'Em Acompanhamento', 'Resolvidas'],
+            datasets: [{
+                data: [{{ stats.pendentes }}, {{ stats.em_acompanhamento }}, {{ stats.resolvidas }}],
+                backgroundColor: ['#dc3545', '#ffc107', '#28a745'],
+                borderWidth: 1
+            }]
+        };
+        
+        const cursoData = {
+            labels: [{% for curso in carencias_por_curso %}'{{ curso.nome }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Total de Carências',
+                data: [{% for curso in carencias_por_curso %}{{ curso.total }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        };
+        
+        const mesData = {
+            labels: [{% for mes in carencias_por_mes %}'{{ mes.nome }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Total de Carências',
+                data: [{% for mes in carencias_por_mes %}{{ mes.total }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        };
+        
+        const tempoResolucaoData = {
+            labels: [{% for curso in tempo_resolucao %}'{{ curso.nome }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Dias para Resolução (média)',
+                data: [{% for curso in tempo_resolucao %}{{ curso.media_dias|floatformat:1 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1
+            }]
+        };
+        
+        // Configuração dos gráficos
+        const statusChart = new Chart(document.getElementById('statusChart'), {
+            type: 'pie',
+            data: statusData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+        
+        const cursoChart = new Chart(document.getElementById('cursoChart'), {
+            type: 'bar',
+            data: cursoData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        const mesChart = new Chart(document.getElementById('mesChart'), {
+            type: 'line',
+            data: mesData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        const tempoResolucaoChart = new Chart(document.getElementById('tempoResolucaoChart'), {
+            type: 'bar',
+            data: tempoResolucaoData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Dias (média)'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

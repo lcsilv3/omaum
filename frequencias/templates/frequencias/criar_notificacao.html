@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Criar Notificação de Carência{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Criar Notificação de Carência</h1>
+        <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    <!-- Informações da carência -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Informações da Carência</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Aluno:</strong> {{ carencia.aluno.nome }}</p>
+                    <p><strong>Curso:</strong> {{ carencia.frequencia_mensal.turma.curso.nome }}</p>
+                    <p><strong>Turma:</strong> {{ carencia.frequencia_mensal.turma.nome }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Período:</strong> {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}</p>
+                    <p><strong>Percentual de Presença:</strong> {{ carencia.percentual_presenca }}%</p>
+                    <p><strong>Status:</strong> {{ carencia.get_status_display }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de notificação -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Nova Notificação</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="assunto" class="form-label">Assunto</label>
+                    <input type="text" class="form-control" id="assunto" name="assunto" 
+                           value="Notificação de Carência - {{ carencia.frequencia_mensal.turma.curso.nome }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="mensagem" class="form-label">Mensagem</label>
+                    <textarea class="form-control" id="mensagem" name="mensagem" rows="10" required>Prezado(a) {{ carencia.aluno.nome }},
+
+Identificamos que sua frequência no curso {{ carencia.frequencia_mensal.turma.curso.nome }}, turma {{ carencia.frequencia_mensal.turma.nome }}, no período de {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }} está abaixo do mínimo necessário (75%).
+
+Seu percentual atual de presença é de {{ carencia.percentual_presenca }}%.
+
+Por favor, entre em contato com a secretaria para regularizar sua situação.
+
+Atenciosamente,
+Equipe OMAUM</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="tipo_notificacao" class="form-label">Tipo de Notificação</label>
+                    <select class="form-select" id="tipo_notificacao" name="tipo_notificacao" required>
+                        <option value="EMAIL">E-mail</option>
+                        <option value="SMS">SMS</option>
+                        <option value="SISTEMA">Sistema</option>
+                        <option value="WHATSAPP">WhatsApp</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="prioridade" class="form-label">Prioridade</label>
+                    <select class="form-select" id="prioridade" name="prioridade" required>
+                        <option value="BAIXA">Baixa</option>
+                        <option value="MEDIA" selected>Média</option>
+                        <option value="ALTA">Alta</option>
+                        <option value="URGENTE">Urgente</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="enviar_agora" name="enviar_agora" checked>
+                    <label class="form-check-label" for="enviar_agora">
+                        Enviar notificação imediatamente
+                    </label>
+                </div>
+                
+                <div class="mb-3" id="data_envio_div" style="display: none;">
+                    <label for="data_envio" class="form-label">Data de Envio</label>
+                    <input type="datetime-local" class="form-control" id="data_envio" name="data_envio">
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-envelope"></i> Criar Notificação
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const enviarAgoraCheckbox = document.getElementById('enviar_agora');
+        const dataEnvioDiv = document.getElementById('data_envio_div');
+        const dataEnvioInput = document.getElementById('data_envio');
+        
+        enviarAgoraCheckbox.addEventListener('change', function() {
+            dataEnvioDiv.style.display = this.checked ? 'none' : 'block';
+            
+            if (!this.checked && !dataEnvioInput.value) {
+                // Definir data padrão para amanhã às 9h
+                const amanha = new Date();
+                amanha.setDate(amanha.getDate() + 1);
+                amanha.setHours(9, 0, 0, 0);
+                
+                const ano = amanha.getFullYear();
+                const mes = String(amanha.getMonth() + 1).padStart(2, '0');
+                const dia = String(amanha.getDate()).padStart(2, '0');
+                const hora = String(amanha.getHours()).padStart(2, '0');
+                const minuto = String(amanha.getMinutes()).padStart(2, '0');
+                
+                dataEnvioInput.value = `${ano}-${mes}-${dia}T${hora}:${minuto}`;
+            }
+        });
+        
+        // Ajustar o template da mensagem com base no tipo de notificação
+        const tipoNotificacaoSelect = document.getElementById('tipo_notificacao');
+        const mensagemTextarea = document.getElementById('mensagem');
+        const mensagemOriginal = mensagemTextarea.value;
+        
+        tipoNotificacaoSelect.addEventListener('change', function() {
+            const tipo = this.value;
+            
+            if (tipo === 'SMS' || tipo === 'WHATSAPP') {
+                // Versão mais curta para SMS e WhatsApp
+                mensagemTextarea.value = `OMAUM: Olá, ${carencia.aluno.nome}. Sua frequência no curso ${carencia.frequencia_mensal.turma.curso.nome} está em ${carencia.percentual_presenca}%, abaixo do mínimo (75%). Entre em contato com a secretaria.`;
+            } else {
+                // Versão completa para e-mail e sistema
+                mensagemTextarea.value = mensagemOriginal;
+            }
+        });
+    });
+</script>
+{% endblock %}

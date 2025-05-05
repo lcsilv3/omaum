@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+
+{% block title %}Carências de Frequência{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Carências de Frequência</h1>
+        <div>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'frequencias:relatorio_carencias' %}" class="btn btn-info">
+                <i class="fas fa-chart-bar"></i> Relatório
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="aluno" class="form-label">Aluno</label>
+                    <input type="text" class="form-control" id="aluno" name="aluno" value="{{ filtros.aluno|default:'' }}" placeholder="Nome ou CPF">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="curso" class="form-label">Curso</label>
+                    <select class="form-select" id="curso" name="curso">
+                        <option value="">Todos os cursos</option>
+                        {% for curso in cursos %}
+                        <option value="{{ curso.codigo_curso }}" {% if filtros.curso == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
+                            {{ curso.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Todos</option>
+                        <option value="PENDENTE" {% if filtros.status == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                        <option value="EM_ACOMPANHAMENTO" {% if filtros.status == 'EM_ACOMPANHAMENTO' %}selected{% endif %}>Em Acompanhamento</option>
+                        <option value="RESOLVIDO" {% if filtros.status == 'RESOLVIDO' %}selected{% endif %}>Resolvido</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="periodo" class="form-label">Período</label>
+                    <select class="form-select" id="periodo" name="periodo">
+                        <option value="">Todos</option>
+                        {% for periodo in periodos %}
+                        <option value="{{ periodo.id }}" {% if filtros.periodo == periodo.id|stringformat:"s" %}selected{% endif %}>
+                            {{ periodo.mes }}/{{ periodo.ano }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Estatísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Pendentes</h6>
+                            <h2 class="mt-2 mb-0">{{ stats.pendentes }}</h2>
+                        </div>
+                        <i class="fas fa-exclamation-circle fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Em Acompanhamento</h6>
+                            <h2 class="mt-2 mb-0">{{ stats.em_acompanhamento }}</h2>
+                        </div>
+                        <i class="fas fa-clock fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Resolvidas</h6>
+                            <h2 class="mt-2 mb-0">{{ stats.resolvidas }}</h2>
+                        </div>
+                        <i class="fas fa-check-circle fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Total</h6>
+                            <h2 class="mt-2 mb-0">{{ stats.total }}</h2>
+                        </div>
+                        <i class="fas fa-list fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de carências -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Carências Identificadas</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Curso</th>
+                            <th>Turma</th>
+                            <th>Período</th>
+                            <th>% Presença</th>
+                            <th>Status</th>
+                            <th>Notificação</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for carencia in carencias %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if carencia.aluno.foto %}
+                                    <img src="{{ carencia.aluno.foto.url }}" alt="{{ carencia.aluno.nome }}" 
+                                         class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                         style="width: 40px; height: 40px; color: white; font-size: 1rem;">
+                                        {{ carencia.aluno.nome|first|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div>{{ carencia.aluno.nome }}</div>
+                                        <small class="text-muted">{{ carencia.aluno.cpf }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ carencia.frequencia_mensal.turma.curso.nome }}</td>
+                            <td>{{ carencia.frequencia_mensal.turma.nome }}</td>
+                            <td>{{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                        <div class="progress-bar bg-danger" role="progressbar" 
+                                             style="width: {{ carencia.percentual_presenca }}%;" 
+                                             aria-valuenow="{{ carencia.percentual_presenca }}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <span>{{ carencia.percentual_presenca|floatformat:1 }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if carencia.status == 'PENDENTE' %}
+                                <span class="badge bg-danger">Pendente</span>
+                                {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}
+                                <span class="badge bg-warning text-dark">Em Acompanhamento</span>
+                                {% elif carencia.status == 'RESOLVIDO' %}
+                                <span class="badge bg-success">Resolvido</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if carencia.notificacao %}
+                                    {% if carencia.notificacao.status == 'PENDENTE' %}
+                                    <span class="badge bg-secondary">Pendente</span>
+                                    {% elif carencia.notificacao.status == 'ENVIADA' %}
+                                    <span class="badge bg-info">Enviada</span>
+                                    {% elif carencia.notificacao.status == 'LIDA' %}
+                                    <span class="badge bg-primary">Lida</span>
+                                    {% elif carencia.notificacao.status == 'RESPONDIDA' %}
+                                    <span class="badge bg-success">Respondida</span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="badge bg-light text-dark">Não criada</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ carencia.data_identificacao|date:"d/m/Y" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    {% if carencia.status == 'PENDENTE' %}
+                                    <a href="{% url 'frequencias:iniciar_acompanhamento' carencia.id %}" class="btn btn-sm btn-warning" title="Iniciar Acompanhamento">
+                                        <i class="fas fa-clock"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if carencia.status != 'RESOLVIDO' %}
+                                    <a href="{% url 'frequencias:resolver_carencia' carencia.id %}" class="btn btn-sm btn-success" title="Resolver Carência">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                    
+                                    {% if not carencia.notificacao %}
+                                    <a href="{% url 'frequencias:criar_notificacao' carencia.id %}" class="btn btn-sm btn-primary" title="Criar Notificação">
+                                        <i class="fas fa-envelope"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle"></i> Nenhuma carência encontrada com os filtros selecionados.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <p class="mb-0 text-muted">Exibindo {{ carencias|length }} de {{ paginator.count }} carências</p>
+                </div>
+                
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginação">
+                    <ul class="pagination mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Anterior">
+                                <span aria-hidden="true">«</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">«</span>
+                        </li>
+                        {% endif %}
+                        
+                        {% for i in paginator.page_range %}
+                            {% if page_obj.number == i %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">{{ i }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Próximo">
+                                <span aria-hidden="true">»</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">»</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

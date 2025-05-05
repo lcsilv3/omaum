@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Frequência Mensal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Confirmar Exclusão</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Você está prestes a excluir a seguinte frequência mensal:
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <p><strong>Turma:</strong> {{ frequencia.turma.nome }}</p>
+                            <p><strong>Período:</strong> {{ frequencia.get_mes_display }}/{{ frequencia.ano }}</p>
+                            <p><strong>Percentual Mínimo:</strong> {{ frequencia.percentual_minimo }}%</p>
+                            <p><strong>Alunos em Carência:</strong> {{ frequencia.carencias.count }}</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-danger">Esta ação não pode ser desfeita e também excluirá todas as carências associadas. Deseja continuar?</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Confirmar Exclusão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

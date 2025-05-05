@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Frequência Mensal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Detalhes da Frequência Mensal</h1>
+        <div class="btn-group">
+            <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'frequencias:editar_frequencia_mensal' frequencia.id %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'frequencias:excluir_frequencia_mensal' frequencia.id %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Excluir
+            </a>
+        </div>
+    </div>
+    
+    <!-- Informações da frequência -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Informações Gerais</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Turma:</strong> {{ frequencia.turma.nome }}</p>
+                    <p><strong>Curso:</strong> {{ frequencia.turma.curso.nome }}</p>
+                    <p><strong>Período:</strong> {{ frequencia.get_mes_display }}/{{ frequencia.ano }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Percentual Mínimo:</strong> {{ frequencia.percentual_minimo }}%</p>
+                    <p><strong>Criado em:</strong> {{ frequencia.created_at|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Última atualização:</strong> {{ frequencia.updated_at|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Estatísticas</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Total de Alunos</h5>
+                            <p class="card-text display-4">{{ total_alunos }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Alunos em Carência</h5>
+                            <p class="card-text display-4">{{ frequencia.carencias.count }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Percentual de Carência</h5>
+                            <p class="card-text display-4">
+                                {% if total_alunos > 0 %}
+                                {{ frequencia.carencias.count|multiply:100|divide:total_alunos|floatformat:1 }}%
+                                {% else %}
+                                0%
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <canvas id="grafico-frequencia"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alunos em carência -->
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Alunos em Carência</h5>
+        </div>
+        <div class="card-body">
+            {% if frequencia.carencias.count > 0 %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Percentual de Presença</th>
+                            <th>Observações</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for carencia in frequencia.carencias.all %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if carencia.aluno.foto %}
+                                    <img src="{{ carencia.aluno.foto.url }}" alt="{{ carencia.aluno.nome }}" 
+                                         class="rounded-circle me-2" width="40" height="40">
+                                    {% else %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                         style="width: 40px; height: 40px; color: white;">
+                                        {{ carencia.aluno.nome|first|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div>{{ carencia.aluno.nome }}</div>
+                                        <small class="text-muted">{{ carencia.aluno.cpf }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                         style="width: {{ carencia.percentual_presenca }}%;" 
+                                         aria-valuenow="{{ carencia.percentual_presenca }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        {{ carencia.percentual_presenca }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ carencia.observacoes|default:"Sem observações" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'frequencias:editar_carencia' carencia.id %}" 
+                                       class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'alunos:detalhar_aluno' carencia.aluno.cpf %}" 
+                                       class="btn btn-sm btn-info" title="Ver aluno">
+                                        <i class="fas fa-user"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                Não há alunos em carência para esta frequência mensal.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de frequência
+        const ctxFrequencia = document.getElementById('grafico-frequencia').getContext('2d');
+        new Chart(ctxFrequencia, {
+            type: 'bar',
+            data: {
+                labels: {{ alunos_labels|safe }},
+                datasets: [{
+                    label: 'Percentual de Presença',
+                    data: {{ percentuais_presenca|safe }},
+                    backgroundColor: function(context) {
+                        const value = context.dataset.data[context.dataIndex];
+                        return value < {{ frequencia.percentual_minimo }} ? 
+                            'rgba(220, 53, 69, 0.7)' : 'rgba(40, 167, 69, 0.7)';
+                    },
+                    borderColor: function(context) {
+                        const value = context.dataset.data[context.dataIndex];
+                        return value < {{ frequencia.percentual_minimo }} ? 
+                            'rgba(220, 53, 69, 1)' : 'rgba(40, 167, 69, 1)';
+                    },
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

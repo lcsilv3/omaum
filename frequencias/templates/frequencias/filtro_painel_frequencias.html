@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel de Frequências - Filtros{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Painel de Frequências</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Selecione a Turma e o Período</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="{{ form.turma.id_for_label }}" class="form-label">{{ form.turma.label }}</label>
+                        {{ form.turma }}
+                        {% if form.turma.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.turma.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="{{ form.mes_inicio.id_for_label }}" class="form-label">{{ form.mes_inicio.label }}</label>
+                        {{ form.mes_inicio }}
+                        {% if form.mes_inicio.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.mes_inicio.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="{{ form.ano_inicio.id_for_label }}" class="form-label">{{ form.ano_inicio.label }}</label>
+                        {{ form.ano_inicio }}
+                        {% if form.ano_inicio.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.ano_inicio.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="{{ form.mes_fim.id_for_label }}" class="form-label">{{ form.mes_fim.label }}</label>
+                        {{ form.mes_fim }}
+                        {% if form.mes_fim.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.mes_fim.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="{{ form.ano_fim.id_for_label }}" class="form-label">{{ form.ano_fim.label }}</label>
+                        {{ form.ano_fim }}
+                        {% if form.ano_fim.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.ano_fim.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Gerar Relatório
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Validar que a data final é posterior à data inicial
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            const mesInicio = parseInt(document.getElementById('id_mes_inicio').value);
+            const anoInicio = parseInt(document.getElementById('id_ano_inicio').value);
+            const mesFim = parseInt(document.getElementById('id_mes_fim').value);
+            const anoFim = parseInt(document.getElementById('id_ano_fim').value);
+            
+            const dataInicio = new Date(anoInicio, mesInicio - 1, 1);
+            const dataFim = new Date(anoFim, mesFim - 1, 1);
+            
+            if (dataFim < dataInicio) {
+                e.preventDefault();
+                alert('A data final deve ser posterior à data inicial.');
+            }
+        });
+    });
+</script>
+{% endblock %}

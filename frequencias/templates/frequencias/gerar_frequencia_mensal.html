@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerar Frequência Mensal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Gerar Frequência Mensal</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Selecione a Turma e o Período</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="{{ form.turma.id_for_label }}" class="form-label">{{ form.turma.label }}</label>
+                        {{ form.turma }}
+                        {% if form.turma.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.turma.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="{{ form.mes.id_for_label }}" class="form-label">{{ form.mes.label }}</label>
+                        {{ form.mes }}
+                        {% if form.mes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.mes.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="{{ form.ano.id_for_label }}" class="form-label">{{ form.ano.label }}</label>
+                        {{ form.ano }}
+                        {% if form.ano.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.ano.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="{{ form.percentual_minimo.id_for_label }}" class="form-label">{{ form.percentual_minimo.label }}</label>
+                        {{ form.percentual_minimo }}
+                        {% if form.percentual_minimo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.percentual_minimo.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Esta operação irá gerar ou atualizar o registro de frequência mensal para a turma e período selecionados. Todas as presenças registradas no período serão consideradas no cálculo.
+                </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calculator"></i> Gerar Frequência
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
