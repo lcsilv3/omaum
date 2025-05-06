@@ -1456,14 +1456,24 @@ DEFAULT_CONFIG = Config()
   - presencas\detalhar_presenca.html
   - presencas\editar_presenca.html
   - presencas\excluir_presenca.html
+  - presencas\filtro_presencas.html
   - presencas\formulario_presenca.html
   - presencas\formulario_presencas_multiplas.html
   - presencas\formulario_presencas_multiplas_passo1.html
   - presencas\formulario_presencas_multiplas_passo2.html
   - presencas\listar_presencas.html
   - presencas\registrar_presenca.html
-  - presencas\registrar_presenca_multipla.html
+  - presencas\registrar_presencas_multiplas.html
+  - presencas\registrar_presenca_em_massa.html
   - presencas\relatorio_presencas.html
+  - presencas\views\atividade.py
+  - presencas\views\listagem.py
+  - presencas\views\multiplas.py
+  - presencas\views\__init__.py
+  - presencas\views\__pycache__\atividade.cpython-312.pyc
+  - presencas\views\__pycache__\listagem.cpython-312.pyc
+  - presencas\views\__pycache__\multiplas.cpython-312.pyc
+  - presencas\views\__pycache__\__init__.cpython-312.pyc
 - punicoes\templates
   Arquivos:
   - punicoes\criar_punicao.html

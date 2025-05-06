@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.core.paginator import Paginator
 
 from .utils import get_return_url, get_form_class, get_model_class
+from core.utils import get_model_dynamically
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -263,9 +264,16 @@ def detalhar_atividade_ritualistica(request, pk):
     # Calcular o total de participantes para exibição
     total_participantes = atividade.participantes.count()
     
-    # Verificar se todos os alunos da turma estão participando
-    Aluno = get_model_class("Aluno", module_name="alunos")
-    total_alunos_turma = Aluno.objects.filter(turmas=atividade.turma).count()
+    # Importar o modelo Matricula se ainda não estiver importado
+    Matricula = get_model_dynamically("matriculas", "Matricula")
+    Aluno = get_model_dynamically("alunos", "Aluno")
+    
+    # Obter alunos matriculados na turma
+    alunos_turma = Aluno.objects.filter(
+        matricula__turma=atividade.turma,
+        matricula__status='A'  # Apenas matrículas ativas
+    )
+    total_alunos_turma = alunos_turma.count()
     todos_alunos_participando = (total_participantes == total_alunos_turma) and (total_alunos_turma > 0)
 
     return render(

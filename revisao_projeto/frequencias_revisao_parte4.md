@@ -648,13 +648,32 @@ html
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>Aluno:</strong> {{ carencia.aluno.nome }}</p>
-                    <p><strong>Curso:</strong> {{ carencia.frequencia_mensal.turma.curso.nome }}</p>
+                    <p><strong>CPF:</strong> {{ carencia.aluno.cpf }}</p>
                     <p><strong>Turma:</strong> {{ carencia.frequencia_mensal.turma.nome }}</p>
+                    <p><strong>Curso:</strong> {{ carencia.frequencia_mensal.turma.curso.nome }}</p>
                 </div>
                 <div class="col-md-6">
                     <p><strong>Período:</strong> {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}</p>
-                    <p><strong>Percentual de Presença:</strong> {{ carencia.percentual_presenca }}%</p>
+                    <p><strong>Percentual de Presença:</strong> {{ carencia.percentual_presenca|floatformat:1 }}%</p>
+                    <p><strong>Percentual Mínimo:</strong> {{ carencia.frequencia_mensal.percentual_minimo }}%</p>
                     <p><strong>Status Atual:</strong> {{ carencia.get_status_display }}</p>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <h6>Percentual de Presença:</h6>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-danger" role="progressbar" 
+                         style="width: {{ carencia.percentual_presenca }}%;" 
+                         aria-valuenow="{{ carencia.percentual_presenca }}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                        {{ carencia.percentual_presenca|floatformat:1 }}%
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                    <small class="text-muted">0%</small>
+                    <small class="text-danger">Mínimo: {{ carencia.frequencia_mensal.percentual_minimo }}%</small>
+                    <small class="text-muted">100%</small>
                 </div>
             </div>
         </div>
@@ -663,7 +682,7 @@ html
     <!-- Formulário de resolução -->
     <div class="card mb-4">
         <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Resolução da Carência</h5>
+            <h5 class="mb-0">Resolver Carência</h5>
         </div>
         <div class="card-body">
             <form method="post" enctype="multipart/form-data">
@@ -672,101 +691,46 @@ html
                 <div class="mb-3">
                     <label for="motivo_resolucao" class="form-label">Motivo da Resolução</label>
                     <select class="form-select" id="motivo_resolucao" name="motivo_resolucao" required>
-                        <option value="" selected disabled>Selecione um motivo</option>
+                        <option value="">Selecione um motivo</option>
                         <option value="COMPENSACAO">Compensação de Faltas</option>
-                        <option value="ATESTADO">Apresentação de Atestado</option>
-                        <option value="AJUSTE_FREQUENCIA">Ajuste na Frequência</option>
-                        <option value="DESISTENCIA">Desistência do Aluno</option>
+                        <option value="JUSTIFICATIVA">Justificativa Aceita</option>
+                        <option value="DISPENSA">Dispensa Médica</option>
+                        <option value="ERRO_REGISTRO">Erro no Registro de Presença</option>
                         <option value="OUTRO">Outro Motivo</option>
                     </select>
                 </div>
                 
                 <div class="mb-3">
-                    <label for="observacoes_resolucao" class="form-label">Observações</label>
-                    <textarea class="form-control" id="observacoes_resolucao" name="observacoes_resolucao" rows="5" required></textarea>
-                    <div class="form-text">Descreva detalhadamente como a carência foi resolvida.</div>
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea class="form-control" id="observacoes" name="observacoes" rows="5" required></textarea>
+                    <div class="form-text">Descreva detalhadamente o motivo da resolução desta carência.</div>
                 </div>
                 
                 <div class="mb-3">
                     <label for="documentos" class="form-label">Documentos Comprobatórios (opcional)</label>
                     <input type="file" class="form-control" id="documentos" name="documentos" multiple>
-                    <div class="form-text">Anexe atestados, comprovantes ou outros documentos relevantes.</div>
+                    <div class="form-text">Anexe documentos que comprovem a justificativa (atestados, declarações, etc).</div>
                 </div>
                 
-                {% if carencia.notificacao %}
                 <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="notificar_aluno" name="notificar_aluno" checked>
                     <label class="form-check-label" for="notificar_aluno">
-                        Notificar aluno sobre a resolução da carência
+                        Notificar aluno sobre a resolução
                     </label>
                 </div>
-                
-                <div class="mb-3" id="mensagem_notificacao_div">
-                    <label for="mensagem_notificacao" class="form-label">Mensagem para o Aluno</label>
-                    <textarea class="form-control" id="mensagem_notificacao" name="mensagem_notificacao" rows="4">Prezado(a) {{ carencia.aluno.nome }},
-
-Informamos que a situação de carência referente ao curso {{ carencia.frequencia_mensal.turma.curso.nome }}, turma {{ carencia.frequencia_mensal.turma.nome }}, período {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}, foi resolvida.
-
-Atenciosamente,
-Equipe OMAUM</textarea>
-                </div>
-                {% endif %}
                 
                 <div class="d-flex justify-content-between">
                     <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-secondary">
                         Cancelar
                     </a>
                     <button type="submit" class="btn btn-success">
-                        <i class="fas fa-check-circle"></i> Confirmar Resolução
+                        <i class="fas fa-check"></i> Resolver Carência
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const notificarCheckbox = document.getElementById('notificar_aluno');
-        const mensagemDiv = document.getElementById('mensagem_notificacao_div');
-        
-        if (notificarCheckbox && mensagemDiv) {
-            notificarCheckbox.addEventListener('change', function() {
-                mensagemDiv.style.display = this.checked ? 'block' : 'none';
-            });
-        }
-        
-        const motivoSelect = document.getElementById('motivo_resolucao');
-        const observacoesTextarea = document.getElementById('observacoes_resolucao');
-        
-        if (motivoSelect && observacoesTextarea) {
-            motivoSelect.addEventListener('change', function() {
-                const motivo = this.value;
-                let textoBase = '';
-                
-                switch(motivo) {
-                    case 'COMPENSACAO':
-                        textoBase = 'O aluno realizou atividades de compensação de faltas, conforme acordado com o instrutor da turma.';
-                        break;
-                    case 'ATESTADO':
-                        textoBase = 'O aluno apresentou atestado médico/declaração que justifica as faltas no período.';
-                        break;
-                    case 'AJUSTE_FREQUENCIA':
-                        textoBase = 'Foi realizado um ajuste na frequência do aluno após verificação dos registros.';
-                        break;
-                    case 'DESISTENCIA':
-                        textoBase = 'O aluno formalizou sua desistência do curso.';
-                        break;
-                    case 'OUTRO':
-                        textoBase = 'Descreva detalhadamente o motivo da resolução da carência.';
-                        break;
-                }
-                
-                observacoesTextarea.value = textoBase;
-            });
-        }
-    });
-</script>
 {% endblock %}
 
 

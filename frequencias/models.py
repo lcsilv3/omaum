@@ -166,6 +166,12 @@ class FrequenciaMensal(models.Model):
 class Carencia(models.Model):
     """Modelo para registro de carências de alunos em uma frequência mensal."""
     
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('EM_ACOMPANHAMENTO', 'Em Acompanhamento'),
+        ('RESOLVIDO', 'Resolvido'),
+    ]
+    
     frequencia_mensal = models.ForeignKey(
         FrequenciaMensal,
         on_delete=models.CASCADE,
@@ -203,6 +209,16 @@ class Carencia(models.Model):
     liberado = models.BooleanField(
         default=False,
         verbose_name="Liberado"
+    )
+    
+    # Adicionando o campo status
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='PENDENTE',
+        verbose_name="Status",
+        null=True,
+        blank=True
     )
     
     observacoes = models.TextField(

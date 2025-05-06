@@ -3,14 +3,16 @@ from django.utils import timezone
 from importlib import import_module
 
 def get_aluno_model():
-    """Obtém o modelo Aluno."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
+def get_turma_model():
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
+
 def get_atividade_model():
-    """Obtém o modelo Atividade."""
     atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "Atividade")
+    return getattr(atividades_module, "AtividadeAcademica")
 
 class Presenca(models.Model):
     """
@@ -31,53 +33,47 @@ class Presenca(models.Model):
     """
     
     aluno = models.ForeignKey(
-        "alunos.Aluno", 
-        on_delete=models.CASCADE, 
+        get_aluno_model(),
+        on_delete=models.CASCADE,
         verbose_name="Aluno"
     )
     
     atividade = models.ForeignKey(
-        "atividades.AtividadeAcademica", 
-        on_delete=models.CASCADE, 
-        verbose_name="Atividade"
+        get_atividade_model(),
+        on_delete=models.CASCADE,
+        verbose_name="Atividade",
+        null=True,
+        blank=True
+    )
+    
+    turma = models.ForeignKey(
+        get_turma_model(), 
+        on_delete=models.CASCADE,
+        verbose_name="Turma",
+        null=True,
+        blank=True
     )
     
     data = models.DateField(verbose_name="Data")
     
-    presente = models.BooleanField(
-        default=True, 
-        verbose_name="Presente"
-    )
+    presente = models.BooleanField(default=True, verbose_name="Presente")
     
-    justificativa = models.TextField(
-        blank=True, 
-        null=True, 
-        verbose_name="Justificativa"
-    )
+    justificativa = models.TextField(blank=True, null=True, verbose_name="Justificativa")
     
-    registrado_por = models.ForeignKey(
-        "auth.User", 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        verbose_name="Registrado por"
-    )
+    registrado_por = models.CharField(max_length=100, default="Sistema", verbose_name="Registrado por")
     
-    data_registro = models.DateTimeField(
-        auto_now_add=True, 
-        verbose_name="Data de registro"
-    )
+    data_registro = models.DateTimeField(default=timezone.now, verbose_name="Data de registro")
     
     class Meta:
         verbose_name = "Presença"
         verbose_name_plural = "Presenças"
         ordering = ["-data", "aluno__nome"]
-        unique_together = ["aluno", "atividade", "data"]
+        unique_together = ["aluno", "turma", "data"]
     
     def __str__(self):
         """Retorna uma representação em string do objeto."""
         status = "Presente" if self.presente else "Ausente"
-        return f"{self.aluno.nome} - {self.atividade.nome} - {self.data} - {status}"
+        return f"{self.aluno.nome} - {self.data} - {status}"
     
     def clean(self):
         """

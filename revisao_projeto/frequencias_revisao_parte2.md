@@ -4,320 +4,6 @@
 ## Arquivos forms.py:
 
 
-### Arquivo: frequencias\templates\frequencias\detalhar_notificacao.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Detalhes da Notificação{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Detalhes da Notificação</h1>
-        <div>
-            {% if notificacao.carencia %}
-            <a href="{% url 'frequencias:detalhar_carencia' notificacao.carencia.id %}" class="btn btn-secondary me-2">
-                <i class="fas fa-exclamation-triangle"></i> Ver Carência
-            </a>
-            {% endif %}
-            <a href="javascript:history.back()" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-        </div>
-    </div>
-    
-    <!-- Status da notificação -->
-    <div class="alert 
-        {% if notificacao.status == 'PENDENTE' %}alert-secondary
-        {% elif notificacao.status == 'ENVIADA' %}alert-info
-        {% elif notificacao.status == 'LIDA' %}alert-primary
-        {% elif notificacao.status == 'RESPONDIDA' %}alert-success
-        {% endif %}">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="alert-heading mb-1">
-                    {% if notificacao.status == 'PENDENTE' %}
-                    <i class="fas fa-clock"></i> Notificação Pendente
-                    {% elif notificacao.status == 'ENVIADA' %}
-                    <i class="fas fa-paper-plane"></i> Notificação Enviada
-                    {% elif notificacao.status == 'LIDA' %}
-                    <i class="fas fa-envelope-open"></i> Notificação Lida
-                    {% elif notificacao.status == 'RESPONDIDA' %}
-                    <i class="fas fa-reply"></i> Notificação Respondida
-                    {% endif %}
-                </h5>
-                <p class="mb-0">
-                    {% if notificacao.status == 'PENDENTE' %}
-                    Esta notificação ainda não foi enviada ao aluno.
-                    {% elif notificacao.status == 'ENVIADA' %}
-                    Esta notificação foi enviada em {{ notificacao.data_envio|date:"d/m/Y H:i" }}.
-                    {% elif notificacao.status == 'LIDA' %}
-                    Esta notificação foi lida pelo aluno em {{ notificacao.data_leitura|date:"d/m/Y H:i" }}.
-                    {% elif notificacao.status == 'RESPONDIDA' %}
-                    Esta notificação foi respondida pelo aluno em {{ notificacao.data_resposta|date:"d/m/Y H:i" }}.
-                    {% endif %}
-                </p>
-            </div>
-            <div>
-                {% if notificacao.status == 'PENDENTE' %}
-                <a href="{% url 'frequencias:enviar_notificacao' notificacao.id %}" class="btn btn-primary">
-                    <i class="fas fa-paper-plane"></i> Enviar Agora
-                </a>
-                {% elif notificacao.status == 'ENVIADA' or notificacao.status == 'LIDA' %}
-                <a href="{% url 'frequencias:reenviar_notificacao' notificacao.id %}" class="btn btn-outline-primary">
-                    <i class="fas fa-sync"></i> Reenviar
-                </a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <!-- Informações do destinatário -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Destinatário</h5>
-        </div>
-        <div class="card-body">
-            <div class="d-flex align-items-center">
-                {% if notificacao.aluno.foto %}
-                <img src="{{ notificacao.aluno.foto.url }}" alt="{{ notificacao.aluno.nome }}" 
-                     class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
-                {% else %}
-                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
-                     style="width: 60px; height: 60px; color: white; font-size: 1.5rem;">
-                    {{ notificacao.aluno.nome|first|upper }}
-                </div>
-                {% endif %}
-                <div>
-                    <h5 class="mb-1">{{ notificacao.aluno.nome }}</h5>
-                    <p class="mb-0">{{ notificacao.aluno.email }}</p>
-                    {% if notificacao.aluno.celular_primeiro_contato %}
-                    <p class="mb-0">{{ notificacao.aluno.celular_primeiro_contato }}</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Conteúdo da notificação -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0">Conteúdo da Notificação</h5>
-        </div>
-        <div class="card-body">
-            <div class="mb-3">
-                <h6>Assunto:</h6>
-                <p class="mb-0">{{ notificacao.assunto }}</p>
-            </div>
-            
-            <div class="mb-3">
-                <h6>Mensagem:</h6>
-                <div class="p-3 bg-light rounded border">
-                    {{ notificacao.mensagem|linebreaks }}
-                </div>
-            </div>
-            
-            {% if notificacao.anexos.all %}
-            <div>
-                <h6>Anexos:</h6>
-                <ul class="list-group">
-                    {% for anexo in notificacao.anexos.all %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ anexo.nome }}</span>
-                        <a href="{{ anexo.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-            
-            <div class="mt-3">
-                <p class="text-muted mb-0">
-                    <small>Criada por: {{ notificacao.criado_por.get_full_name|default:notificacao.criado_por.username }} em {{ notificacao.data_criacao|date:"d/m/Y H:i" }}</small>
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Resposta do aluno (se houver) -->
-    {% if notificacao.resposta %}
-    <div class="card mb-4 border-success">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Resposta do Aluno</h5>
-        </div>
-        <div class="card-body">
-            <div class="mb-3">
-                <h6>Assunto:</h6>
-                <p class="mb-0">{{ notificacao.resposta.assunto }}</p>
-            </div>
-            
-            <div class="mb-3">
-                <h6>Mensagem:</h6>
-                <div class="p-3 bg-light rounded border">
-                    {{ notificacao.resposta.mensagem|linebreaks }}
-                </div>
-            </div>
-            
-            {% if notificacao.resposta.anexos.all %}
-            <div>
-                <h6>Anexos:</h6>
-                <ul class="list-group">
-                    {% for anexo in notificacao.resposta.anexos.all %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ anexo.nome }}</span>
-                        <a href="{{ anexo.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-            
-            <div class="mt-3">
-                <p class="text-muted mb-0">
-                    <small>Respondido em: {{ notificacao.data_resposta|date:"d/m/Y H:i" }}</small>
-                </p>
-            </div>
-            
-            {% if notificacao.resposta.solicitar_compensacao %}
-            <div class="alert alert-warning mt-3">
-                <i class="fas fa-exclamation-circle"></i> O aluno solicitou opções de compensação de faltas.
-            </div>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Ações -->
-    <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">Ações</h5>
-        </div>
-        <div class="card-body">
-            <div class="d-flex flex-wrap gap-2">
-                {% if notificacao.status == 'PENDENTE' %}
-                <a href="{% url 'frequencias:editar_notificacao' notificacao.id %}" class="btn btn-warning">
-                    <i class="fas fa-edit"></i> Editar Notificação
-                </a>
-                <a href="{% url 'frequencias:enviar_notificacao' notificacao.id %}" class="btn btn-primary">
-                    <i class="fas fa-paper-plane"></i> Enviar Notificação
-                </a>
-                {% elif notificacao.status == 'ENVIADA' or notificacao.status == 'LIDA' %}
-                <a href="{% url 'frequencias:reenviar_notificacao' notificacao.id %}" class="btn btn-primary">
-                    <i class="fas fa-sync"></i> Reenviar Notificação
-                </a>
-                {% endif %}
-                
-                {% if notificacao.status == 'RESPONDIDA' %}
-                <a href="{% url 'frequencias:responder_aluno' notificacao.id %}" class="btn btn-success">
-                    <i class="fas fa-reply"></i> Responder ao Aluno
-                </a>
-                {% endif %}
-                
-                {% if notificacao.carencia and notificacao.carencia.status != 'RESOLVIDO' %}
-                <a href="{% url 'frequencias:resolver_carencia' notificacao.carencia.id %}" class="btn btn-success">
-                    <i class="fas fa-check"></i> Resolver Carência
-                </a>
-                {% endif %}
-                
-                <a href="{% url 'frequencias:historico_frequencia' notificacao.aluno.cpf %}" class="btn btn-info">
-                    <i class="fas fa-history"></i> Ver Histórico de Frequência
-                </a>
-                
-                <a href="{% url 'alunos:detalhar_aluno' notificacao.aluno.cpf %}" class="btn btn-primary">
-                    <i class="fas fa-user"></i> Ver Perfil do Aluno
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Histórico de ações -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Histórico de Ações</h5>
-        </div>
-        <div class="card-body p-0">
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-plus-circle text-success"></i> 
-                            <strong>Notificação criada</strong> por {{ notificacao.criado_por.get_full_name|default:notificacao.criado_por.username }}
-                        </div>
-                        <div>{{ notificacao.data_criacao|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                
-                {% if notificacao.data_envio %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-paper-plane text-primary"></i> 
-                            <strong>Notificação enviada</strong>
-                            {% if notificacao.enviado_por %}
-                            por {{ notificacao.enviado_por.get_full_name|default:notificacao.enviado_por.username }}
-                            {% endif %}
-                        </div>
-                        <div>{{ notificacao.data_envio|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                {% endif %}
-                
-                {% if notificacao.data_leitura %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-envelope-open text-info"></i> 
-                            <strong>Notificação lida</strong> pelo aluno
-                        </div>
-                        <div>{{ notificacao.data_leitura|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                {% endif %}
-                
-                {% if notificacao.data_resposta %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-reply text-success"></i> 
-                            <strong>Notificação respondida</strong> pelo aluno
-                        </div>
-                        <div>{{ notificacao.data_resposta|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                {% endif %}
-                
-                {% for log in notificacao.logs.all %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas {{ log.get_icone }} {{ log.get_cor }}"></i> 
-                            <strong>{{ log.acao }}</strong>
-                            {% if log.usuario %}
-                            por {{ log.usuario.get_full_name|default:log.usuario.username }}
-                            {% endif %}
-                        </div>
-                        <div>{{ log.data|date:"d/m/Y H:i" }}</div>
-                    </div>
-                    {% if log.detalhes %}
-                    <div class="mt-1 text-muted">
-                        <small>{{ log.detalhes }}</small>
-                    </div>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-
-
 ### Arquivo: frequencias\templates\frequencias\editar_carencia.html
 
 html
@@ -1604,26 +1290,10 @@ html
         <h1>Histórico de Frequência</h1>
         <div>
             <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary me-2">
-                <i cla                        if (data.turmas) {
-                    data.turmas.forEach(turma => {
-                        const option = document.createElement('option');
-                        option.value = turma.id;
-                        option.textContent = turma.nome;
-                        turmaSelect.appendChild(option);
-                    });
-                }
-            })
-            .catch(error => console.error('Erro ao buscar turmas:', error));
-    }
-});
-});
-</script>
-{% endblock %}
-{% endblock %}
-ss="fas fa-user"></i> Perfil do Aluno
+                <i class="fas fa-user"></i> Perfil do Aluno
             </a>
             <a href="{% url 'frequencias:exportar_historico' aluno.cpf %}" class="btn btn-success">
-                <i class="fas fa-download"></i> Exportar
+                <i class="fas fa-file-csv"></i> Exportar CSV
             </a>
         </div>
     </div>
@@ -1634,49 +1304,20 @@ ss="fas fa-user"></i> Perfil do Aluno
             <h5 class="mb-0">Informações do Aluno</h5>
         </div>
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="d-flex align-items-center">
-                        {% if aluno.foto %}
-                        <img src="{{ aluno.foto.url }}" alt="{{ aluno.nome }}" 
-                             class="rounded-circle me-3" width="80" height="80" style="object-fit: cover;">
-                        {% else %}
-                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
-                             style="width: 80px; height: 80px; color: white; font-size: 2rem;">
-                            {{ aluno.nome|first|upper }}
-                        </div>
-                        {% endif %}
-                        <div>
-                            <h4 class="mb-1">{{ aluno.nome }}</h4>
-                            <p class="text-muted mb-0">{{ aluno.email }}</p>
-                            <p class="mb-0">CPF: {{ aluno.cpf }}</p>
-                        </div>
-                    </div>
+            <div class="d-flex align-items-center">
+                {% if aluno.foto %}
+                <img src="{{ aluno.foto.url }}" alt="{{ aluno.nome }}" 
+                     class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
+                {% else %}
+                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+                     style="width: 60px; height: 60px; color: white; font-size: 1.5rem;">
+                    {{ aluno.nome|first|upper }}
                 </div>
-                <div class="col-md-6">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Situação:</strong> 
-                                {% if aluno.situacao == 'ATIVO' %}
-                                <span class="badge bg-success">Ativo</span>
-                                {% elif aluno.situacao == 'AFASTADO' %}
-                                <span class="badge bg-warning">Afastado</span>
-                                {% elif aluno.situacao == 'EXCLUIDO' %}
-                                <span class="badge bg-danger">Excluído</span>
-                                {% else %}
-                                <span class="badge bg-secondary">{{ aluno.get_situacao_display }}</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Nº Iniciático:</strong> {{ aluno.numero_iniciatico|default:"N/A" }}</p>
-                        </div>
-                    </div>
-                    <p><strong>Média de Frequência Geral:</strong> 
-                        <span class="badge {% if media_geral < 75 %}bg-danger{% elif media_geral < 85 %}bg-warning{% else %}bg-success{% endif %} p-2">
-                            {{ media_geral|floatformat:1 }}%
-                        </span>
-                    </p>
+                {% endif %}
+                <div>
+                    <h5 class="mb-1">{{ aluno.nome }}</h5>
+                    <p class="mb-0">{{ aluno.email }}</p>
+                    <p class="mb-0">CPF: {{ aluno.cpf }}</p>
                 </div>
             </div>
         </div>
@@ -1684,7 +1325,7 @@ ss="fas fa-user"></i> Perfil do Aluno
     
     <!-- Filtros -->
     <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">
+        <div class="card-header bg-info text-white">
             <h5 class="mb-0">Filtros</h5>
         </div>
         <div class="card-body">
@@ -1694,7 +1335,7 @@ ss="fas fa-user"></i> Perfil do Aluno
                     <select class="form-select" id="curso" name="curso">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
-                        <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == filtros.curso %}selected{% endif %}>
+                        <option value="{{ curso.codigo_curso }}" {% if filtros.curso == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
                             {{ curso.nome }}
                         </option>
                         {% endfor %}
@@ -1706,7 +1347,7 @@ ss="fas fa-user"></i> Perfil do Aluno
                     <select class="form-select" id="turma" name="turma">
                         <option value="">Todas as turmas</option>
                         {% for turma in turmas %}
-                        <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == filtros.turma %}selected{% endif %}>
+                        <option value="{{ turma.id }}" {% if filtros.turma == turma.id|stringformat:"s" %}selected{% endif %}>
                             {{ turma.nome }}
                         </option>
                         {% endfor %}
@@ -1721,7 +1362,7 @@ ss="fas fa-user"></i> Perfil do Aluno
                             <optgroup label="{{ ano }}">
                                 {% for mes in meses %}
                                 <option value="{{ ano }}-{{ mes.0 }}" 
-                                        {% if filtros.periodo == ano|stringformat:"s"|add:"-"|add:mes.0 %}selected{% endif %}>
+                                        {% if filtros.periodo == ano|stringformat:"s"|add:"-"|add:mes.0|stringformat:"s" %}selected{% endif %}>
                                     {{ mes.1 }}/{{ ano }}
                                 </option>
                                 {% endfor %}
@@ -1742,33 +1383,52 @@ ss="fas fa-user"></i> Perfil do Aluno
         </div>
     </div>
     
-    <!-- Gráfico de frequência -->
+    <!-- Estatísticas -->
     <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0">Evolução da Frequência</h5>
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Estatísticas</h5>
         </div>
         <div class="card-body">
-            <canvas id="graficoFrequencia" height="200"></canvas>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Média Geral de Frequência</h5>
+                            <p class="card-text display-4">{{ media_geral|floatformat:1 }}%</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Total de Carências</h5>
+                            <p class="card-text display-4">{{ carencias.count }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <canvas id="grafico-evolucao"></canvas>
+            </div>
         </div>
     </div>
     
-    <!-- Tabela de frequências -->
-    <div class="card mb-4">
+    <!-- Registros de frequência -->
+    <div class="card">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Registros de Frequência</h5>
         </div>
         <div class="card-body">
+            {% if registros %}
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
-                    <thead>
+                    <thead class="table-dark">
                         <tr>
+                            <th>Período</th>
                             <th>Curso</th>
                             <th>Turma</th>
-                            <th>Período</th>
-                            <th>Presenças</th>
-                            <th>Faltas</th>
-                            <th>Total Aulas</th>
-                            <th>% Presença</th>
+                            <th>Percentual de Presença</th>
                             <th>Status</th>
                             <th>Ações</th>
                         </tr>
@@ -1776,48 +1436,54 @@ ss="fas fa-user"></i> Perfil do Aluno
                     <tbody>
                         {% for registro in registros %}
                         <tr>
-                            <td>{{ registro.turma.curso.nome }}</td>
-                            <td>{{ registro.turma.nome }}</td>
-                            <td>{{ registro.get_mes_display }}/{{ registro.ano }}</td>
-                            <td>{{ registro.presencas }}</td>
-                            <td>{{ registro.faltas }}</td>
-                            <td>{{ registro.total_aulas }}</td>
+                            <td>{{ registro.frequencia_mensal.get_mes_display }}/{{ registro.frequencia_mensal.ano }}</td>
+                            <td>{{ registro.frequencia_mensal.turma.curso.nome }}</td>
+                            <td>{{ registro.frequencia_mensal.turma.nome }}</td>
                             <td>
                                 <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar {% if registro.percentual_presenca < 75 %}bg-danger{% elif registro.percentual_presenca < 85 %}bg-warning{% else %}bg-success{% endif %}" 
-                                         role="progressbar" style="width: {{ registro.percentual_presenca }}%;" 
-                                         aria-valuenow="{{ registro.percentual_presenca }}" aria-valuemin="0" aria-valuemax="100">
-                                        {{ registro.percentual_presenca|floatformat:1 }}%
+                                    <div class="progress-bar {% if registro.percentual_presenca < 75 %}bg-danger{% else %}bg-success{% endif %}" role="progressbar" 
+                                         style="width: {{ registro.percentual_presenca }}%;" 
+                                         aria-valuenow="{{ registro.percentual_presenca }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        {{ registro.percentual_presenca }}%
                                     </div>
                                 </div>
                             </td>
                             <td>
                                 {% if registro.percentual_presenca < 75 %}
-                                    {% if registro.carencia %}
-                                        {% if registro.carencia.status == 'PENDENTE' %}
-                                        <span class="badge bg-danger">Carência Pendente</span>
-                                        {% elif registro.carencia.status == 'EM_ACOMPANHAMENTO' %}
-                                        <span class="badge bg-warning text-dark">Em Acompanhamento</span>
-                                        {% elif registro.carencia.status == 'RESOLVIDO' %}
-                                        <span class="badge bg-success">Carência Resolvida</span>
-                                        {% endif %}
+                                    {% if registro.liberado %}
+                                        <span class="badge bg-success">Liberado</span>
                                     {% else %}
-                                    <span class="badge bg-danger">Carência</span>
+                                        {% if registro.status == 'PENDENTE' %}
+                                            <span class="badge bg-danger">Carência Pendente</span>
+                                        {% elif registro.status == 'EM_ACOMPANHAMENTO' %}
+                                            <span class="badge bg-warning text-dark">Em Acompanhamento</span>
+                                        {% elif registro.status == 'RESOLVIDO' %}
+                                            <span class="badge bg-success">Resolvido</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Carência</span>
+                                        {% endif %}
                                     {% endif %}
                                 {% else %}
-                                <span class="badge bg-success">Regular</span>
+                                    <span class="badge bg-success">Regular</span>
                                 {% endif %}
                             </td>
                             <td>
                                 <div class="btn-group">
-                                    <a href="{% url 'frequencias:detalhar_frequencia_mensal' registro.id %}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-eye"></i>
+                                    <a href="{% url 'frequencias:detalhar_frequencia_mensal' registro.frequencia_mensal.id %}" 
+                                       class="btn btn-sm btn-info" title="Ver frequência mensal">
+                                        <i class="fas fa-calendar-alt"></i>
                                     </a>
-                                    {% if registro.carencia %}
-                                    <a href="{% url 'frequencias:detalhar_carencia' registro.carencia.id %}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </a>
+                                    {% if registro.percentual_presenca < 75 and not registro.liberado %}
+                                        <a href="{% url 'frequencias:detalhar_carencia' registro.id %}" 
+                                           class="btn btn-sm btn-warning" title="Ver carência">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </a>
                                     {% endif %}
+                                    <a href="{% url 'turmas:detalhar_turma' registro.frequencia_mensal.turma.id %}" 
+                                       class="btn btn-sm btn-primary" title="Ver turma">
+                                        <i class="fas fa-users"></i>
+                                    </a>
                                 </div>
                             </td>
                         </tr>
@@ -1838,43 +1504,48 @@ ss="fas fa-user"></i> Perfil do Aluno
             </div>
             
             {% if registros.has_other_pages %}
-            <nav aria-label="Paginação">
-                <ul class="pagination mb-0">
+            <nav aria-label="Paginação" class="mt-4">
+                <ul class="pagination justify-content-center">
                     {% if registros.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ registros.previous_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Anterior">
-                            <span aria-hidden="true">«</span>
-                        </a>
+                        <a class="page-link" href="?page={{ registros.previous_page_number }}{% if filtros.curso %}&curso={{ filtros.curso }}{% endif %}{% if filtros.turma %}&turma={{ filtros.turma }}{% endif %}{% if filtros.periodo %}&periodo={{ filtros.periodo }}{% endif %}">Anterior</a>
                     </li>
                     {% else %}
                     <li class="page-item disabled">
-                        <span class="page-link" aria-hidden="true">«</span>
+                        <span class="page-link">Anterior</span>
                     </li>
                     {% endif %}
                     
-                    {% for i in registros.paginator.page_range %}
-                        {% if registros.number == i %}
-                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                        {% else %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ i }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">{{ i }}</a>
-                        </li>
-                        {% endif %}
+                    {% for num in registros.paginator.page_range %}
+                    {% if registros.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if filtros.curso %}&curso={{ filtros.curso }}{% endif %}{% if filtros.turma %}&turma={{ filtros.turma }}{% endif %}{% if filtros.periodo %}&periodo={{ filtros.periodo }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
                     {% endfor %}
                     
                     {% if registros.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ registros.next_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Próxima">
-                            <span aria-hidden="true">»</span>
-                        </a>
+                        <a class="page-link" href="?page={{ registros.next_page_number }}{% if filtros.curso %}&curso={{ filtros.curso }}{% endif %}{% if filtros.turma %}&turma={{ filtros.turma }}{% endif %}{% if filtros.periodo %}&periodo={{ filtros.periodo }}{% endif %}">Próxima</a>
                     </li>
                     {% else %}
                     <li class="page-item disabled">
-                        <span class="page-link" aria-hidden="true">»</span>
+                        <span class="page-link">Próxima</span>
                     </li>
                     {% endif %}
                 </ul>
             </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Não há registros de frequência para este aluno com os filtros selecionados.
+            </div>
             {% endif %}
         </div>
     </div>
@@ -1970,17 +1641,17 @@ ss="fas fa-user"></i> Perfil do Aluno
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Gráfico de evolução da frequência
-        const ctxFrequencia = document.getElementById('graficoFrequencia').getContext('2d');
-        new Chart(ctxFrequencia, {
+        // Gráfico de evolução de frequência
+        const ctxEvolucao = document.getElementById('grafico-evolucao').getContext('2d');
+        new Chart(ctxEvolucao, {
             type: 'line',
             data: {
                 labels: {{ periodos_labels|safe }},
                 datasets: [{
                     label: 'Percentual de Presença',
                     data: {{ percentuais_presenca|safe }},
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
                     borderWidth: 2,
                     tension: 0.1,
                     fill: true
@@ -1988,6 +1659,19 @@ ss="fas fa-user"></i> Perfil do Aluno
             },
             options: {
                 responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.raw.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -1995,32 +1679,6 @@ ss="fas fa-user"></i> Perfil do Aluno
                         ticks: {
                             callback: function(value) {
                                 return value + '%';
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + context.raw.toFixed(1) + '%';
-                            }
-                        }
-                    },
-                    annotation: {
-                        annotations: {
-                            line1: {
-                                type: 'line',
-                                yMin: 75,
-                                yMax: 75,
-                                borderColor: 'rgba(255, 0, 0, 0.5)',
-                                borderWidth: 2,
-                                borderDash: [6, 6],
-                                label: {
-                                    content: 'Mínimo (75%)',
-                                    enabled: true,
-                                    position: 'end'
-                                }
                             }
                         }
                     }
@@ -2043,7 +1701,21 @@ ss="fas fa-user"></i> Perfil do Aluno
                 fetch(`/frequencias/api/turmas-por-curso/${cursoId}/`)
                     .then(response => response.json())
                     .then(data => {
-                        if (data.turmas
+                        if (data.turmas) {
+                            data.turmas.forEach(turma => {
+                                const option = document.createElement('option');
+                                option.value = turma.id;
+                                option.textContent = turma.nome;
+                                turmaSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => console.error('Erro ao buscar turmas:', error));
+            }
+        });
+    });
+</script>
+{% endblock %}
 
 
 

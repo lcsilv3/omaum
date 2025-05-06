@@ -1,3 +1,4 @@
+'''
 # Revisão da Funcionalidade: presencas
 
 ## Arquivos forms.py:
@@ -10,10 +11,10 @@ from django import forms
 from django.utils import timezone
 from importlib import import_module
 
-def get_models():
-    """Obtém o modelo Presenca."""
-    presencas_module = import_module("presencas.models")
-    return getattr(presencas_module, "Presenca")
+def get_model_dynamically(app_name, model_name):
+    """Obtém um modelo dinamicamente para evitar importações circulares."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
 
 def get_aluno_model():
     """Obtém o modelo Aluno."""
@@ -31,40 +32,47 @@ def get_turma_model():
     return getattr(turmas_module, "Turma")
 
 class PresencaForm(forms.ModelForm):
-    """Formulário para registro de presença."""
+    """Formulário para registro e edição de presenças."""
     
     class Meta:
-        model = get_models()
-        fields = ['aluno', 'atividade', 'data', 'situacao', 'justificativa']
+        model = get_model_dynamically("presencas", "Presenca")
+        fields = ['aluno', 'atividade', 'data', 'presente', 'justificativa']
         widgets = {
-            'data': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'justificativa': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'aluno': forms.Select(attrs={'class': 'form-select select2'}),
+            'atividade': forms.Select(attrs={'class': 'form-select select2'}),
+            'data': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'presente': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'justificativa': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        # Configurar campos
-        self.fields['aluno'].queryset = get_aluno_model().objects.filter(situacao='ATIVO')
-        self.fields['aluno'].widget.attrs.update({'class': 'form-control select2'})
-        
-        self.fields['atividade'].queryset = get_atividade_model().objects.all().order_by('-data_inicio')
-        self.fields['atividade'].widget.attrs.update({'class': 'form-control select2'})
-        
-        self.fields['situacao'].widget.attrs.update({'class': 'form-control'})
+        # Personalização adicional dos campos
+        self.fields['justificativa'].required = False
         
         # Definir data padrão como hoje
         if not self.instance.pk:
             self.fields['data'].initial = timezone.now().date()
+        
+        # Adicionar classes CSS para validação
+        for field_name, field in self.fields.items():
+            if field.required:
+                field.widget.attrs['required'] = 'required'
     
     def clean(self):
+        """Validação personalizada do formulário."""
         cleaned_data = super().clean()
-        situacao = cleaned_data.get('situacao')
+        presente = cleaned_data.get('presente')
         justificativa = cleaned_data.get('justificativa')
+        data = cleaned_data.get('data')
         
-        # Validar justificativa quando a situação for JUSTIFICADO
-        if situacao == 'JUSTIFICADO' and not justificativa:
-            self.add_error('justificativa', 'A justificativa é obrigatória quando a situação é "Justificado".')
+        # Verificar se a data não é futura
+        if data and data > timezone.now().date():
+            self.add_error('data', 'A data não pode ser futura.')
+        
+        # Verificar se há justificativa quando o aluno está ausente
+        if presente is False and not justificativa:
+            self.add_error('justificativa', 'É necessário fornecer uma justificativa para a ausência.')
         
         return cleaned_data
 
@@ -151,581 +159,487 @@ python
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.db.models import Q
+from importlib import import_module
+from django.utils import timezone
 from django.http import HttpResponse
 import csv
 import logging
-from importlib import import_module
 from datetime import datetime
 
+# Configurar logger
 logger = logging.getLogger(__name__)
 
 def get_models():
-    """Obtém o modelo Presenca."""
+    """Obtém os modelos necessários dinamicamente."""
     presencas_module = import_module("presencas.models")
     return getattr(presencas_module, "Presenca")
 
-def get_forms():
-    """Obtém os formulários relacionados a presenças."""
-    presencas_forms = import_module("presencas.forms")
-    return (
-        getattr(presencas_forms, "PresencaForm"),
-        getattr(presencas_forms, "PresencaMultiplaForm"),
-        getattr(presencas_forms, "FiltroPresencaForm")
-    )
-
 def get_aluno_model():
-    """Obtém o modelo Aluno."""
+    """Obtém o modelo Aluno dinamicamente."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
-def get_atividade_model():
-    """Obtém o modelo Atividade."""
-    atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "Atividade")
-
 def get_turma_model():
-    """Obtém o modelo Turma."""
+    """Obtém o modelo Turma dinamicamente."""
     turmas_module = import_module("turmas.models")
     return getattr(turmas_module, "Turma")
 
+def get_atividade_model():
+    """Obtém o modelo AtividadeAcademica dinamicamente."""
+    atividades_module = import_module("atividades.models")
+    return getattr(atividades_module, "AtividadeAcademica")
+
 @login_required
 def listar_presencas(request):
-    """Lista todas as presenças com filtros."""
-    try:
-        Presenca = get_models()
-        _, _, FiltroPresencaForm = get_forms()
-        
-        # Inicializar formulário de filtro
-        filtro_form = FiltroPresencaForm(request.GET)
-        
-        # Aplicar filtros
-        presencas = Presenca.objects.all().select_related('aluno', 'atividade')
-        
-        if filtro_form.is_valid():
-            # Filtrar por aluno
-            aluno = filtro_form.cleaned_data.get('aluno')
-            if aluno:
-                presencas = presencas.filter(aluno=aluno)
-            
-            # Filtrar por atividade
-            atividade = filtro_form.cleaned_data.get('atividade')
-            if atividade:
-                presencas = presencas.filter(atividade=atividade)
-            
-            # Filtrar por data
-            data_inicio = filtro_form.cleaned_data.get('data_inicio')
-            if data_inicio:
-                presencas = presencas.filter(data__gte=data_inicio)
-            
-            data_fim = filtro_form.cleaned_data.get('data_fim')
-            if data_fim:
-                presencas = presencas.filter(data__lte=data_fim)
-            
-            # Filtrar por situação
-            situacao = filtro_form.cleaned_data.get('situacao')
-            if situacao:
-                presencas = presencas.filter(situacao=situacao)
-        
-        # Ordenar
-        presencas = presencas.order_by('-data', 'aluno__nome')
-        
-        # Paginação
-        paginator = Paginator(presencas, 20)  # 20 itens por página
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        
-        context = {
-            'presencas': page_obj,
-            'page_obj': page_obj,
-            'filtro_form': filtro_form
-        }
-        
-        return render(request, 'presencas/listar_presencas.html', context)
+    """Lista todas as presenças registradas."""
+    Presenca = get_models()
     
-    except Exception as e:
-        logger.error(f"Erro ao listar presenças: {str(e)}", exc_info=True)
-        messages.error(request, f"Erro ao listar presenças: {str(e)}")
-        return redirect('home')
+    # Obter parâmetros de filtro
+    aluno_id = request.GET.get('aluno', '')
+    turma_id = request.GET.get('turma', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    
+    # Iniciar queryset
+    presencas = Presenca.objects.all().select_related('aluno', 'turma', 'atividade')
+    
+    # Aplicar filtros
+    if aluno_id:
+        presencas = presencas.filter(aluno__cpf=aluno_id)
+    if turma_id:
+        presencas = presencas.filter(turma__id=turma_id)
+    if data_inicio:
+        presencas = presencas.filter(data__gte=data_inicio)
+    if data_fim:
+        presencas = presencas.filter(data__lte=data_fim)
+    
+    # Obter dados para os filtros
+    Aluno = get_aluno_model()
+    Turma = get_turma_model()
+    alunos = Aluno.objects.all()
+    turmas = Turma.objects.all()
+    
+    context = {
+        'presencas': presencas,
+        'alunos': alunos,
+        'turmas': turmas,
+        'filtros': {
+            'aluno': aluno_id,
+            'turma': turma_id,
+            'data_inicio': data_inicio,
+            'data_fim': data_fim
+        }
+    }
+    
+    return render(request, 'presencas/listar_presencas.html', context)
 
 @login_required
 def registrar_presenca(request):
     """Registra uma nova presença."""
-    try:
-        PresencaForm, _, _ = get_forms()
-        
-        if request.method == 'POST':
-            form = PresencaForm(request.POST)
-            if form.is_valid():
-                presenca = form.save()
-                messages.success(request, "Presença registrada com sucesso!")
-                
-                # Redirecionar para a lista ou para registrar outra presença
-                if 'salvar_continuar' in request.POST:
-                    return redirect('presencas:registrar_presenca')
-                else:
-                    return redirect('presencas:listar_presencas')
-        else:
-            # Pré-preencher com aluno e atividade se fornecidos na URL
-            initial = {}
-            
-            aluno_id = request.GET.get('aluno')
-            if aluno_id:
-                initial['aluno'] = aluno_id
-            
-            atividade_id = request.GET.get('atividade')
-            if atividade_id:
-                initial['atividade'] = atividade_id
-            
-            form = PresencaForm(initial=initial)
-        
-        context = {
-            'form': form,
-            'titulo': 'Registrar Presença'
-        }
-        
-        return render(request, 'presencas/formulario_presenca.html', context)
+    Presenca = get_models()
+    Aluno = get_aluno_model()
+    Turma = get_turma_model()
+    AtividadeAcademica = get_atividade_model()
     
-    except Exception as e:
-        logger.error(f"Erro ao registrar presença: {str(e)}", exc_info=True)
-        messages.error(request, f"Erro ao registrar presença: {str(e)}")
-        return redirect('presencas:listar_presencas')
+    if request.method == 'POST':
+        aluno_id = request.POST.get('aluno')
+        turma_id = request.POST.get('turma')
+        atividade_id = request.POST.get('atividade')
+        data = request.POST.get('data')
+        presente = request.POST.get('presente') == 'on'
+        justificativa = request.POST.get('justificativa', '')
+        
+        try:
+            aluno = Aluno.objects.get(cpf=aluno_id)
+            turma = Turma.objects.get(id=turma_id)
+            atividade = None
+            if atividade_id:
+                atividade = AtividadeAcademica.objects.get(id=atividade_id)
+            
+            # Verificar se já existe registro para este aluno/turma/data
+            if Presenca.objects.filter(aluno=aluno, turma=turma, data=data).exists():
+                messages.warning(request, f'Já existe um registro de presença para {aluno.nome} na turma {turma.nome} na data {data}.')
+                return redirect('presencas:listar_presencas')
+            
+            presenca = Presenca(
+                aluno=aluno,
+                turma=turma,
+                atividade=atividade,
+                data=data,
+                presente=presente,
+                justificativa=justificativa if not presente else '',
+                registrado_por=request.user.username,
+                data_registro=timezone.now()
+            )
+            presenca.save()
+            
+            messages.success(request, f'Presença registrada com sucesso para {aluno.nome}.')
+            return redirect('presencas:listar_presencas')
+        
+        except Exception as e:
+            messages.error(request, f'Erro ao registrar presença: {str(e)}')
+    
+    # Para requisições GET, exibir o formulário
+    alunos = Aluno.objects.all()
+    turmas = Turma.objects.all()
+    atividades = AtividadeAcademica.objects.all()
+    
+    context = {
+        'alunos': alunos,
+        'turmas': turmas,
+        'atividades': atividades,
+        'data_hoje': timezone.now().date()
+    }
+    
+    return render(request, 'presencas/registrar_presenca.html', context)
 
 @login_required
 def editar_presenca(request, presenca_id):
-    """Edita uma presença existente."""
-    try:
-        Presenca = get_models()
-        PresencaForm, _, _ = get_forms()
-        
-        presenca = get_object_or_404(Presenca, id=presenca_id)
-        
-        if request.method == 'POST':
-            form = PresencaForm(request.POST, instance=presenca)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Presença atualizada com sucesso!")
-                return redirect('presencas:listar_presencas')
-        else:
-            form = PresencaForm(instance=presenca)
-        
-        context = {
-            'form': form,
-            'presenca': presenca,
-            'titulo': 'Editar Presença'
-        }
-        
-        return render(request, 'presencas/formulario_presenca.html', context)
+    """Edita um registro de presença existente."""
+    Presenca = get_models()
+    presenca = get_object_or_404(Presenca, id=presenca_id)
     
-    except Exception as e:
-        logger.error(f"Erro ao editar presença: {str(e)}", exc_info=True)
-        messages.error(request, f"Erro ao editar presença: {str(e)}")
-        return redirect('presencas:listar_presencas')
+    if request.method == 'POST':
+        presente = request.POST.get('presente') == 'on'
+        justificativa = request.POST.get('justificativa', '')
+        
+        presenca.presente = presente
+        presenca.justificativa = justificativa if not presente else ''
+        presenca.registrado_por = request.user.username
+        presenca.data_registro = timezone.now()
+        
+        try:
+            presenca.save()
+            messages.success(request, 'Registro de presença atualizado com sucesso.')
+            return redirect('presencas:listar_presencas')
+        except Exception as e:
+            messages.error(request, f'Erro ao atualizar presença: {str(e)}')
+    
+    context = {
+        'presenca': presenca
+    }
+    
+    return render(request, 'presencas/editar_presenca.html', context)
 
 @login_required
 def excluir_presenca(request, presenca_id):
-    """Exclui uma presença."""
-    try:
-        Presenca = get_models()
-        presenca = get_object_or_404(Presenca, id=presenca_id)
-        
-        if request.method == 'POST':
-            presenca.delete()
-            messages.success(request, "Presença excluída com sucesso!")
-            return redirect('presencas:listar_presencas')
-        
-        context = {
-            'presenca': presenca
-        }
-        
-        return render(request, 'presencas/excluir_presenca.html', context)
+    """Exclui um registro de presença."""
+    Presenca = get_models()
+    presenca = get_object_or_404(Presenca, id=presenca_id)
     
-    except Exception as e:
-        logger.error(f"Erro ao excluir presença: {str(e)}", exc_info=True)
-        messages.error(request, f"Erro ao excluir presença: {str(e)}")
-        return redirect('presencas:listar_presencas')
-
-@login_required
-def registrar_presencas_multiplas(request):
-    """Registra múltiplas presenças de uma vez."""
-    try:
-        _, PresencaMultiplaForm, _ = get_forms()
-        
-        if request.method == 'POST':
-            form = PresencaMultiplaForm(request.POST)
-            if form.is_valid():
-                # Os dados serão processados via API JavaScript
-                messages.success(request, "Formulário válido. Prossiga com o registro de presenças.")
-                
-                # Redirecionar para a página de seleção de alunos
-                return redirect('presencas:selecionar_alunos_presencas', 
-                               data=form.cleaned_data['data'].strftime('%Y-%m-%d'),
-                               turmas=','.join(str(t.id) for t in form.cleaned_data['turmas']),
-                               atividades=','.join(str(a.id) for a in form.cleaned_data['atividades']))
-        else:
-            form = PresencaMultiplaForm()
-        
-        # Obter turmas ativas
-        Turma = get_turma_model()
-        turmas = Turma.objects.filter(status='A')
-        
-        # Obter atividades
-        Atividade = get_atividade_model()
-        atividades = Atividade.objects.all()
-        
-        context = {
-            'form': form,
-            'turmas': turmas,
-            'atividades': atividades
-        }
-        
-        return render(request, 'presencas/formulario_presencas_multiplas_passo1.html', context)
-    
-    except Exception as e:
-        logger.error(f"Erro ao registrar presenças múltiplas: {str(e)}", exc_info=True)
-        messages.error(request, f"Erro ao registrar presenças múltiplas: {str(e)}")
-        return redirect('presencas:listar_presencas')
-
-@login_required
-def selecionar_alunos_presencas(request, data, turmas, atividades):
-    """Seleciona alunos para registro de presenças múltiplas."""
-    try:
-        # Converter parâmetros
-        data_obj = datetime.strptime(data, '%Y-%m-%d').date()
-        turmas_ids = [int(id) for id in turmas.split(',')]
-        atividades_ids = [int(id) for id in atividades.split(',')]
-        
-        # Obter turmas
-        Turma = get_turma_model()
-        turmas_objs = Turma.objects.filter(id__in=turmas_ids)
-        
-        # Obter atividades
-        Atividade = get_atividade_model()
-        atividades_objs = Atividade.objects.filter(id__in=atividades_ids)
-        
-        # Obter alunos matriculados nas turmas
-        Matricula = import_module("matriculas.models").Matricula
-        matriculas = Matricula.objects.filter(turma__in=turmas_objs, status='A').select_related('aluno')
-        
-        # Obter alunos únicos
-        alunos = []
-        alunos_ids = set()
-        
-        for matricula in matriculas:
-            if matricula.aluno.cpf not in alunos_ids:
-                alunos.append(matricula.aluno)
-                alunos_ids.add(matricula.aluno.cpf)
-        
-        # Verificar presenças existentes
-        Presenca = get_models()
-        presencas_existentes = Presenca.objects.filter(
-            aluno__in=alunos,
-            atividade__in=atividades_objs,
-            data=data_obj
-        )
-        
-        # Criar dicionário de presenças existentes para fácil acesso
-        presencas_dict = {}
-        for presenca in presencas_existentes:
-            key = f"{presenca.aluno.cpf}_{presenca.atividade.id}"
-            presencas_dict[key] = presenca
-        
-        context = {
-            'data': data,
-            'data_formatada': data_obj.strftime('%d/%m/%Y'),
-            'turmas': turmas_objs,
-            'atividades': atividades_objs,
-            'alunos': alunos,
-            'presencas_dict': presencas_dict
-        }
-        
-        return render(request, 'presencas/formulario_presencas_multiplas_passo2.html', context)
-    
-    except Exception as e:
-        logger.error(f"Erro ao selecionar alunos para presenças: {str(e)}", exc_info=True)
-        messages.error(request, f"Erro ao selecionar alunos: {str(e)}")
-        return redirect('presencas:registrar_presencas_multiplas')
-
-@login_required
-def registrar_presencas_multiplas_form(request):
-    """Formulário para registrar presenças múltiplas."""
-    try:
-        # Obter parâmetros da URL
-        data_str = request.GET.get('data')
-        turmas_ids = request.GET.get('turmas', '').split(',')
-        atividades_ids = request.GET.get('atividades', '').split(',')
-        
-        if not data_str or not turmas_ids or not atividades_ids:
-            messages.error(request, "Parâmetros inválidos. Por favor, tente novamente.")
-            return redirect('presencas:registrar_presencas_multiplas')
-        
-        # Converter para data
+    if request.method == 'POST':
         try:
-            data = timezone.datetime.strptime(data_str, '%Y-%m-%d').date()
-        except ValueError:
-            messages.error(request, "Formato de data inválido.")
-            return redirect('presencas:registrar_presencas_multiplas')
-        
-        # Obter modelos
-        Turma = get_turma_model()
-        Atividade = get_atividade_model()
-        
-        # Obter turmas e atividades
-        turmas = Turma.objects.filter(id__in=turmas_ids)
-        atividades = Atividade.objects.filter(id__in=atividades_ids)
-        
-        if not turmas or not atividades:
-            messages.error(request, "Turmas ou atividades não encontradas.")
-            return redirect('presencas:registrar_presencas_multiplas')
-        
-        context = {
-            'data': data,
-            'turmas': turmas,
-            'atividades': atividades,
-        }
-        
-        return render(request, 'presencas/formulario_presencas_multiplas.html', context)
+            presenca.delete()
+            messages.success(request, 'Registro de presença excluído com sucesso.')
+            return redirect('presencas:listar_presencas')
+        except Exception as e:
+            messages.error(request, f'Erro ao excluir presença: {str(e)}')
     
-    except Exception as e:
-        logger.error(f"Erro ao exibir formulário múltiplo: {str(e)}", exc_info=True)
-        messages.error(request, f"Erro ao exibir formulário múltiplo: {str(e)}")
-        return redirect('presencas:registrar_presencas_multiplas')
-
-@login_required
-def exportar_presencas_csv(request):
-    """Exporta presenças para um arquivo CSV."""
-    try:
-        Presenca = get_models()
-        _, _, FiltroPresencaForm = get_forms()
-        
-        # Aplicar filtros
-        filtro_form = FiltroPresencaForm(request.GET)
-        presencas = Presenca.objects.all().select_related('aluno', 'atividade')
-        
-        if filtro_form.is_valid():
-            # Aplicar os mesmos filtros da listagem
-            aluno = filtro_form.cleaned_data.get('aluno')
-            if aluno:
-                presencas = presencas.filter(aluno=aluno)
-            
-            atividade = filtro_form.cleaned_data.get('atividade')
-            if atividade:
-                presencas = presencas.filter(atividade=atividade)
-            
-            data_inicio = filtro_form.cleaned_data.get('data_inicio')
-            if data_inicio:
-                presencas = presencas.filter(data__gte=data_inicio)
-            
-            data_fim = filtro_form.cleaned_data.get('data_fim')
-            if data_fim:
-                presencas = presencas.filter(data__lte=data_fim)
-            
-            situacao = filtro_form.cleaned_data.get('situacao')
-            if situacao:
-                presencas = presencas.filter(situacao=situacao)
-        
-        # Ordenar
-        presencas = presencas.order_by('-data', 'aluno__nome')
-        
-        # Criar resposta CSV
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="presencas.csv"'
-        
-        # Escrever cabeçalho e dados
-        writer = csv.writer(response)
-        writer.writerow(['CPF', 'Aluno', 'Atividade', 'Data', 'Situação', 'Justificativa'])
-        
-        for presenca in presencas:
-            writer.writerow([
-                presenca.aluno.cpf,
-                presenca.aluno.nome,
-                presenca.atividade.titulo,
-                presenca.data.strftime('%d/%m/%Y'),
-                dict(Presenca.SITUACAO_CHOICES).get(presenca.situacao, presenca.situacao),
-                presenca.justificativa or ''
-            ])
-        
-        return response
+    context = {
+        'presenca': presenca
+    }
     
-    except Exception as e:
-        logger.error(f"Erro ao exportar presenças: {str(e)}", exc_info=True)
-        messages.error(request, f"Erro ao exportar presenças: {str(e)}")
-        return redirect('presencas:listar_presencas')
+    return render(request, 'presencas/excluir_presenca.html', context)
 
 @login_required
 def detalhar_presenca(request, presenca_id):
-    """
-    Exibe os detalhes de um registro de presença.
-    """
-    Presenca = get_presenca_model()
+    """Exibe os detalhes de um registro de presença."""
+    Presenca = get_models()
     presenca = get_object_or_404(Presenca, id=presenca_id)
     
-    return render(request, 'presencas/detalhar_presenca.html', {'presenca': presenca})
+    context = {
+        'presenca': presenca
+    }
+    
+    return render(request, 'presencas/detalhar_presenca.html', context)
 
 @login_required
-def registrar_presenca_multipla(request):
-    """
-    Registra presenças para múltiplos alunos em múltiplas atividades.
-    """
-    RegistroPresencaMultiplaForm = get_registro_presenca_multipla_form()
-    Presenca = get_presenca_model()
-    Aluno = get_aluno_model()
+def registrar_presenca_turma(request, turma_id):
+    """Registra presença para todos os alunos de uma turma."""
+    Presenca = get_models()
+    Turma = get_turma_model()
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    # Obter todos os alunos matriculados na turma
+    try:
+        Matricula = import_module("matriculas.models").Matricula
+        matriculas = Matricula.objects.filter(turma=turma, status='A')
+        alunos = [m.aluno for m in matriculas]
+    except Exception as e:
+        messages.error(request, f'Erro ao obter alunos da turma: {str(e)}')
+        return redirect('turmas:detalhar_turma', turma_id=turma_id)
     
     if request.method == 'POST':
-        form = RegistroPresencaMultiplaForm(request.POST)
-        if form.is_valid():
-            data = form.cleaned_data['data']
-            atividades = form.cleaned_data['atividades']
-            turmas = form.cleaned_data['turmas']
-            
-            # Obter alunos das turmas selecionadas
-            alunos = Aluno.objects.filter(turmas__in=turmas).distinct()
-            
-            # Processar os dados de presença
-            alunos_presentes = request.POST.getlist('alunos_presentes')
-            justificativas = {}
-            
-            # Coletar justificativas
-            for key, value in request.POST.items():
-                if key.startswith('justificativa_'):
-                    aluno_id = key.replace('justificativa_', '')
-                    justificativas[aluno_id] = value
-            
-            # Registrar presenças
-            with transaction.atomic():
-                for atividade in atividades:
-                    for aluno in alunos:
-                        aluno_id_str = str(aluno.cpf)
-                        
-                        # Determinar situação
-                        if aluno_id_str in alunos_presentes:
-                            situacao = 'PRESENTE'
-                            justificativa = None
-                        else:
-                            # Verificar se há justificativa
-                            if aluno_id_str in justificativas and justificativas[aluno_id_str].strip():
-                                situacao = 'JUSTIFICADO'
-                                justificativa = justificativas[aluno_id_str]
-                            else:
-                                situacao = 'AUSENTE'
-                                justificativa = None
-                        
-                        # Criar ou atualizar registro de presença
-                        Presenca.objects.update_or_create(
-                            aluno=aluno,
-                            atividade=atividade,
-                            data=data,
-                            defaults={
-                                'situacao': situacao,
-                                'justificativa': justificativa,
-                                'registrado_por': request.user,
-                            }
-                        )
-            
-            messages.success(request, "Presenças registradas com sucesso!")
-            return redirect('presencas:listar_presencas')
-        else:
-            messages.error(request, "Erro ao registrar presenças. Verifique os dados informados.")
-    else:
-        form = RegistroPresencaMultiplaForm()
-    
-    return render(request, 'presencas/registrar_presenca_multipla.html', {'form': form})
-
-@login_required
-def obter_alunos_por_turmas(request):
-    """
-    API para obter alunos das turmas selecionadas.
-    """
-    if request.method == 'GET':
-        turmas_ids = request.GET.getlist('turmas[]')
-        data = request.GET.get('data')
-        atividades_ids = request.GET.getlist('atividades[]')
-        
-        if not turmas_ids:
-            return JsonResponse({'error': 'Nenhuma turma selecionada'}, status=400)
-        
-        # Obter alunos das turmas selecionadas
-        Aluno = get_aluno_model()
-        Turma = get_turma_model()
-        Presenca = get_presenca_model()
+        data = request.POST.get('data')
+        atividade_id = request.POST.get('atividade')
         
         try:
-            turmas = Turma.objects.filter(id__in=turmas_ids)
-            alunos = Aluno.objects.filter(turmas__in=turmas).distinct()
+            atividade = None
+            if atividade_id:
+                AtividadeAcademica = get_atividade_model()
+                atividade = AtividadeAcademica.objects.get(id=atividade_id)
             
-            # Formatar dados dos alunos
-            alunos_data = []
+            # Processar presenças para cada aluno
             for aluno in alunos:
-                # Verificar se já existem registros de presença para este aluno nas atividades selecionadas
-                situacoes = {}
-                justificativas = {}
+                presente = request.POST.get(f'presente_{aluno.cpf}') == 'on'
+                justificativa = request.POST.get(f'justificativa_{aluno.cpf}', '')
                 
-                if data and atividades_ids:
-                    for atividade_id in atividades_ids:
-                        try:
-                            presenca = Presenca.objects.get(
-                                aluno=aluno,
-                                atividade_id=atividade_id,
-                                data=data
-                            )
-                            situacoes[atividade_id] = presenca.situacao
-                            justificativas[atividade_id] = presenca.justificativa or ''
-                        except Presenca.DoesNotExist:
-                            situacoes[atividade_id] = 'PRESENTE'  # Padrão
-                            justificativas[atividade_id] = ''
-                
-                alunos_data.append({
-                    'id': aluno.cpf,
-                    'nome': aluno.nome,
-                    'numero_iniciatico': aluno.numero_iniciatico or 'N/A',
-                    'turmas': [t.nome for t in aluno.turmas.all()],
-                    'situacoes': situacoes,
-                    'justificativas': justificativas,
-                })
+                # Verificar se já existe registro
+                if Presenca.objects.filter(aluno=aluno, turma=turma, data=data).exists():
+                    # Atualizar registro existente
+                    presenca = Presenca.objects.get(aluno=aluno, turma=turma, data=data)
+                    presenca.presente = presente
+                    presenca.justificativa = justificativa if not presente else ''
+                    presenca.atividade = atividade
+                    presenca.registrado_por = request.user.username
+                    presenca.data_registro = timezone.now()
+                    presenca.save()
+                else:
+                    # Criar novo registro
+                    Presenca.objects.create(
+                        aluno=aluno,
+                        turma=turma,
+                        atividade=atividade,
+                        data=data,
+                        presente=presente,
+                        justificativa=justificativa if not presente else '',
+                        registrado_por=request.user.username,
+                        data_registro=timezone.now()
+                    )
             
-            return JsonResponse({'alunos': alunos_data})
+            messages.success(request, f'Presenças registradas com sucesso para a turma {turma.nome}.')
+            return redirect('turmas:detalhar_turma', turma_id=turma_id)
+            
         except Exception as e:
-            logger.error(f"Erro ao obter alunos por turmas: {str(e)}")
-            return JsonResponse({'error': f"Erro ao obter alunos: {str(e)}"}, status=500)
+            messages.error(request, f'Erro ao registrar presenças: {str(e)}')
     
-    return JsonResponse({'error': 'Método não permitido'}, status=405)
+    # Para requisições GET, exibir o formulário
+    AtividadeAcademica = get_atividade_model()
+    atividades = AtividadeAcademica.objects.filter(turmas=turma)
+    
+    context = {
+        'turma': turma,
+        'alunos': alunos,
+        'atividades': atividades,
+        'data_hoje': timezone.now().date()
+    }
+    
+    return render(request, 'presencas/registrar_presenca_turma.html', context)
 
 @login_required
-def obter_atividades_por_data(request):
-    """
-    API para obter atividades disponíveis para uma data específica.
-    """
-    if request.method == 'GET':
-        data = request.GET.get('data')
+def exportar_presencas_csv(request):
+    """Exporta os registros de presença para um arquivo CSV."""
+    Presenca = get_models()
+    
+    # Obter parâmetros de filtro
+    aluno_id = request.GET.get('aluno', '')
+    turma_id = request.GET.get('turma', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    
+    # Iniciar queryset
+    presencas = Presenca.objects.all().select_related('aluno', 'turma', 'atividade')
+    
+    # Aplicar filtros
+    if aluno_id:
+        presencas = presencas.filter(aluno__cpf=aluno_id)
+    if turma_id:
+        presencas = presencas.filter(turma__id=turma_id)
+    if data_inicio:
+        presencas = presencas.filter(data__gte=data_inicio)
+    if data_fim:
+        presencas = presencas.filter(data__lte=data_fim)
+    
+    # Criar resposta CSV
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="presencas.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Aluno', 'CPF', 'Turma', 'Data', 'Presente', 'Justificativa', 'Registrado Por', 'Data de Registro'])
+    
+    for presenca in presencas:
+        writer.writerow([
+            presenca.aluno.nome,
+            presenca.aluno.cpf,
+            presenca.turma.nome,
+            presenca.data,
+            'Sim' if presenca.presente else 'Não',
+            presenca.justificativa,
+            presenca.registrado_por,
+            presenca.data_registro
+        ])
+    
+    return response
+
+@login_required
+def relatorio_presencas(request):
+    """Exibe um relatório de presenças."""
+    Presenca = get_models()
+    
+    # Obter parâmetros de filtro
+    aluno_id = request.GET.get('aluno', '')
+    turma_id = request.GET.get('turma', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    
+    # Iniciar queryset
+    presencas = Presenca.objects.all().select_related('aluno', 'turma')
+    
+    # Aplicar filtros
+    if aluno_id:
+        presencas = presencas.filter(aluno__cpf=aluno_id)
+    if turma_id:
+        presencas = presencas.filter(turma__id=turma_id)
+    if data_inicio:
+        presencas = presencas.filter(data__gte=data_inicio)
+    if data_fim:
+        presencas = presencas.filter(data__lte=data_fim)
+    
+    # Calcular estatísticas
+    total = presencas.count()
+    presentes = presencas.filter(presente=True).count()
+    ausentes = total - presentes
+    taxa_presenca = (presentes / total * 100) if total > 0 else 0
+    
+    # Obter dados para os filtros
+    Aluno = get_aluno_model()
+    Turma = get_turma_model()
+    alunos = Aluno.objects.all()
+    turmas = Turma.objects.all()
+    
+    context = {
+        'presencas': presencas,
+        'alunos': alunos,
+        'turmas': turmas,
+        'filtros': {
+            'aluno': aluno_id,
+            'turma': turma_id,
+            'data_inicio': data_inicio,
+            'data_fim': data_fim
+        },
+        'estatisticas': {
+            'total': total,
+            'presentes': presentes,
+            'ausentes': ausentes,
+            'taxa_presenca': taxa_presenca
+        }
+    }
+    
+    return render(request, 'presencas/relatorio_presencas.html', context)
+
+@login_required
+def registrar_presenca_em_massa(request):
+    """Registra presença em massa para uma turma."""
+    Turma = get_model("turmas", "Turma")
+    Presenca = get_model("presencas", "Presenca")
+    Aluno = get_model("alunos", "Aluno")
+    AtividadeAcademica = get_model("atividades", "AtividadeAcademica")
+    
+    # Para requisições POST (quando o formulário é enviado)
+    if request.method == "POST":
+        turma_id = request.POST.get("turma")
+        atividade_id = request.POST.get("atividade")
+        data = request.POST.get("data")
+        presentes = request.POST.getlist("presentes")
         
-        if not data:
-            return JsonResponse({'error': 'Data não fornecida'}, status=400)
+        if not turma_id or not atividade_id or not data:
+            messages.error(request, "Por favor, preencha todos os campos obrigatórios.")
+            return redirect("presencas:registrar_presenca_em_massa")
         
         try:
-            data_obj = timezone.datetime.strptime(data, '%Y-%m-%d').date()
+            turma = Turma.objects.get(id=turma_id)
+            atividade = AtividadeAcademica.objects.get(id=atividade_id)
+            data_obj = datetime.strptime(data, "%Y-%m-%d").date()
             
-            # Obter atividades para a data
-            Atividade = get_atividade_model()
-            atividades = Atividade.objects.filter(data=data_obj)
+            # Obter todos os alunos da turma
+            matriculas = get_model("matriculas", "Matricula").objects.filter(turma=turma, status="A")
+            alunos = [m.aluno for m in matriculas]
             
-            # Formatar dados das atividades
-            atividades_data = []
-            for atividade in atividades:
-                atividades_data.append({
-                    'id': atividade.id,
-                    'titulo': atividade.titulo,
-                    'tipo': atividade.get_tipo_display() if hasattr(atividade, 'get_tipo_display') else 'Não especificado',
-                    'turmas': [t.nome for t in atividade.turmas.all()] if hasattr(atividade, 'turmas') else [],
-                })
+            # Registrar presenças/ausências
+            for aluno in alunos:
+                presente = aluno.cpf in presentes
+                justificativa = request.POST.get(f"justificativa_{aluno.cpf}", "") if not presente else ""
+                
+                # Verificar se já existe registro para este aluno/atividade/data
+                presenca, created = Presenca.objects.update_or_create(
+                    aluno=aluno,
+                    atividade=atividade,
+                    turma=turma,
+                    data=data_obj,
+                    defaults={
+                        "presente": presente,
+                        "justificativa": justificativa,
+                        "registrado_por": request.user.username
+                    }
+                )
             
-            return JsonResponse({'atividades': atividades_data})
+            messages.success(request, f"Presenças registradas com sucesso para {len(alunos)} alunos.")
+            return redirect("presencas:listar_presencas")
+            
         except Exception as e:
-            logger.error(f"Erro ao obter atividades por data: {str(e)}")
-            return JsonResponse({'error': f"Erro ao obter atividades: {str(e)}"}, status=500)
+            messages.error(request, f"Erro ao registrar presenças: {str(e)}")
+            return redirect("presencas:registrar_presenca_em_massa")
     
-    return JsonResponse({'error': 'Método não permitido'}, status=405)
+    # Para requisições GET (quando a página é carregada)
+    turmas = Turma.objects.filter(status="A")
+    data_hoje = timezone.now().date()
+    
+    return render(
+        request, 
+        "presencas/registrar_presenca_em_massa.html",
+        {
+            "turmas": turmas,
+            "data_hoje": data_hoje
+        }
+    )
 
+@login_required
+def api_atividades_por_turma(request, turma_id):
+    """API para obter atividades de uma turma."""
+    try:
+        Turma = get_model("turmas", "Turma")
+        AtividadeAcademica = get_model("atividades", "AtividadeAcademica")
+        
+        turma = Turma.objects.get(id=turma_id)
+        atividades = AtividadeAcademica.objects.filter(turmas=turma)
+        
+        return JsonResponse({
+            "success": True,
+            "atividades": [
+                {
+                    "id": atividade.id,
+                    "nome": atividade.nome
+                }
+                for atividade in atividades
+            ]
+        })
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+@login_required
+def api_alunos_por_turma(request, turma_id):
+    """API para obter alunos de uma turma."""
+    try:
+        Turma = get_model("turmas", "Turma")
+        Matricula = get_model("matriculas", "Matricula")
+        
+        turma = Turma.objects.get(id=turma_id)
+        matriculas = Matricula.objects.filter(turma=turma, status="A")
+        
+        return JsonResponse({
+            "success": True,
+            "alunos": [
+                {
+                    "cpf": m.aluno.cpf,
+                    "nome": m.aluno.nome,
+                    "foto": m.aluno.foto.url if m.aluno.foto else None
+                }
+                for m in matriculas
+            ]
+        })
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 
 ## Arquivos urls.py:
@@ -736,26 +650,21 @@ def obter_atividades_por_data(request):
 python
 from django.urls import path
 from . import views
-from . import api_views
 
-app_name = 'presencas'
+app_name = "presencas"
 
 urlpatterns = [
-   # Views principais
-   path('', views.listar_presencas, name='listar_presencas'),
-   path('registrar/', views.registrar_presenca, name='registrar_presenca'),
-   path('editar/<int:presenca_id>/', views.editar_presenca, name='editar_presenca'),
-   path('excluir/<int:presenca_id>/', views.excluir_presenca, name='excluir_presenca'),
-   path('multiplas/', views.registrar_presencas_multiplas, name='registrar_presencas_multiplas'),
-   path('multiplas/selecionar/<str:data>/<str:turmas>/<str:atividades>/', 
-        views.selecionar_alunos_presencas, name='selecionar_alunos_presencas'),
-   path('exportar/', views.exportar_presencas_csv, name='exportar_presencas_csv'),
-   path('relatorio/', views.relatorio_presencas, name='relatorio_presencas'),
-    
-   # APIs
-   path('api/obter-alunos-por-turmas/', api_views.obter_alunos_por_turmas, name='api_obter_alunos_por_turmas'),
-   path('api/obter-atividades-por-data/', api_views.obter_atividades_por_data, name='api_obter_atividades_por_data'),
-   path('api/salvar-presencas-multiplas/', api_views.salvar_presencas_multiplas, name='api_salvar_presencas_multiplas'),
+   path("", views.listar_presencas, name="listar_presencas"),
+   path("registrar-em-massa/", views.registrar_presenca_em_massa, name="registrar_presenca_em_massa"),
+   path("registrar/", views.registrar_presenca, name="registrar_presenca"),
+   path("editar/<int:presenca_id>/", views.editar_presenca, name="editar_presenca"),
+   path("excluir/<int:presenca_id>/", views.excluir_presenca, name="excluir_presenca"),
+   path("detalhar/<int:presenca_id>/", views.detalhar_presenca, name="detalhar_presenca"),
+   path("turma/<int:turma_id>/registrar/", views.registrar_presenca_turma, name="registrar_presenca_turma"),
+   path("exportar/csv/", views.exportar_presencas_csv, name="exportar_presencas_csv"),
+   path("relatorio/", views.relatorio_presencas, name="relatorio_presencas"),
+   path("api/atividades-por-turma/<int:turma_id>/", views.api_atividades_por_turma, name="api_atividades_por_turma"),
+   path("api/alunos-por-turma/<int:turma_id>/", views.api_alunos_por_turma, name="api_alunos_por_turma"),
 ]
 
 
@@ -771,23 +680,34 @@ from django.utils import timezone
 from importlib import import_module
 
 def get_aluno_model():
-    """Obtém o modelo Aluno."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
+def get_turma_model():
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
+
 def get_atividade_model():
-    """Obtém o modelo Atividade."""
     atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "Atividade")
+    return getattr(atividades_module, "AtividadeAcademica")
 
 class Presenca(models.Model):
-    """Modelo para registro de presença de alunos em atividades."""
+    """
+    Modelo para registro de presença de alunos em atividades.
     
-    SITUACAO_CHOICES = [
-        ('PRESENTE', 'Presente'),
-        ('AUSENTE', 'Ausente'),
-        ('JUSTIFICADO', 'Justificado'),
-    ]
+    Este modelo armazena informações sobre a presença ou ausência de um aluno
+    em uma determinada atividade, incluindo a data, status e justificativa
+    em caso de ausência.
+    
+    Attributes:
+        aluno (ForeignKey): Referência ao aluno cuja presença está sendo registrada.
+        atividade (ForeignKey): Referência à atividade em que a presença está sendo registrada.
+        data (DateField): Data do registro de presença.
+        presente (BooleanField): Indica se o aluno estava presente (True) ou ausente (False).
+        justificativa (TextField): Justificativa para a ausência, se aplicável.
+        registrado_por (ForeignKey): Usuário que registrou a presença.
+        data_registro (DateTimeField): Data e hora em que o registro foi criado.
+    """
     
     aluno = models.ForeignKey(
         get_aluno_model(),
@@ -798,52 +718,59 @@ class Presenca(models.Model):
     atividade = models.ForeignKey(
         get_atividade_model(),
         on_delete=models.CASCADE,
-        verbose_name="Atividade"
-    )
-    
-    data = models.DateField(
-        verbose_name="Data",
-        default=timezone.now
-    )
-    
-    situacao = models.CharField(
-        max_length=15,
-        choices=SITUACAO_CHOICES,
-        default='PRESENTE',
-        verbose_name="Situação"
-    )
-    
-    justificativa = models.TextField(
-        blank=True,
+        verbose_name="Atividade",
         null=True,
-        verbose_name="Justificativa"
+        blank=True
     )
     
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Criado em"
+    turma = models.ForeignKey(
+        get_turma_model(), 
+        on_delete=models.CASCADE,
+        verbose_name="Turma",
+        null=True,
+        blank=True
     )
     
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Atualizado em"
-    )
+    data = models.DateField(verbose_name="Data")
+    
+    presente = models.BooleanField(default=True, verbose_name="Presente")
+    
+    justificativa = models.TextField(blank=True, null=True, verbose_name="Justificativa")
+    
+    registrado_por = models.CharField(max_length=100, default="Sistema", verbose_name="Registrado por")
+    
+    data_registro = models.DateTimeField(default=timezone.now, verbose_name="Data de registro")
     
     class Meta:
         verbose_name = "Presença"
         verbose_name_plural = "Presenças"
-        ordering = ['-data', 'aluno__nome']
-        unique_together = ['aluno', 'atividade', 'data']
+        ordering = ["-data", "aluno__nome"]
+        unique_together = ["aluno", "turma", "data"]
     
     def __str__(self):
-        return f"{self.aluno.nome} - {self.atividade.titulo} - {self.data}"
+        """Retorna uma representação em string do objeto."""
+        status = "Presente" if self.presente else "Ausente"
+        return f"{self.aluno.nome} - {self.data} - {status}"
     
-    def save(self, *args, **kwargs):
-        # Limpar justificativa se a situação não for JUSTIFICADO
-        if self.situacao != 'JUSTIFICADO':
-            self.justificativa = None
+    def clean(self):
+        """
+        Valida os dados do modelo antes de salvar.
         
-        super().save(*args, **kwargs)
+        Raises:
+            ValidationError: Se a data for futura ou se a justificativa estiver
+                            ausente quando o aluno estiver marcado como ausente.
+        """
+        super().clean()
+        
+        # Verificar se a data não é futura
+        if self.data and self.data > timezone.now().date():
+            raise ValidationError({"data": "A data não pode ser futura."})
+        
+        # Verificar se há justificativa quando o aluno está ausente
+        if not self.presente and not self.justificativa:
+            raise ValidationError(
+                {"justificativa": "É necessário fornecer uma justificativa para a ausência."}
+            )
 
 
 
@@ -1000,6 +927,182 @@ html
 </div>
 {% endblock %}
 
+
+
+
+### Arquivo: presencas\templates\presencas\filtro_presencas.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Filtrar Presenças{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Filtrar Presenças</h1>
+        <div>
+            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar para Lista
+            </a>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Filtros de Pesquisa</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{% url 'presencas:listar_presencas' %}">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="aluno" class="form-label">Aluno</label>
+                        <select class="form-select" id="aluno" name="aluno">
+                            <option value="">Todos os alunos</option>
+                            {% for aluno in alunos %}
+                            <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="turma" class="form-label">Turma</label>
+                        <select class="form-select" id="turma" name="turma">
+                            <option value="">Todas as turmas</option>
+                            {% for turma in turmas %}
+                            <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="atividade" class="form-label">Atividade</label>
+                        <select class="form-select" id="atividade" name="atividade">
+                            <option value="">Todas as atividades</option>
+                            {% for atividade in atividades %}
+                            <option value="{{ atividade.id }}">{{ atividade.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="data_inicio" class="form-label">Data Início</label>
+                        <input type="date" class="form-control" id="data_inicio" name="data_inicio">
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="data_fim" class="form-label">Data Fim</label>
+                        <input type="date" class="form-control" id="data_fim" name="data_fim">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="presente">Presente</option>
+                            <option value="ausente">Ausente</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="ordenar" class="form-label">Ordenar por</label>
+                        <select class="form-select" id="ordenar" name="ordenar">
+                            <option value="data">Data (mais recente primeiro)</option>
+                            <option value="data_asc">Data (mais antiga primeiro)</option>
+                            <option value="aluno">Nome do Aluno</option>
+                            <option value="atividade">Nome da Atividade</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <button type="reset" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Limpar Filtros
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Pesquisar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar Select2 para melhorar a experiência de seleção
+        if (typeof $.fn.select2 === 'function') {
+            $('#aluno').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Selecione um aluno',
+                allowClear: true
+            });
+            
+            $('#turma').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Selecione uma turma',
+                allowClear: true
+            });
+            
+            $('#atividade').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Selecione uma atividade',
+                allowClear: true
+            });
+        }
+        
+        // Filtrar atividades por turma
+        const turmaSelect = document.getElementById('turma');
+        const atividadeSelect = document.getElementById('atividade');
+        
+        if (turmaSelect && atividadeSelect) {
+            turmaSelect.addEventListener('change', function() {
+                const turmaId = this.value;
+                
+                if (turmaId) {
+                    // Fazer requisição AJAX para buscar atividades da turma
+                    fetch(`/presencas/api/atividades-por-turma/${turmaId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Limpar select de atividades
+                            atividadeSelect.innerHTML = '<option value="">Todas as atividades</option>';
+                            
+                            // Adicionar novas opções
+                            if (data.success && data.atividades && data.atividades.length > 0) {
+                                data.atividades.forEach(atividade => {
+                                    const option = document.createElement('option');
+                                    option.value = atividade.id;
+                                    option.textContent = `${atividade.nome} (${atividade.data})`;
+                                    atividadeSelect.appendChild(option);
+                                });
+                            }
+                            
+                            // Atualizar Select2 se estiver sendo usado
+                            if (typeof $.fn.select2 === 'function') {
+                                $(atividadeSelect).trigger('change');
+                            }
+                        })
+                        .catch(error => console.error('Erro ao buscar atividades:', error));
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}
 
 
 
@@ -1735,58 +1838,75 @@ html
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <!-- Cabeçalho com título e botões -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Lista de Presenças</h1>
-        <div class="btn-group">
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
             <a href="{% url 'presencas:registrar_presenca' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Nova Presença
+                <i class="fas fa-plus"></i> Registrar Presença
             </a>
-            <a href="{% url 'presencas:registrar_presencas_multiplas' %}" class="btn btn-success">
-                <i class="fas fa-list-check"></i> Presenças Múltiplas
-            </a>
-            <a href="{% url 'presencas:exportar_presencas_csv' %}" class="btn btn-info">
-                <i class="fas fa-file-export"></i> Exportar CSV
-            </a>
-            <a href="{% url 'presencas:relatorio_presencas' %}" class="btn btn-warning">
-                <i class="fas fa-chart-bar"></i> Relatório
+            <a href="{% url 'presencas:registrar_presenca_em_massa' %}" class="btn btn-success">
+                <i class="fas fa-users"></i> Registro em Massa
             </a>
         </div>
     </div>
     
-    <!-- Filtros -->
+    <!-- Filtros avançados -->
     <div class="card mb-4">
-        <div class="card-header bg-light">
+        <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Filtros</h5>
         </div>
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-3">
-                    {{ filtro_form.aluno.label_tag }}
-                    {{ filtro_form.aluno }}
+                    <label for="aluno" class="form-label">Aluno</label>
+                    <select name="aluno" id="aluno" class="form-select">
+                        <option value="">Todos os alunos</option>
+                        {% for aluno in alunos %}
+                        <option value="{{ aluno.cpf }}" {% if filtros.aluno == aluno.cpf %}selected{% endif %}>
+                            {{ aluno.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
+                
                 <div class="col-md-3">
-                    {{ filtro_form.atividade.label_tag }}
-                    {{ filtro_form.atividade }}
+                    <label for="turma" class="form-label">Turma</label>
+                    <select name="turma" id="turma" class="form-select">
+                        <option value="">Todas as turmas</option>
+                        {% for turma in turmas %}
+                        <option value="{{ turma.id }}" {% if filtros.turma == turma.id|stringformat:"s" %}selected{% endif %}>
+                            {{ turma.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
+                
                 <div class="col-md-2">
-                    {{ filtro_form.data_inicio.label_tag }}
-                    {{ filtro_form.data_inicio }}
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio }}">
                 </div>
+                
                 <div class="col-md-2">
-                    {{ filtro_form.data_fim.label_tag }}
-                    {{ filtro_form.data_fim }}
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ filtros.data_fim }}">
                 </div>
+                
                 <div class="col-md-2">
-                    {{ filtro_form.situacao.label_tag }}
-                    {{ filtro_form.situacao }}
+                    <label for="presente" class="form-label">Status</label>
+                    <select name="presente" id="presente" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="true" {% if filtros.presente == 'true' %}selected{% endif %}>Presente</option>
+                        <option value="false" {% if filtros.presente == 'false' %}selected{% endif %}>Ausente</option>
+                    </select>
                 </div>
-                <div class="col-12 mt-3">
+                
+                <div class="col-12">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter"></i> Filtrar
                     </button>
                     <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
-                        <i class="fas fa-broom"></i> Limpar Filtros
+                        <i class="fas fa-undo"></i> Limpar Filtros
                     </a>
                 </div>
             </form>
@@ -1798,139 +1918,114 @@ html
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
-                    <thead class="table-dark">
+                    <thead>
                         <tr>
                             <th>Aluno</th>
                             <th>Atividade</th>
+                            <th>Turma</th>
                             <th>Data</th>
-                            <th>Situação</th>
+                            <th>Status</th>
+                            <th>Justificativa</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for presenca in presencas %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        {% if presenca.aluno.foto %}
-                                            <img src="{{ presenca.aluno.foto.url }}" alt="{{ presenca.aluno.nome }}" 
-                                                 class="rounded-circle me-2" width="40" height="40">
-                                        {% else %}
-                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
-                                                 style="width: 40px; height: 40px; color: white;">
-                                                {{ presenca.aluno.nome|first|upper }}
-                                            </div>
-                                        {% endif %}
-                                        <div>
-                                            <div>{{ presenca.aluno.nome }}</div>
-                                            <small class="text-muted">{{ presenca.aluno.cpf }}</small>
-                                        </div>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if presenca.aluno.foto %}
+                                    <img src="{{ presenca.aluno.foto.url }}" alt="{{ presenca.aluno.nome }}" 
+                                         class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                         style="width: 40px; height: 40px; color: white;">
+                                        {{ presenca.aluno.nome|first|upper }}
                                     </div>
-                                </td>
-                                <td>{{ presenca.atividade.titulo }}</td>
-                                <td>{{ presenca.data|date:"d/m/Y" }}</td>
-                                <td>
-                                    {% if presenca.situacao == 'PRESENTE' %}
-                                        <span class="badge bg-success">Presente</span>
-                                    {% elif presenca.situacao == 'AUSENTE' %}
-                                        <span class="badge bg-danger">Ausente</span>
-                                    {% elif presenca.situacao == 'JUSTIFICADO' %}
-                                        <span class="badge bg-warning">Justificado</span>
-                                        <div class="small text-muted mt-1">{{ presenca.justificativa|truncatechars:30 }}</div>
                                     {% endif %}
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <a href="{% url 'presencas:editar_presenca' presenca.id %}" 
-                                           class="btn btn-sm btn-warning" title="Editar">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="{% url 'presencas:excluir_presenca' presenca.id %}" 
-                                           class="btn btn-sm btn-danger" title="Excluir">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
+                                    <div>
+                                        <div>{{ presenca.aluno.nome }}</div>
+                                        <small class="text-muted">{{ presenca.aluno.cpf }}</small>
                                     </div>
-                                </td>
-                            </tr>
+                                </div>
+                            </td>
+                            <td>{{ presenca.atividade.nome }}</td>
+                            <td>{{ presenca.atividade.turma.nome }}</td>
+                            <td>{{ presenca.data|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if presenca.presente %}
+                                <span class="badge bg-success">Presente</span>
+                                {% else %}
+                                <span class="badge bg-danger">Ausente</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ presenca.justificativa|truncatechars:30|default:"-" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'presencas:editar_presenca' presenca.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'presencas:excluir_presenca' presenca.id %}" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
                         {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center py-4">
-                                    <div class="alert alert-info mb-0">
-                                        Nenhuma presença encontrada com os filtros selecionados.
-                                    </div>
-                                </td>
-                            </tr>
+                        <tr>
+                            <td colspan="7" class="text-center py-3">
+                                <p class="mb-0">Nenhum registro de presença encontrado com os filtros selecionados.</p>
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div>
+                <p class="mb-0">Exibindo {{ presencas|length }} de {{ page_obj.paginator.count }} registros</p>
+            </div>
             
-            <!-- Paginação -->
             {% if page_obj.has_other_pages %}
-            <nav aria-label="Paginação" class="mt-4">
-                <ul class="pagination justify-content-center">
+            <nav aria-label="Paginação">
+                <ul class="pagination mb-0">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                            <i class="fas fa-angle-double-left"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                            <i class="fas fa-angle-left"></i>
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Anterior">
+                            <span aria-hidden="true">«</span>
                         </a>
                     </li>
                     {% else %}
                     <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                        <span class="page-link" aria-hidden="true">«</span>
                     </li>
                     {% endif %}
                     
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% else %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                                {{ num }}
-                            </a>
+                            <a class="page-link" href="?page={{ i }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">{{ i }}</a>
                         </li>
                         {% endif %}
                     {% endfor %}
                     
                     {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                            <i class="fas fa-angle-right"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                            <i class="fas fa-angle-double-right"></i>
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Próxima">
+                            <span aria-hidden="true">»</span>
                         </a>
                     </li>
                     {% else %}
                     <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-right"></i></span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                        <span class="page-link" aria-hidden="true">»</span>
                     </li>
                     {% endif %}
                 </ul>
             </nav>
             {% endif %}
-        </div>
-        <div class="card-footer">
-            <div class="d-flex justify-content-between align-items-center">
-                <span>Total: {{ page_obj.paginator.count }} presenças</span>
-                <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-            </div>
         </div>
     </div>
 </div>
@@ -1940,10 +2035,19 @@ html
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Inicializar Select2 para melhorar a experiência de seleção
-        $('.select2').select2({
-            theme: 'bootstrap-5',
-            width: '100%'
-        });
+        if (typeof $.fn.select2 === 'function') {
+            $('#aluno').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Selecione um aluno',
+                allowClear: true
+            });
+            
+            $('#turma').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Selecione uma turma',
+                allowClear: true
+            });
+        }
     });
 </script>
 {% endblock %}
@@ -1987,77 +2091,84 @@ html
 
 
 
-### Arquivo: presencas\templates\presencas\registrar_presenca_multipla.html
+### Arquivo: presencas\templates\presencas\registrar_presenca_em_massa.html
 
 html
 {% extends 'base.html' %}
 
-{% block title %}Registro Múltiplo de Presenças{% endblock %}
+{% block title %}Registrar Presença em Massa{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Registro Múltiplo de Presenças</h1>
+        <h1>Registrar Presença em Massa</h1>
         <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Voltar
         </a>
     </div>
     
     <div class="card">
-        <div class="card-header">
-            <h5>Selecione os parâmetros</h5>
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Selecione a Turma e a Data</h5>
         </div>
         <div class="card-body">
-            <form method="post" id="form-parametros">
+            <form method="post">
                 {% csrf_token %}
                 
                 <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label for="{{ form.data.id_for_label }}" class="form-label">{{ form.data.label }}</label>
-                        {{ form.data }}
-                        {% if form.data.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.data.errors }}
-                            </div>
-                        {% endif %}
-                        {% if form.data.help_text %}
-                            <div class="form-text">{{ form.data.help_text }}</div>
-                        {% endif %}
+                    <div class="col-md-6">
+                        <label for="turma" class="form-label">Turma</label>
+                        <select name="turma" id="turma" class="form-select" required>
+                            <option value="">Selecione uma turma</option>
+                            {% for turma in turmas %}
+                                <option value="{{ turma.id }}">{{ turma.nome }} - {{ turma.curso.nome }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     
-                    <div class="col-md-8">
-                        <label for="{{ form.turmas.id_for_label }}" class="form-label">{{ form.turmas.label }}</label>
-                        {{ form.turmas }}
-                        {% if form.turmas.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.turmas.errors }}
-                            </div>
-                        {% endif %}
-                        {% if form.turmas.help_text %}
-                            <div class="form-text">{{ form.turmas.help_text }}</div>
-                        {% endif %}
+                    <div class="col-md-6">
+                        <label for="data" class="form-label">Data</label>
+                        <input type="date" name="data" id="data" class="form-control" 
+                               value="{{ data_hoje|date:'Y-m-d' }}" required>
                     </div>
                 </div>
                 
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <label for="{{ form.atividades.id_for_label }}" class="form-label">{{ form.atividades.label }}</label>
-                        {{ form.atividades }}
-                        {% if form.atividades.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.atividades.errors }}
-                            </div>
-                        {% endif %}
-                        {% if form.atividades.help_text %}
-                            <div class="form-text">{{ form.atividades.help_text }}</div>
-                        {% endif %}
+                <div class="mb-3">
+                    <label for="atividade" class="form-label">Atividade</label>
+                    <select name="atividade" id="atividade" class="form-select" required>
+                        <option value="">Selecione uma atividade</option>
+                        <!-- As atividades serão carregadas via JavaScript quando uma turma for selecionada -->
+                    </select>
+                </div>
+                
+                <div id="lista-alunos" class="mt-4" style="display: none;">
+                    <h5>Lista de Alunos</h5>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="marcar-todos" checked>
+                        <label class="form-check-label" for="marcar-todos">Marcar/Desmarcar Todos</label>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">#</th>
+                                    <th>Aluno</th>
+                                    <th style="width: 120px;">Presente</th>
+                                    <th>Justificativa (se ausente)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-alunos">
+                                <!-- Os alunos serão carregados via JavaScript -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between mt-4">
                     <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-arrow-right"></i> Próximo
+                    <button type="submit" class="btn btn-primary" id="btn-registrar" disabled>
+                        <i class="fas fa-save"></i> Registrar Presenças
                     </button>
                 </div>
             </form>
@@ -2069,274 +2180,159 @@ html
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar select2 para os campos de seleção múltipla
-        if (typeof $.fn.select2 !== 'undefined') {
-            $('#id_turmas').select2({
-                placeholder: 'Selecione uma ou mais turmas',
-                allowClear: true
-            });
+        const turmaSelect = document.getElementById('turma');
+        const atividadeSelect = document.getElementById('atividade');
+        const listaAlunos = document.getElementById('lista-alunos');
+        const tbodyAlunos = document.getElementById('tbody-alunos');
+        const btnRegistrar = document.getElementById('btn-registrar');
+        const marcarTodosCheckbox = document.getElementById('marcar-todos');
+        
+        // Carregar atividades quando uma turma for selecionada
+        turmaSelect.addEventListener('change', function() {
+            const turmaId = this.value;
             
-            $('#id_atividades').select2({
-                placeholder: 'Selecione uma ou mais atividades',
-                allowClear: true
-            });
-        }
-        
-        // Carregar atividades disponíveis quando a data mudar
-        const dataInput = document.getElementById('id_data');
-        const atividadesSelect = document.getElementById('id_atividades');
-        
-        if (dataInput && atividadesSelect) {
-            dataInput.addEventListener('change', function() {
-                const data = this.value;
-                if (!data) return;
-                
-                // Limpar atividades atuais
-                $(atividadesSelect).empty();
-                
-                // Carregar atividades para a data selecionada
-                fetch(`{% url 'presencas:api_obter_atividades_por_data' %}?data=${data}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.error) {
-                            console.error(data.error);
-                            return;
-                        }
-                        
-                        // Adicionar atividades ao select
+            if (!turmaId) {
+                atividadeSelect.innerHTML = '<option value="">Selecione uma atividade</option>';
+                listaAlunos.style.display = 'none';
+                btnRegistrar.disabled = true;
+                return;
+            }
+            
+            // Fazer requisição AJAX para buscar atividades da turma
+            fetch(`/api/atividades-por-turma/${turmaId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    atividadeSelect.innerHTML = '<option value="">Selecione uma atividade</option>';
+                    
+                    if (data.atividades && data.atividades.length > 0) {
                         data.atividades.forEach(atividade => {
-                            const option = new Option(atividade.titulo, atividade.id);
-                            $(atividadesSelect).append(option);
+                            const option = document.createElement('option');
+                            option.value = atividade.id;
+                            option.textContent = atividade.nome;
+                            atividadeSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = "";
+                        option.textContent = "Nenhuma atividade encontrada para esta turma";
+                        option.disabled = true;
+                        atividadeSelect.appendChild(option);
+                    }
+                })
+                .catch(error => console.error('Erro ao buscar atividades:', error));
+        });
+        
+        // Carregar alunos quando uma atividade for selecionada
+        atividadeSelect.addEventListener('change', function() {
+            const atividadeId = this.value;
+            const turmaId = turmaSelect.value;
+            
+            if (!atividadeId || !turmaId) {
+                listaAlunos.style.display = 'none';
+                btnRegistrar.disabled = true;
+                return;
+            }
+            
+            // Fazer requisição AJAX para buscar alunos da turma
+            fetch(`/api/alunos-por-turma/${turmaId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    tbodyAlunos.innerHTML = '';
+                    
+                    if (data.alunos && data.alunos.length > 0) {
+                        data.alunos.forEach((aluno, index) => {
+                            const tr = document.createElement('tr');
+                            
+                            tr.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        ${aluno.foto ? 
+                                            `<img src="${aluno.foto}" alt="${aluno.nome}" 
+                                                 class="rounded-circle me-2" width="40" height="40" 
+                                                 style="object-fit: cover;">` : 
+                                            `<div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px; color: white;">
+                                                ${aluno.nome.charAt(0).toUpperCase()}
+                                            </div>`
+                                        }
+                                        <div>
+                                            <div>${aluno.nome}</div>
+                                            <small class="text-muted">${aluno.cpf}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input presenca-checkbox" type="checkbox" 
+                                               name="presentes" value="${aluno.cpf}" id="presente_${aluno.cpf}" checked>
+                                        <label class="form-check-label" for="presente_${aluno.cpf}">
+                                            Presente
+                                        </label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <textarea class="form-control justificativa-field" 
+                                              name="justificativa_${aluno.cpf}" rows="1" 
+                                              placeholder="Justificativa para ausência" disabled></textarea>
+                                </td>
+                            `;
+                            
+                            tbodyAlunos.appendChild(tr);
                         });
                         
-                        // Atualizar select2
-                        $(atividadesSelect).trigger('change');
-                    })
-                    .catch(error => console.error('Erro ao carregar atividades:', error));
-            });
-        }
-    });
-</script>
-{% endblock %}
-
-
-
-### Arquivo: presencas\templates\presencas\relatorio_presencas.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Relatório de Presenças{% endblock %}
-
-{% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Relatório de Presenças</h1>
-        <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-    </div>
-    
-    <!-- Resumo em cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Presenças</h5>
-                    <p class="card-text display-4">{{ total_presencas }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Presentes</h5>
-                    <p class="card-text display-4">{{ total_presentes }}</p>
-                    <p class="card-text">{{ percentual_presentes|floatformat:1 }}%</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-danger text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Ausentes</h5>
-                    <p class="card-text display-4">{{ total_ausentes }}</p>
-                    <p class="card-text">{{ percentual_ausentes|floatformat:1 }}%</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark">
-                <div class="card-body">
-                    <h5 class="card-title">Justificados</h5>
-                    <p class="card-text display-4">{{ total_justificados }}</p>
-                    <p class="card-text">{{ percentual_justificados|floatformat:1 }}%</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Gráficos -->
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Distribuição de Presenças</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="grafico-distribuicao"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Presenças por Mês</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="grafico-mensal"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-12 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Presenças por Atividade</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="grafico-atividades"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Gráfico de distribuição (pizza)
-        const ctxDistribuicao = document.getElementById('grafico-distribuicao').getContext('2d');
-        new Chart(ctxDistribuicao, {
-            type: 'pie',
-            data: {
-                labels: ['Presentes', 'Ausentes', 'Justificados'],
-                datasets: [{
-                    data: [{{ total_presentes }}, {{ total_ausentes }}, {{ total_justificados }}],
-                    backgroundColor: [
-                        'rgba(40, 167, 69, 0.7)',  // Verde
-                        'rgba(220, 53, 69, 0.7)',  // Vermelho
-                        'rgba(255, 193, 7, 0.7)'   // Amarelo
-                    ],
-                    borderColor: [
-                        'rgba(40, 167, 69, 1)',
-                        'rgba(220, 53, 69, 1)',
-                        'rgba(255, 193, 7, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
+                        // Adicionar eventos para os checkboxes de presença
+                        const checkboxes = document.querySelectorAll('.presenca-checkbox');
+                        checkboxes.forEach(function(checkbox) {
+                            checkbox.addEventListener('change', function() {
+                                const row = this.closest('tr');
+                                const justificativa = row.querySelector('.justificativa-field');
+                                
+                                if (this.checked) {
+                                    justificativa.disabled = true;
+                                    justificativa.value = '';
+                                } else {
+                                    justificativa.disabled = false;
+                                }
+                            });
+                        });
+                        
+                        // Marcar/Desmarcar todos
+                        marcarTodosCheckbox.addEventListener('change', function() {
+                            checkboxes.forEach(function(checkbox) {
+                                checkbox.checked = marcarTodosCheckbox.checked;
+                                const row = checkbox.closest('tr');
+                                const justificativa = row.querySelector('.justificativa-field');
+                                
+                                if (checkbox.checked) {
+                                    justificativa.disabled = true;
+                                    justificativa.value = '';
+                                } else {
+                                    justificativa.disabled = false;
+                                }
+                            });
+                        });
+                        
+                        listaAlunos.style.display = 'block';
+                        btnRegistrar.disabled = false;
+                    } else {
+                        tbodyAlunos.innerHTML = `
+                            <tr>
+                                <td colspan="4" class="text-center py-3">
+                                    <p class="mb-0">Nenhum aluno encontrado para esta turma.</p>
+                                </td>
+                            </tr>
+                        `;
+                        
+                        listaAlunos.style.display = 'block';
+                        btnRegistrar.disabled = true;
                     }
-                }
-            }
-        });
-        
-        // Gráfico mensal (linha)
-        const ctxMensal = document.getElementById('grafico-mensal').getContext('2d');
-        new Chart(ctxMensal, {
-            type: 'line',
-            data: {
-                labels: {{ meses|safe }},
-                datasets: [
-                    {
-                        label: 'Presentes',
-                        data: {{ presentes_por_mes|safe }},
-                        borderColor: 'rgba(40, 167, 69, 1)',
-                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                        fill: true
-                    },
-                    {
-                        label: 'Ausentes',
-                        data: {{ ausentes_por_mes|safe }},
-                        borderColor: 'rgba(220, 53, 69, 1)',
-                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                        fill: true
-                    },
-                    {
-                        label: 'Justificados',
-                        data: {{ justificados_por_mes|safe }},
-                        borderColor: 'rgba(255, 193, 7, 1)',
-                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-        
-        // Gráfico por atividade (barra)
-        const ctxAtividades = document.getElementById('grafico-atividades').getContext('2d');
-        new Chart(ctxAtividades, {
-            type: 'bar',
-            data: {
-                labels: {{ atividades_labels|safe }},
-                datasets: [
-                    {
-                        label: 'Presentes',
-                        data: {{ presentes_por_atividade|safe }},
-                        backgroundColor: 'rgba(40, 167, 69, 0.7)'
-                    },
-                    {
-                        label: 'Ausentes',
-                        data: {{ ausentes_por_atividade|safe }},
-                        backgroundColor: 'rgba(220, 53, 69, 0.7)'
-                    },
-                    {
-                        label: 'Justificados',
-                        data: {{ justificados_por_atividade|safe }},
-                        backgroundColor: 'rgba(255, 193, 7, 0.7)'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: false
-                    },
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
+                })
+                .catch(error => console.error('Erro ao buscar alunos:', error));
         });
     });
 </script>
 {% endblock %}
 
+
+'''
