@@ -1,0 +1,40 @@
+{% comment %}
+Componente para botões de ação padronizados
+Uso: {% include 'includes/action_buttons.html' with type="list|detail|form" %}
+{% endcomment %}
+
+{% if type == "list" %}
+<div class="actions-container">
+    <a href="javascript:history.back()" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+    <a href="{{ create_url }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Novo {{ entity_name }}
+    </a>
+</div>
+{% elif type == "detail" %}
+<div class="actions-container">
+    <a href="{{ list_url }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+    <div class="actions-container-end">
+        <a href="{{ edit_url }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+        {% if delete_url %}
+        <a href="{{ delete_url }}" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Excluir
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% elif type == "form" %}
+<div class="actions-container">
+    <a href="{{ cancel_url|default:'javascript:history.back()' }}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Cancelar
+    </a>
+    <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> {{ submit_text|default:'Salvar' }}
+    </button>
+</div>
+{% endif %}

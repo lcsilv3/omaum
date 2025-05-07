@@ -13,9 +13,14 @@
     
   <form method="post">
       {% csrf_token %}
-      <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
-      <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
-      <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary">Cancelar</a>
+      <div class="d-flex justify-content-between">
+          <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary">
+              <i class="fas fa-times"></i> Cancelar
+          </a>
+          <button type="submit" class="btn btn-danger">
+              <i class="fas fa-trash"></i> Confirmar Exclusão
+          </button>
+      </div>
   </form>
 </div>
 {% endblock %}

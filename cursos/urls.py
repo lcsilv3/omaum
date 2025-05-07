@@ -15,4 +15,6 @@ urlpatterns = [
         views.excluir_curso,
         name="excluir_curso",
     ),
+    path("exportar/", views.exportar_cursos, name="exportar_cursos"),
+    path("importar/", views.importar_cursos, name="importar_cursos"),
 ]

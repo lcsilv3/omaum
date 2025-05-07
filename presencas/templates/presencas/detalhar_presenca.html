@@ -31,12 +31,11 @@
             </div>
             {% endif %}
         </div>
-    </div>
-
-    <div class="mt-3">
-        <a href="{% url 'presencas:editar_presenca' presenca.id %}" class="btn btn-warning">Editar</a>
-        <a href="{% url 'presencas:excluir_presenca' presenca.id %}" class="btn btn-danger">Excluir</a>
-        <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">Voltar para Lista</a>
+        <div class="card-footer">
+            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Voltar para a lista
+            </a>
+        </div>
     </div>
 </div>
 {% endblock %}

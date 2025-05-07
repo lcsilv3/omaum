@@ -1,37 +1,31 @@
 from django.urls import path
-from .views.frequencia_mensal import (
+from .views import (
     listar_frequencias,
     criar_frequencia_mensal,
     editar_frequencia_mensal,
     excluir_frequencia_mensal,
     detalhar_frequencia_mensal,
-    recalcular_carencias
-)
-from .views.carencia import (
+    recalcular_carencias,
     editar_carencia,
     resolver_carencia,
     detalhar_carencia,
-    iniciar_acompanhamento
-)
-from .views.notificacao import (
+    iniciar_acompanhamento,
     listar_notificacoes_carencia,
     criar_notificacao,
     detalhar_notificacao,
     editar_notificacao,
     enviar_notificacao,
     reenviar_notificacao,
-    responder_aluno
-)
-from .views.relatorio import (
+    responder_aluno,
     relatorio_frequencias,
     exportar_frequencia_csv,
     historico_frequencia,
-    exportar_historico
-)
-from .views.dashboard import (
+    exportar_historico,
     dashboard,
     painel_frequencias,
-    visualizar_painel_frequencias
+    visualizar_painel_frequencias,
+    exportar_frequencias,
+    importar_frequencias
 )
 from .views import api_views
 
@@ -69,6 +63,8 @@ urlpatterns = [
     path('relatorio/', relatorio_frequencias, name='relatorio_frequencias'),
     path('historico/<str:aluno_cpf>/', historico_frequencia, name='historico_frequencia'),
     path('historico/<str:aluno_cpf>/exportar/', exportar_historico, name='exportar_historico'),
+    path("exportar/", exportar_frequencias, name="exportar_frequencias"),
+    path("importar/", importar_frequencias, name="importar_frequencias"),
     
     # Dashboard
     path('dashboard/', dashboard, name='dashboard'),

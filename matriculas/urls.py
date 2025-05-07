@@ -12,4 +12,6 @@ urlpatterns = [
     path("turma/<int:turma_id>/aluno/<str:aluno_cpf>/cancelar/", 
          views.cancelar_matricula_por_turma_aluno, 
          name="cancelar_matricula_por_turma_aluno"),
+    path("exportar/", views.exportar_matriculas, name="exportar_matriculas"),
+    path("importar/", views.importar_matriculas, name="importar_matriculas"),
 ]

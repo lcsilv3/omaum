@@ -161,7 +161,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from importlib import import_module
 from django.utils import timezone
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import csv
 import logging
 from datetime import datetime
@@ -531,10 +531,10 @@ def relatorio_presencas(request):
 @login_required
 def registrar_presenca_em_massa(request):
     """Registra presença em massa para uma turma."""
-    Turma = get_model("turmas", "Turma")
-    Presenca = get_model("presencas", "Presenca")
-    Aluno = get_model("alunos", "Aluno")
-    AtividadeAcademica = get_model("atividades", "AtividadeAcademica")
+    Turma = get_turma_model()
+    Presenca = get_models()
+    Aluno = get_aluno_model()
+    AtividadeAcademica = get_atividade_model()
     
     # Para requisições POST (quando o formulário é enviado)
     if request.method == "POST":
@@ -553,7 +553,8 @@ def registrar_presenca_em_massa(request):
             data_obj = datetime.strptime(data, "%Y-%m-%d").date()
             
             # Obter todos os alunos da turma
-            matriculas = get_model("matriculas", "Matricula").objects.filter(turma=turma, status="A")
+            Matricula = import_module("matriculas.models").Matricula
+            matriculas = Matricula.objects.filter(turma=turma, status="A")
             alunos = [m.aluno for m in matriculas]
             
             # Registrar presenças/ausências
@@ -598,8 +599,8 @@ def registrar_presenca_em_massa(request):
 def api_atividades_por_turma(request, turma_id):
     """API para obter atividades de uma turma."""
     try:
-        Turma = get_model("turmas", "Turma")
-        AtividadeAcademica = get_model("atividades", "AtividadeAcademica")
+        Turma = get_turma_model()
+        AtividadeAcademica = get_atividade_model()
         
         turma = Turma.objects.get(id=turma_id)
         atividades = AtividadeAcademica.objects.filter(turmas=turma)
@@ -621,10 +622,10 @@ def api_atividades_por_turma(request, turma_id):
 def api_alunos_por_turma(request, turma_id):
     """API para obter alunos de uma turma."""
     try:
-        Turma = get_model("turmas", "Turma")
-        Matricula = get_model("matriculas", "Matricula")
+        Turma = get_turma_model()
         
         turma = Turma.objects.get(id=turma_id)
+        Matricula = import_module("matriculas.models").Matricula
         matriculas = Matricula.objects.filter(turma=turma, status="A")
         
         return JsonResponse({

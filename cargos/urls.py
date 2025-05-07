@@ -15,4 +15,6 @@ urlpatterns = [
         views.remover_atribuicao_cargo,
         name="remover_atribuicao_cargo",
     ),
+    path("exportar/", views.exportar_cargos, name="exportar_cargos"),
+    path("importar/", views.importar_cargos, name="importar_cargos"),
 ]

@@ -5,9 +5,16 @@
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Cabeçalho com título e botões de ação -->
+    <!-- Adicionar exibição do campo alerta_mensagem -->
+    {% if turma.alerta_mensagem %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> {{ turma.alerta_mensagem }}
+    </div>
+    {% endif %}
+
+    <!-- Padronizar botões de ação -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Detalhes da Turma: {{ turma.nome }}</h1>
+        <h1>Detalhes da Turma</h1>
         <div>
             <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary me-2">
                 <i class="fas fa-arrow-left"></i> Voltar
@@ -15,11 +22,9 @@
             <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning me-2">
                 <i class="fas fa-edit"></i> Editar
             </a>
-            {% if not matriculas %}
-                <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Excluir
-                </a>
-            {% endif %}
+            <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Excluir
+            </a>
         </div>
     </div>
     
@@ -302,8 +307,16 @@
             {% endif %}
         </div>
         {% if matriculas %}
-        <div class="card-footer text-muted">
-            <small>Total: {{ alunos_matriculados_count }} aluno(s)</small>
+        <div class="card-footer">
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-list"></i> Voltar para a lista
+            </a>
+            <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning me-2">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Excluir
+            </a>
         </div>
         {% endif %}
     </div>

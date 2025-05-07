@@ -9,10 +9,17 @@
         {% for field in form %}
             {% include 'includes/form_field.html' %}
         {% endfor %}
+        <!-- Padronizar botões no formulário -->
         <div class="mt-3">
-            <button type="submit" class="btn btn-primary">Criar Curso</button>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
-            <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> {% if curso.codigo_curso %}Atualizar{% else %}Criar{% endif %} Curso
+            </button>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
         </div>
     </form>
 </div>

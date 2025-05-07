@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views.importacao import importar_atividades
 
 app_name = "atividades"  # Definindo o namespace
 
@@ -82,6 +83,8 @@ urlpatterns = [
     path("exportar/<str:formato>/", views.exportar_atividades, name="exportar_atividades"),
     path("calendario/", views.calendario_atividades, name="calendario_atividades"),
     path("dashboard/", views.dashboard_atividades, name="dashboard_atividades"),
+    # Importação de atividades (nova funcionalidade)
+    path("importar/", importar_atividades, name="importar_atividades"),
     # APIs
     path("api/eventos/", views.api_eventos_calendario, name="api_eventos_calendario"),
     path("api/evento/<int:evento_id>/", views.api_detalhe_evento, name="api_detalhe_evento"),

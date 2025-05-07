@@ -143,3 +143,153 @@ def cancelar_matricula_por_turma_aluno(request, turma_id, aluno_cpf):
             "return_url": reverse("turmas:detalhar_turma", args=[turma_id])
         }
     )
+
+
+@login_required
+def exportar_matriculas(request):
+    """Exporta os dados das matrículas para um arquivo CSV."""
+    try:
+        import csv
+        from django.http import HttpResponse
+        
+        Matricula = get_model("matriculas", "Matricula")
+        matriculas = Matricula.objects.all().select_related('aluno', 'turma', 'turma__curso')
+        
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="matriculas.csv"'
+        writer = csv.writer(response)
+        writer.writerow([
+            "ID",
+            "Aluno (CPF)",
+            "Aluno (Nome)",
+            "Turma",
+            "Curso",
+            "Data da Matrícula",
+            "Status"
+        ])
+        
+        for matricula in matriculas:
+            writer.writerow([
+                matricula.id,
+                matricula.aluno.cpf,
+                matricula.aluno.nome,
+                matricula.turma.nome,
+                matricula.turma.curso.nome if matricula.turma.curso else "",
+                matricula.data_matricula,
+                matricula.get_status_display()
+            ])
+        
+        return response
+    except Exception as e:
+        messages.error(request, f"Erro ao exportar matrículas: {str(e)}")
+        return redirect("matriculas:listar_matriculas")
+
+@login_required
+def importar_matriculas(request):
+    """Importa matrículas de um arquivo CSV."""
+    if request.method == "POST" and request.FILES.get("csv_file"):
+        try:
+            import csv
+            from io import TextIOWrapper
+            from django.utils import timezone
+            
+            Matricula = get_model("matriculas", "Matricula")
+            Aluno = get_model("alunos", "Aluno")
+            Turma = get_model("turmas", "Turma")
+            
+            csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
+            reader = csv.DictReader(csv_file)
+            count = 0
+            errors = []
+            
+            for row in reader:
+                try:
+                    # Buscar aluno pelo CPF
+                    aluno = None
+                    aluno_cpf = row.get("Aluno (CPF)", "").strip()
+                    if aluno_cpf:
+                        try:
+                            aluno = Aluno.objects.get(cpf=aluno_cpf)
+                        except Aluno.DoesNotExist:
+                            errors.append(f"Aluno não encontrado com CPF: {aluno_cpf}")
+                            continue
+                    else:
+                        errors.append("CPF do aluno não especificado")
+                        continue
+                    
+                    # Buscar turma pelo nome ou ID
+                    turma = None
+                    turma_nome = row.get("Turma", "").strip()
+                    if turma_nome:
+                        try:
+                            turma = Turma.objects.get(nome=turma_nome)
+                        except Turma.DoesNotExist:
+                            try:
+                                turma = Turma.objects.get(id=turma_nome)
+                            except (Turma.DoesNotExist, ValueError):
+                                errors.append(f"Turma não encontrada: {turma_nome}")
+                                continue
+                    else:
+                        errors.append("Turma não especificada")
+                        continue
+                    
+                    # Verificar se já existe matrícula
+                    if Matricula.objects.filter(aluno=aluno, turma=turma).exists():
+                        errors.append(f"O aluno {aluno.nome} já está matriculado na turma {turma.nome}")
+                        continue
+                    
+                    # Processar data da matrícula
+                    data_matricula = timezone.now().date()
+                    try:
+                        if row.get("Data da Matrícula"):
+                            data_matricula = timezone.datetime.strptime(
+                                row.get("Data da Matrícula"), "%d/%m/%Y"
+                            ).date()
+                    except ValueError as e:
+                        errors.append(f"Erro no formato de data: {str(e)}")
+                        continue
+                    
+                    # Processar status
+                    status = "A"  # Ativa por padrão
+                    status_texto = row.get("Status", "").strip()
+                    if status_texto:
+                        status_map = {"Ativa": "A", "Cancelada": "C", "Finalizada": "F"}
+                        status = status_map.get(status_texto, "A")
+                    
+                    # Criar a matrícula
+                    matricula = Matricula(
+                        aluno=aluno,
+                        turma=turma,
+                        data_matricula=data_matricula,
+                        ativa=(status == "A"),
+                        status=status
+                    )
+                    
+                    # Validar o modelo
+                    matricula.full_clean()
+                    matricula.save()
+                    
+                    count += 1
+                except Exception as e:
+                    errors.append(f"Erro na linha {count+1}: {str(e)}")
+            
+            if errors:
+                messages.warning(
+                    request,
+                    f"{count} matrículas importadas com {len(errors)} erros.",
+                )
+                for error in errors[:5]:  # Mostrar apenas os 5 primeiros erros
+                    messages.error(request, error)
+                if len(errors) > 5:
+                    messages.error(
+                        request, f"... e mais {len(errors) - 5} erros."
+                    )
+            else:
+                messages.success(
+                    request, f"{count} matrículas importadas com sucesso!"
+                )
+            return redirect("matriculas:listar_matriculas")
+        except Exception as e:
+            messages.error(request, f"Erro ao importar matrículas: {str(e)}")
+    
+    return render(request, "matriculas/importar_matriculas.html")

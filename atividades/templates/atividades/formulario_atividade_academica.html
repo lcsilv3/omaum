@@ -59,7 +59,7 @@
             </div>
         </div>
         
-        <!-- Nova seção para Turmas -->
+        <!-- Adicionar campo todas_turmas que está no código mas não na tela -->
         <div class="card mb-4">
             <div class="card-header">
                 <h5>Turmas</h5>
@@ -102,11 +102,13 @@
             </div>
         </div>
         
+        <!-- Padronizar botões no formulário -->
         <div class="d-flex justify-content-between mb-5">
-            <!-- Use a URL de retorno fornecida pela view -->
-            <a href="{{ return_url }}" class="btn btn-secondary">Cancelar</a>
+            <a href="{{ return_url }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
             <button type="submit" class="btn btn-primary">
-                {% if atividade %}Atualizar{% else %}Criar{% endif %} Atividade
+                <i class="fas fa-save"></i> {% if atividade %}Atualizar{% else %}Criar{% endif %} Atividade
             </button>
         </div>
     </form>

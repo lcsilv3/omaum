@@ -654,49 +654,139 @@ def exportar_turmas(request):
     try:
         import csv
         from django.http import HttpResponse
-        from django.utils import timezone
-        
-        Turma = get_turma_model()
+        Turma = get_models()
         turmas = Turma.objects.all()
-        
-        # Criar resposta HTTP com cabeçalho para download de arquivo CSV
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="turmas_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
-        
-        # Criar escritor CSV
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="turmas.csv"'
         writer = csv.writer(response)
-        
-        # Escrever cabeçalho
         writer.writerow([
-            'ID', 'Nome', 'Curso', 'Status', 'Vagas',
-            'Data Início', 'Data Fim', 'Instrutor',
-            'Instrutor Auxiliar', 'Auxiliar de Instrução',
-            'Dias da Semana', 'Local', 'Horário'
+            "ID",
+            "Nome",
+            "Curso",
+            "Vagas",
+            "Status",
+            "Data Início",
+            "Data Fim",
+            "Instrutor",
+            "Local",
+            "Horário"
         ])
-        
-        # Escrever dados das turmas
         for turma in turmas:
             writer.writerow([
                 turma.id,
                 turma.nome,
-                turma.curso.nome if turma.curso else 'N/A',
-                turma.get_status_display(),
+                turma.curso.nome if turma.curso else "",
                 turma.vagas,
-                turma.data_inicio.strftime('%d/%m/%Y') if turma.data_inicio else 'N/A',
-                turma.data_fim.strftime('%d/%m/%Y') if turma.data_fim else 'N/A',
-                turma.instrutor.nome if turma.instrutor else 'N/A',
-                turma.instrutor_auxiliar.nome if turma.instrutor_auxiliar else 'N/A',
-                turma.auxiliar_instrucao.nome if turma.auxiliar_instrucao else 'N/A',
-                turma.dias_semana,
+                turma.get_status_display(),
+                turma.data_inicio,
+                turma.data_fim,
+                turma.instrutor.nome if turma.instrutor else "",
                 turma.local,
                 turma.horario
             ])
-        
         return response
-    
     except Exception as e:
         messages.error(request, f"Erro ao exportar turmas: {str(e)}")
         return redirect("turmas:listar_turmas")
+
+@login_required
+def importar_turmas(request):
+    """Importa turmas de um arquivo CSV."""
+    if request.method == "POST" and request.FILES.get("csv_file"):
+        try:
+            import csv
+            from io import TextIOWrapper
+            from django.utils import timezone
+            
+            Turma = get_models()
+            Curso = get_model("cursos", "Curso")
+            Aluno = get_model("alunos", "Aluno")
+            
+            csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
+            reader = csv.DictReader(csv_file)
+            count = 0
+            errors = []
+            
+            for row in reader:
+                try:
+                    # Buscar curso pelo nome ou código
+                    curso = None
+                    curso_nome = row.get("Curso", "").strip()
+                    if curso_nome:
+                        try:
+                            curso = Curso.objects.get(nome=curso_nome)
+                        except Curso.DoesNotExist:
+                            try:
+                                curso = Curso.objects.get(codigo_curso=curso_nome)
+                            except Curso.DoesNotExist:
+                                errors.append(f"Curso não encontrado: {curso_nome}")
+                                continue
+                    
+                    # Buscar instrutor pelo nome ou CPF
+                    instrutor = None
+                    instrutor_nome = row.get("Instrutor", "").strip()
+                    if instrutor_nome:
+                        try:
+                            instrutor = Aluno.objects.get(nome=instrutor_nome)
+                        except Aluno.DoesNotExist:
+                            try:
+                                instrutor = Aluno.objects.get(cpf=instrutor_nome)
+                            except Aluno.DoesNotExist:
+                                errors.append(f"Instrutor não encontrado: {instrutor_nome}")
+                                continue
+                    
+                    # Processar datas
+                    data_inicio = None
+                    data_fim = None
+                    try:
+                        if row.get("Data Início"):
+                            data_inicio = timezone.datetime.strptime(
+                                row.get("Data Início"), "%d/%m/%Y"
+                            ).date()
+                        if row.get("Data Fim"):
+                            data_fim = timezone.datetime.strptime(
+                                row.get("Data Fim"), "%d/%m/%Y"
+                            ).date()
+                    except ValueError as e:
+                        errors.append(f"Erro no formato de data: {str(e)}")
+                        continue
+                    
+                    # Criar a turma
+                    Turma.objects.create(
+                        nome=row.get("Nome", "").strip(),
+                        curso=curso,
+                        vagas=int(row.get("Vagas", 0)),
+                        status=row.get("Status", "A")[0].upper(),
+                        data_inicio=data_inicio,
+                        data_fim=data_fim,
+                        instrutor=instrutor,
+                        local=row.get("Local", "").strip(),
+                        horario=row.get("Horário", "").strip()
+                    )
+                    count += 1
+                except Exception as e:
+                    errors.append(f"Erro na linha {count+1}: {str(e)}")
+            
+            if errors:
+                messages.warning(
+                    request,
+                    f"{count} turmas importadas com {len(errors)} erros.",
+                )
+                for error in errors[:5]:  # Mostrar apenas os 5 primeiros erros
+                    messages.error(request, error)
+                if len(errors) > 5:
+                    messages.error(
+                        request, f"... e mais {len(errors) - 5} erros."
+                    )
+            else:
+                messages.success(
+                    request, f"{count} turmas importadas com sucesso!"
+                )
+            return redirect("turmas:listar_turmas")
+        except Exception as e:
+            messages.error(request, f"Erro ao importar turmas: {str(e)}")
+    
+    return render(request, "turmas/importar_turmas.html")
 
 @login_required
 def relatorio_turmas(request):

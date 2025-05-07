@@ -47,3 +47,5 @@ from .relatorios import (
 
 # Importar funções de dashboard
 from .dashboard import dashboard_atividades
+
+from .importacao import importar_atividades

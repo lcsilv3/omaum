@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Matrícula{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Detalhes da Matrícula</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
+            <a href="{% url 'matriculas:listar_matriculas' %}" class="btn btn-secondary">Lista de Matrículas</a>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Informações do Aluno -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Informações do Aluno</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        {% if matricula.aluno.foto %}
+                            <img src="{{ matricula.aluno.foto.url }}" alt="Foto de {{ matricula.aluno.nome }}" 
+                                 class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
+                        {% else %}
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width: 60px; height: 60px; color: white; font-size: 1.5rem;">
+                                {{ matricula.aluno.nome|first|upper }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h5 class="mb-1">{{ matricula.aluno.nome }}</h5>
+                            <p class="mb-0">CPF: {{ matricula.aluno.cpf }}</p>
+                            <p class="mb-0">Email: {{ matricula.aluno.email }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.cpf %}" class="btn btn-outline-primary">
+                        <i class="fas fa-user"></i> Ver Perfil Completo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações da Turma -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Informações da Turma</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <p><strong>Turma:</strong> {{ matricula.turma.nome }}</p>
+                    <p><strong>Curso:</strong> {{ matricula.turma.curso.nome }}</p>
+                    <p><strong>Instrutor:</strong> {{ matricula.turma.instrutor.nome|default:"Não definido" }}</p>
+                    <p><strong>Período:</strong> {{ matricula.turma.data_inicio|date:"d/m/Y" }} a {{ matricula.turma.data_fim|date:"d/m/Y"|default:"Em andamento" }}</p>
+                    <p><strong>Horário:</strong> {{ matricula.turma.horario|default:"Não definido" }}</p>
+                    <p><strong>Local:</strong> {{ matricula.turma.local|default:"Não definido" }}</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'turmas:detalhar_turma' matricula.turma.id %}" class="btn btn-outline-info">
+                        <i class="fas fa-users"></i> Ver Detalhes da Turma
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações da Matrícula -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Informações da Matrícula</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Data da Matrícula:</strong> {{ matricula.data_matricula|date:"d/m/Y" }}</p>
+                    <p>
+                        <strong>Status:</strong> 
+                        {% if matricula.status == 'A' %}
+                            <span class="badge bg-success">Ativa</span>
+                        {% elif matricula.status == 'C' %}
+                            <span class="badge bg-danger">Cancelada</span>
+                        {% elif matricula.status == 'F' %}
+                            <span class="badge bg-secondary">Finalizada</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p>
+                        <strong>Matrícula Ativa:</strong> 
+                        {% if matricula.ativa %}
+                            <span class="badge bg-success">Sim</span>
+                        {% else %}
+                            <span class="badge bg-danger">Não</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Frequência e Desempenho (se disponível) -->
+    {% if frequencias %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Frequência e Desempenho</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Frequência</h6>
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div class="progress-bar {% if percentual_presenca < 75 %}bg-danger{% else %}bg-success{% endif %}" 
+                             role="progressbar" style="width: {{ percentual_presenca }}%;" 
+                             aria-valuenow="{{ percentual_presenca }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ percentual_presenca|floatformat:1 }}%
+                        </div>
+                    </div>
+                    <p><strong>Total de Presenças:</strong> {{ total_presencas }} de {{ total_aulas }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Desempenho</h6>
+                    {% if notas %}
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Avaliação</th>
+                                    <th>Nota</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for nota in notas %}
+                                <tr>
+                                    <td>{{ nota.avaliacao }}</td>
+                                    <td>{{ nota.valor }}</td>
+                                    <td>{{ nota.data|date:"d/m/Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted">Nenhuma nota registrada.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Ações -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Ações</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+                {% if matricula.status == 'A' %}
+                    <a href="{% url 'matriculas:cancelar_matricula' matricula.id %}" class="btn btn-danger">
+                        <i class="fas fa-times-circle"></i> Cancelar Matrícula
+                    </a>
+                {% endif %}
+                
+                <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.cpf %}" class="btn btn-primary">
+                    <i class="fas fa-user"></i> Ver Perfil do Aluno
+                </a>
+                
+                <a href="{% url 'turmas:detalhar_turma' matricula.turma.id %}" class="btn btn-info">
+                    <i class="fas fa-users"></i> Ver Turma
+                </a>
+                
+                {% if frequencias %}
+                    <a href="{% url 'frequencias:historico_frequencia' matricula.aluno.cpf %}" class="btn btn-warning">
+                        <i class="fas fa-calendar-check"></i> Ver Histórico de Frequência
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

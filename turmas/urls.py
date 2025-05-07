@@ -42,6 +42,7 @@ urlpatterns = [
     
     # URLs para exportação e relatórios
     path("exportar/", views.exportar_turmas, name="exportar_turmas"),
+    path("importar/", views.importar_turmas, name="importar_turmas"),
     path("relatorio/", views.relatorio_turmas, name="relatorio_turmas"),
     path("dashboard/", views.dashboard_turmas, name="dashboard_turmas"),
 ]

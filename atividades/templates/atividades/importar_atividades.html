@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Importar Atividades{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Importar Atividades</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Upload de Arquivo CSV</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="tipo_atividade" class="form-label">Tipo de Atividade</label>
+                    <select class="form-select" id="tipo_atividade" name="tipo_atividade">
+                        <option value="academica">Atividade Acadêmica</option>
+                        <option value="ritualistica">Atividade Ritualística</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="csv_file" class="form-label">Arquivo CSV</label>
+                    <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv" required>
+                    <div class="form-text">
+                        O arquivo CSV deve conter os seguintes cabeçalhos:
+                        <div id="headers_academica">
+                            <strong>Para Atividades Acadêmicas:</strong> Nome, Descricao, Data_Inicio, Data_Fim, Responsavel, Local, Tipo, Status, Turmas
+                        </div>
+                        <div id="headers_ritualistica" style="display: none;">
+                            <strong>Para Atividades Ritualísticas:</strong> Nome, Descricao, Data, Hora_Inicio, Hora_Fim, Local, Turma, Participantes
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="alert alert-info">
+                        <h6>Instruções:</h6>
+                        <ul>
+                            <li>O arquivo deve estar no formato CSV com cabeçalhos.</li>
+                            <li>As datas devem estar no formato DD/MM/AAAA.</li>
+                            <li>As horas devem estar no formato HH:MM.</li>
+                            <li>Para atividades acadêmicas, o campo "Turmas" deve conter IDs de turmas separados por vírgula.</li>
+                            <li>Para atividades ritualísticas, o campo "Participantes" deve conter CPFs de alunos separados por vírgula.</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="javascript:history.back()" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Exemplos de arquivos CSV -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Exemplos de Formato</h5>
+        </div>
+        <div class="card-body">
+            <div id="exemplo_academica">
+                <h6>Exemplo para Atividades Acadêmicas:</h6>
+                <pre class="bg-light p-3 rounded">Nome,Descricao,Data_Inicio,Data_Fim,Responsavel,Local,Tipo,Status,Turmas
+Aula de Meditação,Aula introdutória sobre técnicas de meditação,01/10/2023 14:00,01/10/2023 16:00,João Silva,Sala 101,aula,agendada,1,2
+Workshop de Mantras,Workshop sobre mantras e sua aplicação,05/10/2023 09:00,05/10/2023 12:00,Maria Oliveira,Auditório,workshop,agendada,3</pre>
+            </div>
+            
+            <div id="exemplo_ritualistica" style="display: none;">
+                <h6>Exemplo para Atividades Ritualísticas:</h6>
+                <pre class="bg-light p-3 rounded">Nome,Descricao,Data,Hora_Inicio,Hora_Fim,Local,Turma,Participantes
+Ritual de Lua Cheia,Ritual mensal de lua cheia,15/10/2023,19:00,21:00,Templo Principal,1,12345678901,23456789012
+Meditação Coletiva,Meditação coletiva de alinhamento,20/10/2023,18:00,19:30,Sala de Meditação,2,34567890123,45678901234</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tipoAtividadeSelect = document.getElementById('tipo_atividade');
+        const headersAcademica = document.getElementById('headers_academica');
+        const headersRitualistica = document.getElementById('headers_ritualistica');
+        const exemploAcademica = document.getElementById('exemplo_academica');
+        const exemploRitualistica = document.getElementById('exemplo_ritualistica');
+        
+        tipoAtividadeSelect.addEventListener('change', function() {
+            if (this.value === 'academica') {
+                headersAcademica.style.display = 'block';
+                headersRitualistica.style.display = 'none';
+                exemploAcademica.style.display = 'block';
+                exemploRitualistica.style.display = 'none';
+            } else {
+                headersAcademica.style.display = 'none';
+                headersRitualistica.style.display = 'block';
+                exemploAcademica.style.display = 'none';
+                exemploRitualistica.style.display = 'block';
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

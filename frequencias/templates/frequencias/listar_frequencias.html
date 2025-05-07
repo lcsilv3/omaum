@@ -4,18 +4,24 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <!-- Cabeçalho com título e botões -->
+    <!-- Padronizar cabeçalho com botões -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Lista de Frequências Mensais</h1>
-        <div class="btn-group">
-            <a href="{% url 'frequencias:criar_frequencia_mensal' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Nova Frequência Mensal
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <a href="{% url 'frequencias:painel_frequencias' %}" class="btn btn-info">
-                <i class="fas fa-chart-line"></i> Painel de Frequências
+            <a href="{% url 'frequencias:criar_frequencia_mensal' %}" class="btn btn-primary me-2">
+                <i class="fas fa-plus"></i> Nova Frequência
             </a>
-            <a href="{% url 'frequencias:relatorio_frequencias' %}" class="btn btn-warning">
-                <i class="fas fa-chart-bar"></i> Relatório
+            <a href="{% url 'frequencias:exportar_frequencias' %}" class="btn btn-success me-2">
+                <i class="fas fa-file-export"></i> Exportar CSV
+            </a>
+            <a href="{% url 'frequencias:importar_frequencias' %}" class="btn btn-info me-2">
+                <i class="fas fa-file-import"></i> Importar CSV
+            </a>
+            <a href="{% url 'frequencias:dashboard' %}" class="btn btn-success">
+                <i class="fas fa-chart-bar"></i> Dashboard
             </a>
         </div>
     </div>
@@ -106,17 +112,17 @@
                             <td>{{ frequencia.updated_at|date:"d/m/Y H:i" }}</td>
                             <td>
                                 <div class="btn-group">
-                                    <a href="{% url 'frequencias:detalhar_frequencia_mensal' frequencia.id %}" 
-                                       class="btn btn-sm btn-info" title="Detalhes">
-                                        <i class="fas fa-eye"></i>
+                                    <a href="{% url 'frequencias:detalhar_frequencia_mensal' frequencia.id %}" class="btn btn-sm btn-info" title="Ver detalhes da frequência">
+                                        <i class="fas fa-eye"></i> Detalhes
                                     </a>
-                                    <a href="{% url 'frequencias:editar_frequencia_mensal' frequencia.id %}" 
-                                       class="btn btn-sm btn-warning" title="Editar">
-                                        <i class="fas fa-edit"></i>
+                                    <a href="{% url 'frequencias:editar_frequencia_mensal' frequencia.id %}" class="btn btn-sm btn-warning" title="Editar frequência">
+                                        <i class="fas fa-edit"></i> Editar
                                     </a>
-                                    <a href="{% url 'frequencias:excluir_frequencia_mensal' frequencia.id %}" 
-                                       class="btn btn-sm btn-danger" title="Excluir">
-                                        <i class="fas fa-trash"></i>
+                                    <a href="{% url 'frequencias:excluir_frequencia_mensal' frequencia.id %}" class="btn btn-sm btn-danger" title="Excluir frequência">
+                                        <i class="fas fa-trash"></i> Excluir
+                                    </a>
+                                    <a href="{% url 'frequencias:recalcular_carencias' frequencia.id %}" class="btn btn-sm btn-primary" title="Recalcular carências">
+                                        <i class="fas fa-sync"></i> Recalcular
                                     </a>
                                 </div>
                             </td>

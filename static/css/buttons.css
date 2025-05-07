@@ -1,0 +1,62 @@
+/* Estilos padronizados para botões */
+.btn-action-primary {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    padding: 0.375rem 0.75rem;
+}
+
+.btn-action-secondary {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+    padding: 0.375rem 0.75rem;
+}
+
+.btn-action-success {
+    color: #fff;
+    background-color: #198754;
+    border-color: #198754;
+    padding: 0.375rem 0.75rem;
+}
+
+.btn-action-danger {
+    color: #fff;
+    background-color: #dc3545;
+    border-color: #dc3545;
+    padding: 0.375rem 0.75rem;
+}
+
+.btn-action-warning {
+    color: #000;
+    background-color: #ffc107;
+    border-color: #ffc107;
+    padding: 0.375rem 0.75rem;
+}
+
+.btn-action-info {
+    color: #fff;
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Padrões de posicionamento */
+.actions-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.actions-container-end {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Padrões para botões em tabelas */
+.table-actions {
+    display: flex;
+    gap: 0.25rem;
+}

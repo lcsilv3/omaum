@@ -1,0 +1,9 @@
+<!-- Padronizar botões no formulário -->
+<div class="d-flex justify-content-between mb-5">
+    <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Cancelar
+    </a>
+    <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> {% if turma.id %}Atualizar{% else %}Criar{% endif %} Turma
+    </button>
+</div>

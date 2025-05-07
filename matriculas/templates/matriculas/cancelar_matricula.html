@@ -11,10 +11,17 @@
         <p>Esta ação não pode ser desfeita. Deseja continuar?</p>
     </div>
     
+    <!-- Padronizar botões de confirmação -->
     <form method="post">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Confirmar Cancelamento</button>
-        <a href="{% url 'matriculas:listar_matriculas' %}" class="btn btn-secondary">Voltar</a>
+        <div class="d-flex justify-content-between">
+            <a href="{{ return_url|default:'/matriculas/' }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-ban"></i> Confirmar Cancelamento
+            </button>
+        </div>
     </form>
 </div>
 {% endblock %}

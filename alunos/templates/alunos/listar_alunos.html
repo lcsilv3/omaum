@@ -54,61 +54,21 @@
 {% block content %}
 <div class="container-fluid mt-4">
     <!-- Cabeçalho com título e botões na mesma linha -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-        <h1 class="mb-3 mb-md-0">Lista de Alunos</h1>
-        
-        <!-- Botões agrupados com dropdown em telas menores -->
-        <div class="btn-group-responsive">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Lista de Alunos</h1>
+        <div>
             <a href="javascript:history.back()" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            
             <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Novo Aluno
             </a>
-            
-            <!-- Dropdown para ações secundárias em telas menores -->
-            <div class="d-none d-md-block">
-                <a href="{% url 'alunos:exportar_alunos' %}" class="btn btn-success">
-                    <i class="fas fa-file-export"></i> Exportar CSV
-                </a>
-                
-                <a href="{% url 'alunos:importar_alunos' %}" class="btn btn-info">
-                    <i class="fas fa-file-import"></i> Importar CSV
-                </a>
-                
-                <a href="{% url 'alunos:relatorio_alunos' %}" class="btn btn-warning">
-                    <i class="fas fa-chart-bar"></i> Relatório
-                </a>
-                
-                <a href="{% url 'alunos:dashboard' %}" class="btn btn-dark">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </div>
-            
-            <!-- Dropdown para telas menores -->
-            <div class="dropdown d-md-none">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-ellipsis-h"></i> Mais ações
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-actions" aria-labelledby="dropdownMenuButton">
-                    <li><a class="dropdown-item" href="{% url 'alunos:exportar_alunos' %}">
-                        <i class="fas fa-file-export"></i> Exportar CSV
-                    </a></li>
-                    <li><a class="dropdown-item" href="{% url 'alunos:importar_alunos' %}">
-                        <i class="fas fa-file-import"></i> Importar CSV
-                    </a></li>
-                    <li><a class="dropdown-item" href="{% url 'alunos:relatorio_alunos' %}">
-                        <i class="fas fa-chart-bar"></i> Relatório
-                    </a></li>
-                    <li><a class="dropdown-item" href="{% url 'alunos:dashboard' %}">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a></li>
-                    <li><a class="dropdown-item" href="{% url 'alunos:diagnostico_instrutores' %}">
-                        <i class="fas fa-user-check"></i> Diagnóstico Instrutores
-                    </a></li>
-                </ul>
-            </div>
+            <a href="{% url 'alunos:exportar_alunos' %}" class="btn btn-success">
+                <i class="fas fa-file-export"></i> Exportar CSV
+            </a>
+            <a href="{% url 'alunos:importar_alunos' %}" class="btn btn-info">
+                <i class="fas fa-file-import"></i> Importar CSV
+            </a>
         </div>
     </div>
     

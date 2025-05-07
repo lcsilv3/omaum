@@ -18,12 +18,18 @@
         <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
     </div>
 
+    <!-- Padronizar botões de confirmação -->
     <form method="post">
         {% csrf_token %}
-        <div class="mt-4">
-            <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
-            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Cancelar</a>
-        </div>    </form>
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Confirmar Exclusão
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}
 

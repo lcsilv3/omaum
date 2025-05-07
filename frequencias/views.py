@@ -51,6 +51,12 @@ from .views.api_views import (
     obter_dados_painel_frequencias
 )
 
+# Importar as novas funções do módulo de exportação
+from .views.exportacao import (
+    exportar_frequencias,
+    importar_frequencias
+)
+
 # Importar funções utilitárias do módulo utils
 from .utils import (
     get_models,

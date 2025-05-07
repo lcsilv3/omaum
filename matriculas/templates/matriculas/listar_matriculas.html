@@ -1,7 +1,36 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<!-- Existing content -->
+<!-- Padronizar cabeçalho com botões -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Lista de Matrículas</h1>
+    <div>
+        <a href="javascript:history.back()" class="btn btn-secondary me-2">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+        <a href="{% url 'matriculas:realizar_matricula' %}" class="btn btn-primary me-2">
+            <i class="fas fa-plus"></i> Nova Matrícula
+        </a>
+        <a href="{% url 'matriculas:exportar_matriculas' %}" class="btn btn-success me-2">
+            <i class="fas fa-file-export"></i> Exportar CSV
+        </a>
+        <a href="{% url 'matriculas:importar_matriculas' %}" class="btn btn-info">
+            <i class="fas fa-file-import"></i> Importar CSV
+        </a>
+    </div>
+</div>
 
-<a href="javascript:history.back()" class="back-button">Voltar</a>
+<!-- Padronizar botões de ação na tabela -->
+<td>
+    <div class="table-actions">
+        <a href="{% url 'matriculas:detalhar_matricula' matricula.id %}" class="btn btn-sm btn-info" title="Ver detalhes da matrícula">
+            <i class="fas fa-eye"></i> Detalhes
+        </a>
+        {% if matricula.status == 'A' %}
+        <a href="{% url 'matriculas:cancelar_matricula' matricula.id %}" class="btn btn-sm btn-danger" title="Cancelar matrícula">
+            <i class="fas fa-ban"></i> Cancelar
+        </a>
+        {% endif %}
+    </div>
+</td>
 {% endblock %}
