@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Nota{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Detalhes da Nota</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'notas:editar_nota' nota.id %}" class="btn btn-warning me-2">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'notas:excluir_nota' nota.id %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Excluir
+            </a>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Informações da Nota</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Aluno:</strong> 
+                        <a href="{% url 'alunos:detalhar_aluno' nota.aluno.cpf %}">
+                            {{ nota.aluno.nome }}
+                        </a>
+                    </p>
+                    <p><strong>Curso:</strong> {{ nota.curso.nome }}</p>
+                    <p><strong>Turma:</strong> {{ nota.turma.nome }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Tipo de Avaliação:</strong> {{ nota.get_tipo_avaliacao_display }}</p>
+                    <p><strong>Nota:</strong> 
+                        <span class="badge {% if nota.valor >= 7 %}bg-success{% elif nota.valor >= 5 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ nota.valor|floatformat:1 }}
+                        </span>
+                    </p>
+                    <p><strong>Peso:</strong> {{ nota.peso|floatformat:1 }}</p>
+                    <p><strong>Data:</strong> {{ nota.data|date:"d/m/Y" }}</p>
+                </div>
+            </div>
+            
+            {% if nota.observacoes %}
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <h6>Observações:</h6>
+                        <div class="p-3 bg-light rounded">
+                            {{ nota.observacoes|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-footer text-muted">
+            <small>Registrada em: {{ nota.created_at|date:"d/m/Y H:i" }} | Última atualização: {{ nota.updated_at|date:"d/m/Y H:i" }}</small>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between mb-5">
+        <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> Voltar para a lista
+        </a>
+        <div>
+            <a href="{% url 'notas:editar_nota' nota.id %}" class="btn btn-warning me-2">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'notas:excluir_nota' nota.id %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Excluir
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}{% endblock %}

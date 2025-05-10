@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!-- Atualização do título conforme recomendado -->
+    <title>OMAUM - Página Inicial</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="http://127.0.0.1:8000/static/img/favicon.ico" type="image/x-icon">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome 5 -->
+    <link rel="stylesheet" href="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/all.css">
+    
+    <!-- Select2 CSS com tema Bootstrap 4 -->
+    <link href="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/select2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/select2-bootstrap4.min.css">
+    
+    <!-- CSS Global do Projeto -->
+    <link rel="stylesheet" href="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/styles.css">
+    
+    <!-- CSS de componentes globais -->
+    <link rel="stylesheet" href="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/dias-semana.css">
+    
+    <!-- CSS específico da página -->
+    
+    
+    <!-- jQuery (obrigatório para Bootstrap JS, Select2 e jQuery Mask) -->
+    <script src="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/jquery-3.6.0.min.js"></script>
+    
+    <!-- Pré-carregamento de scripts essenciais -->
+    <script src="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/bootstrap.bundle.min.js" defer="defer"></script>
+    <script src="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/select2.full.min.js" defer="defer"></script>
+    <script src="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/jquery.mask.min.js" defer="defer"></script>
+    
+    <!-- Scripts adicionais da página no head -->
+    
+</head>
+<body>
+    <!-- Cabeçalho/Barra de Navegação -->
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <!-- Atualização do texto da marca para refletir o novo nome -->
+                <a class="navbar-brand ms-0 ps-2" href="http://127.0.0.1:8000/">
+                    <img src="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/logo.png" alt="OMAUM Logo" height="40">
+                    SGI - Om-Aum                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="http://127.0.0.1:8000/">
+                                <i class="fas fa-home"></i> Início
+                            </a>
+                        </li>
+                        
+                        
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/alunos/">
+                                    <i class="fas fa-user-graduate"></i> Alunos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/cursos/">
+                                    <i class="fas fa-book"></i> Cursos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/turmas/">
+                                    <i class="fas fa-users"></i> Turmas
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/matriculas/">
+                                    <i class="fas fa-clipboard-list"></i> Matrículas
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link" href="#" id="navbarDropdownAtividades" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="display: flex; flex-direction: column; align-items: flex-start; padding: 0.5rem 1rem;">
+                                    <i class="fas fa-calendar-alt" style="margin-bottom: 0.25rem;"></i>
+                                    <span class="d-flex align-items-center">
+                                        Atividades
+                                        <i class="fas fa-caret-down ms-1 small"></i>
+                                    </span>
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownAtividades">
+                                    <li>
+                                        <a class="dropdown-item" href="http://127.0.0.1:8000/atividades/academicas/">
+                                            <i class="fas fa-school"></i> Acadêmicas
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="http://127.0.0.1:8000/atividades/ritualisticas/">
+                                            <i class="fas fa-pray"></i> Ritualísticas
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/presencas/">
+                                    <i class="fas fa-clipboard-check"></i> Presenças
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/frequencias/">
+                                    <i class="fas fa-check-square"></i> Frequências
+                                </a>
+                            </li>
+                            <!-- Adicionando itens de menu que estavam no outro template -->
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/iniciacoes/">
+                                    <i class="fas fa-graduation-cap"></i> Iniciações
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/cargos/">
+                                    <i class="fas fa-id-badge"></i> Cargos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/notas/">
+                                    <i class="fas fa-star"></i> Notas
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/pagamentos/">
+                                    <i class="fas fa-money-bill-wave"></i> Pagamentos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/punicoes/">
+                                    <i class="fas fa-gavel"></i> Punições
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="http://127.0.0.1:8000/relatorios/">
+                                    <i class="fas fa-chart-bar"></i> Relatórios
+                                </a>
+                            </li>
+                        
+                    </ul>
+                    
+                    <ul class="navbar-nav">
+                        
+                            
+                                <li class="nav-item">
+                                    <a class="nav-link" href="http://127.0.0.1:8000/painel-controle/">
+                                        <i class="fas fa-cog"></i> Painel de Controle
+                                    </a>
+                                </li>
+                            
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                   <i class="fas fa-user-circle"></i> lcsilv3
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="#">Meu Perfil</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" action="/sair/" class="d-inline">
+                                            <input type="hidden" name="csrfmiddlewaretoken" value="IvqG4TRlNK2fne8R5w3eO5ypIT5ucwYI7vdtGrRI781aKSmr64yTn3KvO4u5rDpp">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-sign-out-alt"></i> Sair
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <!-- Mensagens do sistema (flash messages) -->
+    <div class="message-container">
+        
+    </div>
+    
+    <!-- Conteúdo principal -->
+    <main id="main-content" class="py-4">
+        
+<link rel="stylesheet" href="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/styles.css">
+<div class="container mt-4">
+    <div class="jumbotron">
+        <h1 class="display-4">Sistema de Gestão Integrada</h1>
+        <p class="lead">Bem-vindo ao Sistema de Gestão Integrada da Ordem Mística de Iniciação Universal ao Mestrado.</p>
+    </div>
+    
+    <!-- Primeira linha: Cursos, Alunos, Turmas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3 border-bottom pb-2">Gestão Acadêmica</h3>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-book me-2"></i>Cursos</h5>
+                    <p class="card-text mb-0">Gerenciamento de cursos oferecidos pela instituição.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <a href="http://127.0.0.1:8000/cursos/" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-user-graduate me-2"></i>Alunos</h5>
+                    <p class="card-text mb-0">Cadastro e gerenciamento de alunos.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <a href="http://127.0.0.1:8000/alunos/" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-users me-2"></i>Turmas</h5>
+                    <p class="card-text mb-0">Gerenciamento de turmas e períodos letivos.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <a href="http://127.0.0.1:8000/turmas/" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Segunda linha: Atividades, Presenças, Frequências -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3 border-bottom pb-2">Controle de Participação</h3>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-calendar-alt me-2"></i>Atividades</h5>
+                    <p class="card-text mb-0">Gerenciamento de atividades da instituição.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <!-- Botões menores e com menos espaçamento -->
+                    <div class="d-flex flex-column gap-1" style="max-width: 150px;">
+                        <a href="http://127.0.0.1:8000/atividades/academicas/" class="btn btn-primary btn-sm py-0">
+                            <i class="fas fa-school"></i> Acadêmicas
+                        </a>
+                        <a href="http://127.0.0.1:8000/atividades/ritualisticas/" class="btn btn-info btn-sm py-0">
+                            <i class="fas fa-pray"></i> Ritualísticas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-clipboard-check me-2"></i>Presenças</h5>
+                    <p class="card-text mb-0">Registro e controle de presenças em atividades.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <a href="http://127.0.0.1:8000/presencas/" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-check-square me-2"></i>Frequências</h5>
+                    <p class="card-text mb-0">Análise e relatórios de frequência dos alunos.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <a href="http://127.0.0.1:8000/frequencias/" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Terceira linha: Iniciações, Punições, Cargos -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3 border-bottom pb-2">Gestão Institucional</h3>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-graduation-cap me-2"></i>Iniciações</h5>
+                    <p class="card-text mb-0">Gerenciamento de processos iniciatórios.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <a href="http://127.0.0.1:8000/iniciacoes/" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-gavel me-2"></i>Punições</h5>
+                    <p class="card-text mb-0">Registro e controle de medidas disciplinares.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <a href="http://127.0.0.1:8000/punicoes/" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-id-badge me-2"></i>Cargos</h5>
+                    <p class="card-text mb-0">Gestão de cargos e funções institucionais.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <a href="http://127.0.0.1:8000/cargos/" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quarta linha: Relatórios, Painel de Controle -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3 border-bottom pb-2">Análise e Controle</h3>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-chart-bar me-2"></i>Relatórios</h5>
+                    <p class="card-text mb-0">Geração de relatórios e análises estatísticas.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <a href="http://127.0.0.1:8000/relatorios/" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body pb-0 mb-0 border-bottom-0">
+                    <h5 class="card-title"><i class="fas fa-cog me-2"></i>Painel de Controle</h5>
+                    <p class="card-text mb-0">Visão geral e indicadores de desempenho.</p>
+                </div>
+                <div class="card-footer bg-transparent pt-2 mt-0 border-top-0">
+                    <a href="http://127.0.0.1:8000/painel-controle/" class="btn btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    </main>
+    
+    <!-- Rodapé -->
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <!-- Atualização do texto do rodapé para refletir o novo nome -->
+            <span class="text-muted">© 2025 SGI - Sistema de Gestão Integrada da OmAum</span>
+        </div>
+    </footer>
+    
+    <!-- Scripts de componentes globais -->
+    <script src="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/dias-semana.js"></script>
+    
+    <!-- Scripts específicos da página -->
+    
+    
+    <!-- Script global do sistema -->
+    <script>
+        // Inicialização global do site
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar tooltips do Bootstrap
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Inicializar popovers do Bootstrap
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+            
+            // Verificação CSRF para AJAX
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
+            // Configuração global do AJAX para incluir o token CSRF
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                    }
+                }
+            });
+            
+            // Verificação periódica do token CSRF para sessões longas
+            setInterval(function() {
+                $.get("/csrf_check/");
+            }, 3600000); // A cada hora
+            
+            // Aplicar máscaras globais
+            if (typeof $.fn.mask === 'function') {
+                $('.cpf-mask').mask('000.000.000-00');
+                $('.cep-mask').mask('00000-000');
+                $('.phone-mask').mask('(00) 0000-00009');
+                $('.phone-mask').blur(function(event) {
+                    if($(this).val().length == 15){
+                        $('.phone-mask').mask('(00) 00000-0009');
+                    } else {
+                        $('.phone-mask').mask('(00) 0000-00009');
+                    }
+                });
+                $('.date-mask').mask('00/00/0000');
+                $('.time-mask').mask('00:00 às 00:00');
+            }
+            
+            // Inicialização global do Select2
+            if (typeof $.fn.select2 === 'function') {
+                $('.select2').select2({
+                    theme: 'bootstrap4',
+                    width: '100%'
+                });
+            }
+        });
+    </script>
+    <script src="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/inicializar_select2.js"></script>
+
+
+<link rel="stylesheet" href="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/print.css" media="print">
+<link rel="stylesheet" href="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/toolbar.css">
+
+
+<script type="module" src="OMAUM%20-%20P%C3%A1gina%20Inicial_arquivos/toolbar.js" async=""></script>
+
+<div id="djDebug" class="" dir="ltr" data-store-id="131c944541784eb0b391fcc64917bb25" data-render-panel-url="/__debug__/render_panel/" data-sidebar-url="/__debug__/history_sidebar/" data-default-show="true" data-update-on-fetch="False" data-theme="auto">
+  <div class="djdt-hidden" id="djDebugToolbar">
+    <ul id="djDebugPanelList">
+      <li><a id="djHideToolBarButton" href="#" title="Ocultar barra de ferramentas">Esconder »</a></li>
+      <li>
+        <a id="djToggleThemeButton" href="#" title="Toggle Theme">
+          Toggle Theme <svg aria-hidden="true" class="djdt-hidden theme-auto" fill="currentColor" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0 16q0 3.264 1.28 6.24t3.392 5.088 5.12 3.424 6.208 1.248q3.264 0 6.24-1.248t5.088-3.424 3.392-5.088 1.28-6.24-1.28-6.208-3.392-5.12-5.088-3.392-6.24-1.28q-3.264 0-6.208 1.28t-5.12 3.392-3.392 5.12-1.28 6.208zM4 16q0-3.264 1.6-6.016t4.384-4.352 6.016-1.632 6.016 1.632 4.384 4.352 1.6 6.016-1.6 6.048-4.384 4.352-6.016 1.6-6.016-1.6-4.384-4.352-1.6-6.048zM16 26.016q2.72 0 5.024-1.344t3.648-3.648 1.344-5.024-1.344-4.992-3.648-3.648-5.024-1.344v20z"></path>
+</svg>
+<svg aria-hidden="true" class="djdt-hidden theme-light" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M12 1.25C12.4142 1.25 12.75 1.58579 12.75 2V4C12.75 4.41421 12.4142 4.75 12 4.75C11.5858 4.75 11.25 4.41421 11.25 4V2C11.25 1.58579 11.5858 1.25 12 1.25ZM3.66865 3.71609C3.94815 3.41039 4.42255 3.38915 4.72825 3.66865L6.95026 5.70024C7.25596 5.97974 7.2772 6.45413 6.9977 6.75983C6.7182 7.06553 6.2438 7.08677 5.9381 6.80727L3.71609 4.77569C3.41039 4.49619 3.38915 4.02179 3.66865 3.71609ZM20.3314 3.71609C20.6109 4.02179 20.5896 4.49619 20.2839 4.77569L18.0619 6.80727C17.7562 7.08677 17.2818 7.06553 17.0023 6.75983C16.7228 6.45413 16.744 5.97974 17.0497 5.70024L19.2718 3.66865C19.5775 3.38915 20.0518 3.41039 20.3314 3.71609ZM12 7.75C9.65279 7.75 7.75 9.65279 7.75 12C7.75 14.3472 9.65279 16.25 12 16.25C14.3472 16.25 16.25 14.3472 16.25 12C16.25 9.65279 14.3472 7.75 12 7.75ZM6.25 12C6.25 8.82436 8.82436 6.25 12 6.25C15.1756 6.25 17.75 8.82436 17.75 12C17.75 15.1756 15.1756 17.75 12 17.75C8.82436 17.75 6.25 15.1756 6.25 12ZM1.25 12C1.25 11.5858 1.58579 11.25 2 11.25H4C4.41421 11.25 4.75 11.5858 4.75 12C4.75 12.4142 4.41421 12.75 4 12.75H2C1.58579 12.75 1.25 12.4142 1.25 12ZM19.25 12C19.25 11.5858 19.5858 11.25 20 11.25H22C22.4142 11.25 22.75 11.5858 22.75 12C22.75 12.4142 22.4142 12.75 22 12.75H20C19.5858 12.75 19.25 12.4142 19.25 12ZM17.0255 17.0252C17.3184 16.7323 17.7933 16.7323 18.0862 17.0252L20.3082 19.2475C20.6011 19.5404 20.601 20.0153 20.3081 20.3082C20.0152 20.6011 19.5403 20.601 19.2475 20.3081L17.0255 18.0858C16.7326 17.7929 16.7326 17.3181 17.0255 17.0252ZM6.97467 17.0253C7.26756 17.3182 7.26756 17.7931 6.97467 18.086L4.75244 20.3082C4.45955 20.6011 3.98468 20.6011 3.69178 20.3082C3.39889 20.0153 3.39889 19.5404 3.69178 19.2476L5.91401 17.0253C6.2069 16.7324 6.68177 16.7324 6.97467 17.0253ZM12 19.25C12.4142 19.25 12.75 19.5858 12.75 20V22C12.75 22.4142 12.4142 22.75 12 22.75C11.5858 22.75 11.25 22.4142 11.25 22V20C11.25 19.5858 11.5858 19.25 12 19.25Z" fill="currentColor"></path>
+</svg>
+<svg aria-hidden="true" class="djdt-hidden theme-dark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3.32031 11.6835C3.32031 16.6541 7.34975 20.6835 12.3203 20.6835C16.1075 20.6835 19.3483 18.3443 20.6768 15.032C19.6402 15.4486 18.5059 15.6834 17.3203 15.6834C12.3497 15.6834 8.32031 11.654 8.32031 6.68342C8.32031 5.50338 8.55165 4.36259 8.96453 3.32996C5.65605 4.66028 3.32031 7.89912 3.32031 11.6835Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+
+        </a>
+      </li>
+      
+        
+
+<li id="djdt-HistoryPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtHistoryPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="Histórico" class="HistoryPanel">
+  
+  Histórico
+  
+    
+      <br><small>/</small>
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-VersionsPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtVersionsPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="Versões" class="VersionsPanel">
+  
+  Versões
+  
+    
+      <br><small>Django 5.1.7</small>
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-TimerPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtTimerPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <div class="djdt-contentless">
+  
+  Tempo
+  
+    
+      <br><small>Total: 137.31ms</small>
+    
+  
+  
+    </div>
+  
+</li>
+
+      
+        
+
+<li id="djdt-SettingsPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtSettingsPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="Settings from omaum.settings" class="SettingsPanel">
+  
+  Configurações
+  
+    
+      
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-HeadersPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtHeadersPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="Cabeçalhos" class="HeadersPanel">
+  
+  Cabeçalhos
+  
+    
+      
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-RequestPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtRequestPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="Requisição" class="RequestPanel">
+  
+  Requisição
+  
+    
+      <br><small>pagina_inicial</small>
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-SQLPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtSQLPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="SQL queries from 1 connection" class="SQLPanel">
+  
+  SQL
+  
+    
+      <br><small>2 queries in 3.77ms</small>
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-StaticFilesPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtStaticFilesPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="Arquivos estáticos (155 encontrados, 7 sendo utilizados)" class="StaticFilesPanel">
+  
+  Arquivos estáticos
+  
+    
+      <br><small>7 arquivos utilizados</small>
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-TemplatesPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtTemplatesPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="Templates (2 renderizados)" class="TemplatesPanel">
+  
+  Templates
+  
+    
+      <br><small>home.html</small>
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-AlertsPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtAlertsPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="Alerts" class="AlertsPanel">
+  
+  Alerts
+  
+    
+      
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-CachePanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtCachePanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="Chamadas ao cache de 1 backend" class="CachePanel">
+  
+  Cache
+  
+    
+      <br><small>0 chamada em 0.00ms</small>
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-SignalsPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtSignalsPanel" checked="checked" title="Desativar para próximas requisições">
+  
+    <a href="#" title="Sinais" class="SignalsPanel">
+  
+  Sinais
+  
+    
+      <br><small>35 receptores de 15 sinais</small>
+    
+  
+  
+    </a>
+  
+</li>
+
+      
+        
+
+<li id="djdt-RedirectsPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtRedirectsPanel" title="Habilitar para próximas requisições">
+  
+    <div class="djdt-contentless djdt-disabled">
+  
+  Interceptar redirecionamentos
+  
+  
+    </div>
+  
+</li>
+
+      
+        
+
+<li id="djdt-ProfilingPanel" class="djDebugPanelButton">
+  <input type="checkbox" data-cookie="djdtProfilingPanel" title="Habilitar para próximas requisições">
+  
+    <div class="djdt-contentless djdt-disabled">
+  
+  Profiling
+  
+  
+    </div>
+  
+</li>
+
+      
+    </ul>
+  </div>
+  <div class="" id="djDebugToolbarHandle" style="top: 265px;">
+    <div title="Mostrar barra de ferramentas" id="djShowToolBarButton">
+      <span id="djShowToolBarD">D</span><span id="djShowToolBarJ">J</span>DT
+    </div>
+  </div>
+
+  
+    
+
+
+  <div id="HistoryPanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>Histórico</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+  <div id="VersionsPanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>Versões</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+
+  
+    
+
+
+  <div id="SettingsPanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>Settings from omaum.settings</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+  <div id="HeadersPanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>Cabeçalhos</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+  <div id="RequestPanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>Requisição</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+  <div id="SQLPanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>SQL queries from 1 connection</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+  <div id="StaticFilesPanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>Arquivos estáticos (155 encontrados, 7 sendo utilizados)</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+  <div id="TemplatesPanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>Templates (2 renderizados)</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+  <div id="AlertsPanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>Alerts</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+  <div id="CachePanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>Chamadas ao cache de 1 backend</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+  <div id="SignalsPanel" class="djdt-panelContent djdt-hidden">
+    <div class="djDebugPanelTitle">
+      <button type="button" class="djDebugClose">×</button>
+      <h3>Sinais</h3>
+    </div>
+    <div class="djDebugPanelContent">
+      
+        <div class="djdt-loader"></div>
+        <div class="djdt-scroll"></div>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+
+  
+    
+
+
+
+  
+  <div id="djDebugWindow" class="djdt-panelContent djdt-hidden"></div>
+</div>
+
+
+</body></html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!-- Atualização do título conforme recomendado -->
+    <title>{% block title %}SGI - Sistema de Gestão Integrada da OmAum{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome 5 -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    
+    <!-- Select2 CSS com tema Bootstrap 4 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+    
+    <!-- CSS Global do Projeto -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    
+    <!-- CSS de componentes globais -->
+    <link rel="stylesheet" href="{% static 'css/components/dias-semana.css' %}">
+    
+    <!-- CSS específico da página -->
+    {% block extra_css %}{% endblock %}
+    
+    <!-- jQuery (obrigatório para Bootstrap JS, Select2 e jQuery Mask) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Pré-carregamento de scripts essenciais -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js" defer></script>
+    
+    <!-- Scripts adicionais da página no head -->
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Cabeçalho/Barra de Navegação -->
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <!-- Atualização do texto da marca para refletir o novo nome -->
+                <a class="navbar-brand" href="{% url 'core:pagina_inicial' %}">
+                    <img src="{% static 'img/logo.png' %}" alt="OMAUM Logo" height="40">
+                    SGI - Om-Aum                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'pagina_inicial' %}active{% endif %}"
+                               href="{% url 'core:pagina_inicial' %}">
+                                <i class="fas fa-home"></i> Início
+                            </a>
+                        </li>
+                        
+                        {% if user.is_authenticated %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'alunos' %}active{% endif %}"
+                                   href="{% url 'alunos:listar_alunos' %}">
+                                    <i class="fas fa-user-graduate"></i> Alunos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'cursos' %}active{% endif %}"
+                                   href="{% url 'cursos:listar_cursos' %}">
+                                    <i class="fas fa-book"></i> Cursos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'turmas' %}active{% endif %}"
+                                   href="{% url 'turmas:listar_turmas' %}">
+                                    <i class="fas fa-users"></i> Turmas
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'matriculas' %}active{% endif %}"
+                                   href="{% url 'matriculas:listar_matriculas' %}">
+                                    <i class="fas fa-clipboard-list"></i> Matrículas
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAtividades" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                   <i class="fas fa-calendar-alt"></i> Atividades
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownAtividades">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'atividades:listar_atividades_academicas' %}">
+                                            <i class="fas fa-school"></i> Acadêmicas
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'atividades:listar_atividades_ritualisticas' %}">
+                                            <i class="fas fa-pray"></i> Ritualísticas
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'presencas' %}active{% endif %}"
+                                   href="{% url 'presencas:listar_presencas' %}">
+                                    <i class="fas fa-clipboard-check"></i> Presenças
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'frequencias' %}active{% endif %}"
+                                   href="{% url 'frequencias:listar_frequencias' %}">
+                                    <i class="fas fa-check-square"></i> Frequências
+                                </a>
+                            </li>
+                            <!-- Adicionando itens de menu que estavam no outro template -->
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'iniciacoes' %}active{% endif %}"
+                                   href="{% url 'iniciacoes:listar_iniciacoes' %}">
+                                    <i class="fas fa-graduation-cap"></i> Iniciações
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'cargos' %}active{% endif %}"
+                                   href="{% url 'cargos:listar_cargos' %}">
+                                    <i class="fas fa-id-badge"></i> Cargos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'notas' %}active{% endif %}"
+                                   href="{% url 'notas:listar_notas' %}">
+                                    <i class="fas fa-star"></i> Notas
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'pagamentos' %}active{% endif %}"
+                                   href="{% url 'pagamentos:listar_pagamentos' %}">
+                                    <i class="fas fa-money-bill-wave"></i> Pagamentos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'punicoes' %}active{% endif %}"
+                                   href="{% url 'punicoes:listar_punicoes' %}">
+                                    <i class="fas fa-gavel"></i> Punições
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.app_name == 'relatorios' %}active{% endif %}"
+                                   href="{% url 'relatorios:listar_relatorios' %}">
+                                    <i class="fas fa-chart-bar"></i> Relatórios
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                    
+                    <ul class="navbar-nav">
+                        {% if user.is_authenticated %}
+                            {% if user.is_staff %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'core:painel_controle' %}">
+                                        <i class="fas fa-cog"></i> Painel de Controle
+                                    </a>
+                                </li>
+                            {% endif %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                   <i class="fas fa-user-circle"></i> {{ user.username }}
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="#">Meu Perfil</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" action="{% url 'core:sair' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-sign-out-alt"></i> Sair
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'core:entrar' %}">
+                                    <i class="fas fa-sign-in-alt"></i> Entrar
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <!-- Mensagens do sistema (flash messages) -->
+    <div class="message-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <!-- Conteúdo principal -->
+    <main id="main-content" class="py-4">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Rodapé -->
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <!-- Atualização do texto do rodapé para refletir o novo nome -->
+            <span class="text-muted">© {% now "Y" %} SGI - Sistema de Gestão Integrada da OmAum</span>
+        </div>
+    </footer>
+    
+    <!-- Scripts de componentes globais -->
+    <script src="{% static 'js/modules/dias-semana.js' %}"></script>
+    
+    <!-- Scripts específicos da página -->
+    {% block extra_js %}{% endblock %}
+    
+    <!-- Script global do sistema -->
+    <script>
+        // Inicialização global do site
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar tooltips do Bootstrap
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Inicializar popovers do Bootstrap
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+            
+            // Verificação CSRF para AJAX
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
+            // Configuração global do AJAX para incluir o token CSRF
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                    }
+                }
+            });
+            
+            // Verificação periódica do token CSRF para sessões longas
+            setInterval(function() {
+                $.get("{% url 'core:csrf_check' %}");
+            }, 3600000); // A cada hora
+            
+            // Aplicar máscaras globais
+            if (typeof $.fn.mask === 'function') {
+                $('.cpf-mask').mask('000.000.000-00');
+                $('.cep-mask').mask('00000-000');
+                $('.phone-mask').mask('(00) 0000-00009');
+                $('.phone-mask').blur(function(event) {
+                    if($(this).val().length == 15){
+                        $('.phone-mask').mask('(00) 00000-0009');
+                    } else {
+                        $('.phone-mask').mask('(00) 0000-00009');
+                    }
+                });
+                $('.date-mask').mask('00/00/0000');
+                $('.time-mask').mask('00:00 às 00:00');
+            }
+            
+            // Inicialização global do Select2
+            if (typeof $.fn.select2 === 'function') {
+                $('.select2').select2({
+                    theme: 'bootstrap4',
+                    width: '100%'
+                });
+            }
+        });
+    </script>
+    <script src="{% static 'js/inicializar_select2.js' %}"></script>
+</body>
+</html>

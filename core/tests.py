@@ -181,7 +181,7 @@ class ViewsTests(TestCase):
         """Testa a página inicial"""
         response = self.client.get(reverse("core:pagina_inicial"))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "core/home.html")
+        self.assertTemplateUsed(response, "omaum/omaum/templates/home.html")
 
     def test_entrar_get(self):
         """Testa a página de login (GET)"""

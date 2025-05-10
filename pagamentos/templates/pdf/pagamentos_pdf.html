@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Relatório de Pagamentos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            font-size: 12px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .info {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+        .totals {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .status-pago {
+            color: green;
+            font-weight: bold;
+        }
+        .status-pendente {
+            color: orange;
+            font-weight: bold;
+        }
+        .status-cancelado {
+            color: gray;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Relatório de Pagamentos</h1>
+        <p>Data de geração: {{ data_geracao|date:"d/m/Y H:i" }}</p>
+    </div>
+    
+    <div class="info">
+        <h3>Filtros Aplicados</h3>
+        <p>Status: {{ filtros.status|default:"Todos" }}</p>
+        <p>Período: {% if filtros.data_inicio or filtros.data_fim %}
+            {% if filtros.data_inicio %}De: {{ filtros.data_inicio|date:"d/m/Y" }}{% endif %}
+            {% if filtros.data_fim %}Até: {{ filtros.data_fim|date:"d/m/Y" }}{% endif %}
+            {% else %}Todos{% endif %}
+        </p>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Aluno</th>
+                <th>Valor</th>
+                <th>Vencimento</th>
+                <th>Status</th>
+                <th>Data Pagamento</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pagamento in pagamentos %}
+                <tr>
+                    <td>{{ pagamento.aluno.nome }}</td>
+                    <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
+                    <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
+                    <td class="status-{{ pagamento.status }}">{{ pagamento.get_status_display }}</td>
+                    <td>{{ pagamento.data_pagamento|date:"d/m/Y"|default:"-" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="totals">
+        <p><strong>Total Pago:</strong> R$ {{ total_pago|floatformat:2 }}</p>
+        <p><strong>Total Pendente:</strong> R$ {{ total_pendente|floatformat:2 }}</p>
+        <p><strong>Total Geral:</strong> R$ {{ total_geral|floatformat:2 }}</p>
+    </div>
+    
+    <div class="footer">
+        <p>Relatório gerado pelo sistema OMAUM - Página 1 de 1</p>
+    </div>
+</body>
+</html>

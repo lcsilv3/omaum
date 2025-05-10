@@ -1,151 +1,182 @@
 <!DOCTYPE html>
-{% load static %}
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>{% block title %}OMAUM - Sistema de Gestão de Iniciados{% endblock %}</title>
-    
-    <!-- Favicon -->
-    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
-    
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- FontAwesome 5 -->
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-    
-    <!-- Select2 CSS com tema Bootstrap 4 -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
-    
-    <!-- CSS Global do Projeto -->
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    
-    <!-- CSS de componentes globais -->
-    <link rel="stylesheet" href="{% static 'css/components/dias-semana.css' %}">
-    
-    <!-- CSS específico da página -->
+    <title>{% block title %}SGI - OmAum{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     {% block extra_css %}{% endblock %}
-    
-    <!-- jQuery (obrigatório para Bootstrap JS, Select2 e jQuery Mask) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    <!-- Pré-carregamento de scripts essenciais -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js" defer></script>
-    
-    <!-- Scripts adicionais da página no head -->
-    {% block extra_head %}{% endblock %}
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            flex: 1;
+        }
+        .navbar-brand img {
+            width: 50px; /* Aumentando o tamanho do ícone */
+            height: auto;
+        }
+        .navbar-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .brand-text {
+            font-size: 0.8rem;
+            margin-top: 2px;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 1rem 0;
+            margin-top: auto;
+        }
+        
+        /* Adicione estas regras para os links dourados na navbar */
+        .navbar-dark .navbar-nav .nav-link {
+            color: gold !important; /* Cor dourada para todos os links */
+        }
+        .navbar-dark .navbar-nav .nav-link:hover {
+            color: #FFD700 !important; /* Dourado mais brilhante no hover */
+            text-decoration: underline;
+        }
+        .navbar-dark .navbar-brand {
+            color: gold !important; /* Cor dourada para o logo/texto da marca */
+        }
+        .navbar-dark .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 215, 0, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+        }
+    </style>
 </head>
 <body>
-    <!-- Cabeçalho/Barra de Navegação -->
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand" href="{% url 'core:pagina_inicial' %}">
-                    <img src="{% static 'img/logo.png' %}" alt="OMAUM Logo" height="40">
+                <a class="navbar-brand" href="/">
+                    <img src="/static/img/logo.png" alt="Logo OmAum">
+                    <span class="brand-text">SGI - Om-Aum</span>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-                        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'pagina_inicial' %}active{% endif %}" 
-                               href="{% url 'core:pagina_inicial' %}">
-                                <i class="fas fa-home"></i> Início
-                            </a>
-                        </li>
-                        
                         {% if user.is_authenticated %}
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.app_name == 'alunos' %}active{% endif %}" 
-                                   href="{% url 'alunos:listar_alunos' %}">
-                                    <i class="fas fa-user-graduate"></i> Alunos
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.app_name == 'cursos' %}active{% endif %}" 
-                                   href="{% url 'cursos:listar_cursos' %}">
-                                    <i class="fas fa-book"></i> Cursos
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.app_name == 'turmas' %}active{% endif %}" 
-                                   href="{% url 'turmas:listar_turmas' %}">
-                                    <i class="fas fa-users"></i> Turmas
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.app_name == 'matriculas' %}active{% endif %}" 
-                                   href="{% url 'matriculas:listar_matriculas' %}">
-                                    <i class="fas fa-clipboard-list"></i> Matrículas
-                                </a>
-                            </li>
+                            <!-- Gestão Acadêmica -->
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAtividades" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                   <i class="fas fa-calendar-alt"></i> Atividades
+                                <a class="nav-link dropdown-toggle" href="#" id="academicoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Gestão Acadêmica
                                 </a>
-                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownAtividades">
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'atividades:listar_atividades_academicas' %}">
-                                            <i class="fas fa-school"></i> Acadêmicas
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'atividades:listar_atividades_ritualisticas' %}">
-                                            <i class="fas fa-pray"></i> Ritualísticas
-                                        </a>
-                                    </li>
+                                <ul class="dropdown-menu" aria-labelledby="academicoDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'cursos:listar_cursos' %}">Cursos</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'alunos:listar_alunos' %}">Alunos</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'turmas:listar_turmas' %}">Turmas</a></li>
                                 </ul>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.app_name == 'frequencias' %}active{% endif %}" 
-                                   href="{% url 'frequencias:listar_frequencias' %}">
-                                    <i class="fas fa-check-square"></i> Frequências
+                            
+                            <!-- Frequência e Presença -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="frequenciaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Frequência e Presença
                                 </a>
+                                <ul class="dropdown-menu" aria-labelledby="frequenciaDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'atividades:listar_atividades_academicas' %}">Atividades Acadêmicas</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'atividades:listar_atividades_ritualisticas' %}">Atividades Ritualísticas</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'presencas:listar_presencas' %}">Presenças</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'frequencias:listar_frequencias' %}">Frequências</a></li>
+                                </ul>
+                            </li>
+                            
+                            <!-- Processos Iniciáticos -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="iniciaticosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Processos Iniciáticos
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="iniciaticosDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'iniciacoes:listar_iniciacoes' %}">Iniciações</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'punicoes:listar_punicoes' %}">Punições</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'cargos:listar_cargos' %}">Cargos Administrativos</a></li>
+                                </ul>
+                            </li>
+                            
+                            <!-- Avaliação e Financeiro -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="avaliacaoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Avaliação e Financeiro
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="avaliacaoDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'notas:listar_notas' %}">Notas</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'pagamentos:listar_pagamentos' %}">Pagamentos</a></li>
+                                </ul>
+                            </li>
+                            
+                            <!-- Relatórios e Análises -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="relatoriosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Relatórios e Análises
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="relatoriosDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'relatorios:listar_relatorios' %}">Relatórios</a></li>
+                                </ul>
                             </li>
                         {% endif %}
                     </ul>
-                    
                     <ul class="navbar-nav">
                         {% if user.is_authenticated %}
-                            {% if user.is_staff %}
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{% url 'core:painel_controle' %}">
-                                        <i class="fas fa-cog"></i> Painel de Controle
-                                    </a>
-                                </li>
-                            {% endif %}
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                   <i class="fas fa-user-circle"></i> {{ user.username }}
+                                <a class="nav-link dropdown-toggle" href="#" id="notificacoesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-bell"></i>
+                                    {% if pagamentos_atrasados_count > 0 %}
+                                        <span class="badge bg-danger">{{ pagamentos_atrasados_count }}</span>
+                                    {% endif %}
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificacoesDropdown">
+                                    <li><h6 class="dropdown-header">Notificações</h6></li>
+                                    {% if pagamentos_atrasados %}
+                                        {% for pagamento in pagamentos_atrasados|slice:":5" %}
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}">
+                                                    <i class="fas fa-exclamation-circle"></i> 
+                                                    Pagamento atrasado: {{ pagamento.aluno.nome }} - R$ {{ pagamento.valor|floatformat:2 }}
+                                                    <small class="d-block text-muted">Vencido há {{ pagamento.dias_atraso }} dias</small>
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                        {% if pagamentos_atrasados_count > 5 %}
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-center" href="{% url 'pagamentos:relatorio_financeiro' %}?filtro=atrasados">
+                                                    Ver todos os {{ pagamentos_atrasados_count }} pagamentos atrasados
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li><a class="dropdown-item text-muted">Não há notificações</a></li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user"></i> {{ user.username }}
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <li><a class="dropdown-item" href="#">Meu Perfil</a></li>
+                                    <!-- Removendo o link para o perfil que não existe -->
+                                    <li><a class="dropdown-item" href="{% url 'admin:index' %}">Administração</a></li>
+                                    <!-- Removendo o link para alterar senha que pode não existir -->
                                     <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <form method="post" action="{% url 'core:sair' %}" class="d-inline">
-                                            {% csrf_token %}
-                                            <button type="submit" class="dropdown-item">
-                                                <i class="fas fa-sign-out-alt"></i> Sair
-                                            </button>
-                                        </form>
-                                    </li>
+                                    <li><a class="dropdown-item" href="{% url 'logout' %}">Sair</a></li>
                                 </ul>
                             </li>
                         {% else %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'core:entrar' %}">
-                                    <i class="fas fa-sign-in-alt"></i> Entrar
-                                </a>
+                                <a class="nav-link" href="{% url 'login' %}">Entrar</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'register' %}">Registrar</a>
                             </li>
                         {% endif %}
                     </ul>
@@ -153,108 +184,20 @@
             </div>
         </nav>
     </header>
-    
-    <!-- Mensagens do sistema (flash messages) -->
-    <div class="message-container">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    </div>
-    
-    <!-- Conteúdo principal -->
-    <main id="main-content" class="py-4">
-        {% block content %}{% endblock %}
+
+    <main class="py-4">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
     </main>
-    
-    <!-- Rodapé -->
-    <footer class="footer mt-auto py-3 bg-light">
+
+    <footer class="footer">
         <div class="container text-center">
-            <span class="text-muted">© {% now "Y" %} OMAUM - Sistema de Gestão de Iniciados</span>
+            <p class="mb-0">&copy; {% now "Y" %} SGI - OmAum. Todos os direitos reservados.</p>
         </div>
     </footer>
-    
-    <!-- Scripts de componentes globais -->
-    <script src="{% static 'js/modules/dias-semana.js' %}"></script>
-    
-    <!-- Scripts específicos da página -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
-    
-    <!-- Script global do sistema -->
-    <script>
-        // Inicialização global do site
-        document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar tooltips do Bootstrap
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-            
-            // Inicializar popovers do Bootstrap
-            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-                return new bootstrap.Popover(popoverTriggerEl);
-            });
-            
-            // Verificação CSRF para AJAX
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
-            }
-            
-            // Configuração global do AJAX para incluir o token CSRF
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                    }
-                }
-            });
-            
-            // Verificação periódica do token CSRF para sessões longas
-            setInterval(function() {
-                $.get("{% url 'core:csrf_check' %}");
-            }, 3600000); // A cada hora
-            
-            // Aplicar máscaras globais
-            if (typeof $.fn.mask === 'function') {
-                $('.cpf-mask').mask('000.000.000-00');
-                $('.cep-mask').mask('00000-000');
-                $('.phone-mask').mask('(00) 0000-00009');
-                $('.phone-mask').blur(function(event) {
-                    if($(this).val().length == 15){
-                        $('.phone-mask').mask('(00) 00000-0009');
-                    } else {
-                        $('.phone-mask').mask('(00) 0000-00009');
-                    }
-                });
-                $('.date-mask').mask('00/00/0000');
-                $('.time-mask').mask('00:00 às 00:00');
-            }
-            
-            // Inicialização global do Select2
-            if (typeof $.fn.select2 === 'function') {
-                $('.select2').select2({
-                    theme: 'bootstrap4',
-                    width: '100%'
-                });
-            }
-        });
-    </script>
-    <script src="{% static 'js/inicializar_select2.js' %}"></script>
 </body>
 </html>

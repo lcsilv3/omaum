@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Relatório de Notas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            font-size: 12px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        .header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .info {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+        .aluno-section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .nota-alta {
+            color: green;
+            font-weight: bold;
+        }
+        .nota-media {
+            color: orange;
+            font-weight: bold;
+        }
+        .nota-baixa {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Relatório de Notas</h1>
+        <p>Data de geração: {{ data_geracao|date:"d/m/Y H:i" }}</p>
+    </div>
+    
+    <div class="info">
+        <h3>Filtros Aplicados</h3>
+        <p>Aluno: {{ filtros.aluno|default:"Todos" }}</p>
+        <p>Curso: {{ filtros.curso|default:"Todos" }}</p>
+    </div>
+    
+    {% for aluno_media in alunos_medias %}
+        <div class="aluno-section">
+            <h2>{{ aluno_media.aluno.nome }}</h2>
+            <p><strong>CPF:</strong> {{ aluno_media.aluno.cpf }}</p>
+            <p><strong>Média Geral:</strong> 
+                <span class="{% if aluno_media.media >= 7 %}nota-alta{% elif aluno_media.media >= 5 %}nota-media{% else %}nota-baixa{% endif %}">
+                    {{ aluno_media.media|floatformat:1 }}
+                </span>
+            </p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Curso</th>
+                        <th>Tipo de Avaliação</th>
+                        <th>Nota</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for nota in aluno_media.notas %}
+                        <tr>
+                            <td>{{ nota.curso.nome }}</td>
+                            <td>{{ nota.get_tipo_avaliacao_display }}</td>
+                            <td class="{% if nota.valor >= 7 %}nota-alta{% elif nota.valor >= 5 %}nota-media{% else %}nota-baixa{% endif %}">
+                                {{ nota.valor|floatformat:1 }}
+                            </td>
+                            <td>{{ nota.data|date:"d/m/Y" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endfor %}
+    
+    <div class="footer">
+        <p>Relatório gerado pelo sistema OMAUM</p>
+    </div>
+</body>
+</html>

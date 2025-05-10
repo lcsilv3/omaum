@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Acadêmico{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard Acadêmico</h1>
+        <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> Listar Notas
+        </a>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total de Avaliações</h5>
+                    <p class="card-text display-6">{{ total_avaliacoes }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Média Geral</h5>
+                    <p class="card-text display-6">{{ media_geral|floatformat:1 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Aprovações</h5>
+                    <p class="card-text display-6">{{ percentual_aprovacao }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Distribuição de Notas</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="distribuicaoNotas" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Média por Curso</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="mediaPorCurso" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Melhores Alunos</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Média Geral</th>
+                            <th>Cursos</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aluno in melhores_alunos %}
+                            <tr>
+                                <td>{{ aluno.nome }}</td>
+                                <td>
+                                    <span class="badge bg-success">{{ aluno.media|floatformat:1 }}</span>
+                                </td>
+                                <td>{{ aluno.cursos|join:", " }}</td>
+                                <td>
+                                    <a href="{% url 'notas:relatorio_notas_aluno' aluno.cpf %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-chart-line"></i> Relatório
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de distribuição de notas
+        const ctxDistribuicao = document.getElementById('distribuicaoNotas').getContext('2d');
+        new Chart(ctxDistribuicao, {
+            type: 'bar',
+            data: {
+                labels: ['0-2', '2-4', '4-6', '6-8', '8-10'],
+                datasets: [{
+                    label: 'Quantidade de Notas',
+                    data: [
+                        {{ faixas_notas.0 }},
+                        {{ faixas_notas.1 }},
+                        {{ faixas_notas.2 }},
+                        {{ faixas_notas.3 }},
+                        {{ faixas_notas.4 }}
+                    ],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(255, 159, 64, 0.6)',
+                        'rgba(255, 205, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(54, 162, 235, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(255, 159, 64)',
+                        'rgb(255, 205, 86)',
+                        'rgb(75, 192, 192)',
+                        'rgb(54, 162, 235)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de média por curso
+        const ctxMedia = document.getElementById('mediaPorCurso').getContext('2d');
+        new Chart(ctxMedia, {
+            type: 'bar',
+            data: {
+                labels: [{% for curso in cursos_medias %}'{{ curso.nome }}',{% endfor %}],
+                datasets: [{
+                    label: 'Média',
+                    data: [{% for curso in cursos_medias %}{{ curso.media }},{% endfor %}],
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

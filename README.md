@@ -69,8 +69,8 @@ Agora, vamos corrigir o problema específico que você encontrou no arquivo `scr
 ("home.html", "omaum\templates\home.html"),
 
 # Por:
-("base.html", r"omaum\templates\base.html"),
-("home.html", r"omaum\templates\home.html"),
+("base.html", r"omaum/omaum/templates/base.html"),
+("home.html", r"omaum/omaum/templates/home.html"),
 
 ## Convenções de Código
 

@@ -77,8 +77,9 @@ def listar_alunos(request):
                 cursos = [m.turma.curso.nome for m in matriculas]
                 # Adicionar informação de cursos ao aluno
                 aluno.cursos = cursos
-            except:
+            except Exception as e:
                 aluno.cursos = []
+                print(f"Erro ao buscar cursos do aluno {aluno.nome}: {e}")
             alunos_com_cursos.append(aluno)
         
         # Paginação
@@ -89,17 +90,28 @@ def listar_alunos(request):
         try:
             Curso = import_module("cursos.models").Curso
             cursos = Curso.objects.all()
-        except:
+        except Exception as e:
             cursos = []
+            print(f"Erro ao buscar cursos: {e}")
+        
+        # Adicionar contagem total de alunos ao contexto
+        total_alunos = alunos.count()
+        
         context = {
             "alunos": page_obj,
             "page_obj": page_obj,
             "query": query,
             "cursos": cursos,
             "curso_selecionado": curso_id,
+            "total_alunos": total_alunos,  # Adicionando contagem total
         }
         return render(request, "alunos/listar_alunos.html", context)
     except Exception as e:
+        # Logar o erro para facilitar a depuração
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Erro ao listar alunos: {str(e)}", exc_info=True)
+        
         # Em vez de mostrar a mensagem de erro, apenas retornamos uma lista vazia
         return render(
             request,
@@ -111,6 +123,7 @@ def listar_alunos(request):
                 "cursos": [],
                 "curso_selecionado": "",
                 "error_message": f"Erro ao listar alunos: {str(e)}",
+                "total_alunos": 0,  # Garantir que a contagem seja zero em caso de erro
             },
         )
 

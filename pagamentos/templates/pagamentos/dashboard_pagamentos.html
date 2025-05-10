@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Pagamentos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard de Pagamentos</h1>
+        <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> Listar Pagamentos
+        </a>
+    </div>
+    
+    <!-- Resumo estatístico -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total de Pagamentos</h5>
+                    <p class="card-text display-6">{{ total_pagamentos }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Valor Total</h5>
+                    <p class="card-text display-6">R$ {{ valor_total|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pagamentos por status -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Pagamentos por Status</h5>
+        </div>
+        <div class="card-body">
+            {% if pagamentos_por_status %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Quantidade</th>
+                                <th>Valor Total</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pagamentos_por_status %}
+                                <tr>
+                                    <td>
+                                        <span class="badge {% if item.status == 'pago' %}bg-success{% elif item.status == 'pendente' %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {% if item.status == 'pago' %}Pago{% elif item.status == 'pendente' %}Pendente{% else %}Cancelado{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ item.total }}</td>
+                                    <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'pagamentos:listar_pagamentos' %}?status={{ item.status }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> Ver Pagamentos
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Pagamentos por mês -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Pagamentos por Mês (Últimos 6 meses)</h5>
+        </div>
+        <div class="card-body">
+            {% if pagamentos_por_mes %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                                            <th>Mês</th>
+                                                            <th>Quantidade</th>
+                                                            <th>Valor Total</th>
+                                                            <th>Média por Pagamento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for item in pagamentos_por_mes %}
+                                                            <tr>
+                                                                <td>{{ item.mes }}</td>
+                                                                <td>{{ item.total }}</td>
+                                                                <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                                                                <td>
+                                                                    {% if item.total > 0 %}
+                                                                        R$ {{ item.valor_total|floatformat:2|default:0|divisibleby:item.total }}
+                                                                    {% else %}
+                                                                        R$ 0,00
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado nos últimos 6 meses.
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+    
+                                <!-- Pagamentos por aluno -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0">Top 5 Alunos por Valor Total</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if pagamentos_por_aluno %}
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Aluno</th>
+                                                            <th>Quantidade de Pagamentos</th>
+                                                            <th>Valor Total</th>
+                                                            <th>Ações</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for item in pagamentos_por_aluno %}
+                                                            <tr>
+                                                                <td>{{ item.aluno__nome }}</td>
+                                                                <td>{{ item.total }}</td>
+                                                                <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                                                                <td>
+                                                                    <a href="{% url 'pagamentos:listar_pagamentos' %}?aluno={{ item.aluno__cpf }}" class="btn btn-sm btn-info">
+                                                                        <i class="fas fa-eye"></i> Ver Pagamentos
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado.
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+    
+                                <div class="mt-4">
+                                    <a href="javascript:history.back()" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i> Voltar
+                                    </a>
+                                </div>
+</div>
+{% endblock %}                                <th

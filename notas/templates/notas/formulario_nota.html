@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if nota %}Editar{% else %}Nova{% endif %} Nota{% endblock %}
+
+{% block extra_css %}
+<style>
+    .required-field label:after {
+        content: " *";
+        color: red;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% if nota %}Editar{% else %}Nova{% endif %} Nota</h1>
+        <a href="javascript:history.back()" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Formulário de Nota</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.aluno.id_for_label }}" class="form-label">{{ form.aluno.label }}</label>
+                            {{ form.aluno }}
+                            {% if form.aluno.help_text %}
+                                <div class="form-text">{{ form.aluno.help_text }}</div>
+                            {% endif %}
+                            {% if form.aluno.errors %}
+                                <div class="alert alert-danger mt-1">
+                                    {{ form.aluno.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.curso.id_for_label }}" class="form-label">{{ form.curso.label }}</label>
+                            {{ form.curso }}
+                            {% if form.curso.help_text %}
+                                <div class="form-text">{{ form.curso.help_text }}</div>
+                            {% endif %}
+                            {% if form.curso.errors %}
+                                <div class="alert alert-danger mt-1">
+                                    {{ form.curso.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.turma.id_for_label }}" class="form-label">{{ form.turma.label }}</label>
+                            {{ form.turma }}
+                            {% if form.turma.help_text %}
+                                <div class="form-text">{{ form.turma.help_text }}</div>
+                            {% endif %}
+                            {% if form.turma.errors %}
+                                <div class="alert alert-danger mt-1">
+                                    {{ form.turma.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.tipo_avaliacao.id_for_label }}" class="form-label">{{ form.tipo_avaliacao.label }}</label>
+                            {{ form.tipo_avaliacao }}
+                            {% if form.tipo_avaliacao.help_text %}
+                                <div class="form-text">{{ form.tipo_avaliacao.help_text }}</div>
+                            {% endif %}
+                            {% if form.tipo_avaliacao.errors %}
+                                <div class="alert alert-danger mt-1">
+                                    {{ form.tipo_avaliacao.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ form.valor.id_for_label }}" class="form-label">{{ form.valor.label }}</label>
+                            {{ form.valor }}
+                            {% if form.valor.help_text %}
+                                <div class="form-text">{{ form.valor.help_text }}</div>
+                            {% endif %}
+                            {% if form.valor.errors %}
+                                <div class="alert alert-danger mt-1">
+                                    {{ form.valor.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ form.peso.id_for_label }}" class="form-label">{{ form.peso.label }}</label>
+                            {{ form.peso }}
+                            {% if form.peso.help_text %}
+                                <div class="form-text">{{ form.peso.help_text }}</div>
+                            {% endif %}
+                            {% if form.peso.errors %}
+                                <div class="alert alert-danger mt-1">
+                                    {{ form.peso.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ form.data.id_for_label }}" class="form-label">{{ form.data.label }}</label>
+                            {{ form.data }}
+                            {% if form.data.help_text %}
+                                <div class="form-text">{{ form.data.help_text }}</div>
+                            {% endif %}
+                            {% if form.data.errors %}
+                                <div class="alert alert-danger mt-1">
+                                    {{ form.data.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.observacoes.id_for_label }}" class="form-label">{{ form.observacoes.label }}</label>
+                    {{ form.observacoes }}
+                    {% if form.observacoes.help_text %}
+                        <div class="form-text">{{ form.observacoes.help_text }}</div>
+                    {% endif %}
+                    {% if form.observacoes.errors %}
+                        <div class="alert alert-danger mt-1">
+                            {{ form.observacoes.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="javascript:history.back()" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const alunoSelect = document.getElementById('id_aluno');
+        const cursoSelect = document.getElementById('id_curso');
+        const turmaSelect = document.getElementById('id_turma');
+        
+        // Atualizar turmas quando o curso for alterado
+        if (cursoSelect && turmaSelect) {
+            cursoSelect.addEventListener('change', function() {
+                const cursoId = this.value;
+                
+                // Limpar o select de turmas
+                turmaSelect.innerHTML = '<option value="">---------</option>';
+                
+                if (cursoId) {
+                    // Fazer uma requisição AJAX para obter as turmas do curso
+                    fetch(`/api/cursos/${cursoId}/turmas/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            data.forEach(turma => {
+                                const option = document.createElement('option');
+                                option.value = turma.id;
+                                option.textContent = turma.nome;
+                                turmaSelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Erro ao carregar turmas:', error);
+                        });
+                }
+            });
+        }
+        
+        // Verificar se o aluno está matriculado na turma selecionada
+        if (alunoSelect && turmaSelect) {
+            function verificarMatricula() {
+                const alunoCpf = alunoSelect.value;
+                const turmaId = turmaSelect.value;
+                
+                if (alunoCpf && turmaId) {
+                    // Fazer uma requisição AJAX para verificar se o aluno está matriculado na turma
+                    fetch(`/api/alunos/${alunoCpf}/matriculado/${turmaId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data.matriculado) {
+                                // Mostrar alerta se o aluno não estiver matriculado
+                                const alertDiv = document.createElement('div');
+                                alertDiv.className = 'alert alert-warning mt-3';
+                                alertDiv.id = 'alerta-matricula';
+                                alertDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Atenção: Este aluno não está matriculado nesta turma.';
+                                
+                                // Remover alerta existente, se houver
+                                const alertaExistente = document.getElementById('alerta-matricula');
+                                if (alertaExistente) {
+                                    alertaExistente.remove();
+                                }
+                                
+                                // Adicionar o alerta após o select de turma
+                                turmaSelect.parentElement.appendChild(alertDiv);
+                            } else {
+                                // Remover alerta se o aluno estiver matriculado
+                                const alertaExistente = document.getElementById('alerta-matricula');
+                                if (alertaExistente) {
+                                    alertaExistente.remove();
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro ao verificar matrícula:', error);
+                        });
+                }
+            }
+            
+            // Verificar quando o aluno ou a turma mudar
+            alunoSelect.addEventListener('change', verificarMatricula);
+            turmaSelect.addEventListener('change', verificarMatricula);
+            
+            // Verificar na inicialização, se ambos já estiverem selecionados
+            if (alunoSelect.value && turmaSelect.value) {
+                verificarMatricula();
+            }
+        }
+    });
+</script>
+{% endblock %}

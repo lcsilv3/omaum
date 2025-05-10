@@ -155,3 +155,12 @@ def csrf_check(request):
     return JsonResponse(
         {"status": "ok"}
     )  # Sempre retornar OK para evitar falsos positivos
+# core/views.py
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+# Outras views...
+
+@login_required
+def perfil(request):
+    return render(request, 'core/perfil.html', {'user': request.user})

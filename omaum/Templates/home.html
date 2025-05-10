@@ -1,177 +1,283 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
-{% block title %}OMAUM - Página Inicial{% endblock %}
+{% block title %}SGI - Sistema de Gestão Integrada da OmAum{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/styles.css' %}">
 <div class="container mt-4">
-    <div class="jumbotron">
-        <h1 class="display-4">Sistema de Gestão de Pessoal</h1>
-        <p class="lead">Bem-vindo ao sistema de gestão de Pessoal da Ordem Mística de Iniciação Universal ao Mestrado.</p>
-    </div>
-    
-    <!-- Primeira linha: Cursos, Alunos, Turmas -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h3 class="mb-3 border-bottom pb-2">Gestão Acadêmica</h3>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Cursos</h5>
-                    <p class="card-text">Gerenciamento de cursos oferecidos pela instituição.</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-primary">Acessar</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Alunos</h5>
-                    <p class="card-text">Cadastro e gerenciamento de alunos.</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-primary">Acessar</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Turmas</h5>
-                    <p class="card-text">Gerenciamento de turmas e períodos letivos.</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-primary">Acessar</a>
-                </div>
-            </div>
+    <div class="jumbotron bg-light p-4 rounded">
+        <h1 class="display-4">Bem-vindo ao SGI - OmAum</h1>
+        <p class="lead">Sistema de Gestão Integrada da OmAum - Gerenciamento completo de alunos, cursos, turmas e atividades.</p>
+        <hr class="my-4">
+        <p>Selecione um dos módulos abaixo para começar.</p>
+        <div class="alert alert-info text-center">
+            <i class="fas fa-arrow-down"></i> Role a página para ver todos os módulos disponíveis <i class="fas fa-arrow-down"></i>
         </div>
     </div>
-    
-    <!-- Segunda linha: Atividades, Presenças, Frequências -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h3 class="mb-3 border-bottom pb-2">Controle de Participação</h3>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Atividades</h5>
-                    <p class="card-text">Gerenciamento de atividades da instituição.</p>
+
+    {% if user.is_authenticated %}
+        <!-- Seção: Gestão Acadêmica -->
+        <div class="mt-4 mb-3">
+            <h3 class="border-bottom pb-2">Gestão Acadêmica</h3>
+            <div class="row">
+                <!-- Módulo de Cursos -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-book text-success"></i> Cursos
+                            </h5>
+                            <p class="card-text">Cadastro e gerenciamento de cursos oferecidos pela instituição.</p>
+                            <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-success">
+                                <i class="fas fa-book-open"></i> Acessar Cursos
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <div class="btn-group">
-                        <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-primary">Atividades Acadêmicas</a>
-                        <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-primary">Atividades Ritualísticas</a>
+                <!-- Módulo de Alunos -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-user-graduate text-primary"></i> Alunos
+                            </h5>
+                            <p class="card-text">Gerenciamento completo de alunos, incluindo cadastro, edição e consulta.</p>
+                            <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-primary">
+                                <i class="fas fa-users"></i> Acessar Alunos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Módulo de Turmas -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-users text-info"></i> Turmas
+                            </h5>
+                            <p class="card-text">Gerenciamento de turmas, incluindo horários, instrutores e alunos.</p>
+                            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-info">
+                                <i class="fas fa-chalkboard-teacher"></i> Acessar Turmas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-2 mb-4">
+                <span class="badge bg-secondary">Role para ver mais módulos <i class="fas fa-arrow-down"></i></span>
+            </div>
+        </div>
+
+        <!-- Seção: Frequência e Presença -->
+        <div class="mt-4 mb-3">
+            <h3 class="border-bottom pb-2">Frequência e Presença</h3>
+            <div class="row">
+                <!-- Módulo de Atividades (mudando de vermelho para rosa) -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-calendar-alt text-pink"></i> Atividades
+                            </h5>
+                            <p class="card-text">Gerenciamento de atividades acadêmicas e ritualísticas.</p>
+                            <div class="d-flex flex-column">
+                                <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-pink mb-2">
+                                    <i class="fas fa-school"></i> Atividades Acadêmicas
+                                </a>
+                                <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-outline-pink">
+                                    <i class="fas fa-pray"></i> Atividades Ritualísticas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Módulo de Presenças -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-clipboard-check text-secondary"></i> Presenças
+                            </h5>
+                            <p class="card-text">Controle de presenças em atividades e aulas.</p>
+                            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+                                <i class="fas fa-clipboard-check"></i> Acessar Presenças
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Módulo de Frequências -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-check-square text-primary"></i> Frequências
+                            </h5>
+                            <p class="card-text">Registro e consulta de frequências dos alunos.</p>
+                            <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-primary">
+                                <i class="fas fa-check-square"></i> Acessar Frequências
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-2 mb-4">
+                <span class="badge bg-secondary">Continue rolando <i class="fas fa-arrow-down"></i></span>
+            </div>
+        </div>
+
+        <!-- Seção: Processos Iniciáticos -->
+        <div class="mt-4 mb-3">
+            <h3 class="border-bottom pb-2">Processos Iniciáticos</h3>
+            <div class="row">
+                <!-- Módulo de Iniciações -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-graduation-cap text-success"></i> Iniciações
+                            </h5>
+                            <p class="card-text">Gerenciamento de iniciações e processos iniciáticos.</p>
+                            <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-success">
+                                <i class="fas fa-graduation-cap"></i> Acessar Iniciações
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Módulo de Punições (mudando de vermelho para roxo claro) -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-gavel text-purple"></i> Punições
+                            </h5>
+                            <p class="card-text">Registro e gerenciamento de punições disciplinares.</p>
+                            <a href="{% url 'punicoes:listar_punicoes' %}" class="btn btn-purple">
+                                <i class="fas fa-gavel"></i> Acessar Punições
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Módulo de Cargos Administrativos -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-id-badge text-info"></i> Cargos Administrativos
+                            </h5>
+                            <p class="card-text">Gerenciamento de cargos e funções administrativas.</p>
+                            <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-info">
+                                <i class="fas fa-id-badge"></i> Acessar Cargos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-2 mb-4">
+                <span class="badge bg-secondary">Mais módulos abaixo <i class="fas fa-arrow-down"></i></span>
+            </div>
+        </div>
+
+        <!-- Seção: Avaliação e Financeiro -->
+        <div class="mt-4 mb-3">
+            <h3 class="border-bottom pb-2">Avaliação e Financeiro</h3>
+            <div class="row">
+                <!-- Módulo de Notas -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-star text-warning"></i> Notas
+                            </h5>
+                            <p class="card-text">Gerenciamento de notas dos alunos nos cursos.</p>
+                            <a href="{% url 'notas:listar_notas' %}" class="btn btn-warning">
+                                <i class="fas fa-star"></i> Acessar Notas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Módulo de Pagamentos -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-money-bill-wave text-success"></i> Pagamentos
+                            </h5>
+                            <p class="card-text">Gerenciamento de pagamentos dos alunos.</p>
+                            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-success">
+                                <i class="fas fa-money-bill-wave"></i> Acessar Pagamentos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Relatórios e Análises -->
+        <div class="mt-4 mb-3">
+            <h3 class="border-bottom pb-2">Relatórios e Análises</h3>
+            <div class="row">
+                <!-- Módulo de Relatórios -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-chart-bar text-secondary"></i> Relatórios
+                            </h5>
+                            <p class="card-text">Geração de relatórios e estatísticas do sistema.</p>
+                            <a href="{% url 'relatorios:listar_relatorios' %}" class="btn btn-secondary">
+                                <i class="fas fa-chart-bar"></i> Acessar Relatórios
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Presenças</h5>
-                    <p class="card-text">Registro e controle de presenças em atividades.</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-primary">Acessar</a>
-                </div>
+        <!-- Botão para voltar ao topo -->
+        <div class="text-center my-4">
+            <a href="#" class="btn btn-outline-primary" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;">
+                <i class="fas fa-arrow-up"></i> Voltar ao topo
+            </a>
+        </div>
+    {% else %}
+        <div class="col-12 text-center mt-4">
+            <div class="alert alert-info">
+                <h4>Bem-vindo ao Sistema de Gestão Integrada da OmAum</h4>
+                <p>Por favor, faça login para acessar o sistema.</p>
+                <a href="{% url 'login' %}" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
+                </a>
             </div>
         </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Frequências</h5>
-                    <p class="card-text">Análise e relatórios de frequência dos alunos.</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-primary">Acessar</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Terceira linha: Iniciações, Punições, Cargos -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h3 class="mb-3 border-bottom pb-2">Gestão Institucional</h3>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Iniciações</h5>
-                    <p class="card-text">Gerenciamento de processos iniciatórios.</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-primary">Acessar</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Punições</h5>
-                    <p class="card-text">Registro e controle de medidas disciplinares.</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'punicoes:listar_punicoes' %}" class="btn btn-primary">Acessar</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Cargos</h5>
-                    <p class="card-text">Gestão de cargos e funções institucionais.</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-primary">Acessar</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Quarta linha: Relatórios, Painel de Controle -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h3 class="mb-3 border-bottom pb-2">Análise e Controle</h3>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Relatórios</h5>
-                    <p class="card-text">Geração de relatórios e análises estatísticas.</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'relatorios:listar_relatorios' %}" class="btn btn-primary">Acessar</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Painel de Controle</h5>
-                    <p class="card-text">Visão geral e indicadores de desempenho.</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'core:painel_controle' %}" class="btn btn-primary">Acessar</a>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% endif %}
 </div>
+
+<style>
+    /* Cores personalizadas mais suaves para substituir o vermelho */
+    .text-pink {
+        color: #e83e8c !important;
+    }
+    .btn-pink {
+        background-color: #e83e8c !important;
+        border-color: #e83e8c !important;
+        color: white !important;
+    }
+    .btn-outline-pink {
+        color: #e83e8c !important;
+        border-color: #e83e8c !important;
+    }
+    .btn-outline-pink:hover {
+        background-color: #e83e8c !important;
+        color: white !important;
+    }
+    
+    .text-purple {
+        color: #6f42c1 !important;
+    }
+    .btn-purple {
+        background-color: #6f42c1 !important;
+        border-color: #6f42c1 !important;
+        color: white !important;
+    }
+</style>
 {% endblock %}

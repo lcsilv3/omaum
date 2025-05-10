@@ -6,12 +6,20 @@ app_name = "core"
 
 urlpatterns = [
     path("", views.pagina_inicial, name="pagina_inicial"),
-    path(
-        "entrar/",
-        auth_views.LoginView.as_view(template_name="registration/login.html"),
-        name="entrar",
-    ),
-    path("sair/", views.sair, name="sair"),
+    
+    # Adicione estas URLs se quiser manter as funcionalidades no template
+    path('perfil/', views.perfil, name='perfil'),  # Você precisará criar esta view
+    path('alterar-senha/', auth_views.PasswordChangeView.as_view(
+        template_name='core/alterar_senha.html',
+        success_url='/core/senha-alterada/'
+    ), name='alterar_senha'),
+    path('senha-alterada/', auth_views.PasswordChangeDoneView.as_view(
+        template_name='core/senha_alterada.html'
+    ), name='senha_alterada'),
+    
+    # Se você estiver usando as views de autenticação do Django
+    path('sair/', auth_views.LogoutView.as_view(next_page='/'), name='sair'),
+    
     path("painel-controle/", views.painel_controle, name="painel_controle"),
     path(
         "atualizar-configuracao/",

@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Notas - {{ aluno.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Relatório de Notas - {{ aluno.nome }}</h1>
+        <div>
+            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary me-2">
+                <i class="fas fa-user"></i> Perfil do Aluno
+            </a>
+            <a href="{% url 'notas:criar_nota' %}?aluno={{ aluno.cpf }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nova Nota
+            </a>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Resumo Acadêmico</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Média Geral</h5>
+                            <p class="card-text display-6">{{ media_geral|floatformat:1 }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Aprovações</h5>
+                            <p class="card-text display-6">{{ total_aprovacoes }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Reprovações</h5>
+                            <p class="card-text display-6">{{ total_reprovacoes }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if cursos_com_notas %}
+        {% for curso in cursos_com_notas %}
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ curso.nome }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Média do Curso</h5>
+                                    <p class="card-text display-6 
+                                        {% if curso.media >= 7 %}text-success
+                                        {% elif curso.media >= 5 %}text-warning
+                                        {% else %}text-danger{% endif %}">
+                                        {{ curso.media|floatformat:1 }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Situação</h5>
+                                    <p class="card-text display-6">
+                                        {% if curso.media >= 7 %}
+                                            <span class="badge bg-success">Aprovado</span>
+                                        {% elif curso.media >= 5 %}
+                                            <span class="badge bg-warning text-dark">Recuperação</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Reprovado</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Total de Avaliações</h5>
+                                    <p class="card-text display-6">{{ curso.notas|length }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Turma</th>
+                                    <th>Tipo</th>
+                                    <th>Nota</th>
+                                    <th>Peso</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for nota in curso.notas %}
+                                    <tr>
+                                        <td>{{ nota.turma.nome }}</td>
+                                        <td>{{ nota.get_tipo_avaliacao_display }}</td>
+                                        <td>
+                                            <span class="badge {% if nota.valor >= 7 %}bg-success{% elif nota.valor >= 5 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                                {{ nota.valor|floatformat:1 }}
+                                            </span>
+                                        </td>
+                                        <td>{{ nota.peso|floatformat:1 }}</td>
+                                        <td>{{ nota.data|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'notas:detalhar_nota' nota.id %}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'notas:editar_nota' nota.id %}" class="btn btn-sm btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if curso.grafico_data %}
+                        <div class="mt-4">
+                            <h6>Evolução das Notas</h6>
+                            <canvas id="grafico-{{ curso.id }}" height="200"></canvas>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Este aluno não possui notas registradas.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for curso in cursos_com_notas %}
+            {% if curso.grafico_data %}
+                const ctx{{ curso.id }} = document.getElementById('grafico-{{ curso.id }}').getContext('2d');
+                new Chart(ctx{{ curso.id }}, {
+                    type: 'line',
+                    data: {
+                        labels: [{% for item in curso.grafico_data %}'{{ item.data|date:"d/m/Y" }}',{% endfor %}],
+                        datasets: [{
+                            label: 'Notas',
+                            data: [{% for item in curso.grafico_data %}{{ item.valor }},{% endfor %}],
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            tension: 0.1,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 10,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Nota: ${context.raw}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            {% endif %}
+        {% endfor %}
+    });
+</script>
+{% endblock %}
