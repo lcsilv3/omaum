@@ -1,0 +1,85 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+    
+    - name: Run migrations
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+      run: |
+        python manage.py migrate --settings=config.settings.test
+    
+    - name: Run unit tests
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+      run: |
+        python manage.py test tests.alunos.test_models tests.alunos.test_forms tests.turmas.test_models tests.turmas.test_forms tests.atividades.test_models tests.atividades.test_forms tests.frequencias.test_models tests.frequencias.test_forms tests.notas.test_models tests.notas.test_forms tests.pagamentos.test_models tests.pagamentos.test_forms tests.matriculas.test_models tests.matriculas.test_forms --settings=config.settings.test
+    
+    - name: Run integration tests
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+      run: |
+        python manage.py test tests.alunos.test_views tests.turmas.test_views tests.atividades.test_views tests.frequencias.test_views tests.notas.test_views tests.pagamentos.test_views tests.matriculas.test_views --settings=config.settings.test
+    
+    - name: Set up Chrome
+      uses: browser-actions/setup-chrome@latest
+    
+    - name: Run E2E tests
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+      run: |
+        python manage.py test tests.e2e --settings=config.settings.test
+    
+    - name: Run security tests
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+      run: |
+        python manage.py test tests.security --settings=config.settings.test
+    
+    - name: Generate coverage report
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+      run: |
+        coverage run --source='.' manage.py test --settings=config.settings.test
+        coverage xml
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: true
