@@ -22,7 +22,7 @@ class Nota(models.Model):
     valor = models.DecimalField(max_digits=5, decimal_places=2)
     peso = models.DecimalField(max_digits=3, decimal_places=1, default=1.0)
     data = models.DateField()
-    observacoes = models.TextField(blank=True, null=True)
+    observacao = models.TextField(blank=True, null=True)
     
     # Metadados
     created_at = models.DateTimeField(auto_now_add=True)

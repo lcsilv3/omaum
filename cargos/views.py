@@ -21,7 +21,7 @@ def get_cargo_administrativo_form():
 @login_required
 def listar_cargos(request):
     """Lista todos os cargos administrativos."""
-    CargoAdministrativo = get_models()
+    CargoAdministrativo = get_cargo_administrativo_model()
     cargos = CargoAdministrativo.objects.all()
     return render(request, "cargos/listar_cargos.html", {"cargos": cargos})
 
@@ -29,7 +29,7 @@ def listar_cargos(request):
 @login_required
 def criar_cargo(request):
     """Cria um novo cargo administrativo."""
-    CargoAdministrativoForm = get_forms()
+    CargoAdministrativoForm = get_cargo_administrativo_form()
 
     if request.method == "POST":
         form = CargoAdministrativoForm(request.POST)
@@ -50,7 +50,7 @@ def criar_cargo(request):
 @login_required
 def detalhar_cargo(request, id):
     """Exibe os detalhes de um cargo administrativo."""
-    CargoAdministrativo = get_models()
+    CargoAdministrativo = get_cargo_administrativo_model()
     cargo = get_object_or_404(CargoAdministrativo, id=id)
     return render(request, "cargos/detalhar_cargo.html", {"cargo": cargo})
 
@@ -58,8 +58,8 @@ def detalhar_cargo(request, id):
 @login_required
 def editar_cargo(request, id):
     """Edita um cargo administrativo existente."""
-    CargoAdministrativo = get_models()
-    CargoAdministrativoForm = get_forms()
+    CargoAdministrativo = get_cargo_administrativo_model()
+    CargoAdministrativoForm = get_cargo_administrativo_form()
 
     cargo = get_object_or_404(CargoAdministrativo, id=id)
 
@@ -84,7 +84,7 @@ def editar_cargo(request, id):
 @login_required
 def excluir_cargo(request, id):
     """Exclui um cargo administrativo."""
-    CargoAdministrativo = get_models()
+    CargoAdministrativo = get_cargo_administrativo_model()
     cargo = get_object_or_404(CargoAdministrativo, id=id)
 
     if request.method == "POST":

@@ -1,116 +1,93 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Lista de Pagamentos{% endblock %}
+{% block title %}Pagamentos{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .badge-status {
+        font-size: 0.85rem;
+        padding: 0.35em 0.65em;
+    }
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+    }
+    .btn-icon i {
+        margin-right: 0.5rem;
+    }
+    .date-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .date-label {
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+    .date-value {
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Lista de Pagamentos</h1>
+        <h1>Pagamentos</h1>
         <div>
-            <a href="{% url 'pagamentos:criar_pagamento' %}" class="btn btn-primary">
+            <a href="{% url 'pagamentos:criar_pagamento' %}" class="btn btn-primary btn-icon">
                 <i class="fas fa-plus"></i> Novo Pagamento
             </a>
-            <a href="{% url 'pagamentos:exportar_pagamentos_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success">
-                <i class="fas fa-file-csv"></i> Exportar CSV
-            </a>
-            <a href="{% url 'pagamentos:exportar_pagamentos_excel' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-info">
-                <i class="fas fa-file-excel"></i> Exportar Excel
-            </a>
-            <a href="{% url 'pagamentos:dashboard_pagamentos' %}" class="btn btn-secondary">
-                <i class="fas fa-chart-bar"></i> Dashboard
+            <a href="{% url 'pagamentos:exportar_pagamentos' %}" class="btn btn-success btn-icon">
+                <i class="fas fa-file-export"></i> Exportar
             </a>
         </div>
     </div>
     
-    <!-- Filtros -->
     <div class="card mb-4">
         <div class="card-header bg-light">
-            <h5 class="mb-0">Filtros</h5>
-        </div>
-        <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="aluno" class="form-label">Aluno</label>
-                    <select name="aluno" id="aluno" class="form-select">
-                        <option value="">Todos os alunos</option>
+                    <select name="aluno" id="aluno" class="form-select select2">
+                        <option value="">Todos</option>
                         {% for aluno in alunos %}
-                            <option value="{{ aluno.cpf }}" {% if filtros.aluno == aluno.cpf %}selected{% endif %}>
+                            <option value="{{ aluno.cpf }}" {% if aluno.cpf == aluno_selecionado %}selected{% endif %}>
                                 {{ aluno.nome }}
                             </option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <label for="status" class="form-label">Status</label>
                     <select name="status" id="status" class="form-select">
-                        <option value="">Todos os status</option>
-                        <option value="pendente" {% if filtros.status == 'pendente' %}selected{% endif %}>Pendente</option>
-                        <option value="pago" {% if filtros.status == 'pago' %}selected{% endif %}>Pago</option>
-                        <option value="cancelado" {% if filtros.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                        <option value="">Todos</option>
+                        <option value="PENDENTE" {% if status_selecionado == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                        <option value="PAGO" {% if status_selecionado == 'PAGO' %}selected{% endif %}>Pago</option>
+                        <option value="ATRASADO" {% if status_selecionado == 'ATRASADO' %}selected{% endif %}>Atrasado</option>
+                        <option value="CANCELADO" {% if status_selecionado == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="periodo" class="form-label">Período</label>
-                    <select name="periodo" id="periodo" class="form-select">
-                        <option value="">Todo o período</option>
-                        <option value="atual" {% if filtros.periodo == 'atual' %}selected{% endif %}>Mês atual</option>
-                        <option value="ultimo_mes" {% if filtros.periodo == 'ultimo_mes' %}selected{% endif %}>Último mês</option>
-                        <option value="ultimo_trimestre" {% if filtros.periodo == 'ultimo_trimestre' %}selected{% endif %}>Último trimestre</option>
-                        <option value="ultimo_semestre" {% if filtros.periodo == 'ultimo_semestre' %}selected{% endif %}>Último semestre</option>
-                    </select>
+                <div class="col-md-2">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" name="data_inicio" id="data_inicio" class="form-control" value="{{ data_inicio }}">
                 </div>
-                <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-primary">
+                <div class="col-md-2">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ data_fim }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
                         <i class="fas fa-filter"></i> Filtrar
                     </button>
                     <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
-                        <i class="fas fa-broom"></i> Limpar Filtros
+                        <i class="fas fa-undo"></i> Limpar
                     </a>
                 </div>
             </form>
-        </div>
-    </div>
-    
-    <!-- Resumo estatístico -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Total de Pagamentos</h5>
-                    <p class="card-text display-6">{{ estatisticas.total_pagamentos }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Valor Total</h5>
-                    <p class="card-text display-6">R$ {{ estatisticas.valor_total|floatformat:2 }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Pagamentos Pendentes</h5>
-                    <p class="card-text display-6">{{ estatisticas.pagamentos_pendentes }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-danger text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Valor Pendente</h5>
-                    <p class="card-text display-6">R$ {{ estatisticas.valor_pendente|floatformat:2 }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tabela de pagamentos -->
-    <div class="card">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Pagamentos</h5>
         </div>
         <div class="card-body">
             {% if pagamentos %}
@@ -120,50 +97,152 @@
                             <tr>
                                 <th>Aluno</th>
                                 <th>Valor</th>
-                                <th>Data</th>
+                                <th>Datas</th>
                                 <th>Status</th>
-                                <th>Ações</th>
+                                <th>Observações</th>
+                                <th class="text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for pagamento in pagamentos %}
                                 <tr>
                                     <td>{{ pagamento.aluno.nome }}</td>
-                                    <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
-                                    <td>{{ pagamento.data_pagamento|date:"d/m/Y" }}</td>
                                     <td>
-                                        <span class="badge {% if pagamento.status == 'pago' %}bg-success{% elif pagamento.status == 'pendente' %}bg-warning{% else %}bg-danger{% endif %}">
-                                            {{ pagamento.get_status_display }}
-                                        </span>
+                                        <div>
+                                            <div><strong>Valor:</strong> R$ {{ pagamento.valor }}</div>
+                                            {% if pagamento.valor_pago %}
+                                                <div><strong>Valor Pago:</strong> R$ {{ pagamento.valor_pago }}</div>
+                                            {% endif %}
+                                        </div>
                                     </td>
                                     <td>
-                                        <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{% url 'pagamentos:editar_pagamento' pagamento.id %}" class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="{% url 'pagamentos:excluir_pagamento' pagamento.id %}" class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
+                                        <div class="date-info">
+                                            <div>
+                                                <span class="date-label">Criado em:</span>
+                                                <span class="date-value">{{ pagamento.created_at|date:"d/m/Y H:i" }}</span>
+                                            </div>
+                                            <div>
+                                                <span class="date-label">Vencimento:</span>
+                                                <span class="date-value">{{ pagamento.data_vencimento|date:"d/m/Y" }}</span>
+                                            </div>
+                                            {% if pagamento.data_pagamento %}
+                                            <div>
+                                                <span class="date-label">Pagamento:</span>
+                                                <span class="date-value">{{ pagamento.data_pagamento|date:"d/m/Y" }}</span>
+                                            </div>
+                                            {% endif %}
+                                            {% if pagamento.updated_at %}
+                                            <div>
+                                                <span class="date-label">Atualizado:</span>
+                                                <span class="date-value">{{ pagamento.updated_at|date:"d/m/Y H:i" }}</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if pagamento.status == 'PENDENTE' %}
+                                            <span class="badge bg-warning badge-status">{{ pagamento.get_status_display }}</span>
+                                        {% elif pagamento.status == 'PAGO' %}
+                                            <span class="badge bg-success badge-status">{{ pagamento.get_status_display }}</span>
+                                        {% elif pagamento.status == 'ATRASADO' %}
+                                            <span class="badge bg-danger badge-status">{{ pagamento.get_status_display }}</span>
+                                        {% elif pagamento.status == 'CANCELADO' %}
+                                            <span class="badge bg-secondary badge-status">{{ pagamento.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ pagamento.observacoes|default:"-" }}</td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info" title="Ver detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'pagamentos:editar_pagamento' pagamento.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'pagamentos:excluir_pagamento' pagamento.id %}" class="btn btn-sm btn-danger" title="Excluir">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                
+                {% if pagamentos.has_other_pages %}
+                    <nav aria-label="Paginação" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if pagamentos.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ pagamentos.previous_page_number }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.data_inicio %}&data_inicio={{ request.GET.data_inicio }}{% endif %}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}">
+                                        Anterior
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Anterior</span>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in pagamentos.paginator.page_range %}
+                                {% if pagamentos.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.data_inicio %}&data_inicio={{ request.GET.data_inicio }}{% endif %}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagamentos.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ pagamentos.next_page_number }}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.data_inicio %}&data_inicio={{ request.GET.data_inicio }}{% endif %}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}">
+                                        Próximo
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Próximo</span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
             {% else %}
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado.
                 </div>
             {% endif %}
         </div>
-    </div>
-    
-    <div class="mt-4">
-        <a href="javascript:history.back()" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>Total:</strong> {{ pagamentos.paginator.count }} pagamento(s)
+                </div>
+                {% if total_valor %}
+                <div>
+                    <strong>Valor Total:</strong> R$ {{ total_valor }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            placeholder: "Selecione um aluno",
+            allowClear: true
+        });
+    });
+</script>
 {% endblock %}

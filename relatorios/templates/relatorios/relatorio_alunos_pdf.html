@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Alunos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .filters {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        .text-center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Relatório de Alunos</h1>
+        <p>Data de geração: {{ data_geracao|date:"d/m/Y H:i" }}</p>
+    </div>
+    
+    <div class="filters">
+        <h3>Filtros aplicados:</h3>
+        <p>
+            {% if nome %}<strong>Nome:</strong> {{ nome }}{% endif %}
+            {% if data_inicio %}<strong>Data de Nascimento (Início):</strong> {{ data_inicio }}{% endif %}
+            {% if data_fim %}<strong>Data de Nascimento (Fim):</strong> {{ data_fim }}{% endif %}
+            {% if not nome and not data_inicio and not data_fim %}Nenhum filtro aplicado{% endif %}
+        </p>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Email</th>
+                <th>Data de Nascimento</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aluno in alunos %}
+            <tr>
+                <td>{{ aluno.nome }}</td>
+                <td>{{ aluno.cpf }}</td>
+                <td>{{ aluno.email }}</td>
+                <td>{{ aluno.data_nascimento|date:"d/m/Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">Nenhum aluno encontrado com os filtros selecionados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="footer">
+        <p>Total de alunos: {{ alunos|length }}</p>
+        <p>Relatório gerado pelo sistema OMAUM</p>
+    </div>
+</body>
+</html>

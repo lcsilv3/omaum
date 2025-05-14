@@ -4,30 +4,39 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card border-danger">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Excluir Nota</h1>
+        <a href="{% url 'notas:detalhar_nota' nota.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="card mb-4 border-danger">
         <div class="card-header bg-danger text-white">
-            <h4 class="mb-0">Confirmar Exclusão</h4>
+            <h5 class="mb-0">Confirmação de Exclusão</h5>
         </div>
         <div class="card-body">
-            <h5 class="card-title">Você tem certeza que deseja excluir esta nota?</h5>
-            
             <div class="alert alert-warning">
-                <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
+                <i class="fas fa-exclamation-triangle"></i> 
+                <strong>Atenção!</strong> Esta ação não pode ser desfeita.
             </div>
             
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Detalhes da Nota</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Aluno:</strong> {{ nota.aluno.nome }}</p>
-                    <p><strong>Curso:</strong> {{ nota.curso.nome }}</p>
-                    <p><strong>Turma:</strong> {{ nota.turma.nome }}</p>
-                    <p><strong>Tipo de Avaliação:</strong> {{ nota.get_tipo_avaliacao_display }}</p>
-                    <p><strong>Nota:</strong> {{ nota.valor|floatformat:1 }}</p>
-                    <p><strong>Data:</strong> {{ nota.data|date:"d/m/Y" }}</p>
-                </div>
-            </div>
+            <p>Você está prestes a excluir a seguinte nota:</p>
+            
+            <ul class="list-group mb-4">
+                <li class="list-group-item">
+                    <strong>Aluno:</strong> {{ nota.aluno.nome }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Curso:</strong> {{ nota.curso.nome }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Nota:</strong> {{ nota.valor }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Data:</strong> {{ nota.data|date:"d/m/Y" }}
+                </li>
+            </ul>
             
             <form method="post">
                 {% csrf_token %}
@@ -43,4 +52,4 @@
         </div>
     </div>
 </div>
-{% endblock %}{% endblock %}{% endblock %}        <div
+{% endblock %}

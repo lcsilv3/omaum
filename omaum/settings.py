@@ -68,9 +68,9 @@ TEMPLATES = [
             ],
         },
     },
-]
+]  # Este colchete estava na linha errada
 
-WSGI_APPLICATION = 'omaum.wsgi.application'
+WSGI_APPLICATION = 'omaum.wsgi.application'  # Esta linha deve começar sem o colchete
 
 # Database
 DATABASES = {

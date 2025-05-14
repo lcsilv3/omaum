@@ -7,10 +7,11 @@ class NotaForm(forms.ModelForm):
     """
     Formulário para criação e edição de notas.
     """
+    peso = forms.FloatField(initial=1.0, required=False)
     
     class Meta:
         model = Nota
-        fields = ['aluno', 'curso', 'valor', 'data', 'tipo_avaliacao', 'peso', 'observacoes']
+        fields = ['aluno', 'curso', 'turma', 'valor', 'data', 'peso']  # Inclua 'peso' aqui
         widgets = {
             'aluno': forms.Select(attrs={'class': 'form-control'}),
             'curso': forms.Select(attrs={'class': 'form-control'}),
@@ -60,7 +61,7 @@ class NotaForm(forms.ModelForm):
         self.fields['aluno'].queryset = Aluno.objects.filter(situacao='ATIVO')
         
         # Filtrar apenas cursos ativos
-        self.fields['curso'].queryset = Curso.objects.filter(ativo=True)
+        self.fields['curso'].queryset = Curso.objects.all()
         
         # Adicionar classes CSS para estilização
         for field_name, field in self.fields.items():
@@ -86,3 +87,10 @@ class NotaForm(forms.ModelForm):
             if peso > 5:
                 raise forms.ValidationError("O peso não pode ser maior que 5.")
         return peso
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        turma = cleaned_data.get('turma')
+        if not turma:
+            raise forms.ValidationError("É necessário selecionar uma turma.")
+        return cleaned_data
