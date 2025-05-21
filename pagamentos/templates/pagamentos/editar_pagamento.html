@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Pagamento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Editar Pagamento</h1>
+        <div>
+            <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Dados do Pagamento</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Aluno</label>
+                            <div class="input-group">
+                                <div class="alert alert-info d-flex align-items-center w-100 mb-0">
+                                    {% if pagamento.aluno.foto %}
+                                        <img src="{{ pagamento.aluno.foto.url }}" alt="Foto de {{ pagamento.aluno.nome }}" 
+                                             class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 40px; height: 40px; color: white;">
+                                            {{ pagamento.aluno.nome|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ pagamento.aluno.nome }}</strong>
+                                        <br>
+                                        <small>CPF: {{ pagamento.aluno.cpf }}</small>
+                                    </div>
+                                    <a href="{% url 'alunos:detalhar_aluno' pagamento.aluno.cpf %}" class="btn btn-sm btn-outline-primary ms-auto">
+                                        <i class="fas fa-user"></i> Ver Perfil
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_valor" class="form-label">Valor (R$)</label>
+                                    <input type="number" name="valor" id="id_valor" class="form-control" step="0.01" min="0" value="{{ pagamento.valor }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_data_vencimento" class="form-label">Data de Vencimento</label>
+                                    <input type="date" name="data_vencimento" id="id_data_vencimento" class="form-control" value="{{ pagamento.data_vencimento|date:'Y-m-d' }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_observacoes" class="form-label">Observações</label>
+                            <textarea name="observacoes" id="id_observacoes" class="form-control" rows="3">{{ pagamento.observacoes }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_status" class="form-label">Status</label>
+                                    <select name="status" id="id_status" class="form-select" required>
+                                        <option value="PENDENTE" {% if pagamento.status == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                                        <option value="PAGO" {% if pagamento.status == 'PAGO' %}selected{% endif %}>Pago</option>
+                                        <option value="ATRASADO" {% if pagamento.status == 'ATRASADO' %}selected{% endif %}>Atrasado</option>
+                                        <option value="CANCELADO" {% if pagamento.status == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 metodo-pagamento-container" {% if pagamento.status != 'PAGO' %}style="display: none;"{% endif %}>
+                                    <label for="id_metodo_pagamento" class="form-label">Método de Pagamento</label>
+                                    <select name="metodo_pagamento" id="id_metodo_pagamento" class="form-select">
+                                        <option value="">Selecione um método</option>
+                                        <option value="DINHEIRO" {% if pagamento.metodo_pagamento == 'DINHEIRO' %}selected{% endif %}>Dinheiro</option>
+                                        <option value="CARTAO_CREDITO" {% if pagamento.metodo_pagamento == 'CARTAO_CREDITO' %}selected{% endif %}>Cartão de Crédito</option>
+                                        <option value="CARTAO_DEBITO" {% if pagamento.metodo_pagamento == 'CARTAO_DEBITO' %}selected{% endif %}>Cartão de Débito</option>
+                                        <option value="BOLETO" {% if pagamento.metodo_pagamento == 'BOLETO' %}selected{% endif %}>Boleto Bancário</option>
+                                        <option value="TRANSFERENCIA" {% if pagamento.metodo_pagamento == 'TRANSFERENCIA' %}selected{% endif %}>Transferência</option>
+                                        <option value="PIX" {% if pagamento.metodo_pagamento == 'PIX' %}selected{% endif %}>PIX</option>
+                                        <option value="OUTRO" {% if pagamento.metodo_pagamento == 'OUTRO' %}selected{% endif %}>Outro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 data-pagamento-container" {% if pagamento.status != 'PAGO' %}style="display: none;"{% endif %}>
+                                    <label for="id_data_pagamento" class="form-label">Data de Pagamento</label>
+                                    <input type="date" name="data_pagamento" id="id_data_pagamento" class="form-control" value="{{ pagamento.data_pagamento|date:'Y-m-d' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 valor-pago-container" {% if pagamento.status != 'PAGO' %}style="display: none;"{% endif %}>
+                                    <label for="id_valor_pago" class="form-label">Valor Pago (R$)</label>
+                                    <input type="number" name="valor_pago" id="id_valor_pago" class="form-control" step="0.01" min="0" value="{{ pagamento.valor_pago|default:pagamento.valor }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Informações</h5>
+                </div>
+                <div class="card-body">
+                    <p>Você está editando um pagamento existente.</p>
+                    <p>Se alterar o status para "Pago", informe também a data de pagamento e o método utilizado.</p>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle"></i> Não é possível alterar o aluno associado ao pagamento.
+                    </div>
+                </div>
+            </div>
+            
+            {% if pagamento.matricula %}
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Dados da Matrícula</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Curso:</strong> {{ pagamento.matricula.turma.curso.nome }}</p>
+                    <p><strong>Turma:</strong> {{ pagamento.matricula.turma.nome }}</p>
+                    {% if pagamento.numero_parcela %}
+                        <p><strong>Parcela:</strong> {{ pagamento.numero_parcela }}/{{ pagamento.total_parcelas }}</p>
+                    {% endif %}
+                    
+                    <a href="{% url 'matriculas:detalhar_matricula' pagamento.matricula.id %}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-graduation-cap"></i> Ver Matrícula
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Histórico</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Criado em:</strong> {{ pagamento.created_at|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Última atualização:</strong> {{ pagamento.updated_at|date:"d/m/Y H:i" }}</p>
+                    
+                    {% if pagamento.status == 'PAGO' %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Este pagamento foi registrado como pago em {{ pagamento.data_pagamento|date:"d/m/Y" }}.
+                        </div>
+                    {% elif pagamento.status == 'ATRASADO' %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> Este pagamento está atrasado há {{ pagamento.dias_atraso }} dias.
+                        </div>
+                    {% elif pagamento.status == 'CANCELADO' %}
+                        <div class="alert alert-secondary">
+                            <i class="fas fa-ban"></i> Este pagamento foi cancelado.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusSelect = document.getElementById('id_status');
+        const dataPagamentoContainer = document.querySelector('.data-pagamento-container');
+        const valorPagoContainer = document.querySelector('.valor-pago-container');
+        const metodoPagamentoContainer = document.querySelector('.metodo-pagamento-container');
+        
+        // Função para mostrar/ocultar campos dependendo do status
+        function toggleFields() {
+            if (statusSelect.value === 'PAGO') {
+                dataPagamentoContainer.style.display = 'block';
+                valorPagoContainer.style.display = 'block';
+                metodoPagamentoContainer.style.display = 'block';
+                document.getElementById('id_data_pagamento').required = true;
+                document.getElementById('id_valor_pago').required = true;
+                
+                // Se não houver data de pagamento, definir para hoje
+                const dataPagamentoInput = document.getElementById('id_data_pagamento');
+                if (!dataPagamentoInput.value) {
+                    const hoje = new Date();
+                    const ano = hoje.getFullYear();
+                    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+                    const dia = String(hoje.getDate()).padStart(2, '0');
+                    dataPagamentoInput.value = `${ano}-${mes}-${dia}`;
+                }
+                
+                // Se não houver valor pago, usar o valor original
+                const valorPagoInput = document.getElementById('id_valor_pago');
+                if (!valorPagoInput.value) {
+                    valorPagoInput.value = document.getElementById('id_valor').value;
+                }
+            } else {
+                dataPagamentoContainer.style.display = 'none';
+                valorPagoContainer.style.display = 'none';
+                metodoPagamentoContainer.style.display = 'none';
+                document.getElementById('id_data_pagamento').required = false;
+                document.getElementById('id_valor_pago').required = false;
+            }
+        }
+        
+        // Executar ao carregar a página
+        toggleFields();
+        
+        // Adicionar evento de mudança
+        statusSelect.addEventListener('change', toggleFields);
+    });
+</script>
+{% endblock %}

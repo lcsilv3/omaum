@@ -1,16 +1,94 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Dashboard de Pagamentos{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Dashboard de Pagamentos</h1>
-        <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
-            <i class="fas fa-list"></i> Listar Pagamentos
-        </a>
+        <div>
+            <a href="{% url 'pagamentos:dashboard' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-tachometer-alt"></i> Dashboard Principal
+            </a>
+            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-primary">
+                <i class="fas fa-list"></i> Listar Pagamentos
+            </a>
+        </div>
     </div>
-    
+
+    <!-- Estatísticas do mês atual -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Estatísticas do Mês ({{ mes_atual }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Pagamentos Pagos</h5>
+                            <p class="card-text display-4 text-success">{{ pagos_mes }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Pagamentos Pendentes</h5>
+                            <p class="card-text display-4 text-warning">{{ pendentes_mes }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Pagamentos Atrasados</h5>
+                            <p class="card-text display-4 text-danger">{{ atrasados_mes }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">Valor Pago</h5>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="text-success">R$ {{ valor_pago_mes|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">Valor Pendente</h5>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="text-warning">R$ {{ valor_pendente_mes|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">Valor Atrasado</h5>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="text-danger">R$ {{ valor_atrasado_mes|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Resumo estatístico -->
     <div class="row mb-4">
         <div class="col-md-6">
@@ -87,83 +165,235 @@
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
-                                                            <th>Mês</th>
-                                                            <th>Quantidade</th>
-                                                            <th>Valor Total</th>
-                                                            <th>Média por Pagamento</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for item in pagamentos_por_mes %}
-                                                            <tr>
-                                                                <td>{{ item.mes }}</td>
-                                                                <td>{{ item.total }}</td>
-                                                                <td>R$ {{ item.valor_total|floatformat:2 }}</td>
-                                                                <td>
-                                                                    {% if item.total > 0 %}
-                                                                        R$ {{ item.valor_total|floatformat:2|default:0|divisibleby:item.total }}
-                                                                    {% else %}
-                                                                        R$ 0,00
-                                                                    {% endif %}
-                                                                </td>
-                                                            </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                <th>Mês</th>
+                                <th>Quantidade</th>
+                                <th>Valor Total</th>
+                                <th>Média por Pagamento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pagamentos_por_mes %}
+                                <tr>
+                                    <td>{{ item.mes }}</td>
+                                    <td>{{ item.total }}</td>
+                                    <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                                    <td>
+                                        {% if item.total > 0 %}
+                                            R$ {{ item.valor_total|floatformat:2|default:0|divisibleby:item.total }}
                                         {% else %}
-                                            <div class="alert alert-info">
-                                                <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado nos últimos 6 meses.
-                                            </div>
+                                            R$ 0,00
                                         {% endif %}
-                                    </div>
-                                </div>
-    
-                                <!-- Pagamentos por aluno -->
-                                <div class="card mb-4">
-                                    <div class="card-header bg-light">
-                                        <h5 class="mb-0">Top 5 Alunos por Valor Total</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        {% if pagamentos_por_aluno %}
-                                            <div class="table-responsive">
-                                                <table class="table table-striped table-hover">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Aluno</th>
-                                                            <th>Quantidade de Pagamentos</th>
-                                                            <th>Valor Total</th>
-                                                            <th>Ações</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for item in pagamentos_por_aluno %}
-                                                            <tr>
-                                                                <td>{{ item.aluno__nome }}</td>
-                                                                <td>{{ item.total }}</td>
-                                                                <td>R$ {{ item.valor_total|floatformat:2 }}</td>
-                                                                <td>
-                                                                    <a href="{% url 'pagamentos:listar_pagamentos' %}?aluno={{ item.aluno__cpf }}" class="btn btn-sm btn-info">
-                                                                        <i class="fas fa-eye"></i> Ver Pagamentos
-                                                                    </a>
-                                                                </td>
-                                                            </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        {% else %}
-                                            <div class="alert alert-info">
-                                                <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado.
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-    
-                                <div class="mt-4">
-                                    <a href="javascript:history.back()" class="btn btn-secondary">
-                                        <i class="fas fa-arrow-left"></i> Voltar
-                                    </a>
-                                </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado nos últimos 6 meses.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagamentos por aluno -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Top 5 Alunos por Valor Total</h5>
+        </div>
+        <div class="card-body">
+            {% if pagamentos_por_aluno %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Quantidade de Pagamentos</th>
+                                <th>Valor Total</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pagamentos_por_aluno %}
+                                <tr>
+                                    <td>{{ item.aluno__nome }}</td>
+                                    <td>{{ item.total }}</td>
+                                    <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'pagamentos:listar_pagamentos' %}?aluno={{ item.aluno__cpf }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> Ver Pagamentos
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <!-- Gráfico de pagamentos por dia -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Pagamentos por Dia ({{ mes_atual }})</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="grafico-pagamentos-dia" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de métodos de pagamento -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Métodos de Pagamento</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="grafico-metodos-pagamento" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagamentos atrasados por faixa -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Pagamentos Atrasados por Faixa</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Até 15 dias</h5>
+                            <p class="card-text display-4 text-warning">{{ atrasados_ate_15 }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">15 a 30 dias</h5>
+                            <p class="card-text display-4 text-danger">{{ atrasados_15_30 }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Mais de 30 dias</h5>
+                            <p class="card-text display-4 text-danger">{{ atrasados_mais_30 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 text-center">
+                <a href="{% url 'pagamentos:listar_pagamentos' %}?status=ATRASADO" class="btn btn-outline-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Ver Todos os Pagamentos Atrasados
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="javascript:history.back()" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
 </div>
-{% endblock %}                                <th
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Gráfico de pagamentos por dia
+    const ctxDia = document.getElementById('grafico-pagamentos-dia').getContext('2d');
+    const graficoPagamentosDia = new Chart(ctxDia, {
+        type: 'line',
+        data: {
+            labels: {{ dias|safe }},
+            datasets: [{
+                label: 'Valor Pago (R$)',
+                data: {{ valores_por_dia|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Pagamentos Recebidos por Dia'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de métodos de pagamento
+    const ctxMetodos = document.getElementById('grafico-metodos-pagamento').getContext('2d');
+    const graficoMetodosPagamento = new Chart(ctxMetodos, {
+        type: 'doughnut',
+        data: {
+            labels: {{ metodos|safe }},
+            datasets: [{
+                data: {{ contagens|safe }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Métodos de Pagamento'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

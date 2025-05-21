@@ -653,7 +653,7 @@ text
 text
 
 
-### Arquivo: c:\projetos\omaum\Cursos.JPG
+### Arquivo: c:/projetos/omaum\Cursos.JPG
 
 
 Erro ao ler o arquivo: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
@@ -852,17 +852,87 @@ XlsxWriter==3.2.2
 ### Arquivo: requirements.txt
 
 text
+arabic-reshaper==3.0.0
 asgiref==3.8.1
+asn1crypto==1.5.1
+astroid==3.3.9
+autopep8==2.3.2
+black==25.1.0
+Brotli==1.1.0
+certifi==2025.4.26
+cffi==1.17.1
+cfgv==3.4.0
 chardet==5.2.0
+charset-normalizer==3.4.1
+click==8.1.8
+colorama==0.4.6
+cryptography==44.0.3
+cssselect2==0.8.0
+defusedxml==0.7.1
+dill==0.3.9
+distlib==0.3.9
 Django==5.1.7
 django-crispy-forms==2.3
 django-debug-toolbar==5.1.0
 django-extensions==3.2.3
 django-widget-tweaks==1.5.0
+docformatter==1.7.5
+Faker==37.1.0
+filelock==3.18.0
+flake8==7.2.0
+fonttools==4.58.0
+html5lib==1.1
+identify==2.6.9
+idna==3.10
+isort==6.0.1
+lxml==5.4.0
+mccabe==0.7.0
+mypy-extensions==1.0.0
+nodeenv==1.9.1
+numpy==2.2.5
+oscrypto==1.3.0
+packaging==24.2
+pandas==2.2.3
+pathspec==0.12.1
 pillow==11.1.0
+platformdirs==4.3.7
+pre_commit==4.2.0
+pycodestyle==2.13.0
+pycparser==2.22
+pydyf==0.11.0
+pyflakes==3.3.2
+pyHanko==0.26.0
+pyhanko-certvalidator==0.26.8
+pylint==3.3.6
+pypdf==5.5.0
+pyphen==0.17.2
+python-bidi==0.6.6
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.0
+pytz==2025.2
+PyYAML==6.0.2
+qrcode==8.2
 reportlab==4.3.1
+requests==2.32.3
+six==1.17.0
 sqlparse==0.5.3
+svglib==1.5.1
+tinycss2==1.4.0
+tinyhtml5==2.0.0
+tomlkit==0.13.2
 tzdata==2025.1
+tzlocal==5.3.1
+untokenize==0.1.1
+uritools==5.0.0
+urllib3==2.4.0
+virtualenv==20.30.0
+weasyprint==65.1
+webdriver-manager==4.0.2
+webencodings==0.5.1
+xhtml2pdf==0.2.17
+XlsxWriter==3.2.2
+xlwt==1.3.0
+zopfli==0.2.3.post1
 
 
 
@@ -1733,7 +1803,7 @@ text
 text
 
 
-### Arquivo: c:\projetos\omaum\static\img\favicon.ico
+### Arquivo: c:/projetos/omaum\static\img\favicon.ico
 
 
 Erro ao ler o arquivo: 'charmap' codec can't decode byte 0x98 in position 615: character maps to <undefined>
@@ -1745,7 +1815,7 @@ Erro ao ler o arquivo: 'charmap' codec can't decode byte 0x98 in position 615: c
 text
 
 
-### Arquivo: c:\projetos\omaum\static\img\logo.png
+### Arquivo: c:/projetos/omaum\static\img\logo.png
 
 
 Erro ao ler o arquivo: 'utf-8' codec can't decode byte 0x89 in position 0: invalid start byte

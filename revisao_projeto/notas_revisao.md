@@ -15,10 +15,11 @@ class NotaForm(forms.ModelForm):
     """
     Formulário para criação e edição de notas.
     """
+    peso = forms.FloatField(initial=1.0, required=False)
     
     class Meta:
         model = Nota
-        fields = ['aluno', 'curso', 'valor', 'data', 'tipo_avaliacao', 'peso', 'observacoes']
+        fields = ['aluno', 'curso', 'turma', 'valor', 'data', 'peso']  # Inclua 'peso' aqui
         widgets = {
             'aluno': forms.Select(attrs={'class': 'form-control'}),
             'curso': forms.Select(attrs={'class': 'form-control'}),
@@ -68,7 +69,7 @@ class NotaForm(forms.ModelForm):
         self.fields['aluno'].queryset = Aluno.objects.filter(situacao='ATIVO')
         
         # Filtrar apenas cursos ativos
-        self.fields['curso'].queryset = Curso.objects.filter(ativo=True)
+        self.fields['curso'].queryset = Curso.objects.all()
         
         # Adicionar classes CSS para estilização
         for field_name, field in self.fields.items():
@@ -94,6 +95,13 @@ class NotaForm(forms.ModelForm):
             if peso > 5:
                 raise forms.ValidationError("O peso não pode ser maior que 5.")
         return peso
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        turma = cleaned_data.get('turma')
+        if not turma:
+            raise forms.ValidationError("É necessário selecionar uma turma.")
+        return cleaned_data
 
 
 
@@ -103,89 +111,73 @@ class NotaForm(forms.ModelForm):
 ### Arquivo: notas\views.py
 
 python
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-from django.db.models import Avg, Max, Min
+from django.contrib import messages
+from django.http import HttpResponse, JsonResponse
+from django.db.models import Q, Avg, Count, Max, Min
+from django.core.paginator import Paginator
 from .models import Nota
-from alunos.models import Aluno
-from cursos.models import Curso
 from .forms import NotaForm
 import csv
 import datetime
 
-
 @login_required
 def listar_notas(request):
     """Lista todas as notas cadastradas."""
-    # Obter parâmetros de filtro
-    aluno_id = request.GET.get('aluno', '')
-    curso_id = request.GET.get('curso', '')
-    periodo = request.GET.get('periodo', '')
+    # Obter parâmetros de busca e filtro
+    query = request.GET.get("q", "")
+    aluno_id = request.GET.get("aluno", "")
+    curso_id = request.GET.get("curso", "")
     
-    # Iniciar queryset
-    notas = Nota.objects.all().select_related('aluno', 'curso')
+    # Filtrar notas
+    notas = Nota.objects.all().select_related('aluno', 'curso', 'turma')
     
-    # Aplicar filtros
+    if query:
+        notas = notas.filter(
+            Q(aluno__nome__icontains=query) |
+            Q(curso__nome__icontains=query)
+        )
+    
     if aluno_id:
         notas = notas.filter(aluno__cpf=aluno_id)
     
     if curso_id:
-        notas = notas.filter(curso__id=curso_id)
+        notas = notas.filter(curso__codigo_curso=curso_id)
     
-    if periodo:
-        hoje = datetime.datetime.now().date()
-        
-        if periodo == 'atual':
-            # Mês atual
-            notas = notas.filter(data__month=hoje.month, data__year=hoje.year)
-        elif periodo == 'ultimo_mes':
-            # Último mês
-            um_mes_atras = hoje - datetime.timedelta(days=30)
-            notas = notas.filter(data__gte=um_mes_atras)
-        elif periodo == 'ultimo_trimestre':
-            # Último trimestre
-            tres_meses_atras = hoje - datetime.timedelta(days=90)
-            notas = notas.filter(data__gte=tres_meses_atras)
-        elif periodo == 'ultimo_semestre':
-            # Último semestre
-            seis_meses_atras = hoje - datetime.timedelta(days=180)
-            notas = notas.filter(data__gte=seis_meses_atras)
+    # Ordenar por data mais recente
+    notas = notas.order_by('-data')
     
-    # Calcular estatísticas
-    estatisticas = {
-        'media_geral': notas.aggregate(Avg('valor'))['valor__avg'] or 0,
-        'nota_maxima': notas.aggregate(Max('valor'))['valor__max'] or 0,
-        'nota_minima': notas.aggregate(Min('valor'))['valor__min'] or 0,
-        'total_notas': notas.count(),
-    }
+    # Paginação
+    paginator = Paginator(notas, 10)  # 10 notas por página
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
     
     # Obter alunos e cursos para os filtros
-    alunos = Aluno.objects.filter(situacao='ATIVO')
-    cursos = Curso.objects.filter(ativo=True)
+    from alunos.models import Aluno
+    from cursos.models import Curso
+    
+    alunos = Aluno.objects.all().order_by('nome')
+    cursos = Curso.objects.all().order_by('nome')
     
     context = {
-        'notas': notas,
-        'estatisticas': estatisticas,
-        'alunos': alunos,
-        'cursos': cursos,
-        'filtros': {
-            'aluno': aluno_id,
-            'curso': curso_id,
-            'periodo': periodo
-        }
+        "notas": page_obj,
+        "page_obj": page_obj,
+        "query": query,
+        "alunos": alunos,
+        "cursos": cursos,
+        "aluno_selecionado": aluno_id,
+        "curso_selecionado": curso_id,
+        "total_notas": notas.count(),
     }
     
     return render(request, "notas/listar_notas.html", context)
-
 
 @login_required
 def detalhar_nota(request, nota_id):
     """Exibe os detalhes de uma nota."""
     nota = get_object_or_404(Nota, id=nota_id)
     return render(request, "notas/detalhar_nota.html", {"nota": nota})
-
 
 @login_required
 def criar_nota(request):
@@ -194,13 +186,14 @@ def criar_nota(request):
         form = NotaForm(request.POST)
         if form.is_valid():
             nota = form.save()
-            messages.success(request, "Nota cadastrada com sucesso!")
+            messages.success(request, "Nota registrada com sucesso!")
             return redirect("notas:detalhar_nota", nota_id=nota.id)
+        else:
+            messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
         form = NotaForm()
     
     return render(request, "notas/formulario_nota.html", {"form": form})
-
 
 @login_required
 def editar_nota(request, nota_id):
@@ -213,11 +206,15 @@ def editar_nota(request, nota_id):
             nota = form.save()
             messages.success(request, "Nota atualizada com sucesso!")
             return redirect("notas:detalhar_nota", nota_id=nota.id)
+        else:
+            messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
         form = NotaForm(instance=nota)
+        # Formatar a data no formato correto para o input type="date"
+        if nota.data:
+            form.initial['data'] = nota.data.strftime('%Y-%m-%d')
     
     return render(request, "notas/formulario_nota.html", {"form": form, "nota": nota})
-
 
 @login_required
 def excluir_nota(request, nota_id):
@@ -231,425 +228,201 @@ def excluir_nota(request, nota_id):
     
     return render(request, "notas/excluir_nota.html", {"nota": nota})
 
-
-def obter_notas_filtradas(request):
-    """Obtém as notas com base nos filtros aplicados."""
-    aluno_id = request.GET.get('aluno', '')
-    curso_id = request.GET.get('curso', '')
-    periodo = request.GET.get('periodo', '')
-    
-    notas = Nota.objects.all().select_related('aluno', 'curso')
-    
-    if aluno_id:
-        notas = notas.filter(aluno__cpf=aluno_id)
-    
-    if curso_id:
-        notas = notas.filter(curso__id=curso_id)
-    
-    if periodo:
-        hoje = datetime.datetime.now().date()
-        
-        if periodo == 'atual':
-            # Mês atual
-            notas = notas.filter(data__month=hoje.month, data__year=hoje.year)
-        elif periodo == 'ultimo_mes':
-            # Último mês
-            um_mes_atras = hoje - datetime.timedelta(days=30)
-            notas = notas.filter(data__gte=um_mes_atras)
-        elif periodo == 'ultimo_trimestre':
-            # Último trimestre
-            tres_meses_atras = hoje - datetime.timedelta(days=90)
-            notas = notas.filter(data__gte=tres_meses_atras)
-        elif periodo == 'ultimo_semestre':
-            # Último semestre
-            seis_meses_atras = hoje - datetime.timedelta(days=180)
-            notas = notas.filter(data__gte=seis_meses_atras)
-    
-    return notas
-
-
 @login_required
 def exportar_notas_csv(request):
-    """Exporta os dados das notas para um arquivo CSV."""
-    try:
-        # Obter notas com os mesmos filtros da listagem
-        notas = obter_notas_filtradas(request)
-        
-        response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = 'attachment; filename="notas.csv"'
-        writer = csv.writer(response)
-        writer.writerow([
-            "Aluno",
-            "Curso",
-            "Nota",
-            "Data",
-            "Tipo de Avaliação",
-            "Observações"
-        ])
-        
-        for nota in notas:
-            writer.writerow([
-                nota.aluno.nome,
-                nota.curso.nome,
-                nota.valor,
-                nota.data.strftime("%d/%m/%Y"),
-                nota.get_tipo_avaliacao_display() if hasattr(nota, "get_tipo_avaliacao_display") else "Regular",
-                nota.observacoes or ""
-            ])
-        
-        return response
-    except Exception as e:
-        messages.error(request, f"Erro ao exportar notas: {str(e)}")
-        return redirect("notas:listar_notas")
-
-
-@login_required
-def exportar_notas_excel(request):
-    """Exporta os dados das notas para um arquivo Excel."""
-    try:
-        import xlwt
-        
-        # Obter notas com os mesmos filtros da listagem
-        notas = obter_notas_filtradas(request)
-        
-        response = HttpResponse(content_type="application/ms-excel")
-        response["Content-Disposition"] = 'attachment; filename="notas.xls"'
-        
-        wb = xlwt.Workbook(encoding='utf-8')
-        ws = wb.add_sheet('Notas')
-        
-        # Estilos
-        font_style = xlwt.XFStyle()
-        font_style.font.bold = True
-        
-        # Cabeçalhos
-        colunas = ['Aluno', 'Curso', 'Nota', 'Data', 'Tipo de Avaliação', 'Observações']
-        for col_num, coluna in enumerate(colunas):
-            ws.write(0, col_num, coluna, font_style)
-        
-        # Dados
-        font_style = xlwt.XFStyle()
-        for row_num, nota in enumerate(notas, 1):
-            ws.write(row_num, 0, nota.aluno.nome, font_style)
-            ws.write(row_num, 1, nota.curso.nome, font_style)
-            ws.write(row_num, 2, float(nota.valor), font_style)
-            ws.write(row_num, 3, nota.data.strftime("%d/%m/%Y"), font_style)
-            ws.write(row_num, 4, nota.get_tipo_avaliacao_display() if hasattr(nota, "get_tipo_avaliacao_display") else "Regular", font_style)
-            ws.write(row_num, 5, nota.observacoes or "", font_style)
-        
-        wb.save(response)
-        return response
-    except Exception as e:
-        messages.error(request, f"Erro ao exportar notas para Excel: {str(e)}")
-        return redirect("notas:listar_notas")
-
-
-@login_required
-def dashboard_notas(request):
-    """Exibe o dashboard de notas com estatísticas."""
-    # Estatísticas gerais
-    total_notas = Nota.objects.count()
-    media_geral = Nota.objects.aggregate(Avg('valor'))['valor__avg'] or 0
+    """Exporta as notas para um arquivo CSV."""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="notas.csv"'
     
-    # Notas por curso
-    cursos = Curso.objects.filter(ativo=True)
-    notas_por_curso = []
+    writer = csv.writer(response)
+    writer.writerow(['Aluno', 'Curso', 'Turma', 'Nota', 'Peso', 'Data'])
     
-    for curso in cursos:
-        notas_curso = Nota.objects.filter(curso=curso)
-        if notas_curso.exists():
-            media_curso = notas_curso.aggregate(Avg('valor'))['valor__avg'] or 0
-            notas_por_curso.append({
-                'curso': curso.nome,
-                'media': media_curso,
-                'total': notas_curso.count()
-            })
-    
-    # Melhores alunos
-    alunos = Aluno.objects.filter(situacao='ATIVO')
-    melhores_alunos = []
-    
-    for aluno in alunos[:10]:  # Limitar a 10 alunos para performance
-        notas_aluno = Nota.objects.filter(aluno=aluno)
-        if notas_aluno.exists():
-            media_aluno = notas_aluno.aggregate(Avg('valor'))['valor__avg'] or 0
-            melhores_alunos.append({
-                'aluno': aluno,
-                'media': media_aluno,
-                'total_notas': notas_aluno.count()
-            })
-    
-    # Ordenar por média decrescente
-    melhores_alunos.sort(key=lambda x: x['media'], reverse=True)
-    melhores_alunos = melhores_alunos[:5]  # Top 5
-    
-    context = {
-        'total_notas': total_notas,
-        'media_geral': media_geral,
-        'notas_por_curso': notas_por_curso,
-        'melhores_alunos': melhores_alunos
-    }
-    
-    return render(request, "notas/dashboard_notas.html", context)
-
-
-@login_required
-def registrar_nota_aluno(request, aluno_cpf):
-    """Registra uma nota para um aluno específico."""
-    aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
-    
-    if request.method == 'POST':
-        form = NotaForm(request.POST)
-        if form.is_valid():
-            nota = form.save()
-            messages.success(request, 'Nota registrada com sucesso!')
-            return redirect('notas:detalhar_nota', nota_id=nota.id)
-    else:
-        # Pré-preencher o formulário com o aluno selecionado
-        form = NotaForm(initial={'aluno': aluno})
-    
-    return render(request, 'notas/formulario_nota.html', {
-        'form': form,
-        'aluno': aluno,
-        'registro_direto': True
-    })
-
-
-@login_required
-def relatorio_notas_aluno(request, aluno_cpf):
-    """Exibe um relatório de notas de um aluno específico."""
-    aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
-    
-    # Obter todas as notas do aluno
-    notas = Nota.objects.filter(aluno=aluno).select_related('curso', 'turma')
-    
-    # Agrupar notas por curso
-    cursos_info = []
-    cursos_ids = notas.values_list('curso', flat=True).distinct()
-    
-    for curso_id in cursos_ids:
-        curso = Curso.objects.get(id=curso_id)
-        notas_curso = notas.filter(curso=curso)
-        
-        # Calcular média ponderada
-        total_pesos = sum(nota.peso for nota in notas_curso)
-        if total_pesos > 0:
-            media = sum(nota.valor * nota.peso for nota in notas_curso) / total_pesos
-        else:
-            media = 0
-        
-        # Determinar situação
-        if media >= 7:
-            situacao = 'Aprovado'
-        elif media >= 5:
-            situacao = 'Em Recuperação'
-        else:
-            situacao = 'Reprovado'
-        
-        cursos_info.append({
-            'id': curso.id,
-            'nome': curso.nome,
-            'notas': notas_curso,
-            'media': round(media, 1),
-            'situacao': situacao
-        })
-    
-    context = {
-        'aluno': aluno,
-        'cursos': cursos_info,
-        'total_cursos': len(cursos_info),
-    }
-    
-    return render(request, 'notas/relatorio_notas_aluno.html', context)
-
-
-@login_required
-def relatorio_notas_turma(request, turma_id):
-    """Exibe um relatório de notas de uma turma específica."""
-    turma = get_object_or_404(Turma, id=turma_id)
-    
-    # Obter todas as notas da turma
-    notas = Nota.objects.filter(turma=turma).select_related('aluno')
-    
-    # Agrupar notas por aluno
-    alunos_info = []
-    alunos_ids = notas.values_list('aluno', flat=True).distinct()
-    
-    for aluno_id in alunos_ids:
-        aluno = Aluno.objects.get(cpf=aluno_id)
-        notas_aluno = notas.filter(aluno=aluno)
-        
-        # Calcular média ponderada
-        total_pesos = sum(nota.peso for nota in notas_aluno)
-        if total_pesos > 0:
-            media = sum(nota.valor * nota.peso for nota in notas_aluno) / total_pesos
-        else:
-            media = 0
-        
-        # Determinar situação
-        if media >= 7:
-            situacao = 'Aprovado'
-        elif media >= 5:
-            situacao = 'Em Recuperação'
-        else:
-            situacao = 'Reprovado'
-        
-        alunos_info.append({
-            'aluno': aluno,
-            'notas': notas_aluno,
-            'media': round(media, 1),
-            'situacao': situacao
-        })
-    
-    # Ordenar por nome do aluno
-    alunos_info.sort(key=lambda x: x['aluno'].nome)
-    
-    context = {
-        'turma': turma,
-        'alunos': alunos_info,
-        'total_alunos': len(alunos_info),
-    }
-    
-    return render(request, 'notas/relatorio_notas_turma.html', context)
-from django.http import HttpResponse
-from django.template.loader import render_to_string
-# from weasyprint import HTML
-import tempfile
-from django.utils import timezone
-import pandas as pd
-from io import BytesIO
-
-def exportar_notas_pdf(request):
-    """Exporta a lista de notas para PDF."""
-    # Obter filtros
-    aluno_id = request.GET.get('aluno', '')
-    curso_id = request.GET.get('curso', '')
-    
-    # Filtrar notas
-    notas = Nota.objects.all()
-    if aluno_id:
-        notas = notas.filter(aluno__cpf=aluno_id)
-    if curso_id:
-        notas = notas.filter(curso__id=curso_id)
-    
-    # Calcular médias
-    alunos_medias = {}
+    notas = Nota.objects.all().select_related('aluno', 'curso', 'turma')
     for nota in notas:
-        if nota.aluno.cpf not in alunos_medias:
-            alunos_medias[nota.aluno.cpf] = {
-                'aluno': nota.aluno,
-                'notas': [],
-                'soma': 0,
-                'count': 0
-            }
-        alunos_medias[nota.aluno.cpf]['notas'].append(nota)
-        alunos_medias[nota.aluno.cpf]['soma'] += nota.valor
-        alunos_medias[nota.aluno.cpf]['count'] += 1
+        writer.writerow([
+            nota.aluno.nome,
+            nota.curso.nome,
+            nota.turma.nome if nota.turma else 'N/A',
+            nota.valor,
+            nota.peso,
+            nota.data.strftime('%d/%m/%Y'),
+        ])
     
-    for cpf in alunos_medias:
-        if alunos_medias[cpf]['count'] > 0:
-            alunos_medias[cpf]['media'] = alunos_medias[cpf]['soma'] / alunos_medias[cpf]['count']
-        else:
-            alunos_medias[cpf]['media'] = 0
-    
-    # Renderizar o template HTML
-    html_string = render_to_string(
-        'notas/pdf/notas_pdf.html',
-        {
-            'notas': notas,
-            'alunos_medias': alunos_medias.values(),
-            'data_geracao': timezone.now(),
-            'filtros': {
-                'aluno': aluno_id,
-                'curso': curso_id,
-            }
-        }
-    )
-    
-    # Criar arquivo PDF
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="notas.pdf"'
-    
-    # Gerar PDF a partir do HTML
-    html = HTML(string=html_string, base_url=request.build_absolute_uri())
-    result = html.write_pdf()
-    
-    # Retornar o PDF como resposta
-    response.write(result)
     return response
 
+@login_required
 def exportar_notas_excel(request):
-    """Exporta a lista de notas para Excel."""
-    # Obter filtros
-    aluno_id = request.GET.get('aluno', '')
-    curso_id = request.GET.get('curso', '')
+    """Exporta as notas para um arquivo Excel."""
+    import xlsxwriter
+    from io import BytesIO
     
-    # Filtrar notas
-    notas = Nota.objects.all()
-    if aluno_id:
-        notas = notas.filter(aluno__cpf=aluno_id)
-    if curso_id:
-        notas = notas.filter(curso__id=curso_id)
-    
-    # Preparar dados para o Excel
-    data = []
-    for nota in notas:
-        data.append({
-            'ID': nota.id,
-            'Aluno': nota.aluno.nome,
-            'CPF': nota.aluno.cpf,
-            'Curso': nota.curso.nome,
-            'Turma': nota.turma.nome if hasattr(nota, 'turma') and nota.turma else '',
-            'Tipo de Avaliação': nota.get_tipo_avaliacao_display() if hasattr(nota, 'get_tipo_avaliacao_display') else '',
-            'Nota': nota.valor,
-            'Data': nota.data,
-            'Observações': nota.observacoes if hasattr(nota, 'observacoes') else '',
-        })
-    
-    # Criar DataFrame
-    df = pd.DataFrame(data)
-    
-    # Criar arquivo Excel
+    # Criar um buffer de memória para o arquivo Excel
     output = BytesIO()
-    writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    df.to_excel(writer, sheet_name='Notas', index=False)
     
-    # Ajustar largura das colunas
-    worksheet = writer.sheets['Notas']
-    for i, col in enumerate(df.columns):
-        column_width = max(df[col].astype(str).map(len).max(), len(col)) + 2
-        worksheet.set_column(i, i, column_width)
+    # Criar um novo workbook e adicionar uma planilha
+    workbook = xlsxwriter.Workbook(output)
+    worksheet = workbook.add_worksheet('Notas')
     
-    # Adicionar formatação condicional para as notas
-    formato_nota_alta = writer.book.add_format({'bold': True, 'font_color': 'green'})
-    formato_nota_media = writer.book.add_format({'bold': True, 'font_color': 'orange'})
-    formato_nota_baixa = writer.book.add_format({'bold': True, 'font_color': 'red'})
+    # Definir estilos - Corrigido o atributo 'color' para 'font_color'
+    header_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#4472C4',
+        'font_color': 'white',  # Corrigido de 'color' para 'font_color'
+        'border': 1
+    })
     
-    # Coluna da nota (índice 6)
-    worksheet.conditional_format(1, 6, len(data), 6, {'type': 'cell',
-                                                      'criteria': '>=',
-                                                      'value': 7,
-                                                      'format': formato_nota_alta})
-    worksheet.conditional_format(1, 6, len(data), 6, {'type': 'cell',
-                                                      'criteria': 'between',
-                                                      'minimum': 5,
-                                                      'maximum': 6.9,
-                                                      'format': formato_nota_media})
-    worksheet.conditional_format(1, 6, len(data), 6, {'type': 'cell',
-                                                      'criteria': '<',
-                                                      'value': 5,
-                                                      'format': formato_nota_baixa})
+    # Escrever cabeçalhos
+    headers = ['Aluno', 'Curso', 'Turma', 'Nota', 'Peso', 'Data']
+    for col_num, header in enumerate(headers):
+        worksheet.write(0, col_num, header, header_format)
     
-    writer.save()
+    # Buscar todas as notas
+    notas = Nota.objects.all().select_related('aluno', 'curso', 'turma')
+    
+    # Escrever dados
+    for row_num, nota in enumerate(notas, 1):
+        worksheet.write(row_num, 0, nota.aluno.nome)
+        worksheet.write(row_num, 1, nota.curso.nome)
+        worksheet.write(row_num, 2, nota.turma.nome if nota.turma else 'N/A')
+        worksheet.write(row_num, 3, float(nota.valor))
+        worksheet.write(row_num, 4, float(nota.peso))
+        worksheet.write(row_num, 5, nota.data.strftime('%d/%m/%Y'))
+    
+    # Fechar o workbook (em vez de salvar)
+    workbook.close()
+    
+    # Configurar a resposta HTTP
     output.seek(0)
-    
-    # Retornar o arquivo Excel
     response = HttpResponse(
         output.read(),
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     response['Content-Disposition'] = 'attachment; filename="notas.xlsx"'
+    
     return response
+
+@login_required
+def dashboard_notas(request):
+    """Exibe um dashboard com estatísticas sobre as notas."""
+    # Estatísticas gerais
+    total_notas = Nota.objects.count()
+    media_geral = Nota.objects.aggregate(Avg('valor'))['valor__avg'] or 0
+    
+    # Notas por curso (para gráfico)
+    notas_por_curso = list(Nota.objects.values('curso__nome').annotate(
+        total=Count('id'),
+        media=Avg('valor')
+    ).order_by('-total'))
+    
+    # Distribuição de notas (para gráfico)
+    from django.db.models import Case, When, IntegerField
+    distribuicao = Nota.objects.annotate(
+        faixa=Case(
+            When(valor__lt=5, then=0),  # Abaixo de 5
+            When(valor__lt=7, then=1),  # Entre 5 e 6.9
+            When(valor__lt=9, then=2),  # Entre 7 e 8.9
+            default=3,                  # 9 ou mais
+            output_field=IntegerField(),
+        )
+    ).values('faixa').annotate(
+        total=Count('id')
+    ).order_by('faixa')
+    
+    # Converter para formato adequado para gráficos
+    faixas_notas = ['Abaixo de 5', 'Entre 5 e 6.9', 'Entre 7 e 8.9', '9 ou mais']
+    dados_distribuicao = [0, 0, 0, 0]  # Inicializar com zeros
+    
+    for item in distribuicao:
+        dados_distribuicao[item['faixa']] = item['total']
+    
+    # Notas recentes
+    notas_recentes = Nota.objects.all().select_related('aluno', 'curso').order_by('-data')[:5]
+    
+    context = {
+        'total_notas': total_notas,
+        'media_geral': round(media_geral, 2),
+        'notas_por_curso': notas_por_curso,
+        'faixas_notas': faixas_notas,
+        'dados_distribuicao': dados_distribuicao,
+        'notas_recentes': notas_recentes,
+    }
+    
+    return render(request, "notas/dashboard_notas.html", context)
+
+@login_required
+def relatorio_notas(request):
+    """Exibe um relatório com estatísticas sobre as notas."""
+    # Estatísticas gerais
+    total_notas = Nota.objects.count()
+    media_geral = Nota.objects.aggregate(Avg('valor'))['valor__avg'] or 0
+    
+    # Estatísticas por curso
+    cursos_stats = Nota.objects.values('curso__nome').annotate(
+        total=Count('id'),
+        media=Avg('valor'),
+        maxima=Max('valor'),
+        minima=Min('valor')
+    ).order_by('-total')
+    
+    # Estatísticas por aluno
+    alunos_stats = Nota.objects.values('aluno__nome').annotate(
+        total=Count('id'),
+        media=Avg('valor'),
+        maxima=Max('valor'),
+        minima=Min('valor')
+    ).order_by('-media')[:10]  # Top 10 alunos por média
+    
+    context = {
+        'total_notas': total_notas,
+        'media_geral': media_geral,
+        'cursos_stats': cursos_stats,
+        'alunos_stats': alunos_stats,
+    }
+    
+    return render(request, "notas/relatorio_notas.html", context)
+
+@login_required
+def buscar_alunos(request):
+    """API endpoint para buscar alunos."""
+    query = request.GET.get("q", "")
+    if len(query) < 2:
+        return JsonResponse([], safe=False)
+    
+    from alunos.models import Aluno
+    alunos = Aluno.objects.filter(
+        Q(nome__icontains=query) |
+        Q(cpf__icontains=query)
+    )[:10]
+    
+    results = []
+    for aluno in alunos:
+        results.append({
+            "id": aluno.cpf,
+            "text": f"{aluno.nome} (CPF: {aluno.cpf})"
+        })
+    
+    return JsonResponse({"results": results})
+
+@login_required
+def verificar_aluno_matriculado(request, aluno_id, turma_id):
+    """Verifica se um aluno está matriculado em uma turma."""
+    try:
+        from matriculas.models import Matricula
+        
+        matricula = Matricula.objects.filter(
+            aluno__cpf=aluno_id,
+            turma__id=turma_id,
+            status='A'  # Ativa
+        ).exists()
+        
+        return JsonResponse({
+            "matriculado": matricula
+        })
+    except Exception as e:
+        return JsonResponse({
+            "error": str(e)
+        }, status=500)
+
 
 
 ## Arquivos urls.py:
@@ -705,7 +478,7 @@ class Nota(models.Model):
     valor = models.DecimalField(max_digits=5, decimal_places=2)
     peso = models.DecimalField(max_digits=3, decimal_places=1, default=1.0)
     data = models.DateField()
-    observacoes = models.TextField(blank=True, null=True)
+    observacao = models.TextField(blank=True, null=True)
     
     # Metadados
     created_at = models.DateTimeField(auto_now_add=True)
@@ -930,131 +703,200 @@ html
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Dashboard de Notas</h1>
-        <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">
-            <i class="fas fa-list"></i> Listar Notas
-        </a>
+        <div>
+            <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar para a lista
+            </a>
+        </div>
     </div>
     
-    <!-- Resumo estatístico -->
+    <!-- Estatísticas Gerais -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card bg-primary text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Total de Notas</h5>
-                    <p class="card-text display-6">{{ total_notas }}</p>
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Estatísticas Gerais</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 text-center">
+                            <h2 class="display-4">{{ total_notas }}</h2>
+                            <p class="text-muted">Total de Notas</p>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <h2 class="display-4">{{ media_geral }}</h2>
+                            <p class="text-muted">Média Geral</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        
         <div class="col-md-6">
-            <div class="card bg-success text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Média Geral</h5>
-                    <p class="card-text display-6">{{ media_geral|floatformat:1 }}</p>
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Distribuição de Notas</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="distribuicaoChart" height="200"></canvas>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Notas por curso -->
+    <!-- Notas por Curso -->
     <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Médias por Curso</h5>
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Notas por Curso</h5>
         </div>
         <div class="card-body">
-            {% if notas_por_curso %}
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>Curso</th>
-                                <th>Média</th>
-                                <th>Total de Notas</th>
-                                <th>Desempenho</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for curso in notas_por_curso %}
-                                <tr>
-                                    <td>{{ curso.curso }}</td>
-                                    <td>{{ curso.media|floatformat:1 }}</td>
-                                    <td>{{ curso.total }}</td>
-                                    <td>
-                                        <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar {% if curso.media >= 7 %}bg-success{% elif curso.media >= 5 %}bg-warning{% else %}bg-danger{% endif %}" 
-                                                 role="progressbar" 
-                                                 style="width: {{ curso.media|floatformat:0 }}0%;" 
-                                                 aria-valuenow="{{ curso.media|floatformat:0 }}" 
-                                                 aria-valuemin="0" 
-                                                 aria-valuemax="10">
-                                                {{ curso.media|floatformat:1 }}
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Nenhuma nota encontrada.
-                </div>
-            {% endif %}
+            <canvas id="notasPorCursoChart" height="300"></canvas>
         </div>
     </div>
     
-    <!-- Melhores alunos -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Melhores Alunos</h5>
+    <!-- Notas Recentes -->
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Notas Recentes</h5>
         </div>
         <div class="card-body">
-            {% if melhores_alunos %}
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>Aluno</th>
-                                <th>Média</th>
-                                <th>Total de Notas</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in melhores_alunos %}
-                                <tr>
-                                    <td>{{ item.aluno.nome }}</td>
-                                    <td>
-                                        <span class="badge {% if item.media >= 7 %}bg-success{% elif item.media >= 5 %}bg-warning{% else %}bg-danger{% endif %}">
-                                            {{ item.media|floatformat:1 }}
-                                        </span>
-                                    </td>
-                                    <td>{{ item.total_notas }}</td>
-                                    <td>
-                                        <a href="{% url 'notas:listar_notas' %}?aluno={{ item.aluno.cpf }}" class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye"></i> Ver Notas
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Nenhum aluno com notas encontrado.
-                </div>
-            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Curso</th>
+                            <th>Nota</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for nota in notas_recentes %}
+                        <tr>
+                            <td>{{ nota.aluno.nome }}</td>
+                            <td>{{ nota.curso.nome }}</td>
+                            <td>{{ nota.valor }}</td>
+                            <td>{{ nota.data|date:"d/m/Y" }}</td>
+                            <td>
+                                <a href="{% url 'notas:detalhar_nota' nota.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> Ver
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">Nenhuma nota registrada recentemente.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
-    
-    <div class="mt-4">
-        <a href="javascript:history.back()" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
     </div>
 </div>
-{% endblock %}                            {% for item in melhores_alunos %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dados para o gráfico de distribuição de notas
+        const ctxDistribuicao = document.getElementById('distribuicaoChart').getContext('2d');
+        const distribuicaoChart = new Chart(ctxDistribuicao, {
+            type: 'pie',
+            data: {
+                labels: {{ faixas_notas|safe }},
+                datasets: [{
+                    data: {{ dados_distribuicao|safe }},
+                    backgroundColor: [
+                        '#dc3545', // Vermelho para notas baixas
+                        '#ffc107', // Amarelo para notas médias-baixas
+                        '#17a2b8', // Azul para notas médias-altas
+                        '#28a745'  // Verde para notas altas
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribuição de Notas por Faixa'
+                    }
+                }
+            }
+        });
+        
+        // Dados para o gráfico de notas por curso
+        const ctxCursos = document.getElementById('notasPorCursoChart').getContext('2d');
+        
+        // Preparar dados para o gráfico
+        const cursos = [];
+        const totais = [];
+        const medias = [];
+        
+        {% for curso in notas_por_curso %}
+        cursos.push("{{ curso.curso__nome }}");
+        totais.push({{ curso.total }});
+        medias.push({{ curso.media|floatformat:2 }});
+        {% endfor %}
+        
+        const cursoChart = new Chart(ctxCursos, {
+            type: 'bar',
+            data: {
+                labels: cursos,
+                datasets: [
+                    {
+                        label: 'Total de Notas',
+                        data: totais,
+                        backgroundColor: '#4e73df',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Média',
+                        data: medias,
+                        backgroundColor: '#1cc88a',
+                        borderWidth: 1,
+                        type: 'line',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Total de Notas'
+                        }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Média'
+                        },
+                        min: 0,
+                        max: 10,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+
 
 
 
@@ -1070,8 +912,8 @@ html
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Detalhes da Nota</h1>
         <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">
-                <i class="fas fa-arrow-left"></i> Voltar
+            <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar para a lista
             </a>
             <a href="{% url 'notas:editar_nota' nota.id %}" class="btn btn-warning me-2">
                 <i class="fas fa-edit"></i> Editar
@@ -1081,7 +923,7 @@ html
             </a>
         </div>
     </div>
-    
+
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Informações da Nota</h5>
@@ -1089,58 +931,39 @@ html
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <p><strong>Aluno:</strong> 
-                        <a href="{% url 'alunos:detalhar_aluno' nota.aluno.cpf %}">
-                            {{ nota.aluno.nome }}
-                        </a>
-                    </p>
+                    <p><strong>Aluno:</strong> {{ nota.aluno.nome }}</p>
                     <p><strong>Curso:</strong> {{ nota.curso.nome }}</p>
-                    <p><strong>Turma:</strong> {{ nota.turma.nome }}</p>
+                    {% if nota.turma %}
+                        <p><strong>Turma:</strong> {{ nota.turma.nome }}</p>
+                    {% endif %}
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Tipo de Avaliação:</strong> {{ nota.get_tipo_avaliacao_display }}</p>
-                    <p><strong>Nota:</strong> 
-                        <span class="badge {% if nota.valor >= 7 %}bg-success{% elif nota.valor >= 5 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                            {{ nota.valor|floatformat:1 }}
+                    <p>
+                        <strong>Nota:</strong> 
+                        <span class="badge {% if nota.valor >= 7 %}bg-success{% elif nota.valor >= 5 %}bg-warning{% else %}bg-danger{% endif %}">
+                            {{ nota.valor }}
                         </span>
                     </p>
-                    <p><strong>Peso:</strong> {{ nota.peso|floatformat:1 }}</p>
                     <p><strong>Data:</strong> {{ nota.data|date:"d/m/Y" }}</p>
+                    {% if nota.tipo_avaliacao %}
+                        <p><strong>Tipo de Avaliação:</strong> {{ nota.get_tipo_avaliacao_display }}</p>
+                    {% endif %}
                 </div>
             </div>
             
             {% if nota.observacoes %}
-                <hr>
-                <div class="row">
-                    <div class="col-12">
-                        <h6>Observações:</h6>
-                        <div class="p-3 bg-light rounded">
-                            {{ nota.observacoes|linebreaks }}
-                        </div>
-                    </div>
+            <div class="mt-3">
+                <h6>Observações:</h6>
+                <div class="p-3 bg-light rounded">
+                    {{ nota.observacoes|linebreaks }}
                 </div>
+            </div>
             {% endif %}
-        </div>
-        <div class="card-footer text-muted">
-            <small>Registrada em: {{ nota.created_at|date:"d/m/Y H:i" }} | Última atualização: {{ nota.updated_at|date:"d/m/Y H:i" }}</small>
-        </div>
-    </div>
-    
-    <div class="d-flex justify-content-between mb-5">
-        <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">
-            <i class="fas fa-list"></i> Voltar para a lista
-        </a>
-        <div>
-            <a href="{% url 'notas:editar_nota' nota.id %}" class="btn btn-warning me-2">
-                <i class="fas fa-edit"></i> Editar
-            </a>
-            <a href="{% url 'notas:excluir_nota' nota.id %}" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Excluir
-            </a>
         </div>
     </div>
 </div>
-{% endblock %}{% endblock %}
+{% endblock %}
+
 
 
 
@@ -1153,30 +976,39 @@ html
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card border-danger">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Excluir Nota</h1>
+        <a href="{% url 'notas:detalhar_nota' nota.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="card mb-4 border-danger">
         <div class="card-header bg-danger text-white">
-            <h4 class="mb-0">Confirmar Exclusão</h4>
+            <h5 class="mb-0">Confirmação de Exclusão</h5>
         </div>
         <div class="card-body">
-            <h5 class="card-title">Você tem certeza que deseja excluir esta nota?</h5>
-            
             <div class="alert alert-warning">
-                <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
+                <i class="fas fa-exclamation-triangle"></i> 
+                <strong>Atenção!</strong> Esta ação não pode ser desfeita.
             </div>
             
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Detalhes da Nota</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Aluno:</strong> {{ nota.aluno.nome }}</p>
-                    <p><strong>Curso:</strong> {{ nota.curso.nome }}</p>
-                    <p><strong>Turma:</strong> {{ nota.turma.nome }}</p>
-                    <p><strong>Tipo de Avaliação:</strong> {{ nota.get_tipo_avaliacao_display }}</p>
-                    <p><strong>Nota:</strong> {{ nota.valor|floatformat:1 }}</p>
-                    <p><strong>Data:</strong> {{ nota.data|date:"d/m/Y" }}</p>
-                </div>
-            </div>
+            <p>Você está prestes a excluir a seguinte nota:</p>
+            
+            <ul class="list-group mb-4">
+                <li class="list-group-item">
+                    <strong>Aluno:</strong> {{ nota.aluno.nome }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Curso:</strong> {{ nota.curso.nome }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Nota:</strong> {{ nota.valor }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Data:</strong> {{ nota.data|date:"d/m/Y" }}
+                </li>
+            </ul>
             
             <form method="post">
                 {% csrf_token %}
@@ -1192,7 +1024,8 @@ html
         </div>
     </div>
 </div>
-{% endblock %}{% endblock %}{% endblock %}        <div
+{% endblock %}
+
 
 
 

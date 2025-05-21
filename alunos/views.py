@@ -50,9 +50,7 @@ def listar_alunos(request):
         # Adicionar filtro por curso
         if curso_id:
             try:
-                # Importar o modelo Matricula dinamicamente
                 Matricula = import_module("matriculas.models").Matricula
-                # Filtrar alunos matriculados no curso especificado
                 alunos_ids = (
                     Matricula.objects.filter(
                         turma__curso__codigo_curso=curso_id
@@ -62,8 +60,7 @@ def listar_alunos(request):
                 )
                 alunos = alunos.filter(cpf__in=alunos_ids)
             except (ImportError, AttributeError) as e:
-                # Logar o erro, mas continuar sem o filtro de curso
-                print(f"Erro ao filtrar por curso: {e}")
+                logger.error(f"Erro ao filtrar por curso: {e}")
         
         # Para cada aluno, buscar os cursos em que está matriculado
         alunos_com_cursos = []
@@ -459,22 +456,19 @@ def search_alunos(request):
             return JsonResponse([], safe=False)
         
         Aluno = get_aluno_model()
-        # Buscar alunos por nome, CPF ou número iniciático
         alunos = Aluno.objects.filter(
             Q(nome__icontains=query) |
             Q(cpf__icontains=query) |
+            Q(email__icontains=query) |  # <-- Adicione esta linha
             Q(numero_iniciatico__icontains=query)
-        )[:10]  # Limitar a 10 resultados
+        )[:10]
         
-        # Log para depuração
-        logger.info(f"Busca por '{query}' retornou {alunos.count()} resultados")
-        
-        # Formatar resultados
         results = []
         for aluno in alunos:
             results.append({
                 "cpf": aluno.cpf,
                 "nome": aluno.nome,
+                "email": aluno.email,  # <-- Adicione esta linha
                 "numero_iniciatico": aluno.numero_iniciatico or "N/A",
                 "foto": aluno.foto.url if hasattr(aluno, "foto") and aluno.foto else None,
                 "situacao": aluno.get_situacao_display() if hasattr(aluno, "get_situacao_display") else ""

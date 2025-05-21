@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Pagamentos por Turma{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Pagamentos por Turma</h1>
+        <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    {% for item in turmas_com_pagamentos %}
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ item.turma.nome }} - {{ item.turma.curso.nome }}</h5>
+                    <span class="badge bg-light text-dark">{{ item.alunos_count }} alunos</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card text-white bg-success">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Total Pago</h6>
+                                <p class="card-text h4">R$ {{ item.total_pago|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-white bg-warning">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Total Pendente</h6>
+                                <p class="card-text h4">R$ {{ item.total_pendente|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-white bg-info">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Total</h6>
+                                <p class="card-text h4">R$ {{ item.total|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pagamento in item.pagamentos %}
+                                <tr>
+                                    <td>{{ pagamento.aluno.nome }}</td>
+                                    <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
+                                    <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if pagamento.status == 'PAGO' %}
+                                            <span class="badge bg-success">{{ pagamento.get_status_display }}</span>
+                                        {% elif pagamento.status == 'PENDENTE' %}
+                                            <span class="badge bg-warning">{{ pagamento.get_status_display }}</span>
+                                        {% elif pagamento.status == 'ATRASADO' %}
+                                            <span class="badge bg-danger">{{ pagamento.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ pagamento.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">Detalhes</a>
+                                        <a href="{% url 'pagamentos:editar_pagamento' pagamento.id %}" class="btn btn-sm btn-warning">Editar</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">Nenhum pagamento encontrado para esta turma.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-info">
+            <p>Nenhuma turma ativa encontrada.</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

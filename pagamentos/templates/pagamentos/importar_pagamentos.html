@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Importar Pagamentos CSV{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Importar Pagamentos via CSV</h1>
+    <form method="post" enctype="multipart/form-data" class="mt-3">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="arquivo_csv" class="form-label">Arquivo CSV</label>
+            <input type="file" class="form-control" id="arquivo_csv" name="arquivo_csv" accept=".csv" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Importar</button>
+        <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+    <div class="mt-3">
+        <p>O arquivo CSV deve conter as colunas: <strong>cpf, valor, data_vencimento, status, observacoes</strong></p>
+    </div>
+</div>
+{% endblock %}

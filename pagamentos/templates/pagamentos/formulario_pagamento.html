@@ -1,257 +1,291 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{% if pagamento %}Editar{% else %}Novo{% endif %} Pagamento{% endblock %}
-
-{% block extra_css %}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<style>
-    .select2-container .select2-selection--single {
-        height: 38px;
-        padding: 5px;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 36px;
-    }
-    .select2-container--default .select2-selection--single {
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-    }
-    .btn-icon {
-        display: inline-flex;
-        align-items: center;
-    }
-    .btn-icon i {
-        margin-right: 0.5rem;
-    }
-</style>
+{% block title %}
+    {% if pagamento %}Editar Pagamento{% else %}Novo Pagamento{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{% if pagamento %}Editar{% else %}Novo{% endif %} Pagamento</h1>
-        <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary btn-icon">
-            <i class="fas fa-arrow-left"></i> Voltar para a lista
-        </a>
+    <!-- Cabeçalho com botões de ação -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{% if pagamento %}Editar Pagamento{% else %}Novo Pagamento{% endif %}</h1>
+        <div>
+            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Lista de Pagamentos
+            </a>
+        </div>
     </div>
     
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="card mb-4">
+    <!-- Formulário -->
+    <div class="card">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Informações do Pagamento</h5>
         </div>
         <div class="card-body">
-            <form method="post" id="pagamento-form">
+            <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 
                 {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    <p class="mb-0">{{ error }}</p>
+                    {% endfor %}
+                </div>
                 {% endif %}
                 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.aluno.id_for_label }}" class="form-label">{{ form.aluno.label }}</label>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.aluno.id_for_label }}" class="form-label">Aluno*</label>
                         {{ form.aluno }}
                         {% if form.aluno.errors %}
-                            <div class="text-danger">
-                                {% for error in form.aluno.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.aluno.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
                         {% endif %}
-                        {% if form.aluno.help_text %}
-                            <small class="form-text text-muted">{{ form.aluno.help_text }}</small>
-                        {% endif %}
+                        <div class="form-text">Selecione o aluno para este pagamento</div>
                     </div>
                     
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.observacoes.id_for_label }}" class="form-label">{{ form.observacoes.label }}</label>
-                        {{ form.observacoes }}
-                        {% if form.observacoes.errors %}
-                            <div class="text-danger">
-                                {% for error in form.observacoes.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        {% if form.observacoes.help_text %}
-                            <small class="form-text text-muted">{{ form.observacoes.help_text }}</small>
+                    <div class="col-md-6">
+                        <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo de Pagamento*</label>
+                        {{ form.tipo }}
+                        {% if form.tipo.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.tipo.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
                         {% endif %}
                     </div>
                 </div>
                 
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.valor.id_for_label }}" class="form-label">{{ form.valor.label }}</label>
-                        <div class="input-group">
-                            <span class="input-group-text">R$</span>
-                            {{ form.valor }}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.descricao.id_for_label }}" class="form-label">Descrição*</label>
+                        {{ form.descricao }}
+                        {% if form.descricao.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.descricao.errors %}
+                            {{ error }}
+                            {% endfor %}
                         </div>
-                        {% if form.valor.errors %}
-                            <div class="text-danger">
-                                {% for error in form.valor.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        {% if form.valor.help_text %}
-                            <small class="form-text text-muted">{{ form.valor.help_text }}</small>
                         {% endif %}
                     </div>
                     
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.data_vencimento.id_for_label }}" class="form-label">{{ form.data_vencimento.label }}</label>
+                    <div class="col-md-6">
+                        <label for="{{ form.valor.id_for_label }}" class="form-label">Valor (R$)*</label>
+                        {{ form.valor }}
+                        {% if form.valor.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.valor.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.data_vencimento.id_for_label }}" class="form-label">Data de Vencimento*</label>
                         {{ form.data_vencimento }}
                         {% if form.data_vencimento.errors %}
-                            <div class="text-danger">
-                                {% for error in form.data_vencimento.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        {% if form.data_vencimento.help_text %}
-                            <small class="form-text text-muted">{{ form.data_vencimento.help_text }}</small>
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.data_vencimento.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
                         {% endif %}
                     </div>
                     
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                    <div class="col-md-6">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">Status*</label>
                         {{ form.status }}
                         {% if form.status.errors %}
-                            <div class="text-danger">
-                                {% for error in form.status.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        {% if form.status.help_text %}
-                            <small class="form-text text-muted">{{ form.status.help_text }}</small>
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.status.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
                         {% endif %}
                     </div>
                 </div>
                 
-                <!-- Campos adicionais para pagamentos com status PAGO -->
-                <div class="row" id="campos-pagamento" style="display: none;">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.data_pagamento.id_for_label }}" class="form-label">{{ form.data_pagamento.label }}</label>
+                <div class="row mb-3" id="pagamento-info" style="display: {% if form.instance.status == 'PAGO' %}block{% else %}none{% endif %};">
+                    <div class="col-md-6">
+                        <label for="{{ form.data_pagamento.id_for_label }}" class="form-label">Data de Pagamento</label>
                         {{ form.data_pagamento }}
                         {% if form.data_pagamento.errors %}
-                            <div class="text-danger">
-                                {% for error in form.data_pagamento.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.data_pagamento.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
                         {% endif %}
                     </div>
                     
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.valor_pago.id_for_label }}" class="form-label">{{ form.valor_pago.label }}</label>
-                        <div class="input-group">
-                            <span class="input-group-text">R$</span>
-                            {{ form.valor_pago }}
+                    <div class="col-md-6">
+                        <label for="{{ form.metodo_pagamento.id_for_label }}" class="form-label">Método de Pagamento</label>
+                        {{ form.metodo_pagamento }}
+                        {% if form.metodo_pagamento.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.metodo_pagamento.errors %}
+                            {{ error }}
+                            {% endfor %}
                         </div>
-                        {% if form.valor_pago.errors %}
-                            <div class="text-danger">
-                                {% for error in form.valor_pago.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
                         {% endif %}
                     </div>
                 </div>
                 
-                <div class="alert alert-info mt-3">
-                    <i class="fas fa-info-circle"></i> 
-                    {% if pagamento %}
-                        Você está editando um pagamento existente. Todos os campos marcados são obrigatórios.
-                    {% else %}
-                        Preencha todos os campos obrigatórios. A data de vencimento padrão é 30 dias a partir de hoje.
-                    {% endif %}
-                    <br>
-                    <strong>Nota:</strong> Se o status for "Pago", os campos de data de pagamento e valor pago serão exibidos.
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.curso.id_for_label }}" class="form-label">Curso</label>
+                        {{ form.curso }}
+                        {% if form.curso.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.curso.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="{{ form.turma.id_for_label }}" class="form-label">Turma</label>
+                        {{ form.turma }}
+                        {% if form.turma.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.turma.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
                 
-                <div class="d-flex justify-content-between mt-4">
-                    <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary btn-icon">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-primary btn-icon">
-                        <i class="fas fa-save"></i> {% if pagamento %}Atualizar{% else %}Cadastrar{% endif %} Pagamento
+                <div class="mb-3">
+                    <label for="{{ form.observacoes.id_for_label }}" class="form-label">Observações</label>
+                    {{ form.observacoes }}
+                    {% if form.observacoes.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.observacoes.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.comprovante.id_for_label }}" class="form-label">Comprovante de Pagamento</label>
+                    {% if pagamento.comprovante %}
+                    <div class="mb-2">
+                        <a href="{{ pagamento.comprovante.url }}" target="_blank" class="btn btn-sm btn-info">
+                            <i class="fas fa-file-alt"></i> Ver comprovante atual
+                        </a>
+                    </div>
+                    {% endif %}
+                    {{ form.comprovante }}
+                    {% if form.comprovante.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.comprovante.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="form-text">Formatos aceitos: PDF, JPG, PNG. Tamanho máximo: 5MB</div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if pagamento %}Atualizar{% else %}Cadastrar{% endif %} Pagamento
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-<!-- Script inline para garantir que o código seja executado -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Função para mostrar/ocultar campos de pagamento
-        function toggleCamposPagamento() {
-            const statusSelect = document.getElementById('id_status');
-            const camposPagamento = document.getElementById('campos-pagamento');
-            
-            if (statusSelect && camposPagamento) {
-                if (statusSelect.value === 'PAGO') {
-                    camposPagamento.style.display = 'flex';
-                    
-                    // Preencher data de pagamento se estiver vazia
-                    const dataPagamentoField = document.getElementById('id_data_pagamento');
-                    if (dataPagamentoField && !dataPagamentoField.value) {
-                        const hoje = new Date();
-                        const ano = hoje.getFullYear();
-                        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-                        const dia = String(hoje.getDate()).padStart(2, '0');
-                        dataPagamentoField.value = `${ano}-${mes}-${dia}`;
-                    }
-                    
-                    // Preencher valor pago se estiver vazio
-                    const valorPagoField = document.getElementById('id_valor_pago');
-                    const valorField = document.getElementById('id_valor');
-                    if (valorPagoField && valorField && !valorPagoField.value) {
-                        valorPagoField.value = valorField.value;
-                    }
-                } else {
-                    camposPagamento.style.display = 'none';
-                }
-            }
-        }
-        
-        // Executar na inicialização
-        toggleCamposPagamento();
-        
-        // Adicionar evento de mudança ao select de status
-        const statusSelect = document.getElementById('id_status');
-        if (statusSelect) {
-            statusSelect.addEventListener('change', toggleCamposPagamento);
-        }
-    });
-</script>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar/ocultar campos de pagamento conforme o status
+    const statusSelect = document.getElementById('{{ form.status.id_for_label }}');
+    const pagamentoInfo = document.getElementById('pagamento-info');
+    
+    function togglePagamentoInfo() {
+        if (statusSelect.value === 'PAGO') {
+            pagamentoInfo.style.display = 'flex';
+        } else {
+            pagamentoInfo.style.display = 'none';
+        }
+    }
+    
+    // Chama ao carregar a página para garantir o estado correto
+    togglePagamentoInfo();
+    statusSelect.addEventListener('change', togglePagamentoInfo);
+    
+    // Inicializar campos de select2
     $(document).ready(function() {
-        // Inicializar Select2 para o campo de aluno
         $('#{{ form.aluno.id_for_label }}').select2({
+            theme: 'bootstrap-5',
             placeholder: 'Selecione um aluno',
             allowClear: true
         });
+        
+        $('#{{ form.curso.id_for_label }}').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Selecione um curso',
+            allowClear: true
+        });
+        
+        $('#{{ form.turma.id_for_label }}').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Selecione uma turma',
+            allowClear: true
+        });
+        
+        // Filtrar turmas com base no curso selecionado
+        function carregarTurmas(cursoId, turmaSelecionada) {
+            var turmaSelect = $('#{{ form.turma.id_for_label }}');
+            turmaSelect.empty().append('<option value="">---------</option>');
+            if (cursoId) {
+                $.ajax({
+                    url: '{% url "pagamentos:turmas_por_curso" %}',
+                    data: {
+                        'curso_id': cursoId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        $.each(data, function(i, turma) {
+                            var option = $('<option></option>')
+                                .attr('value', turma.id)
+                                .text(turma.nome);
+                            if (turmaSelecionada && turma.id == turmaSelecionada) {
+                                option.attr('selected', 'selected');
+                            }
+                            turmaSelect.append(option);
+                        });
+                    }
+                });
+            }
+        }
+
+        $('#{{ form.curso.id_for_label }}').on('change', function() {
+            var cursoId = $(this).val();
+            carregarTurmas(cursoId, null);
+        });
+
+        // Ao carregar a página, se já houver curso selecionado, carregar as turmas
+        var cursoInicial = $('#{{ form.curso.id_for_label }}').val();
+        var turmaInicial = $('#{{ form.turma.id_for_label }}').val();
+        if (cursoInicial) {
+            carregarTurmas(cursoInicial, turmaInicial);
+        }
     });
+});
 </script>
 {% endblock %}

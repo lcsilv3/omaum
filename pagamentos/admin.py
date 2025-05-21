@@ -1,24 +1,39 @@
+"""
+Configuração do admin para o aplicativo de pagamentos.
+"""
 from django.contrib import admin
-from importlib import import_module
-
-
-# Função para obter o modelo Pagamento dinamicamente
-def get_pagamento_model():
-    pagamentos_module = import_module("pagamentos.models")
-    return getattr(pagamentos_module, "Pagamento")
-
-
-# Registrar o modelo Pagamento no admin
-Pagamento = get_pagamento_model()
-
+from .models import Pagamento
 
 @admin.register(Pagamento)
 class PagamentoAdmin(admin.ModelAdmin):
-    list_display = ("aluno", "valor", "data_pagamento", "status")
-    search_fields = ("aluno__nome", "status")
-    list_filter = ("status", "data_pagamento")
-    ordering = ("-data_pagamento",)
+    """Configuração do admin para o modelo Pagamento."""
+    list_display = ('aluno', 'valor', 'status', 'data_vencimento', 'data_pagamento')
+    search_fields = ('aluno__nome', 'aluno__cpf', 'status')
+    list_filter = ('status', 'data_vencimento')
 
+    fieldsets = [
+        ('Informações Básicas', {
+            'fields': [
+                'aluno',
+                'valor',
+                'data_vencimento',
+                'status',
+            ]
+        }),
+        ('Informações de Pagamento', {
+            'fields': [
+                'data_pagamento',
+                'valor_pago',
+                'metodo_pagamento',
+            ],
+            'classes': ['collapse'],
+        }),
+        ('Observações', {
+            'fields': ['observacoes'],
+            'classes': ['collapse'],
+        }),
+    ]
+    
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.select_related("aluno")
+        """Otimiza as consultas ao banco de dados."""
+        return super().get_queryset(request).select_related('aluno')

@@ -1,167 +1,247 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Relatório Financeiro{% endblock %}
 
+{% block extra_css %}
+<style>
+    .card-dashboard {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .card-dashboard:hover {
+        transform: translateY(-5px);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .status-indicator {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    
+    .status-pago {
+        background-color: #28a745;
+    }
+    
+    .status-pendente {
+        background-color: #ffc107;
+    }
+    
+    .status-atrasado {
+        background-color: #dc3545;
+    }
+    
+    .status-cancelado {
+        background-color: #6c757d;
+    }
+    
+    .table-financeiro th {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Relatório Financeiro</h1>
-        <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
+        <div>
+            <a href="{% url 'pagamentos:exportar_relatorio_pdf' %}?ano={{ ano_atual }}" class="btn btn-danger" target="_blank">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </a>
+            <a href="{% url 'pagamentos:exportar_relatorio_excel' %}?ano={{ ano_atual }}" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </a>
+        </div>
     </div>
     
+    <!-- Filtros -->
     <div class="card mb-4">
-        <div class="card-header">
+        <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Filtros</h5>
         </div>
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-6">
-                    <label for="periodo" class="form-label">Período</label>
-                    <select name="periodo" id="periodo" class="form-select">
-                        <option value="mes" {% if periodo == 'mes' %}selected{% endif %}>Mês Atual</option>
-                        <option value="trimestre" {% if periodo == 'trimestre' %}selected{% endif %}>Trimestre Atual</option>
-                        <option value="semestre" {% if periodo == 'semestre' %}selected{% endif %}>Semestre Atual</option>
-                        <option value="ano" {% if periodo == 'ano' %}selected{% endif %}>Ano Atual</option>
-                        <option value="personalizado" {% if periodo == 'personalizado' %}selected{% endif %}>Personalizado</option>
+                <div class="col-md-4">
+                    <label for="ano" class="form-label">Ano</label>
+                    <select class="form-select" id="ano" name="ano" onchange="this.form.submit()">
+                        {% for ano in anos_disponiveis %}
+                            <option value="{{ ano }}" {% if ano == ano_atual %}selected{% endif %}>{{ ano }}</option>
+                        {% endfor %}
                     </select>
                 </div>
-                
-                <div class="col-md-3 periodo-personalizado" {% if periodo != 'personalizado' %}style="display: none;"{% endif %}>
-                    <label for="data_inicio" class="form-label">Data Inicial</label>
-                    <input type="date" name="data_inicio" id="data_inicio" class="form-control" value="{{ data_inicio|date:'Y-m-d' }}">
+                <div class="col-md-4">
+                    <label for="mes" class="form-label">Mês (opcional)</label>
+                    <select class="form-select" id="mes" name="mes" onchange="this.form.submit()">
+                        <option value="">Todos os meses</option>
+                        {% for i in "123456789101112"|make_list %}
+                            {% with mes_num=forloop.counter %}
+                                <option value="{{ mes_num }}" {% if mes_num == mes_atual %}selected{% endif %}>
+                                    {{ mes_num|stringformat:"02d" }} - {% now "F"|date:"F"|cut:mes_num %}
+                                </option>
+                            {% endwith %}
+                        {% endfor %}
+                    </select>
                 </div>
-                
-                <div class="col-md-3 periodo-personalizado" {% if periodo != 'personalizado' %}style="display: none;"{% endif %}>
-                    <label for="data_fim" class="form-label">Data Final</label>
-                    <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ data_fim|date:'Y-m-d' }}">
-                </div>
-                
-                <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter"></i> Filtrar
-                    </button>
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status (opcional)</label>
+                    <select class="form-select" id="status" name="status" onchange="this.form.submit()">
+                        <option value="">Todos os status</option>
+                        <option value="PAGO" {% if filtros.status == 'PAGO' %}selected{% endif %}>Pago</option>
+                        <option value="PENDENTE" {% if filtros.status == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                        <option value="ATRASADO" {% if filtros.status == 'ATRASADO' %}selected{% endif %}>Atrasado</option>
+                        <option value="CANCELADO" {% if filtros.status == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+                    </select>
                 </div>
             </form>
         </div>
     </div>
     
+    <!-- Resumo -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card bg-primary text-white">
+            <div class="card card-dashboard bg-primary text-white">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Total</h5>
-                    <p class="card-text display-6">R$ {{ total_pago|add:total_pendente|add:total_cancelado|floatformat:2 }}</p>
+                    <h5 class="card-title">Total Geral</h5>
+                    <p class="card-text display-6">R$ {{ total_geral|floatformat:2 }}</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-success text-white">
+            <div class="card card-dashboard bg-success text-white">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Pago</h5>
+                    <h5 class="card-title">Total Pago</h5>
                     <p class="card-text display-6">R$ {{ total_pago|floatformat:2 }}</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-warning text-dark">
+            <div class="card card-dashboard bg-warning text-dark">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Pendente</h5>
+                    <h5 class="card-title">Total Pendente</h5>
                     <p class="card-text display-6">R$ {{ total_pendente|floatformat:2 }}</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-danger text-white">
+            <div class="card card-dashboard bg-danger text-white">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Atrasado</h5>
-                    <p class="card-text display-6">R$ {{ valor_atrasados|floatformat:2 }}</p>
+                    <h5 class="card-title">Total Atrasado</h5>
+                    <p class="card-text display-6">R$ {{ total_atrasado|floatformat:2 }}</p>
                 </div>
             </div>
         </div>
     </div>
     
+    <!-- Gráficos -->
     <div class="row mb-4">
-        <div class="col-md-6">
+        <div class="col-md-8">
             <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Pagamentos por Status</h5>
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Evolução Mensal</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="statusChart" height="250"></canvas>
+                    <div class="chart-container">
+                        <canvas id="graficoMensal"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Pagamentos por Mês</h5>
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Distribuição por Status</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="monthlyChart" height="250"></canvas>
+                    <div class="chart-container">
+                        <canvas id="graficoPizza"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <span class="status-indicator status-pago"></span> Pago
+                            </div>
+                            <strong>{{ total_pago|floatformat:2 }} ({{ porcentagem_pago|floatformat:1 }}%)</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <span class="status-indicator status-pendente"></span> Pendente
+                            </div>
+                            <strong>{{ total_pendente|floatformat:2 }} ({{ porcentagem_pendente|floatformat:1 }}%)</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <span class="status-indicator status-atrasado"></span> Atrasado
+                            </div>
+                            <strong>{{ total_atrasado|floatformat:2 }} ({{ porcentagem_atrasado|floatformat:1 }}%)</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <span class="status-indicator status-cancelado"></span> Cancelado
+                            </div>
+                            <strong>{{ total_cancelado|floatformat:2 }} ({{ porcentagem_cancelado|floatformat:1 }}%)</strong>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    {% if pagamentos_atrasados %}
-        <div class="card mb-4">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0">Pagamentos Atrasados</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead>
+    <!-- Tabela de dados mensais -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Dados Mensais - {{ ano_atual }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-financeiro">
+                    <thead>
+                        <tr>
+                            <th>Mês</th>
+                            <th class="text-success">Pago</th>
+                            <th class="text-warning">Pendente</th>
+                            <th class="text-danger">Atrasado</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dado in dados_mensais %}
                             <tr>
-                                <th>Aluno</th>
-                                <th>Descrição</th>
-                                <th>Valor</th>
-                                <th>Vencimento</th>
-                                <th>Dias em Atraso</th>
-                                <th>Ações</th>
+                                <td>{{ dado.nome_mes }}</td>
+                                <td class="text-success">R$ {{ dado.pago|floatformat:2 }}</td>
+                                <td class="text-warning">R$ {{ dado.pendente|floatformat:2 }}</td>
+                                <td class="text-danger">R$ {{ dado.atrasado|floatformat:2 }}</td>
+                                <td><strong>R$ {{ dado.total|floatformat:2 }}</strong></td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {% for pagamento in pagamentos_atrasados %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'alunos:detalhar_aluno' pagamento.aluno.cpf %}">
-                                            {{ pagamento.aluno.nome }}
-                                        </a>
-                                    </td>
-                                    <td>
-                                        {% if pagamento.matricula %}
-                                            {{ pagamento.matricula.turma.curso.nome }} - {{ pagamento.matricula.turma.nome }}
-                                            {% if pagamento.numero_parcela %}
-                                                <br><small>Parcela {{ pagamento.numero_parcela }}/{{ pagamento.total_parcelas }}</small>
-                                            {% endif %}
-                                        {% else %}
-                                            Pagamento Avulso
-                                        {% endif %}
-                                    </td>
-                                    <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
-                                    <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
-                                    <td>
-                                        <span class="badge bg-danger">{{ pagamento.dias_atraso }} dias</span>
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-success">
-                                            <i class="fas fa-check"></i> Pagar
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-active">
+                            <th>Total</th>
+                            <th class="text-success">R$ {{ total_pago|floatformat:2 }}</th>
+                            <th class="text-warning">R$ {{ total_pendente|floatformat:2 }}</th>
+                            <th class="text-danger">R$ {{ total_atrasado|floatformat:2 }}</th>
+                            <th>R$ {{ total_geral|floatformat:2 }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
-    {% endif %}
+    </div>
+    
+    <div class="text-muted text-center mb-4">
+        <small>Relatório gerado em {{ data_geracao|date:"d/m/Y H:i" }}</small>
+    </div>
 </div>
 {% endblock %}
 
@@ -169,109 +249,5 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Mostrar/ocultar campos de data personalizada
-        const periodoSelect = document.getElementById('periodo');
-        const camposPersonalizados = document.querySelectorAll('.periodo-personalizado');
-        
-        periodoSelect.addEventListener('change', function() {
-            if (this.value === 'personalizado') {
-                camposPersonalizados.forEach(campo => {
-                    campo.style.display = 'block';
-                });
-            } else {
-                camposPersonalizados.forEach(campo => {
-                    campo.style.display = 'none';
-                });
-            }
-        });
-        
-        // Gráfico de status
-        const statusCtx = document.getElementById('statusChart').getContext('2d');
-        const statusChart = new Chart(statusCtx, {
-            type: 'pie',
-            data: {
-                labels: [
-                    {% for item in pagamentos_por_status %}
-                        '{{ item.status|capfirst }}',
-                    {% endfor %}
-                ],
-                datasets: [{
-                    data: [
-                        {% for item in pagamentos_por_status %}
-                            {{ item.valor_total }},
-                        {% endfor %}
-                    ],
-                    backgroundColor: [
-                        '#28a745',  // Verde para pago
-                        '#ffc107',  // Amarelo para pendente
-                        '#6c757d',  // Cinza para cancelado
-                    ],
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                return `${label}: R$ ${value.toFixed(2)}`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Gráfico mensal
-        const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-        const monthlyChart = new Chart(monthlyCtx, {
-            type: 'bar',
-            data: {
-                labels: [
-                    {% for item in pagamentos_por_mes %}
-                        '{{ item.mes|date:"M/Y" }}',
-                    {% endfor %}
-                ],
-                datasets: [{
-                    label: 'Valor Total',
-                    data: [
-                        {% for item in pagamentos_por_mes %}
-                            {{ item.total }},
-                        {% endfor %}
-                    ],
-                    backgroundColor: '#007bff',
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return 'R$ ' + value.toFixed(2);
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.dataset.label || '';
-                                const value = context.raw || 0;
-                                return `${label}: R$ ${value.toFixed(2)}`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    });
-</script>
-{% endblock %}
+        // Dados para o gráfico mensal
+        const meses = [{% for dado in dados_mensais %}'{{ dado.nome_mes }}',{% endfor %}];

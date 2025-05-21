@@ -1,0 +1,139 @@
+        # Adicionar cabeçalhos
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        # Adicionar dados
+        for row_num, pagamento in enumerate(pagamentos, 2):
+            ws.cell(row=row_num, column=1).value = pagamento.id
+            ws.cell(row=row_num, column=2).value = pagamento.aluno.nome if pagamento.aluno else "N/A"
+            ws.cell(row=row_num, column=3).value = pagamento.valor
+            ws.cell(row=row_num, column=3).number_format = '#,##0.00'
+            ws.cell(row=row_num, column=4).value = pagamento.data.strftime("%d/%m/%Y") if pagamento.data else "N/A"
+            ws.cell(row=row_num, column=5).value = pagamento.get_metodo_pagamento_display() if hasattr(pagamento, 'get_metodo_pagamento_display') else pagamento.metodo_pagamento
+            ws.cell(row=row_num, column=6).value = pagamento.get_status_display() if hasattr(pagamento, 'get_status_display') else pagamento.status
+            ws.cell(row=row_num, column=7).value = pagamento.descricao
+        
+        # Ajustar largura das colunas
+        for col_num in range(1, len(headers) + 1):
+            col_letter = get_column_letter(col_num)
+            # Definir uma largura mínima
+            ws.column_dimensions[col_letter].width = 15
+            
+            # Ajustar para o conteúdo mais largo (até um limite razoável)
+            max_length = 0
+            for row_num in range(1, len(pagamentos) + 2):  # +2 para incluir o cabeçalho
+                cell = ws.cell(row=row_num, column=col_num)
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            adjusted_width = min(max_length + 2, 50)  # Limitar a 50 caracteres
+            ws.column_dimensions[col_letter].width = adjusted_width
+        
+        # Salvar o arquivo em um buffer
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        
+        # Configurar a resposta HTTP
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="pagamentos.xlsx"'
+        
+        return response
+    except Exception as e:
+        logger.error(f"Erro ao exportar pagamentos para Excel: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao exportar pagamentos para Excel: {str(e)}")
+        return redirect("pagamentos:listar_pagamentos")
+
+@login_required
+def exportar_pagamentos_pdf(request):
+    """Exporta os dados dos pagamentos para um arquivo PDF."""
+    try:
+        from django.http import HttpResponse
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import letter, landscape
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
+        import io
+        from datetime import datetime
+        
+        Pagamento = get_pagamento_model()
+        
+        # Buscar todos os pagamentos
+        pagamentos = Pagamento.objects.all().order_by('-data')
+        
+        # Criar um buffer para o PDF
+        buffer = io.BytesIO()
+        
+        # Configurar o documento PDF
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(letter),
+            title="Relatório de Pagamentos",
+            author="Sistema OMAUM"
+        )
+        
+        # Estilos para o PDF
+        styles = getSampleStyleSheet()
+        title_style = styles['Heading1']
+        
+        # Elementos do PDF
+        elements = []
+        
+        # Título
+        elements.append(Paragraph("Relatório de Pagamentos", title_style))
+        elements.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+        elements.append(Spacer(1, 20))
+        
+        # Dados para a tabela
+        data = [["ID", "Aluno", "Valor (R$)", "Data", "Método", "Status", "Descrição"]]
+        
+        for pagamento in pagamentos:
+            data.append([
+                str(pagamento.id),
+                pagamento.aluno.nome if pagamento.aluno else "N/A",
+                f"{pagamento.valor:.2f}",
+                pagamento.data.strftime("%d/%m/%Y") if pagamento.data else "N/A",
+                pagamento.get_metodo_pagamento_display() if hasattr(pagamento, 'get_metodo_pagamento_display') else pagamento.metodo_pagamento,
+                pagamento.get_status_display() if hasattr(pagamento, 'get_status_display') else pagamento.status,
+                pagamento.descricao[:50] + "..." if pagamento.descricao and len(pagamento.descricao) > 50 else pagamento.descricao or "N/A"
+            ])
+        
+        # Criar a tabela
+        table = Table(data, repeatRows=1)
+        
+        # Estilo da tabela
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+            ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        
+        elements.append(table)
+        
+        # Construir o PDF
+        doc.build(elements)
+        
+        # Preparar a resposta
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="pagamentos.pdf"'
+        
+        return response
+    except Exception as e:
+        logger.error(f"Erro ao exportar pagamentos para PDF: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao exportar pagamentos para PDF: {str(e)}")
+        return redirect("pagamentos:listar_pagamentos")

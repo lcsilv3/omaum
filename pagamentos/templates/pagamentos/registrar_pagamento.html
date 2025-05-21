@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registrar Pagamento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Registrar Pagamento</h1>
+        <div>
+            <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Dados do Pagamento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info d-flex align-items-center mb-4">
+                        {% if pagamento.aluno.foto %}
+                            <img src="{{ pagamento.aluno.foto.url }}" alt="Foto de {{ pagamento.aluno.nome }}" 
+                                 class="rounded-circle me-3" width="50" height="50" style="object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 50px; height: 50px; color: white;">
+                                {{ pagamento.aluno.nome|first|upper }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <strong>Aluno:</strong> {{ pagamento.aluno.nome }}
+                            <br>
+                            <small>CPF: {{ pagamento.aluno.cpf }}</small>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Valor</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="text" class="form-control" value="{{ pagamento.valor|floatformat:2 }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de Vencimento</label>
+                                <input type="text" class="form-control" value="{{ pagamento.data_vencimento|date:'d/m/Y' }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <input type="text" class="form-control" value="{% if pagamento.matricula %}{{ pagamento.matricula.turma.curso.nome }} - {{ pagamento.matricula.turma.nome }}{% else %}Pagamento Avulso{% endif %}" readonly>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="data_pagamento" class="form-label">Data de Pagamento</label>
+                                <input type="date" name="data_pagamento" id="data_pagamento" class="form-control" value="{{ data_hoje }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="metodo_pagamento" class="form-label">Método de Pagamento</label>
+                                <select name="metodo_pagamento" id="metodo_pagamento" class="form-select" required>
+                                    <option value="">Selecione um método</option>
+                                    <option value="DINHEIRO">Dinheiro</option>
+                                    <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                                    <option value="CARTAO_DEBITO">Cartão de Débito</option>
+                                    <option value="BOLETO">Boleto Bancário</option>
+                                    <option value="TRANSFERENCIA">Transferência</option>
+                                    <option value="PIX">PIX</option>
+                                    <option value="OUTRO">Outro</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="observacoes" class="form-label">Observações</label>
+                            <textarea name="observacoes" id="observacoes" class="form-control" rows="3">{{ pagamento.observacoes }}</textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Confirmar Pagamento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Informações</h5>
+                </div>
+                <div class="card-body">
+                    <p>Você está registrando o pagamento para <strong>{{ pagamento.aluno.nome }}</strong>.</p>
+                    <p>Valor a ser pago: <strong>R$ {{ pagamento.valor|floatformat:2 }}</strong></p>
+                    <p>Vencimento: <strong>{{ pagamento.data_vencimento|date:'d/m/Y' }}</strong></p>
+                    
+                    {% if pagamento.status == 'ATRASADO' %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Este pagamento está <strong>atrasado</strong>.
+                        </div>
+                    {% endif %}
+                    
+                    <hr>
+                    <p class="mb-0"><small>Ao confirmar o pagamento, o status será alterado para "Pago" e não poderá ser revertido facilmente.</small></p>
+                </div>
+            </div>
+            
+            {% if pagamento.matricula %}
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Dados da Matrícula</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Curso:</strong> {{ pagamento.matricula.turma.curso.nome }}</p>
+                    <p><strong>Turma:</strong> {{ pagamento.matricula.turma.nome }}</p>
+                    {% if pagamento.numero_parcela %}
+                        <p><strong>Parcela:</strong> {{ pagamento.numero_parcela }} de {{ pagamento.total_parcelas }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Definir data de pagamento padrão como hoje
+        const dataPagamentoInput = document.getElementById('data_pagamento');
+        if (!dataPagamentoInput.value) {
+            const hoje = new Date();
+            const ano = hoje.getFullYear();
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const dia = String(hoje.getDate()).padStart(2, '0');
+            dataPagamentoInput.value = `${ano}-${mes}-${dia}`;
+        }
+        
+        // Validar formulário antes de enviar
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const dataPagamento = document.getElementById('data_pagamento').value;
+            const metodoPagamento = document.getElementById('metodo_pagamento').value;
+            
+            if (!dataPagamento) {
+                e.preventDefault();
+                alert('Por favor, informe a data de pagamento.');
+                return false;
+            }
+            
+            if (!metodoPagamento) {
+                e.preventDefault();
+                alert('Por favor, selecione o método de pagamento.');
+                return false;
+            }
+            
+            return true;
+        });
+    });
+</script>
+{% endblock %}

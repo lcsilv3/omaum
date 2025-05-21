@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Detalhes do Pagamento{% endblock %}
 
@@ -7,10 +8,10 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Detalhes do Pagamento</h1>
         <div>
-            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary me-2">
-                <i class="fas fa-list"></i> Voltar para a lista
+            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <a href="{% url 'pagamentos:editar_pagamento' pagamento.id %}" class="btn btn-warning me-2">
+            <a href="{% url 'pagamentos:editar_pagamento' pagamento.id %}" class="btn btn-warning">
                 <i class="fas fa-edit"></i> Editar
             </a>
             <a href="{% url 'pagamentos:excluir_pagamento' pagamento.id %}" class="btn btn-danger">
@@ -27,55 +28,197 @@
         {% endfor %}
     {% endif %}
     
-    <div class="card">
-        <div class="card-header bg-primary text-white">
+    <div class="card mb-4">
+        <div class="card-header">
             <h5 class="mb-0">Informações do Pagamento</h5>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <p><strong>Aluno:</strong> {{ pagamento.aluno.nome }}</p>
-                    <p><strong>Valor:</strong> R$ {{ pagamento.valor|floatformat:2 }}</p>
+                    <h6>Aluno</h6>
+                    <p>
+                        <a href="{% url 'alunos:detalhar_aluno' pagamento.aluno.cpf %}">
+                            {{ pagamento.aluno.nome }}
+                        </a>
+                    </p>
+                    
+                    <h6>Valor</h6>
+                    <p>R$ {{ pagamento.valor|floatformat:2 }}</p>
+                    
+                    <h6>Data de Vencimento</h6>
+                    <p>{{ pagamento.data_vencimento|date:"d/m/Y" }}</p>
+                    
+                    <h6>Descrição</h6>
+                    <p>{{ pagamento.descricao }}</p>
+                    
+                    <h6>Tipo</h6>
+                    <p>{{ pagamento.get_tipo_display }}</p>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Data do Pagamento:</strong> {{ pagamento.data_pagamento|date:"d/m/Y" }}</p>
-                    <p><strong>Status:</strong> 
-                        <span class="badge {% if pagamento.status == 'pago' %}bg-success{% elif pagamento.status == 'pendente' %}bg-warning{% else %}bg-danger{% endif %}">
-                            {{ pagamento.get_status_display }}
-                        </span>
+                    <h6>Status</h6>
+                    <p>
+                        {% if pagamento.status == 'PAGO' %}
+                            <span class="badge bg-success">{{ pagamento.get_status_display }}</span>
+                        {% elif pagamento.status == 'PENDENTE' %}
+                            <span class="badge bg-warning">{{ pagamento.get_status_display }}</span>
+                        {% elif pagamento.status == 'ATRASADO' %}
+                            <span class="badge bg-danger">{{ pagamento.get_status_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ pagamento.get_status_display }}</span>
+                        {% endif %}
                     </p>
+                    
+                    {% if pagamento.status == 'PAGO' %}
+                        <h6>Data de Pagamento</h6>
+                        <p>{{ pagamento.data_pagamento|date:"d/m/Y" }}</p>
+                        
+                        <h6>Valor Pago</h6>
+                        <p>R$ {{ pagamento.valor_pago|floatformat:2 }}</p>
+                        
+                        <h6>Método de Pagamento</h6>
+                        <p>{{ pagamento.get_metodo_pagamento_display }}</p>
+                        
+                        {% if pagamento.comprovante %}
+                            <h6>Comprovante</h6>
+                            <p>
+                                <a href="{{ pagamento.comprovante.url }}" target="_blank" class="btn btn-sm btn-info">
+                                    <i class="fas fa-file-download"></i> Visualizar Comprovante
+                                </a>
+                            </p>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <h6 class="mb-2">Ações Disponíveis</h6>
+                            <a href="{% url 'pagamentos:registrar_pagamento' pagamento.id %}" class="btn btn-success">
+                                <i class="fas fa-check-circle"></i> Registrar Pagamento
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
+            
+            {% if pagamento.observacoes %}
+                <div class="mt-3">
+                    <h6>Observações</h6>
+                    <div class="p-3 bg-light rounded">
+                        {{ pagamento.observacoes|linebreaks }}
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if pagamento.matricula %}
+                <div class="mt-3">
+                    <h6>Matrícula Associada</h6>
+                    <div class="p-3 bg-light rounded">
+                        <p><strong>Curso:</strong> {{ pagamento.matricula.turma.curso.nome }}</p>
+                        <p><strong>Turma:</strong> {{ pagamento.matricula.turma.nome }}</p>
+                        {% if pagamento.numero_parcela %}
+                            <p><strong>Parcela:</strong> {{ pagamento.numero_parcela }} de {{ pagamento.total_parcelas }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-footer text-muted">
+            <small>Criado em: {{ pagamento.created_at|date:"d/m/Y H:i" }}</small>
+            <br>
+            <small>Última atualização: {{ pagamento.updated_at|date:"d/m/Y H:i" }}</small>
         </div>
     </div>
     
-    <div class="card mt-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0">Informações do Aluno</h5>
+    {% if pagamentos_relacionados %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Pagamentos Relacionados</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pag in pagamentos_relacionados %}
+                                <tr>
+                                    <td>
+                                        {{ pag.descricao }}
+                                        {% if pag.numero_parcela %}
+                                            <br><small>Parcela {{ pag.numero_parcela }}/{{ pag.total_parcelas }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>R$ {{ pag.valor|floatformat:2 }}</td>
+                                    <td>{{ pag.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if pag.status == 'PAGO' %}
+                                            <span class="badge bg-success">Pago</span>
+                                            {% if pag.data_pagamento %}
+                                                <br><small>em {{ pag.data_pagamento|date:"d/m/Y" }}</small>
+                                            {% endif %}
+                                        {% elif pag.status == 'PENDENTE' %}
+                                            <span class="badge bg-warning text-dark">Pendente</span>
+                                        {% elif pag.status == 'ATRASADO' %}
+                                            <span class="badge bg-danger">Atrasado</span>
+                                        {% elif pag.status == 'CANCELADO' %}
+                                            <span class="badge bg-secondary">Cancelado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'pagamentos:detalhar_pagamento' pag.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if pag.status == 'PENDENTE' or pag.status == 'ATRASADO' %}
+                                            <a href="{% url 'pagamentos:registrar_pagamento' pag.id %}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Histórico de Alterações</h5>
         </div>
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>CPF:</strong> {{ pagamento.aluno.cpf }}</p>
-                    <p><strong>Email:</strong> {{ pagamento.aluno.email }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Situação:</strong> {{ pagamento.aluno.get_situacao_display }}</p>
-                    <p><strong>Número Iniciático:</strong> {{ pagamento.aluno.numero_iniciatico|default:"Não informado" }}</p>
-                </div>
-            </div>
-            <div class="mt-3">
-                <a href="{% url 'alunos:detalhar_aluno' pagamento.aluno.cpf %}" class="btn btn-info">
-                    <i class="fas fa-user"></i> Ver Detalhes do Aluno
-                </a>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Usuário</th>
+                            <th>Ação</th>
+                            <th>Detalhes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in historico %}
+                            <tr>
+                                <td>{{ log.timestamp|date:"d/m/Y H:i" }}</td>
+                                <td>{{ log.usuario.username }}</td>
+                                <td>{{ log.get_acao_display }}</td>
+                                <td>{{ log.detalhes }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">Nenhum registro de alteração encontrado.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div>
-    
-    <div class="mt-4">
-        <a href="javascript:history.back()" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
     </div>
 </div>
 {% endblock %}

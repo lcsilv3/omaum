@@ -1,0 +1,426 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Financeiro{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Cabeçalho com botões de ação -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Dashboard Financeiro</h1>
+        <div>
+            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-list"></i> Lista de Pagamentos
+            </a>
+            <a href="{% url 'pagamentos:criar_pagamento' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Novo Pagamento
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="ano" class="form-label">Ano</label>
+                    <select class="form-select" id="ano" name="ano">
+                        {% for ano_opcao in anos_disponiveis %}
+                        <option value="{{ ano_opcao }}" {% if ano_opcao == ano_selecionado %}selected{% endif %}>{{ ano_opcao }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="curso" class="form-label">Curso</label>
+                    <select class="form-select" id="curso" name="curso">
+                        <option value="">Todos os cursos</option>
+                        {% for curso in cursos %}
+                        <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == filtros.curso %}selected{% endif %}>{{ curso.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="tipo" class="form-label">Tipo de Pagamento</label>
+                    <select class="form-select" id="tipo" name="tipo">
+                        <option value="">Todos os tipos</option>
+                        <option value="MENSALIDADE" {% if filtros.tipo == 'MENSALIDADE' %}selected{% endif %}>Mensalidade</option>
+                        <option value="MATRICULA" {% if filtros.tipo == 'MATRICULA' %}selected{% endif %}>Matrícula</option>
+                        <option value="MATERIAL" {% if filtros.tipo == 'MATERIAL' %}selected{% endif %}>Material</option>
+                        <option value="OUTRO" {% if filtros.tipo == 'OUTRO' %}selected{% endif %}>Outro</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <a href="{% url 'pagamentos:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Limpar Filtros
+                    </a>
+                    <a href="{% url 'pagamentos:exportar_relatorio_pdf' %}{{ request.GET.urlencode }}" class="btn btn-danger float-end">
+                        <i class="fas fa-file-pdf"></i> Exportar Relatório
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Resumo financeiro -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Receita Total</h5>
+                    <h2>R$ {{ resumo.receita_total|floatformat:2 }}</h2>
+                    <p class="mb-0">{{ resumo.total_pagos }} pagamentos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Pendente</h5>
+                    <h2>R$ {{ resumo.valor_pendente|floatformat:2 }}</h2>
+                    <p class="mb-0">{{ resumo.total_pendentes }} pagamentos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Atrasado</h5>
+                    <h2>R$ {{ resumo.valor_atrasado|floatformat:2 }}</h2>
+                    <p class="mb-0">{{ resumo.total_atrasados }} pagamentos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Previsão Mensal</h5>
+                    <h2>R$ {{ resumo.previsao_mensal|floatformat:2 }}</h2>
+                    <p class="mb-0">Média dos últimos 3 meses</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos financeiros -->
+    <div class="row">
+        <!-- Gráfico de receita mensal -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Receita Mensal ({{ ano_selecionado }})</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoReceitaMensal" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico de distribuição por status -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Distribuição por Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoDistribuicaoStatus" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Gráfico de distribuição por tipo -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Distribuição por Tipo</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoDistribuicaoTipo" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico de distribuição por curso -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Distribuição por Curso</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoDistribuicaoCurso" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pagamentos recentes -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Pagamentos Recentes</h5>
+        </div>
+        <div class="card-body">
+            {% if pagamentos_recentes %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Data</th>
+                            <th>Aluno</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pagamento in pagamentos_recentes %}
+                        <tr>
+                            <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
+                            <td>{{ pagamento.aluno.nome }}</td>
+                            <td>{{ pagamento.descricao|truncatechars:30 }}</td>
+                            <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if pagamento.status == 'PAGO' %}bg-success
+                                    {% elif pagamento.status == 'PENDENTE' %}bg-warning
+                                    {% elif pagamento.status == 'ATRASADO' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ pagamento.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-end mt-3">
+                <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-outline-primary">
+                    Ver todos os pagamentos
+                </a>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Não há pagamentos recentes para exibir.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Pagamentos atrasados -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Pagamentos Atrasados</h5>
+        </div>
+        <div class="card-body">
+            {% if pagamentos_atrasados %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Vencimento</th>
+                            <th>Aluno</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Dias Atrasados</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pagamento in pagamentos_atrasados %}
+                        <tr>
+                            <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
+                            <td>{{ pagamento.aluno.nome }}</td>
+                            <td>{{ pagamento.descricao|truncatechars:30 }}</td>
+                            <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
+                            <td>{{ pagamento.dias_atrasados }}</td>
+                            <td>
+                                <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Não há pagamentos atrasados para exibir.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Gráfico de receita mensal
+    const ctxReceita = document.getElementById('graficoReceitaMensal').getContext('2d');
+    const graficoReceitaMensal = new Chart(ctxReceita, {
+        type: 'bar',
+        data: {
+            labels: {{ meses|safe }},
+            datasets: [{
+                label: 'Receita Mensal (R$)',
+                data: {{ valores_mensais|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Receita Mensal do Ano de {{ ano_selecionado }}'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de distribuição por status
+    const ctxStatus = document.getElementById('graficoDistribuicaoStatus').getContext('2d');
+    const graficoDistribuicaoStatus = new Chart(ctxStatus, {
+        type: 'pie',
+        data: {
+            labels: ['Pago', 'Pendente', 'Atrasado'],
+            datasets: [{
+                data: [{{ resumo.total_pagos }}, {{ resumo.total_pendentes }}, {{ resumo.total_atrasados }}],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.7)',
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(220, 53, 69, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Distribuição de Pagamentos por Status'
+                }
+            }
+        }
+    });
+
+    // Gráfico de distribuição por tipo
+    const ctxTipo = document.getElementById('graficoDistribuicaoTipo').getContext('2d');
+    const graficoDistribuicaoTipo = new Chart(ctxTipo, {
+        type: 'pie',
+        data: {
+            labels: ['Mensalidade', 'Matrícula', 'Material', 'Outro'],
+            datasets: [{
+                data: [{{ resumo.mensalidades }}, {{ resumo.matriculas }}, {{ resumo.materiais }}, {{ resumo.outros }}],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Distribuição de Pagamentos por Tipo'
+                }
+            }
+        }
+    });
+
+    // Gráfico de distribuição por curso
+    const ctxCurso = document.getElementById('graficoDistribuicaoCurso').getContext('2d');
+    const graficoDistribuicaoCurso = new Chart(ctxCurso, {
+        type: 'pie',
+        data: {
+            labels: {{ cursos_nomes|safe }},
+            datasets: [{
+                data: {{ cursos_valores|safe }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Distribuição de Pagamentos por Curso'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

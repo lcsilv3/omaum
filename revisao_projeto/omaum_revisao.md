@@ -8,15 +8,15 @@
 python
 """
 Configuração de URLs do projeto OMAUM.
-
 A lista `urlpatterns` roteia URLs para views. Para mais informações, consulte:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
 """
-
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from core import views as core_views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -36,6 +36,10 @@ urlpatterns = [
     path('pagamentos/', include('pagamentos.urls', namespace='pagamentos')),
     # URLs de autenticação do Django
     path('accounts/', include('django.contrib.auth.urls')),
+    # Adicionar rota para 'entrar/'
+    path('entrar/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    # Adicionar rota para 'register'
+    path('register/', core_views.registro_usuario, name='register'),
 ]
 
 # Configurações para ambiente de desenvolvimento
@@ -609,6 +613,8 @@ html
                                 <ul class="dropdown-menu" aria-labelledby="avaliacaoDropdown">
                                     <li><a class="dropdown-item" href="{% url 'notas:listar_notas' %}">Notas</a></li>
                                     <li><a class="dropdown-item" href="{% url 'pagamentos:listar_pagamentos' %}">Pagamentos</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'pagamentos:pagamentos_por_turma' %}">Pagamentos por Turma</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'pagamentos:relatorio_financeiro' %}">Relatório Financeiro</a></li>
                                 </ul>
                             </li>
                             
@@ -638,7 +644,7 @@ html
                                         {% for pagamento in pagamentos_atrasados|slice:":5" %}
                                             <li>
                                                 <a class="dropdown-item text-danger" href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}">
-                                                    <i class="fas fa-exclamation-circle"></i> 
+                                                    <i class="fas fa-exclamation-circle"></i>
                                                     Pagamento atrasado: {{ pagamento.aluno.nome }} - R$ {{ pagamento.valor|floatformat:2 }}
                                                     <small class="d-block text-muted">Vencido há {{ pagamento.dias_atraso }} dias</small>
                                                 </a>
@@ -666,12 +672,14 @@ html
                                     <li><a class="dropdown-item" href="{% url 'admin:index' %}">Administração</a></li>
                                     <!-- Removendo o link para alterar senha que pode não existir -->
                                     <li><hr class="dropdown-divider"></li>
-                                                                    <li>
-                                                                        <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                                                                            {% csrf_token %}
-                                                                            <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left;">Sair</button>
-                                                                        </form>
-                                                                    </li>
+                                    
+                                    <li>
+                                        
+                                        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left;">Sair</button>
+                                        </form>
+                                    </li>
                                 </ul>
                             </li>
                         {% else %}
@@ -687,19 +695,16 @@ html
             </div>
         </nav>
     </header>
-
     <main class="py-4">
         <div class="container">
             {% block content %}{% endblock %}
         </div>
     </main>
-
     <footer class="footer">
         <div class="container text-center">
             <p class="mb-0">&copy; {% now "Y" %} SGI - OmAum. Todos os direitos reservados.</p>
         </div>
     </footer>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
 </body>
@@ -1708,4 +1713,43 @@ html
   </div>
 </div>
 {% endblock %}
+
+
+
+### Arquivo: omaum\templates\sidebar.html
+
+html
+<!-- Adicionar esta seção ao menu lateral ou menu principal -->
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="pagamentosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-money-bill-wave"></i> Pagamentos
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="pagamentosDropdown">
+        <li>
+            <a class="dropdown-item" href="{% url 'pagamentos:listar_pagamentos' %}">
+                <i class="fas fa-list"></i> Listar Todos
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="{% url 'pagamentos:criar_pagamento' %}">
+                <i class="fas fa-plus"></i> Novo Pagamento
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="{% url 'pagamentos:pagamentos_por_turma' %}">
+                <i class="fas fa-users"></i> Por Turma
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="{% url 'pagamentos:relatorio_financeiro' %}">
+                <i class="fas fa-chart-line"></i> Relatório Financeiro
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="{% url 'pagamentos:exportar_pagamentos_pdf' %}">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </a>
+        </li>
+    </ul>
+</li>
 

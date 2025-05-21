@@ -5,85 +5,33 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Excluir Pagamento</h1>
-        <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-secondary btn-icon">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-    </div>
-    
-    <div class="card border-danger mb-4">
-        <div class="card-header bg-danger text-white">
-            <h5 class="mb-0">Confirmação de Exclusão</h5>
-        </div>
-        <div class="card-body">
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i> 
-                <strong>Atenção:</strong> Esta ação não pode ser desfeita.
-            </div>
-            
-            <p>Você tem certeza que deseja excluir o pagamento abaixo?</p>
-            
-            <div class="table-responsive mt-3">
-                <table class="table table-bordered">
-                    <tr>
-                        <th style="width: 30%">Aluno:</th>
-                        <td>{{ pagamento.aluno.nome }}</td>
-                    </tr>
-                    <tr>
-                        <th>Valor:</th>
-                        <td>R$ {{ pagamento.valor }}</td>
-                    </tr>
-                    <tr>
-                        <th>Data de Vencimento:</th>
-                        <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
-                    </tr>
-                    <tr>
-                        <th>Status:</th>
-                        <td>
-                            {% if pagamento.status == 'PENDENTE' %}
-                                <span class="badge bg-warning">{{ pagamento.get_status_display }}</span>
-                            {% elif pagamento.status == 'PAGO' %}
-                                <span class="badge bg-success">{{ pagamento.get_status_display }}</span>
-                            {% elif pagamento.status == 'ATRASADO' %}
-                                <span class="badge bg-danger">{{ pagamento.get_status_display }}</span>
-                            {% elif pagamento.status == 'CANCELADO' %}
-                                <span class="badge bg-secondary">{{ pagamento.get_status_display }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% if pagamento.observacoes %}
-                    <tr>
-                        <th>Observações:</th>
-                        <td>{{ pagamento.observacoes }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if pagamento.data_pagamento %}
-                    <tr>
-                        <th>Data de Pagamento:</th>
-                        <td>{{ pagamento.data_pagamento|date:"d/m/Y" }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if pagamento.valor_pago %}
-                    <tr>
-                        <th>Valor Pago:</th>
-                        <td>R$ {{ pagamento.valor_pago }}</td>
-                    </tr>
-                    {% endif %}
-                </table>
-            </div>
-            
-            <form method="post" class="mt-4">
-                {% csrf_token %}
-                <div class="d-flex justify-content-between">
-                    <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-secondary btn-icon">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-danger btn-icon">
-                        <i class="fas fa-trash"></i> Confirmar Exclusão
-                    </button>
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Confirmar Exclusão de Pagamento</h5>
                 </div>
-            </form>
+                <div class="card-body">
+                    <p>
+                        Tem certeza que deseja <strong>excluir</strong> o pagamento do aluno
+                        <strong>{{ pagamento.aluno.nome }}</strong>
+                        no valor de <strong>R$ {{ pagamento.valor|floatformat:2 }}</strong>
+                        com vencimento em <strong>{{ pagamento.data_vencimento|date:"d/m/Y" }}</strong>?
+                    </p>
+                    <p class="text-danger mb-0"><small>Esta ação não poderá ser desfeita.</small></p>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Cancelar
+                    </a>
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Excluir Pagamento
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -1,9 +1,23 @@
+"""
+Configuração do aplicativo de pagamentos.
+"""
 from django.apps import AppConfig
-import os
+from django.utils.translation import gettext_lazy as _
 
 
 class PagamentosConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
-    name = "pagamentos"
-    # Remova a linha abaixo ou corrija-a para:
+    """Configuração do aplicativo de pagamentos."""
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'pagamentos'
+    verbose_name = _('Pagamentos')
+    
+    def ready(self):
+        """
+        Inicializa o aplicativo quando o Django estiver pronto.
+        Importa os signals para garantir que sejam registrados.
+        """
+        try:
+            import pagamentos.signals  # noqa
+        except ImportError:
+            pass
     # path = os.path.dirname(__file__)

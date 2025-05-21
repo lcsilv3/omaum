@@ -1,0 +1,33 @@
+<!-- Adicionar esta seção ao menu lateral ou menu principal -->
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="pagamentosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-money-bill-wave"></i> Pagamentos
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="pagamentosDropdown">
+        <li>
+            <a class="dropdown-item" href="{% url 'pagamentos:listar_pagamentos' %}">
+                <i class="fas fa-list"></i> Listar Todos
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="{% url 'pagamentos:criar_pagamento' %}">
+                <i class="fas fa-plus"></i> Novo Pagamento
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="{% url 'pagamentos:pagamentos_por_turma' %}">
+                <i class="fas fa-users"></i> Por Turma
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="{% url 'pagamentos:relatorio_financeiro' %}">
+                <i class="fas fa-chart-line"></i> Relatório Financeiro
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="{% url 'pagamentos:exportar_pagamentos_pdf' %}">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </a>
+        </li>
+    </ul>
+</li>

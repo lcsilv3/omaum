@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pagamento Rápido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Cabeçalho com botões de ação -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Pagamento Rápido</h1>
+        <div>
+            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Lista de Pagamentos
+            </a>
+        </div>
+    </div>
+    
+    <!-- Formulário -->
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Registrar Pagamento</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="aluno" class="form-label">Aluno</label>
+                        <select class="form-select" id="aluno" name="aluno" required>
+                            <option value="">Selecione um aluno</option>
+                            {% for aluno in alunos %}
+                                <option value="{{ aluno.cpf }}" {% if form.aluno.value == aluno.cpf %}selected{% endif %}>
+                                    {{ aluno.nome }} ({{ aluno.cpf }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.aluno.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.aluno.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="tipo" class="form-label">Tipo de Pagamento</label>
+                        <select class="form-select" id="tipo" name="tipo" required>
+                            <option value="">Selecione o tipo</option>
+                            <option value="MENSALIDADE" {% if form.tipo.value == 'MENSALIDADE' %}selected{% endif %}>Mensalidade</option>
+                            <option value="MATRICULA" {% if form.tipo.value == 'MATRICULA' %}selected{% endif %}>Matrícula</option>
+                            <option value="MATERIAL" {% if form.tipo.value == 'MATERIAL' %}selected{% endif %}>Material</option>
+                            <option value="OUTRO" {% if form.tipo.value == 'OUTRO' %}selected{% endif %}>Outro</option>
+                        </select>
+                        {% if form.tipo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.tipo.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="valor" class="form-label">Valor (R$)</label>
+                        <input type="number" step="0.01" class="form-control" id="valor" name="valor" required value="{{ form.valor.value|default:'' }}">
+                        {% if form.valor.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.valor.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="metodo_pagamento" class="form-label">Método de Pagamento</label>
+                        <select class="form-select" id="metodo_pagamento" name="metodo_pagamento" required>
+                            <option value="">Selecione o método</option>
+                            <option value="PIX" {% if form.metodo_pagamento.value == 'PIX' %}selected{% endif %}>PIX</option>
+                            <option value="CARTAO_CREDITO" {% if form.metodo_pagamento.value == 'CARTAO_CREDITO' %}selected{% endif %}>Cartão de Crédito</option>
+                            <option value="CARTAO_DEBITO" {% if form.metodo_pagamento.value == 'CARTAO_DEBITO' %}selected{% endif %}>Cartão de Débito</option>
+                            <option value="DINHEIRO" {% if form.metodo_pagamento.value == 'DINHEIRO' %}selected{% endif %}>Dinheiro</option>
+                            <option value="BOLETO" {% if form.metodo_pagamento.value == 'BOLETO' %}selected{% endif %}>Boleto</option>
+                            <option value="TRANSFERENCIA" {% if form.metodo_pagamento.value == 'TRANSFERENCIA' %}selected{% endif %}>Transferência</option>
+                            <option value="OUTRO" {% if form.metodo_pagamento.value == 'OUTRO' %}selected{% endif %}>Outro</option>
+                        </select>
+                        {% if form.metodo_pagamento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.metodo_pagamento.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="descricao" class="form-label">Descrição</label>
+                        <input type="text" class="form-control" id="descricao" name="descricao" required value="{{ form.descricao.value|default:'' }}">
+                        {% if form.descricao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.descricao.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="comprovante" class="form-label">Comprovante (opcional)</label>
+                        <input type="file" class="form-control" id="comprovante" name="comprovante">
+                        {% if form.comprovante.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.comprovante.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="observacoes" class="form-label">Observações (opcional)</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ form.observacoes.value|default:'' }}</textarea>
+                        {% if form.observacoes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.observacoes.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-money-bill-wave"></i> Registrar Pagamento
+                    </button>
+                    <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar o select2 para o campo de aluno
+        $('#aluno').select2({
+            placeholder: 'Selecione um aluno',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        // Atualizar a descrição automaticamente quando o tipo mudar
+        $('#tipo').change(function() {
+            var tipo = $(this).val();
+            var descricao = '';
+            
+            if (tipo === 'MENSALIDADE') {
+                var dataAtual = new Date();
+                var mes = dataAtual.toLocaleString('pt-BR', { month: 'long' });
+                var ano = dataAtual.getFullYear();
+                descricao = 'Mensalidade - ' + mes + '/' + ano;
+            } else if (tipo === 'MATRICULA') {
+                descricao = 'Taxa de Matrícula';
+            } else if (tipo === 'MATERIAL') {
+                descricao = 'Material Didático';
+            }
+            
+            if (descricao) {
+                $('#descricao').val(descricao);
+            }
+        });
+        
+        // Formatar o campo de valor para mostrar como moeda
+        $('#valor').on('input', function() {
+            var value = $(this).val();
+            if (value) {
+                value = parseFloat(value).toFixed(2);
+                if (!isNaN(value)) {
+                    $(this).val(value);
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
