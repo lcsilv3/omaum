@@ -88,3 +88,33 @@
     </div>
 </div>
 {% endblock %}
+<form method="get" class="row g-3">
+    <div class="col-md-4">
+        <input type="text" name="q" class="form-control" placeholder="Buscar por nome ou descrição..." value="{{ query }}">
+    </div>
+    <div class="col-md-3">
+        <select name="codigo_curso" id="id_codigo_curso" class="form-select" aria-label="Selecionar curso">
+            <option value="">Todos os cursos</option>
+            {% for curso in cursos %}
+                <option value="{{ curso.codigo_curso }}" {% if codigo_curso_selecionado == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
+                    {{ curso.nome }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="turma" id="id_turma" class="form-select" aria-label="Selecionar turma">
+            <option value="">Todas as turmas</option>
+            {% for turma in turmas %}
+                <option value="{{ turma.id }}" {% if turma_selecionada == turma.id|stringformat:"s" %}selected{% endif %}>
+                    {{ turma.nome }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-search"></i> Filtrar
+        </button>
+    </div>
+</form>
+</select>

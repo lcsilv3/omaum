@@ -1077,6 +1077,19 @@ def dashboard_turmas(request):
         return redirect("turmas:listar_turmas")
 
 
+from django.http import JsonResponse
+from .models import Turma
+
+def turmas_por_curso(request):
+    codigo_curso = request.GET.get("codigo_curso")
+    turmas = []
+    if codigo_curso:
+        turmas_qs = Turma.objects.filter(curso__codigo_curso=codigo_curso)
+        turmas = [{"id": t.id, "nome": t.nome} for t in turmas_qs]
+    return JsonResponse({"turmas": turmas})
+    return JsonResponse({"turmas": turmas})
+
+
 ## Arquivos urls.py:
 
 
@@ -1130,8 +1143,10 @@ urlpatterns = [
     path("importar/", views.importar_turmas, name="importar_turmas"),
     path("relatorio/", views.relatorio_turmas, name="relatorio_turmas"),
     path("dashboard/", views.dashboard_turmas, name="dashboard_turmas"),
+    
+    # API endpoints
+    path("api/turmas-por-curso/", views.turmas_por_curso, name="turmas_por_curso"),
 ]
-
 
 
 ## Arquivos models.py:
@@ -2183,6 +2198,268 @@ html
     });
 </script>
 {% endblock %}
+
+
+
+### Arquivo: turmas\templates\turmas\detalhar_turma.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Turma{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Detalhes da Turma</h1>
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2>{{ turma.nome }}</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
+            <p><strong>Status:</strong> {{ turma.get_status_display }}</p>
+            <p><strong>Data de In√≠cio:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
+            <p><strong>Data de Fim:</strong> {{ turma.data_fim|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+
+    <h3>Alunos da Turma</h3>
+    <ul>
+        {% for matricula in turma.matriculas.all %}
+            <li>{{ matricula.aluno.nome }}</li>
+        {% empty %}
+            <li>Nenhum aluno matriculado.</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Atividades Relacionadas</h3>
+    <ul>
+        {% for atividade in turma.atividades_academicas.all %}
+            <li>
+                {{ atividade.nome }} - {{ atividade.get_tipo_atividade_display }} ({{ atividade.data_inicio|date:"d/m/Y H:i" }})
+                <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
+            </li>
+        {% empty %}
+            <li>Nenhuma atividade relacionada.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
+
+
+
+
+### Arquivo: turmas\templates\turmas\editar_turma.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Turma{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Ocultar os selects originais */
+    #id_instrutor, #id_instrutor_auxiliar, #id_auxiliar_instrucao {
+        display: none;
+    }
+    
+    /* Estilo para os resultados da busca */
+    .list-group-item-action {
+        cursor: pointer;
+    }
+    
+    /* Estilo para o contêiner de instrutor selecionado */
+    .selected-instrutor {
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Editar Turma: {{ turma.nome }}</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <form method="post">
+        {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
+        
+        <!-- Seção de Informações Básicas -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5>Informações Básicas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.nome %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.curso %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.vagas %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.status %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.dias_semana %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_inicio %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_fim %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.local %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.horario %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        {% include 'includes/form_field.html' with field=form.descricao %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção de Instrutores -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5>Instrutores</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Instrutor Principal -->
+                    <div class="col-md-4 mb-3">
+                        <label for="search-instrutor" class="form-label">Instrutor Principal</label>
+                        <input type="text" id="search-instrutor" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none"></div>
+                        <div id="selected-instrutor-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-instrutor-info">
+                                Nenhum instrutor selecionado
+                            </div>
+                        </div>
+                        <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.instrutor }}
+                    </div>
+                    
+                    <!-- Instrutor Auxiliar -->
+                    <div class="col-md-4 mb-3">
+                        <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
+                        <input type="text" id="search-instrutor-auxiliar" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-instrutor-auxiliar-info">
+                                Nenhum instrutor auxiliar selecionado
+                            </div>
+                        </div>
+                        <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.instrutor_auxiliar }}
+                    </div>
+                    
+                    <!-- Auxiliar de Instrução -->
+                    <div class="col-md-4 mb-3">
+                        <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
+                        <input type="text" id="search-auxiliar-instrucao" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-auxiliar-instrucao-info">
+                                Nenhum auxiliar de instrução selecionado
+                            </div>
+                        </div>
+                        <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
+                        <!-- Campo original oculto via CSS -->
+                        {{ form.auxiliar_instrucao }}
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
+                    O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mb-5">
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Atualizar Turma</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/instrutor_search.js' %}"></script>
+{% endblock %}
+
+
+
+
+### Arquivo: turmas\templates\turmas\excluir_turma.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Excluir Turma: {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Turma: {{ turma.nome }}</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div class="alert alert-danger">
+        <p>Você tem certeza que deseja excluir esta turma?</p>
+        <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
+    </div>
+
+    <!-- Padronizar botões de confirmação -->
+    <form method="post">
+        {% csrf_token %}
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Confirmar Exclusão
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+
 
 
 '''

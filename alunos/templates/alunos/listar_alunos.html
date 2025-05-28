@@ -85,10 +85,12 @@
                     </div>
                 </div>
                 <div class="col-md-4 col-lg-3">
-                    <select name="curso" class="form-select" title="Selecione um curso" aria-label="Selecione um curso">
+                    <select name="codigo_curso" class="form-select" aria-label="Filtrar por curso">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
-                            <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == curso_selecionado %}selected{% endif %}>{{ curso.nome }}</option>
+                            <option value="{{ curso.codigo_curso }}" {% if codigo_curso_selecionado == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
+                                {{ curso.nome }}
+                            </option>
                         {% endfor %}
                     </select>
                 </div>

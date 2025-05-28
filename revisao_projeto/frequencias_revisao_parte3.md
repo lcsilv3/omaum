@@ -4,6 +4,1293 @@
 ## Arquivos forms.py:
 
 
+### Arquivo: frequencias\templates\frequencias\estatisticas_frequencia.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Estatísticas de Frequência</h1>
+   
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+   
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="aluno" class="form-label">Aluno</label>
+                    <select name="aluno" id="aluno" class="form-select">
+                        <option value="">Todos</option>
+                        {% for aluno in alunos %}
+                            <option value="{{ aluno.id }}" {% if aluno_id == aluno.id|stringformat:"s" %}selected{% endif %}>{{ aluno.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="turma" class="form-label">Turma</label>
+                    <select name="turma" id="turma" class="form-select">
+                        <option value="">Todas</option>
+                        {% for turma in turmas %}
+                            <option value="{{ turma.id }}" {% if turma_id == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.id }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <a href="{% url 'estatisticas_frequencia' %}" class="btn btn-secondary">Limpar Filtros</a>
+                </div>
+            </form>
+        </div>
+    </div>
+   
+    <!-- Resumo Estatístico -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-4">
+                <div class="card-header">Total de Registros</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ total }}</h5>
+                    <p class="card-text">registros de frequência</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-4">
+                <div class="card-header">Presenças</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ presentes }}</h5>
+                    <p class="card-text">alunos presentes ({{ taxa_presenca|floatformat:2 }}%)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger mb-4">
+                <div class="card-header">Ausências</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ ausentes }}</h5>
+                    <p class="card-text">alunos ausentes ({{ 100|sub:taxa_presenca|floatformat:2 }}%)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+   
+    <!-- Gráfico (pode ser implementado com Chart.js) -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Gráfico de Frequência</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="graficoFrequencia" width="400" height="200"></canvas>
+        </div>
+    </div>
+   
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Voltar para Lista</a>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var ctx = document.getElementById('graficoFrequencia').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Presentes', 'Ausentes'],
+                datasets: [{
+                    label: 'Frequência',
+                    data: [{{ presentes }}, {{ ausentes }}],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',
+                        'rgba(220, 53, 69, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribuição de Frequência'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
+
+
+
+
+### Arquivo: frequencias\templates\frequencias\excluir_frequencia.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Registro de Frequência</h1>
+  
+    <div class="alert alert-danger">
+      <p>Tem certeza que deseja excluir o registro de frequência de <strong>{{ frequencia.aluno.nome }}</strong> na atividade <strong>{{ frequencia.atividade.nome }}</strong> do dia <strong>{{ frequencia.data|date:"d/m/Y" }}</strong>?</p>
+    </div>
+  
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Sim, excluir</button>
+      <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
+
+
+
+
+### Arquivo: frequencias\templates\frequencias\excluir_frequencia_mensal.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Excluir Frequência Mensal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Confirmar Exclusão</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Você está prestes a excluir a seguinte frequência mensal:
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <p><strong>Turma:</strong> {{ frequencia.turma.nome }}</p>
+                            <p><strong>Período:</strong> {{ frequencia.get_mes_display }}/{{ frequencia.ano }}</p>
+                            <p><strong>Percentual Mínimo:</strong> {{ frequencia.percentual_minimo }}%</p>
+                            <p><strong>Alunos em Carência:</strong> {{ frequencia.carencias.count }}</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-danger">Esta ação não pode ser desfeita e também excluirá todas as carências associadas. Deseja continuar?</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Confirmar Exclusão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: frequencias\templates\frequencias\filtro_painel_frequencias.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Painel de Frequências - Filtros{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Painel de Frequências</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Selecione a Turma e o Período</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="{{ form.turma.id_for_label }}" class="form-label">{{ form.turma.label }}</label>
+                        {{ form.turma }}
+                        {% if form.turma.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.turma.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="{{ form.mes_inicio.id_for_label }}" class="form-label">{{ form.mes_inicio.label }}</label>
+                        {{ form.mes_inicio }}
+                        {% if form.mes_inicio.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.mes_inicio.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="{{ form.ano_inicio.id_for_label }}" class="form-label">{{ form.ano_inicio.label }}</label>
+                        {{ form.ano_inicio }}
+                        {% if form.ano_inicio.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.ano_inicio.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="{{ form.mes_fim.id_for_label }}" class="form-label">{{ form.mes_fim.label }}</label>
+                        {{ form.mes_fim }}
+                        {% if form.mes_fim.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.mes_fim.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="{{ form.ano_fim.id_for_label }}" class="form-label">{{ form.ano_fim.label }}</label>
+                        {{ form.ano_fim }}
+                        {% if form.ano_fim.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.ano_fim.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Gerar Relatório
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Validar que a data final é posterior à data inicial
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            const mesInicio = parseInt(document.getElementById('id_mes_inicio').value);
+            const anoInicio = parseInt(document.getElementById('id_ano_inicio').value);
+            const mesFim = parseInt(document.getElementById('id_mes_fim').value);
+            const anoFim = parseInt(document.getElementById('id_ano_fim').value);
+            
+            const dataInicio = new Date(anoInicio, mesInicio - 1, 1);
+            const dataFim = new Date(anoFim, mesFim - 1, 1);
+            
+            if (dataFim < dataInicio) {
+                e.preventDefault();
+                alert('A data final deve ser posterior à data inicial.');
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+
+
+### Arquivo: frequencias\templates\frequencias\formulario_frequencia_mensal.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ titulo }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.turma.id_for_label }}" class="form-label">{{ form.turma.label }}</label>
+                            {{ form.turma }}
+                            {% if form.turma.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.turma.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.turma.help_text %}
+                            <div class="form-text">{{ form.turma.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.mes.id_for_label }}" class="form-label">{{ form.mes.label }}</label>
+                                    {{ form.mes }}
+                                    {% if form.mes.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.mes.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.mes.help_text %}
+                                    <div class="form-text">{{ form.mes.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.ano.id_for_label }}" class="form-label">{{ form.ano.label }}</label>
+                                    {{ form.ano }}
+                                    {% if form.ano.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.ano.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.ano.help_text %}
+                                    <div class="form-text">{{ form.ano.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.percentual_minimo.id_for_label }}" class="form-label">
+                                {{ form.percentual_minimo.label }}
+                            </label>
+                            <div class="input-group">
+                                {{ form.percentual_minimo }}
+                                <span class="input-group-text">%</span>
+                            </div>
+                            {% if form.percentual_minimo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.percentual_minimo.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.percentual_minimo.help_text %}
+                            <div class="form-text">{{ form.percentual_minimo.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar Select2 para melhorar a experiência de seleção
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %}
+
+
+
+### Arquivo: frequencias\templates\frequencias\gerar_frequencia_mensal.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Gerar Frequência Mensal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Gerar Frequência Mensal</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Selecione a Turma e o Período</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="{{ form.turma.id_for_label }}" class="form-label">{{ form.turma.label }}</label>
+                        {{ form.turma }}
+                        {% if form.turma.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.turma.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="{{ form.mes.id_for_label }}" class="form-label">{{ form.mes.label }}</label>
+                        {{ form.mes }}
+                        {% if form.mes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.mes.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="{{ form.ano.id_for_label }}" class="form-label">{{ form.ano.label }}</label>
+                        {{ form.ano }}
+                        {% if form.ano.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.ano.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="{{ form.percentual_minimo.id_for_label }}" class="form-label">{{ form.percentual_minimo.label }}</label>
+                        {{ form.percentual_minimo }}
+                        {% if form.percentual_minimo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.percentual_minimo.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Esta operação irá gerar ou atualizar o registro de frequência mensal para a turma e período selecionados. Todas as presenças registradas no período serão consideradas no cálculo.
+                </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calculator"></i> Gerar Frequência
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: frequencias\templates\frequencias\gerenciar_carencias.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Carências{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gerenciar Carências</h1>
+        <div>
+            <a href="{% url 'frequencias:detalhar_frequencia_mensal' frequencia.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Informações da frequência -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Informações da Frequência</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <p><strong>Turma:</strong> {{ frequencia.turma.nome }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Mês/Ano:</strong> {{ frequencia.get_mes_display }}/{{ frequencia.ano }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Percentual Mínimo:</strong> {{ frequencia.percentual_minimo }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de alunos com carência -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Alunos com Carência</h5>
+        </div>
+        <div class="card-body">
+            {% if carencias %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Aluno</th>
+                                <th class="text-center">Presenças</th>
+                                <th class="text-center">Percentual</th>
+                                <th class="text-center">Carências</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for carencia in carencias %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if carencia.aluno.foto %}
+                                                <img src="{{ carencia.aluno.foto.url }}" alt="Foto de {{ carencia.aluno.nome }}" 
+                                                    class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
+                                            {% else %}
+                                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" 
+                                                    style="width: 40px; height: 40px; color: white;">
+                                                    {{ carencia.aluno.nome|first|upper }}
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <div>{{ carencia.aluno.nome }}</div>
+                                                <small class="text-muted">{{ carencia.aluno.cpf }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {{ carencia.total_presencas }}/{{ carencia.total_atividades }}
+                                    </td>
+                                    <td class="text-center">
+                                        {{ carencia.percentual_presenca|floatformat:1 }}%
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger">{{ carencia.numero_carencias }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <form method="post" action="{% url 'frequencias:atualizar_carencia' carencia.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="liberado" value="true">
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="fas fa-check"></i> Liberar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i> Não há alunos com carência nesta frequência.
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'frequencias:detalhar_frequencia_mensal' frequencia.id %}" class="btn btn-secondary">
+                Voltar
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: frequencias\templates\frequencias\historico_frequencia.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Histórico de Frequência - {{ aluno.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Padronizar botões de ação -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Histórico de Frequência</h1>
+        <div>
+            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary me-2">
+                <i class="fas fa-user"></i> Perfil do Aluno
+            </a>
+            <a href="{% url 'frequencias:exportar_historico' aluno.cpf %}" class="btn btn-success">
+                <i class="fas fa-file-csv"></i> Exportar CSV
+            </a>
+        </div>
+    </div>
+    
+    <!-- Informações do aluno -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Informações do Aluno</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                {% if aluno.foto %}
+                <img src="{{ aluno.foto.url }}" alt="{{ aluno.nome }}" 
+                     class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
+                {% else %}
+                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+                     style="width: 60px; height: 60px; color: white; font-size: 1.5rem;">
+                    {{ aluno.nome|first|upper }}
+                </div>
+                {% endif %}
+                <div>
+                    <h5 class="mb-1">{{ aluno.nome }}</h5>
+                    <p class="mb-0">{{ aluno.email }}</p>
+                    <p class="mb-0">CPF: {{ aluno.cpf }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="curso" class="form-label">Curso</label>
+                    <select class="form-select" id="curso" name="curso">
+                        <option value="">Todos os cursos</option>
+                        {% for curso in cursos %}
+                        <option value="{{ curso.codigo_curso }}" {% if filtros.curso == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
+                            {{ curso.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label for="turma" class="form-label">Turma</label>
+                    <select class="form-select" id="turma" name="turma">
+                        <option value="">Todas as turmas</option>
+                        {% for turma in turmas %}
+                        <option value="{{ turma.id }}" {% if filtros.turma == turma.id|stringformat:"s" %}selected{% endif %}>
+                            {{ turma.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label for="periodo" class="form-label">Período</label>
+                    <select class="form-select" id="periodo" name="periodo">
+                        <option value="">Todos os períodos</option>
+                        {% for ano in anos %}
+                            <optgroup label="{{ ano }}">
+                                {% for mes in meses %}
+                                <option value="{{ ano }}-{{ mes.0 }}" 
+                                        {% if filtros.periodo == ano|stringformat:"s"|add:"-"|add:mes.0|stringformat:"s" %}selected{% endif %}>
+                                    {{ mes.1 }}/{{ ano }}
+                                </option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Padronizar botões de filtro -->
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <a href="{% url 'frequencias:historico_frequencia' aluno.cpf %}" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Limpar Filtros
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Estatísticas</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Média Geral de Frequência</h5>
+                            <p class="card-text display-4">{{ media_geral|floatformat:1 }}%</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Total de Carências</h5>
+                            <p class="card-text display-4">{{ carencias.count }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <canvas id="grafico-evolucao"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Registros de frequência -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Registros de Frequência</h5>
+        </div>
+        <div class="card-body">
+            {% if registros %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Período</th>
+                            <th>Curso</th>
+                            <th>Turma</th>
+                            <th>Percentual de Presença</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in registros %}
+                        <tr>
+                            <td>{{ registro.frequencia_mensal.get_mes_display }}/{{ registro.frequencia_mensal.ano }}</td>
+                            <td>{{ registro.frequencia_mensal.turma.curso.nome }}</td>
+                            <td>{{ registro.frequencia_mensal.turma.nome }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar {% if registro.percentual_presenca < 75 %}bg-danger{% else %}bg-success{% endif %}" role="progressbar" 
+                                         style="width: {{ registro.percentual_presenca }}%;" 
+                                         aria-valuenow="{{ registro.percentual_presenca }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        {{ registro.percentual_presenca }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if registro.percentual_presenca < 75 %}
+                                    {% if registro.liberado %}
+                                        <span class="badge bg-success">Liberado</span>
+                                    {% else %}
+                                        {% if registro.status == 'PENDENTE' %}
+                                            <span class="badge bg-danger">Carência Pendente</span>
+                                        {% elif registro.status == 'EM_ACOMPANHAMENTO' %}
+                                            <span class="badge bg-warning text-dark">Em Acompanhamento</span>
+                                        {% elif registro.status == 'RESOLVIDO' %}
+                                            <span class="badge bg-success">Resolvido</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Carência</span>
+                                        {% endif %}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-success">Regular</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'frequencias:detalhar_frequencia_mensal' registro.frequencia_mensal.id %}" 
+                                       class="btn btn-sm btn-info" title="Ver frequência mensal">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </a>
+                                    {% if registro.percentual_presenca < 75 and not registro.liberado %}
+                                        <a href="{% url 'frequencias:detalhar_carencia' registro.id %}" 
+                                           class="btn btn-sm btn-warning" title="Ver carência">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'turmas:detalhar_turma' registro.frequencia_mensal.turma.id %}" 
+                                       class="btn btn-sm btn-primary" title="Ver turma">
+                                        <i class="fas fa-users"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-3">
+                                <p class="mb-0">Nenhum registro de frequência encontrado com os filtros selecionados.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div>
+                <p class="mb-0">Exibindo {{ registros|length }} de {{ total_registros }} registros</p>
+            </div>
+            
+            {% if registros.has_other_pages %}
+            <nav aria-label="Paginação" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if registros.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ registros.previous_page_number }}{% if filtros.curso %}&curso={{ filtros.curso }}{% endif %}{% if filtros.turma %}&turma={{ filtros.turma }}{% endif %}{% if filtros.periodo %}&periodo={{ filtros.periodo }}{% endif %}">Anterior</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Anterior</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in registros.paginator.page_range %}
+                    {% if registros.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if filtros.curso %}&curso={{ filtros.curso }}{% endif %}{% if filtros.turma %}&turma={{ filtros.turma }}{% endif %}{% if filtros.periodo %}&periodo={{ filtros.periodo }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if registros.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ registros.next_page_number }}{% if filtros.curso %}&curso={{ filtros.curso }}{% endif %}{% if filtros.turma %}&turma={{ filtros.turma }}{% endif %}{% if filtros.periodo %}&periodo={{ filtros.periodo }}{% endif %}">Próxima</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Próxima</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Não há registros de frequência para este aluno com os filtros selecionados.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Carências -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Histórico de Carências</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Curso</th>
+                            <th>Turma</th>
+                            <th>Período</th>
+                            <th>% Presença</th>
+                            <th>Data Identificação</th>
+                            <th>Status</th>
+                            <th>Notificação</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for carencia in carencias %}
+                        <tr>
+                            <td>{{ carencia.frequencia_mensal.turma.curso.nome }}</td>
+                            <td>{{ carencia.frequencia_mensal.turma.nome }}</td>
+                            <td>{{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                         style="width: {{ carencia.percentual_presenca }}%;" 
+                                         aria-valuenow="{{ carencia.percentual_presenca }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ carencia.percentual_presenca|floatformat:1 }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ carencia.data_identificacao|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if carencia.status == 'PENDENTE' %}
+                                <span class="badge bg-danger">Pendente</span>
+                                {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}
+                                <span class="badge bg-warning text-dark">Em Acompanhamento</span>
+                                {% elif carencia.status == 'RESOLVIDO' %}
+                                <span class="badge bg-success">Resolvido</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if carencia.notificacao %}
+                                    {% if carencia.notificacao.status == 'PENDENTE' %}
+                                    <span class="badge bg-secondary">Não Enviada</span>
+                                    {% elif carencia.notificacao.status == 'ENVIADA' %}
+                                    <span class="badge bg-info">Enviada</span>
+                                    {% elif carencia.notificacao.status == 'LIDA' %}
+                                    <span class="badge bg-primary">Lida</span>
+                                    {% elif carencia.notificacao.status == 'RESPONDIDA' %}
+                                    <span class="badge bg-success">Respondida</span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="badge bg-secondary">Não Criada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if carencia.notificacao %}
+                                    <a href="{% url 'frequencias:detalhar_notificacao' carencia.notificacao.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-envelope"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-3">
+                                <p class="mb-0">Nenhuma carência encontrada com os filtros selecionados.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de evolução de frequência
+        const ctxEvolucao = document.getElementById('grafico-evolucao').getContext('2d');
+        new Chart(ctxEvolucao, {
+            type: 'line',
+            data: {
+                labels: {{ periodos_labels|safe }},
+                datasets: [{
+                    label: 'Percentual de Presença',
+                    data: {{ percentuais_presenca|safe }},
+                    backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.raw.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Atualizar turmas quando o curso for alterado
+        const cursoSelect = document.getElementById('curso');
+        const turmaSelect = document.getElementById('turma');
+        
+        cursoSelect.addEventListener('change', function() {
+            const cursoId = this.value;
+            
+            // Limpar o select de turmas
+            turmaSelect.innerHTML = '<option value="">Todas as turmas</option>';
+            
+            if (cursoId) {
+                // Fazer uma requisição AJAX para buscar as turmas do curso
+                fetch(`/frequencias/api/turmas-por-curso/${cursoId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.turmas) {
+                            data.turmas.forEach(turma => {
+                                const option = document.createElement('option');
+                                option.value = turma.id;
+                                option.textContent = turma.nome;
+                                turmaSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => console.error('Erro ao buscar turmas:', error));
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+
+
+### Arquivo: frequencias\templates\frequencias\importar_frequencias.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Importar Frequências{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Importar Frequências Mensais</h1>
+    
+    <div class="card">
+        <div class="card-body">
+            <p class="mb-3">Faça upload de um arquivo CSV contendo os dados das frequências mensais.</p>
+            
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="csv_file" class="form-label">Arquivo CSV</label>
+                    <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
+                    <div class="form-text">O arquivo deve ter cabeçalhos: Turma, Mês, Ano, Percentual Mínimo</div>
+                </div>
+                
+                <div class="d-flex">
+                    <button type="submit" class="btn btn-primary me-2">Importar</button>
+                    <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="mt-3">
+        <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-link">Voltar para a lista de frequências</a>
+    </div>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: frequencias\templates\frequencias\iniciar_acompanhamento.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Acompanhamento de Carência{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Iniciar Acompanhamento de Carência</h1>
+        <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    <!-- Informações da carência -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Informações da Carência</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Aluno:</strong> {{ carencia.aluno.nome }}</p>
+                    <p><strong>Curso:</strong> {{ carencia.frequencia_mensal.turma.curso.nome }}</p>
+                    <p><strong>Turma:</strong> {{ carencia.frequencia_mensal.turma.nome }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Período:</strong> {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}</p>
+                    <p><strong>Percentual de Presença:</strong> {{ carencia.percentual_presenca }}%</p>
+                    <p><strong>Status Atual:</strong> {{ carencia.get_status_display }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de acompanhamento -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Iniciar Acompanhamento</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea class="form-control" id="observacoes" name="observacoes" rows="5" required></textarea>
+                    <div class="form-text">Descreva as ações que serão tomadas para acompanhar esta carência.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="prazo_resolucao" class="form-label">Prazo Estimado para Resolução</label>
+                    <input type="date" class="form-control" id="prazo_resolucao" name="prazo_resolucao" 
+                           min="{{ data_atual|date:'Y-m-d' }}" required>
+                    <div class="form-text">Defina um prazo para a resolução desta carência.</div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="criar_notificacao" name="criar_notificacao" checked>
+                    <label class="form-check-label" for="criar_notificacao">
+                        Criar notificação para o aluno
+                    </label>
+                </div>
+                
+                <div id="notificacao_fields" class="border p-3 rounded mb-3">
+                    <h6>Dados da Notificação</h6>
+                    
+                    <div class="mb-3">
+                        <label for="assunto" class="form-label">Assunto</label>
+                        <input type="text" class="form-control" id="assunto" name="assunto" 
+                               value="Notificação de Carência - {{ carencia.frequencia_mensal.turma.curso.nome }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mensagem" class="form-label">Mensagem</label>
+                        <textarea class="form-control" id="mensagem" name="mensagem" rows="5">Prezado(a) {{ carencia.aluno.nome }},
+
+Identificamos que sua frequência no curso {{ carencia.frequencia_mensal.turma.curso.nome }}, turma {{ carencia.frequencia_mensal.turma.nome }}, no período de {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }} está abaixo do mínimo necessário (75%).
+
+Seu percentual atual de presença é de {{ carencia.percentual_presenca }}%.
+
+Por favor, entre em contato com a secretaria para regularizar sua situação.
+
+Atenciosamente,
+Equipe OMAUM</textarea>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="enviar_agora" name="enviar_agora" checked>
+                        <label class="form-check-label" for="enviar_agora">
+                            Enviar notificação imediatamente
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-clock"></i> Iniciar Acompanhamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const criarNotificacaoCheckbox = document.getElementById('criar_notificacao');
+        const notificacaoFields = document.getElementById('notificacao_fields');
+        
+        criarNotificacaoCheckbox.addEventListener('change', function() {
+            notificacaoFields.style.display = this.checked ? 'block' : 'none';
+        });
+        
+        // Definir prazo padrão para 7 dias a partir de hoje
+        const prazoInput = document.getElementById('prazo_resolucao');
+        if (prazoInput) {
+            const hoje = new Date();
+            const prazo = new Date(hoje);
+            prazo.setDate(hoje.getDate() + 7);
+            
+            const ano = prazo.getFullYear();
+            const mes = String(prazo.getMonth() + 1).padStart(2, '0');
+            const dia = String(prazo.getDate()).padStart(2, '0');
+            
+            prazoInput.value = `${ano}-${mes}-${dia}`;
+        }
+    });
+</script>
+{% endblock %}
+
+
+
 ### Arquivo: frequencias\templates\frequencias\listar_carencias.html
 
 html
@@ -585,1300 +1872,6 @@ html
         {% endif %}
     </div>
 </td>
-
-
-
-### Arquivo: frequencias\templates\frequencias\notificacoes_carencia.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Notificações de Carência{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Notificações de Carência</h1>
-        <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-    </div>
-    
-    <!-- Filtros -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Filtros</h5>
-        </div>
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="turma" class="form-label">Turma</label>
-                    <select name="turma" id="turma" class="form-select select2">
-                        <option value="">Todas as turmas</option>
-                        {% for turma in turmas %}
-                        <option value="{{ turma.id }}" {% if request.GET.turma == turma.id|stringformat:"s" %}selected{% endif %}>
-                            {{ turma.nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="status" class="form-label">Status</label>
-                    <select name="status" id="status" class="form-select">
-                        <option value="">Todos os status</option>
-                        <option value="PENDENTE" {% if request.GET.status == "PENDENTE" %}selected{% endif %}>Pendente</option>
-                        <option value="ENVIADA" {% if request.GET.status == "ENVIADA" %}selected{% endif %}>Enviada</option>
-                        <option value="LIDA" {% if request.GET.status == "LIDA" %}selected{% endif %}>Lida</option>
-                        <option value="RESPONDIDA" {% if request.GET.status == "RESPONDIDA" %}selected{% endif %}>Respondida</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="periodo" class="form-label">Período</label>
-                    <select name="periodo" id="periodo" class="form-select">
-                        <option value="">Todos os períodos</option>
-                        <option value="7" {% if request.GET.periodo == "7" %}selected{% endif %}>Últimos 7 dias</option>
-                        <option value="30" {% if request.GET.periodo == "30" %}selected{% endif %}>Últimos 30 dias</option>
-                        <option value="90" {% if request.GET.periodo == "90" %}selected{% endif %}>Últimos 90 dias</option>
-                    </select>
-                </div>
-                <div class="col-12 mt-3">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter"></i> Filtrar
-                    </button>
-                    <a href="{% url 'frequencias:notificacoes_carencia' %}" class="btn btn-secondary">
-                        <i class="fas fa-broom"></i> Limpar Filtros
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Estatísticas -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Notificações</h5>
-                    <p class="card-text display-4">{{ total_notificacoes }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark">
-                <div class="card-body">
-                    <h5 class="card-title">Pendentes</h5>
-                    <p class="card-text display-4">{{ notificacoes_pendentes }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Enviadas</h5>
-                    <p class="card-text display-4">{{ notificacoes_enviadas }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Respondidas</h5>
-                    <p class="card-text display-4">{{ notificacoes_respondidas }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Lista de notificações -->
-    <div class="card">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Lista de Notificações</h5>
-            <div>
-                <button id="btn-enviar-selecionadas" class="btn btn-primary btn-sm" disabled>
-                    <i class="fas fa-paper-plane"></i> Enviar Selecionadas
-                </button>
-                <button id="btn-marcar-todas" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-check-square"></i> Marcar Todas
-                </button>
-                <button id="btn-desmarcar-todas" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-square"></i> Desmarcar Todas
-                </button>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="selecionar-todas">
-                                </div>
-                            </th>
-                            <th>Aluno</th>
-                            <th>Turma</th>
-                            <th>Período</th>
-                            <th>Percentual</th>
-                            <th>Status</th>
-                            <th>Data de Envio</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for notificacao in notificacoes %}
-                        <tr>
-                            <td>
-                                <div class="form-check">
-                                    <input class="form-check-input notificacao-checkbox" type="checkbox" 
-                                           value="{{ notificacao.id }}" 
-                                           {% if notificacao.status != 'PENDENTE' %}disabled{% endif %}>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    {% if notificacao.carencia.aluno.foto %}
-                                    <img src="{{ notificacao.carencia.aluno.foto.url }}" alt="{{ notificacao.carencia.aluno.nome }}" 
-                                         class="rounded-circle me-2" width="40" height="40">
-                                    {% else %}
-                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
-                                         style="width: 40px; height: 40px; color: white;">
-                                        {{ notificacao.carencia.aluno.nome|first|upper }}
-                                    </div>
-                                    {% endif %}
-                                    <div>
-                                        <div>{{ notificacao.carencia.aluno.nome }}</div>
-                                        <small class="text-muted">{{ notificacao.carencia.aluno.cpf }}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ notificacao.carencia.frequencia_mensal.turma.nome }}</td>
-                            <td>{{ notificacao.carencia.frequencia_mensal.get_mes_display }}/{{ notificacao.carencia.frequencia_mensal.ano }}</td>
-                            <td>
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-danger" role="progressbar" 
-                                         style="width: {{ notificacao.carencia.percentual_presenca }}%;" 
-                                         aria-valuenow="{{ notificacao.carencia.percentual_presenca }}" 
-                                         aria-valuemin="0" aria-valuemax="100">
-                                        {{ notificacao.carencia.percentual_presenca }}%
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                {% if notificacao.status == 'PENDENTE' %}
-                                <span class="badge bg-warning text-dark">Pendente</span>
-                                {% elif notificacao.status == 'ENVIADA' %}
-                                <span class="badge bg-info">Enviada</span>
-                                {% elif notificacao.status == 'LIDA' %}
-                                <span class="badge bg-primary">Lida</span>
-                                {% elif notificacao.status == 'RESPONDIDA' %}
-                                <span class="badge bg-success">Respondida</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ notificacao.data_envio|date:"d/m/Y H:i"|default:"-" }}</td>
-                            <td>
-                                <div class="btn-group">
-                                    <a href="{% url 'frequencias:detalhar_notificacao' notificacao.id %}" 
-                                       class="btn btn-sm btn-info" title="Ver detalhes">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    {% if notificacao.status == 'PENDENTE' %}
-                                    <a href="{% url 'frequencias:enviar_notificacao' notificacao.id %}" 
-                                       class="btn btn-sm btn-primary" title="Enviar notificação">
-                                        <i class="fas fa-paper-plane"></i>
-                                    </a>
-                                    {% endif %}
-                                    {% if notificacao.status == 'RESPONDIDA' %}
-                                    <a href="{% url 'frequencias:visualizar_resposta' notificacao.id %}" 
-                                       class="btn btn-sm btn-success" title="Ver resposta">
-                                        <i class="fas fa-reply"></i>
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center py-4">
-                                <div class="alert alert-info mb-0">
-                                    Nenhuma notificação encontrada com os filtros selecionados.
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Paginação -->
-            {% if page_obj.has_other_pages %}
-            <nav aria-label="Paginação" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                            <i class="fas fa-angle-double-left"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                            <i class="fas fa-angle-left"></i>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-left"></i></span>
-                    </li>
-                    {% endif %}
-                    
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                                {{ num }}
-                            </a>
-                        </li>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                            <i class="fas fa-angle-right"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                            <i class="fas fa-angle-double-right"></i>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-right"></i></span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-        </div>
-        <div class="card-footer">
-            <div class="d-flex justify-content-between align-items-center">
-                <span>Total: {{ page_obj.paginator.count }} notificações</span>
-                <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de confirmação para envio em massa -->
-<div class="modal fade" id="modalEnvioMassa" tabindex="-1" aria-labelledby="modalEnvioMassaLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalEnvioMassaLabel">Confirmar Envio de Notificações</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body">
-                <p>Você está prestes a enviar <span id="qtd-notificacoes-selecionadas">0</span> notificações de carência.</p>
-                <p>Esta ação enviará e-mails para os alunos selecionados. Deseja continuar?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btn-confirmar-envio">Confirmar Envio</button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar Select2 para melhorar a experiência de seleção
-        $('.select2').select2({
-            theme: 'bootstrap-5',
-            width: '100%'
-        });
-        
-        // Gerenciar seleção de notificações
-        const checkboxes = document.querySelectorAll('.notificacao-checkbox');
-        const selecionarTodas = document.getElementById('selecionar-todas');
-        const btnEnviarSelecionadas = document.getElementById('btn-enviar-selecionadas');
-        const btnMarcarTodas = document.getElementById('btn-marcar-todas');
-        const btnDesmarcarTodas = document.getElementById('btn-desmarcar-todas');
-        const qtdNotificacoesSelecionadas = document.getElementById('qtd-notificacoes-selecionadas');
-        
-        // Modal de confirmação
-        const modalEnvioMassa = new bootstrap.Modal(document.getElementById('modalEnvioMassa'));
-        const btnConfirmarEnvio = document.getElementById('btn-confirmar-envio');
-        
-        // Função para atualizar o estado do botão de envio
-        function atualizarBotaoEnvio() {
-            const selecionadas = document.querySelectorAll('.notificacao-checkbox:checked');
-            btnEnviarSelecionadas.disabled = selecionadas.length === 0;
-            qtdNotificacoesSelecionadas.textContent = selecionadas.length;
-        }
-        
-        // Evento para o checkbox "selecionar todas"
-        selecionarTodas.addEventListener('change', function() {
-            checkboxes.forEach(checkbox => {
-                if (!checkbox.disabled) {
-                    checkbox.checked = this.checked;
-                }
-            });
-            atualizarBotaoEnvio();
-        });
-        
-        // Evento para os checkboxes individuais
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                atualizarBotaoEnvio();
-                
-                // Verificar se todos estão selecionados
-                const todosCheckboxes = document.querySelectorAll('.notificacao-checkbox:not(:disabled)');
-                const todosSelecionados = document.querySelectorAll('.notificacao-checkbox:not(:disabled):checked');
-                selecionarTodas.checked = todosCheckboxes.length === todosSelecionados.length;
-            });
-        });
-        
-        // Botão para marcar todas
-        btnMarcarTodas.addEventListener('click', function() {
-            checkboxes.forEach(checkbox => {
-                if (!checkbox.disabled) {
-                    checkbox.checked = true;
-                }
-            });
-            selecionarTodas.checked = true;
-            atualizarBotaoEnvio();
-        });
-        
-        // Botão para desmarcar todas
-        btnDesmarcarTodas.addEventListener('click', function() {
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            selecionarTodas.checked = false;
-            atualizarBotaoEnvio();
-        });
-        
-        // Botão para enviar selecionadas
-        btnEnviarSelecionadas.addEventListener('click', function() {
-            modalEnvioMassa.show();
-        });
-        
-        // Botão para confirmar envio
-        btnConfirmarEnvio.addEventListener('click', function() {
-            // Obter IDs das notificações selecionadas
-            const selecionadas = Array.from(document.querySelectorAll('.notificacao-checkbox:checked')).map(cb => cb.value);
-            
-            // Enviar requisição AJAX para o backend
-            fetch('{% url "frequencias:enviar_notificacoes_massa" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    notificacoes: selecionadas
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                modalEnvioMassa.hide();
-                
-                if (data.success) {
-                    // Mostrar mensagem de sucesso
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
-                    alertDiv.innerHTML = `
-                        <strong>Sucesso!</strong> ${data.message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-                    `;
-                    document.querySelector('.container').prepend(alertDiv);
-                    
-                    // Recarregar a página após 2 segundos
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
-                } else {
-                    // Mostrar mensagem de erro
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-                    alertDiv.innerHTML = `
-                        <strong>Erro!</strong> ${data.message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-                    `;
-                    document.querySelector('.container').prepend(alertDiv);
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                modalEnvioMassa.hide();
-                
-                // Mostrar mensagem de erro
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-                alertDiv.innerHTML = `
-                    <strong>Erro!</strong> Ocorreu um erro ao processar sua solicitação.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-                `;
-                document.querySelector('.container').prepend(alertDiv);
-            });
-        });
-        
-        // Inicializar o estado do botão
-        atualizarBotaoEnvio();
-    });
-</script>
-{% endblock %}
-
-
-
-### Arquivo: frequencias\templates\frequencias\painel_frequencias.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Painel de Frequências{% endblock %}
-
-{% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Painel de Frequências</h1>
-        <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-    </div>
-    
-    <!-- Filtros -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Filtros</h5>
-        </div>
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="turma" class="form-label">Turma</label>
-                    <select name="turma" id="turma" class="form-select select2">
-                        <option value="">Todas as turmas</option>
-                        {% for turma in turmas %}
-                        <option value="{{ turma.id }}" {% if request.GET.turma == turma.id|stringformat:"s" %}selected{% endif %}>
-                            {{ turma.nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="ano" class="form-label">Ano</label>
-                    <select name="ano" id="ano" class="form-select">
-                        <option value="">Todos os anos</option>
-                        {% for ano in anos %}
-                        <option value="{{ ano }}" {% if request.GET.ano == ano|stringformat:"s" %}selected{% endif %}>
-                            {{ ano }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-12 mt-3">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter"></i> Filtrar
-                    </button>
-                    <a href="{% url 'frequencias:painel_frequencias' %}" class="btn btn-secondary">
-                        <i class="fas fa-broom"></i> Limpar Filtros
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Resumo em cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Frequências</h5>
-                    <p class="card-text display-4">{{ total_frequencias }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Média de Presença</h5>
-                    <p class="card-text display-4">{{ media_presenca|floatformat:1 }}%</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-danger text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Carências</h5>
-                    <p class="card-text display-4">{{ total_carencias }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark">
-                <div class="card-body">
-                    <h5 class="card-title">Carências Resolvidas</h5>
-                    <p class="card-text display-4">{{ carencias_resolvidas }}</p>
-                    <p class="card-text">
-                        {% if total_carencias > 0 %}
-                        {{ carencias_resolvidas|multiply:100|divide:total_carencias|floatformat:1 }}%
-                        {% else %}
-                        0%
-                        {% endif %}
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Gráficos -->
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Frequência Mensal</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="grafico-mensal"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Carências por Turma</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="grafico-carencias-turma"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-12 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Evolução de Carências</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="grafico-evolucao-carencias"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tabela de turmas com mais carências -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Turmas com Mais Carências</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Turma</th>
-                            <th>Curso</th>
-                            <th>Total de Carências</th>
-                            <th>Carências Resolvidas</th>
-                            <th>Percentual Resolvido</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for turma in turmas_mais_carencias %}
-                        <tr>
-                            <td>{{ turma.nome }}</td>
-                            <td>{{ turma.curso.nome }}</td>
-                            <td>{{ turma.total_carencias }}</td>
-                            <td>{{ turma.carencias_resolvidas }}</td>
-                            <td>
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-success" role="progressbar" 
-                                         style="width: {{ turma.percentual_resolvido }}%;" 
-                                         aria-valuenow="{{ turma.percentual_resolvido }}" 
-                                         aria-valuemin="0" aria-valuemax="100">
-                                        {{ turma.percentual_resolvido }}%
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center py-4">
-                                <div class="alert alert-info mb-0">
-                                    Nenhuma turma com carências encontrada.
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar Select2 para melhorar a experiência de seleção
-        $('.select2').select2({
-            theme: 'bootstrap-5',
-            width: '100%'
-        });
-        
-        // Gráfico mensal (linha)
-        const ctxMensal = document.getElementById('grafico-mensal').getContext('2d');
-        new Chart(ctxMensal, {
-            type: 'line',
-            data: {
-                labels: {{ meses|safe }},
-                datasets: [
-                    {
-                        label: 'Média de Presença',
-                        data: {{ media_presenca_por_mes|safe }},
-                        borderColor: 'rgba(40, 167, 69, 1)',
-                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Gráfico de carências por turma (barra)
-        const ctxCarenciasTurma = document.getElementById('grafico-carencias-turma').getContext('2d');
-        new Chart(ctxCarenciasTurma, {
-            type: 'bar',
-            data: {
-                labels: {{ turmas_labels|safe }},
-                datasets: [
-                    {
-                        label: 'Carências',
-                        data: {{ carencias_por_turma|safe }},
-                        backgroundColor: 'rgba(220, 53, 69, 0.7)',
-                        borderColor: 'rgba(220, 53, 69, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Resolvidas',
-                        data: {{ carencias_resolvidas_por_turma|safe }},
-                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
-                        borderColor: 'rgba(40, 167, 69, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-        
-        // Gráfico de evolução de carências (linha)
-        const ctxEvolucaoCarencias = document.getElementById('grafico-evolucao-carencias').getContext('2d');
-        new Chart(ctxEvolucaoCarencias, {
-            type: 'line',
-            data: {
-                labels: {{ meses_completos|safe }},
-                datasets: [
-                    {
-                        label: 'Novas Carências',
-                        data: {{ novas_carencias_por_mes|safe }},
-                        borderColor: 'rgba(220, 53, 69, 1)',
-                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                        fill: true
-                    },
-                    {
-                        label: 'Carências Resolvidas',
-                        data: {{ carencias_resolvidas_por_mes|safe }},
-                        borderColor: 'rgba(40, 167, 69, 1)',
-                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    });
-</script>
-{% endblock %}
-
-
-
-### Arquivo: frequencias\templates\frequencias\registrar_frequencia.html
-
-html
-{% extends 'base.html' %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1>Registrar Frequência</h1>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="card">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                {% include 'includes/form_errors.html' %}
-                
-                {% for field in form %}
-                    {% include 'includes/form_field.html' %}
-                {% endfor %}
-                
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-primary">Registrar Frequência</button>
-                    <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-
-
-
-### Arquivo: frequencias\templates\frequencias\registrar_frequencia_turma.html
-
-html
-{% extends 'base.html' %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1>Registrar Frequência da Turma: {{ turma.id }}</h1>
-   
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-   
-    <div class="card">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-               
-                <div class="mb-3">
-                    <label for="data" class="form-label">Data</label>
-                    <input type="date" class="form-control" id="data" name="data" required>
-                </div>
-               
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Aluno</th>
-                            <th>Presente</th>
-                            <th>Justificativa (se ausente)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for aluno in alunos %}
-                        <tr>
-                            <td>{{ aluno.nome }}</td>
-                            <td>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="presentes" value="{{ aluno.id }}" id="presente_{{ aluno.id }}" checked>
-                                    <label class="form-check-label" for="presente_{{ aluno.id }}">
-                                        Presente
-                                    </label>
-                                </div>
-                            </td>
-                            <td>
-                                <textarea class="form-control" name="justificativa_{{ aluno.id }}" rows="2" placeholder="Justificativa para ausência"></textarea>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="text-center">Nenhum aluno encontrado nesta turma.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-               
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-primary">Registrar Frequências</button>
-                    <a href="{% url 'listar_frequencias' %}" class="btn btn-secondary">Cancelar</a>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-
-
-
-### Arquivo: frequencias\templates\frequencias\relatorio_carencias.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Relatório de Carências{% endblock %}
-
-{% block extra_css %}
-<style>
-    .chart-container {
-        position: relative;
-        height: 300px;
-        width: 100%;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Relatório de Carências</h1>
-        <div>
-            <a href="{% url 'frequencias:listar_carencias' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar para Lista
-            </a>
-            <button class="btn btn-primary" onclick="window.print()">
-                <i class="fas fa-print"></i> Imprimir Relatório
-            </button>
-        </div>
-    </div>
-    
-    <!-- Filtros -->
-    <div class="card mb-4 d-print-none">
-        <div class="card-header">
-            <h5 class="mb-0">Filtros</h5>
-        </div>
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="periodo_inicio" class="form-label">Período Início</label>
-                    <input type="month" class="form-control" id="periodo_inicio" name="periodo_inicio" 
-                           value="{{ filtros.periodo_inicio|default:'' }}">
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="periodo_fim" class="form-label">Período Fim</label>
-                    <input type="month" class="form-control" id="periodo_fim" name="periodo_fim" 
-                           value="{{ filtros.periodo_fim|default:'' }}">
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="curso" class="form-label">Curso</label>
-                    <select class="form-select" id="curso" name="curso">
-                        <option value="">Todos os cursos</option>
-                        {% for curso in cursos %}
-                        <option value="{{ curso.codigo_curso }}" {% if filtros.curso == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
-                            {{ curso.nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-filter"></i> Gerar Relatório
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Resumo -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Resumo</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <h6 class="card-title">Total de Carências</h6>
-                            <h2 class="display-4">{{ stats.total }}</h2>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3 mb-3">
-                    <div class="card h-100 border-danger">
-                        <div class="card-body text-center">
-                            <h6 class="card-title text-danger">Pendentes</h6>
-                            <h2 class="display-4">{{ stats.pendentes }}</h2>
-                            <p class="mb-0">{{ stats.percentual_pendentes|floatformat:1 }}%</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3 mb-3">
-                    <div class="card h-100 border-warning">
-                        <div class="card-body text-center">
-                            <h6 class="card-title text-warning">Em Acompanhamento</h6>
-                            <h2 class="display-4">{{ stats.em_acompanhamento }}</h2>
-                            <p class="mb-0">{{ stats.percentual_em_acompanhamento|floatformat:1 }}%</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3 mb-3">
-                    <div class="card h-100 border-success">
-                        <div class="card-body text-center">
-                            <h6 class="card-title text-success">Resolvidas</h6>
-                            <h2 class="display-4">{{ stats.resolvidas }}</h2>
-                            <p class="mb-0">{{ stats.percentual_resolvidas|floatformat:1 }}%</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Gráficos -->
-    <div class="row mb-4">
-        <div class="col-md-6 mb-3">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Carências por Status</h5>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Carências por Curso</h5>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="cursoChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row mb-4">
-        <div class="col-md-6 mb-3">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Carências por Mês</h5>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="mesChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Tempo Médio de Resolução</h5>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="tempoResolucaoChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tabela de Carências por Curso -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Carências por Curso</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>Curso</th>
-                            <th class="text-center">Pendentes</th>
-                            <th class="text-center">Em Acompanhamento</th>
-                            <th class="text-center">Resolvidas</th>
-                            <th class="text-center">Total</th>
-                            <th class="text-center">% Resolução</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for curso in carencias_por_curso %}
-                        <tr>
-                            <td>{{ curso.nome }}</td>
-                            <td class="text-center">{{ curso.pendentes }}</td>
-                            <td class="text-center">{{ curso.em_acompanhamento }}</td>
-                            <td class="text-center">{{ curso.resolvidas }}</td>
-                            <td class="text-center">{{ curso.total }}</td>
-                            <td class="text-center">
-                                <div class="d-flex align-items-center justify-content-center">
-                                    <div class="progress flex-grow-1 me-2" style="height: 8px; max-width: 100px;">
-                                        <div class="progress-bar bg-success" role="progressbar" 
-                                             style="width: {{ curso.percentual_resolucao }}%;" 
-                                             aria-valuenow="{{ curso.percentual_resolucao }}" 
-                                             aria-valuemin="0" aria-valuemax="100">
-                                        </div>
-                                    </div>
-                                    <span>{{ curso.percentual_resolucao|floatformat:1 }}%</span>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-3">Nenhum dado disponível</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tabela de Carências por Mês -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Carências por Mês</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>Mês/Ano</th>
-                            <th class="text-center">Pendentes</th>
-                            <th class="text-center">Em Acompanhamento</th>
-                            <th class="text-center">Resolvidas</th>
-                            <th class="text-center">Total</th>
-                            <th class="text-center">% Resolução</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for mes in carencias_por_mes %}
-                        <tr>
-                            <td>{{ mes.nome }}</td>
-                            <td class="text-center">{{ mes.pendentes }}</td>
-                            <td class="text-center">{{ mes.em_acompanhamento }}</td>
-                            <td class="text-center">{{ mes.resolvidas }}</td>
-                            <td class="text-center">{{ mes.total }}</td>
-                            <td class="text-center">
-                                <div class="d-flex align-items-center justify-content-center">
-                                    <div class="progress flex-grow-1 me-2" style="height: 8px; max-width: 100px;">
-                                        <div class="progress-bar bg-success" role="progressbar" 
-                                             style="width: {{ mes.percentual_resolucao }}%;" 
-                                             aria-valuenow="{{ mes.percentual_resolucao }}" 
-                                             aria-valuemin="0" aria-valuemax="100">
-                                        </div>
-                                    </div>
-                                    <span>{{ mes.percentual_resolucao|floatformat:1 }}%</span>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-3">Nenhum dado disponível</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Rodapé do relatório -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <p class="mb-0 text-muted">Relatório gerado em: {{ data_geracao|date:"d/m/Y H:i" }}</p>
-                </div>
-                <div>
-                    <p class="mb-0 text-muted">Período: 
-                        {% if filtros.periodo_inicio %}{{ filtros.periodo_inicio_formatado }}{% else %}Início{% endif %} 
-                        até 
-                        {% if filtros.periodo_fim %}{{ filtros.periodo_fim_formatado }}{% else %}Atual{% endif %}
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Dados para os gráficos
-        const statusData = {
-            labels: ['Pendentes', 'Em Acompanhamento', 'Resolvidas'],
-            datasets: [{
-                data: [{{ stats.pendentes }}, {{ stats.em_acompanhamento }}, {{ stats.resolvidas }}],
-                backgroundColor: ['#dc3545', '#ffc107', '#28a745'],
-                borderWidth: 1
-            }]
-        };
-        
-        const cursoData = {
-            labels: [{% for curso in carencias_por_curso %}'{{ curso.nome }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
-            datasets: [{
-                label: 'Total de Carências',
-                data: [{% for curso in carencias_por_curso %}{{ curso.total }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
-        };
-        
-        const mesData = {
-            labels: [{% for mes in carencias_por_mes %}'{{ mes.nome }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
-            datasets: [{
-                label: 'Total de Carências',
-                data: [{% for mes in carencias_por_mes %}{{ mes.total }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-                backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        };
-        
-        const tempoResolucaoData = {
-            labels: [{% for curso in tempo_resolucao %}'{{ curso.nome }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
-            datasets: [{
-                label: 'Dias para Resolução (média)',
-                data: [{% for curso in tempo_resolucao %}{{ curso.media_dias|floatformat:1 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-                backgroundColor: 'rgba(153, 102, 255, 0.5)',
-                borderColor: 'rgba(153, 102, 255, 1)',
-                borderWidth: 1
-            }]
-        };
-        
-        // Configuração dos gráficos
-        const statusChart = new Chart(document.getElementById('statusChart'), {
-            type: 'pie',
-            data: statusData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                    }
-                }
-            }
-        });
-        
-        const cursoChart = new Chart(document.getElementById('cursoChart'), {
-            type: 'bar',
-            data: cursoData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-        
-        const mesChart = new Chart(document.getElementById('mesChart'), {
-            type: 'line',
-            data: mesData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-        
-        const tempoResolucaoChart = new Chart(document.getElementById('tempoResolucaoChart'), {
-            type: 'bar',
-            data: tempoResolucaoData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Dias (média)'
-                        }
-                    }
-                }
-            }
-        });
-    });
-</script>
-{% endblock %}
-{% endblock %}
 
 
 '''

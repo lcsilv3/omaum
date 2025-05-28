@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db.models import Count
 from datetime import datetime, timedelta
+from django.views.decorators.http import require_GET
 
 from .utils import get_model_class
 
@@ -316,3 +317,71 @@ def exportar_atividades_pdf(atividades_academicas, atividades_ritualisticas):
     except ImportError:
         # Fallback para CSV se reportlab não estiver disponível
         return exportar_atividades_csv(atividades_academicas, atividades_ritualisticas)
+
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from importlib import import_module
+
+from ..models import AtividadeAcademica
+
+@login_required
+def relatorio_atividades_curso_turma(request):
+    """
+    Relatório de atividades acadêmicas filtrado por curso e turma.
+    Suporta AJAX para atualização parcial da tabela.
+    """
+    Curso = import_module("cursos.models").Curso
+    Turma = import_module("turmas.models").Turma
+
+    cursos = Curso.objects.all()
+    turmas = Turma.objects.all()
+
+    curso_id = request.GET.get("curso")
+    turma_id = request.GET.get("turma")
+
+    atividades = AtividadeAcademica.objects.all()
+
+    if curso_id:
+        atividades = atividades.filter(turma__curso_id=curso_id)
+        turmas = turmas.filter(curso_id=curso_id)
+    if turma_id:
+        atividades = atividades.filter(turma_id=turma_id)
+
+    atividades = atividades.select_related("turma__curso").distinct()
+
+    context = {
+        "atividades": atividades,
+        "cursos": cursos,
+        "turmas": turmas,
+        "curso_selecionado": curso_id,
+        "turma_selecionada": turma_id,
+    }
+
+    # AJAX: retorna apenas o corpo da tabela para atualização dinâmica
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return render(request, "atividades/_tabela_atividades.html", context)
+
+    return render(request, "atividades/relatorio_atividades_curso_turma.html", context)
+
+@require_GET
+@login_required
+def ajax_turmas_por_curso_relatorio(request):
+    """
+    Endpoint AJAX: retorna as turmas de um curso em JSON (para relatório).
+    """
+    curso_id = request.GET.get("curso_id")
+    Turma = import_module("turmas.models").Turma
+    turmas = Turma.objects.filter(curso_id=curso_id).values("id", "nome")
+    return JsonResponse(list(turmas), safe=False)
+
+@require_GET
+@login_required
+def ajax_atividades_filtradas_relatorio(request):
+    """
+    Endpoint AJAX: retorna atividades filtradas por curso/turma para relatório.
+    Retorna HTML parcial da tabela.
+    """
+    return relatorio_atividades_curso_turma(request)

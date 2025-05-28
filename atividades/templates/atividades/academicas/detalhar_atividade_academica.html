@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Atividade Acadêmica{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ atividade.nome }}</h1>
+    <p><strong>Curso:</strong> {{ atividade.curso }}</p>
+    <p><strong>Turmas:</strong>
+        {% for turma in atividade.turmas.all %}
+            {{ turma.nome }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
+    <!-- demais campos -->
+</div>
+{% endblock %}

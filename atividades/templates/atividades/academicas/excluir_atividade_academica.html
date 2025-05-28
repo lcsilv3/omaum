@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Atividade Acadêmica{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Atividade Acadêmica</h1>
+    <div class="alert alert-danger">
+        <p>Tem certeza que deseja excluir a atividade <strong>{{ atividade.nome }}</strong>?</p>
+        <p><strong>Curso:</strong> {{ atividade.curso }}</p>
+        <p><strong>Turmas:</strong>
+            {% for turma in atividade.turmas.all %}
+                {{ turma.nome }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        </p>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+        <a href="{% url 'atividades:detalhar_atividade_academica' atividade.pk %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

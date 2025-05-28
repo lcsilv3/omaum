@@ -1,367 +1,41 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Detalhes da Turma: {{ turma.nome }}{% endblock %}
+{% block title %}Detalhes da Turma{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Adicionar exibição do campo alerta_mensagem -->
-    {% if turma.alerta_mensagem %}
-    <div class="alert alert-warning">
-        <i class="fas fa-exclamation-triangle"></i> {{ turma.alerta_mensagem }}
+    <h1>Detalhes da Turma</h1>
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2>{{ turma.nome }}</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
+            <p><strong>Status:</strong> {{ turma.get_status_display }}</p>
+            <p><strong>Data de Início:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
+            <p><strong>Data de Fim:</strong> {{ turma.data_fim|date:"d/m/Y" }}</p>
+        </div>
     </div>
-    {% endif %}
 
-    <!-- Padronizar botões de ação -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Detalhes da Turma</h1>
-        <div>
-            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary me-2">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-            <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning me-2">
-                <i class="fas fa-edit"></i> Editar
-            </a>
-            <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Excluir
-            </a>
-        </div>
-    </div>
-    
-    {% if tem_pendencia_instrutoria %}
-    <div class="alert alert-danger text-center mb-4 blink">
-        <h5 class="mb-0"><strong>Pendência na Instrutoria</strong></h5>
-    </div>
-    {% endif %}
-    
-    <!-- Card de informações da turma com layout em colunas -->
-    <div class="card mb-4 border-primary">
-        <div class="card-header bg-primary text-white">
-            <h5 class="card-title mb-0">Informações da Turma</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <!-- Coluna 1 -->
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <h6 class="text-muted">Curso</h6>
-                        <p class="fs-5">{{ turma.curso }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <h6 class="text-muted">Status</h6>
-                        <p>
-                            {% if turma.status == 'A' %}
-                                <span class="badge bg-success">{{ turma.get_status_display }}</span>
-                            {% elif turma.status == 'I' %}
-                                <span class="badge bg-warning">{{ turma.get_status_display }}</span>
-                            {% else %}
-                                <span class="badge bg-secondary">{{ turma.get_status_display }}</span>
-                            {% endif %}
-                        </p>
-                    </div>
-                </div>
-                
-                <!-- Coluna 2 -->
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <h6 class="text-muted">Data de Início</h6>
-                        <p>{{ turma.data_inicio|date:"d/m/Y" }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <h6 class="text-muted">Data de Término</h6>
-                        <p>{{ turma.data_fim|date:"d/m/Y"|default:"Não definida" }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <h6 class="text-muted">Local</h6>
-                        <p>{{ turma.local|default:"Não informado" }}</p>
-                    </div>
-                </div>
-                
-                <!-- Coluna 3 - Estatísticas -->
-                <div class="col-md-4">
-                    <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <h6 class="text-muted">Ocupação</h6>
-                            <div class="d-flex justify-content-around mb-2">
-                                <div>
-                                    <h3 class="mb-0">{{ alunos_matriculados_count }}</h3>
-                                    <small class="text-muted">Matriculados</small>
-                                </div>
-                                <div>
-                                    <h3 class="mb-0">{{ turma.vagas }}</h3>
-                                    <small class="text-muted">Total</small>
-                                </div>
-                                <div>
-                                    <h3 class="mb-0">{{ vagas_disponiveis }}</h3>
-                                    <small class="text-muted">Disponíveis</small>
-                                </div>
-                            </div>
-                            
-                            <!-- Barra de progresso -->
-                            <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-primary" role="progressbar"
-                                     style="width: {% widthratio alunos_matriculados_count turma.vagas 100 %}%;"
-                                     aria-valuenow="{{ alunos_matriculados_count }}"
-                                     aria-valuemin="0"
-                                     aria-valuemax="{{ turma.vagas }}">
-                                </div>
-                            </div>
-                            <small class="text-muted">{% widthratio alunos_matriculados_count turma.vagas 100 %}% ocupado</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Linha para Dias da Semana e Horário -->
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <h6 class="text-muted">Dias da Semana</h6>
-                    <p>{{ turma.dias_semana|default:"Não informado" }}</p>
-                </div>
-                <div class="col-md-6">
-                    <h6 class="text-muted">Horário</h6>
-                    <p>{{ turma.horario|default:"Não informado" }}</p>
-                </div>
-            </div>
-            
-            <!-- Descrição em linha separada -->
-            {% if turma.descricao %}
-            <div class="row mt-3">
-                <div class="col-12">
-                    <h6 class="text-muted">Descrição</h6>
-                    <p>{{ turma.descricao }}</p>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-    
-    <!-- Card de instrutores -->
-    <div class="card mb-4 border-success">
-        <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">Instrutoria</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <!-- Instrutor Principal -->
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">Instrutor Principal</h6>
-                        </div>
-                        <div class="card-body text-center">
-                            {% if turma.instrutor %}
-                                <div class="mb-3">
-                                    {% if turma.instrutor.foto %}
-                                        <img src="{{ turma.instrutor.foto.url }}" alt="Foto de {{ turma.instrutor.nome }}"
-                                             class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
-                                    {% else %}
-                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto"
-                                             style="width: 100px; height: 100px; font-size: 36px;">
-                                            {{ turma.instrutor.nome|first|upper }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <h5>{{ turma.instrutor.nome }}</h5>
-                                <p class="text-muted">{{ turma.instrutor.numero_iniciatico|default:"" }}</p>
-                                <a href="{% url 'alunos:detalhar_aluno' turma.instrutor.cpf %}" class="btn btn-sm btn-primary">
-                                    Ver Perfil
-                                </a>
-                            {% else %}
-                                <div class="text-muted py-4">
-                                    <i class="fas fa-user-slash fa-3x mb-3"></i>
-                                    <p>Nenhum instrutor designado</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Instrutor Auxiliar -->
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">Instrutor Auxiliar</h6>
-                        </div>
-                        <div class="card-body text-center">
-                            {% if turma.instrutor_auxiliar %}
-                                <div class="mb-3">
-                                    {% if turma.instrutor_auxiliar.foto %}
-                                        <img src="{{ turma.instrutor_auxiliar.foto.url }}" alt="Foto de {{ turma.instrutor_auxiliar.nome }}"
-                                             class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
-                                    {% else %}
-                                        <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center mx-auto"
-                                             style="width: 100px; height: 100px; font-size: 36px;">
-                                            {{ turma.instrutor_auxiliar.nome|first|upper }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <h5>{{ turma.instrutor_auxiliar.nome }}</h5>
-                                <p class="text-muted">{{ turma.instrutor_auxiliar.numero_iniciatico|default:"" }}</p>
-                                <a href="{% url 'alunos:detalhar_aluno' turma.instrutor_auxiliar.cpf %}" class="btn btn-sm btn-info">
-                                    Ver Perfil
-                                </a>
-                            {% else %}
-                                <div class="text-muted py-4">
-                                    <i class="fas fa-user-slash fa-3x mb-3"></i>
-                                    <p>Nenhum instrutor designado</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Auxiliar de Instrução -->
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">Auxiliar de Instrução</h6>
-                        </div>
-                        <div class="card-body text-center">
-                            {% if turma.auxiliar_instrucao %}
-                                <div class="mb-3">
-                                    {% if turma.auxiliar_instrucao.foto %}
-                                        <img src="{{ turma.auxiliar_instrucao.foto.url }}" alt="Foto de {{ turma.auxiliar_instrucao.nome }}"
-                                             class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
-                                    {% else %}
-                                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto"
-                                             style="width: 100px; height: 100px; font-size: 36px;">
-                                            {{ turma.auxiliar_instrucao.nome|first|upper }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <h5>{{ turma.auxiliar_instrucao.nome }}</h5>
-                                <p class="text-muted">{{ turma.auxiliar_instrucao.numero_iniciatico|default:"" }}</p>
-                                <a href="{% url 'alunos:detalhar_aluno' turma.auxiliar_instrucao.cpf %}" class="btn btn-sm btn-success">
-                                    Ver Perfil
-                                </a>
-                            {% else %}
-                                <div class="text-muted py-4">
-                                    <i class="fas fa-user-slash fa-3x mb-3"></i>
-                                    <p>Nenhum auxiliar designado</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Card de alunos matriculados -->
-    <div class="card mb-4 border-primary">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Alunos Matriculados</h5>
-            <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-light">
-                <i class="fas fa-user-plus"></i> Matricular Aluno
-            </a>
-        </div>
-        <div class="card-body">
-            {% if matriculas %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Nome</th>
-                                <th>CPF</th>
-                                <th>Nº Iniciático</th>
-                                <th class="text-end">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for matricula in matriculas %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2"
-                                             style="width: 32px; height: 32px; font-size: 14px;">
-                                            {{ matricula.aluno.nome|first|upper }}
-                                        </div>
-                                        {{ matricula.aluno.nome }}
-                                    </div>
-                                </td>
-                                <td>{{ matricula.aluno.cpf }}</td>
-                                <td>{{ matricula.aluno.numero_iniciatico|default:"N/A" }}</td>
-                                <td class="text-end">
-                                    <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.cpf %}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-eye"></i> Ver
-                                    </a>
-                                    <a href="{% url 'matriculas:cancelar_matricula_por_turma_aluno' turma.id matricula.aluno.cpf %}"
-                                       class="btn btn-sm btn-danger"
-                                       onclick="return confirm('Tem certeza que deseja cancelar esta matrícula?');">
-                                        <i class="fas fa-times"></i> Cancelar
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i> Nenhum aluno matriculado nesta turma.
-                </div>
-                <a href="{% url 'turmas:matricular_aluno' turma.id %}" class="btn btn-primary">
-                    <i class="fas fa-user-plus"></i> Matricular Primeiro Aluno
-                </a>
-            {% endif %}
-        </div>
-        {% if matriculas %}
-        <div class="card-footer">
-            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary me-2">
-                <i class="fas fa-list"></i> Voltar para a lista
-            </a>
-            <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning me-2">
-                <i class="fas fa-edit"></i> Editar
-            </a>
-            <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Excluir
-            </a>
-        </div>
-        {% endif %}
-    </div>
+    <h3>Alunos da Turma</h3>
+    <ul>
+        {% for matricula in turma.matriculas.all %}
+            <li>{{ matricula.aluno.nome }}</li>
+        {% empty %}
+            <li>Nenhum aluno matriculado.</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Atividades Relacionadas</h3>
+    <ul>
+        {% for atividade in turma.atividades_academicas.all %}
+            <li>
+                {{ atividade.nome }} - {{ atividade.get_tipo_atividade_display }} ({{ atividade.data_inicio|date:"d/m/Y H:i" }})
+                <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
+            </li>
+        {% empty %}
+            <li>Nenhuma atividade relacionada.</li>
+        {% endfor %}
+    </ul>
 </div>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-    .bg-gradient-primary {
-        background: linear-gradient(to right, #0d6efd, #0a58ca);
-    }
-    .bg-primary.bg-opacity-10 {
-        background-color: rgba(13, 110, 253, 0.1) !important;
-    }
-    .bg-success.bg-opacity-10 {
-        background-color: rgba(25, 135, 84, 0.1) !important;
-    }
-    .bg-info.bg-opacity-10 {
-        background-color: rgba(13, 202, 240, 0.1) !important;
-    }
-    .rounded-circle {
-        border-radius: 50% !important;
-    }
-    .progress {
-        overflow: hidden;
-        background-color: #e9ecef;
-    }
-    .card {
-        transition: all 0.3s ease;
-    }
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
-    }
-    .blink {
-        animation: blinker 1s linear infinite;
-    }
-    @keyframes blinker {
-        50% { opacity: 0.5; }
-    }
-</style>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Adicione aqui qualquer JavaScript específico para esta página
-</script>
 {% endblock %}

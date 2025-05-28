@@ -538,6 +538,1742 @@ class Carencia(models.Model):
 
 
 
+## Arquivos de Views Modulares:
+
+
+### Arquivo: frequencias\views\__init__.py
+
+python
+"""
+Pacote de views para o aplicativo de frequências.
+Este arquivo permite que o diretório views seja tratado como um pacote Python.
+"""
+
+# Importar todas as funções de views que você quer expor
+from .frequencia_mensal import (
+    listar_frequencias,
+    criar_frequencia_mensal,
+    editar_frequencia_mensal,
+    excluir_frequencia_mensal,
+    detalhar_frequencia_mensal,
+    recalcular_carencias
+)
+
+from .carencia import (
+    editar_carencia,
+    resolver_carencia,
+    detalhar_carencia,
+    iniciar_acompanhamento
+)
+
+from .notificacao import (
+    criar_notificacao,
+    detalhar_notificacao,
+    editar_notificacao,
+    enviar_notificacao,
+    reenviar_notificacao,
+    responder_aluno,
+    listar_notificacoes_carencia
+)
+
+from .relatorio import (
+    relatorio_frequencias,
+    exportar_frequencia_csv,
+    historico_frequencia,
+    exportar_historico
+)
+
+from .dashboard import (
+    dashboard,
+    painel_frequencias,
+    visualizar_painel_frequencias
+)
+
+from .api_views import (
+    obter_dados_frequencia,
+    obter_dados_painel_frequencias
+)
+
+# Importar as novas funções
+from .exportacao import (
+    exportar_frequencias,
+    importar_frequencias
+)
+
+
+
+### Arquivo: frequencias\views\api_views.py
+
+python
+"""
+API views para o aplicativo de frequências.
+"""
+
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+from importlib import import_module
+import logging
+import json
+
+logger = logging.getLogger(__name__)
+
+def get_models():
+    """Obtém os modelos FrequenciaMensal e Carencia."""
+    frequencias_module = import_module("frequencias.models")
+    FrequenciaMensal = getattr(frequencias_module, "FrequenciaMensal")
+    Carencia = getattr(frequencias_module, "Carencia")
+    return FrequenciaMensal, Carencia
+
+def get_turma_model():
+    """Obtém o modelo Turma."""
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
+
+@login_required
+def obter_dados_frequencia(request, frequencia_id):
+    """API para obter dados de uma frequência mensal."""
+    try:
+        FrequenciaMensal, Carencia = get_models()
+        frequencia = get_object_or_404(FrequenciaMensal, id=frequencia_id)
+        
+        # Obter carências
+        carencias = Carencia.objects.filter(frequencia_mensal=frequencia).select_related('aluno')
+        
+        # Preparar dados
+        dados = {
+            'frequencia': {
+                'id': frequencia.id,
+                'turma': frequencia.turma.nome,
+                'mes': frequencia.get_mes_display(),
+                'ano': frequencia.ano,
+                'percentual_minimo': frequencia.percentual_minimo
+            },
+            'carencias': []
+        }
+        
+        for carencia in carencias:
+            dados['carencias'].append({
+                'id': carencia.id,
+                'aluno': {
+                    'cpf': carencia.aluno.cpf,
+                    'nome': carencia.aluno.nome,
+                    'email': carencia.aluno.email
+                },
+                'percentual_presenca': float(carencia.percentual_presenca),
+                'total_presencas': carencia.total_presencas,
+                'total_atividades': carencia.total_atividades,
+                'liberado': carencia.liberado,
+                'observacoes': carencia.observacoes or ''
+            })
+        
+        return JsonResponse({'success': True, 'dados': dados})
+    
+    except Exception as e:
+        logger.error(f"Erro ao obter dados da frequência: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
+def obter_dados_painel_frequencias(request):
+    """API para obter dados para o painel de frequências."""
+    try:
+        # Obter parâmetros
+        turma_id = request.GET.get('turma')
+        mes_inicio = request.GET.get('mes_inicio')
+        ano_inicio = request.GET.get('ano_inicio')
+        mes_fim = request.GET.get('mes_fim')
+        ano_fim = request.GET.get('ano_fim')
+        
+        if not all([turma_id, mes_inicio, ano_inicio, mes_fim, ano_fim]):
+            return JsonResponse({'success': False, 'error': 'Parâmetros incompletos'}, status=400)
+        
+        FrequenciaMensal, Carencia = get_models()
+        Turma = get_turma_model()
+        
+        # Obter turma
+        turma = get_object_or_404(Turma, id=turma_id)
+        
+        # Converter parâmetros para inteiros
+        mes_inicio = int(mes_inicio)
+        ano_inicio = int(ano_inicio)
+        mes_fim = int(mes_fim)
+        ano_fim = int(ano_fim)
+        
+        # Calcular período em meses
+        data_inicio = ano_inicio * 12 + mes_inicio
+        data_fim = ano_fim * 12 + mes_fim
+        
+        # Obter frequências no período
+        frequencias = FrequenciaMensal.objects.filter(
+            turma=turma
+        ).select_related('turma')
+        
+        # Filtrar pelo período
+        frequencias_filtradas = [
+            f for f in frequencias
+            if data_inicio <= (f.ano * 12 + f.mes) <= data_fim
+        ]
+        
+        # Ordenar por ano e mês
+        frequencias_filtradas.sort(key=lambda x: (x.ano, x.mes))
+        
+        # Preparar dados
+        dados = {
+            'turma': {
+                'id': turma.id,
+                'nome': turma.nome,
+                'curso': turma.curso.nome if turma.curso else 'Sem curso'
+            },
+            'periodo': {
+                'mes_inicio': mes_inicio,
+                'ano_inicio': ano_inicio,
+                'mes_fim': mes_fim,
+                'ano_fim': ano_fim
+            },
+            'frequencias': []
+        }
+        
+        for frequencia in frequencias_filtradas:
+            # Obter carências
+            carencias = Carencia.objects.filter(frequencia_mensal=frequencia)
+            
+            # Calcular estatísticas
+            total_alunos = carencias.count()
+            alunos_carencia = carencias.filter(percentual_presenca__lt=frequencia.percentual_minimo).count()
+            
+            # Adicionar dados da frequência
+            dados['frequencias'].append({
+                'id': frequencia.id,
+                'mes': frequencia.get_mes_display(),
+                'ano': frequencia.ano,
+                'percentual_minimo': frequencia.percentual_minimo,
+                'total_alunos': total_alunos,
+                'alunos_carencia': alunos_carencia,
+                'percentual_carencia': (alunos_carencia / total_alunos * 100) if total_alunos > 0 else 0
+            })
+        
+        return JsonResponse({'success': True, 'dados': dados})
+    
+    except Exception as e:
+        logger.error(f"Erro ao obter dados do painel: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
+### Arquivo: frequencias\views\carencia.py
+
+python
+"""
+Views para gerenciamento de carências.
+"""
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+import logging
+
+# Importar funções utilitárias do módulo utils
+from ..utils import (
+    get_models,
+    get_forms,
+    get_turma_model,
+    get_model_dynamically
+)
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def editar_carencia(request, carencia_id):
+    """Edita uma carência específica."""
+    try:
+        _, Carencia = get_models()
+        carencia = get_object_or_404(Carencia, id=carencia_id)
+        
+        if request.method == 'POST':
+            # Atualizar campos da carência
+            liberado = request.POST.get('liberado') == 'on'
+            observacoes = request.POST.get('observacoes', '')
+            
+            carencia.liberado = liberado
+            carencia.observacoes = observacoes
+            carencia.save()
+            
+            messages.success(request, "Carência atualizada com sucesso!")
+            return redirect('frequencias:detalhar_frequencia_mensal', frequencia_id=carencia.frequencia_mensal.id)
+        
+        context = {
+            'carencia': carencia
+        }
+        
+        return render(request, 'frequencias/editar_carencia.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao editar carência: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao editar carência: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+@login_required
+def resolver_carencia(request, carencia_id):
+    """Resolve uma carência."""
+    try:
+        _, Carencia = get_models()
+        carencia = get_object_or_404(Carencia, id=carencia_id)
+        
+        if request.method == 'POST':
+            # Atualizar status da carência
+            carencia.status = 'RESOLVIDO'
+            carencia.data_resolucao = timezone.now()
+            carencia.resolvido_por = request.user
+            carencia.motivo_resolucao = request.POST.get('motivo_resolucao')
+            carencia.observacoes_resolucao = request.POST.get('observacoes_resolucao', '')
+            carencia.liberado = True
+            carencia.save()
+            
+            # Processar documentos anexados
+            for arquivo in request.FILES.getlist('documentos'):
+                Documento = get_model_dynamically("documentos", "Documento")
+                
+                documento = Documento.objects.create(
+                    nome=arquivo.name,
+                    arquivo=arquivo,
+                    tipo='CARENCIA',
+                    aluno=carencia.aluno,
+                    uploaded_by=request.user
+                )
+                
+                # Associar documento à carência
+                carencia.documentos_resolucao.add(documento)
+            
+            messages.success(request, "Carência resolvida com sucesso!")
+            return redirect('frequencias:detalhar_carencia', carencia_id=carencia.id)
+        
+        context = {
+            'carencia': carencia
+        }
+        
+        return render(request, 'frequencias/resolver_carencia.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao resolver carência: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao resolver carência: {str(e)}")
+        return redirect('frequencias:detalhar_carencia', carencia_id=carencia_id)
+
+@login_required
+def detalhar_carencia(request, carencia_id):
+    """Exibe os detalhes de uma carência."""
+    try:
+        _, Carencia = get_models()
+        carencia = get_object_or_404(Carencia, id=carencia_id)
+        
+        context = {
+            'carencia': carencia
+        }
+        
+        return render(request, 'frequencias/detalhar_carencia.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao detalhar carência: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao detalhar carência: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+@login_required
+def iniciar_acompanhamento(request, carencia_id):
+    """Inicia o acompanhamento de uma carência."""
+    try:
+        _, Carencia = get_models()
+        carencia = get_object_or_404(Carencia, id=carencia_id)
+        
+        if request.method == 'POST':
+            # Atualizar status da carência
+            carencia.status = 'EM_ACOMPANHAMENTO'
+            carencia.data_acompanhamento = timezone.now()
+            carencia.acompanhado_por = request.user
+            carencia.observacoes = request.POST.get('observacoes', '')
+            carencia.prazo_resolucao = request.POST.get('prazo_resolucao')
+            carencia.save()
+            
+            # Criar notificação se solicitado
+            if request.POST.get('criar_notificacao'):
+                Notificacao = get_model_dynamically("notificacoes", "Notificacao")
+                
+                notificacao = Notificacao.objects.create(
+                    aluno=carencia.aluno,
+                    carencia=carencia,
+                    assunto=request.POST.get('assunto'),
+                    mensagem=request.POST.get('mensagem'),
+                    criado_por=request.user,
+                    data_criacao=timezone.now()
+                )
+                
+                # Enviar notificação imediatamente se solicitado
+                if request.POST.get('enviar_agora'):
+                    notificacao.status = 'ENVIADA'
+                    notificacao.data_envio = timezone.now()
+                    notificacao.enviado_por = request.user
+                    notificacao.save()
+                    
+                    # Lógica para enviar a notificação (e-mail, SMS, etc.)
+                    try:
+                        # Implementar envio de notificação
+                        pass
+                    except Exception as e:
+                        logger.error(f"Erro ao enviar notificação: {str(e)}", exc_info=True)
+                        messages.warning(request, f"Acompanhamento iniciado, mas houve um erro ao enviar a notificação: {str(e)}")
+                        return redirect('frequencias:detalhar_carencia', carencia_id=carencia.id)
+            
+            messages.success(request, "Acompanhamento iniciado com sucesso!")
+            return redirect('frequencias:detalhar_carencia', carencia_id=carencia.id)
+        
+        context = {
+            'carencia': carencia,
+            'data_atual': timezone.now().date()
+        }
+        
+        return render(request, 'frequencias/iniciar_acompanhamento.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao iniciar acompanhamento: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao iniciar acompanhamento: {str(e)}")
+        return redirect('frequencias:detalhar_carencia', carencia_id=carencia_id)
+
+
+
+### Arquivo: frequencias\views\dashboard.py
+
+python
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Avg, Count, Case, When, IntegerField
+from django.utils import timezone
+from importlib import import_module
+import logging
+import json
+from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
+
+def get_models():
+    """Obtém os modelos FrequenciaMensal e Carencia."""
+    frequencias_module = import_module("frequencias.models")
+    FrequenciaMensal = getattr(frequencias_module, "FrequenciaMensal")
+    Carencia = getattr(frequencias_module, "Carencia")
+    return FrequenciaMensal, Carencia
+
+def get_forms():
+    """Obtém os formulários relacionados a frequências."""
+    frequencias_forms = import_module("frequencias.forms")
+    return (
+        getattr(frequencias_forms, "FrequenciaMensalForm"),
+        getattr(frequencias_forms, "FiltroPainelFrequenciasForm")
+    )
+
+def get_turma_model():
+    """Obtém o modelo Turma."""
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
+
+def get_model_dynamically(app_name, model_name):
+    """Obtém um modelo dinamicamente para evitar importações circulares."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+@login_required
+def dashboard(request):
+    """Exibe um dashboard com estatísticas de frequência."""
+    try:
+        FrequenciaMensal, Carencia = get_models()
+        
+        # Obter parâmetros de filtro
+        periodo = request.GET.get('periodo')
+        curso_id = request.GET.get('curso')
+        turma_id = request.GET.get('turma')
+        
+        # Construir query base
+        frequencias = FrequenciaMensal.objects.all().select_related('turma')
+        carencias = Carencia.objects.all().select_related('frequencia_mensal', 'aluno')
+        
+        # Aplicar filtros
+        if periodo:
+            ano, mes = periodo.split('-')
+            frequencias = frequencias.filter(ano=ano, mes=mes)
+            carencias = carencias.filter(frequencia_mensal__ano=ano, frequencia_mensal__mes=mes)
+        
+        if curso_id:
+            frequencias = frequencias.filter(turma__curso__codigo_curso=curso_id)
+            carencias = carencias.filter(frequencia_mensal__turma__curso__codigo_curso=curso_id)
+        
+        if turma_id:
+            frequencias = frequencias.filter(turma__id=turma_id)
+            carencias = carencias.filter(frequencia_mensal__turma__id=turma_id)
+        
+        # Calcular estatísticas
+        total_alunos = carencias.values('aluno').distinct().count()
+        alunos_regulares = carencias.filter(percentual_presenca__gte=75).values('aluno').distinct().count()
+        alunos_carencia = carencias.filter(percentual_presenca__lt=75).values('aluno').distinct().count()
+        
+        # Calcular média de frequência
+        from django.db.models import Avg
+        media_frequencia = carencias.aggregate(Avg('percentual_presenca'))['percentual_presenca__avg'] or 0
+        
+        # Obter turmas com menor frequência
+        turmas_menor_frequencia = []
+        turmas_ids = frequencias.values_list('turma__id', flat=True).distinct()
+        
+        for turma_id in turmas_ids:
+            carencias_turma = carencias.filter(frequencia_mensal__turma__id=turma_id)
+            if carencias_turma.exists():
+                media_turma = carencias_turma.aggregate(Avg('percentual_presenca'))['percentual_presenca__avg'] or 0
+                alunos_carencia_turma = carencias_turma.filter(percentual_presenca__lt=75).count()
+                total_alunos_turma = carencias_turma.count()
+                
+                # Obter informações da turma
+                turma = get_turma_model().objects.get(id=turma_id)
+                
+                # Obter período (mês/ano) da frequência mais recente
+                ultima_frequencia = frequencias.filter(turma__id=turma_id).order_by('-ano', '-mes').first()
+                
+                turmas_menor_frequencia.append({
+                    'id': turma_id,
+                    'nome': turma.nome,
+                    'curso': turma.curso,
+                    'media_frequencia': media_turma,
+                    'alunos_carencia': alunos_carencia_turma,
+                    'total_alunos': total_alunos_turma,
+                    'periodo_mes': ultima_frequencia.get_mes_display() if ultima_frequencia else '',
+                    'periodo_ano': ultima_frequencia.ano if ultima_frequencia else ''
+                })
+        
+        # Ordenar turmas por média de frequência (ascendente)
+        turmas_menor_frequencia.sort(key=lambda x: x['media_frequencia'])
+        
+        # Limitar a 5 turmas
+        turmas_menor_frequencia = turmas_menor_frequencia[:5]
+        
+        # Obter alunos com menor frequência
+        alunos_menor_frequencia = []
+        alunos_ids = carencias.filter(percentual_presenca__lt=75).values_list('aluno__cpf', flat=True).distinct()
+        
+        for aluno_id in alunos_ids:
+            carencia_aluno = carencias.filter(aluno__cpf=aluno_id).order_by('percentual_presenca').first()
+            if carencia_aluno:
+                alunos_menor_frequencia.append({
+                    'cpf': aluno_id,
+                    'nome': carencia_aluno.aluno.nome,
+                    'email': carencia_aluno.aluno.email,
+                    'foto': carencia_aluno.aluno.foto.url if carencia_aluno.aluno.foto else None,
+                    'turma': carencia_aluno.frequencia_mensal.turma.nome,
+                    'curso': carencia_aluno.frequencia_mensal.turma.curso.nome,
+                    'percentual_presenca': carencia_aluno.percentual_presenca,
+                    'periodo_mes': carencia_aluno.frequencia_mensal.get_mes_display(),
+                    'periodo_ano': carencia_aluno.frequencia_mensal.ano,
+                    'carencia_id': carencia_aluno.id,
+                    'status_carencia': carencia_aluno.status if hasattr(carencia_aluno, 'status') else 'PENDENTE'
+                })
+        
+        # Ordenar alunos por percentual de presença (ascendente)
+        alunos_menor_frequencia.sort(key=lambda x: x['percentual_presenca'])
+        
+        # Limitar a 10 alunos
+        alunos_menor_frequencia = alunos_menor_frequencia[:10]
+        
+        # Dados para gráficos
+        # 1. Frequência por curso
+        cursos_labels = []
+        frequencia_por_curso = []
+        
+        Curso = get_model_dynamically("cursos", "Curso")
+        cursos = Curso.objects.all()
+        
+        for curso in cursos:
+            carencias_curso = carencias.filter(frequencia_mensal__turma__curso=curso)
+            if carencias_curso.exists():
+                media_curso = carencias_curso.aggregate(Avg('percentual_presenca'))['percentual_presenca__avg'] or 0
+                cursos_labels.append(curso.nome)
+                frequencia_por_curso.append(float(media_curso))
+        
+        # 2. Evolução da frequência por período
+        periodos_labels = []
+        evolucao_frequencia = []
+        
+        # Obter últimos 6 meses
+        hoje = datetime.now()
+        for i in range(5, -1, -1):
+            data = hoje - timedelta(days=30 * i)
+            mes = data.month
+            ano = data.year
+            
+            # Obter frequências do mês
+            carencias_periodo = carencias.filter(frequencia_mensal__mes=mes, frequencia_mensal__ano=ano)
+            if carencias_periodo.exists():
+                media_periodo = carencias_periodo.aggregate(Avg('percentual_presenca'))['percentual_presenca__avg'] or 0
+                mes_nome = dict(FrequenciaMensal.MES_CHOICES).get(mes)
+                periodos_labels.append(f"{mes_nome}/{ano}")
+                evolucao_frequencia.append(float(media_periodo))
+            else:
+                mes_nome = dict(FrequenciaMensal.MES_CHOICES).get(mes)
+                periodos_labels.append(f"{mes_nome}/{ano}")
+                evolucao_frequencia.append(0)
+        
+        # Obter dados para filtros
+        anos = FrequenciaMensal.objects.values_list('ano', flat=True).distinct().order_by('-ano')
+        meses = FrequenciaMensal.MES_CHOICES
+        
+        # Obter contagem por status
+        status_counts = {}
+        for status, _ in getattr(FrequenciaMensal, 'STATUS_CHOICES', []):
+            count = FrequenciaMensal.objects.filter(status=status).count()
+            status_counts[status] = count
+        
+        # Obter contagem por tipo
+        academicas_por_tipo = {}
+        for tipo, _ in getattr(FrequenciaMensal, 'TIPO_CHOICES', []):
+            count = FrequenciaMensal.objects.filter(tipo_atividade=tipo).count()
+            academicas_por_tipo[tipo] = count
+        
+        context = {
+            'estatisticas': {
+                'total_alunos': total_alunos,
+                'alunos_regulares': alunos_regulares,
+                'alunos_carencia': alunos_carencia,
+                'media_frequencia': media_frequencia
+            },
+            'turmas_menor_frequencia': turmas_menor_frequencia,
+            'alunos_menor_frequencia': alunos_menor_frequencia,
+            'cursos_labels': json.dumps(cursos_labels),
+            'frequencia_por_curso': json.dumps(frequencia_por_curso),
+            'periodos_labels': json.dumps(periodos_labels),
+            'evolucao_frequencia': json.dumps(evolucao_frequencia),
+            'filtros': {
+                'periodo': periodo,
+                'curso': curso_id,
+                'turma': turma_id
+            },
+            'anos': anos,
+            'meses': meses,
+            'cursos': cursos,
+            'turmas': get_turma_model().objects.filter(status='A'),
+            'status_counts': status_counts,
+            'academicas_por_tipo': academicas_por_tipo
+        }
+        
+        return render(request, 'frequencias/dashboard.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao exibir dashboard: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao exibir dashboard: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+@login_required
+def painel_frequencias(request):
+    """Exibe um painel de frequências para uma turma."""
+    try:
+        _, FiltroPainelFrequenciasForm = get_forms()
+        
+        if request.method == 'POST':
+            form = FiltroPainelFrequenciasForm(request.POST)
+            if form.is_valid():
+                # Redirecionar para a página do painel com os parâmetros
+                return redirect('frequencias:visualizar_painel_frequencias', 
+                               turma_id=form.cleaned_data['turma'].id,
+                               mes_inicio=form.cleaned_data['mes_inicio'],
+                               ano_inicio=form.cleaned_data['ano_inicio'],
+                               mes_fim=form.cleaned_data['mes_fim'],
+                               ano_fim=form.cleaned_data['ano_fim'])
+        else:
+            form = FiltroPainelFrequenciasForm()
+        
+        context = {
+            'form': form
+        }
+        
+        return render(request, 'frequencias/painel_frequencias_form.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao acessar painel de frequências: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao acessar painel de frequências: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+@login_required
+def visualizar_painel_frequencias(request, turma_id, mes_inicio, ano_inicio, mes_fim, ano_fim):
+    """Visualiza o painel de frequências para uma turma em um período."""
+    try:
+        FrequenciaMensal, _ = get_models()
+        Turma = get_turma_model()
+        
+        # Obter turma
+        turma = get_object_or_404(Turma, id=turma_id)
+        
+        # Converter parâmetros para inteiros
+        mes_inicio = int(mes_inicio)
+        ano_inicio = int(ano_inicio)
+        mes_fim = int(mes_fim)
+        ano_fim = int(ano_fim)
+        
+        # Calcular período em meses
+        data_inicio = ano_inicio * 12 + mes_inicio
+        data_fim = ano_fim * 12 + mes_fim
+        
+        # Obter frequências no período
+        frequencias = FrequenciaMensal.objects.filter(
+            turma=turma
+        ).select_related('turma')
+        
+        # Filtrar pelo período
+        frequencias_filtradas = [
+            f for f in frequencias
+            if data_inicio <= (f.ano * 12 + f.mes) <= data_fim
+        ]
+        
+        # Ordenar por ano e mês
+        frequencias_filtradas.sort(key=lambda x: (x.ano, x.mes))
+        
+        context = {
+            'turma': turma,
+            'mes_inicio': mes_inicio,
+            'ano_inicio': ano_inicio,
+            'mes_fim': mes_fim,
+            'ano_fim': ano_fim,
+            'frequencias': frequencias_filtradas
+        }
+        
+        return render(request, 'frequencias/visualizar_painel_frequencias.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao visualizar painel de frequências: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao visualizar painel de frequências: {str(e)}")
+        return redirect('frequencias:painel_frequencias')
+
+
+
+### Arquivo: frequencias\views\exportacao.py
+
+python
+import logging
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
+from django.contrib import messages
+from django.http import HttpResponse
+from ..utils import get_model_dynamically
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def exportar_frequencias(request):
+    """Exporta os dados de frequências mensais para um arquivo CSV."""
+    try:
+        import csv
+        
+        FrequenciaMensal = get_model_dynamically("frequencias", "FrequenciaMensal")
+        frequencias = FrequenciaMensal.objects.all().select_related('turma', 'turma__curso')
+        
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="frequencias.csv"'
+        writer = csv.writer(response)
+        writer.writerow([
+            "ID",
+            "Turma",
+            "Curso",
+            "Mês",
+            "Ano",
+            "Percentual Mínimo",
+            "Total de Alunos",
+            "Alunos com Carência",
+            "Alunos Liberados"
+        ])
+        
+        for freq in frequencias:
+            writer.writerow([
+                freq.id,
+                freq.turma.nome,
+                freq.turma.curso.nome if freq.turma.curso else "",
+                freq.get_mes_display(),
+                freq.ano,
+                freq.percentual_minimo,
+                freq.total_alunos,
+                freq.alunos_com_carencia,
+                freq.alunos_liberados
+            ])
+        
+        return response
+    except Exception as e:
+        messages.error(request, f"Erro ao exportar frequências: {str(e)}")
+        return redirect("frequencias:listar_frequencias")
+
+@login_required
+def importar_frequencias(request):
+    """Importa frequências mensais de um arquivo CSV."""
+    if request.method == "POST" and request.FILES.get("csv_file"):
+        try:
+            import csv
+            from io import TextIOWrapper
+            
+            FrequenciaMensal = get_model_dynamically("frequencias", "FrequenciaMensal")
+            Turma = get_model_dynamically("turmas", "Turma")
+            
+            csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
+            reader = csv.DictReader(csv_file)
+            count = 0
+            errors = []
+            
+            for row in reader:
+                try:
+                    # Buscar turma pelo nome ou ID
+                    turma = None
+                    turma_nome = row.get("Turma", "").strip()
+                    if turma_nome:
+                        try:
+                            turma = Turma.objects.get(nome=turma_nome)
+                        except Turma.DoesNotExist:
+                            try:
+                                turma = Turma.objects.get(id=turma_nome)
+                            except (Turma.DoesNotExist, ValueError):
+                                errors.append(f"Turma não encontrada: {turma_nome}")
+                                continue
+                    else:
+                        errors.append("Turma não especificada")
+                        continue
+                    
+                    # Processar mês
+                    mes = None
+                    mes_nome = row.get("Mês", "").strip()
+                    if mes_nome:
+                        # Mapear nome do mês para número
+                        meses = {
+                            "Janeiro": 1, "Fevereiro": 2, "Março": 3, "Abril": 4,
+                            "Maio": 5, "Junho": 6, "Julho": 7, "Agosto": 8,
+                            "Setembro": 9, "Outubro": 10, "Novembro": 11, "Dezembro": 12
+                        }
+                        mes = meses.get(mes_nome)
+                        if not mes:
+                            try:
+                                mes = int(mes_nome)
+                                if mes < 1 or mes > 12:
+                                    errors.append(f"Mês inválido: {mes_nome}")
+                                    continue
+                            except ValueError:
+                                errors.append(f"Mês inválido: {mes_nome}")
+                                continue
+                    else:
+                        errors.append("Mês não especificado")
+                        continue
+                    
+                    # Processar ano
+                    ano = None
+                    try:
+                        ano = int(row.get("Ano", "").strip())
+                    except ValueError:
+                        errors.append(f"Ano inválido: {row.get('Ano', '')}")
+                        continue
+                    
+                    # Processar percentual mínimo
+                    percentual_minimo = 75  # Valor padrão
+                    try:
+                        if row.get("Percentual Mínimo"):
+                            percentual_minimo = int(row.get("Percentual Mínimo"))
+                    except ValueError:
+                        errors.append(f"Percentual mínimo inválido: {row.get('Percentual Mínimo', '')}")
+                        continue
+                    
+                    # Verificar se já existe uma frequência para esta turma/mês/ano
+                    if FrequenciaMensal.objects.filter(turma=turma, mes=mes, ano=ano).exists():
+                        errors.append(f"Já existe uma frequência para a turma {turma.nome} no mês {mes}/{ano}")
+                        continue
+                    
+                    # Criar a frequência mensal
+                    frequencia = FrequenciaMensal.objects.create(
+                        turma=turma,
+                        mes=mes,
+                        ano=ano,
+                        percentual_minimo=percentual_minimo
+                    )
+                    
+                    # Calcular carências
+                    frequencia.calcular_carencias()
+                    
+                    count += 1
+                except Exception as e:
+                    errors.append(f"Erro na linha {count+1}: {str(e)}")
+            
+            if errors:
+                messages.warning(
+                    request,
+                    f"{count} frequências importadas com {len(errors)} erros.",
+                )
+                for error in errors[:5]:  # Mostrar apenas os 5 primeiros erros
+                    messages.error(request, error)
+                if len(errors) > 5:
+                    messages.error(
+                        request, f"... e mais {len(errors) - 5} erros."
+                    )
+            else:
+                messages.success(
+                    request, f"{count} frequências importadas com sucesso!"
+                )
+            return redirect("frequencias:listar_frequencias")
+        except Exception as e:
+            messages.error(request, f"Erro ao importar frequências: {str(e)}")
+    
+    return render(request, "frequencias/importar_frequencias.html")
+
+
+
+### Arquivo: frequencias\views\frequencia_mensal.py
+
+python
+"""
+Views para gerenciamento de frequências mensais.
+"""
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Q
+import logging
+import json
+
+# Importar funções utilitárias do módulo utils
+from frequencias.utils import (
+    get_models,
+    get_forms,
+    get_turma_model,
+    get_model_dynamically
+)
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def listar_frequencias(request):
+    """Lista todas as frequências mensais."""
+    try:
+        FrequenciaMensal, _ = get_models()
+        
+        # Aplicar filtros
+        frequencias = FrequenciaMensal.objects.all().select_related('turma')
+        
+        # Filtrar por turma
+        turma_id = request.GET.get('turma')
+        if turma_id:
+            frequencias = frequencias.filter(turma_id=turma_id)
+        
+        # Filtrar por ano
+        ano = request.GET.get('ano')
+        if ano:
+            frequencias = frequencias.filter(ano=ano)
+        
+        # Ordenar
+        frequencias = frequencias.order_by('-ano', '-mes', 'turma__nome')
+        
+        # Paginação
+        paginator = Paginator(frequencias, 20)  # 20 itens por página
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        # Obter turmas para filtro
+        Turma = get_turma_model()
+        turmas = Turma.objects.filter(status='A')
+        
+        # Obter anos disponíveis
+        anos = FrequenciaMensal.objects.values_list('ano', flat=True).distinct().order_by('-ano')
+        
+        context = {
+            'frequencias': page_obj,
+            'page_obj': page_obj,
+            'turmas': turmas,
+            'anos': anos,
+            'turma_selecionada': turma_id,
+            'ano_selecionado': ano
+        }
+        
+        return render(request, 'frequencias/listar_frequencias.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao listar frequências: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao listar frequências: {str(e)}")
+        return redirect('home')
+
+@login_required
+def criar_frequencia_mensal(request):
+    """Cria uma nova frequência mensal."""
+    try:
+        FrequenciaMensalForm, _ = get_forms()
+        
+        if request.method == 'POST':
+            form = FrequenciaMensalForm(request.POST)
+            if form.is_valid():
+                frequencia = form.save()
+                
+                # Calcular carências automaticamente
+                frequencia.calcular_carencias()
+                
+                messages.success(request, "Frequência mensal criada com sucesso!")
+                return redirect('frequencias:detalhar_frequencia_mensal', frequencia_id=frequencia.id)
+        else:
+            form = FrequenciaMensalForm()
+        
+        context = {
+            'form': form,
+            'titulo': 'Criar Frequência Mensal'
+        }
+        
+        return render(request, 'frequencias/formulario_frequencia_mensal.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao criar frequência mensal: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao criar frequência mensal: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+@login_required
+def editar_frequencia_mensal(request, frequencia_id):
+    """Edita uma frequência mensal existente."""
+    try:
+        FrequenciaMensal, _ = get_models()
+        FrequenciaMensalForm, _ = get_forms()
+        
+        frequencia = get_object_or_404(FrequenciaMensal, id=frequencia_id)
+        
+        if request.method == 'POST':
+            form = FrequenciaMensalForm(request.POST, instance=frequencia)
+            if form.is_valid():
+                frequencia = form.save()
+                
+                # Recalcular carências se necessário
+                if 'recalcular' in request.POST:
+                    frequencia.calcular_carencias()
+                    messages.success(request, "Frequência mensal atualizada e carências recalculadas!")
+                else:
+                    messages.success(request, "Frequência mensal atualizada com sucesso!")
+                
+                return redirect('frequencias:detalhar_frequencia_mensal', frequencia_id=frequencia.id)
+        else:
+            form = FrequenciaMensalForm(instance=frequencia)
+        
+        context = {
+            'form': form,
+            'frequencia': frequencia,
+            'titulo': 'Editar Frequência Mensal'
+        }
+        
+        return render(request, 'frequencias/formulario_frequencia_mensal.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao editar frequência mensal: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao editar frequência mensal: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+@login_required
+def excluir_frequencia_mensal(request, frequencia_id):
+    """Exclui uma frequência mensal."""
+    try:
+        FrequenciaMensal, _ = get_models()
+        frequencia = get_object_or_404(FrequenciaMensal, id=frequencia_id)
+        
+        if request.method == 'POST':
+            frequencia.delete()
+            messages.success(request, "Frequência mensal excluída com sucesso!")
+            return redirect('frequencias:listar_frequencias')
+        
+        context = {
+            'frequencia': frequencia
+        }
+        
+        return render(request, 'frequencias/excluir_frequencia_mensal.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao excluir frequência mensal: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao excluir frequência mensal: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+@login_required
+def detalhar_frequencia_mensal(request, frequencia_id):
+    """Exibe os detalhes de uma frequência mensal."""
+    try:
+        FrequenciaMensal, Carencia = get_models()
+        frequencia = get_object_or_404(FrequenciaMensal, id=frequencia_id)
+        
+        # Obter carências
+        carencias = Carencia.objects.filter(frequencia_mensal=frequencia).select_related('aluno')
+        
+        # Ordenar carências
+        carencias = carencias.order_by('liberado', 'aluno__nome')
+        
+        # Preparar dados para gráfico
+        alunos_labels = []
+        percentuais_presenca = []
+        
+        for carencia in carencias:
+            alunos_labels.append(carencia.aluno.nome)
+            percentuais_presenca.append(float(carencia.percentual_presenca))
+        
+        # Calcular total de alunos
+        total_alunos = carencias.count()
+        
+        context = {
+            'frequencia': frequencia,
+            'carencias': carencias,
+            'total_alunos': total_alunos,
+            'alunos_labels': json.dumps(alunos_labels),
+            'percentuais_presenca': json.dumps(percentuais_presenca)
+        }
+        
+        return render(request, 'frequencias/detalhar_frequencia_mensal.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao detalhar frequência mensal: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao detalhar frequência mensal: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+@login_required
+def recalcular_carencias(request, frequencia_id):
+    """Recalcula as carências de uma frequência mensal."""
+    try:
+        FrequenciaMensal, _ = get_models()
+        frequencia = get_object_or_404(FrequenciaMensal, id=frequencia_id)
+        
+        # Recalcular carências
+        frequencia.calcular_carencias()
+        
+        messages.success(request, "Carências recalculadas com sucesso!")
+        return redirect('frequencias:detalhar_frequencia_mensal', frequencia_id=frequencia.id)
+    
+    except Exception as e:
+        logger.error(f"Erro ao recalcular carências: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao recalcular carências: {str(e)}")
+        return redirect('frequencias:detalhar_frequencia_mensal', frequencia_id=frequencia_id)
+
+
+
+### Arquivo: frequencias\views\notificacao.py
+
+python
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.core.paginator import Paginator
+from importlib import import_module
+import logging
+
+logger = logging.getLogger(__name__)
+
+def get_models():
+    """Obtém os modelos FrequenciaMensal e Carencia."""
+    frequencias_module = import_module("frequencias.models")
+    FrequenciaMensal = getattr(frequencias_module, "FrequenciaMensal")
+    Carencia = getattr(frequencias_module, "Carencia")
+    return FrequenciaMensal, Carencia
+
+def get_model_dynamically(app_name, model_name):
+    """Obtém um modelo dinamicamente para evitar importações circulares."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+@login_required
+def criar_notificacao(request, carencia_id):
+    """Cria uma notificação para uma carência."""
+    try:
+        _, Carencia = get_models()
+        carencia = get_object_or_404(Carencia, id=carencia_id)
+        
+        if request.method == 'POST':
+            Notificacao = get_model_dynamically("notificacoes", "Notificacao")
+            
+            notificacao = Notificacao.objects.create(
+                aluno=carencia.aluno,
+                carencia=carencia,
+                assunto=request.POST.get('assunto'),
+                mensagem=request.POST.get('mensagem'),
+                tipo_notificacao=request.POST.get('tipo_notificacao'),
+                prioridade=request.POST.get('prioridade'),
+                criado_por=request.user,
+                data_criacao=timezone.now()
+            )
+            
+            # Processar anexos
+            for arquivo in request.FILES.getlist('anexos'):
+                Anexo = get_model_dynamically("notificacoes", "Anexo")
+                
+                anexo = Anexo.objects.create(
+                    notificacao=notificacao,
+                    nome=arquivo.name,
+                    arquivo=arquivo,
+                    uploaded_by=request.user
+                )
+            
+            # Enviar notificação imediatamente se solicitado
+            if request.POST.get('enviar_agora'):
+                notificacao.status = 'ENVIADA'
+                notificacao.data_envio = timezone.now()
+                notificacao.enviado_por = request.user
+                notificacao.save()
+                
+                # Lógica para enviar a notificação (e-mail, SMS, etc.)
+                try:
+                    # Implementar envio de notificação
+                    pass
+                except Exception as e:
+                    logger.error(f"Erro ao enviar notificação: {str(e)}", exc_info=True)
+                    messages.warning(request, f"Notificação criada, mas houve um erro ao enviá-la: {str(e)}")
+                    return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+            
+            messages.success(request, "Notificação criada com sucesso!")
+            return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+        
+        context = {
+            'carencia': carencia
+        }
+        
+        return render(request, 'frequencias/criar_notificacao.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao criar notificação: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao criar notificação: {str(e)}")
+        return redirect('frequencias:detalhar_carencia', carencia_id=carencia_id)
+
+@login_required
+def detalhar_notificacao(request, notificacao_id):
+    """Exibe os detalhes de uma notificação."""
+    try:
+        Notificacao = get_model_dynamically("notificacoes", "Notificacao")
+        notificacao = get_object_or_404(Notificacao, id=notificacao_id)
+        
+        context = {
+            'notificacao': notificacao
+        }
+        
+        return render(request, 'frequencias/detalhar_notificacao.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao detalhar notificação: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao detalhar notificação: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+@login_required
+def editar_notificacao(request, notificacao_id):
+    """Edita uma notificação."""
+    try:
+        Notificacao = get_model_dynamically("notificacoes", "Notificacao")
+        notificacao = get_object_or_404(Notificacao, id=notificacao_id)
+        
+        # Verificar se a notificação já foi enviada
+        if notificacao.status != 'PENDENTE':
+            messages.warning(request, "Esta notificação já foi enviada e não pode ser editada.")
+            return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+        
+        if request.method == 'POST':
+            action = request.POST.get('action', 'salvar')
+            
+            # Atualizar dados da notificação
+            notificacao.assunto = request.POST.get('assunto')
+            notificacao.mensagem = request.POST.get('mensagem')
+            
+            # Processar anexos
+            for arquivo in request.FILES.getlist('anexos'):
+                Anexo = get_model_dynamically("notificacoes", "Anexo")
+                
+                anexo = Anexo.objects.create(
+                    notificacao=notificacao,
+                    nome=arquivo.name,
+                    arquivo=arquivo,
+                    uploaded_by=request.user
+                )
+            
+            # Remover anexos selecionados
+            for anexo_id in request.POST.getlist('remover_anexos'):
+                Anexo = get_model_dynamically("notificacoes", "Anexo")
+                anexo = get_object_or_404(Anexo, id=anexo_id)
+                anexo.delete()
+            
+            notificacao.save()
+            
+            # Enviar notificação se solicitado
+            if action == 'salvar_enviar':
+                notificacao.status = 'ENVIADA'
+                notificacao.data_envio = timezone.now()
+                notificacao.enviado_por = request.user
+                notificacao.save()
+                
+                # Lógica para enviar a notificação (e-mail, SMS, etc.)
+                try:
+                    # Implementar envio de notificação
+                    pass
+                except Exception as e:
+                    logger.error(f"Erro ao enviar notificação: {str(e)}", exc_info=True)
+                    messages.warning(request, f"Notificação atualizada, mas houve um erro ao enviá-la: {str(e)}")
+                    return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+                
+                messages.success(request, "Notificação atualizada e enviada com sucesso!")
+            else:
+                messages.success(request, "Notificação atualizada com sucesso!")
+            
+            return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+        
+        context = {
+            'notificacao': notificacao
+        }
+        
+        return render(request, 'frequencias/editar_notificacao.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao editar notificação: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao editar notificação: {str(e)}")
+        return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao_id)
+
+@login_required
+def enviar_notificacao(request, notificacao_id):
+    """Envia uma notificação."""
+    try:
+        Notificacao = get_model_dynamically("notificacoes", "Notificacao")
+        notificacao = get_object_or_404(Notificacao, id=notificacao_id)
+        
+        # Verificar se a notificação já foi enviada
+        if notificacao.status != 'PENDENTE':
+            messages.warning(request, "Esta notificação já foi enviada.")
+            return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+        
+        if request.method == 'POST':
+            # Atualizar status da notificação
+            notificacao.status = 'ENVIADA'
+            notificacao.data_envio = timezone.now()
+            notificacao.enviado_por = request.user
+            
+            # Atualizar status da carência se solicitado
+            if request.POST.get('marcar_acompanhamento') and notificacao.carencia and notificacao.carencia.status == 'PENDENTE':
+                notificacao.carencia.status = 'EM_ACOMPANHAMENTO'
+                notificacao.carencia.data_acompanhamento = timezone.now()
+                notificacao.carencia.acompanhado_por = request.user
+                notificacao.carencia.save()
+            
+            notificacao.save()
+            
+            # Enviar cópia para o usuário se solicitado
+            enviar_copia = request.POST.get('enviar_copia')
+            
+            # Lógica para enviar a notificação (e-mail, SMS, etc.)
+            try:
+                # Implementar envio de notificação
+                pass
+            except Exception as e:
+                logger.error(f"Erro ao enviar notificação: {str(e)}", exc_info=True)
+                messages.warning(request, f"Houve um erro ao enviar a notificação: {str(e)}")
+                return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+            
+            messages.success(request, "Notificação enviada com sucesso!")
+            return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+        
+        context = {
+            'notificacao': notificacao
+        }
+        
+        return render(request, 'frequencias/enviar_notificacao.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao enviar notificação: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao enviar notificação: {str(e)}")
+        return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao_id)
+
+@login_required
+def reenviar_notificacao(request, notificacao_id):
+    """Reenvia uma notificação."""
+    try:
+        Notificacao = get_model_dynamically("notificacoes", "Notificacao")
+        notificacao = get_object_or_404(Notificacao, id=notificacao_id)
+        
+        # Verificar se a notificação pode ser reenviada
+        if notificacao.status not in ['ENVIADA', 'LIDA']:
+            messages.warning(request, "Esta notificação não pode ser reenviada.")
+            return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+        
+        # Atualizar data de envio
+        notificacao.data_envio = timezone.now()
+        notificacao.enviado_por = request.user
+        notificacao.save()
+        
+        # Lógica para reenviar a notificação (e-mail, SMS, etc.)
+        try:
+            # Implementar reenvio de notificação
+            pass
+        except Exception as e:
+            logger.error(f"Erro ao reenviar notificação: {str(e)}", exc_info=True)
+            messages.warning(request, f"Houve um erro ao reenviar a notificação: {str(e)}")
+            return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+        
+        messages.success(request, "Notificação reenviada com sucesso!")
+        return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+    
+    except Exception as e:
+        logger.error(f"Erro ao reenviar notificação: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao reenviar notificação: {str(e)}")
+        return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao_id)
+
+@login_required
+def responder_aluno(request, notificacao_id):
+    """Responde a uma notificação do aluno."""
+    try:
+        Notificacao = get_model_dynamically("notificacoes", "Notificacao")
+        notificacao = get_object_or_404(Notificacao, id=notificacao_id)
+        
+        # Verificar se a notificação pode ser respondida
+        if notificacao.status != 'RESPONDIDA':
+            messages.warning(request, "Esta notificação não possui resposta do aluno.")
+            return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao.id)
+        
+        if request.method == 'POST':
+            # Criar nova notificação como resposta
+            nova_notificacao = Notificacao.objects.create(
+                aluno=notificacao.aluno,
+                carencia=notificacao.carencia,
+                assunto=f"RE: {notificacao.assunto}",
+                mensagem=request.POST.get('mensagem'),
+                tipo_notificacao=notificacao.tipo_notificacao,
+                prioridade=notificacao.prioridade,
+                criado_por=request.user,
+                data_criacao=timezone.now(),
+                notificacao_pai=notificacao
+            )
+            
+            # Processar anexos
+            for arquivo in request.FILES.getlist('anexos'):
+                Anexo = get_model_dynamically("notificacoes", "Anexo")
+                
+                anexo = Anexo.objects.create(
+                    notificacao=nova_notificacao,
+                    nome=arquivo.name,
+                    arquivo=arquivo,
+                    uploaded_by=request.user
+                )
+            
+            # Enviar notificação imediatamente
+            nova_notificacao.status = 'ENVIADA'
+            nova_notificacao.data_envio = timezone.now()
+            nova_notificacao.enviado_por = request.user
+            nova_notificacao.save()
+            
+            # Lógica para enviar a notificação (e-mail, SMS, etc.)
+            try:
+                # Implementar envio de notificação
+                pass
+            except Exception as e:
+                logger.error(f"Erro ao enviar resposta: {str(e)}", exc_info=True)
+                messages.warning(request, f"Resposta criada, mas houve um erro ao enviá-la: {str(e)}")
+                return redirect('frequencias:detalhar_notificacao', notificacao_id=nova_notificacao.id)
+            
+            messages.success(request, "Resposta enviada com sucesso!")
+            return redirect('frequencias:detalhar_notificacao', notificacao_id=nova_notificacao.id)
+        
+        context = {
+            'notificacao': notificacao
+        }
+        
+        return render(request, 'frequencias/responder_aluno.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao responder aluno: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao responder aluno: {str(e)}")
+        return redirect('frequencias:detalhar_notificacao', notificacao_id=notificacao_id)
+
+@login_required
+def listar_notificacoes_carencia(request):
+    """Lista todas as notificações de carência."""
+    try:
+        Notificacao = get_model_dynamically("notificacoes", "Notificacao")
+        
+        # Obter parâmetros de filtro
+        status = request.GET.get('status')
+        aluno_id = request.GET.get('aluno')
+        tipo = request.GET.get('tipo')
+        
+        # Construir query base
+        notificacoes = Notificacao.objects.filter(carencia__isnull=False).select_related('aluno', 'carencia')
+        
+        # Aplicar filtros
+        if status:
+            notificacoes = notificacoes.filter(status=status)
+        
+        if aluno_id:
+            notificacoes = notificacoes.filter(aluno__cpf=aluno_id)
+        
+        if tipo:
+            notificacoes = notificacoes.filter(tipo_notificacao=tipo)
+            
+        # Ordenar por data de criação (mais recente primeiro)
+        notificacoes = notificacoes.order_by('-data_criacao')
+        
+        # Paginação
+        paginator = Paginator(notificacoes, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        context = {
+            'notificacoes': page_obj,
+            'page_obj': page_obj,
+            'filtros': {
+                'status': status,
+                'aluno': aluno_id,
+                'tipo': tipo
+            }
+        }
+        
+        return render(request, 'frequencias/listar_notificacoes.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao listar notificações: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao listar notificações: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+
+
+### Arquivo: frequencias\views\relatorio.py
+
+python
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Avg, Count, Case, When, IntegerField
+from django.http import HttpResponse
+from importlib import import_module
+import logging
+import csv
+import json
+
+logger = logging.getLogger(__name__)
+
+def get_models():
+    """Obtém os modelos FrequenciaMensal e Carencia."""
+    frequencias_module = import_module("frequencias.models")
+    FrequenciaMensal = getattr(frequencias_module, "FrequenciaMensal")
+    Carencia = getattr(frequencias_module, "Carencia")
+    return FrequenciaMensal, Carencia
+
+def get_model_dynamically(app_name, model_name):
+    """Obtém um modelo dinamicamente para evitar importações circulares."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+@login_required
+def relatorio_frequencias(request):
+    """Exibe um relatório de frequências."""
+    try:
+        FrequenciaMensal, Carencia = get_models()
+        
+        # Estatísticas gerais
+        total_frequencias = FrequenciaMensal.objects.count()
+        
+        # Obter total de alunos com carência
+        total_carencias = Carencia.objects.count()
+        total_liberados = Carencia.objects.filter(liberado=True).count()
+        total_nao_liberados = total_carencias - total_liberados
+        
+        # Percentuais
+        percentual_liberados = (total_liberados / total_carencias * 100) if total_carencias > 0 else 0
+        percentual_nao_liberados = (total_nao_liberados / total_carencias * 100) if total_carencias > 0 else 0
+        
+        # Frequências por mês
+        from django.db.models import Count
+        from django.db.models.functions import TruncMonth
+        
+        # Agrupar por mês e ano
+        frequencias_por_mes = FrequenciaMensal.objects.values('mes', 'ano').annotate(
+            total=Count('id')
+        ).order_by('ano', 'mes')
+        
+        # Formatar dados para gráficos
+        meses = []
+        dados_frequencias = []
+        
+        for item in frequencias_por_mes:
+            mes_nome = dict(FrequenciaMensal.MES_CHOICES).get(item['mes'])
+            meses.append(f"{mes_nome}/{item['ano']}")
+            dados_frequencias.append(item['total'])
+        
+        context = {
+            'total_frequencias': total_frequencias,
+            'total_carencias': total_carencias,
+            'total_liberados': total_liberados,
+            'total_nao_liberados': total_nao_liberados,
+            'percentual_liberados': percentual_liberados,
+            'percentual_nao_liberados': percentual_nao_liberados,
+            'meses': meses,
+            'dados_frequencias': dados_frequencias
+        }
+        
+        return render(request, 'frequencias/relatorio_frequencias.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao gerar relatório de frequências: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao gerar relatório: {str(e)}")
+        return redirect('frequencias:listar_frequencias')
+
+@login_required
+def exportar_frequencia_csv(request, frequencia_id):
+    """Exporta os dados de uma frequência mensal para CSV."""
+    try:
+        FrequenciaMensal, Carencia = get_models()
+        frequencia = get_object_or_404(FrequenciaMensal, id=frequencia_id)
+        
+        # Obter carências
+        carencias = Carencia.objects.filter(frequencia_mensal=frequencia).select_related('aluno')
+        
+        # Criar resposta CSV
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="frequencia_{frequencia.turma.nome}_{frequencia.get_mes_display()}_{frequencia.ano}.csv"'
+        
+        # Escrever cabeçalho e dados
+        writer = csv.writer(response)
+        writer.writerow(['CPF', 'Aluno', 'Presenças', 'Total Atividades', 'Percentual', 'Carências', 'Liberado', 'Observações'])
+        
+        for carencia in carencias:
+            writer.writerow([
+                carencia.aluno.cpf,
+                carencia.aluno.nome,
+                carencia.total_presencas,
+                carencia.total_atividades,
+                f"{carencia.percentual_presenca:.2f}",
+                carencia.numero_carencias,
+                'Sim' if carencia.liberado else 'Não',
+                carencia.observacoes or ''
+            ])
+        
+        return response
+    
+    except Exception as e:
+        logger.error(f"Erro ao exportar frequência: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao exportar frequência: {str(e)}")
+        return redirect('frequencias:detalhar_frequencia_mensal', frequencia_id=frequencia_id)
+
+@login_required
+def historico_frequencia(request, aluno_cpf):
+    """Exibe o histórico de frequência de um aluno."""
+    try:
+        FrequenciaMensal, Carencia = get_models()
+        Aluno = get_model_dynamically("alunos", "Aluno")
+        
+        # Obter aluno
+        aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
+        
+        # Obter parâmetros de filtro
+        curso_id = request.GET.get('curso')
+        turma_id = request.GET.get('turma')
+        periodo = request.GET.get('periodo')
+        
+        # Construir query base
+        carencias = Carencia.objects.filter(aluno=aluno).select_related('frequencia_mensal', 'frequencia_mensal__turma')
+        
+        # Aplicar filtros
+        if curso_id:
+            carencias = carencias.filter(frequencia_mensal__turma__curso__codigo_curso=curso_id)
+        
+        if turma_id:
+            carencias = carencias.filter(frequencia_mensal__turma__id=turma_id)
+        
+        if periodo:
+            ano, mes = periodo.split('-')
+            carencias = carencias.filter(frequencia_mensal__ano=ano, frequencia_mensal__mes=mes)
+        
+        # Ordenar por período (mais recente primeiro)
+        carencias = carencias.order_by('-frequencia_mensal__ano', '-frequencia_mensal__mes')
+        
+        # Paginação
+        paginator = Paginator(carencias, 10)  # 10 itens por página
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        # Calcular média geral de frequência
+        from django.db.models import Avg
+        media_geral = carencias.aggregate(Avg('percentual_presenca'))['percentual_presenca__avg'] or 0
+        
+        # Dados para gráfico de evolução
+        periodos_labels = []
+        percentuais_presenca = []
+        
+        # Limitar a 12 períodos mais recentes
+        for carencia in carencias[:12]:
+            periodo_label = f"{carencia.frequencia_mensal.get_mes_display()}/{carencia.frequencia_mensal.ano}"
+            periodos_labels.append(periodo_label)
+            percentuais_presenca.append(float(carencia.percentual_presenca))
+        
+        # Inverter para ordem cronológica
+        periodos_labels.reverse()
+        percentuais_presenca.reverse()
+        
+        # Obter dados para filtros
+        Curso = get_model_dynamically("cursos", "Curso")
+        cursos = Curso.objects.all()
+        
+        Turma = get_turma_model()
+        turmas = Turma.objects.filter(matriculas__aluno=aluno).distinct()
+        
+        anos = FrequenciaMensal.objects.filter(carencia__aluno=aluno).values_list('ano', flat=True).distinct().order_by('-ano')
+        meses = FrequenciaMensal.MES_CHOICES
+        
+        context = {
+            'aluno': aluno,
+            'registros': page_obj,
+            'total_registros': carencias.count(),
+            'media_geral': media_geral,
+            'carencias': carencias.filter(percentual_presenca__lt=75),
+            'periodos_labels': json.dumps(periodos_labels),
+            'percentuais_presenca': json.dumps(percentuais_presenca),
+            'filtros': {
+                'curso': curso_id,
+                'turma': turma_id,
+                'periodo': periodo
+            },
+            'cursos': cursos,
+            'turmas': turmas,
+            'anos': anos,
+            'meses': meses
+        }
+        
+        return render(request, 'frequencias/historico_frequencia.html', context)
+    
+    except Exception as e:
+        logger.error(f"Erro ao exibir histórico de frequência: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao exibir histórico de frequência: {str(e)}")
+        return redirect('alunos:detalhar_aluno', cpf=aluno_cpf)
+
+@login_required
+def exportar_historico(request, aluno_cpf):
+    """Exporta o histórico de frequência de um aluno para CSV."""
+    try:
+        _, Carencia = get_models()
+        Aluno = get_model_dynamically("alunos", "Aluno")
+        
+        # Obter aluno
+        aluno = get_object_or_404(Aluno, cpf=aluno_cpf)
+        
+        # Obter carências
+        carencias = Carencia.objects.filter(aluno=aluno).select_related('frequencia_mensal', 'frequencia_mensal__turma')
+        
+        # Criar resposta CSV
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="historico_frequencia_{aluno.nome}.csv"'
+        
+        # Escrever cabeçalho e dados
+        writer = csv.writer(response)
+        writer.writerow(['Curso', 'Turma', 'Período', 'Presenças', 'Faltas', 'Total Aulas', 'Percentual', 'Status'])
+        
+        for carencia in carencias:
+            writer.writerow([
+                carencia.frequencia_mensal.turma.curso.nome,
+                carencia.frequencia_mensal.turma.nome,
+                f"{carencia.frequencia_mensal.get_mes_display()}/{carencia.frequencia_mensal.ano}",
+                carencia.total_presencas,
+                carencia.total_atividades - carencia.total_presencas,
+                carencia.total_atividades,
+                f"{carencia.percentual_presenca:.2f}",
+                'Regular' if carencia.percentual_presenca >= 75 else 'Carência'
+            ])
+        
+        return response
+    
+    except Exception as e:
+        logger.error(f"Erro ao exportar histórico: {str(e)}", exc_info=True)
+        messages.error(request, f"Erro ao exportar histórico: {str(e)}")
+        return redirect('frequencias:historico_frequencia', aluno_cpf=aluno_cpf)
+
+
 ## Arquivos de Template:
 
 
@@ -783,1483 +2519,6 @@ Equipe OMAUM</textarea>
         });
     });
 </script>
-{% endblock %}
-
-
-
-### Arquivo: frequencias\templates\frequencias\dashboard.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Dashboard de Frequências{% endblock %}
-
-{% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Dashboard de Frequências</h1>
-        <div>
-            <a href="{% url 'frequencias:relatorio_carencias' %}" class="btn btn-primary">
-                <i class="fas fa-file-alt"></i> Relatório de Carências
-            </a>
-            <a href="{% url 'frequencias:notificacoes_carencia' %}" class="btn btn-info">
-                <i class="fas fa-envelope"></i> Notificações
-            </a>
-        </div>
-    </div>
-    
-    <!-- Filtros -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Filtros</h5>
-        </div>
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="periodo" class="form-label">Período</label>
-                    <select class="form-select" id="periodo" name="periodo">
-                        <option value="">Todos os períodos</option>
-                        {% for ano in anos %}
-                            <optgroup label="{{ ano }}">
-                                {% for mes in meses %}
-                                <option value="{{ ano }}-{{ mes.0 }}" 
-                                        {% if filtros.periodo == ano|stringformat:"s"|add:"-"|add:mes.0 %}selected{% endif %}>
-                                    {{ mes.1 }}/{{ ano }}
-                                </option>
-                                {% endfor %}
-                            </optgroup>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="curso" class="form-label">Curso</label>
-                    <select class="form-select" id="curso" name="curso">
-                        <option value="">Todos os cursos</option>
-                        {% for curso in cursos %}
-                        <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == filtros.curso %}selected{% endif %}>
-                            {{ curso.nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="turma" class="form-label">Turma</label>
-                    <select class="form-select" id="turma" name="turma">
-                        <option value="">Todas as turmas</option>
-                        {% for turma in turmas %}
-                        <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == filtros.turma %}selected{% endif %}>
-                            {{ turma.nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter"></i> Filtrar
-                    </button>
-                    <a href="{% url 'frequencias:dashboard' %}" class="btn btn-secondary">
-                        <i class="fas fa-undo"></i> Limpar Filtros
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Cards de estatísticas -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-white bg-primary h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Média de Frequência</h5>
-                    <p class="card-text display-4">{{ estatisticas.media_frequencia|floatformat:1 }}%</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <small>Média geral de frequência</small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card text-white bg-success h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Alunos Regulares</h5>
-                    <p class="card-text display-4">{{ estatisticas.alunos_regulares }}</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <small>Alunos com frequência ≥ 75%</small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card text-white bg-danger h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Alunos em Carência</h5>
-                    <p class="card-text display-4">{{ estatisticas.alunos_carencia }}</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <small>Alunos com frequência < 75%</small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card text-white bg-info h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Alunos</h5>
-                    <p class="card-text display-4">{{ estatisticas.total_alunos }}</p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <small>Alunos ativos no período</small>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Gráficos -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Frequência por Curso</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="graficoFrequenciaCursos" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Evolução da Frequência</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="graficoEvolucaoFrequencia" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tabela de turmas com menor frequência -->
-    <div class="card mb-4">
-        <div class="card-header bg-warning text-dark">
-            <h5 class="mb-0">Turmas com Menor Frequência</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Turma</th>
-                            <th>Curso</th>
-                            <th>Período</th>
-                            <th>Média de Frequência</th>
-                            <th>Alunos em Carência</th>
-                            <th>Total de Alunos</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for turma in turmas_menor_frequencia %}
-                        <tr>
-                            <td>{{ turma.nome }}</td>
-                            <td>{{ turma.curso.nome }}</td>
-                            <td>{{ turma.periodo_mes }}/{{ turma.periodo_ano }}</td>
-                            <td>
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar {% if turma.media_frequencia < 75 %}bg-danger{% elif turma.media_frequencia < 85 %}bg-warning{% else %}bg-success{% endif %}" 
-                                         role="progressbar" style="width: {{ turma.media_frequencia }}%;" 
-                                         aria-valuenow="{{ turma.media_frequencia }}" aria-valuemin="0" aria-valuemax="100">
-                                        {{ turma.media_frequencia|floatformat:1 }}%
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ turma.alunos_carencia }} / {{ turma.total_alunos }}</td>
-                            <td>{{ turma.total_alunos }}</td>
-                            <td>
-                                <a href="{% url 'frequencias:listar_frequencias' %}?turma={{ turma.id }}" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-list"></i> Ver Frequências
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-3">
-                                <p class="mb-0">Nenhuma turma encontrada com os filtros selecionados.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Alunos com menor frequência -->
-    <div class="card mb-4">
-        <div class="card-header bg-danger text-white">
-            <h5 class="mb-0">Alunos com Menor Frequência</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Aluno</th>
-                            <th>Turma</th>
-                            <th>Curso</th>
-                            <th>Período</th>
-                            <th>Frequência</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for aluno in alunos_menor_frequencia %}
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    {% if aluno.foto %}
-                                    <img src="{{ aluno.foto.url }}" alt="{{ aluno.nome }}" 
-                                         class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
-                                    {% else %}
-                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
-                                         style="width: 40px; height: 40px; color: white;">
-                                        {{ aluno.nome|first|upper }}
-                                    </div>
-                                    {% endif %}
-                                    <div>
-                                        <div>{{ aluno.nome }}</div>
-                                        <small class="text-muted">{{ aluno.email }}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ aluno.turma }}</td>
-                            <td>{{ aluno.curso }}</td>
-                            <td>{{ aluno.periodo_mes }}/{{ aluno.periodo_ano }}</td>
-                            <td>
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-danger" role="progressbar" 
-                                         style="width: {{ aluno.percentual_presenca }}%;" 
-                                         aria-valuenow="{{ aluno.percentual_presenca }}" aria-valuemin="0" aria-valuemax="100">
-                                        {{ aluno.percentual_presenca }}%
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                {% if aluno.status_carencia == 'PENDENTE' %}
-                                <span class="badge bg-danger">Pendente</span>
-                                {% elif aluno.status_carencia == 'EM_ACOMPANHAMENTO' %}
-                                <span class="badge bg-warning text-dark">Em Acompanhamento</span>
-                                {% elif aluno.status_carencia == 'RESOLVIDO' %}
-                                <span class="badge bg-success">Resolvido</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="btn-group">
-                                    <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-user"></i>
-                                    </a>
-                                    {% if aluno.carencia_id %}
-                                    <a href="{% url 'frequencias:detalhar_carencia' aluno.carencia_id %}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </a>
-                                    {% if aluno.status_carencia != 'RESOLVIDO' %}
-                                    <a href="{% url 'frequencias:resolver_carencia' aluno.carencia_id %}" class="btn btn-sm btn-success">
-                                        <i class="fas fa-check"></i>
-                                    </a>
-                                    {% endif %}
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-3">
-                                <p class="mb-0">Nenhum aluno em carência encontrado com os filtros selecionados.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Gráfico de frequência por curso
-        const ctxCursos = document.getElementById('graficoFrequenciaCursos').getContext('2d');
-        new Chart(ctxCursos, {
-            type: 'bar',
-            data: {
-                labels: {{ cursos_labels|safe }},
-                datasets: [{
-                    label: 'Média de Frequência (%)',
-                    data: {{ frequencia_por_curso|safe }},
-                    backgroundColor: [
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(153, 102, 255, 0.7)',
-                        'rgba(255, 159, 64, 0.7)',
-                        'rgba(199, 199, 199, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)',
-                        'rgba(199, 199, 199, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + context.raw.toFixed(1) + '%';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Gráfico de evolução da frequência
-        const ctxEvolucao = document.getElementById('graficoEvolucaoFrequencia').getContext('2d');
-        new Chart(ctxEvolucao, {
-            type: 'line',
-            data: {
-                labels: {{ periodos_labels|safe }},
-                datasets: [{
-                    label: 'Média de Frequência (%)',
-                    data: {{ evolucao_frequencia|safe }},
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 2,
-                    tension: 0.1,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + context.raw.toFixed(1) + '%';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Atualizar turmas quando o curso for alterado
-        const cursoSelect = document.getElementById('curso');
-        const turmaSelect = document.getElementById('turma');
-        
-        cursoSelect.addEventListener('change', function() {
-            const cursoId = this.value;
-            
-            // Limpar o select de turmas
-            turmaSelect.innerHTML = '<option value="">Todas as turmas</option>';
-            
-            if (cursoId) {
-                // Fazer uma requisição AJAX para buscar as turmas do curso
-                fetch(`/frequencias/api/turmas-por-curso/${cursoId}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.turmas) {
-                            data.turmas.forEach(turma => {
-                                const option = document.createElement('option');
-                                option.value = turma.id;
-                                option.textContent = turma.nome;
-                                turmaSelect.appendChild(option);
-                            });
-                        }
-                    })
-                    .catch(error => console.error('Erro ao buscar turmas:', error));
-            }
-        });
-    });
-</script>
-{% endblock %}
-{% endblock %}
-
-
-
-### Arquivo: frequencias\templates\frequencias\detalhar_carencia.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Detalhes da Carência{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <!-- Padronizar botões de ação -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Detalhes da Carência</h1>
-        <div>
-            <a href="{% url 'frequencias:listar_carencias' %}" class="btn btn-secondary me-2">
-                <i class="fas fa-list"></i> Lista de Carências
-            </a>
-            <a href="javascript:history.back()" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-        </div>
-    </div>
-    
-    <!-- Status da carência -->
-    <div class="alert 
-        {% if carencia.status == 'PENDENTE' %}alert-danger
-        {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}alert-warning
-        {% elif carencia.status == 'RESOLVIDO' %}alert-success
-        {% endif %}">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="alert-heading mb-1">
-                    {% if carencia.status == 'PENDENTE' %}
-                    <i class="fas fa-exclamation-circle"></i> Carência Pendente
-                    {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}
-                    <i class="fas fa-clock"></i> Carência em Acompanhamento
-                    {% elif carencia.status == 'RESOLVIDO' %}
-                    <i class="fas fa-check-circle"></i> Carência Resolvida
-                    {% endif %}
-                </h5>
-                <p class="mb-0">
-                    {% if carencia.status == 'PENDENTE' %}
-                    Esta carência foi identificada em {{ carencia.data_identificacao|date:"d/m/Y" }} e ainda não foi tratada.
-                    {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}
-                    Esta carência está sendo acompanhada desde {{ carencia.data_acompanhamento|date:"d/m/Y" }}.
-                    {% elif carencia.status == 'RESOLVIDO' %}
-                    Esta carência foi resolvida em {{ carencia.data_resolucao|date:"d/m/Y" }}.
-                    {% endif %}
-                </p>
-            </div>
-            <div>
-                {% if carencia.status == 'PENDENTE' %}
-                <a href="{% url 'frequencias:iniciar_acompanhamento' carencia.id %}" class="btn btn-warning">
-                    <i class="fas fa-clock"></i> Iniciar Acompanhamento
-                </a>
-                {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}
-                <a href="{% url 'frequencias:resolver_carencia' carencia.id %}" class="btn btn-success">
-                    <i class="fas fa-check"></i> Resolver Carência
-                </a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <!-- Informações do aluno -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Informações do Aluno</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="d-flex align-items-center">
-                        {% if carencia.aluno.foto %}
-                        <img src="{{ carencia.aluno.foto.url }}" alt="{{ carencia.aluno.nome }}" 
-                             class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
-                        {% else %}
-                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
-                             style="width: 60px; height: 60px; color: white; font-size: 1.5rem;">
-                            {{ carencia.aluno.nome|first|upper }}
-                        </div>
-                        {% endif %}
-                        <div>
-                            <h5 class="mb-1">{{ carencia.aluno.nome }}</h5>
-                            <p class="mb-0">{{ carencia.aluno.email }}</p>
-                            <p class="mb-0">CPF: {{ carencia.aluno.cpf }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <a href="{% url 'alunos:detalhar_aluno' carencia.aluno.cpf %}" class="btn btn-outline-primary">
-                        <i class="fas fa-user"></i> Ver Perfil Completo
-                    </a>
-                    <a href="{% url 'frequencias:historico_frequencia' carencia.aluno.cpf %}" class="btn btn-outline-info">
-                        <i class="fas fa-history"></i> Histórico de Frequência
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Informações da frequência -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0">Informações da Frequência</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Curso:</strong> {{ carencia.frequencia_mensal.turma.curso.nome }}</p>
-                    <p><strong>Turma:</strong> {{ carencia.frequencia_mensal.turma.nome }}</p>
-                    <p><strong>Período:</strong> {{ carencia.frequencia_mensal.get_mes_display }}/{{ carencia.frequencia_mensal.ano }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Total de Aulas:</strong> {{ carencia.frequencia_mensal.total_aulas }}</p>
-                    <p><strong>Presenças:</strong> {{ carencia.frequencia_mensal.presencas }}</p>
-                    <p><strong>Faltas:</strong> {{ carencia.frequencia_mensal.faltas }}</p>
-                </div>
-            </div>
-            
-            <div class="mt-3">
-                <h6>Percentual de Presença:</h6>
-                <div class="progress" style="height: 25px;">
-                    <div class="progress-bar bg-danger" role="progressbar" 
-                         style="width: {{ carencia.percentual_presenca }}%;" 
-                         aria-valuenow="{{ carencia.percentual_presenca }}" aria-valuemin="0" aria-valuemax="100">
-                        {{ carencia.percentual_presenca|floatformat:1 }}%
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between mt-1">
-                    <small class="text-muted">0%</small>
-                    <small class="text-danger">Mínimo: 75%</small>
-                    <small class="text-muted">100%</small>
-                </div>
-            </div>
-            
-            <div class="mt-3 text-end">
-                <a href="{% url 'frequencias:detalhar_frequencia_mensal' carencia.frequencia_mensal.id %}" class="btn btn-outline-info">
-                    <i class="fas fa-calendar-alt"></i> Ver Detalhes da Frequência Mensal
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Notificações -->
-    <div class="card mb-4">
-        <div class="card-header bg-warning text-dark">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Notificações</h5>
-                {% if not carencia.notificacao and carencia.status != 'RESOLVIDO' %}
-                <a href="{% url 'frequencias:criar_notificacao' carencia.id %}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus"></i> Criar Notificação
-                </a>
-                {% endif %}
-            </div>
-        </div>
-        <div class="card-body">
-            {% if carencia.notificacao %}
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">{{ carencia.notificacao.assunto }}</h6>
-                        <span class="badge 
-                            {% if carencia.notificacao.status == 'PENDENTE' %}bg-secondary
-                            {% elif carencia.notificacao.status == 'ENVIADA' %}bg-info
-                            {% elif carencia.notificacao.status == 'LIDA' %}bg-primary
-                            {% elif carencia.notificacao.status == 'RESPONDIDA' %}bg-success
-                            {% endif %}">
-                            {{ carencia.notificacao.get_status_display }}
-                        </span>
-                    </div>
-                    <p class="mb-2">{{ carencia.notificacao.mensagem|truncatechars:150 }}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">
-                            Criada em: {{ carencia.notificacao.data_criacao|date:"d/m/Y H:i" }}
-                            {% if carencia.notificacao.data_envio %}
-                            | Enviada em: {{ carencia.notificacao.data_envio|date:"d/m/Y H:i" }}
-                            {% endif %}
-                        </small>
-                        <a href="{% url 'frequencias:detalhar_notificacao' carencia.notificacao.id %}" class="btn btn-sm btn-outline-primary">
-                            Ver Detalhes
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <div class="alert alert-info mb-0">
-                <i class="fas fa-info-circle"></i> Nenhuma notificação foi criada para esta carência.
-                {% if carencia.status != 'RESOLVIDO' %}
-                <a href="{% url 'frequencias:criar_notificacao' carencia.id %}" class="btn btn-sm btn-primary ms-2">
-                    Criar Notificação
-                </a>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
-    </div>
-    
-    <!-- Resolução (se resolvida) -->
-    {% if carencia.status == 'RESOLVIDO' %}
-    <div class="card mb-4 border-success">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Resolução da Carência</h5>
-        </div>
-        <div class="card-body">
-            <div class="mb-3">
-                <h6>Motivo da Resolução:</h6>
-                <p class="mb-0">{{ carencia.get_motivo_resolucao_display }}</p>
-            </div>
-            
-            <div class="mb-3">
-                <h6>Observações:</h6>
-                <div class="p-3 bg-light rounded border">
-                    {{ carencia.observacoes_resolucao|linebreaks }}
-                </div>
-            </div>
-            
-            {% if carencia.documentos_resolucao.all %}
-            <div>
-                <h6>Documentos:</h6>
-                <ul class="list-group">
-                    {% for documento in carencia.documentos_resolucao.all %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ documento.nome }}</span>
-                        <a href="{{ documento.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-            
-            <div class="mt-3">
-                <p class="text-muted mb-0">
-                    <small>Resolvida por: {{ carencia.resolvido_por.get_full_name|default:carencia.resolvido_por.username }} em {{ carencia.data_resolucao|date:"d/m/Y H:i" }}</small>
-                </p>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Padronizar botões de ações na seção de ações -->
-    <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">Ações</h5>
-        </div>
-        <div class="card-body">
-            <div class="d-flex flex-wrap gap-2">
-                {% if carencia.status == 'PENDENTE' %}
-                <a href="{% url 'frequencias:iniciar_acompanhamento' carencia.id %}" class="btn btn-warning">
-                    <i class="fas fa-clock"></i> Iniciar Acompanhamento
-                </a>
-                {% endif %}
-                
-                {% if carencia.status != 'RESOLVIDO' %}
-                <a href="{% url 'frequencias:resolver_carencia' carencia.id %}" class="btn btn-success">
-                    <i class="fas fa-check"></i> Resolver Carência
-                </a>
-                {% endif %}
-                
-                {% if not carencia.notificacao and carencia.status != 'RESOLVIDO' %}
-                <a href="{% url 'frequencias:criar_notificacao' carencia.id %}" class="btn btn-primary">
-                    <i class="fas fa-envelope"></i> Criar Notificação
-                </a>
-                {% endif %}
-                
-                <a href="{% url 'frequencias:historico_frequencia' carencia.aluno.cpf %}" class="btn btn-info">
-                    <i class="fas fa-history"></i> Ver Histórico de Frequência
-                </a>
-                
-                <a href="{% url 'alunos:detalhar_aluno' carencia.aluno.cpf %}" class="btn btn-primary">
-                    <i class="fas fa-user"></i> Ver Perfil do Aluno
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Histórico de ações -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Histórico de Ações</h5>
-        </div>
-        <div class="card-body p-0">
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-exclamation-circle text-danger"></i> 
-                            <strong>Carência identificada</strong>
-                            {% if carencia.identificado_por %}
-                            por {{ carencia.identificado_por.get_full_name|default:carencia.identificado_por.username }}
-                            {% endif %}
-                        </div>
-                        <div>{{ carencia.data_identificacao|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                
-                {% if carencia.data_acompanhamento %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-clock text-warning"></i> 
-                            <strong>Acompanhamento iniciado</strong>
-                            {% if carencia.acompanhado_por %}
-                            por {{ carencia.acompanhado_por.get_full_name|default:carencia.acompanhado_por.username }}
-                            {% endif %}
-                        </div>
-                        <div>{{ carencia.data_acompanhamento|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                {% endif %}
-                
-                {% if carencia.notificacao %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-envelope text-primary"></i> 
-                            <strong>Notificação criada</strong>
-                            {% if carencia.notificacao.criado_por %}
-                            por {{ carencia.notificacao.criado_por.get_full_name|default:carencia.notificacao.criado_por.username }}
-                            {% endif %}
-                        </div>
-                        <div>{{ carencia.notificacao.data_criacao|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                
-                {% if carencia.notificacao.data_envio %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-paper-plane text-info"></i> 
-                            <strong>Notificação enviada</strong>
-                            {% if carencia.notificacao.enviado_por %}
-                            por {{ carencia.notificacao.enviado_por.get_full_name|default:carencia.notificacao.enviado_por.username }}
-                            {% endif %}
-                        </div>
-                        <div>{{ carencia.notificacao.data_envio|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                {% endif %}
-                
-                {% if carencia.notificacao.data_leitura %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-envelope-open text-primary"></i> 
-                            <strong>Notificação lida</strong> pelo aluno
-                        </div>
-                        <div>{{ carencia.notificacao.data_leitura|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                {% endif %}
-                
-                {% if carencia.notificacao.data_resposta %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-reply text-success"></i> 
-                            <strong>Notificação respondida</strong> pelo aluno
-                        </div>
-                        <div>{{ carencia.notificacao.data_resposta|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                {% endif %}
-                {% endif %}
-                
-                {% if carencia.data_resolucao %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-check-circle text-success"></i> 
-                            <strong>Carência resolvida</strong>
-                            {% if carencia.resolvido_por %}
-                            por {{ carencia.resolvido_por.get_full_name|default:carencia.resolvido_por.username }}
-                            {% endif %}
-                        </div>
-                        <div>{{ carencia.data_resolucao|date:"d/m/Y H:i" }}</div>
-                    </div>
-                    {% if carencia.observacoes_resolucao %}
-                    <div class="mt-1 text-muted">
-                        <small>{{ carencia.observacoes_resolucao|truncatewords:20 }}</small>
-                    </div>
-                    {% endif %}
-                </li>
-                {% endif %}
-                
-                {% for log in carencia.logs.all %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas {{ log.get_icone }} {{ log.get_cor }}"></i> 
-                            <strong>{{ log.acao }}</strong>
-                            {% if log.usuario %}
-                            por {{ log.usuario.get_full_name|default:log.usuario.username }}
-                            {% endif %}
-                        </div>
-                        <div>{{ log.data|date:"d/m/Y H:i" }}</div>
-                    </div>
-                    {% if log.detalhes %}
-                    <div class="mt-1 text-muted">
-                        <small>{{ log.detalhes }}</small>
-                    </div>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-
-
-### Arquivo: frequencias\templates\frequencias\detalhar_frequencia.html
-
-html
-{% extends 'base.html' %}
-
-{% block content %}
-<div class="container mt-4">
-  <h1>Detalhes da Frequência</h1>
-    
-  {% if messages %}
-      {% for message in messages %}
-          <div class="alert alert-{{ message.tags }}">
-              {{ message }}
-          </div>
-      {% endfor %}
-  {% endif %}
-    
-  <div class="card">
-      <div class="card-header">
-          <h5 class="mb-0">Informações da Frequência</h5>
-      </div>
-      <div class="card-body">
-          <div class="row mb-3">
-              <div class="col-md-6">
-                  <p><strong>Aluno:</strong> {{ frequencia.aluno.nome }}</p>
-                  <p><strong>Turma:</strong> {{ frequencia.turma.id }}</p>
-                  <p><strong>Data:</strong> {{ frequencia.data }}</p>
-              </div>
-              <div class="col-md-6">
-                  <p>
-                      <strong>Status:</strong> 
-                      {% if frequencia.presente %}
-                          <span class="badge bg-success">Presente</span>
-                      {% else %}
-                          <span class="badge bg-danger">Ausente</span>
-                      {% endif %}
-                  </p>
-                  <p><strong>Registrado por:</strong> {{ frequencia.registrado_por|default:"Não informado" }}</p>
-                  <p><strong>Data de registro:</strong> {{ frequencia.data_registro }}</p>
-              </div>
-          </div>
-            
-          {% if not frequencia.presente %}
-          <div class="mb-3">
-              <h6>Justificativa:</h6>
-              <div class="p-3 bg-light rounded">
-                  {% if frequencia.justificativa %}
-                      {{ frequencia.justificativa|linebreaks }}
-                  {% else %}
-                      <em>Nenhuma justificativa fornecida.</em>
-                  {% endif %}
-              </div>
-          </div>
-          {% endif %}
-            
-          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-              <a href="{% url 'frequencias:editar_frequencia' frequencia.id %}" class="btn btn-warning">Editar</a>
-              <a href="{% url 'frequencias:excluir_frequencia' frequencia.id %}" class="btn btn-danger">Excluir</a>
-              <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">Voltar</a>
-          </div>
-      </div>
-  </div>
-</div>
-{% endblock %}
-
-
-
-
-### Arquivo: frequencias\templates\frequencias\detalhar_frequencia_mensal.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Detalhes da Frequência Mensal{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <!-- Padronizar botões de ação -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Detalhes da Frequência Mensal</h1>
-        <div class="btn-group">
-            <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-            <a href="{% url 'frequencias:editar_frequencia_mensal' frequencia.id %}" class="btn btn-warning">
-                <i class="fas fa-edit"></i> Editar
-            </a>
-            <a href="{% url 'frequencias:excluir_frequencia_mensal' frequencia.id %}" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Excluir
-            </a>
-            <a href="{% url 'frequencias:recalcular_carencias' frequencia.id %}" class="btn btn-primary">
-                <i class="fas fa-sync"></i> Recalcular Carências
-            </a>
-            <a href="{% url 'frequencias:exportar_frequencia_csv' frequencia.id %}" class="btn btn-success">
-                <i class="fas fa-file-csv"></i> Exportar CSV
-            </a>
-        </div>
-    </div>
-    
-    <!-- Informações da frequência -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Informações Gerais</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Turma:</strong> {{ frequencia.turma.nome }}</p>
-                    <p><strong>Curso:</strong> {{ frequencia.turma.curso.nome }}</p>
-                    <p><strong>Período:</strong> {{ frequencia.get_mes_display }}/{{ frequencia.ano }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Percentual Mínimo:</strong> {{ frequencia.percentual_minimo }}%</p>
-                    <p><strong>Criado em:</strong> {{ frequencia.created_at|date:"d/m/Y H:i" }}</p>
-                    <p><strong>Última atualização:</strong> {{ frequencia.updated_at|date:"d/m/Y H:i" }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Estatísticas -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0">Estatísticas</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card text-center mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">Total de Alunos</h5>
-                            <p class="card-text display-4">{{ total_alunos }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card text-center mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">Alunos em Carência</h5>
-                            <p class="card-text display-4">{{ carencias|length }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card text-center mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">Percentual de Carência</h5>
-                            <p class="card-text display-4">
-                                {% if total_alunos > 0 %}
-                                {{ carencias|length|multiply:100|divide:total_alunos|floatformat:1 }}%
-                                {% else %}
-                                0%
-                                {% endif %}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-4">
-                <canvas id="grafico-frequencia"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Alunos em carência -->
-    <div class="card">
-        <div class="card-header bg-danger text-white">
-            <h5 class="mb-0">Alunos em Carência</h5>
-        </div>
-        <div class="card-body">
-            {% if carencias %}
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Aluno</th>
-                            <th>Percentual de Presença</th>
-                            <th>Status</th>
-                            <th>Observações</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for carencia in carencias %}
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    {% if carencia.aluno.foto %}
-                                    <img src="{{ carencia.aluno.foto.url }}" alt="{{ carencia.aluno.nome }}" 
-                                         class="rounded-circle me-2" width="40" height="40">
-                                    {% else %}
-                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
-                                         style="width: 40px; height: 40px; color: white;">
-                                        {{ carencia.aluno.nome|first|upper }}
-                                    </div>
-                                    {% endif %}
-                                    <div>
-                                        <div>{{ carencia.aluno.nome }}</div>
-                                        <small class="text-muted">{{ carencia.aluno.cpf }}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar {% if carencia.percentual_presenca < frequencia.percentual_minimo %}bg-danger{% else %}bg-success{% endif %}" role="progressbar" 
-                                         style="width: {{ carencia.percentual_presenca }}%;" 
-                                         aria-valuenow="{{ carencia.percentual_presenca }}" 
-                                         aria-valuemin="0" aria-valuemax="100">
-                                        {{ carencia.percentual_presenca }}%
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                {% if carencia.status == 'PENDENTE' %}
-                                <span class="badge bg-danger">Pendente</span>
-                                {% elif carencia.status == 'EM_ACOMPANHAMENTO' %}
-                                <span class="badge bg-warning text-dark">Em Acompanhamento</span>
-                                {% elif carencia.status == 'RESOLVIDO' %}
-                                <span class="badge bg-success">Resolvido</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ carencia.observacoes|default:"Sem observações"|truncatechars:50 }}</td>
-                            <td>
-                                <div class="btn-group">
-                                    <a href="{% url 'frequencias:editar_carencia' carencia.id %}" 
-                                       class="btn btn-sm btn-warning" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'frequencias:detalhar_carencia' carencia.id %}" 
-                                       class="btn btn-sm btn-info" title="Detalhes">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{% url 'alunos:detalhar_aluno' carencia.aluno.cpf %}" 
-                                       class="btn btn-sm btn-primary" title="Ver aluno">
-                                        <i class="fas fa-user"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle me-2"></i>
-                Não há alunos em carência para esta frequência mensal.
-            </div>
-            {% endif %}
-        </div>
-        <div class="card-footer">
-            <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-secondary">
-                <i class="fas fa-list"></i> Voltar para a lista
-            </a>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Gráfico de frequência
-        const ctxFrequencia = document.getElementById('grafico-frequencia').getContext('2d');
-        new Chart(ctxFrequencia, {
-            type: 'bar',
-            data: {
-                labels: {{ alunos_labels|safe }},
-                datasets: [{
-                    label: 'Percentual de Presença',
-                    data: {{ percentuais_presenca|safe }},
-                    backgroundColor: function(context) {
-                        const value = context.dataset.data[context.dataIndex];
-                        return value < {{ frequencia.percentual_minimo }} ? 
-                            'rgba(220, 53, 69, 0.7)' : 'rgba(40, 167, 69, 0.7)';
-                    },
-                    borderColor: function(context) {
-                        const value = context.dataset.data[context.dataIndex];
-                        return value < {{ frequencia.percentual_minimo }} ? 
-                            'rgba(220, 53, 69, 1)' : 'rgba(40, 167, 69, 1)';
-                    },
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    });
-</script>
-{% endblock %}
-
-
-
-### Arquivo: frequencias\templates\frequencias\detalhar_notificacao.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Detalhes da Notificação{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Detalhes da Notificação</h1>
-        <div>
-            {% if notificacao.carencia %}
-            <a href="{% url 'frequencias:detalhar_carencia' notificacao.carencia.id %}" class="btn btn-secondary me-2">
-                <i class="fas fa-exclamation-triangle"></i> Ver Carência
-            </a>
-            {% endif %}
-            <a href="javascript:history.back()" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-        </div>
-    </div>
-    
-    <!-- Status da notificação -->
-    <div class="alert 
-        {% if notificacao.status == 'PENDENTE' %}alert-secondary
-        {% elif notificacao.status == 'ENVIADA' %}alert-info
-        {% elif notificacao.status == 'LIDA' %}alert-primary
-        {% elif notificacao.status == 'RESPONDIDA' %}alert-success
-        {% endif %}">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="alert-heading mb-1">
-                    {% if notificacao.status == 'PENDENTE' %}
-                    <i class="fas fa-clock"></i> Notificação Pendente
-                    {% elif notificacao.status == 'ENVIADA' %}
-                    <i class="fas fa-paper-plane"></i> Notificação Enviada
-                    {% elif notificacao.status == 'LIDA' %}
-                    <i class="fas fa-envelope-open"></i> Notificação Lida
-                    {% elif notificacao.status == 'RESPONDIDA' %}
-                    <i class="fas fa-reply"></i> Notificação Respondida
-                    {% endif %}
-                </h5>
-                <p class="mb-0">
-                    {% if notificacao.status == 'PENDENTE' %}
-                    Esta notificação ainda não foi enviada ao aluno.
-                    {% elif notificacao.status == 'ENVIADA' %}
-                    Esta notificação foi enviada em {{ notificacao.data_envio|date:"d/m/Y H:i" }}.
-                    {% elif notificacao.status == 'LIDA' %}
-                    Esta notificação foi lida pelo aluno em {{ notificacao.data_leitura|date:"d/m/Y H:i" }}.
-                    {% elif notificacao.status == 'RESPONDIDA' %}
-                    Esta notificação foi respondida pelo aluno em {{ notificacao.data_resposta|date:"d/m/Y H:i" }}.
-                    {% endif %}
-                </p>
-            </div>
-            <div>
-                {% if notificacao.status == 'PENDENTE' %}
-                <a href="{% url 'frequencias:enviar_notificacao' notificacao.id %}" class="btn btn-primary">
-                    <i class="fas fa-paper-plane"></i> Enviar Agora
-                </a>
-                {% elif notificacao.status == 'ENVIADA' or notificacao.status == 'LIDA' %}
-                <a href="{% url 'frequencias:reenviar_notificacao' notificacao.id %}" class="btn btn-outline-primary">
-                    <i class="fas fa-sync"></i> Reenviar
-                </a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <!-- Informações do destinatário -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Destinatário</h5>
-        </div>
-        <div class="card-body">
-            <div class="d-flex align-items-center">
-                {% if notificacao.aluno.foto %}
-                <img src="{{ notificacao.aluno.foto.url }}" alt="{{ notificacao.aluno.nome }}" 
-                     class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
-                {% else %}
-                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
-                     style="width: 60px; height: 60px; color: white; font-size: 1.5rem;">
-                    {{ notificacao.aluno.nome|first|upper }}
-                </div>
-                {% endif %}
-                <div>
-                    <h5 class="mb-1">{{ notificacao.aluno.nome }}</h5>
-                    <p class="mb-0">{{ notificacao.aluno.email }}</p>
-                    {% if notificacao.aluno.celular_primeiro_contato %}
-                    <p class="mb-0">{{ notificacao.aluno.celular_primeiro_contato }}</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Conteúdo da notificação -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0">Conteúdo da Notificação</h5>
-        </div>
-        <div class="card-body">
-            <div class="mb-3">
-                <h6>Assunto:</h6>
-                <p class="mb-0">{{ notificacao.assunto }}</p>
-            </div>
-            
-            <div class="mb-3">
-                <h6>Mensagem:</h6>
-                <div class="p-3 bg-light rounded border">
-                    {{ notificacao.mensagem|linebreaks }}
-                </div>
-            </div>
-            
-            {% if notificacao.anexos.all %}
-            <div>
-                <h6>Anexos:</h6>
-                <ul class="list-group">
-                    {% for anexo in notificacao.anexos.all %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ anexo.nome }}</span>
-                        <a href="{{ anexo.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-            
-            <div class="mt-3">
-                <p class="text-muted mb-0">
-                    <small>Criada por: {{ notificacao.criado_por.get_full_name|default:notificacao.criado_por.username }} em {{ notificacao.data_criacao|date:"d/m/Y H:i" }}</small>
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Resposta do aluno (se houver) -->
-    {% if notificacao.resposta %}
-    <div class="card mb-4 border-success">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Resposta do Aluno</h5>
-        </div>
-        <div class="card-body">
-            <div class="mb-3">
-                <h6>Assunto:</h6>
-                <p class="mb-0">{{ notificacao.resposta.assunto }}</p>
-            </div>
-            
-            <div class="mb-3">
-                <h6>Mensagem:</h6>
-                <div class="p-3 bg-light rounded border">
-                    {{ notificacao.resposta.mensagem|linebreaks }}
-                </div>
-            </div>
-            
-            {% if notificacao.resposta.anexos.all %}
-            <div>
-                <h6>Anexos:</h6>
-                <ul class="list-group">
-                    {% for anexo in notificacao.resposta.anexos.all %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ anexo.nome }}</span>
-                        <a href="{{ anexo.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-            
-            <div class="mt-3">
-                <p class="text-muted mb-0">
-                    <small>Respondido em: {{ notificacao.data_resposta|date:"d/m/Y H:i" }}</small>
-                </p>
-            </div>
-            
-            {% if notificacao.resposta.solicitar_compensacao %}
-            <div class="alert alert-warning mt-3">
-                <i class="fas fa-exclamation-circle"></i> O aluno solicitou opções de compensação de faltas.
-            </div>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Ações -->
-    <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">Ações</h5>
-        </div>
-        <div class="card-body">
-            <div class="d-flex flex-wrap gap-2">
-                {% if notificacao.status == 'PENDENTE' %}
-                <a href="{% url 'frequencias:editar_notificacao' notificacao.id %}" class="btn btn-warning">
-                    <i class="fas fa-edit"></i> Editar Notificação
-                </a>
-                <a href="{% url 'frequencias:enviar_notificacao' notificacao.id %}" class="btn btn-primary">
-                    <i class="fas fa-paper-plane"></i> Enviar Notificação
-                </a>
-                {% elif notificacao.status == 'ENVIADA' or notificacao.status == 'LIDA' %}
-                <a href="{% url 'frequencias:reenviar_notificacao' notificacao.id %}" class="btn btn-primary">
-                    <i class="fas fa-sync"></i> Reenviar Notificação
-                </a>
-                {% endif %}
-                
-                {% if notificacao.status == 'RESPONDIDA' %}
-                <a href="{% url 'frequencias:responder_aluno' notificacao.id %}" class="btn btn-success">
-                    <i class="fas fa-reply"></i> Responder ao Aluno
-                </a>
-                {% endif %}
-                
-                {% if notificacao.carencia and notificacao.carencia.status != 'RESOLVIDO' %}
-                <a href="{% url 'frequencias:resolver_carencia' notificacao.carencia.id %}" class="btn btn-success">
-                    <i class="fas fa-check"></i> Resolver Carência
-                </a>
-                {% endif %}
-                
-                <a href="{% url 'frequencias:historico_frequencia' notificacao.aluno.cpf %}" class="btn btn-info">
-                    <i class="fas fa-history"></i> Ver Histórico de Frequência
-                </a>
-                
-                <a href="{% url 'alunos:detalhar_aluno' notificacao.aluno.cpf %}" class="btn btn-primary">
-                    <i class="fas fa-user"></i> Ver Perfil do Aluno
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Histórico de ações -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Histórico de Ações</h5>
-        </div>
-        <div class="card-body p-0">
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-plus-circle text-success"></i> 
-                            <strong>Notificação criada</strong> por {{ notificacao.criado_por.get_full_name|default:notificacao.criado_por.username }}
-                        </div>
-                        <div>{{ notificacao.data_criacao|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                
-                {% if notificacao.data_envio %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-paper-plane text-primary"></i> 
-                            <strong>Notificação enviada</strong>
-                            {% if notificacao.enviado_por %}
-                            por {{ notificacao.enviado_por.get_full_name|default:notificacao.enviado_por.username }}
-                            {% endif %}
-                        </div>
-                        <div>{{ notificacao.data_envio|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                {% endif %}
-                
-                {% if notificacao.data_leitura %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-envelope-open text-info"></i> 
-                            <strong>Notificação lida</strong> pelo aluno
-                        </div>
-                        <div>{{ notificacao.data_leitura|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                {% endif %}
-                
-                {% if notificacao.data_resposta %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas fa-reply text-success"></i> 
-                            <strong>Notificação respondida</strong> pelo aluno
-                        </div>
-                        <div>{{ notificacao.data_resposta|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </li>
-                {% endif %}
-                
-                {% for log in notificacao.logs.all %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <i class="fas {{ log.get_icone }} {{ log.get_cor }}"></i> 
-                            <strong>{{ log.acao }}</strong>
-                            {% if log.usuario %}
-                            por {{ log.usuario.get_full_name|default:log.usuario.username }}
-                            {% endif %}
-                        </div>
-                        <div>{{ log.data|date:"d/m/Y H:i" }}</div>
-                    </div>
-                    {% if log.detalhes %}
-                    <div class="mt-1 text-muted">
-                        <small>{{ log.detalhes }}</small>
-                    </div>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 

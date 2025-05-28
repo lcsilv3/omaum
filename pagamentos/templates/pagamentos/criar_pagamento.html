@@ -1,8 +1,18 @@
 {% extends 'base.html' %}
 
-{% block title %}Criar Novo Pagamento{% endblock %}
+{% block title %}Criar Pagamento{% endblock %}
 
 {% block content %}
+<style>
+@keyframes piscarBorda {
+    0%   { box-shadow: 0 0 0 0 red; }
+    50%  { box-shadow: 0 0 8px 2px red; }
+    100% { box-shadow: 0 0 0 0 red; }
+}
+.piscar-erro {
+    animation: piscarBorda 0.8s linear 2;
+}
+</style>
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Novo Pagamento</h1>
@@ -11,13 +21,20 @@
         </a>
     </div>
 
-    <!-- Alertas de erro/sucesso -->
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}{% if message.tags == 'error' %} alert-danger{% endif %}">
                 {{ message }}
             </div>
         {% endfor %}
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
     {% endif %}
 
     <div class="row">
@@ -32,54 +49,80 @@
                         <!-- Busca de aluno -->
                         <div class="mb-3">
                             <label for="busca-aluno" class="form-label">Buscar Aluno <span class="text-danger">*</span></label>
-                            <input type="text" id="busca-aluno" class="form-control" placeholder="Digite nome ou CPF do aluno" autocomplete="off">
-                            <input type="hidden" name="aluno" id="id_aluno">
+                            <input type="text" id="busca-aluno" class="form-control{% if form.aluno.errors %} is-invalid piscar-erro{% endif %}" placeholder="Digite nome ou CPF do aluno" autocomplete="off">
+                            <input type="hidden" name="aluno" id="id_aluno" value="{{ form.aluno.value|default_if_none:'' }}">
                             <div id="resultados-aluno" class="list-group mt-1"></div>
                             <div class="form-text">Digite pelo menos 2 letras para buscar.</div>
+                            {% for error in form.aluno.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="id_valor" class="form-label">Valor (R$) <span class="text-danger">*</span></label>
-                                    <input type="number" name="valor" step="0.01" required id="id_valor" class="form-control" placeholder="Ex: 100.00">
+                                    <input type="number" name="valor" step="0.01" required id="id_valor"
+                                           class="form-control{% if form.valor.errors %} is-invalid piscar-erro{% endif %}"
+                                           value="{{ form.valor.value|default_if_none:'' }}" placeholder="Ex: 100.00">
+                                    {% for error in form.valor.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="id_data_vencimento" class="form-label">Data de Vencimento <span class="text-danger">*</span></label>
-                                    <input type="date" name="data_vencimento" required id="id_data_vencimento" class="form-control">
+                                    <input type="date" name="data_vencimento" required id="id_data_vencimento"
+                                           class="form-control{% if form.data_vencimento.errors %} is-invalid piscar-erro{% endif %}"
+                                           value="{{ form.data_vencimento.value|default_if_none:'' }}">
+                                    {% for error in form.data_vencimento.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="id_observacoes" class="form-label">Observações</label>
-                            <textarea name="observacoes" cols="40" rows="3" id="id_observacoes" class="form-control" placeholder="Observações adicionais..."></textarea>
+                            <textarea name="observacoes" cols="40" rows="3" id="id_observacoes"
+                                      class="form-control{% if form.observacoes.errors %} is-invalid piscar-erro{% endif %}"
+                                      placeholder="Observações adicionais...">{{ form.observacoes.value|default_if_none:'' }}</textarea>
+                            {% for error in form.observacoes.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="id_status" class="form-label">Status <span class="text-danger">*</span></label>
-                                    <select name="status" id="id_status" class="form-select" required>
-                                        <option value="PENDENTE" selected>Pendente</option>
-                                        <option value="PAGO">Pago</option>
-                                        <option value="ATRASADO">Atrasado</option>
-                                        <option value="CANCELADO">Cancelado</option>
+                                    <select name="status" id="id_status"
+                                            class="form-select{% if form.status.errors %} is-invalid piscar-erro{% endif %}" required>
+                                        <option value="PENDENTE" {% if form.status.value == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                                        <option value="PAGO" {% if form.status.value == 'PAGO' %}selected{% endif %}>Pago</option>
+                                        <option value="ATRASADO" {% if form.status.value == 'ATRASADO' %}selected{% endif %}>Atrasado</option>
+                                        <option value="CANCELADO" {% if form.status.value == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
                                     </select>
+                                    {% for error in form.status.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3 metodo-pagamento-container" style="display: none;">
                                     <label for="id_metodo_pagamento" class="form-label">Método de Pagamento</label>
-                                    <select name="metodo_pagamento" id="id_metodo_pagamento" class="form-select">
+                                    <select name="metodo_pagamento" id="id_metodo_pagamento"
+                                            class="form-select{% if form.metodo_pagamento.errors %} is-invalid piscar-erro{% endif %}">
                                         <option value="">Selecione um método</option>
-                                        <option value="DINHEIRO">Dinheiro</option>
-                                        <option value="CARTAO_CREDITO">Cartão de Crédito</option>
-                                        <option value="CARTAO_DEBITO">Cartão de Débito</option>
-                                        <option value="BOLETO">Boleto Bancário</option>
-                                        <option value="TRANSFERENCIA">Transferência</option>
-                                        <option value="PIX">PIX</option>
-                                        <option value="OUTRO">Outro</option>
+                                        <option value="DINHEIRO" {% if form.metodo_pagamento.value == 'DINHEIRO' %}selected{% endif %}>Dinheiro</option>
+                                        <option value="CARTAO_CREDITO" {% if form.metodo_pagamento.value == 'CARTAO_CREDITO' %}selected{% endif %}>Cartão de Crédito</option>
+                                        <option value="CARTAO_DEBITO" {% if form.metodo_pagamento.value == 'CARTAO_DEBITO' %}selected{% endif %}>Cartão de Débito</option>
+                                        <option value="BOLETO" {% if form.metodo_pagamento.value == 'BOLETO' %}selected{% endif %}>Boleto Bancário</option>
+                                        <option value="TRANSFERENCIA" {% if form.metodo_pagamento.value == 'TRANSFERENCIA' %}selected{% endif %}>Transferência</option>
+                                        <option value="PIX" {% if form.metodo_pagamento.value == 'PIX' %}selected{% endif %}>PIX</option>
+                                        <option value="OUTRO" {% if form.metodo_pagamento.value == 'OUTRO' %}selected{% endif %}>Outro</option>
                                     </select>
+                                    {% for error in form.metodo_pagamento.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
@@ -87,20 +130,34 @@
                             <div class="col-md-6">
                                 <div class="mb-3 data-pagamento-container" style="display: none;">
                                     <label for="id_data_pagamento" class="form-label">Data de Pagamento</label>
-                                    <input type="date" name="data_pagamento" id="id_data_pagamento" class="form-control">
+                                    <input type="date" name="data_pagamento" id="id_data_pagamento"
+                                           class="form-control{% if form.data_pagamento.errors %} is-invalid piscar-erro{% endif %}"
+                                           value="{{ form.data_pagamento.value|default_if_none:'' }}">
+                                    {% for error in form.data_pagamento.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3 valor-pago-container" style="display: none;">
                                     <label for="id_valor_pago" class="form-label">Valor Pago (R$)</label>
-                                    <input type="number" name="valor_pago" id="id_valor_pago" class="form-control" step="0.01" min="0">
+                                    <input type="number" name="valor_pago" id="id_valor_pago"
+                                           class="form-control{% if form.valor_pago.errors %} is-invalid piscar-erro{% endif %}"
+                                           step="0.01" min="0" value="{{ form.valor_pago.value|default_if_none:'' }}">
+                                    {% for error in form.valor_pago.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="id_comprovante" class="form-label">Comprovante de Pagamento</label>
-                            <input type="file" name="comprovante" id="id_comprovante" class="form-control">
+                            <input type="file" name="comprovante" id="id_comprovante"
+                                   class="form-control{% if form.comprovante.errors %} is-invalid piscar-erro{% endif %}">
                             <div class="form-text">Formatos aceitos: PDF, JPG, PNG. Tamanho máximo: 5MB</div>
+                            {% for error in form.comprovante.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
@@ -127,8 +184,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-    // Exibe campos de pagamento só se status for "Pago"
     document.addEventListener('DOMContentLoaded', function() {
         const status = document.getElementById('id_status');
         const metodoPagamentoContainer = document.querySelector('.metodo-pagamento-container');
@@ -175,209 +234,6 @@
                         }
                     });
                 });
-        });
-    });
-</script>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const statusSelect = document.getElementById('status');
-        const dataPagamentoContainer = document.querySelector('.data-pagamento-container');
-        const metodoPagamentoContainer = document.querySelector('.metodo-pagamento-container');
-        const alunoBusca = document.getElementById('aluno_busca');
-        const btnBuscarAluno = document.getElementById('btn-buscar-aluno');
-        const resultadosBusca = document.getElementById('resultados-busca');
-        const listaAlunos = document.getElementById('lista-turmas');
-        const alunoSelecionado = document.getElementById('aluno-selecionado');
-        const alunoNome = document.getElementById('aluno-nome');
-        const alunoCpf = document.getElementById('aluno-cpf');
-        const alunoFoto = document.getElementById('aluno-foto');
-        const alunoInicial = document.getElementById('aluno-inicial');
-        const alunoIdInput = document.getElementById('aluno_id');
-        const btnLimparAluno = document.getElementById('btn-limpar-aluno');
-        const btnSalvar = document.getElementById('btn-salvar');
-        const turmasCard = document.getElementById('turmas-card');
-        const listaTurmas = document.getElementById('lista-turmas');
-        
-        // Função para mostrar/ocultar campos dependendo do status
-        function toggleFields() {
-            if (statusSelect.value === 'PAGO') {
-                dataPagamentoContainer.style.display = 'block';
-                metodoPagamentoContainer.style.display = 'block';
-                document.getElementById('data_pagamento').required = true;
-            } else {
-                dataPagamentoContainer.style.display = 'none';
-                metodoPagamentoContainer.style.display = 'none';
-                document.getElementById('data_pagamento').required = false;
-            }
-        }
-        
-        // Executar ao carregar a página
-        toggleFields();
-        
-        // Adicionar evento de mudança
-        statusSelect.addEventListener('change', toggleFields);
-        
-        // Definir data de vencimento padrão como hoje
-        const dataVencimentoInput = document.getElementById('data_vencimento');
-        if (!dataVencimentoInput.value) {
-            const hoje = new Date();
-            const ano = hoje.getFullYear();
-            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-            const dia = String(hoje.getDate()).padStart(2, '0');
-            dataVencimentoInput.value = `${ano}-${mes}-${dia}`;
-        }
-        
-        // Buscar alunos
-        function buscarAlunos() {
-            const termo = alunoBusca.value.trim();
-            const cursoId = document.getElementById('curso_filtro').value;
-            if (termo.length < 2) return;
-
-            listaAlunos.innerHTML = '<div class="list-group-item text-center"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>';
-
-            let url = `/alunos/api/search/?q=${encodeURIComponent(termo)}`;
-            if (cursoId) {
-                url += `&curso=${encodeURIComponent(cursoId)}`;
-            }
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    listaAlunos.innerHTML = '';
-                    if (Array.isArray(data) && data.length > 0) {
-                        data.forEach(aluno => {
-                            const item = document.createElement('a');
-                            item.href = 'javascript:void(0)';
-                            item.className = 'list-group-item list-group-item-action';
-                            item.innerHTML = `
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">${aluno.nome}</h6>
-                                    <small>CPF: ${aluno.cpf}</small>
-                                </div>
-                                <small>${aluno.email || 'Sem e-mail'}</small>
-                            `;
-                            item.addEventListener('click', () => selecionarAluno(aluno.cpf, aluno.nome, aluno.foto));
-                            listaAlunos.appendChild(item);
-                        });
-                    } else {
-                        listaAlunos.innerHTML = '<div class="list-group-item">Nenhum aluno encontrado</div>';
-                    }
-                    resultadosBusca.style.display = 'block';
-                })
-                .catch(error => {
-                    console.error('Erro ao buscar alunos:', error);
-                    listaAlunos.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar alunos</div>';
-                    resultadosBusca.style.display = 'block';
-                });
-        }
-        
-        // Selecionar um aluno
-        function selecionarAluno(cpf, nome, foto) {
-            alunoIdInput.value = cpf;
-            alunoNome.textContent = nome;
-            alunoCpf.textContent = `CPF: ${cpf}`;
-            
-            if (foto) {
-                alunoFoto.innerHTML = `<img src="${foto}" alt="Foto de ${nome}" style="width: 100%; height: 100%; object-fit: cover;">`;
-            } else {
-                alunoInicial.textContent = nome.charAt(0).toUpperCase();
-                alunoFoto.innerHTML = `<span id="aluno-inicial">${nome.charAt(0).toUpperCase()}</span>`;
-            }
-            
-            alunoSelecionado.style.display = 'block';
-            resultadosBusca.style.display = 'none';
-            alunoBusca.value = '';
-            btnSalvar.disabled = false;
-            
-            // Buscar turmas do aluno
-            buscarTurmasDoAluno(cpf);
-        }
-        
-        // Buscar turmas do aluno
-        function buscarTurmasDoAluno(cpf) {
-            fetch(`/alunos/api/detalhes/${cpf}/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.turmas && data.turmas.length > 0) {
-                        listaTurmas.innerHTML = '';
-                        
-                        const ul = document.createElement('ul');
-                        ul.className = 'list-group';
-                        
-                        data.turmas.forEach(turma => {
-                            const li = document.createElement('li');
-                            li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                            li.innerHTML = `
-                                <div>
-                                    <strong>${turma.curso}</strong>
-                                    <div>${turma.nome}</div>
-                                </div>
-                            `;
-                            ul.appendChild(li);
-                        });
-                        
-                        listaTurmas.appendChild(ul);
-                        turmasCard.style.display = 'block';
-                    } else {
-                        turmasCard.style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao buscar turmas do aluno:', error);
-                    turmasCard.style.display = 'none';
-                });
-        }
-        
-        // Limpar seleção de aluno
-        function limparAluno() {
-            alunoIdInput.value = '';
-            alunoSelecionado.style.display = 'none';
-            btnSalvar.disabled = true;
-            turmasCard.style.display = 'none';
-        }
-        
-        // Eventos
-        alunoBusca.addEventListener('input', function() {
-            if (this.value.trim().length >= 2) {
-                buscarAlunos();
-            } else {
-                resultadosBusca.style.display = 'none';
-            }
-        });
-        
-        btnBuscarAluno.addEventListener('click', buscarAlunos);
-        
-        btnLimparAluno.addEventListener('click', limparAluno);
-        
-        // Validar formulário antes de enviar
-        document.getElementById('pagamento-form').addEventListener('submit', function(e) {
-            if (!idAluno.value) {
-                e.preventDefault();
-                alert('Por favor, selecione um aluno.');
-                return false;
-            }
-            
-            if (statusSelect.value === 'PAGO') {
-                const dataPagamento = document.getElementById('data_pagamento').value;
-                const metodoPagamento = document.getElementById('metodo_pagamento').value;
-                
-                if (!dataPagamento) {
-                    e.preventDefault();
-                    alert('Por favor, informe a data de pagamento.');
-                    return false;
-                }
-                
-                if (!metodoPagamento) {
-                    e.preventDefault();
-                    alert('Por favor, selecione o método de pagamento.');
-                    return false;
-                }
-            }
-            
-            return true;
         });
     });
 </script>

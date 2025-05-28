@@ -4,211 +4,46 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Relatório de Atividades</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
-            <a href="{% url 'atividades:calendario_atividades' %}" class="btn btn-info me-2">
-                <i class="fas fa-calendar-alt"></i> Calendário
-            </a>
-            <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-success me-2">
-                <i class="fas fa-chart-bar"></i> Dashboard
-            </a>
-            <div class="btn-group">
-                <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-outline-primary">Atividades Acadêmicas</a>
-                <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-outline-info">Atividades Ritualísticas</a>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Filtros -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Filtros</h5>
-        </div>
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="tipo" class="form-label">Tipo de Atividade</label>
-                    <select name="tipo" id="tipo" class="form-select">
-                        <option value="todas" {% if tipo == 'todas' %}selected{% endif %}>Todas</option>
-                        <option value="academicas" {% if tipo == 'academicas' %}selected{% endif %}>Acadêmicas</option>
-                        <option value="ritualisticas" {% if tipo == 'ritualisticas' %}selected{% endif %}>Ritualísticas</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="status" class="form-label">Status</label>
-                    <select name="status" id="status" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="agendada" {% if status == 'agendada' %}selected{% endif %}>Agendada</option>
-                        <option value="em_andamento" {% if status == 'em_andamento' %}selected{% endif %}>Em Andamento</option>
-                        <option value="concluida" {% if status == 'concluida' %}selected{% endif %}>Concluída</option>
-                        <option value="cancelada" {% if status == 'cancelada' %}selected{% endif %}>Cancelada</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="data_inicio" class="form-label">Data Início</label>
-                    <input type="date" name="data_inicio" id="data_inicio" class="form-control" value="{{ data_inicio }}">
-                </div>
-                <div class="col-md-3">
-                    <label for="data_fim" class="form-label">Data Fim</label>
-                    <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ data_fim }}">
-                </div>
-                <div class="col-md-12 d-flex justify-content-end">
-                    <button type="submit" class="btn btn-primary me-2">Filtrar</button>
-                    <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-secondary">Limpar Filtros</a>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Padronizar botões de exportação -->
-    <div class="mb-4">
-        <a href="{% url 'atividades:exportar_atividades' 'pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger me-2">
-            <i class="fas fa-file-pdf"></i> Exportar PDF
-        </a>
-        <a href="{% url 'atividades:exportar_atividades' 'excel' %}?{{ request.GET.urlencode }}" class="btn btn-success me-2">
-            <i class="fas fa-file-excel"></i> Exportar Excel
-        </a>
-        <a href="{% url 'atividades:exportar_atividades' 'csv' %}?{{ request.GET.urlencode }}" class="btn btn-info">
-            <i class="fas fa-file-csv"></i> Exportar CSV
-        </a>
-    </div>
-    
-    <!-- Resumo -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-light">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Total de Atividades</h5>
-                    <p class="display-4">{{ total_atividades }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-primary text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Atividades Acadêmicas</h5>
-                    <p class="display-4">{{ total_academicas }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-info text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Atividades Ritualísticas</h5>
-                    <p class="display-4">{{ total_ritualisticas }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tabela de resultados -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Resultados</h5>
-        </div>
-        <div class="card-body">
-            <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="academicas-tab" data-bs-toggle="tab" data-bs-target="#academicas" type="button" role="tab" aria-controls="academicas" aria-selected="true">
-                        Atividades Acadêmicas
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="ritualisticas-tab" data-bs-toggle="tab" data-bs-target="#ritualisticas" type="button" role="tab" aria-controls="ritualisticas" aria-selected="false">
-                        Atividades Ritualísticas
-                    </button>
-                </li>
-            </ul>
-            <div class="tab-content" id="myTabContent">
-                <!-- Atividades Acadêmicas -->
-                <div class="tab-pane fade show active" id="academicas" role="tabpanel" aria-labelledby="academicas-tab">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Tipo</th>
-                                    <th>Data de Início</th>
-                                    <th>Status</th>
-                                    <th>Responsável</th>
-                                    <th>Turmas</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for atividade in atividades_academicas %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}">
-                                            {{ atividade.nome }}
-                                        </a>
-                                    </td>
-                                    <td>{{ atividade.get_tipo_atividade_display }}</td>
-                                    <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
-                                    <td>
-                                        <span class="badge {% if atividade.status == 'agendada' %}bg-warning{% elif atividade.status == 'em_andamento' %}bg-info{% elif atividade.status == 'concluida' %}bg-success{% else %}bg-secondary{% endif %}">
-                                            {{ atividade.get_status_display }}
-                                        </span>
-                                    </td>
-                                    <td>{{ atividade.responsavel|default:"Não informado" }}</td>
-                                    <td>
-                                        {% for turma in atividade.turmas.all %}
-                                            <span class="badge bg-primary">{{ turma.nome }}</span>
-                                        {% empty %}
-                                            <span class="text-muted">Nenhuma turma</span>
-                                        {% endfor %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center">Nenhuma atividade acadêmica encontrada.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Atividades Ritualísticas -->
-                <div class="tab-pane fade" id="ritualisticas" role="tabpanel" aria-labelledby="ritualisticas-tab">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Data</th>
-                                    <th>Horário</th>
-                                    <th>Local</th>
-                                    <th>Turma</th>
-                                    <th>Participantes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for atividade in atividades_ritualisticas %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}">
-                                            {{ atividade.nome }}
-                                        </a>
-                                    </td>
-                                    <td>{{ atividade.data|date:"d/m/Y" }}</td>
-                                    <td>{{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</td>
-                                    <td>{{ atividade.local }}</td>
-                                    <td>{{ atividade.turma.nome }}</td>
-                                    <td>{{ atividade.participantes.count }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center">Nenhuma atividade ritualística encontrada.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+    <h1>Relatório de Atividades</h1>
+    <form method="get" class="mb-3">
+        <select name="curso" class="form-select w-auto d-inline" onchange="this.form.submit()">
+            <option value="">Todos os cursos</option>
+            {% for curso in cursos %}
+                <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == curso_id %}selected{% endif %}>
+                    {{ curso.nome }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+    {% for curso, atividades_curso in cursos_dict.items %}
+        <h3>{{ curso }}</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Turmas</th>
+                    <th>Tipo</th>
+                    <th>Status</th>
+                    <th>Início</th>
+                    <th>Término</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for atividade in atividades_curso %}
+                <tr>
+                    <td>{{ atividade.nome }}</td>
+                    <td>
+                        {% for turma in atividade.turmas.all %}
+                            {{ turma.nome }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>{{ atividade.get_tipo_atividade_display }}</td>
+                    <td>{{ atividade.get_status_display }}</td>
+                    <td>{{ atividade.data_inicio|date:"d/m/Y H:i" }}</td>
+                    <td>{{ atividade.data_fim|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}</div>
+{% endblock %}{% endblock %}

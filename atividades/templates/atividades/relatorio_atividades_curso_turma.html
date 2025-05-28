@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Relatório de Atividades por Curso e Turma{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Relatório de Atividades Acadêmicas</h1>
+    <form id="filtro-relatorio-form" method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label for="curso" class="form-label">Curso</label>
+            <select name="curso" id="filtro-curso" class="form-select">
+                <option value="">Todos os cursos</option>
+                {% for curso in cursos %}
+                    <option value="{{ curso.id }}" {% if curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>{{ curso.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="turma" class="form-label">Turma</label>
+            <select name="turma" id="filtro-turma" class="form-select">
+                <option value="">Todas as turmas</option>
+                {% for turma in turmas %}
+                    <option value="{{ turma.id }}" {% if turma_selecionada == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+    <div class="card">
+        <div class="card-body">
+            <div id="relatorio-tabela-container">
+            {% if atividades %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Curso</th>
+                            <th>Turmas</th>
+                            <th>Nome da Atividade</th>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for atividade in atividades %}
+                        <tr>
+                            <td>{{ atividade.curso.nome }}</td>
+                            <td>
+                                {% for turma in atividade.turmas.all %}
+                                    <span class="badge bg-info">{{ turma.nome }}</span>
+                                {% endfor %}
+                            </td>
+                            <td>{{ atividade.nome }}</td>
+                            <td>
+                                {# CORREÇÃO DO ERRO DE DATA: usar apenas d/m/Y para DateField #}
+                                {{ atividade.data|date:"d/m/Y" }}
+                            </td>
+                            <td>{{ atividade.descricao }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-warning">
+                    Nenhuma atividade acadêmica encontrada para o filtro selecionado.
+                </div>
+            {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/atividades_filtros.js' %}"></script>
+{% endblock %}

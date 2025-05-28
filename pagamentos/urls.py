@@ -47,6 +47,6 @@ urlpatterns = [
     # Turmas por curso
     path('turmas-por-curso/', turmas_por_curso, name='turmas_por_curso'),
 
-    # Buscar alunos
+    # Buscar alunos (API)
     path('alunos/buscar/', buscar_alunos, name='buscar_alunos'),
 ]

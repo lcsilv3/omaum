@@ -47,18 +47,19 @@ def listar_alunos(request):
                 | Q(email__icontains=query)
                 | Q(numero_iniciatico__icontains=query)
             )
-        # Adicionar filtro por curso
-        if curso_id:
+        # Filtro por curso (corrigido)
+        codigo_curso = request.GET.get("codigo_curso", "")
+        if codigo_curso:
             try:
                 Matricula = import_module("matriculas.models").Matricula
-                alunos_ids = (
+                alunos_cpfs = (
                     Matricula.objects.filter(
-                        turma__curso__codigo_curso=curso_id
+                        turma__curso__codigo_curso=codigo_curso
                     )
                     .values_list("aluno__cpf", flat=True)
                     .distinct()
                 )
-                alunos = alunos.filter(cpf__in=alunos_ids)
+                alunos = alunos.filter(cpf__in=alunos_cpfs)
             except (ImportError, AttributeError) as e:
                 logger.error(f"Erro ao filtrar por curso: {e}")
         
@@ -99,7 +100,7 @@ def listar_alunos(request):
             "page_obj": page_obj,
             "query": query,
             "cursos": cursos,
-            "curso_selecionado": curso_id,
+            "codigo_curso_selecionado": codigo_curso,
             "total_alunos": total_alunos,  # Adicionando contagem total
         }
         return render(request, "alunos/listar_alunos.html", context)

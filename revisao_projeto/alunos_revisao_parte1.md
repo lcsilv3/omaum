@@ -423,23 +423,21 @@ def listar_alunos(request):
                 | Q(email__icontains=query)
                 | Q(numero_iniciatico__icontains=query)
             )
-        # Adicionar filtro por curso
-        if curso_id:
+        # Filtro por curso (corrigido)
+        codigo_curso = request.GET.get("codigo_curso", "")
+        if codigo_curso:
             try:
-                # Importar o modelo Matricula dinamicamente
                 Matricula = import_module("matriculas.models").Matricula
-                # Filtrar alunos matriculados no curso especificado
-                alunos_ids = (
+                alunos_cpfs = (
                     Matricula.objects.filter(
-                        turma__curso__codigo_curso=curso_id
+                        turma__curso__codigo_curso=codigo_curso
                     )
                     .values_list("aluno__cpf", flat=True)
                     .distinct()
                 )
-                alunos = alunos.filter(cpf__in=alunos_ids)
+                alunos = alunos.filter(cpf__in=alunos_cpfs)
             except (ImportError, AttributeError) as e:
-                # Logar o erro, mas continuar sem o filtro de curso
-                print(f"Erro ao filtrar por curso: {e}")
+                logger.error(f"Erro ao filtrar por curso: {e}")
         
         # Para cada aluno, buscar os cursos em que está matriculado
         alunos_com_cursos = []
@@ -478,7 +476,7 @@ def listar_alunos(request):
             "page_obj": page_obj,
             "query": query,
             "cursos": cursos,
-            "curso_selecionado": curso_id,
+            "codigo_curso_selecionado": codigo_curso,
             "total_alunos": total_alunos,  # Adicionando contagem total
         }
         return render(request, "alunos/listar_alunos.html", context)
@@ -835,22 +833,19 @@ def search_alunos(request):
             return JsonResponse([], safe=False)
         
         Aluno = get_aluno_model()
-        # Buscar alunos por nome, CPF ou número iniciático
         alunos = Aluno.objects.filter(
             Q(nome__icontains=query) |
             Q(cpf__icontains=query) |
+            Q(email__icontains=query) |  # <-- Adicione esta linha
             Q(numero_iniciatico__icontains=query)
-        )[:10]  # Limitar a 10 resultados
+        )[:10]
         
-        # Log para depuração
-        logger.info(f"Busca por '{query}' retornou {alunos.count()} resultados")
-        
-        # Formatar resultados
         results = []
         for aluno in alunos:
             results.append({
                 "cpf": aluno.cpf,
                 "nome": aluno.nome,
+                "email": aluno.email,  # <-- Adicione esta linha
                 "numero_iniciatico": aluno.numero_iniciatico or "N/A",
                 "foto": aluno.foto.url if hasattr(aluno, "foto") and aluno.foto else None,
                 "situacao": aluno.get_situacao_display() if hasattr(aluno, "get_situacao_display") else ""
@@ -1488,6 +1483,883 @@ class Aluno(models.Model):
 
 
 
+## Arquivos de Views Modulares:
+
+
+### Arquivo: alunos\views\__init__.py
+
+python
+"""
+Inicialização do pacote de views do aplicativo alunos.
+Importa todas as views dos submodulos para disponibilizá-las no namespace 'alunos.views'.
+"""
+# Import views from submodules
+from .aluno_views import *
+from .api_views import *
+from .instrutor_views import *
+from .relatorio_views import *
+from .mixins import *
+
+# Explicitly import the function to ensure it's available
+from .api_views import get_aluno_detalhes as get_aluno_detalhes
+
+
+
+### Arquivo: alunos\views\aluno_views.py
+
+python
+"""
+Views relacionadas ao CRUD básico de alunos.
+"""
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
+from importlib import import_module
+import logging
+
+from ..utils import get_aluno_model, get_aluno_form
+from ..services import remover_instrutor_de_turmas
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def listar_alunos(request):
+    """Lista todos os alunos cadastrados."""
+    try:
+        Aluno = get_aluno_model()
+        # Obter parâmetros de busca e filtro
+        query = request.GET.get("q", "")
+        curso_id = request.GET.get("curso", "")
+        
+        # Filtrar alunos
+        alunos = Aluno.objects.all()
+        if query:
+            alunos = alunos.filter(
+                Q(nome__icontains=query)
+                | Q(cpf__icontains=query)
+                | Q(email__icontains=query)
+                | Q(numero_iniciatico__icontains=query)
+            )
+        
+        # Adicionar filtro por curso
+        if curso_id:
+            try:
+                # Importar o modelo Matricula dinamicamente
+                Matricula = import_module("matriculas.models").Matricula
+                # Filtrar alunos matriculados no curso especificado
+                alunos_ids = (
+                    Matricula.objects.filter(
+                        turma__curso__codigo_curso=curso_id
+                    )
+                    .values_list("aluno__cpf", flat=True)
+                    .distinct()
+                )
+                alunos = alunos.filter(cpf__in=alunos_ids)
+            except (ImportError, AttributeError) as e:
+                # Log do erro, mas continuar sem o filtro de curso
+                logger.error(f"Erro ao filtrar por curso: {e}")
+        
+        # Para cada aluno, buscar os cursos em que está matriculado
+        alunos_com_cursos = []
+        for aluno in alunos:
+            try:
+                # Importar o modelo Matricula dinamicamente
+                Matricula = import_module("matriculas.models").Matricula
+                # Buscar matrículas do aluno
+                matriculas = Matricula.objects.filter(aluno=aluno)
+                # Extrair nomes dos cursos
+                cursos = [m.turma.curso.nome for m in matriculas]
+                # Adicionar informação de cursos ao aluno
+                aluno.cursos = cursos
+            except:
+                aluno.cursos = []
+            alunos_com_cursos.append(aluno)
+        
+        # Paginação
+        paginator = Paginator(alunos_com_cursos, 10)  # 10 alunos por página
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+        
+        # Obter cursos para o filtro
+        try:
+            Curso = import_module("cursos.models").Curso
+            cursos = Curso.objects.all()
+        except:
+            cursos = []
+        
+        context = {
+            "alunos": page_obj,
+            "page_obj": page_obj,
+            "query": query,
+            "cursos": cursos,
+            "curso_selecionado": curso_id,
+        }
+        return render(request, "alunos/listar_alunos.html", context)
+    except Exception as e:
+        # Em vez de mostrar a mensagem de erro, apenas retornamos uma lista vazia
+        logger.error(f"Erro ao listar alunos: {str(e)}")
+        return render(
+            request,
+            "alunos/listar_alunos.html",
+            {
+                "alunos": [],
+                "page_obj": None,
+                "query": "",
+                "cursos": [],
+                "curso_selecionado": "",
+                "error_message": f"Erro ao listar alunos: {str(e)}",
+            },
+        )
+
+@login_required
+def criar_aluno(request):
+    """Cria um novo aluno."""
+    AlunoForm = get_aluno_form()
+    if request.method == "POST":
+        form = AlunoForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                aluno = form.save()
+                messages.success(request, "Aluno cadastrado com sucesso!")
+                return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
+            except ValidationError as e:
+                for field, errors in e.message_dict.items():
+                    for error in errors:
+                        form.add_error(field, error)
+            except Exception as e:
+                messages.error(request, f"Erro ao cadastrar aluno: {str(e)}")
+        else:
+            messages.error(request, "Por favor, corrija os erros abaixo.")
+    else:
+        form = AlunoForm()
+    return render(
+        request, "alunos/formulario_aluno.html", {"form": form, "aluno": None}
+    )
+
+@login_required
+def detalhar_aluno(request, cpf):
+    """Exibe os detalhes de um aluno."""
+    Aluno = get_aluno_model()
+    aluno = get_object_or_404(Aluno, cpf=cpf)
+    
+    # Buscar turmas onde o aluno é instrutor
+    turmas_como_instrutor = []
+    turmas_como_instrutor_auxiliar = []
+    turmas_como_auxiliar_instrucao = []
+    
+    if aluno.esta_ativo:
+        from importlib import import_module
+        try:
+            # Importar o modelo Turma dinamicamente
+            turmas_module = import_module("turmas.models")
+            Turma = getattr(turmas_module, "Turma")
+            # Buscar turmas ativas onde o aluno é instrutor
+            turmas_como_instrutor = Turma.objects.filter(
+                instrutor=aluno, status="A"
+            ).select_related("curso")
+            turmas_como_instrutor_auxiliar = Turma.objects.filter(
+                instrutor_auxiliar=aluno, status="A"
+            ).select_related("curso")
+            turmas_como_auxiliar_instrucao = Turma.objects.filter(
+                auxiliar_instrucao=aluno, status="A"
+            ).select_related("curso")
+        except (ImportError, AttributeError):
+            pass
+    
+    # Buscar matrículas do aluno
+    matriculas = []
+    try:
+        # Importar o modelo Matricula dinamicamente
+        matriculas_module = import_module("matriculas.models")
+        Matricula = getattr(matriculas_module, "Matricula")
+        # Buscar matrículas do aluno
+        matriculas = Matricula.objects.filter(aluno=aluno).select_related("turma__curso")
+    except (ImportError, AttributeError):
+        pass
+    
+    # Buscar atividades acadêmicas do aluno
+    atividades_academicas = []
+    try:
+        # Importar o modelo Frequencia dinamicamente
+        frequencias_module = import_module("frequencias.models")
+        Frequencia = getattr(frequencias_module, "Frequencia")
+        # Buscar frequências do aluno
+        atividades_academicas = Frequencia.objects.filter(aluno=aluno).select_related("atividade").order_by("-data")
+    except (ImportError, AttributeError):
+        pass
+    
+    # Buscar atividades ritualísticas do aluno
+    atividades_ritualisticas = []
+    try:
+        # Importar o modelo AtividadeRitualistica dinamicamente
+        atividades_module = import_module("atividades.models")
+        AtividadeRitualistica = getattr(atividades_module, "AtividadeRitualistica")
+        # Buscar atividades ritualísticas do aluno
+        atividades_ritualisticas = AtividadeRitualistica.objects.filter(participantes=aluno).order_by("-data")
+    except (ImportError, AttributeError):
+        pass
+    
+    return render(
+        request,
+        "alunos/detalhar_aluno.html",
+        {
+            "aluno": aluno,
+            "turmas_como_instrutor": turmas_como_instrutor,
+            "turmas_como_instrutor_auxiliar": turmas_como_instrutor_auxiliar,
+            "turmas_como_auxiliar_instrucao": turmas_como_auxiliar_instrucao,
+            "matriculas": matriculas,
+            "atividades_academicas": atividades_academicas,
+            "atividades_ritualisticas": atividades_ritualisticas,
+        },
+    )
+
+@login_required
+def editar_aluno(request, cpf):
+    """Edita um aluno existente."""
+    Aluno = get_aluno_model()
+    AlunoForm = get_aluno_form()
+    aluno = get_object_or_404(Aluno, cpf=cpf)
+    situacao_anterior = aluno.situacao
+    
+    if request.method == "POST":
+        form = AlunoForm(request.POST, request.FILES, instance=aluno)
+        # Verificar se o formulário é válido
+        if form.is_valid():
+            try:
+                # Verificar se a situação mudou de "ATIVO" para outra
+                nova_situacao = form.cleaned_data.get("situacao")
+                # Se a situação mudou e o aluno é instrutor em alguma turma
+                if (
+                    situacao_anterior == "ATIVO"
+                    and nova_situacao != "ATIVO"
+                    and hasattr(form, "aluno_e_instrutor")
+                ):
+                    # Verificar se o usuário confirmou a remoção da instrutoria
+                    if (
+                        request.POST.get("confirmar_remocao_instrutoria")
+                        != "1"
+                    ):
+                        # Redirecionar para a página de confirmação
+                        return redirect(
+                            "alunos:confirmar_remocao_instrutoria",
+                            cpf=aluno.cpf,
+                            nova_situacao=nova_situacao,
+                        )
+                    # Se confirmou, atualizar as turmas
+                    resultado = remover_instrutor_de_turmas(aluno, nova_situacao)
+                    if not resultado["sucesso"]:
+                        messages.error(request, resultado["mensagem"])
+                
+                # Salvar o aluno
+                form.save()
+                messages.success(request, "Aluno atualizado com sucesso!")
+                return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
+            except ValidationError as e:
+                for field, errors in e.message_dict.items():
+                    for error in errors:
+                        form.add_error(field, error)
+            except Exception as e:
+                messages.error(request, f"Erro ao atualizar aluno: {str(e)}")
+        else:
+            messages.error(request, "Por favor, corrija os erros abaixo.")
+    else:
+        form = AlunoForm(instance=aluno)
+    
+    return render(
+        request, "alunos/formulario_aluno.html", {"form": form, "aluno": aluno}
+    )
+
+@login_required
+def excluir_aluno(request, cpf):
+    """Exclui um aluno."""
+    Aluno = get_aluno_model()
+    aluno = get_object_or_404(Aluno, cpf=cpf)
+    
+    if request.method == "POST":
+        try:
+            aluno.delete()
+            messages.success(request, "Aluno excluído com sucesso!")
+            return redirect("alunos:listar_alunos")
+        except Exception as e:
+            messages.error(request, f"Erro ao excluir aluno: {str(e)}")
+            return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
+    
+    return render(request, "alunos/excluir_aluno.html", {"aluno": aluno})
+
+
+
+### Arquivo: alunos\views\api_views.py
+
+python
+"""Views relacionadas a endpoints de API."""
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required, permission_required
+from django.db.models import Q
+import logging
+import traceback
+from alunos.utils import get_aluno_model
+from ..services import verificar_elegibilidade_instrutor as verificar_elegibilidade_service
+
+logger = logging.getLogger(__name__)
+
+@require_GET
+def search_alunos(request):
+    """API para buscar alunos por nome, CPF ou número iniciático."""
+    query = request.GET.get('q', '').strip()
+    if len(query) < 2:
+        return JsonResponse([], safe=False)
+    
+    # Buscar alunos que correspondam à consulta
+    Aluno = get_aluno_model()
+    alunos = Aluno.objects.filter(
+        nome__icontains=query
+    )[:10]  # Limitar a 10 resultados
+    
+    # Formatar resultados
+    results = []
+    for aluno in alunos:
+        results.append({
+            'cpf': aluno.cpf,
+            'nome': aluno.nome,
+            'numero_iniciatico': aluno.numero_iniciatico or 'N/A',
+            'email': aluno.email or 'N/A',
+            'foto': aluno.foto.url if aluno.foto else None,
+        })
+    
+    return JsonResponse(results, safe=False)
+
+@login_required
+def search_instrutores(request):
+    """API endpoint para buscar alunos elegíveis para serem instrutores."""
+    try:
+        from importlib import import_module
+        Aluno = import_module("alunos.models").Aluno
+        
+        query = request.GET.get("q", "")
+        
+        # Buscar apenas alunos ativos
+        alunos = Aluno.objects.filter(situacao="ATIVO")
+        
+        # Se houver uma consulta, filtrar por ela
+        if query and len(query) >= 2:
+            alunos = alunos.filter(
+                Q(nome__icontains=query) |
+                Q(cpf__icontains=query) |
+                Q(numero_iniciatico__icontains=query)
+            )
+        
+        # Limitar a 10 resultados
+        alunos = alunos[:10]
+        
+        # Formatar resultados
+        results = []
+        for aluno in alunos:
+            results.append({
+                "cpf": aluno.cpf,
+                "nome": aluno.nome,
+                "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                "foto": aluno.foto.url if hasattr(aluno, "foto") and aluno.foto else None,
+                "situacao": aluno.get_situacao_display() if hasattr(aluno, "get_situacao_display") else "",
+                "situacao_codigo": aluno.situacao,
+                "esta_ativo": aluno.esta_ativo if hasattr(aluno, "esta_ativo") else False,
+                "elegivel": aluno.pode_ser_instrutor if hasattr(aluno, "pode_ser_instrutor") else True
+            })
+        
+        logger.info(f"Busca por '{query}' retornou {len(results)} resultados")
+        return JsonResponse(results, safe=False)
+    except Exception as e:
+        logger.error(f"Error in search_instrutores: {str(e)}")
+        return JsonResponse({"error": str(e)}, status=500)
+
+@login_required
+def get_aluno(request, cpf):
+    """API endpoint para obter dados de um aluno específico."""
+    try:
+        Aluno = get_aluno_model()
+        aluno = get_object_or_404(Aluno, cpf=cpf)
+        return JsonResponse(
+            {
+                "success": True,
+                "aluno": {
+                    "cpf": aluno.cpf,
+                    "nome": aluno.nome,
+                    "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                    "foto": (
+                        aluno.foto.url
+                        if hasattr(aluno, "foto") and aluno.foto
+                        else None
+                    ),
+                },
+            }
+        )
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=404)
+
+@login_required
+@permission_required('alunos.view_aluno', raise_exception=True)
+def verificar_elegibilidade_instrutor_api(request, cpf):
+    """API endpoint para verificar se um aluno pode ser instrutor."""
+    try:
+        # Configurar logging
+        logger.info(f"Verificando elegibilidade do instrutor com CPF: {cpf}")
+        
+        Aluno = get_aluno_model()
+        aluno = get_object_or_404(Aluno, cpf=cpf)
+        
+        # Usar o serviço para verificar elegibilidade
+        resultado = verificar_elegibilidade_service(aluno)
+        return JsonResponse(resultado)
+        
+    except Exception as e:
+        error_msg = str(e)
+        stack_trace = traceback.format_exc()
+        logger.error(f"Erro ao verificar elegibilidade: {error_msg}")
+        logger.error(f"Traceback: {stack_trace}")
+        return JsonResponse(
+            {"elegivel": False, "motivo": f"Erro na busca: {error_msg}"},
+            status=500
+        )
+
+@login_required
+@permission_required('alunos.view_aluno', raise_exception=True)
+def verificar_elegibilidade_endpoint(request, cpf):
+    """API endpoint para verificar se um aluno pode ser instrutor."""
+    try:
+        from importlib import import_module
+        Aluno = import_module("alunos.models").Aluno
+        
+        aluno = Aluno.objects.get(cpf=cpf)
+        
+        # Verificar se o aluno está ativo
+        if aluno.situacao != "ATIVO":
+            return JsonResponse({
+                "elegivel": False,
+                "motivo": f"O aluno não está ativo. Situação atual: {aluno.get_situacao_display()}"
+            })
+        
+        # Verificar se o aluno pode ser instrutor
+        if hasattr(aluno, 'pode_ser_instrutor'):
+            pode_ser_instrutor = aluno.pode_ser_instrutor
+            
+            if not pode_ser_instrutor:
+                return JsonResponse({
+                    "elegivel": False,
+                    "motivo": "O aluno não atende aos requisitos para ser instrutor."
+                })
+        else:
+            # Se o método não existir, considerar elegível por padrão
+            return JsonResponse({"elegivel": True})
+        
+        return JsonResponse({"elegivel": True})
+    except Aluno.DoesNotExist:
+        return JsonResponse({
+            "elegivel": False,
+            "motivo": "Aluno não encontrado."
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            "elegivel": False,
+            "motivo": f"Erro na busca: {str(e)}"
+        }, status=500)
+
+@login_required
+def get_aluno_detalhes(request, cpf):
+    """API endpoint para obter detalhes específicos de um aluno."""
+    try:
+        from importlib import import_module
+        Aluno = import_module("alunos.models").Aluno
+        
+        aluno = Aluno.objects.get(cpf=cpf)
+        
+        # Verificar se o aluno é instrutor em alguma turma
+        turmas_como_instrutor = False
+        try:
+            from django.db.models import Q
+            Turma = import_module("turmas.models").Turma
+            turmas_como_instrutor = Turma.objects.filter(
+                Q(instrutor=aluno) |
+                Q(instrutor_auxiliar=aluno) |
+                Q(auxiliar_instrucao=aluno)
+            ).exists()
+        except Exception as e:
+            logger.error(f"Erro ao verificar turmas como instrutor: {str(e)}")
+        
+        # Obter turmas em que o aluno está matriculado
+        turmas_matriculado = []
+        try:
+            Matricula = import_module("matriculas.models").Matricula
+            matriculas = Matricula.objects.filter(aluno=aluno, status="A")
+            turmas_matriculado = [
+                {
+                    "id": m.turma.id,
+                    "nome": m.turma.nome,
+                    "curso": m.turma.curso.nome if m.turma.curso else "Sem curso"
+                }
+                for m in matriculas
+            ]
+        except Exception as e:
+            logger.error(f"Erro ao buscar matrículas: {str(e)}")
+        
+        return JsonResponse({
+            "success": True,
+            "e_instrutor": turmas_como_instrutor,
+            "turmas": turmas_matriculado,
+            "pode_ser_instrutor": getattr(aluno, 'pode_ser_instrutor', False)
+        })
+    except Aluno.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Aluno não encontrado"}, status=404)
+    except Exception as e:
+        logger.error(f"Erro ao obter detalhes do aluno: {str(e)}", exc_info=True)
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+
+### Arquivo: alunos\views\instrutor_views.py
+
+python
+"""
+Views relacionadas a instrutores.
+"""
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+import logging
+
+from ..utils import get_aluno_model, get_turma_model, get_atribuicao_cargo_model
+from ..services import remover_instrutor_de_turmas
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
+    """Confirma a remoção da instrutoria de um aluno."""
+    Aluno = get_aluno_model()
+    aluno = get_object_or_404(Aluno, cpf=cpf)
+    
+    # Importar os modelos necessários
+    try:
+        Turma = get_turma_model()
+        AtribuicaoCargo = get_atribuicao_cargo_model()
+        
+        # Buscar turmas onde o aluno é instrutor
+        turmas_instrutor = Turma.objects.filter(instrutor=aluno, status="A")
+        turmas_instrutor_auxiliar = Turma.objects.filter(
+            instrutor_auxiliar=aluno, status="A"
+        )
+        turmas_auxiliar_instrucao = Turma.objects.filter(
+            auxiliar_instrucao=aluno, status="A"
+        )
+        
+        # Juntar todas as turmas
+        turmas = (
+            list(turmas_instrutor)
+            + list(turmas_instrutor_auxiliar)
+            + list(turmas_auxiliar_instrucao)
+        )
+        
+        # Se não houver turmas, redirecionar para a edição
+        if not turmas:
+            return redirect("alunos:editar_aluno", cpf=aluno.cpf)
+        # Se o método for POST, processar a confirmação
+        if request.method == "POST":
+            # Atualizar a situação do aluno
+            aluno.situacao = nova_situacao
+            aluno.save()
+            
+            # Remover o aluno das turmas como instrutor
+            resultado = remover_instrutor_de_turmas(aluno, nova_situacao)
+            if resultado["sucesso"]:
+                messages.success(
+                    request,
+                    "Aluno atualizado com sucesso e removido das turmas como instrutor!"
+                )
+            else:
+                messages.error(request, resultado["mensagem"])
+            
+            return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
+        
+        # Renderizar a página de confirmação
+        return render(
+            request,
+            "alunos/confirmar_remocao_instrutoria.html",
+            {
+                "aluno": aluno,
+                "nova_situacao": dict(Aluno.SITUACAO_CHOICES).get(
+                    nova_situacao
+                ),
+                "turmas_instrutor": turmas_instrutor,
+                "turmas_instrutor_auxiliar": turmas_instrutor_auxiliar,
+                "turmas_auxiliar_instrucao": turmas_auxiliar_instrucao,
+                "total_turmas": len(turmas),
+            },
+        )
+    except Exception as e:
+        messages.error(request, f"Erro ao processar a solicitação: {str(e)}")
+        logger.error(f"Erro ao confirmar remoção de instrutoria: {str(e)}")
+        return redirect("alunos:editar_aluno", cpf=aluno.cpf)
+
+from importlib import import_module
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+# Importar a função de verificação de elegibilidade
+from alunos.utils import verificar_elegibilidade_instrutor
+
+@login_required
+def diagnostico_instrutores(request):
+    """Exibe um diagnóstico de elegibilidade de todos os alunos ativos para serem instrutores."""
+    # Importar o modelo Aluno dinamicamente para evitar importações circulares
+    alunos_module = import_module('alunos.models')
+    Aluno = alunos_module.Aluno
+    
+    # Obter todos os alunos ativos
+    alunos_ativos = Aluno.objects.filter(situacao='ATIVO')
+    
+    # Verificar elegibilidade de cada aluno
+    alunos_diagnostico = []
+    alunos_elegiveis = 0
+    
+    for aluno in alunos_ativos:
+        elegivel, motivo = verificar_elegibilidade_instrutor(aluno)
+        alunos_diagnostico.append({
+            'aluno': aluno,
+            'elegivel': elegivel,
+            'motivo': motivo
+        })
+        if elegivel:
+            alunos_elegiveis += 1
+    
+    # Calcular total de alunos inelegíveis
+    total_alunos = len(alunos_ativos)
+    alunos_inelegiveis = total_alunos - alunos_elegiveis
+    
+    # Calcular porcentagens
+    porcentagem_elegiveis = (alunos_elegiveis / total_alunos * 100) if total_alunos > 0 else 0
+    porcentagem_inelegiveis = (alunos_inelegiveis / total_alunos * 100) if total_alunos > 0 else 0
+    
+    context = {
+        'alunos_diagnostico': alunos_diagnostico,
+        'total_alunos': total_alunos,
+        'alunos_elegiveis': alunos_elegiveis,
+        'alunos_inelegiveis': alunos_inelegiveis,
+        'porcentagem_elegiveis': round(porcentagem_elegiveis, 1),
+        'porcentagem_inelegiveis': round(porcentagem_inelegiveis, 1),
+    }
+    
+    return render(request, 'alunos/diagnostico_instrutores.html', context)
+
+
+
+### Arquivo: alunos\views\mixins.py
+
+python
+class AlunoQuerysetMixin:
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # LÃ³gica comum de filtragem
+        return queryset
+
+
+
+### Arquivo: alunos\views\relatorio_views.py
+
+python
+"""
+Views relacionadas a relatórios e exportação de dados.
+"""
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Avg, F
+from django.db.models.functions import ExtractYear
+from django.utils import timezone
+from django.http import HttpResponse
+import csv
+import logging
+from io import TextIOWrapper
+
+from ..utils import get_aluno_model
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def dashboard(request):
+    """Exibe o dashboard de alunos com estatísticas."""
+    try:
+        Aluno = get_aluno_model()
+        total_alunos = Aluno.objects.count()
+        # Contagem por sexo
+        total_masculino = Aluno.objects.filter(sexo="M").count()
+        total_feminino = Aluno.objects.filter(sexo="F").count()
+        total_outros = Aluno.objects.filter(sexo="O").count()
+        # Alunos recentes
+        alunos_recentes = Aluno.objects.order_by("-created_at")[:5]
+        context = {
+            "total_alunos": total_alunos,
+            "total_masculino": total_masculino,
+            "total_feminino": total_feminino,
+            "total_outros": total_outros,
+            "alunos_recentes": alunos_recentes,
+        }
+        return render(request, "alunos/dashboard.html", context)
+    except Exception as e:
+        messages.error(request, f"Erro ao carregar dashboard: {str(e)}")
+        logger.error(f"Erro ao carregar dashboard: {str(e)}")
+        return redirect("alunos:listar_alunos")
+
+@login_required
+def exportar_alunos(request):
+    """Exporta os dados dos alunos para um arquivo CSV."""
+    try:
+        Aluno = get_aluno_model()
+        alunos = Aluno.objects.all()
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="alunos.csv"'
+        writer = csv.writer(response)
+        writer.writerow(
+            [
+                "CPF",
+                "Nome",
+                "Email",
+                "Data de Nascimento",
+                "Sexo",
+                "Número Iniciático",
+            ]
+        )
+        for aluno in alunos:
+            writer.writerow(
+                [
+                    aluno.cpf,
+                    aluno.nome,
+                    aluno.email,
+                    aluno.data_nascimento,
+                    aluno.get_sexo_display(),
+                    aluno.numero_iniciatico,
+                ]
+            )
+        return response
+    except Exception as e:
+        messages.error(request, f"Erro ao exportar alunos: {str(e)}")
+        logger.error(f"Erro ao exportar alunos: {str(e)}")
+        return redirect("alunos:listar_alunos")
+
+@login_required
+def importar_alunos(request):
+    """Importa alunos de um arquivo CSV."""
+    if request.method == "POST" and request.FILES.get("csv_file"):
+        try:
+            Aluno = get_aluno_model()
+            csv_file = TextIOWrapper(
+                request.FILES["csv_file"].file, encoding="utf-8"
+            )
+            reader = csv.DictReader(csv_file)
+            count = 0
+            errors = []
+            for row in reader:
+                try:
+                    # Processar cada linha do CSV
+                    Aluno.objects.create(
+                        cpf=row.get("CPF", "").strip(),
+                        nome=row.get("Nome", "").strip(),
+                        email=row.get("Email", "").strip(),
+                        data_nascimento=row.get(
+                            "Data de Nascimento", ""
+                        ).strip(),
+                        sexo=row.get("Sexo", "M")[
+                            0
+                        ].upper(),  # Pega a primeira letra e converte para maiúscula
+                        numero_iniciatico=row.get(
+                            "Número Iniciático", ""
+                        ).strip(),
+                        nome_iniciatico=row.get(
+                            "Nome Iniciático", row.get("Nome", "")
+                        ).strip(),
+                        nacionalidade=row.get(
+                            "Nacionalidade", "Brasileira"
+                        ).strip(),
+                        naturalidade=row.get("Naturalidade", "").strip(),
+                        rua=row.get("Rua", "").strip(),
+                        numero_imovel=row.get("Número", "").strip(),
+                        complemento=row.get("Complemento", "").strip(),
+                        bairro=row.get("Bairro", "").strip(),
+                        cidade=row.get("Cidade", "").strip(),
+                        estado=row.get("Estado", "").strip(),
+                        cep=row.get("CEP", "").strip(),
+                        nome_primeiro_contato=row.get(
+                            "Nome do Primeiro Contato", ""
+                        ).strip(),
+                        celular_primeiro_contato=row.get(
+                            "Celular do Primeiro Contato", ""
+                        ).strip(),
+                        tipo_relacionamento_primeiro_contato=row.get(
+                            "Tipo de Relacionamento do Primeiro Contato", ""
+                        ).strip(),
+                        tipo_sanguineo=row.get("Tipo Sanguíneo", "").strip(),
+                        fator_rh=row.get("Fator RH", "+").strip(),
+                    )
+                    count += 1
+                except Exception as e:
+                    errors.append(f"Erro na linha {count+1}: {str(e)}")
+            if errors:
+                messages.warning(
+                    request,
+                    f"{count} alunos importados com {len(errors)} erros.",
+                )
+                for error in errors[:5]:  # Mostrar apenas os 5 primeiros erros
+                    messages.error(request, error)
+                if len(errors) > 5:
+                    messages.error(
+                        request, f"... e mais {len(errors) - 5} erros."
+                    )
+            else:
+                messages.success(
+                    request, f"{count} alunos importados com sucesso!"
+                )
+            return redirect("alunos:listar_alunos")
+        except Exception as e:
+            messages.error(request, f"Erro ao importar alunos: {str(e)}")
+            logger.error(f"Erro ao importar alunos: {str(e)}")
+    return render(request, "alunos/importar_alunos.html")
+
+@login_required
+def relatorio_alunos(request):
+    """Exibe um relatório com estatísticas sobre os alunos."""
+    try:
+        Aluno = get_aluno_model()
+        total_alunos = Aluno.objects.count()
+        total_masculino = Aluno.objects.filter(sexo="M").count()
+        total_feminino = Aluno.objects.filter(sexo="F").count()
+        total_outros = Aluno.objects.filter(sexo="O").count()
+        
+        # Calcular idade média
+        current_year = timezone.now().year
+        idade_media = (
+            Aluno.objects.annotate(
+                idade=current_year - ExtractYear("data_nascimento")
+            ).aggregate(Avg("idade"))["idade__avg"]
+            or 0
+        )
+        
+        context = {
+            "total_alunos": total_alunos,
+            "total_masculino": total_masculino,
+            "total_feminino": total_feminino,
+            "total_outros": total_outros,
+            "idade_media": round(idade_media, 1),
+        }
+        return render(request, "alunos/relatorio_alunos.html", context)
+    except Exception as e:
+        messages.error(request, f"Erro ao gerar relatório: {str(e)}")
+        logger.error(f"Erro ao gerar relatório: {str(e)}")
+        return redirect("alunos:listar_alunos")
+
+
 ## Arquivos de Template:
 
 
@@ -1722,516 +2594,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-{% endblock %}
-
-
-
-
-### Arquivo: alunos\templates\alunos\detalhar_aluno.html
-
-html
-{% extends 'base.html' %}
-{% load alunos_extras %}
-
-{% block title %}Detalhes do Aluno: {{ aluno.nome }}{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Detalhes do Aluno</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-            <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-warning me-2">
-                <i class="fas fa-edit"></i> Editar
-            </a>
-            <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Excluir
-            </a>
-        </div>
-    </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    {% if aluno.alerta_mensagem %}
-    <div class="alert alert-warning">
-        <i class="fas fa-exclamation-triangle"></i> {{ aluno.alerta_mensagem }}
-    </div>
-    {% endif %}
-    
-    <div class="card mb-4 border-primary">
-        <div class="card-header bg-primary text-white">
-            <h5>Dados Pessoais</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-8">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>CPF:</strong> <span class="cpf-mask">{{ aluno.cpf }}</span></p>
-                            <p><strong>Nome:</strong> {{ aluno.nome }}</p>
-                            <p><strong>Data de Nascimento:</strong> {{ aluno.data_nascimento|date:"d/m/Y" }}</p>
-                            <p><strong>Hora de Nascimento:</strong> {{ aluno.hora_nascimento|time:"H:i" }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Email:</strong> {{ aluno.email }}</p>
-                            <p><strong>Sexo:</strong> {{ aluno.get_sexo_display }}</p>
-                            <p><strong>Situação:</strong> 
-                                {% if aluno.situacao == 'ATIVO' %}
-                                    <span class="badge bg-success">{{ aluno.get_situacao_display }}</span>
-                                {% elif aluno.situacao == 'AFASTADO' %}
-                                    <span class="badge bg-warning">{{ aluno.get_situacao_display }}</span>
-                                {% elif aluno.situacao == 'EXCLUIDO' %}
-                                    <span class="badge bg-danger">{{ aluno.get_situacao_display }}</span>
-                                {% elif aluno.situacao == 'FALECIDO' %}
-                                    <span class="badge bg-dark">{{ aluno.get_situacao_display }}</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">{{ aluno.get_situacao_display }}</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <!-- Moldura tracejada azul brilhante sem cabeçalho -->
-                    <div class="border rounded p-3 text-center" 
-                         style="border-style: dashed !important; 
-                                border-color: #007bff !important; 
-                                border-width: 2px !important;
-                                width: 200px;  /* Largura fixa para o contêiner */
-                                height: 200px; /* Altura fixa para o contêiner */
-                                display: flex; 
-                                align-items: center; 
-                                justify-content: center;
-                                overflow: hidden;
-                                margin: 0 auto;">
-                        {% if aluno.foto %}
-                            <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                 style="max-width: 180px;
-                                        max-height: 180px;
-                                        width: auto;
-                                        height: auto;
-                                        object-fit: contain;
-                                        display: block;">
-                        {% else %}
-                            <div class="text-muted">Sem foto</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    {% if aluno.esta_ativo %}
-    <div class="card mb-4 border-success">
-        <div class="card-header bg-success text-white">
-            <h5>Instrutoria</h5>
-        </div>
-        <div class="card-body">
-            {% if turmas_como_instrutor or turmas_como_instrutor_auxiliar or turmas_como_auxiliar_instrucao %}
-                <div class="row">
-                    {% if turmas_como_instrutor %}
-                    <div class="col-md-4">
-                        <h6 class="border-bottom pb-2">Como Instrutor Principal</h6>
-                        <ul class="list-group">
-                            {% for turma in turmas_como_instrutor %}
-                            <li class="list-group-item">
-                                <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
-                                <span class="badge bg-primary float-end">{{ turma.curso }}</span>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-                    
-                    {% if turmas_como_instrutor_auxiliar %}
-                    <div class="col-md-4">
-                        <h6 class="border-bottom pb-2">Como Instrutor Auxiliar</h6>
-                        <ul class="list-group">
-                            {% for turma in turmas_como_instrutor_auxiliar %}
-                            <li class="list-group-item">
-                                <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
-                                <span class="badge bg-info float-end">{{ turma.curso }}</span>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-                    
-                    {% if turmas_como_auxiliar_instrucao %}
-                    <div class="col-md-4">
-                        <h6 class="border-bottom pb-2">Como Auxiliar de Instrução</h6>
-                        <ul class="list-group">
-                            {% for turma in turmas_como_auxiliar_instrucao %}
-                            <li class="list-group-item">
-                                <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
-                                <span class="badge bg-success float-end">{{ turma.curso }}</span>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-                </div>
-            {% else %}
-                <p class="text-muted">Este aluno não é instrutor em nenhuma turma ativa.</p>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-    
-    <div class="card mb-4 border-info">
-        <div class="card-header bg-info text-white">
-            <h5>Dados Iniciáticos</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Número Iniciático:</strong> {{ aluno.numero_iniciatico|default:"Não informado" }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Nome Iniciático:</strong> {{ aluno.nome_iniciatico|default:"Não informado" }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="card mb-4 border-secondary">
-        <div class="card-header bg-secondary text-white">
-            <h5>Nacionalidade e Naturalidade</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Nacionalidade:</strong> {{ aluno.nacionalidade }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Naturalidade:</strong> {{ aluno.naturalidade }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="card mb-4 border-secondary">
-        <div class="card-header bg-secondary text-white">
-            <h5>Endereço</h5>
-        </div>
-        <div class="card-body">
-            <p><strong>Endereço Completo:</strong> {{ aluno.rua }}, {{ aluno.numero_imovel }}
-                {% if aluno.complemento %}, {{ aluno.complemento }}{% endif %}
-                - {{ aluno.bairro }}, {{ aluno.cidade }}/{{ aluno.estado }} - CEP: <span class="cep-mask">{{ aluno.cep }}</span></p>
-        </div>
-    </div>
-    
-    <div class="card mb-4 border-warning">
-        <div class="card-header bg-warning text-dark">
-            <h5>Contatos de Emergência</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>Primeiro Contato</h6>
-                    <p><strong>Nome:</strong> {{ aluno.nome_primeiro_contato }}</p>
-                    <p><strong>Celular:</strong> <span class="celular-mask">{{ aluno.celular_primeiro_contato }}</span></p>
-                    <p><strong>Relacionamento:</strong> {{ aluno.tipo_relacionamento_primeiro_contato }}</p>
-                </div>
-                
-                {% if aluno.nome_segundo_contato %}
-                <div class="col-md-6">
-                    <h6>Segundo Contato</h6>
-                    <p><strong>Nome:</strong> {{ aluno.nome_segundo_contato }}</p>
-                    <p><strong>Celular:</strong> <span class="celular-mask">{{ aluno.celular_segundo_contato }}</span></p>
-                    <p><strong>Relacionamento:</strong> {{ aluno.tipo_relacionamento_segundo_contato }}</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <div class="card mb-4 border-danger">
-        <div class="card-header bg-danger text-white">
-            <h5>Informações Médicas</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-3">
-                    <p><strong>Tipo Sanguíneo:</strong> {{ aluno.tipo_sanguineo }}</p>
-                </div>
-                <div class="col-md-3">
-                    <p><strong>Fator RH:</strong> {{ aluno.get_fator_rh_display }}</p>
-                </div>
-                <div class="col-md-3">
-                    <p><strong>Convênio Médico:</strong> {{ aluno.convenio_medico|default:"Não informado" }}</p>
-                </div>
-                <div class="col-md-3">
-                    <p><strong>Hospital:</strong> {{ aluno.hospital|default:"Não informado" }}</p>
-                </div>
-            </div>
-            
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <h6>Alergias:</h6>
-                    <div class="p-2 bg-light rounded">
-                        {{ aluno.alergias|default:"Nenhuma"|linebreaks }}
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <h6>Condições Médicas:</h6>
-                    <div class="p-2 bg-light rounded">
-                        {{ aluno.condicoes_medicas_gerais|default:"Nenhuma"|linebreaks }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="d-flex justify-content-between mb-5">
-        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
-            <i class="fas fa-list"></i> Voltar para a lista
-        </a>
-        <div>
-            <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-warning me-2">
-                <i class="fas fa-edit"></i> Editar
-            </a>
-            <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Excluir
-            </a>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-<script>
-    $(document).ready(function(){
-        // Aplicar máscaras para exibição
-        $('.cpf-mask').each(function(){
-            var cpf = $(this).text().trim();
-            if(cpf.length === 11) {
-                $(this).text(cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4"));
-            }
-        });
-        
-        $('.cep-mask').each(function(){
-            var cep = $(this).text().trim();
-            if(cep.length === 8) {
-                $(this).text(cep.replace(/(\d{5})(\d{3})/, "$1-$2"));
-            }
-        });
-        
-        $('.celular-mask').each(function(){
-            var celular = $(this).text().trim();
-            if(celular.length === 11) {
-                $(this).text(celular.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3"));
-            } else if(celular.length === 10) {
-                $(this).text(celular.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3"));
-            }
-        });
-    });
-</script>
-{% endblock %}
-
-
-
-### Arquivo: alunos\templates\alunos\diagnostico_instrutores.html
-
-html
-{% extends "base.html" %}
-
-{% block title %}Diagnóstico de Elegibilidade de Instrutores{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Diagnóstico de Elegibilidade de Instrutores</h1>
-        <div>
-            <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-        </div>
-    </div>
-    
-    <div class="alert alert-info">
-        <p>Esta página mostra o diagnóstico de elegibilidade de todos os alunos ativos para serem instrutores.</p>
-        <p>Total de alunos: {{ total_alunos }}</p>
-        <p>Alunos elegíveis: {{ alunos_elegiveis }} ({{ porcentagem_elegiveis }}%)</p>
-        <p>Alunos inelegíveis: {{ alunos_inelegiveis }} ({{ porcentagem_inelegiveis }}%)</p>
-    </div>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Filtros</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="mostrar-elegiveis" checked>
-                        <label class="form-check-label" for="mostrar-elegiveis">Mostrar alunos elegíveis</label>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="mostrar-inelegiveis" checked>
-                        <label class="form-check-label" for="mostrar-inelegiveis">Mostrar alunos inelegíveis</label>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="table-responsive">
-        <table class="table table-striped" id="tabela-diagnostico">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>CPF</th>
-                    <th>Nº Iniciático</th>
-                    <th>Situação</th>
-                    <th>Elegível</th>
-                    <th>Motivo</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in alunos_diagnostico %}
-                <tr class="{% if item.elegivel %}elegivel{% else %}inelegivel{% endif %}">
-                    <td>{{ item.aluno.nome }}</td>
-                    <td>{{ item.aluno.cpf }}</td>
-                    <td>{{ item.aluno.numero_iniciatico|default:"N/A" }}</td>
-                    <td>{{ item.aluno.get_situacao_display }}</td>
-                    <td>
-                        {% if item.elegivel %}
-                            <span class="badge bg-success">Sim</span>
-                        {% else %}
-                            <span class="badge bg-danger">Não</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ item.motivo }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center">Nenhum aluno encontrado.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    
-    <!-- Botão de voltar no final da página -->
-    <div class="mt-4 text-center">
-        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar para Lista de Alunos
-        </a>
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const mostrarElegiveisCheckbox = document.getElementById('mostrar-elegiveis');
-        const mostrarInelegiveisCheckbox = document.getElementById('mostrar-inelegiveis');
-        const tabela = document.getElementById('tabela-diagnostico');
-        
-        function atualizarVisibilidade() {
-            const mostrarElegiveis = mostrarElegiveisCheckbox.checked;
-            const mostrarInelegiveis = mostrarInelegiveisCheckbox.checked;
-            
-            const linhasElegiveis = tabela.querySelectorAll('tbody tr.elegivel');
-            const linhasInelegiveis = tabela.querySelectorAll('tbody tr.inelegivel');
-            
-            linhasElegiveis.forEach(linha => {
-                linha.style.display = mostrarElegiveis ? '' : 'none';
-            });
-            
-            linhasInelegiveis.forEach(linha => {
-                linha.style.display = mostrarInelegiveis ? '' : 'none';
-            });
-        }
-        
-        mostrarElegiveisCheckbox.addEventListener('change', atualizarVisibilidade);
-        mostrarInelegiveisCheckbox.addEventListener('change', atualizarVisibilidade);
-        
-        // Inicializar
-        atualizarVisibilidade();
-    });
-</script>
-{% endblock %}
-
-
-
-### Arquivo: alunos\templates\alunos\editar_aluno.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Editar Aluno: {{ aluno.nome }}{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1>Editar Aluno: {{ aluno.nome }}</h1>
-    
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        
-        {% for field in form %}
-            <div class="form-group mb-3">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-        {% endfor %}
-        
-        <div class="mt-4">
-            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-            <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
-            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-info">Cancelar</a>
-        </div>
-    </form>
-</div>
-{% endblock %}
-
-
-
-### Arquivo: alunos\templates\alunos\excluir_aluno.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Excluir Aluno: {{ aluno.nome }}{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-  <h1>Excluir Aluno: {{ aluno.nome }}</h1>
-    
-  <div class="alert alert-danger">
-      <p>Você tem certeza que deseja excluir o aluno "{{ aluno.nome }}"?</p>
-      <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
-  </div>
-    
-  <form method="post">
-      {% csrf_token %}
-      <div class="d-flex justify-content-between">
-          <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary">
-              <i class="fas fa-times"></i> Cancelar
-          </a>
-          <button type="submit" class="btn btn-danger">
-              <i class="fas fa-trash"></i> Confirmar Exclusão
-          </button>
-      </div>
-  </form>
-</div>
 {% endblock %}
 
 

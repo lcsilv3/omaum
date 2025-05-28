@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('alunos', '0002_aluno_situacao'),
-        ('atividades', '0005_remove_atividadeacademica_turma'),
+        ('atividades', '0001_initial'),
         ('presencas', '0002_presenca_delete_presencaacademica'),
         ('turmas', '0007_alter_turma_status'),
     ]

@@ -916,3 +916,16 @@ def dashboard_turmas(request):
     except Exception as e:
         messages.error(request, f"Erro ao carregar dashboard de turmas: {str(e)}")
         return redirect("turmas:listar_turmas")
+
+
+from django.http import JsonResponse
+from .models import Turma
+
+def turmas_por_curso(request):
+    codigo_curso = request.GET.get("codigo_curso")
+    turmas = []
+    if codigo_curso:
+        turmas_qs = Turma.objects.filter(curso__codigo_curso=codigo_curso)
+        turmas = [{"id": t.id, "nome": t.nome} for t in turmas_qs]
+    return JsonResponse({"turmas": turmas})
+    return JsonResponse({"turmas": turmas})

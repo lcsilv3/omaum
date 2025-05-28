@@ -45,4 +45,7 @@ urlpatterns = [
     path("importar/", views.importar_turmas, name="importar_turmas"),
     path("relatorio/", views.relatorio_turmas, name="relatorio_turmas"),
     path("dashboard/", views.dashboard_turmas, name="dashboard_turmas"),
+    
+    # API endpoints
+    path("api/turmas-por-curso/", views.turmas_por_curso, name="turmas_por_curso"),
 ]

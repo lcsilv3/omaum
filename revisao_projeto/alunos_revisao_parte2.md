@@ -4,6 +4,516 @@
 ## Arquivos forms.py:
 
 
+### Arquivo: alunos\templates\alunos\detalhar_aluno.html
+
+html
+{% extends 'base.html' %}
+{% load alunos_extras %}
+
+{% block title %}Detalhes do Aluno: {{ aluno.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Detalhes do Aluno</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-warning me-2">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Excluir
+            </a>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    {% if aluno.alerta_mensagem %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> {{ aluno.alerta_mensagem }}
+    </div>
+    {% endif %}
+    
+    <div class="card mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h5>Dados Pessoais</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>CPF:</strong> <span class="cpf-mask">{{ aluno.cpf }}</span></p>
+                            <p><strong>Nome:</strong> {{ aluno.nome }}</p>
+                            <p><strong>Data de Nascimento:</strong> {{ aluno.data_nascimento|date:"d/m/Y" }}</p>
+                            <p><strong>Hora de Nascimento:</strong> {{ aluno.hora_nascimento|time:"H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong> {{ aluno.email }}</p>
+                            <p><strong>Sexo:</strong> {{ aluno.get_sexo_display }}</p>
+                            <p><strong>Situação:</strong> 
+                                {% if aluno.situacao == 'ATIVO' %}
+                                    <span class="badge bg-success">{{ aluno.get_situacao_display }}</span>
+                                {% elif aluno.situacao == 'AFASTADO' %}
+                                    <span class="badge bg-warning">{{ aluno.get_situacao_display }}</span>
+                                {% elif aluno.situacao == 'EXCLUIDO' %}
+                                    <span class="badge bg-danger">{{ aluno.get_situacao_display }}</span>
+                                {% elif aluno.situacao == 'FALECIDO' %}
+                                    <span class="badge bg-dark">{{ aluno.get_situacao_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ aluno.get_situacao_display }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <!-- Moldura tracejada azul brilhante sem cabeçalho -->
+                    <div class="border rounded p-3 text-center" 
+                         style="border-style: dashed !important; 
+                                border-color: #007bff !important; 
+                                border-width: 2px !important;
+                                width: 200px;  /* Largura fixa para o contêiner */
+                                height: 200px; /* Altura fixa para o contêiner */
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: center;
+                                overflow: hidden;
+                                margin: 0 auto;">
+                        {% if aluno.foto %}
+                            <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
+                                 style="max-width: 180px;
+                                        max-height: 180px;
+                                        width: auto;
+                                        height: auto;
+                                        object-fit: contain;
+                                        display: block;">
+                        {% else %}
+                            <div class="text-muted">Sem foto</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if aluno.esta_ativo %}
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white">
+            <h5>Instrutoria</h5>
+        </div>
+        <div class="card-body">
+            {% if turmas_como_instrutor or turmas_como_instrutor_auxiliar or turmas_como_auxiliar_instrucao %}
+                <div class="row">
+                    {% if turmas_como_instrutor %}
+                    <div class="col-md-4">
+                        <h6 class="border-bottom pb-2">Como Instrutor Principal</h6>
+                        <ul class="list-group">
+                            {% for turma in turmas_como_instrutor %}
+                            <li class="list-group-item">
+                                <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
+                                <span class="badge bg-primary float-end">{{ turma.curso }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    {% if turmas_como_instrutor_auxiliar %}
+                    <div class="col-md-4">
+                        <h6 class="border-bottom pb-2">Como Instrutor Auxiliar</h6>
+                        <ul class="list-group">
+                            {% for turma in turmas_como_instrutor_auxiliar %}
+                            <li class="list-group-item">
+                                <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
+                                <span class="badge bg-info float-end">{{ turma.curso }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    {% if turmas_como_auxiliar_instrucao %}
+                    <div class="col-md-4">
+                        <h6 class="border-bottom pb-2">Como Auxiliar de Instrução</h6>
+                        <ul class="list-group">
+                            {% for turma in turmas_como_auxiliar_instrucao %}
+                            <li class="list-group-item">
+                                <a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a>
+                                <span class="badge bg-success float-end">{{ turma.curso }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p class="text-muted">Este aluno não é instrutor em nenhuma turma ativa.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="card mb-4 border-info">
+        <div class="card-header bg-info text-white">
+            <h5>Dados Iniciáticos</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Número Iniciático:</strong> {{ aluno.numero_iniciatico|default:"Não informado" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Nome Iniciático:</strong> {{ aluno.nome_iniciatico|default:"Não informado" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4 border-secondary">
+        <div class="card-header bg-secondary text-white">
+            <h5>Nacionalidade e Naturalidade</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Nacionalidade:</strong> {{ aluno.nacionalidade }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Naturalidade:</strong> {{ aluno.naturalidade }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4 border-secondary">
+        <div class="card-header bg-secondary text-white">
+            <h5>Endereço</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Endereço Completo:</strong> {{ aluno.rua }}, {{ aluno.numero_imovel }}
+                {% if aluno.complemento %}, {{ aluno.complemento }}{% endif %}
+                - {{ aluno.bairro }}, {{ aluno.cidade }}/{{ aluno.estado }} - CEP: <span class="cep-mask">{{ aluno.cep }}</span></p>
+        </div>
+    </div>
+    
+    <div class="card mb-4 border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h5>Contatos de Emergência</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Primeiro Contato</h6>
+                    <p><strong>Nome:</strong> {{ aluno.nome_primeiro_contato }}</p>
+                    <p><strong>Celular:</strong> <span class="celular-mask">{{ aluno.celular_primeiro_contato }}</span></p>
+                    <p><strong>Relacionamento:</strong> {{ aluno.tipo_relacionamento_primeiro_contato }}</p>
+                </div>
+                
+                {% if aluno.nome_segundo_contato %}
+                <div class="col-md-6">
+                    <h6>Segundo Contato</h6>
+                    <p><strong>Nome:</strong> {{ aluno.nome_segundo_contato }}</p>
+                    <p><strong>Celular:</strong> <span class="celular-mask">{{ aluno.celular_segundo_contato }}</span></p>
+                    <p><strong>Relacionamento:</strong> {{ aluno.tipo_relacionamento_segundo_contato }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4 border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5>Informações Médicas</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <p><strong>Tipo Sanguíneo:</strong> {{ aluno.tipo_sanguineo }}</p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Fator RH:</strong> {{ aluno.get_fator_rh_display }}</p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Convênio Médico:</strong> {{ aluno.convenio_medico|default:"Não informado" }}</p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Hospital:</strong> {{ aluno.hospital|default:"Não informado" }}</p>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6>Alergias:</h6>
+                    <div class="p-2 bg-light rounded">
+                        {{ aluno.alergias|default:"Nenhuma"|linebreaks }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Condições Médicas:</h6>
+                    <div class="p-2 bg-light rounded">
+                        {{ aluno.condicoes_medicas_gerais|default:"Nenhuma"|linebreaks }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between mb-5">
+        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> Voltar para a lista
+        </a>
+        <div>
+            <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-warning me-2">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Excluir
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+<script>
+    $(document).ready(function(){
+        // Aplicar máscaras para exibição
+        $('.cpf-mask').each(function(){
+            var cpf = $(this).text().trim();
+            if(cpf.length === 11) {
+                $(this).text(cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4"));
+            }
+        });
+        
+        $('.cep-mask').each(function(){
+            var cep = $(this).text().trim();
+            if(cep.length === 8) {
+                $(this).text(cep.replace(/(\d{5})(\d{3})/, "$1-$2"));
+            }
+        });
+        
+        $('.celular-mask').each(function(){
+            var celular = $(this).text().trim();
+            if(celular.length === 11) {
+                $(this).text(celular.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3"));
+            } else if(celular.length === 10) {
+                $(this).text(celular.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3"));
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+
+
+### Arquivo: alunos\templates\alunos\diagnostico_instrutores.html
+
+html
+{% extends "base.html" %}
+
+{% block title %}Diagnóstico de Elegibilidade de Instrutores{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Diagnóstico de Elegibilidade de Instrutores</h1>
+        <div>
+            <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    <div class="alert alert-info">
+        <p>Esta página mostra o diagnóstico de elegibilidade de todos os alunos ativos para serem instrutores.</p>
+        <p>Total de alunos: {{ total_alunos }}</p>
+        <p>Alunos elegíveis: {{ alunos_elegiveis }} ({{ porcentagem_elegiveis }}%)</p>
+        <p>Alunos inelegíveis: {{ alunos_inelegiveis }} ({{ porcentagem_inelegiveis }}%)</p>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Filtros</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="mostrar-elegiveis" checked>
+                        <label class="form-check-label" for="mostrar-elegiveis">Mostrar alunos elegíveis</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="mostrar-inelegiveis" checked>
+                        <label class="form-check-label" for="mostrar-inelegiveis">Mostrar alunos inelegíveis</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-striped" id="tabela-diagnostico">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>CPF</th>
+                    <th>Nº Iniciático</th>
+                    <th>Situação</th>
+                    <th>Elegível</th>
+                    <th>Motivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in alunos_diagnostico %}
+                <tr class="{% if item.elegivel %}elegivel{% else %}inelegivel{% endif %}">
+                    <td>{{ item.aluno.nome }}</td>
+                    <td>{{ item.aluno.cpf }}</td>
+                    <td>{{ item.aluno.numero_iniciatico|default:"N/A" }}</td>
+                    <td>{{ item.aluno.get_situacao_display }}</td>
+                    <td>
+                        {% if item.elegivel %}
+                            <span class="badge bg-success">Sim</span>
+                        {% else %}
+                            <span class="badge bg-danger">Não</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.motivo }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">Nenhum aluno encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Botão de voltar no final da página -->
+    <div class="mt-4 text-center">
+        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Lista de Alunos
+        </a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mostrarElegiveisCheckbox = document.getElementById('mostrar-elegiveis');
+        const mostrarInelegiveisCheckbox = document.getElementById('mostrar-inelegiveis');
+        const tabela = document.getElementById('tabela-diagnostico');
+        
+        function atualizarVisibilidade() {
+            const mostrarElegiveis = mostrarElegiveisCheckbox.checked;
+            const mostrarInelegiveis = mostrarInelegiveisCheckbox.checked;
+            
+            const linhasElegiveis = tabela.querySelectorAll('tbody tr.elegivel');
+            const linhasInelegiveis = tabela.querySelectorAll('tbody tr.inelegivel');
+            
+            linhasElegiveis.forEach(linha => {
+                linha.style.display = mostrarElegiveis ? '' : 'none';
+            });
+            
+            linhasInelegiveis.forEach(linha => {
+                linha.style.display = mostrarInelegiveis ? '' : 'none';
+            });
+        }
+        
+        mostrarElegiveisCheckbox.addEventListener('change', atualizarVisibilidade);
+        mostrarInelegiveisCheckbox.addEventListener('change', atualizarVisibilidade);
+        
+        // Inicializar
+        atualizarVisibilidade();
+    });
+</script>
+{% endblock %}
+
+
+
+### Arquivo: alunos\templates\alunos\editar_aluno.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Editar Aluno: {{ aluno.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Editar Aluno: {{ aluno.nome }}</h1>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        {% for field in form %}
+            <div class="form-group mb-3">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+            <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-info">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: alunos\templates\alunos\excluir_aluno.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Excluir Aluno: {{ aluno.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Excluir Aluno: {{ aluno.nome }}</h1>
+    
+  <div class="alert alert-danger">
+      <p>Você tem certeza que deseja excluir o aluno "{{ aluno.nome }}"?</p>
+      <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
+  </div>
+    
+  <form method="post">
+      {% csrf_token %}
+      <div class="d-flex justify-content-between">
+          <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary">
+              <i class="fas fa-times"></i> Cancelar
+          </a>
+          <button type="submit" class="btn btn-danger">
+              <i class="fas fa-trash"></i> Confirmar Exclusão
+          </button>
+      </div>
+  </form>
+</div>
+{% endblock %}
+
+
+
+
 ### Arquivo: alunos\templates\alunos\formulario_aluno.html
 
 html
@@ -484,10 +994,12 @@ html
                     </div>
                 </div>
                 <div class="col-md-4 col-lg-3">
-                    <select name="curso" class="form-select" title="Selecione um curso" aria-label="Selecione um curso">
+                    <select name="codigo_curso" class="form-select" aria-label="Filtrar por curso">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
-                            <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == curso_selecionado %}selected{% endif %}>{{ curso.nome }}</option>
+                            <option value="{{ curso.codigo_curso }}" {% if codigo_curso_selecionado == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
+                                {{ curso.nome }}
+                            </option>
                         {% endfor %}
                     </select>
                 </div>

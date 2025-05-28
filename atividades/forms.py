@@ -1,105 +1,218 @@
-print("ARQUIVO FORMS.PY CARREGADO")
 from django import forms
-from django.core.validators import RegexValidator
 from importlib import import_module
+import logging
 
-# resto do código...
+logger = logging.getLogger(__name__)
 
-
-def get_atividade_academica_model():
+# Função utilitária para obter modelos dinamicamente
+def get_models():
+    """
+    Obtém todos os modelos necessários dinamicamente.
+    Returns:
+        dict: Dicionário com todos os modelos necessários
+    Raises:
+        ImportError: Se algum módulo não puder ser importado
+        AttributeError: Se algum modelo não for encontrado no módulo
+    """
     try:
         atividades_module = import_module("atividades.models")
-        return getattr(atividades_module, "AtividadeAcademica")
-    except (ImportError, AttributeError):
-        return None
+        cursos_module = import_module("cursos.models")
+        turmas_module = import_module("turmas.models")
+        alunos_module = import_module("alunos.models")
 
-
-def get_atividade_ritualistica_model():
-    try:
-        atividades_module = import_module("atividades.models")
-        return getattr(atividades_module, "AtividadeRitualistica")
-    except (ImportError, AttributeError):
-        return None
-
-
-class AtividadeAcademicaForm(forms.ModelForm):
-    todas_turmas = forms.BooleanField(
-        required=False, 
-        label="Aplicar a todas as turmas ativas", 
-        initial=False
-    )
-    
-    class Meta:
-        model = get_atividade_academica_model()
-        fields = ["nome", "descricao", "data_inicio", "data_fim", "turmas", "responsavel", 
-                  "local", "tipo_atividade", "status"]
-        widgets = {
-            "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-            "data_inicio": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "data_fim": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "turmas": forms.SelectMultiple(attrs={"class": "form-control"}),
-            "responsavel": forms.TextInput(attrs={"class": "form-control"}),
-            "local": forms.TextInput(attrs={"class": "form-control"}),
-            "tipo_atividade": forms.Select(attrs={"class": "form-control"}),
-            "status": forms.Select(attrs={"class": "form-control"}),
+        return {
+            'AtividadeAcademica': getattr(atividades_module, "AtividadeAcademica"),
+            'AtividadeRitualistica': getattr(atividades_module, "AtividadeRitualistica"),
+            'Curso': getattr(cursos_module, "Curso"),
+            'Turma': getattr(turmas_module, "Turma"),
+            'Aluno': getattr(alunos_module, "Aluno"),
         }
-    
+    except (ImportError, AttributeError) as e:
+        logger.error(f"Erro ao obter modelos: {e}")
+        raise
+
+# Filtro de atividades acadêmicas
+class AtividadeAcademicaFiltroForm(forms.Form):
+    q = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar por nome ou descrição...'
+        })
+    )
+
+    curso = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        empty_label="Todos os cursos",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    turma = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        empty_label="Todas as turmas",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Tornar o campo turmas não obrigatório, já que pode ser preenchido automaticamente
-        self.fields['turmas'].required = False
-        
-        # Converter o formato da data para YYYY-MM-DD se estiver editando uma atividade existente
-        if self.instance and self.instance.pk and self.instance.data_inicio:
-            # Converter para o formato esperado pelo input type="date"
-            self.initial['data_inicio'] = self.instance.data_inicio.strftime('%Y-%m-%d')
-            if self.instance.data_fim:
-                self.initial['data_fim'] = self.instance.data_fim.strftime('%Y-%m-%d')
+        try:
+            models = get_models()
+            self.fields['curso'].queryset = models['Curso'].objects.all()
+            self.fields['turma'].queryset = models['Turma'].objects.all()
+            if 'curso' in self.data and self.data['curso']:
+                try:
+                    curso_id = int(self.data['curso'])
+                    self.fields['turma'].queryset = models['Turma'].objects.filter(curso_id=curso_id)
+                except (ValueError, TypeError):
+                    logger.warning(f"Valor inválido para curso_id: {self.data['curso']}")
+        except Exception as e:
+            logger.error(f"Erro ao inicializar AtividadeAcademicaFiltroForm: {e}")
+            self.fields['curso'].queryset = []
+            self.fields['turma'].queryset = []
 
+# Formulário de Atividade Acadêmica
+def get_atividade_academica_model():
+    return get_models()['AtividadeAcademica']
+
+class AtividadeAcademicaForm(forms.ModelForm):
+    """Formulário para criação e edição de atividades acadêmicas."""
+
+    class Meta:
+        model = get_atividade_academica_model()
+        fields = [
+            'nome', 'descricao', 'tipo_atividade', 'data_inicio', 'data_fim',
+            'hora_inicio', 'hora_fim', 'local', 'responsavel', 'status',
+            'curso', 'turmas'
+        ]
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'tipo_atividade': forms.Select(attrs={'class': 'form-control'}),
+            'data_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'data_fim': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'hora_inicio': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'hora_fim': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'local': forms.TextInput(attrs={'class': 'form-control'}),
+            'responsavel': forms.TextInput(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'curso': forms.Select(attrs={'class': 'form-control'}),
+            'turmas': forms.SelectMultiple(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'nome': 'Nome da Atividade',
+            'descricao': 'Descrição',
+            'tipo_atividade': 'Tipo de Atividade',
+            'data_inicio': 'Data de Início',
+            'data_fim': 'Data de Término',
+            'hora_inicio': 'Hora de Início',
+            'hora_fim': 'Hora de Término',
+            'local': 'Local',
+            'responsavel': 'Responsável',
+            'status': 'Status',
+            'curso': 'Curso',
+            'turmas': 'Turmas',
+        }
+        help_texts = {
+            'data_fim': 'Opcional. Se não informada, será considerada a mesma data de início.',
+            'hora_fim': 'Opcional. Se não informada, será considerada 1 hora após o início.',
+            'turmas': 'Selecione uma ou mais turmas para esta atividade.',
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        data_inicio = cleaned_data.get('data_inicio')
+        data_fim = cleaned_data.get('data_fim')
+        hora_inicio = cleaned_data.get('hora_inicio')
+        hora_fim = cleaned_data.get('hora_fim')
+
+        if data_inicio and not data_fim:
+            cleaned_data['data_fim'] = data_inicio
+
+        if data_inicio and data_fim and data_fim < data_inicio:
+            self.add_error('data_fim', 'A data de término não pode ser anterior à data de início.')
+
+        if (data_inicio and data_fim and data_inicio == data_fim and
+            hora_inicio and hora_fim and hora_fim < hora_inicio):
+            self.add_error('hora_fim', 'A hora de término não pode ser anterior à hora de início no mesmo dia.')
+
+        return cleaned_data
+
+# Formulário de Atividade Ritualística
+def get_atividade_ritualistica_model():
+    return get_models()['AtividadeRitualistica']
 
 class AtividadeRitualisticaForm(forms.ModelForm):
-    todos_alunos = forms.BooleanField(
-        required=False, label="Incluir todos os alunos da turma", initial=False
-    )
+    """Formulário para criação e edição de atividades ritualísticas."""
 
     class Meta:
         model = get_atividade_ritualistica_model()
         fields = [
-            "nome",
-            "descricao",
-            "data",
-            "hora_inicio",
-            "hora_fim",
-            "local",
-            "turma",
-            "participantes",
+            'nome', 'descricao', 'data', 'hora_inicio', 'hora_fim',
+            'local', 'responsavel', 'status', 'participantes'
         ]
         widgets = {
-            "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
-            "data": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
-            ),
-            "hora_inicio": forms.TimeInput(
-                attrs={"class": "form-control", "type": "time"}
-            ),
-            "hora_fim": forms.TimeInput(
-                attrs={"class": "form-control", "type": "time"}
-            ),
-            "local": forms.TextInput(attrs={"class": "form-control"}),
-            "turma": forms.Select(attrs={"class": "form-control"}),
-            "participantes": forms.SelectMultiple(
-                attrs={"class": "form-control"}
-            ),
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'data': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'hora_inicio': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'hora_fim': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'local': forms.TextInput(attrs={'class': 'form-control'}),
+            'responsavel': forms.TextInput(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'participantes': forms.SelectMultiple(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'nome': 'Nome da Atividade',
+            'descricao': 'Descrição',
+            'data': 'Data',
+            'hora_inicio': 'Hora de Início',
+            'hora_fim': 'Hora de Término',
+            'local': 'Local',
+            'responsavel': 'Responsável',
+            'status': 'Status',
+            'participantes': 'Participantes',
+        }
+        help_texts = {
+            'hora_fim': 'Opcional. Se não informada, será considerada 1 hora após o início.',
+            'participantes': 'Selecione um ou mais participantes para esta atividade.',
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        hora_inicio = cleaned_data.get('hora_inicio')
+        hora_fim = cleaned_data.get('hora_fim')
 
-def criar_form_atividade_academica():
-    return AtividadeAcademicaForm
+        if hora_inicio and hora_fim and hora_fim < hora_inicio:
+            self.add_error('hora_fim', 'A hora de término não pode ser anterior à hora de início.')
 
+        return cleaned_data
 
-def criar_form_atividade_ritualistica():
-    return AtividadeRitualisticaForm
+# Filtro alternativo (se necessário)
+def get_curso_queryset():
+    Curso = import_module("cursos.models").Curso
+    return Curso.objects.all()
+
+def get_turma_queryset():
+    Turma = import_module("turmas.models").Turma
+    return Turma.objects.all()
+
+class FiltroAtividadesForm(forms.Form):
+    curso = forms.ModelChoiceField(
+        queryset=get_curso_queryset(),
+        required=False,
+        label="Curso",
+        widget=forms.Select(attrs={"class": "form-select", "id": "filtro-curso"})
+    )
+    turma = forms.ModelChoiceField(
+        queryset=get_turma_queryset(),
+        required=False,
+        label="Turma",
+        widget=forms.Select(attrs={"class": "form-select", "id": "filtro-turma"})
+    )
+    q = forms.CharField(
+        required=False,
+        label="Buscar",
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Buscar por nome ou descrição..."})
+    )

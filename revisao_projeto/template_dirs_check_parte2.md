@@ -393,6 +393,76 @@ class KeyUsageConstraints(ConfigurableMixin):
   - django_extensions\graph_models\original\label.dot
   - django_extensions\graph_models\original\relation.dot
   - django_extensions\widgets\foreignkey_searchinput.html
+- .venv\Lib\site-packages\rest_framework\templates
+  Arquivos:
+  - rest_framework\admin.html
+  - rest_framework\api.html
+  - rest_framework\base.html
+  - rest_framework\login.html
+  - rest_framework\login_base.html
+  - rest_framework\raw_data_form.html
+  - rest_framework\schema.js
+  - rest_framework\admin\detail.html
+  - rest_framework\admin\dict_value.html
+  - rest_framework\admin\list.html
+  - rest_framework\admin\list_value.html
+  - rest_framework\admin\simple_list_value.html
+  - rest_framework\docs\document.html
+  - rest_framework\docs\error.html
+  - rest_framework\docs\index.html
+  - rest_framework\docs\interact.html
+  - rest_framework\docs\link.html
+  - rest_framework\docs\sidebar.html
+  - rest_framework\docs\auth\basic.html
+  - rest_framework\docs\auth\session.html
+  - rest_framework\docs\auth\token.html
+  - rest_framework\docs\langs\javascript-intro.html
+  - rest_framework\docs\langs\javascript.html
+  - rest_framework\docs\langs\python-intro.html
+  - rest_framework\docs\langs\python.html
+  - rest_framework\docs\langs\shell-intro.html
+  - rest_framework\docs\langs\shell.html
+  - rest_framework\filters\base.html
+  - rest_framework\filters\ordering.html
+  - rest_framework\filters\search.html
+  - rest_framework\horizontal\checkbox.html
+  - rest_framework\horizontal\checkbox_multiple.html
+  - rest_framework\horizontal\dict_field.html
+  - rest_framework\horizontal\fieldset.html
+  - rest_framework\horizontal\form.html
+  - rest_framework\horizontal\input.html
+  - rest_framework\horizontal\list_field.html
+  - rest_framework\horizontal\list_fieldset.html
+  - rest_framework\horizontal\radio.html
+  - rest_framework\horizontal\select.html
+  - rest_framework\horizontal\select_multiple.html
+  - rest_framework\horizontal\textarea.html
+  - rest_framework\inline\checkbox.html
+  - rest_framework\inline\checkbox_multiple.html
+  - rest_framework\inline\dict_field.html
+  - rest_framework\inline\fieldset.html
+  - rest_framework\inline\form.html
+  - rest_framework\inline\input.html
+  - rest_framework\inline\list_field.html
+  - rest_framework\inline\list_fieldset.html
+  - rest_framework\inline\radio.html
+  - rest_framework\inline\select.html
+  - rest_framework\inline\select_multiple.html
+  - rest_framework\inline\textarea.html
+  - rest_framework\pagination\numbers.html
+  - rest_framework\pagination\previous_and_next.html
+  - rest_framework\vertical\checkbox.html
+  - rest_framework\vertical\checkbox_multiple.html
+  - rest_framework\vertical\dict_field.html
+  - rest_framework\vertical\fieldset.html
+  - rest_framework\vertical\form.html
+  - rest_framework\vertical\input.html
+  - rest_framework\vertical\list_field.html
+  - rest_framework\vertical\list_fieldset.html
+  - rest_framework\vertical\radio.html
+  - rest_framework\vertical\select.html
+  - rest_framework\vertical\select_multiple.html
+  - rest_framework\vertical\textarea.html
 - alunos\templates
   Arquivos:
   - alunos\confirmar_remocao_instrutoria.html
@@ -410,32 +480,36 @@ class KeyUsageConstraints(ConfigurableMixin):
 - atividades\templates
   Arquivos:
   - atividades\calendario_atividades.html
-  - atividades\confirmar_copia_academica.html
-  - atividades\confirmar_copia_ritualistica.html
-  - atividades\confirmar_exclusao_academica.html
-  - atividades\confirmar_exclusao_ritualistica.html
-  - atividades\copiar_atividade_academica.html
-  - atividades\copiar_atividade_ritualistica.html
-  - atividades\criar_atividade_academica.html
-  - atividades\criar_atividade_ritualistica.html
   - atividades\dashboard.html
   - atividades\dashboard_atividades.html
-  - atividades\detalhar_atividade_academica.html
-  - atividades\detalhar_atividade_ritualistica.html
-  - atividades\editar_atividade_academica.html
-  - atividades\editar_atividade_ritualistica.html
-  - atividades\excluir_atividade_academica.html
-  - atividades\excluir_atividade_ritualistica.html
-  - atividades\formulario_atividade_academica.html
-  - atividades\formulario_atividade_ritualistica.html
   - atividades\importar_atividades.html
   - atividades\index.html
   - atividades\listar_atividades.html
-  - atividades\listar_atividades_academicas.html
-  - atividades\listar_atividades_ritualisticas.html
   - atividades\registrar_frequencia.html
   - atividades\relatorio_atividades.html
+  - atividades\relatorio_atividades_curso_turma.html
   - atividades\visualizar_frequencia.html
+  - atividades\_tabela_atividades.html
+  - atividades\academicas\confirmar_copia_academica.html
+  - atividades\academicas\confirmar_exclusao_academica.html
+  - atividades\academicas\copiar_atividade_academica.html
+  - atividades\academicas\criar_atividade_academica.html
+  - atividades\academicas\detalhar_atividade_academica.html
+  - atividades\academicas\editar_atividade_academica.html
+  - atividades\academicas\excluir_atividade_academica.html
+  - atividades\academicas\formulario_atividade_academica.html
+  - atividades\academicas\form_atividade_academica.html
+  - atividades\academicas\listar_atividades_academicas.html
+  - atividades\partials\atividades_tabela_body.html
+  - atividades\ritualisticas\confirmar_copia_ritualistica.html
+  - atividades\ritualisticas\confirmar_exclusao_ritualistica.html
+  - atividades\ritualisticas\copiar_atividade_ritualistica.html
+  - atividades\ritualisticas\criar_atividade_ritualistica.html
+  - atividades\ritualisticas\detalhar_atividade_ritualistica.html
+  - atividades\ritualisticas\editar_atividade_ritualistica.html
+  - atividades\ritualisticas\excluir_atividade_ritualistica.html
+  - atividades\ritualisticas\formulario_atividade_ritualistica.html
+  - atividades\ritualisticas\listar_atividades_ritualisticas.html
 - cargos\templates
   Arquivos:
   - cargos\atribuir_cargo.html
@@ -567,7 +641,7 @@ class KeyUsageConstraints(ConfigurableMixin):
   - pagamentos\registrar_pagamento_rapido.html
   - pagamentos\relatorio_financeiro.html
   - pagamentos\__init__.py
-  - pdf\pagamentos_pdf.html
+  - pagamentos\pdf\pagamentos_pdf.html
 - presencas\templates
   Arquivos:
   - presencas\detalhar_presenca.html

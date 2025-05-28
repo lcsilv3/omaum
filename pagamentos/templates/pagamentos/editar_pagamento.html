@@ -3,6 +3,16 @@
 {% block title %}Editar Pagamento{% endblock %}
 
 {% block content %}
+<style>
+@keyframes piscarBorda {
+    0%   { box-shadow: 0 0 0 0 red; }
+    50%  { box-shadow: 0 0 8px 2px red; }
+    100% { box-shadow: 0 0 0 0 red; }
+}
+.piscar-erro {
+    animation: piscarBorda 0.8s linear 2;
+}
+</style>
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Editar Pagamento</h1>
@@ -28,9 +38,16 @@
                     <h5 class="mb-0">Dados do Pagamento</h5>
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <form method="post" enctype="multipart/form-data" id="pagamento-form" novalidate>
                         {% csrf_token %}
-                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
                         <div class="mb-3">
                             <label class="form-label">Aluno</label>
                             <div class="input-group">
@@ -59,65 +76,103 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="id_valor" class="form-label">Valor (R$)</label>
-                                    <input type="number" name="valor" id="id_valor" class="form-control" step="0.01" min="0" value="{{ pagamento.valor }}" required>
+                                    <label for="id_valor" class="form-label">Valor (R$) <span class="text-danger">*</span></label>
+                                    <input type="number" name="valor" step="0.01" required id="id_valor"
+                                           class="form-control{% if form.valor.errors %} is-invalid piscar-erro{% endif %}"
+                                           value="{{ form.valor.value|default_if_none:'' }}" placeholder="Ex: 100.00">
+                                    {% for error in form.valor.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="id_data_vencimento" class="form-label">Data de Vencimento</label>
-                                    <input type="date" name="data_vencimento" id="id_data_vencimento" class="form-control" value="{{ pagamento.data_vencimento|date:'Y-m-d' }}" required>
+                                    <label for="id_data_vencimento" class="form-label">Data de Vencimento <span class="text-danger">*</span></label>
+                                    <input type="date" name="data_vencimento" required id="id_data_vencimento"
+                                           class="form-control{% if form.data_vencimento.errors %} is-invalid piscar-erro{% endif %}"
+                                           value="{{ form.data_vencimento.value|date:'Y-m-d' }}">
+                                    {% for error in form.data_vencimento.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
                         
                         <div class="mb-3">
                             <label for="id_observacoes" class="form-label">Observações</label>
-                            <textarea name="observacoes" id="id_observacoes" class="form-control" rows="3">{{ pagamento.observacoes }}</textarea>
+                            <textarea name="observacoes" cols="40" rows="3" id="id_observacoes"
+                                      class="form-control{% if form.observacoes.errors %} is-invalid piscar-erro{% endif %}"
+                                      placeholder="Observações adicionais...">{{ form.observacoes.value|default_if_none:'' }}</textarea>
+                            {% for error in form.observacoes.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_status" class="form-label">Status <span class="text-danger">*</span></label>
+                            <select name="status" id="id_status"
+                                    class="form-select{% if form.status.errors %} is-invalid piscar-erro{% endif %}" required>
+                                <option value="PENDENTE" {% if form.status.value == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                                <option value="PAGO" {% if form.status.value == 'PAGO' %}selected{% endif %}>Pago</option>
+                                <option value="ATRASADO" {% if form.status.value == 'ATRASADO' %}selected{% endif %}>Atrasado</option>
+                                <option value="CANCELADO" {% if form.status.value == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+                            </select>
+                            {% for error in form.status.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3 metodo-pagamento-container" style="display: none;">
+                            <label for="id_metodo_pagamento" class="form-label">Método de Pagamento</label>
+                            <select name="metodo_pagamento" id="id_metodo_pagamento"
+                                    class="form-select{% if form.metodo_pagamento.errors %} is-invalid piscar-erro{% endif %}">
+                                <option value="">Selecione um método</option>
+                                <option value="DINHEIRO" {% if form.metodo_pagamento.value == 'DINHEIRO' %}selected{% endif %}>Dinheiro</option>
+                                <option value="CARTAO_CREDITO" {% if form.metodo_pagamento.value == 'CARTAO_CREDITO' %}selected{% endif %}>Cartão de Crédito</option>
+                                <option value="CARTAO_DEBITO" {% if form.metodo_pagamento.value == 'CARTAO_DEBITO' %}selected{% endif %}>Cartão de Débito</option>
+                                <option value="BOLETO" {% if form.metodo_pagamento.value == 'BOLETO' %}selected{% endif %}>Boleto Bancário</option>
+                                <option value="TRANSFERENCIA" {% if form.metodo_pagamento.value == 'TRANSFERENCIA' %}selected{% endif %}>Transferência</option>
+                                <option value="PIX" {% if form.metodo_pagamento.value == 'PIX' %}selected{% endif %}>PIX</option>
+                                <option value="OUTRO" {% if form.metodo_pagamento.value == 'OUTRO' %}selected{% endif %}>Outro</option>
+                            </select>
+                            {% for error in form.metodo_pagamento.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="id_status" class="form-label">Status</label>
-                                    <select name="status" id="id_status" class="form-select" required>
-                                        <option value="PENDENTE" {% if pagamento.status == 'PENDENTE' %}selected{% endif %}>Pendente</option>
-                                        <option value="PAGO" {% if pagamento.status == 'PAGO' %}selected{% endif %}>Pago</option>
-                                        <option value="ATRASADO" {% if pagamento.status == 'ATRASADO' %}selected{% endif %}>Atrasado</option>
-                                        <option value="CANCELADO" {% if pagamento.status == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3 metodo-pagamento-container" {% if pagamento.status != 'PAGO' %}style="display: none;"{% endif %}>
-                                    <label for="id_metodo_pagamento" class="form-label">Método de Pagamento</label>
-                                    <select name="metodo_pagamento" id="id_metodo_pagamento" class="form-select">
-                                        <option value="">Selecione um método</option>
-                                        <option value="DINHEIRO" {% if pagamento.metodo_pagamento == 'DINHEIRO' %}selected{% endif %}>Dinheiro</option>
-                                        <option value="CARTAO_CREDITO" {% if pagamento.metodo_pagamento == 'CARTAO_CREDITO' %}selected{% endif %}>Cartão de Crédito</option>
-                                        <option value="CARTAO_DEBITO" {% if pagamento.metodo_pagamento == 'CARTAO_DEBITO' %}selected{% endif %}>Cartão de Débito</option>
-                                        <option value="BOLETO" {% if pagamento.metodo_pagamento == 'BOLETO' %}selected{% endif %}>Boleto Bancário</option>
-                                        <option value="TRANSFERENCIA" {% if pagamento.metodo_pagamento == 'TRANSFERENCIA' %}selected{% endif %}>Transferência</option>
-                                        <option value="PIX" {% if pagamento.metodo_pagamento == 'PIX' %}selected{% endif %}>PIX</option>
-                                        <option value="OUTRO" {% if pagamento.metodo_pagamento == 'OUTRO' %}selected{% endif %}>Outro</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3 data-pagamento-container" {% if pagamento.status != 'PAGO' %}style="display: none;"{% endif %}>
+                                <div class="mb-3 data-pagamento-container" style="display: none;">
                                     <label for="id_data_pagamento" class="form-label">Data de Pagamento</label>
-                                    <input type="date" name="data_pagamento" id="id_data_pagamento" class="form-control" value="{{ pagamento.data_pagamento|date:'Y-m-d' }}">
+                                    <input type="date" name="data_pagamento" id="id_data_pagamento"
+                                           class="form-control{% if form.data_pagamento.errors %} is-invalid piscar-erro{% endif %}"
+                                           value="{{ form.data_pagamento.value|date:'Y-m-d' }}">
+                                    {% for error in form.data_pagamento.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3 valor-pago-container" {% if pagamento.status != 'PAGO' %}style="display: none;"{% endif %}>
+                                <div class="mb-3 valor-pago-container" style="display: none;">
                                     <label for="id_valor_pago" class="form-label">Valor Pago (R$)</label>
-                                    <input type="number" name="valor_pago" id="id_valor_pago" class="form-control" step="0.01" min="0" value="{{ pagamento.valor_pago|default:pagamento.valor }}">
+                                    <input type="number" name="valor_pago" id="id_valor_pago"
+                                           class="form-control{% if form.valor_pago.errors %} is-invalid piscar-erro{% endif %}"
+                                           step="0.01" min="0" value="{{ form.valor_pago.value|default_if_none:'' }}">
+                                    {% for error in form.valor_pago.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_comprovante" class="form-label">Comprovante de Pagamento</label>
+                            <input type="file" name="comprovante" id="id_comprovante"
+                                   class="form-control{% if form.comprovante.errors %} is-invalid piscar-erro{% endif %}">
+                            <div class="form-text">Formatos aceitos: PDF, JPG, PNG. Tamanho máximo: 5MB</div>
+                            {% for error in form.comprovante.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         
                         <div class="d-flex justify-content-between">

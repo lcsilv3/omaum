@@ -1,340 +1,67 @@
 {% extends 'base.html' %}
-
 {% block title %}Dashboard de Atividades{% endblock %}
-
-{% block extra_css %}
-<style>
-    .stat-card {
-        transition: transform 0.3s;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .chart-container {
-        position: relative;
-        height: 300px;
-        margin-bottom: 20px;
-    }
-    
-    .activity-item {
-        border-left: 4px solid #dee2e6;
-        padding-left: 15px;
-        margin-bottom: 15px;
-        position: relative;
-    }
-    
-    .activity-item.academica {
-        border-left-color: #0d6efd;
-    }
-    
-    .activity-item.ritualistica {
-        border-left-color: #17a2b8;
-    }
-    
-    .activity-item .date {
-        font-size: 0.85rem;
-        color: #6c757d;
-    }
-    
-    .activity-item .title {
-        font-weight: 600;
-        margin: 5px 0;
-    }
-    
-    .activity-item .status {
-        position: absolute;
-        top: 0;
-        right: 0;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Dashboard de Atividades</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
-            <a href="{% url 'atividades:calendario_atividades' %}" class="btn btn-info me-2">
-                <i class="fas fa-calendar-alt"></i> Calendário
-            </a>
-            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning me-2">
-                <i class="fas fa-file-alt"></i> Relatórios
-            </a>
-            <div class="btn-group">
-                <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-outline-primary">Atividades Acadêmicas</a>
-                <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-outline-info">Atividades Ritualísticas</a>
-            </div>
+<div class="container mt-4">
+    <h1>Dashboard de Atividades</h1>
+    <form id="filtro-dashboard-form" method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label for="curso" class="form-label">Curso</label>
+            <select name="curso" id="filtro-curso" class="form-select">
+                <option value="">Todos os cursos</option>
+                {% for curso in cursos %}
+                    <option value="{{ curso.id }}" {% if curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>{{ curso.nome }}</option>
+                {% endfor %}
+            </select>
         </div>
-    </div>
-    
-    <!-- Estatísticas Gerais -->
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="card stat-card h-100 border-primary">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Total de Atividades</h5>
-                    <p class="display-4">{{ total_academicas|add:total_ritualisticas }}</p>
-                    <div class="d-flex justify-content-around mt-3">
-                        <div>
-                            <span class="badge bg-primary">Acadêmicas</span>
-                            <h5>{{ total_academicas }}</h5>
-                        </div>
-                        <div>
-                            <span class="badge bg-info">Ritualísticas</span>
-                            <h5>{{ total_ritualisticas }}</h5>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="col-md-4">
+            <label for="turma" class="form-label">Turma</label>
+            <select name="turma" id="filtro-turma" class="form-select">
+                <option value="">Todas as turmas</option>
+                {% for turma in turmas %}
+                    <option value="{{ turma.id }}" {% if turma_selecionada == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.nome }}</option>
+                {% endfor %}
+            </select>
         </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card stat-card h-100 border-success">
-                <div class="card-body">
-                    <h5 class="card-title text-center">Atividades por Status</h5>
-                    <div class="mt-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Agendadas</span>
-                            <span class="badge bg-warning">{{ academicas_por_status.agendada|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-warning" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_status.agendada|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_status.agendada|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Em Andamento</span>
-                            <span class="badge bg-info">{{ academicas_por_status.em_andamento|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-info" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_status.em_andamento|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_status.em_andamento|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Concluídas</span>
-                            <span class="badge bg-success">{{ academicas_por_status.concluida|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-success" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_status.concluida|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_status.concluida|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Canceladas</span>
-                            <span class="badge bg-danger">{{ academicas_por_status.cancelada|default:"0" }}</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar bg-danger" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_status.cancelada|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_status.cancelada|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card stat-card h-100 border-info">
-                <div class="card-body">
-                    <h5 class="card-title text-center">Atividades por Tipo</h5>
-                    <div class="mt-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Aulas</span>
-                            <span class="badge bg-primary">{{ academicas_por_tipo.aula|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-primary" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_tipo.aula|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_tipo.aula|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Palestras</span>
-                            <span class="badge bg-success">{{ academicas_por_tipo.palestra|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-success" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_tipo.palestra|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_tipo.palestra|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Workshops</span>
-                            <span class="badge bg-warning">{{ academicas_por_tipo.workshop|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-warning" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_tipo.workshop|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_tipo.workshop|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Seminários</span>
-                            <span class="badge bg-info">{{ academicas_por_tipo.seminario|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-info" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_tipo.seminario|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_tipo.seminario|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Outros</span>
-                            <span class="badge bg-secondary">{{ academicas_por_tipo.outro|default:"0" }}</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar bg-secondary" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_tipo.outro|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_tipo.outro|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Gráfico de Atividades por Mês -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Atividades por Mês (Últimos 6 Meses)</h5>
-        </div>
-        <div class="card-body">
-            <div class="chart-container">
-                <canvas id="atividadesPorMesChart"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Atividades Recentes -->
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Atividades Acadêmicas Recentes</h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        {% for atividade in atividades_academicas_recentes %}
-                            <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ atividade.nome }}</h6>
-                                    <small>{{ atividade.data_inicio|date:"d/m/Y" }}</small>
-                                </div>
-                                <p class="mb-1">{{ atividade.descricao|truncatechars:100 }}</p>
-                                <small>
-                                    <span class="badge {% if atividade.status == 'agendada' %}bg-warning{% elif atividade.status == 'em_andamento' %}bg-info{% elif atividade.status == 'concluida' %}bg-success{% else %}bg-secondary{% endif %}">
-                                        {{ atividade.get_status_display }}
-                                    </span>
-                                    <span class="badge bg-primary">{{ atividade.get_tipo_atividade_display }}</span>
-                                </small>
-                            </a>
-                        {% empty %}
-                            <div class="list-group-item">
-                                <p class="mb-0 text-muted">Nenhuma atividade acadêmica recente.</p>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Atividades Ritualísticas Recentes</h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        {% for atividade in atividades_ritualisticas_recentes %}
-                            <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ atividade.nome }}</h6>
-                                    <small>{{ atividade.data|date:"d/m/Y" }}</small>
-                                </div>
-                                <p class="mb-1">{{ atividade.descricao|truncatechars:100 }}</p>
-                                <small>
-                                    <span class="badge bg-info">{{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</span>
-                                    <span class="badge bg-secondary">{{ atividade.local }}</span>
-                                </small>
-                            </a>
-                        {% empty %}
-                            <div class="list-group-item">
-                                <p class="mb-0 text-muted">Nenhuma atividade ritualística recente.</p>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
+    </form>
+    <div id="dashboard-conteudo">
+        {# Aqui ficaria o conteúdo do dashboard, como cards, gráficos, tabelas etc. #}
+        {# Corrigir eventuais usos de filtro date: #}
+        {% if atividades %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Curso</th>
+                        <th>Turmas</th>
+                        <th>Tipo</th>
+                        <th>Status</th>
+                        <th>Início</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for atividade in atividades %}
+                    <tr>
+                        <td>{{ atividade.nome }}</td>
+                        <td>{{ atividade.curso.nome }}</td>
+                        <td>
+                            {% for turma in atividade.turmas.all %}
+                                <span class="badge bg-info">{{ turma.nome }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ atividade.get_tipo_display }}</td>
+                        <td>{{ atividade.get_status_display }}</td>
+                        <td>
+                            {{ atividade.data_inicio|date:"d/m/Y" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Dados para o gráfico de atividades por mês
-        var ctx = document.getElementById('atividadesPorMesChart').getContext('2d');
-        var myChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: {{ meses|safe }},
-                datasets: [
-                    {
-                        label: 'Atividades Acadêmicas',
-                        data: {{ dados_academicas }},
-                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                        borderColor: 'rgba(13, 110, 253, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Atividades Ritualísticas',
-                        data: {{ dados_ritualisticas }},
-                        backgroundColor: 'rgba(23, 162, 184, 0.7)',
-                        borderColor: 'rgba(23, 162, 184, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    title: {
-                        display: true,
-                        text: 'Atividades por Mês'
-                    }
-                }
-            }
-        });
-    });
-</script>
+<script src="{% static 'js/atividades_filtros.js' %}"></script>
 {% endblock %}

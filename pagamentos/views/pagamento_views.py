@@ -93,12 +93,14 @@ def criar_pagamento(request):
     """Cria um novo pagamento."""
     PagamentoModel = get_pagamento_model()
     Aluno = get_aluno_model()
-    from cursos.models import Curso  # garanta que o model está importado
+    from cursos.models import Curso
 
-    cursos = Curso.objects.all().order_by('nome')  # ou o filtro que preferir
+    cursos = Curso.objects.all().order_by('nome')
 
     if request.method == 'POST':
         form = PagamentoForm(request.POST)
+        # Defina o queryset de alunos mesmo em POST
+        form.fields['aluno'].queryset = Aluno.objects.all()
         if form.is_valid():
             pagamento = form.save()
             messages.success(request, "Pagamento criado com sucesso!")
@@ -106,26 +108,22 @@ def criar_pagamento(request):
         else:
             messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
-        # Busca todos os alunos ativos para o formulário, se desejar filtrar
-        alunos_queryset = Aluno.objects.all()
         form = PagamentoForm()
-        form.fields['aluno'].queryset = alunos_queryset
+        form.fields['aluno'].queryset = Aluno.objects.all()
 
     return render(
         request,
-        'pagamentos/criar_pagamento.html',  # agora sim, seu template customizado!
+        'pagamentos/criar_pagamento.html',
         {'form': form, 'cursos': cursos}
     )
 
 
 @login_required
 def editar_pagamento(request, pagamento_id):
-    """Edita um pagamento existente."""
-    Pagamento = get_pagamento_model()
+    pagamento = get_object_or_404(Pagamento, id=pagamento_id)
     try:
-        pagamento = get_object_or_404(Pagamento, id=pagamento_id)
         if request.method == 'POST':
-            form = PagamentoForm(request.POST, instance=pagamento)
+            form = PagamentoForm(request.POST, request.FILES, instance=pagamento)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Pagamento atualizado com sucesso!")
@@ -136,7 +134,7 @@ def editar_pagamento(request, pagamento_id):
             form = PagamentoForm(instance=pagamento)
         return render(
             request,
-            'pagamentos/editar_pagamento.html',  # agora usando seu template customizado!
+            'pagamentos/editar_pagamento.html',
             {'form': form, 'pagamento': pagamento}
         )
     except Exception as e:

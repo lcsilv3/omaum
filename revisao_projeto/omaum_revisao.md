@@ -613,7 +613,7 @@ html
                                 <ul class="dropdown-menu" aria-labelledby="avaliacaoDropdown">
                                     <li><a class="dropdown-item" href="{% url 'notas:listar_notas' %}">Notas</a></li>
                                     <li><a class="dropdown-item" href="{% url 'pagamentos:listar_pagamentos' %}">Pagamentos</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'pagamentos:pagamentos_por_turma' %}">Pagamentos por Turma</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'pagamentos:relatorio_pagamentos_turma' %}">Pagamentos por Turma</a></li>
                                     <li><a class="dropdown-item" href="{% url 'pagamentos:relatorio_financeiro' %}">Relatório Financeiro</a></li>
                                 </ul>
                             </li>

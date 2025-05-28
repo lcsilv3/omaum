@@ -7,111 +7,224 @@
 ### Arquivo: atividades\forms.py
 
 python
-print("ARQUIVO FORMS.PY CARREGADO")
 from django import forms
-from django.core.validators import RegexValidator
 from importlib import import_module
+import logging
 
-# resto do código...
+logger = logging.getLogger(__name__)
 
-
-def get_atividade_academica_model():
+# Função utilitária para obter modelos dinamicamente
+def get_models():
+    """
+    Obtém todos os modelos necessários dinamicamente.
+    Returns:
+        dict: Dicionário com todos os modelos necessários
+    Raises:
+        ImportError: Se algum módulo não puder ser importado
+        AttributeError: Se algum modelo não for encontrado no módulo
+    """
     try:
         atividades_module = import_module("atividades.models")
-        return getattr(atividades_module, "AtividadeAcademica")
-    except (ImportError, AttributeError):
-        return None
+        cursos_module = import_module("cursos.models")
+        turmas_module = import_module("turmas.models")
+        alunos_module = import_module("alunos.models")
 
-
-def get_atividade_ritualistica_model():
-    try:
-        atividades_module = import_module("atividades.models")
-        return getattr(atividades_module, "AtividadeRitualistica")
-    except (ImportError, AttributeError):
-        return None
-
-
-class AtividadeAcademicaForm(forms.ModelForm):
-    todas_turmas = forms.BooleanField(
-        required=False, 
-        label="Aplicar a todas as turmas ativas", 
-        initial=False
-    )
-    
-    class Meta:
-        model = get_atividade_academica_model()
-        fields = ["nome", "descricao", "data_inicio", "data_fim", "turmas", "responsavel", 
-                  "local", "tipo_atividade", "status"]
-        widgets = {
-            "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-            "data_inicio": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "data_fim": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "turmas": forms.SelectMultiple(attrs={"class": "form-control"}),
-            "responsavel": forms.TextInput(attrs={"class": "form-control"}),
-            "local": forms.TextInput(attrs={"class": "form-control"}),
-            "tipo_atividade": forms.Select(attrs={"class": "form-control"}),
-            "status": forms.Select(attrs={"class": "form-control"}),
+        return {
+            'AtividadeAcademica': getattr(atividades_module, "AtividadeAcademica"),
+            'AtividadeRitualistica': getattr(atividades_module, "AtividadeRitualistica"),
+            'Curso': getattr(cursos_module, "Curso"),
+            'Turma': getattr(turmas_module, "Turma"),
+            'Aluno': getattr(alunos_module, "Aluno"),
         }
-    
+    except (ImportError, AttributeError) as e:
+        logger.error(f"Erro ao obter modelos: {e}")
+        raise
+
+# Filtro de atividades acadêmicas
+class AtividadeAcademicaFiltroForm(forms.Form):
+    q = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar por nome ou descrição...'
+        })
+    )
+
+    curso = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        empty_label="Todos os cursos",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    turma = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        empty_label="Todas as turmas",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Tornar o campo turmas não obrigatório, já que pode ser preenchido automaticamente
-        self.fields['turmas'].required = False
-        
-        # Converter o formato da data para YYYY-MM-DD se estiver editando uma atividade existente
-        if self.instance and self.instance.pk and self.instance.data_inicio:
-            # Converter para o formato esperado pelo input type="date"
-            self.initial['data_inicio'] = self.instance.data_inicio.strftime('%Y-%m-%d')
-            if self.instance.data_fim:
-                self.initial['data_fim'] = self.instance.data_fim.strftime('%Y-%m-%d')
+        try:
+            models = get_models()
+            self.fields['curso'].queryset = models['Curso'].objects.all()
+            self.fields['turma'].queryset = models['Turma'].objects.all()
+            if 'curso' in self.data and self.data['curso']:
+                try:
+                    curso_id = int(self.data['curso'])
+                    self.fields['turma'].queryset = models['Turma'].objects.filter(curso_id=curso_id)
+                except (ValueError, TypeError):
+                    logger.warning(f"Valor inválido para curso_id: {self.data['curso']}")
+        except Exception as e:
+            logger.error(f"Erro ao inicializar AtividadeAcademicaFiltroForm: {e}")
+            self.fields['curso'].queryset = []
+            self.fields['turma'].queryset = []
 
+# Formulário de Atividade Acadêmica
+def get_atividade_academica_model():
+    return get_models()['AtividadeAcademica']
+
+class AtividadeAcademicaForm(forms.ModelForm):
+    """Formulário para criação e edição de atividades acadêmicas."""
+
+    class Meta:
+        model = get_atividade_academica_model()
+        fields = [
+            'nome', 'descricao', 'tipo_atividade', 'data_inicio', 'data_fim',
+            'hora_inicio', 'hora_fim', 'local', 'responsavel', 'status',
+            'curso', 'turmas'
+        ]
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'tipo_atividade': forms.Select(attrs={'class': 'form-control'}),
+            'data_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'data_fim': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'hora_inicio': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'hora_fim': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'local': forms.TextInput(attrs={'class': 'form-control'}),
+            'responsavel': forms.TextInput(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'curso': forms.Select(attrs={'class': 'form-control'}),
+            'turmas': forms.SelectMultiple(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'nome': 'Nome da Atividade',
+            'descricao': 'Descrição',
+            'tipo_atividade': 'Tipo de Atividade',
+            'data_inicio': 'Data de Início',
+            'data_fim': 'Data de Término',
+            'hora_inicio': 'Hora de Início',
+            'hora_fim': 'Hora de Término',
+            'local': 'Local',
+            'responsavel': 'Responsável',
+            'status': 'Status',
+            'curso': 'Curso',
+            'turmas': 'Turmas',
+        }
+        help_texts = {
+            'data_fim': 'Opcional. Se não informada, será considerada a mesma data de início.',
+            'hora_fim': 'Opcional. Se não informada, será considerada 1 hora após o início.',
+            'turmas': 'Selecione uma ou mais turmas para esta atividade.',
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        data_inicio = cleaned_data.get('data_inicio')
+        data_fim = cleaned_data.get('data_fim')
+        hora_inicio = cleaned_data.get('hora_inicio')
+        hora_fim = cleaned_data.get('hora_fim')
+
+        if data_inicio and not data_fim:
+            cleaned_data['data_fim'] = data_inicio
+
+        if data_inicio and data_fim and data_fim < data_inicio:
+            self.add_error('data_fim', 'A data de término não pode ser anterior à data de início.')
+
+        if (data_inicio and data_fim and data_inicio == data_fim and
+            hora_inicio and hora_fim and hora_fim < hora_inicio):
+            self.add_error('hora_fim', 'A hora de término não pode ser anterior à hora de início no mesmo dia.')
+
+        return cleaned_data
+
+# Formulário de Atividade Ritualística
+def get_atividade_ritualistica_model():
+    return get_models()['AtividadeRitualistica']
 
 class AtividadeRitualisticaForm(forms.ModelForm):
-    todos_alunos = forms.BooleanField(
-        required=False, label="Incluir todos os alunos da turma", initial=False
-    )
+    """Formulário para criação e edição de atividades ritualísticas."""
 
     class Meta:
         model = get_atividade_ritualistica_model()
         fields = [
-            "nome",
-            "descricao",
-            "data",
-            "hora_inicio",
-            "hora_fim",
-            "local",
-            "turma",
-            "participantes",
+            'nome', 'descricao', 'data', 'hora_inicio', 'hora_fim',
+            'local', 'responsavel', 'status', 'participantes'
         ]
         widgets = {
-            "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
-            "data": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
-            ),
-            "hora_inicio": forms.TimeInput(
-                attrs={"class": "form-control", "type": "time"}
-            ),
-            "hora_fim": forms.TimeInput(
-                attrs={"class": "form-control", "type": "time"}
-            ),
-            "local": forms.TextInput(attrs={"class": "form-control"}),
-            "turma": forms.Select(attrs={"class": "form-control"}),
-            "participantes": forms.SelectMultiple(
-                attrs={"class": "form-control"}
-            ),
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'data': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'hora_inicio': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'hora_fim': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'local': forms.TextInput(attrs={'class': 'form-control'}),
+            'responsavel': forms.TextInput(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'participantes': forms.SelectMultiple(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'nome': 'Nome da Atividade',
+            'descricao': 'Descrição',
+            'data': 'Data',
+            'hora_inicio': 'Hora de Início',
+            'hora_fim': 'Hora de Término',
+            'local': 'Local',
+            'responsavel': 'Responsável',
+            'status': 'Status',
+            'participantes': 'Participantes',
+        }
+        help_texts = {
+            'hora_fim': 'Opcional. Se não informada, será considerada 1 hora após o início.',
+            'participantes': 'Selecione um ou mais participantes para esta atividade.',
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        hora_inicio = cleaned_data.get('hora_inicio')
+        hora_fim = cleaned_data.get('hora_fim')
 
-def criar_form_atividade_academica():
-    return AtividadeAcademicaForm
+        if hora_inicio and hora_fim and hora_fim < hora_inicio:
+            self.add_error('hora_fim', 'A hora de término não pode ser anterior à hora de início.')
 
+        return cleaned_data
 
-def criar_form_atividade_ritualistica():
-    return AtividadeRitualisticaForm
+# Filtro alternativo (se necessário)
+def get_curso_queryset():
+    Curso = import_module("cursos.models").Curso
+    return Curso.objects.all()
+
+def get_turma_queryset():
+    Turma = import_module("turmas.models").Turma
+    return Turma.objects.all()
+
+class FiltroAtividadesForm(forms.Form):
+    curso = forms.ModelChoiceField(
+        queryset=get_curso_queryset(),
+        required=False,
+        label="Curso",
+        widget=forms.Select(attrs={"class": "form-select", "id": "filtro-curso"})
+    )
+    turma = forms.ModelChoiceField(
+        queryset=get_turma_queryset(),
+        required=False,
+        label="Turma",
+        widget=forms.Select(attrs={"class": "form-select", "id": "filtro-turma"})
+    )
+    q = forms.CharField(
+        required=False,
+        label="Buscar",
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Buscar por nome ou descrição..."})
+    )
 
 
 
@@ -121,30 +234,1219 @@ def criar_form_atividade_ritualistica():
 ### Arquivo: atividades\views.py
 
 python
-<UPDATED_CODE>"""
-Views para o aplicativo de atividades.
-Este arquivo agora funciona como um agregador que importa todas as funções
-dos módulos separados para manter a compatibilidade com o código existente.
-"""
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.urls import reverse
+from importlib import import_module
+from .models import AtividadeAcademica
+from .forms import AtividadeAcademicaForm
+from cursos.models import Curso
+from turmas.models import Turma
 
+def listar_atividades_academicas(request):
+    query = request.GET.get("q", "")
+    codigo_curso = request.GET.get("codigo_curso", "")
+    turma_selecionada = request.GET.get("turma", "")
+
+    cursos = Curso.objects.all()
+    turmas = Turma.objects.all()
+    if codigo_curso:
+        turmas = turmas.filter(curso__codigo_curso=codigo_curso)
+
+    atividades = AtividadeAcademica.objects.all()
+    if query:
+        atividades = atividades.filter(nome__icontains=query)
+    if codigo_curso:
+        atividades = atividades.filter(curso__codigo_curso=codigo_curso)
+    if turma_selecionada:
+        atividades = atividades.filter(turmas__id=turma_selecionada)
+
+    context = {
+        "cursos": cursos,
+        "turmas": turmas,
+        "codigo_curso_selecionado": codigo_curso,
+        "turma_selecionada": turma_selecionada,
+        "atividades": atividades,
+        "query": query,
+    }
+    return render(request, "atividades/listar_atividades_academicas.html", context)
+
+
+def relatorio_atividades(request):
+    atividades = AtividadeAcademica.objects.prefetch_related('turmas__curso').all()
+
+    curso_id = request.GET.get("curso")
+    if curso_id:
+        atividades = atividades.filter(turmas__curso__codigo_curso=curso_id)
+
+    cursos_dict = {}
+    for atividade in atividades:
+        curso = atividade.curso
+        if curso not in cursos_dict:
+            cursos_dict[curso] = []
+        cursos_dict[curso].append(atividade)
+
+    Curso = import_module("cursos.models").Curso
+    cursos = Curso.objects.all()
+
+    return render(request, "atividades/relatorio_atividades.html", {
+        "atividades": atividades,
+        "cursos_dict": cursos_dict,
+        "cursos": cursos,
+        "curso_id": curso_id,
+    })
+
+def criar_atividade_academica(request):
+    """
+    Cria uma nova atividade acadêmica.
+    """
+    if request.method == "POST":
+        form = AtividadeAcademicaForm(request.POST)
+        if form.is_valid():
+            atividade = form.save()
+            messages.success(request, "Atividade acadêmica criada com sucesso!")
+            return redirect(reverse("atividades:detalhar_atividade_academica", args=[atividade.pk]))
+        else:
+            messages.error(request, "Por favor, corrija os erros abaixo.")
+    else:
+        form = AtividadeAcademicaForm()
+    return render(request, "atividades/form_atividade_academica.html", {"form": form})
+
+def editar_atividade_academica(request, pk):
+    """
+    Edita uma atividade acadêmica existente.
+    """
+    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+    if request.method == "POST":
+        form = AtividadeAcademicaForm(request.POST, instance=atividade)
+        if form.is_valid():
+            atividade = form.save()
+            messages.success(request, "Atividade acadêmica atualizada com sucesso!")
+            return redirect(reverse("atividades:detalhar_atividade_academica", args=[atividade.pk]))
+        else:
+            messages.error(request, "Por favor, corrija os erros abaixo.")
+    else:
+        form = AtividadeAcademicaForm(instance=atividade)
+    return render(request, "atividades/form_atividade_academica.html", {"form": form, "atividade": atividade})
+
+def detalhar_atividade_academica(request, pk):
+    """
+    Exibe os detalhes de uma atividade acadêmica.
+    """
+    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+    curso = atividade.curso  # propriedade do model, obtida via turma
+    return render(request, "atividades/detalhar_atividade_academica.html", {
+        "atividade": atividade,
+        "curso": curso,
+    })
+
+def excluir_atividade_academica(request, pk):
+    """
+    Exclui uma atividade acadêmica.
+    """
+    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+    if request.method == "POST":
+        atividade.delete()
+        messages.success(request, "Atividade acadêmica excluída com sucesso!")
+        return redirect(reverse("atividades:listar_atividades_academicas"))
+    return render(request, "atividades/excluir_atividade_academica.html", {"atividade": atividade})
+def relatorio_atividades(request):
+    """
+    Relatório de atividades acadêmicas agrupadas por curso (via turma).
+    """
+    atividades = AtividadeAcademica.objects.prefetch_related('turmas__curso').all()
+
+    # Filtro por curso
+    curso_id = request.GET.get("curso")
+    if curso_id:
+        atividades = atividades.filter(turmas__curso__codigo_curso=curso_id)
+
+    # Agrupamento por curso para estatísticas
+    cursos_dict = {}
+    for atividade in atividades:
+        curso = atividade.curso
+        if curso not in cursos_dict:
+            cursos_dict[curso] = []
+        cursos_dict[curso].append(atividade)
+
+    # Buscar todos os cursos para o filtro
+    Curso = import_module("cursos.models").Curso
+    cursos = Curso.objects.all()
+
+    return render(request, "atividades/relatorio_atividades.html", {
+        "atividades": atividades,
+        "cursos_dict": cursos_dict,
+        "cursos": cursos,
+        "curso_id": curso_id,
+    })
+
+def ajax_atividades_filtradas(request):
+    # ... lógica de filtro ...
+    return render(request, "atividades/partials/atividades_tabela_body.html", {"atividades": atividades})
+
+
+## Arquivos urls.py:
+
+
+### Arquivo: atividades\urls.py
+
+python
+from django.urls import path
+from . import views
+
+app_name = "atividades"
+
+urlpatterns = [
+     # Atividades Acadêmicas
+     path("academicas/", views.academicas.listar_atividades_academicas, name="listar_atividades_academicas"),
+     path("academicas/criar/", views.academicas.criar_atividade_academica, name="criar_atividade_academica"),
+     path("academicas/<int:id>/editar/", views.academicas.editar_atividade_academica, name="editar_atividade_academica"),
+     path("academicas/<int:id>/detalhes/", views.academicas.detalhar_atividade_academica, name="detalhar_atividade_academica"),
+     path("academicas/<int:id>/excluir/", views.academicas.excluir_atividade_academica, name="excluir_atividade_academica"),
+
+     # AJAX: turmas por curso (listagem)
+     path("ajax/turmas-por-curso/", views.academicas.ajax_turmas_por_curso, name="ajax_turmas_por_curso"),
+     # AJAX: atividades filtradas (listagem)
+     path("ajax/atividades-filtradas/", views.academicas.ajax_atividades_filtradas, name="ajax_atividades_filtradas"),
+
+     # Relatório de atividades por curso/turma
+     path("relatorio/curso-turma/", views.relatorios.relatorio_atividades_curso_turma, name="relatorio_atividades_curso_turma"),
+     # AJAX: turmas por curso (relatório)
+     path("ajax/relatorio/turmas-por-curso/", views.relatorios.ajax_turmas_por_curso_relatorio, name="ajax_turmas_por_curso_relatorio"),
+     # AJAX: atividades filtradas (relatório)
+     path("ajax/relatorio/atividades-filtradas/", views.relatorios.ajax_atividades_filtradas_relatorio, name="ajax_atividades_filtradas_relatorio"),
+
+     # Dashboard de atividades
+     path("dashboard/", views.dashboard.dashboard_atividades, name="dashboard_atividades"),
+     # AJAX: turmas por curso (dashboard)
+     path("ajax/dashboard/turmas-por-curso/", views.dashboard.ajax_turmas_por_curso_dashboard, name="ajax_turmas_por_curso_dashboard"),
+     # AJAX: dashboard filtrado
+     path("ajax/dashboard/conteudo/", views.dashboard.ajax_dashboard_conteudo, name="ajax_dashboard_conteudo"),
+
+     # Atividades Ritualísticas
+     path("ritualisticas/", views.ritualisticas.listar_atividades_ritualisticas, name="listar_atividades_ritualisticas"),
+     path("ritualisticas/criar/", views.ritualisticas.criar_atividade_ritualistica, name="criar_atividade_ritualistica"),
+     path("ritualisticas/<int:id>/editar/", views.ritualisticas.editar_atividade_ritualistica, name="editar_atividade_ritualistica"),
+     path("ritualisticas/<int:id>/detalhes/", views.ritualisticas.detalhar_atividade_ritualistica, name="detalhar_atividade_ritualistica"),
+     path("ritualisticas/<int:id>/excluir/", views.ritualisticas.excluir_atividade_ritualistica, name="excluir_atividade_ritualistica"),
+     path("ritualisticas/<int:id>/copiar/", views.ritualisticas.copiar_atividade_ritualistica, name="copiar_atividade_ritualistica"),
+]
+
+
+## Arquivos models.py:
+
+
+### Arquivo: atividades\models.py
+
+python
+from django.db import models
+from django.utils import timezone
+
+class AtividadeAcademica(models.Model):
+    """
+    Modelo para atividades acadêmicas como aulas, palestras, workshops, etc.
+    """
+    TIPO_CHOICES = [
+        ('AULA', 'Aula'),
+        ('PALESTRA', 'Palestra'),
+        ('WORKSHOP', 'Workshop'),
+        ('SEMINARIO', 'Seminário'),
+        ('OUTRO', 'Outro'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('CONFIRMADA', 'Confirmada'),
+        ('REALIZADA', 'Realizada'),
+        ('CANCELADA', 'Cancelada'),
+    ]
+    
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(blank=True, null=True)
+    tipo_atividade = models.CharField(
+        max_length=20, 
+        choices=TIPO_CHOICES,
+        default='AULA'
+    )
+    data_inicio = models.DateField()
+    data_fim = models.DateField(blank=True, null=True)
+    hora_inicio = models.TimeField()
+    hora_fim = models.TimeField(blank=True, null=True)
+    local = models.CharField(max_length=100, blank=True, null=True)
+    responsavel = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES,
+        default='PENDENTE'
+    )
+    
+    # Relacionamentos
+    curso = models.ForeignKey(
+        'cursos.Curso', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='atividades'
+    )
+    turmas = models.ManyToManyField(
+        'turmas.Turma', 
+        blank=True,
+        related_name='atividades'
+    )
+    
+    # Metadados
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.nome
+    
+    class Meta:
+        verbose_name = 'Atividade Acadêmica'
+        verbose_name_plural = 'Atividades Acadêmicas'
+        ordering = ['-data_inicio', 'hora_inicio']
+
+class AtividadeRitualistica(models.Model):
+    """
+    Modelo para atividades ritualísticas.
+    """
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('CONFIRMADA', 'Confirmada'),
+        ('REALIZADA', 'Realizada'),
+        ('CANCELADA', 'Cancelada'),
+    ]
+    
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(blank=True, null=True)
+    data = models.DateField()
+    hora_inicio = models.TimeField()
+    hora_fim = models.TimeField(blank=True, null=True)
+    local = models.CharField(max_length=100, blank=True, null=True)
+    responsavel = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES,
+        default='PENDENTE'
+    )
+    
+    # Relacionamentos
+    participantes = models.ManyToManyField(
+        'alunos.Aluno', 
+        blank=True,
+        related_name='atividades_ritualisticas'
+    )
+    
+    # Metadados
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.nome
+    
+    class Meta:
+        verbose_name = 'Atividade Ritualística'
+        verbose_name_plural = 'Atividades Ritualísticas'
+        ordering = ['-data', 'hora_inicio']
+
+
+
+## Arquivos de Views Modulares:
+
+
+### Arquivo: atividades\views\__init__.py
+
+python
+from .academicas import (
+    listar_atividades_academicas,
+    criar_atividade_academica,
+    editar_atividade_academica,
+    detalhar_atividade_academica,
+    excluir_atividade_academica,
+    confirmar_exclusao_academica,
+    copiar_atividade_academica,
+    alunos_por_turma,
+    api_get_turmas_por_curso,
+    api_get_cursos_por_turma,
+)
+
+from .ritualisticas import (
+    listar_atividades_ritualisticas,
+    criar_atividade_ritualistica,
+    editar_atividade_ritualistica,
+    detalhar_atividade_ritualistica,
+    excluir_atividade_ritualistica,
+)
+
+from .dashboard import (
+    dashboard_atividades,
+)
+
+from .relatorios import (
+    relatorio_atividades,
+    relatorio_atividades_curso_turma,
+    exportar_atividades,
+    exportar_atividades_csv,
+    exportar_atividades_pdf,
+    exportar_atividades_excel,
+)
+
+from .importacao import (
+    importar_atividades,
+)
+
+from .calendario import (
+    api_eventos_calendario,
+    api_detalhe_evento,
+    calendario_atividades,
+)
+
+
+
+
+### Arquivo: atividades\views\academicas.py
+
+python
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, JsonResponse
+from atividades.models import AtividadeAcademica
+from django.urls import reverse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
-from django.core.paginator import Paginator
+from django.http import JsonResponse
 from importlib import import_module
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-import csv
-from io import TextIOWrapper
-import datetime
+from django.core.exceptions import ObjectDoesNotExist
+from django.views.decorators.http import require_GET
 
-# Importar a função utilitária centralizada
-from core.utils import get_model_dynamically
-
+# Configurar logger
 logger = logging.getLogger(__name__)
+
+# Função centralizada para obter modelos
+def get_models():
+    """Obtém os modelos necessários dinamicamente."""
+    try:
+        atividades_module = import_module("atividades.models")
+        cursos_module = import_module("cursos.models")
+        turmas_module = import_module("turmas.models")
+        
+        return {
+            'AtividadeAcademica': getattr(atividades_module, "AtividadeAcademica"),
+            'Curso': getattr(cursos_module, "Curso"),
+            'Turma': getattr(turmas_module, "Turma"),
+        }
+    except (ImportError, AttributeError) as e:
+        logger.error("Erro ao obter modelos: %s", str(e), exc_info=True)
+        raise
+
+# Utilitários
+def get_form_class(form_name):
+    """Obtém uma classe de formulário dinamicamente."""
+    try:
+        forms_module = import_module("atividades.forms")
+        return getattr(forms_module, form_name)
+    except (ImportError, AttributeError) as e:
+        logger.error("Erro ao obter formulário %s: %s", form_name, str(e))
+        raise
+
+def get_model_class(model_name, app_name="atividades"):
+    """Obtém uma classe de modelo dinamicamente."""
+    try:
+        models_module = import_module(f"{app_name}.models")
+        return getattr(models_module, model_name)
+    except (ImportError, AttributeError) as e:
+        logger.error("Erro ao obter modelo %s: %s", model_name, str(e))
+        raise
+
+@login_required
+def listar_atividades_academicas(request):
+    """
+    Lista atividades acadêmicas com filtros dinâmicos por curso e turma.
+    Suporta AJAX para atualização parcial da tabela.
+    """
+    Curso = import_module("cursos.models").Curso
+    Turma = import_module("turmas.models").Turma
+    AtividadeAcademica = import_module("atividades.models").AtividadeAcademica
+
+    cursos = Curso.objects.all()
+    turmas = Turma.objects.all()
+    curso_id = request.GET.get("curso")
+    turma_id = request.GET.get("turma")
+    query = request.GET.get("q", "")
+
+    atividades = AtividadeAcademica.objects.all()
+
+    # Filtro por turma (mais restritivo)
+    if turma_id:
+        atividades = atividades.filter(turmas__id=turma_id)
+        # Se turma foi selecionada, filtra cursos para o curso da turma
+        try:
+            turma = Turma.objects.get(id=turma_id)
+            cursos = cursos.filter(id=turma.curso_id)
+            curso_id = turma.curso_id  # Para manter seleção no template
+        except Turma.DoesNotExist:
+            pass
+        turmas = turmas.filter(id=turma_id)
+    # Filtro por curso (se turma não foi selecionada)
+    elif curso_id:
+        atividades = atividades.filter(curso_id=curso_id)
+        turmas = turmas.filter(curso_id=curso_id)
+
+    if query:
+        atividades = atividades.filter(
+            Q(nome__icontains=query) | Q(descricao__icontains=query)
+        )
+
+    atividades = atividades.select_related("curso").prefetch_related("turmas").distinct()
+
+    context = {
+        "atividades": atividades,
+        "cursos": cursos,
+        "turmas": turmas,
+        "curso_selecionado": curso_id,
+        "turma_selecionada": turma_id,
+    }
+
+    # AJAX: retorna apenas o corpo da tabela para atualização dinâmica
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return render(request, "atividades/partials/atividades_tabela_body.html", context)
+    return render(request, "atividades/academicas/listar_atividades_academicas.html", context)
+
+@require_GET
+@login_required
+def ajax_turmas_por_curso(request):
+    """
+    Endpoint AJAX: retorna as turmas de um curso em JSON.
+    """
+    curso_id = request.GET.get("curso_id")
+    Turma = import_module("turmas.models").Turma
+    turmas = Turma.objects.filter(curso_id=curso_id).values("id", "nome")
+    return JsonResponse(list(turmas), safe=False)
+
+@require_GET
+@login_required
+def ajax_atividades_filtradas(request):
+    """
+    Endpoint AJAX: retorna atividades filtradas por curso/turma/nome.
+    Retorna HTML parcial da tabela.
+    """
+    return listar_atividades_academicas(request)
+
+@login_required
+def criar_atividade_academica(request):
+    """Cria uma nova atividade acadêmica."""
+    try:
+        AtividadeAcademicaForm = get_form_class("AtividadeAcademicaForm")
+        
+        if request.method == "POST":
+            form = AtividadeAcademicaForm(request.POST)
+            if form.is_valid():
+                atividade = form.save()
+                messages.success(
+                    request, 
+                    "Atividade acadêmica criada com sucesso!"
+                )
+                return redirect("atividades:listar_atividades_academicas")
+            else:
+                messages.error(request, "Por favor, corrija os erros abaixo.")
+        else:
+            form = AtividadeAcademicaForm()
+        
+        return render(
+            request, 
+            "atividades/academicas/form_atividade_academica.html", 
+            {"form": form}
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao criar atividade acadêmica: {str(e)}", 
+            exc_info=True
+        )
+        messages.error(
+            request, 
+            f"Ocorreu um erro ao criar a atividade: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_academicas")
+
+@login_required
+def editar_atividade_academica(request, id):
+    """Edita uma atividade acadêmica existente."""
+    try:
+        models = get_models()
+        AtividadeAcademica = models['AtividadeAcademica']
+        AtividadeAcademicaForm = get_form_class("AtividadeAcademicaForm")
+        
+        atividade = get_object_or_404(AtividadeAcademica, id=id)
+        
+        if request.method == "POST":
+            form = AtividadeAcademicaForm(request.POST, instance=atividade)
+            if form.is_valid():
+                form.save()
+                messages.success(
+                    request, 
+                    "Atividade acadêmica atualizada com sucesso!"
+                )
+                return redirect("atividades:listar_atividades_academicas")
+            else:
+                messages.error(request, "Por favor, corrija os erros abaixo.")
+        else:
+            form = AtividadeAcademicaForm(instance=atividade)
+        
+        return render(
+            request, 
+            "atividades/academicas/form_atividade_academica.html", 
+            {"form": form, "atividade": atividade}
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao editar atividade acadêmica {id}: {str(e)}", 
+            exc_info=True
+        )
+        messages.error(
+            request, 
+            f"Ocorreu um erro ao editar a atividade: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_academicas")
+
+@login_required
+def detalhar_atividade_academica(request, id):
+    """Exibe detalhes de uma atividade acadêmica."""
+    try:
+        models = get_models()
+        AtividadeAcademica = models['AtividadeAcademica']
+        
+        atividade = get_object_or_404(
+            AtividadeAcademica.objects.select_related(
+                "curso").prefetch_related("turmas"),
+            id=id
+        )
+        
+        return render(
+            request, 
+            "atividades/academicas/detalhar_atividade_academica.html", 
+            {"atividade": atividade}
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao detalhar atividade acadêmica {id}: {str(e)}", 
+            exc_info=True
+        )
+        messages.error(
+            request, 
+            f"Ocorreu um erro ao exibir os detalhes da atividade: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_academicas")
+
+@login_required
+def excluir_atividade_academica(request, id):
+    """Exclui uma atividade acadêmica."""
+    try:
+        models = get_models()
+        AtividadeAcademica = models['AtividadeAcademica']
+        
+        atividade = get_object_or_404(AtividadeAcademica, id=id)
+        
+        if request.method == "POST":
+            atividade.delete()
+            messages.success(
+                request, 
+                "Atividade acadêmica excluída com sucesso!"
+            )
+            return redirect("atividades:listar_atividades_academicas")
+        
+        return render(
+            request, 
+            "atividades/academicas/excluir_atividade_academica.html", 
+            {"atividade": atividade}
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao excluir atividade acadêmica {id}: {str(e)}", 
+            exc_info=True
+        )
+        messages.error(
+            request, 
+            f"Ocorreu um erro ao excluir a atividade: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_academicas")
+
+@login_required
+def confirmar_exclusao_academica(request, pk):
+    """Função para confirmar a exclusão de uma atividade acadêmica."""
+    try:
+        AtividadeAcademica = get_model_class("AtividadeAcademica")
+        atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+        return_url = request.GET.get(
+            "return_url", 
+            reverse("atividades:listar_atividades_academicas")
+        )
+        
+        if request.method == "POST":
+            try:
+                nome_atividade = atividade.nome  # Guardar o nome para a mensagem
+                atividade.delete()
+                messages.success(
+                    request, 
+                    f"Atividade acadêmica '{nome_atividade}' excluída com sucesso."
+                )
+                return redirect(return_url)
+            except (AtividadeAcademica.DoesNotExist, ValueError) as e:
+                logger.error(
+                    f"Erro ao excluir atividade acadêmica: {str(e)}", 
+                    exc_info=True
+                )
+                messages.error(
+                    request, 
+                    f"Erro ao excluir atividade acadêmica: {str(e)}"
+                )
+                return redirect("atividades:detalhar_atividade_academica", pk=pk)
+        
+        return render(
+            request,
+            "atividades/confirmar_exclusao_academica.html",
+            {"atividade": atividade, "return_url": return_url},
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao processar confirmação de exclusão: {str(e)}", 
+            exc_info=True
+        )
+        messages.error(
+            request, 
+            f"Ocorreu um erro ao processar a solicitação: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_academicas")
+
+@login_required
+def copiar_atividade_academica(request, id):
+    """Cria uma cópia de uma atividade acadêmica existente."""
+    try:
+        AtividadeAcademica = get_model_class("AtividadeAcademica")
+        AtividadeAcademicaForm = get_form_class("AtividadeAcademicaForm")
+        
+        # Obter atividade original
+        atividade_original = get_object_or_404(AtividadeAcademica, id=id)
+        
+        if request.method == "POST":
+            # Criar formulário com dados do POST
+            form = AtividadeAcademicaForm(request.POST)
+            if form.is_valid():
+                # Salvar nova atividade
+                nova_atividade = form.save()
+                
+                # Verificar se deve copiar frequências
+                copiar_frequencias = request.POST.get('copiar_frequencias') == 'on'
+                if copiar_frequencias:
+                    try:
+                        # Importar modelo de Frequencia
+                        Frequencia = get_model_class("Frequencia", "frequencias")
+                        
+                        # Obter frequências da atividade original
+                        frequencias_originais = Frequencia.objects.filter(
+                            atividade=atividade_original
+                        )
+                        
+                        # Criar novas frequências
+                        for freq in frequencias_originais:
+                            Frequencia.objects.create(
+                                aluno=freq.aluno,
+                                atividade=nova_atividade,
+                                data=nova_atividade.data_inicio,  # Usar a nova data
+                                presente=False,  # Inicialmente todos ausentes
+                                justificativa=None
+                            )
+                        
+                        messages.success(
+                            request,
+                            f"Atividade copiada com sucesso! "
+                            f"{frequencias_originais.count()} registros de "
+                            f"frequência foram copiados."
+                        )
+                    except (ImportError, AttributeError, ValueError, TypeError) as e:
+                        logger.error(
+                            "Erro ao copiar frequências: %s", 
+                            str(e), 
+                            exc_info=True
+                        )
+                        messages.warning(
+                            request,
+                            f"Atividade copiada, mas ocorreu um erro ao copiar "
+                            f"as frequências: {str(e)}"
+                        )
+                else:
+                    messages.success(request, "Atividade copiada com sucesso!")
+                
+                return redirect(
+                    "atividades:detalhar_atividade_academica",
+                    id=nova_atividade.id
+                )
+            else:
+                messages.error(request, "Corrija os erros no formulário.")
+        else:
+            # Pré-preencher formulário com dados da atividade original
+            initial_data = {
+                'nome': f"Cópia de {atividade_original.nome}",
+                'descricao': atividade_original.descricao,
+                'tipo_atividade': atividade_original.tipo_atividade,
+                'responsavel': atividade_original.responsavel,
+                'local': atividade_original.local,
+                'status': 'PENDENTE',  # Sempre começa como pendente
+                'curso': atividade_original.curso_id,
+            }
+            form = AtividadeAcademicaForm(initial=initial_data)
+            # Para M2M, setar manualmente:
+            form.fields['turmas'].initial = atividade_original.turmas.all()
+        
+        return render(
+            request,
+            "atividades/academicas/copiar_atividade_academica.html",
+            {
+                "form": form,
+                "atividade_original": atividade_original,
+            },
+        )
+    except (ImportError, AttributeError, ValueError) as e:
+        logger.error(
+            "Erro ao copiar atividade acadêmica %s: %s",
+            id,
+            str(e),
+            exc_info=True
+        )
+        messages.error(
+            request,
+            f"Ocorreu um erro ao copiar a atividade: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_academicas")
+    except ObjectDoesNotExist as e:
+        logger.error(
+            "Objeto não encontrado ao copiar atividade acadêmica %s: %s",
+            id,
+            str(e),
+            exc_info=True
+        )
+        messages.error(
+            request,
+            f"Atividade acadêmica não encontrada: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_academicas")
+
+@login_required
+def alunos_por_turma(request, turma_id):
+    """Retorna os alunos de uma turma em formato JSON."""
+    try:
+        Matricula = import_module("matriculas.models").Matricula
+        alunos = Matricula.objects.filter(
+            turma_id=turma_id
+        ).select_related('aluno')
+        
+        data = [
+            {
+                "nome": m.aluno.nome,
+                "foto": m.aluno.foto.url if m.aluno.foto else None,
+                "cpf": m.aluno.cpf,
+            }
+            for m in alunos
+        ]
+        
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        logger.error(
+            "Erro ao obter alunos da turma %s: %s", 
+            turma_id, 
+            str(e),
+            exc_info=True
+        )
+        return JsonResponse({"error": str(e)}, status=500)
+
+@login_required
+def api_get_turmas_por_curso(request):
+    """API para obter turmas por curso."""
+    try:
+        curso_id = request.GET.get("curso_id")
+        
+        models = get_models()
+        Turma = models['Turma']
+        
+        if curso_id:
+            try:
+                # Validar que o curso_id é um inteiro válido
+                curso_id = int(curso_id)
+                turmas = Turma.objects.filter(curso_id=curso_id)
+            except ValueError:
+                return JsonResponse(
+                    {
+                        "error": "ID do curso inválido. Deve ser um número inteiro."
+                    },
+                    status=400
+                )
+        else:
+            turmas = Turma.objects.all()
+        
+        # Serializar manualmente sem depender do REST Framework
+        data = [
+            {
+                "id": turma.id,
+                "nome": turma.nome,
+                "codigo": turma.codigo if hasattr(turma, 'codigo') else None,
+            }
+            for turma in turmas
+        ]
+        
+        return JsonResponse({"turmas": data})
+    except Exception as e:
+        logger.error(
+            "Erro ao obter turmas por curso: %s", 
+            str(e), 
+            exc_info=True
+        )
+        return JsonResponse(
+            {
+                "error": "Erro ao processar a solicitação. Tente novamente."
+            },
+            status=500
+        )
+
+@login_required
+def api_get_cursos_por_turma(request):
+    """API para obter cursos por turma."""
+    try:
+        turma_id = request.GET.get("turma_id")
+        
+        if not turma_id:
+            models = get_models()
+            Curso = models['Curso']
+            cursos = Curso.objects.all()
+            
+            # Serializar manualmente sem depender do REST Framework
+            data = [
+                {
+                    "id": curso.id,
+                    "nome": curso.nome,
+                    "codigo_curso": (
+                        curso.codigo_curso 
+                        if hasattr(curso, 'codigo_curso') 
+                        else None
+                    ),
+                }
+                for curso in cursos
+            ]
+            
+            return JsonResponse({"cursos": data})
+        
+        try:
+            # Validar que o turma_id é um inteiro válido
+            turma_id = int(turma_id)
+        except ValueError:
+            return JsonResponse(
+                {
+                    "error": "ID da turma inválido. Deve ser um número inteiro."
+                },
+                status=400
+            )
+        
+        models = get_models()
+        Turma = models['Turma']
+        
+        try:
+            turma = Turma.objects.get(id=turma_id)
+            curso = turma.curso
+            
+            if curso:
+                data = {
+                    "id": curso.id,
+                    "nome": curso.nome,
+                    "codigo_curso": (
+                        curso.codigo_curso 
+                        if hasattr(curso, 'codigo_curso') 
+                        else None
+                    ),
+                }
+                return JsonResponse({"cursos": [data]})
+            else:
+                return JsonResponse({"cursos": []})
+        except Turma.DoesNotExist:
+            return JsonResponse(
+                {"error": "Turma não encontrada."},
+                status=404
+            )
+    except Exception as e:
+        logger.error(
+            "Erro ao obter cursos por turma: %s", 
+            str(e), 
+            exc_info=True
+        )
+        return JsonResponse(
+            {
+                "error": "Erro ao processar a solicitação. Tente novamente."
+            },
+            status=500
+        )
+
+
+
+### Arquivo: atividades\views\calendario.py
+
+python
+import logging
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from datetime import datetime, timedelta
+
+from .utils import get_model_class
+
+# Set up logger
+logger = logging.getLogger(__name__)
+
+@login_required
+def calendario_atividades(request):
+    """Exibe o calendário de atividades."""
+    # Obter todas as turmas para o filtro
+    Turma = get_model_class("Turma", "turmas")
+    turmas = Turma.objects.filter(status='A')  # Apenas turmas ativas
+    
+    return render(
+        request,
+        "atividades/calendario_atividades.html",
+        {
+            "turmas": turmas,
+        },
+    )
+
+@login_required
+def api_eventos_calendario(request):
+    """API para fornecer eventos para o calendário."""
+    # Obter parâmetros
+    start_date = request.GET.get('start', '')
+    end_date = request.GET.get('end', '')
+    tipo_filtro = request.GET.get('tipo', 'todas')
+    turma_filtro = request.GET.get('turma', 'todas')
+    mostrar_concluidas = request.GET.get('concluidas', '1') == '1'
+    
+    # Obter modelos
+    AtividadeAcademica = get_model_class("AtividadeAcademica")
+    AtividadeRitualistica = get_model_class("AtividadeRitualistica")
+    
+    eventos = []
+    
+    # Adicionar atividades acadêmicas
+    if tipo_filtro in ['todas', 'academicas']:
+        atividades_academicas = AtividadeAcademica.objects.all()
+        
+        # Aplicar filtro de data
+        if start_date:
+            atividades_academicas = atividades_academicas.filter(data_inicio__gte=start_date)
+        if end_date:
+            atividades_academicas = atividades_academicas.filter(data_inicio__lte=end_date)
+        
+        # Aplicar filtro de turma
+        if turma_filtro != 'todas':
+            atividades_academicas = atividades_academicas.filter(turmas__id=turma_filtro)
+        
+        # Aplicar filtro de status concluído
+        if not mostrar_concluidas:
+            atividades_academicas = atividades_academicas.exclude(status='concluida')
+        
+        # Converter para formato de evento do FullCalendar
+        for atividade in atividades_academicas:
+            evento = {
+                'id': atividade.id,
+                'title': atividade.nome,
+                'start': atividade.data_inicio.isoformat(),
+                'end': atividade.data_fim.isoformat() if atividade.data_fim else None,
+                'allDay': True,  # Por padrão, eventos de dia inteiro
+                'tipo': 'academica',
+                'status': atividade.status,
+                'description': atividade.descricao or '',
+            }
+            eventos.append(evento)
+    
+    # Adicionar atividades ritualísticas
+    if tipo_filtro in ['todas', 'ritualisticas']:
+        atividades_ritualisticas = AtividadeRitualistica.objects.all()
+        
+        # Aplicar filtro de data
+        if start_date:
+            atividades_ritualisticas = atividades_ritualisticas.filter(data__gte=start_date)
+        if end_date:
+            atividades_ritualisticas = atividades_ritualisticas.filter(data__lte=end_date)
+        
+        # Aplicar filtro de turma
+        if turma_filtro != 'todas':
+            atividades_ritualisticas = atividades_ritualisticas.filter(turma_id=turma_filtro)
+        
+        # Converter para formato de evento do FullCalendar
+        for atividade in atividades_ritualisticas:
+            # Combinar data e hora para criar datetime completo
+            data = atividade.data
+            
+            # Converter hora_inicio e hora_fim para objetos time
+            hora_inicio = atividade.hora_inicio
+            hora_fim = atividade.hora_fim
+            
+            # Criar datetime para início e fim
+            start_datetime = datetime.combine(data, hora_inicio)
+            end_datetime = datetime.combine(data, hora_fim)
+            
+            evento = {
+                'id': atividade.id,
+                'title': atividade.nome,
+                'start': start_datetime.isoformat(),
+                'end': end_datetime.isoformat(),
+                'allDay': False,  # Eventos ritualísticos têm horário específico
+                'tipo': 'ritualistica',
+                'description': atividade.descricao or '',
+            }
+            eventos.append(evento)
+    
+    return JsonResponse(eventos, safe=False)
+
+@login_required
+def api_detalhe_evento(request, evento_id):
+    """API para fornecer detalhes de um evento específico."""
+    tipo = request.GET.get('tipo', '')
+    
+    try:
+        if tipo == 'academica':
+            AtividadeAcademica = get_model_class("AtividadeAcademica")
+            atividade = get_object_or_404(AtividadeAcademica, id=evento_id)
+            
+            # Formatar dados para resposta JSON
+            evento = {
+                'nome': atividade.nome,
+                'descricao': atividade.descricao,
+                'data_inicio': atividade.data_inicio.strftime('%d/%m/%Y'),
+                'data_fim': atividade.data_fim.strftime('%d/%m/%Y') if atividade.data_fim else None,
+                'responsavel': atividade.responsavel,
+                'local': atividade.local,
+                'tipo': atividade.tipo_atividade,
+                'tipo_display': atividade.get_tipo_atividade_display(),
+                'status': atividade.status,
+                'status_display': atividade.get_status_display(),
+                'turmas': [turma.nome for turma in atividade.turmas.all()]
+            }
+            
+            return JsonResponse({'success': True, 'evento': evento})
+        
+        elif tipo == 'ritualistica':
+            AtividadeRitualistica = get_model_class("AtividadeRitualistica")
+            atividade = get_object_or_404(AtividadeRitualistica, id=evento_id)
+            
+            # Formatar dados para resposta JSON
+            evento = {
+                'nome': atividade.nome,
+                'descricao': atividade.descricao,
+                'data': atividade.data.strftime('%d/%m/%Y'),
+                'hora_inicio': atividade.hora_inicio.strftime('%H:%M'),
+                'hora_fim': atividade.hora_fim.strftime('%H:%M'),
+                'local': atividade.local,
+                'turma': atividade.turma.nome if atividade.turma else 'Sem turma',
+                'total_participantes': atividade.participantes.count(),
+            }
+            
+            return JsonResponse({'success': True, 'evento': evento})
+        
+        else:
+            return JsonResponse({'success': False, 'error': 'Tipo de evento inválido'}, status=400)
+    
+    except Exception as e:
+        logger.error(f"Erro ao obter detalhes do evento: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
+### Arquivo: atividades\views\dashboard.py
+
+python
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q, Count
+from importlib import import_module
+
+from ..models import AtividadeAcademica
+
+@login_required
+def dashboard_atividades(request):
+    """
+    Dashboard de atividades com filtros dinâmicos por curso e turma.
+    Suporta AJAX para atualização dos cards/gráficos/tabelas.
+    """
+    Curso = import_module("cursos.models").Curso
+    Turma = import_module("turmas.models").Turma
+
+    cursos = Curso.objects.all()
+    turmas = Turma.objects.all()
+
+    curso_id = request.GET.get("curso")
+    turma_id = request.GET.get("turma")
+
+    atividades = AtividadeAcademica.objects.all()
+
+    if curso_id:
+        atividades = atividades.filter(turma__curso_id=curso_id)
+        turmas = turmas.filter(curso_id=curso_id)
+    if turma_id:
+        atividades = atividades.filter(turma_id=turma_id)
+
+    atividades = atividades.select_related("turma__curso").distinct()
+
+    # Exemplo de dados para cards
+    total_atividades = atividades.count()
+    total_turmas = turmas.count()
+    total_cursos = cursos.count()
+
+    context = {
+        "atividades": atividades,
+        "cursos": cursos,
+        "turmas": turmas,
+        "curso_selecionado": curso_id,
+        "turma_selecionada": turma_id,
+        "total_atividades": total_atividades,
+        "total_turmas": total_turmas,
+        "total_cursos": total_cursos,
+    }
+
+    # AJAX: retorna apenas o conteúdo do dashboard para atualização dinâmica
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return render(request, "atividades/_dashboard_conteudo.html", context)
+
+    return render(request, "atividades/dashboard.html", context)
+
+@require_GET
+@login_required
+def ajax_turmas_por_curso_dashboard(request):
+    """
+    Endpoint AJAX: retorna as turmas de um curso em JSON (para dashboard).
+    """
+    curso_id = request.GET.get("curso_id")
+    Turma = import_module("turmas.models").Turma
+    turmas = Turma.objects.filter(curso_id=curso_id).values("id", "nome")
+    return JsonResponse(list(turmas), safe=False)
+
+@require_GET
+@login_required
+def ajax_dashboard_conteudo(request):
+    """
+    Endpoint AJAX: retorna conteúdo do dashboard filtrado.
+    """
+    return dashboard_atividades(request)
+
+
+
+
+### Arquivo: atividades\views\importacao.py
+
+python
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from io import TextIOWrapper
+import csv
+import datetime
+from importlib import import_module
 
 def get_models():
     """Obtém os modelos AtividadeAcademica e AtividadeRitualistica."""
@@ -152,13 +1454,6 @@ def get_models():
     AtividadeAcademica = getattr(atividades_module, "AtividadeAcademica")
     AtividadeRitualistica = getattr(atividades_module, "AtividadeRitualistica")
     return AtividadeAcademica, AtividadeRitualistica
-
-def get_forms():
-    """Obtém os formulários AtividadeAcademicaForm e AtividadeRitualisticaForm."""
-    atividades_forms = import_module("atividades.forms")
-    AtividadeAcademicaForm = getattr(atividades_forms, "AtividadeAcademicaForm")
-    AtividadeRitualisticaForm = getattr(atividades_forms, "AtividadeRitualisticaForm")
-    return AtividadeAcademicaForm, AtividadeRitualisticaForm
 
 def get_turma_model():
     """Obtém o modelo Turma."""
@@ -170,514 +1465,236 @@ def get_aluno_model():
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
-@login_required
-def listar_atividades(request):
-    """Lista todas as atividades."""
-    return render(request, "atividades/listar_atividades.html")
-
-@login_required
-def listar_atividades_academicas(request):
-    """Lista todas as atividades acadêmicas."""
-    AtividadeAcademica, _ = get_models()
+def parse_date(date_str):
+    """Converte uma string de data para um objeto date."""
+    if not date_str:
+        return None
     
-    # Obter parâmetros de busca
-    query = request.GET.get("q", "")
+    # Tentar diferentes formatos
+    formats = ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"]
     
-    # Filtrar atividades
-    atividades = AtividadeAcademica.objects.all().order_by('-data_inicio')
-    if query:
-        atividades = atividades.filter(
-            Q(nome__icontains=query) |
-            Q(descricao__icontains=query) |
-            Q(responsavel__icontains=query) |
-            Q(local__icontains=query)
-        )
-    
-    # Paginação
-    paginator = Paginator(atividades, 10)  # 10 atividades por página
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        "atividades": page_obj,
-        "page_obj": page_obj,
-        "query": query,
-    }
-    
-    return render(request, "atividades/listar_atividades_academicas.html", context)
-
-@login_required
-def criar_atividade_academica(request):
-    """Cria uma nova atividade acadêmica."""
-    AtividadeAcademicaForm, _ = get_forms()
-    
-    # Obter URL de retorno
-    return_url = request.GET.get('return_url', 'atividades:listar_atividades_academicas')
-    
-    if request.method == "POST":
-        form = AtividadeAcademicaForm(request.POST)
-        if form.is_valid():
-            try:
-                atividade = form.save(commit=False)
-                
-                # Verificar se deve aplicar a todas as turmas
-                todas_turmas = form.cleaned_data.get('todas_turmas', False)
-                
-                # Salvar a atividade
-                atividade.save()
-                
-                # Se marcou para aplicar a todas as turmas, adicionar todas as turmas ativas
-                if todas_turmas:
-                    Turma = get_turma_model()
-                    turmas_ativas = Turma.objects.filter(status='A')
-                    atividade.turmas.add(*turmas_ativas)
-                else:
-                    # Adicionar as turmas selecionadas
-                    turmas = form.cleaned_data.get('turmas', [])
-                    if turmas:
-                        atividade.turmas.add(*turmas)
-                
-                messages.success(request, "Atividade acadêmica criada com sucesso!")
-                return redirect(return_url)
-            except Exception as e:
-                messages.error(request, f"Erro ao criar atividade: {str(e)}")
-        else:
-            messages.error(request, "Por favor, corrija os erros abaixo.")
-    else:
-        form = AtividadeAcademicaForm()
-    
-    return render(
-        request, 
-        "atividades/formulario_atividade_academica.html", 
-        {
-            "form": form, 
-            "return_url": return_url
-        }
-    )
-
-@login_required
-def editar_atividade_academica(request, pk):
-    """Edita uma atividade acadêmica existente."""
-    AtividadeAcademica, _ = get_models()
-    AtividadeAcademicaForm, _ = get_forms()
-    
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
-    
-    # Obter URL de retorno
-    return_url = request.GET.get('return_url', 'atividades:listar_atividades_academicas')
-    
-    if request.method == "POST":
-        form = AtividadeAcademicaForm(request.POST, instance=atividade)
-        if form.is_valid():
-            try:
-                atividade = form.save(commit=False)
-                
-                # Verificar se deve aplicar a todas as turmas
-                todas_turmas = form.cleaned_data.get('todas_turmas', False)
-                
-                # Salvar a atividade
-                atividade.save()
-                
-                # Limpar turmas existentes
-                atividade.turmas.clear()
-                
-                # Se marcou para aplicar a todas as turmas, adicionar todas as turmas ativas
-                if todas_turmas:
-                    Turma = get_turma_model()
-                    turmas_ativas = Turma.objects.filter(status='A')
-                    atividade.turmas.add(*turmas_ativas)
-                else:
-                    # Adicionar as turmas selecionadas
-                    turmas = form.cleaned_data.get('turmas', [])
-                    if turmas:
-                        atividade.turmas.add(*turmas)
-                
-                messages.success(request, "Atividade acadêmica atualizada com sucesso!")
-                return redirect(return_url)
-            except Exception as e:
-                messages.error(request, f"Erro ao atualizar atividade: {str(e)}")
-        else:
-            messages.error(request, "Por favor, corrija os erros abaixo.")
-    else:
-        form = AtividadeAcademicaForm(instance=atividade)
-    
-    return render(
-        request, 
-        "atividades/formulario_atividade_academica.html", 
-        {
-            "form": form, 
-            "atividade": atividade,
-            "return_url": return_url
-        }
-    )
-
-@login_required
-def excluir_atividade_academica(request, pk):
-    """Exclui uma atividade acadêmica."""
-    AtividadeAcademica, _ = get_models()
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
-    
-    if request.method == "POST":
+    for fmt in formats:
         try:
-            atividade.delete()
-            messages.success(request, "Atividade acadêmica excluída com sucesso!")
-            return redirect("atividades:listar_atividades_academicas")
-        except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade: {str(e)}")
-            return redirect("atividades:detalhar_atividade_academica", pk=pk)
+            return datetime.datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            continue
     
-    return render(request, "atividades/excluir_atividade_academica.html", {"atividade": atividade})
+    raise ValueError(f"Formato de data inválido: {date_str}")
 
-@login_required
-def detalhar_atividade_academica(request, pk):
-    """Exibe os detalhes de uma atividade acadêmica."""
-    AtividadeAcademica, _ = get_models()
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
-    return render(request, "atividades/detalhar_atividade_academica.html", {"atividade": atividade})
-
-@login_required
-def confirmar_exclusao_academica(request, pk):
-    """Confirma a exclusão de uma atividade acadêmica."""
-    AtividadeAcademica, _ = get_models()
-    atividade = get_object_or_404(AtividadeAcademica, pk=pk)
+def parse_time(time_str):
+    """Converte uma string de hora para um objeto time."""
+    if not time_str:
+        return None
     
-    # Obter URL de retorno
-    return_url = request.GET.get('return_url', 'atividades:listar_atividades_academicas')
+    # Tentar diferentes formatos
+    formats = ["%H:%M", "%H:%M:%S"]
     
-    if request.method == "POST":
+    for fmt in formats:
         try:
-            atividade.delete()
-            messages.success(request, "Atividade acadêmica excluída com sucesso!")
-            return redirect(return_url)
-        except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade: {str(e)}")
-            return redirect("atividades:detalhar_atividade_academica", pk=pk)
+            return datetime.datetime.strptime(time_str, fmt).time()
+        except ValueError:
+            continue
     
-    return render(
-        request, 
-        "atividades/confirmar_exclusao_academica.html", 
-        {
-            "atividade": atividade,
-            "return_url": return_url
-        }
-    )
+    raise ValueError(f"Formato de hora inválido: {time_str}")
+
+def parse_date_time(datetime_str):
+    """Converte uma string de data e hora para um objeto datetime."""
+    if not datetime_str:
+        return None
+    
+    # Tentar diferentes formatos
+    formats = ["%d/%m/%Y %H:%M", "%Y-%m-%d %H:%M", "%d-%m-%Y %H:%M", 
+               "%d/%m/%Y %H:%M:%S", "%Y-%m-%d %H:%M:%S", "%d-%m-%Y %H:%M:%S"]
+    
+    for fmt in formats:
+        try:
+            return datetime.datetime.strptime(datetime_str, fmt)
+        except ValueError:
+            continue
+    
+    raise ValueError(f"Formato de data e hora inválido: {datetime_str}")
 
 @login_required
-def copiar_atividade_academica(request, id):
-    """Cria uma cópia de uma atividade acadêmica existente."""
-    AtividadeAcademica, _ = get_models()
-    AtividadeAcademicaForm, _ = get_forms()
+def importar_atividades(request):
+    """Importa atividades a partir de um arquivo CSV."""
+    AtividadeAcademica, AtividadeRitualistica = get_models()
     
-    atividade_original = get_object_or_404(AtividadeAcademica, id=id)
-    
-    if request.method == "POST":
+    if request.method == "POST" and request.FILES.get("csv_file"):
         try:
-            # Criar uma nova atividade com os mesmos dados
-            nova_atividade = AtividadeAcademica.objects.create(
-                nome=f"Cópia de {atividade_original.nome}",
-                descricao=atividade_original.descricao,
-                data_inicio=atividade_original.data_inicio,
-                data_fim=atividade_original.data_fim,
-                responsavel=atividade_original.responsavel,
-                local=atividade_original.local,
-                tipo_atividade=atividade_original.tipo_atividade,
-                status="agendada"  # Sempre começa como agendada
-            )
+            # Obter o tipo de atividade a ser importada
+            tipo_atividade = request.POST.get("tipo_atividade", "academica")
             
-            # Copiar as turmas
-            for turma in atividade_original.turmas.all():
-                nova_atividade.turmas.add(turma)
+            # Abrir o arquivo CSV
+            csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
+            reader = csv.DictReader(csv_file)
             
-            messages.success(request, "Atividade acadêmica copiada com sucesso!")
-            return redirect("atividades:detalhar_atividade_academica", pk=nova_atividade.id)
-        except Exception as e:
-            messages.error(request, f"Erro ao copiar atividade: {str(e)}")
-            return redirect("atividades:detalhar_atividade_academica", pk=id)
-    
-    return render(
-        request, 
-        "atividades/confirmar_copia_academica.html", 
-        {"atividade": atividade_original}
-    )
-
-@login_required
-def listar_atividades_ritualisticas(request):
-    """Lista todas as atividades ritualísticas."""
-    _, AtividadeRitualistica = get_models()
-    
-    # Obter parâmetros de busca
-    query = request.GET.get("q", "")
-    
-    # Filtrar atividades
-    atividades = AtividadeRitualistica.objects.all().order_by('-data')
-    if query:
-        atividades = atividades.filter(
-            Q(nome__icontains=query) |
-            Q(descricao__icontains=query) |
-            Q(local__icontains=query)
-        )
-    
-    # Paginação
-    paginator = Paginator(atividades, 10)  # 10 atividades por página
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        "atividades": page_obj,
-        "page_obj": page_obj,
-        "query": query,
-    }
-    
-    return render(request, "atividades/listar_atividades_ritualisticas.html", context)
-
-@login_required
-def criar_atividade_ritualistica(request):
-    """Cria uma nova atividade ritualística."""
-    _, AtividadeRitualisticaForm = get_forms()
-    
-    # Obter URL de retorno
-    return_url = request.GET.get('return_url', 'atividades:listar_atividades_ritualisticas')
-    
-    if request.method == "POST":
-        form = AtividadeRitualisticaForm(request.POST)
-        if form.is_valid():
-            try:
-                atividade = form.save(commit=False)
-                
-                # Verificar se deve incluir todos os alunos da turma
-                todos_alunos = form.cleaned_data.get('todos_alunos', False)
-                
-                # Salvar a atividade
-                atividade.save()
-                
-                # Se marcou para incluir todos os alunos, adicionar todos os alunos da turma
-                if todos_alunos:
-                    # Importar o modelo Matricula dinamicamente
-                    Matricula = get_model_dynamically("matriculas", "Matricula")
-                    
-                    # Buscar alunos matriculados na turma
-                    matriculas = Matricula.objects.filter(turma=atividade.turma, status='A')
-                    alunos = [matricula.aluno for matricula in matriculas]
-                    
-                    # Adicionar alunos como participantes
-                    atividade.participantes.add(*alunos)
-                else:
-                    # Adicionar os participantes selecionados
-                    participantes = form.cleaned_data.get('participantes', [])
-                    if participantes:
-                        atividade.participantes.add(*participantes)
-                
-                messages.success(request, "Atividade ritualística criada com sucesso!")
-                return redirect(return_url)
-            except Exception as e:
-                messages.error(request, f"Erro ao criar atividade: {str(e)}")
-        else:
-            messages.error(request, "Por favor, corrija os erros abaixo.")
-    else:
-        form = AtividadeRitualisticaForm()
-    
-    return render(
-        request, 
-        "atividades/formulario_atividade_ritualistica.html", 
-        {
-            "form": form, 
-            "return_url": return_url
-        }
-    )
-
-@login_required
-def editar_atividade_ritualistica(request, pk):
-    """Edita uma atividade ritualística existente."""
-    _, AtividadeRitualistica = get_models()
-    _, AtividadeRitualisticaForm = get_forms()
-    
-    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
-    
-    # Obter URL de retorno
-    return_url = request.GET.get('return_url', 'atividades:listar_atividades_ritualisticas')
-    
-    if request.method == "POST":
-        form = AtividadeRitualisticaForm(request.POST, instance=atividade)
-        if form.is_valid():
-            try:
-                atividade = form.save(commit=False)
-                
-                # Verificar se deve incluir todos os alunos da turma
-                todos_alunos = form.cleaned_data.get('todos_alunos', False)
-                
-                # Salvar a atividade
-                atividade.save()
-                
-                # Limpar participantes existentes
-                atividade.participantes.clear()
-                
-                # Se marcou para incluir todos os alunos, adicionar todos os alunos da turma
-                if todos_alunos:
-                    # Importar o modelo Matricula dinamicamente
-                    Matricula = get_model_dynamically("matriculas", "Matricula")
-                    
-                    # Buscar alunos matriculados na turma
-                    matriculas = Matricula.objects.filter(turma=atividade.turma, status='A')
-                    alunos = [matricula.aluno for matricula in matriculas]
-                    
-                    # Adicionar alunos como participantes
-                    atividade.participantes.add(*alunos)
-                else:
-                    # Adicionar os participantes selecionados
-                    participantes = form.cleaned_data.get('participantes', [])
-                    if participantes:
-                        atividade.participantes.add(*participantes)
-                
-                messages.success(request, "Atividade ritualística atualizada com sucesso!")
-                return redirect(return_url)
-            except Exception as e:
-                messages.error(request, f"Erro ao atualizar atividade: {str(e)}")
-        else:
-            messages.error(request, "Por favor, corrija os erros abaixo.")
-    else:
-        form = AtividadeRitualisticaForm(instance=atividade)
-    
-    return render(
-        request, 
-        "atividades/formulario_atividade_ritualistica.html", 
-        {
-            "form": form, 
-            "atividade": atividade,
-            "return_url": return_url
-        }
-    )
-
-@login_required
-def excluir_atividade_ritualistica(request, pk):
-    """Exclui uma atividade ritualística."""
-    _, AtividadeRitualistica = get_models()
-    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
-    
-    if request.method == "POST":
-        try:
-            atividade.delete()
-            messages.success(request, "Atividade ritualística excluída com sucesso!")
-            return redirect("atividades:listar_atividades_ritualisticas")
-        except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade: {str(e)}")
-            return redirect("atividades:detalhar_atividade_ritualistica", pk=pk)
-    
-    return render(request, "atividades/excluir_atividade_ritualistica.html", {"atividade": atividade})
-
-@login_required
-def detalhar_atividade_ritualistica(request, pk):
-    """Exibe os detalhes de uma atividade ritualística."""
-    _, AtividadeRitualistica = get_models()
-    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
-    
-    # Calcular total de participantes
-    total_participantes = atividade.participantes.count()
-    
-    return render(
-        request, 
-        "atividades/detalhar_atividade_ritualistica.html", 
-        {
-            "atividade": atividade,
-            "total_participantes": total_participantes,
-            "return_url": request.META.get('HTTP_REFERER', 'atividades:listar_atividades_ritualisticas')
-        }
-    )
-
-@login_required
-def confirmar_exclusao_ritualistica(request, pk):
-    """Confirma a exclusão de uma atividade ritualística."""
-    _, AtividadeRitualistica = get_models()
-    atividade = get_object_or_404(AtividadeRitualistica, pk=pk)
-    
-    # Obter URL de retorno
-    return_url = request.GET.get('return_url', 'atividades:listar_atividades_ritualisticas')
-    
-    if request.method == "POST":
-        try:
-            atividade.delete()
-            messages.success(request, "Atividade ritualística excluída com sucesso!")
-            return redirect(return_url)
-        except Exception as e:
-            messages.error(request, f"Erro ao excluir atividade: {str(e)}")
-            return redirect("atividades:detalhar_atividade_ritualistica", pk=pk)
-    
-    return render(
-        request, 
-        "atividades/confirmar_exclusao_ritualistica.html", 
-        {
-            "atividade": atividade,
-            "return_url": return_url
-        }
-    )
-
-@login_required
-def copiar_atividade_ritualistica(request, id):
-    """Cria uma cópia de uma atividade ritualística existente."""
-    _, AtividadeRitualistica = get_models()
-    _, AtividadeRitualisticaForm = get_forms()
-    
-    atividade_original = get_object_or_404(AtividadeRitualistica, id=id)
-    
-    if request.method == "POST":
-        try:
-            # Criar uma nova atividade com os mesmos dados
-            nova_atividade = AtividadeRitualistica.objects.create(
-                nome=f"Cópia de {atividade_original.nome}",
-                descricao=atividade_original.descricao,
-                data=atividade_original.data,
-                hora_inicio=atividade_original.hora_inicio,
-                hora_fim=atividade_original.hora_fim,
-                local=atividade_original.local,
-                turma=atividade_original.turma
-            )
+            count = 0
+            errors = []
             
-            # Copiar os participantes
-            for participante in atividade_original.participantes.all():
-                nova_atividade.participantes.add(participante)
+            # Importar atividades acadêmicas
+            if tipo_atividade == "academica":
+                for row in reader:
+                    try:
+                        # Criar a atividade acadêmica
+                        atividade = AtividadeAcademica(
+                            nome=row.get("Nome", "").strip(),
+                            descricao=row.get("Descricao", "").strip(),
+                            data_inicio=parse_date_time(row.get("Data_Inicio", "")),
+                            data_fim=parse_date_time(row.get("Data_Fim", "")) if row.get("Data_Fim") else None,
+                            responsavel=row.get("Responsavel", "").strip(),
+                            local=row.get("Local", "").strip(),
+                            tipo_atividade=row.get("Tipo", "aula").strip().lower(),
+                            status=row.get("Status", "agendada").strip().lower()
+                        )
+                        
+                        # Validar e salvar
+                        atividade.full_clean()
+                        atividade.save()
+                        
+                        # Adicionar turmas
+                        turmas_str = row.get("Turmas", "").strip()
+                        if turmas_str:
+                            Turma = get_turma_model()
+                            turmas_ids = [t.strip() for t in turmas_str.split(",")]
+                            for turma_id in turmas_ids:
+                                try:
+                                    turma = Turma.objects.get(id=turma_id)
+                                    atividade.turmas.add(turma)
+                                except Turma.DoesNotExist:
+                                    errors.append(f"Turma com ID {turma_id} não encontrada para a atividade '{atividade.nome}'")
+                        
+                        count += 1
+                    except Exception as e:
+                        errors.append(f"Erro na linha {count+1}: {str(e)}")
             
-            messages.success(request, "Atividade ritualística copiada com sucesso!")
-            return redirect("atividades:detalhar_atividade_ritualistica", pk=nova_atividade.id)
+            # Importar atividades ritualísticas
+            elif tipo_atividade == "ritualistica":
+                for row in reader:
+                    try:
+                        # Obter a turma
+                        Turma = get_turma_model()
+                        turma_id = row.get("Turma", "").strip()
+                        try:
+                            turma = Turma.objects.get(id=turma_id)
+                        except Turma.DoesNotExist:
+                            errors.append(f"Turma com ID {turma_id} não encontrada para a atividade '{row.get('Nome', '')}'")
+                            continue
+                        
+                        # Criar a atividade ritualística
+                        atividade = AtividadeRitualistica(
+                            nome=row.get("Nome", "").strip(),
+                            descricao=row.get("Descricao", "").strip(),
+                            data=parse_date(row.get("Data", "")),
+                            hora_inicio=parse_time(row.get("Hora_Inicio", "")),
+                            hora_fim=parse_time(row.get("Hora_Fim", "")),
+                            local=row.get("Local", "").strip(),
+                            turma=turma
+                        )
+                        
+                        # Validar e salvar
+                        atividade.full_clean()
+                        atividade.save()
+                        
+                        # Adicionar participantes
+                        participantes_str = row.get("Participantes", "").strip()
+                        if participantes_str:
+                            Aluno = get_aluno_model()
+                            participantes_cpfs = [p.strip() for p in participantes_str.split(",")]
+                            for cpf in participantes_cpfs:
+                                try:
+                                    aluno = Aluno.objects.get(cpf=cpf)
+                                    atividade.participantes.add(aluno)
+                                except Aluno.DoesNotExist:
+                                    errors.append(f"Aluno com CPF {cpf} não encontrado para a atividade '{atividade.nome}'")
+                        
+                        count += 1
+                    except Exception as e:
+                        errors.append(f"Erro na linha {count+1}: {str(e)}")
+            
+            # Exibir mensagens de sucesso/erro
+            if errors:
+                messages.warning(
+                    request,
+                    f"{count} atividades importadas com {len(errors)} erros.",
+                )
+                for error in errors[:5]:  # Mostrar apenas os 5 primeiros erros
+                    messages.error(request, error)
+                if len(errors) > 5:
+                    messages.error(
+                        request, f"... e mais {len(errors) - 5} erros."
+                    )
+            else:
+                messages.success(
+                    request, f"{count} atividades importadas com sucesso!"
+                )
+            
+            # Redirecionar para a lista de atividades
+            if tipo_atividade == "academica":
+                return redirect("atividades:listar_atividades_academicas")
+            else:
+                return redirect("atividades:listar_atividades_ritualisticas")
+        
         except Exception as e:
-            messages.error(request, f"Erro ao copiar atividade: {str(e)}")
-            return redirect("atividades:detalhar_atividade_ritualistica", pk=id)
+            messages.error(request, f"Erro ao importar atividades: {str(e)}")
     
-    return render(
-        request, 
-        "atividades/confirmar_copia_ritualistica.html", 
-        {"atividade": atividade_original}
-    )
+    return render(request, "atividades/importar_atividades.html")
+
+
+
+### Arquivo: atividades\views\relatorios.py
+
+python
+import logging
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from django.db.models import Count
+from datetime import datetime, timedelta
+from django.views.decorators.http import require_GET
+
+from .utils import get_model_class
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 @login_required
 def relatorio_atividades(request):
-    """Exibe um relatório com estatísticas sobre as atividades."""
-    AtividadeAcademica, AtividadeRitualistica = get_models()
+    """Gera um relatório de atividades com base nos filtros aplicados."""
+    AtividadeAcademica = get_model_class("AtividadeAcademica")
+    AtividadeRitualistica = get_model_class("AtividadeRitualistica")
     
     # Obter parâmetros de filtro
-    tipo = request.GET.get("tipo", "todas")
-    status = request.GET.get("status", "")
-    data_inicio = request.GET.get("data_inicio", "")
-    data_fim = request.GET.get("data_fim", "")
+    tipo = request.GET.get('tipo', 'todas')
+    status = request.GET.get('status', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
     
     # Filtrar atividades acadêmicas
     atividades_academicas = AtividadeAcademica.objects.all()
+    
     if status:
         atividades_academicas = atividades_academicas.filter(status=status)
+    
     if data_inicio:
         atividades_academicas = atividades_academicas.filter(data_inicio__gte=data_inicio)
+    
     if data_fim:
         atividades_academicas = atividades_academicas.filter(data_inicio__lte=data_fim)
     
     # Filtrar atividades ritualísticas
     atividades_ritualisticas = AtividadeRitualistica.objects.all()
+    
     if data_inicio:
         atividades_ritualisticas = atividades_ritualisticas.filter(data__gte=data_inicio)
+    
     if data_fim:
         atividades_ritualisticas = atividades_ritualisticas.filter(data__lte=data_fim)
     
     # Aplicar filtro por tipo
-    if tipo == "academicas":
+    if tipo == 'academicas':
         atividades_ritualisticas = AtividadeRitualistica.objects.none()
-    elif tipo == "ritualisticas":
+    elif tipo == 'ritualisticas':
         atividades_academicas = AtividadeAcademica.objects.none()
     
     # Calcular totais
@@ -685,38 +1702,35 @@ def relatorio_atividades(request):
     total_ritualisticas = atividades_ritualisticas.count()
     total_atividades = total_academicas + total_ritualisticas
     
-    context = {
-        "atividades_academicas": atividades_academicas,
-        "atividades_ritualisticas": atividades_ritualisticas,
-        "total_academicas": total_academicas,
-        "total_ritualisticas": total_ritualisticas,
-        "total_atividades": total_atividades,
-        "tipo": tipo,
-        "status": status,
-        "data_inicio": data_inicio,
-        "data_fim": data_fim,
-        "filtros": {
+    return render(
+        request,
+        "atividades/relatorio_atividades.html",
+        {
+            "atividades_academicas": atividades_academicas,
+            "atividades_ritualisticas": atividades_ritualisticas,
+            "total_academicas": total_academicas,
+            "total_ritualisticas": total_ritualisticas,
+            "total_atividades": total_atividades,
             "tipo": tipo,
             "status": status,
             "data_inicio": data_inicio,
             "data_fim": data_fim,
-        }
-    }
-    
-    return render(request, "atividades/relatorio_atividades.html", context)
+        },
+    )
 
 @login_required
 def exportar_atividades(request, formato):
-    """Exporta as atividades para um arquivo no formato especificado."""
-    AtividadeAcademica, AtividadeRitualistica = get_models()
+    """Exporta as atividades filtradas para o formato especificado."""
+    # Obter os mesmos filtros que no relatório
+    tipo = request.GET.get('tipo', 'todas')
+    status = request.GET.get('status', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
     
-    # Obter parâmetros de filtro
-    tipo = request.GET.get("tipo", "todas")
-    status = request.GET.get("status", "")
-    data_inicio = request.GET.get("data_inicio", "")
-    data_fim = request.GET.get("data_fim", "")
+    # Obter atividades filtradas (mesmo código do relatório)
+    AtividadeAcademica = get_model_class("AtividadeAcademica")
+    AtividadeRitualistica = get_model_class("AtividadeRitualistica")
     
-    # Filtrar atividades acadêmicas
     atividades_academicas = AtividadeAcademica.objects.all()
     if status:
         atividades_academicas = atividades_academicas.filter(status=status)
@@ -725,157 +1739,169 @@ def exportar_atividades(request, formato):
     if data_fim:
         atividades_academicas = atividades_academicas.filter(data_inicio__lte=data_fim)
     
-    # Filtrar atividades ritualísticas
     atividades_ritualisticas = AtividadeRitualistica.objects.all()
     if data_inicio:
         atividades_ritualisticas = atividades_ritualisticas.filter(data__gte=data_inicio)
     if data_fim:
         atividades_ritualisticas = atividades_ritualisticas.filter(data__lte=data_fim)
     
-    # Aplicar filtro por tipo
-    if tipo == "academicas":
+    if tipo == 'academicas':
         atividades_ritualisticas = AtividadeRitualistica.objects.none()
-    elif tipo == "ritualisticas":
+    elif tipo == 'ritualisticas':
         atividades_academicas = AtividadeAcademica.objects.none()
     
-    # Exportar para CSV
-    if formato == "csv":
-        response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = 'attachment; filename="atividades.csv"'
-        
-        writer = csv.writer(response)
+    # Exportar para o formato solicitado
+    if formato == 'csv':
+        return exportar_atividades_csv(atividades_academicas, atividades_ritualisticas)
+    elif formato == 'excel':
+        return exportar_atividades_excel(atividades_academicas, atividades_ritualisticas)
+    elif formato == 'pdf':
+        return exportar_atividades_pdf(atividades_academicas, atividades_ritualisticas)
+    else:
+        messages.error(request, f"Formato de exportação '{formato}' não suportado.")
+        return redirect('atividades:relatorio_atividades')
+
+def exportar_atividades_csv(atividades_academicas, atividades_ritualisticas):
+    """Exporta as atividades para CSV."""
+    import csv
+    from django.http import HttpResponse
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="atividades.csv"'
+    
+    writer = csv.writer(response)
+    
+    # Cabeçalho para atividades acadêmicas
+    writer.writerow(['Tipo', 'Nome', 'Descrição', 'Data de Início', 'Data de Término', 
+                     'Responsável', 'Local', 'Status', 'Tipo de Atividade'])
+    
+    # Dados das atividades acadêmicas
+    for atividade in atividades_academicas:
         writer.writerow([
-            "Tipo", "Nome", "Descrição", "Data", "Local", "Status", "Turma(s)"
+            'Acadêmica',
+            atividade.nome,
+            atividade.descricao or '',
+            atividade.data_inicio.strftime('%d/%m/%Y'),
+            atividade.data_fim.strftime('%d/%m/%Y') if atividade.data_fim else '',
+            atividade.responsavel or '',
+            atividade.local or '',
+            atividade.get_status_display(),
+            atividade.get_tipo_atividade_display(),
         ])
+    
+    # Dados das atividades ritualísticas
+    for atividade in atividades_ritualisticas:
+        writer.writerow([
+            'Ritualística',
+            atividade.nome,
+            atividade.descricao or '',
+            atividade.data.strftime('%d/%m/%Y'),
+            '',  # Não tem data_fim
+            '',  # Não tem responsável
+            atividade.local,
+            '',  # Não tem status
+            '',  # Não tem tipo_atividade
+        ])
+    
+    return response
+
+def exportar_atividades_excel(atividades_academicas, atividades_ritualisticas):
+    """Exporta as atividades para Excel."""
+    # Implementação básica usando pandas
+    try:
+        import pandas as pd
+        from django.http import HttpResponse
+        from io import BytesIO
         
-        # Adicionar atividades acadêmicas
+        # Criar DataFrames para cada tipo de atividade
+        dados_academicas = []
         for atividade in atividades_academicas:
-            turmas = ", ".join([t.nome for t in atividade.turmas.all()])
-            writer.writerow([
-                "Acadêmica",
-                atividade.nome,
-                atividade.descricao,
-                atividade.data_inicio.strftime("%d/%m/%Y"),
-                atividade.local,
-                atividade.get_status_display(),
-                turmas
-            ])
+            dados_academicas.append({
+                'Tipo': 'Acadêmica',
+                'Nome': atividade.nome,
+                'Descrição': atividade.descricao or '',
+                'Data de Início': atividade.data_inicio,
+                'Data de Término': atividade.data_fim,
+                'Responsável': atividade.responsavel or '',
+                'Local': atividade.local or '',
+                'Status': atividade.get_status_display(),
+                'Tipo de Atividade': atividade.get_tipo_atividade_display(),
+            })
         
-        # Adicionar atividades ritualísticas
+        dados_ritualisticas = []
         for atividade in atividades_ritualisticas:
-            writer.writerow([
-                "Ritualística",
-                atividade.nome,
-                atividade.descricao,
-                atividade.data.strftime("%d/%m/%Y"),
-                atividade.local,
-                "N/A",  # Atividades ritualísticas não têm status
-                atividade.turma.nome
-            ])
+            dados_ritualisticas.append({
+                'Tipo': 'Ritualística',
+                'Nome': atividade.nome,
+                'Descrição': atividade.descricao or '',
+                'Data': atividade.data,
+                'Horário': f"{atividade.hora_inicio} - {atividade.hora_fim}",
+                'Local': atividade.local,
+                'Turma': atividade.turma.nome,
+                'Participantes': atividade.participantes.count(),
+            })
+        
+        # Criar arquivo Excel com múltiplas abas
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            if dados_academicas:
+                df_academicas = pd.DataFrame(dados_academicas)
+                df_academicas.to_excel(writer, sheet_name='Atividades Acadêmicas', index=False)
+            
+            if dados_ritualisticas:
+                df_ritualisticas = pd.DataFrame(dados_ritualisticas)
+                df_ritualisticas.to_excel(writer, sheet_name='Atividades Ritualísticas', index=False)
+        
+        # Configurar resposta HTTP
+        output.seek(0)
+        response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="atividades.xlsx"'
         
         return response
-    
-    # Exportar para Excel
-    elif formato == "excel":
-        try:
-            import xlwt
+    except ImportError:
+        # Fallback para CSV se pandas não estiver disponível
+        return exportar_atividades_csv(atividades_academicas, atividades_ritualisticas)
+
+def exportar_atividades_pdf(atividades_academicas, atividades_ritualisticas):
+    """Exporta as atividades para PDF."""
+    # Implementação básica usando reportlab
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import letter, landscape
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
+        from django.http import HttpResponse
+        import io
+        
+        # Configurar buffer e documento
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(letter))
+        elements = []
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = styles['Heading1']
+        subtitle_style = styles['Heading2']
+        
+        # Título
+        elements.append(Paragraph("Relatório de Atividades", title_style))
+        elements.append(Spacer(1, 12))
+        
+        # Atividades Acadêmicas
+        if atividades_academicas:
+            elements.append(Paragraph("Atividades Acadêmicas", subtitle_style))
+            elements.append(Spacer(1, 6))
             
-            response = HttpResponse(content_type="application/ms-excel")
-            response["Content-Disposition"] = 'attachment; filename="atividades.xls"'
+            # Dados para a tabela
+            data = [['Nome', 'Tipo', 'Data de Início', 'Status', 'Responsável']]
             
-            wb = xlwt.Workbook(encoding="utf-8")
-            ws = wb.add_sheet("Atividades")
-            
-            # Estilos
-            header_style = xlwt.easyxf("font: bold on; align: wrap on, vert centre, horiz center")
-            date_style = xlwt.easyxf("align: wrap on, vert centre, horiz left", num_format_str="DD/MM/YYYY")
-            
-            # Cabeçalho
-            row_num = 0
-            columns = [
-                "Tipo", "Nome", "Descrição", "Data", "Local", "Status", "Turma(s)"
-            ]
-            
-            for col_num, column_title in enumerate(columns):
-                ws.write(row_num, col_num, column_title, header_style)
-            
-            # Adicionar atividades acadêmicas
             for atividade in atividades_academicas:
-                row_num += 1
-                turmas = ", ".join([t.nome for t in atividade.turmas.all()])
-                
-                ws.write(row_num, 0, "Acadêmica")
-                ws.write(row_num, 1, atividade.nome)
-                ws.write(row_num, 2, atividade.descricao)
-                ws.write(row_num, 3, atividade.data_inicio, date_style)
-                ws.write(row_num, 4, atividade.local)
-                ws.write(row_num, 5, atividade.get_status_display())
-                ws.write(row_num, 6, turmas)
-            
-            # Adicionar atividades ritualísticas
-            for atividade in atividades_ritualisticas:
-                row_num += 1
-                
-                ws.write(row_num, 0, "Ritualística")
-                ws.write(row_num, 1, atividade.nome)
-                ws.write(row_num, 2, atividade.descricao)
-                ws.write(row_num, 3, atividade.data, date_style)
-                ws.write(row_num, 4, atividade.local)
-                ws.write(row_num, 5, "N/A")  # Atividades ritualísticas não têm status
-                ws.write(row_num, 6, atividade.turma.nome)
-            
-            wb.save(response)
-            return response
-        except ImportError:
-            messages.error(request, "A biblioteca xlwt não está instalada. Instale-a para exportar para Excel.")
-            return redirect("atividades:relatorio_atividades")
-    
-    # Exportar para PDF
-    elif formato == "pdf":
-        try:
-            from reportlab.lib import colors
-            from reportlab.lib.pagesizes import letter, landscape
-            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-            from reportlab.lib.styles import getSampleStyleSheet
-            from io import BytesIO
-            
-            buffer = BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=landscape(letter))
-            elements = []
-            
-            # Estilos
-            styles = getSampleStyleSheet()
-            title_style = styles["Heading1"]
-            
-            # Título
-            elements.append(Paragraph("Relatório de Atividades", title_style))
-            
-            # Dados da tabela
-            data = [["Tipo", "Nome", "Descrição", "Data", "Local", "Status", "Turma(s)"]]
-            
-            # Adicionar atividades acadêmicas
-            for atividade in atividades_academicas:
-                turmas = ", ".join([t.nome for t in atividade.turmas.all()])
                 data.append([
-                    "Acadêmica",
                     atividade.nome,
-                    atividade.descricao,
-                    atividade.data_inicio.strftime("%d/%m/%Y"),
-                    atividade.local,
+                    atividade.get_tipo_atividade_display(),
+                    atividade.data_inicio.strftime('%d/%m/%Y'),
                     atividade.get_status_display(),
-                    turmas
-                ])
-            
-            # Adicionar atividades ritualísticas
-            for atividade in atividades_ritualisticas:
-                data.append([
-                    "Ritualística",
-                    atividade.nome,
-                    atividade.descricao,
-                    atividade.data.strftime("%d/%m/%Y"),
-                    atividade.local,
-                    "N/A",  # Atividades ritualísticas não têm status
-                    atividade.turma.nome
+                    atividade.responsavel or 'Não informado',
                 ])
             
             # Criar tabela
@@ -885,655 +1911,537 @@ def exportar_atividades(request, formato):
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 12),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ]))
             
             elements.append(table)
+            elements.append(Spacer(1, 12))
+        
+        # Atividades Ritualísticas
+        if atividades_ritualisticas:
+            elements.append(Paragraph("Atividades Ritualísticas", subtitle_style))
+            elements.append(Spacer(1, 6))
             
-            # Gerar PDF
-            doc.build(elements)
+            # Dados para a tabela
+            data = [['Nome', 'Data', 'Horário', 'Local', 'Turma', 'Participantes']]
             
-            # Retornar resposta
-            buffer.seek(0)
-            response = HttpResponse(buffer, content_type="application/pdf")
-            response["Content-Disposition"] = 'attachment; filename="atividades.pdf"'
+            for atividade in atividades_ritualisticas:
+                data.append([
+                    atividade.nome,
+                    atividade.data.strftime('%d/%m/%Y'),
+                    f"{atividade.hora_inicio} - {atividade.hora_fim}",
+                    atividade.local,
+                    atividade.turma.nome,
+                    str(atividade.participantes.count()),
+                ])
             
-            return response
-        except ImportError:
-            messages.error(request, "As bibliotecas necessárias para gerar PDF não estão instaladas.")
-            return redirect("atividades:relatorio_atividades")
-    
-    # Formato não suportado
-    else:
-        messages.error(request, f"Formato de exportação '{formato}' não suportado.")
-        return redirect("atividades:relatorio_atividades")
+            # Criar tabela
+            table = Table(data)
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ]))
+            
+            elements.append(table)
+        
+        # Gerar PDF
+        doc.build(elements)
+        
+        # Configurar resposta HTTP
+        buffer.seek(0)
+        response = HttpResponse(buffer.read(), content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="atividades.pdf"'
+        
+        return response
+    except ImportError:
+        # Fallback para CSV se reportlab não estiver disponível
+        return exportar_atividades_csv(atividades_academicas, atividades_ritualisticas)
 
-@login_required
-def calendario_atividades(request):
-    """Exibe um calendário com todas as atividades."""
-    # Obter todas as turmas para o filtro
-    Turma = get_turma_model()
-    turmas = Turma.objects.filter(status='A')
-    
-    return render(request, "atividades/calendario_atividades.html", {"turmas": turmas})
-
-@login_required
-def dashboard_atividades(request):
-    """Exibe um dashboard com estatísticas sobre as atividades."""
-    AtividadeAcademica, AtividadeRitualistica = get_models()
-    
-    # Estatísticas gerais
-    total_academicas = AtividadeAcademica.objects.count()
-    total_ritualisticas = AtividadeRitualistica.objects.count()
-    
-    # Estatísticas por status
-    academicas_por_status = {
-        'agendada': AtividadeAcademica.objects.filter(status='agendada').count(),
-        'em_andamento': AtividadeAcademica.objects.filter(status='em_andamento').count(),
-        'concluida': AtividadeAcademica.objects.filter(status='concluida').count(),
-        'cancelada': AtividadeAcademica.objects.filter(status='cancelada').count(),
-    }
-    
-    # Estatísticas por tipo
-    academicas_por_tipo = {
-        'aula': AtividadeAcademica.objects.filter(tipo_atividade='aula').count(),
-        'palestra': AtividadeAcademica.objects.filter(tipo_atividade='palestra').count(),
-        'workshop': AtividadeAcademica.objects.filter(tipo_atividade='workshop').count(),
-        'seminario': AtividadeAcademica.objects.filter(tipo_atividade='seminario').count(),
-        'outro': AtividadeAcademica.objects.filter(tipo_atividade='outro').count(),
-    }
-    
-    # Atividades recentes
-    atividades_academicas_recentes = AtividadeAcademica.objects.all().order_by('-data_inicio')[:5]
-    atividades_ritualisticas_recentes = AtividadeRitualistica.objects.all().order_by('-data')[:5]
-    
-    #
-
-
-## Arquivos urls.py:
-
-
-### Arquivo: atividades\urls.py
-
-python
-from django.urls import path
-from . import views
-from .views.importacao import importar_atividades
-
-app_name = "atividades"  # Definindo o namespace
-
-urlpatterns = [
-    path("", views.listar_atividades, name="listar_atividades"),
-    # Atividades Acadêmicas
-    path(
-        "academicas/",
-        views.listar_atividades_academicas,
-        name="listar_atividades_academicas",
-    ),
-    path(
-        "academicas/criar/",
-        views.criar_atividade_academica,
-        name="criar_atividade_academica",
-    ),
-    path(
-        "academicas/editar/<int:pk>/",
-        views.editar_atividade_academica,
-        name="editar_atividade_academica",
-    ),
-    path(
-        "academicas/excluir/<int:pk>/",
-        views.excluir_atividade_academica,
-        name="excluir_atividade_academica",
-    ),
-    path(
-        "academicas/detalhar/<int:pk>/",
-        views.detalhar_atividade_academica,
-        name="detalhar_atividade_academica",
-    ),
-    path(
-        "academicas/confirmar-exclusao/<int:pk>/",
-        views.confirmar_exclusao_academica,
-        name="confirmar_exclusao_academica",
-    ),
-    path(
-        "academicas/<int:id>/copiar/",
-        views.copiar_atividade_academica,
-        name="copiar_atividade_academica",
-    ),
-    # Atividades Ritualísticas
-    path(
-        "ritualisticas/",
-        views.listar_atividades_ritualisticas,
-        name="listar_atividades_ritualisticas",
-    ),
-    path(
-        "ritualisticas/criar/",
-        views.criar_atividade_ritualistica,
-        name="criar_atividade_ritualistica",
-    ),
-    path(
-        "ritualisticas/editar/<int:pk>/",
-        views.editar_atividade_ritualistica,
-        name="editar_atividade_ritualistica",
-    ),
-    path(
-        "ritualisticas/excluir/<int:pk>/",
-        views.excluir_atividade_ritualistica,
-        name="excluir_atividade_ritualistica",
-    ),
-    path(
-        "ritualisticas/detalhar/<int:pk>/",
-        views.detalhar_atividade_ritualistica,
-        name="detalhar_atividade_ritualistica",
-    ),
-    path(
-        "ritualisticas/confirmar-exclusao/<int:pk>/",
-        views.confirmar_exclusao_ritualistica,
-        name="confirmar_exclusao_ritualistica",
-    ),
-    path(
-        "ritualisticas/<int:id>/copiar/",
-        views.copiar_atividade_ritualistica,
-        name="copiar_atividade_ritualistica",
-    ),
-    # Novas funcionalidades
-    path("relatorio/", views.relatorio_atividades, name="relatorio_atividades"),
-    path("exportar/<str:formato>/", views.exportar_atividades, name="exportar_atividades"),
-    path("calendario/", views.calendario_atividades, name="calendario_atividades"),
-    path("dashboard/", views.dashboard_atividades, name="dashboard_atividades"),
-    # Importação de atividades (nova funcionalidade)
-    path("importar/", importar_atividades, name="importar_atividades"),
-    # APIs
-    path("api/eventos/", views.api_eventos_calendario, name="api_eventos_calendario"),
-    path("api/evento/<int:evento_id>/", views.api_detalhe_evento, name="api_detalhe_evento"),
-]
-
-
-
-## Arquivos models.py:
-
-
-### Arquivo: atividades\models.py
-
-python
-# Adicione o seguinte código temporário para diagnóstico no início do arquivo:
-
-print("CARREGANDO MODELS.PY")
-# Imprimir os campos do modelo para diagnóstico
-try:
-    from django.db import models
-    import inspect
-
-    # Carregar o módulo atual
-    import sys
-
-    current_module = sys.modules[__name__]
-
-    # Encontrar todas as classes de modelo no módulo
-    for name, obj in inspect.getmembers(current_module):
-        if (
-            inspect.isclass(obj)
-            and issubclass(obj, models.Model)
-            and obj != models.Model
-        ):
-            print(f"Modelo: {name}")
-            for field in obj._meta.fields:
-                print(f"  - {field.name} ({field.__class__.__name__})")
-except Exception as e:
-    print(f"Erro ao inspecionar modelos: {e}")
-
-from django.db import models
-from django.utils import timezone
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from importlib import import_module
 
+from ..models import AtividadeAcademica
 
-def get_aluno_model():
-    alunos_module = import_module("alunos.models")
-    return getattr(alunos_module, "Aluno")
+@login_required
+def relatorio_atividades_curso_turma(request):
+    """
+    Relatório de atividades acadêmicas filtrado por curso e turma.
+    Suporta AJAX para atualização parcial da tabela.
+    """
+    Curso = import_module("cursos.models").Curso
+    Turma = import_module("turmas.models").Turma
+
+    cursos = Curso.objects.all()
+    turmas = Turma.objects.all()
+
+    curso_id = request.GET.get("curso")
+    turma_id = request.GET.get("turma")
+
+    atividades = AtividadeAcademica.objects.all()
+
+    if curso_id:
+        atividades = atividades.filter(turma__curso_id=curso_id)
+        turmas = turmas.filter(curso_id=curso_id)
+    if turma_id:
+        atividades = atividades.filter(turma_id=turma_id)
+
+    atividades = atividades.select_related("turma__curso").distinct()
+
+    context = {
+        "atividades": atividades,
+        "cursos": cursos,
+        "turmas": turmas,
+        "curso_selecionado": curso_id,
+        "turma_selecionada": turma_id,
+    }
+
+    # AJAX: retorna apenas o corpo da tabela para atualização dinâmica
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return render(request, "atividades/_tabela_atividades.html", context)
+
+    return render(request, "atividades/relatorio_atividades_curso_turma.html", context)
+
+@require_GET
+@login_required
+def ajax_turmas_por_curso_relatorio(request):
+    """
+    Endpoint AJAX: retorna as turmas de um curso em JSON (para relatório).
+    """
+    curso_id = request.GET.get("curso_id")
+    Turma = import_module("turmas.models").Turma
+    turmas = Turma.objects.filter(curso_id=curso_id).values("id", "nome")
+    return JsonResponse(list(turmas), safe=False)
+
+@require_GET
+@login_required
+def ajax_atividades_filtradas_relatorio(request):
+    """
+    Endpoint AJAX: retorna atividades filtradas por curso/turma para relatório.
+    Retorna HTML parcial da tabela.
+    """
+    return relatorio_atividades_curso_turma(request)
+
+
+
+
+### Arquivo: atividades\views\ritualisticas.py
+
+python
+import logging
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Q
+from importlib import import_module
+
+from .utils import get_form_class, get_model_class
+
+# Configurar logger
+logger = logging.getLogger(__name__)
+
+
+@login_required
+def listar_atividades_ritualisticas(request):
+    """Lista todas as atividades ritualísticas."""
+    try:
+        AtividadeRitualistica = get_model_class("AtividadeRitualistica")
+        
+        # Obter parâmetros de filtro
+        query = request.GET.get("q", "")
+        
+        # Consulta base
+        atividades = AtividadeRitualistica.objects.all().prefetch_related("participantes")
+        
+        # Aplicar filtros
+        if query:
+            atividades = atividades.filter(
+                Q(nome__icontains=query) |
+                Q(descricao__icontains=query)
+            )
+        
+        # Paginação
+        paginator = Paginator(atividades, 10)  # 10 itens por página
+        page = request.GET.get('page')
+        
+        try:
+            atividades_paginadas = paginator.page(page)
+        except PageNotAnInteger:
+            atividades_paginadas = paginator.page(1)
+        except EmptyPage:
+            atividades_paginadas = paginator.page(paginator.num_pages)
+        
+        context = {
+            "atividades": atividades_paginadas,
+            "page_obj": atividades_paginadas,
+            "query": query,
+            "total_atividades": atividades.count(),
+        }
+        
+        return render(
+            request, 
+            "atividades/ritualisticas/listar_atividades_ritualisticas.html", 
+            context
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao listar atividades ritualísticas: {str(e)}", 
+            exc_info=True
+        )
+        messages.error(
+            request, 
+            f"Ocorreu um erro ao listar as atividades: {str(e)}"
+        )
+        return render(
+            request,
+            "atividades/ritualisticas/listar_atividades_ritualisticas.html",
+            {
+                "atividades": [],
+                "page_obj": None,
+                "query": "",
+                "error_message": f"Erro ao listar atividades: {str(e)}",
+            }
+        )
+
+@login_required
+def criar_atividade_ritualistica(request):
+    """Cria uma nova atividade ritualística."""
+    try:
+        AtividadeRitualisticaForm = get_form_class("AtividadeRitualisticaForm")
+        
+        if request.method == "POST":
+            form = AtividadeRitualisticaForm(request.POST)
+            if form.is_valid():
+                atividade = form.save()
+                messages.success(
+                    request, 
+                    "Atividade ritualística criada com sucesso!"
+                )
+                return redirect("atividades:listar_atividades_ritualisticas")
+            else:
+                messages.error(request, "Por favor, corrija os erros abaixo.")
+        else:
+            form = AtividadeRitualisticaForm()
+        
+        return render(
+            request, 
+            "atividades/ritualisticas/form_atividade_ritualistica.html", 
+            {"form": form}
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao criar atividade ritualística: {str(e)}", 
+            exc_info=True
+        )
+        messages.error(
+            request, 
+            f"Ocorreu um erro ao criar a atividade: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_ritualisticas")
+
+@login_required
+def editar_atividade_ritualistica(request, id):
+    """Edita uma atividade ritualística existente."""
+    try:
+        AtividadeRitualistica = get_model_class("AtividadeRitualistica")
+        AtividadeRitualisticaForm = get_form_class("AtividadeRitualisticaForm")
+        
+        atividade = get_object_or_404(AtividadeRitualistica, id=id)
+        
+        if request.method == "POST":
+            form = AtividadeRitualisticaForm(request.POST, instance=atividade)
+            if form.is_valid():
+                form.save()
+                messages.success(
+                    request, 
+                    "Atividade ritualística atualizada com sucesso!"
+                )
+                return redirect("atividades:listar_atividades_ritualisticas")
+            else:
+                messages.error(request, "Por favor, corrija os erros abaixo.")
+        else:
+            form = AtividadeRitualisticaForm(instance=atividade)
+        
+        return render(
+            request, 
+            "atividades/ritualisticas/form_atividade_ritualistica.html", 
+            {"form": form, "atividade": atividade}
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao editar atividade ritualística {id}: {str(e)}", 
+            exc_info=True
+        )
+        messages.error(
+            request, 
+            f"Ocorreu um erro ao editar a atividade: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_ritualisticas")
+
+@login_required
+def detalhar_atividade_ritualistica(request, id):
+    """Exibe detalhes de uma atividade ritualística."""
+    try:
+        AtividadeRitualistica = get_model_class("AtividadeRitualistica")
+        
+        atividade = get_object_or_404(
+            AtividadeRitualistica.objects.prefetch_related("participantes"),
+            id=id
+        )
+        
+        return render(
+            request, 
+            "atividades/ritualisticas/detalhar_atividade_ritualistica.html", 
+            {"atividade": atividade}
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao detalhar atividade ritualística {id}: {str(e)}", 
+            exc_info=True
+        )
+        messages.error(
+            request, 
+            f"Ocorreu um erro ao exibir os detalhes da atividade: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_ritualisticas")
+
+@login_required
+def excluir_atividade_ritualistica(request, id):
+    """Exclui uma atividade ritualística."""
+    try:
+        AtividadeRitualistica = get_model_class("AtividadeRitualistica")
+        
+        atividade = get_object_or_404(AtividadeRitualistica, id=id)
+        
+        if request.method == "POST":
+            atividade.delete()
+            messages.success(
+                request, 
+                "Atividade ritualística excluída com sucesso!"
+            )
+            return redirect("atividades:listar_atividades_ritualisticas")
+        
+        return render(
+            request, 
+            "atividades/ritualisticas/excluir_atividade_ritualistica.html", 
+            {"atividade": atividade}
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao excluir atividade ritualística {id}: {str(e)}", 
+            exc_info=True
+        )
+        messages.error(
+            request, 
+            f"Ocorreu um erro ao excluir a atividade: {str(e)}"
+        )
+        return redirect("atividades:listar_atividades_ritualisticas")
+
+@login_required
+def copiar_atividade_ritualistica(request, id):
+    """Cria uma cópia de uma atividade ritualística existente."""
+    AtividadeRitualistica = get_model_class("AtividadeRitualistica")
+    AtividadeRitualisticaForm = get_form_class("AtividadeRitualisticaForm")
+    
+    # Obter atividade original
+    atividade_original = get_object_or_404(AtividadeRitualistica, id=id)
+    
+    if request.method == "POST":
+        # Criar formulário com dados do POST
+        form = AtividadeRitualisticaForm(request.POST)
+        
+        if form.is_valid():
+            # Salvar nova atividade sem os participantes
+            nova_atividade = form.save(commit=False)
+            nova_atividade.save()
+            
+            # Verificar se deve copiar participantes
+            copiar_participantes = request.POST.get('copiar_participantes') == 'on'
+            
+            if copiar_participantes:
+                # Copiar participantes da atividade original
+                for participante in atividade_original.participantes.all():
+                    nova_atividade.participantes.add(participante)
+                
+                messages.success(
+                    request, 
+                    f"Atividade copiada com sucesso! {atividade_original.participantes.count()} participantes foram copiados."
+                )
+            else:
+                # Salvar apenas os participantes selecionados no formulário
+                form.save_m2m()
+                messages.success(request, "Atividade copiada com sucesso!")
+            
+            return redirect("atividades:detalhar_atividade_ritualistica", pk=nova_atividade.id)
+        else:
+            messages.error(request, "Corrija os erros no formulário.")
+    else:
+        # Pré-preencher formulário com dados da atividade original
+        initial_data = {
+            'nome': f"Cópia de {atividade_original.nome}",
+            'descricao': atividade_original.descricao,
+            'data': atividade_original.data,
+            'hora_inicio': atividade_original.hora_inicio,
+            'hora_fim': atividade_original.hora_fim,
+            'local': atividade_original.local,
+            'turma': atividade_original.turma,
+        }
+        form = AtividadeRitualisticaForm(initial=initial_data)
+    
+    context = {
+        "form": form,
+        "atividade_original": atividade_original,
+    }
+    
+    return render(request, "atividades/copiar_atividade_ritualistica.html", context)
+
+
+
+### Arquivo: atividades\views\utils.py
+
+python
+import logging
+from django.shortcuts import get_object_or_404
+from importlib import import_module
+
+# Set up logger
+logger = logging.getLogger(__name__)
+
+
+def get_return_url(request, default_url):
+    """Obtém a URL de retorno do request ou usa o valor padrão."""
+    return_url = request.GET.get("return_url", "")
+    # Verificação básica de segurança
+    if not return_url or not return_url.startswith("/"):
+        return default_url
+    return return_url
+
+
+def get_form_class(form_name, app_name="atividades"):
+    """Obtém uma classe de formulário dinamicamente."""
+    try:
+        forms_module = import_module(f"{app_name}.forms")
+        return getattr(forms_module, form_name)
+    except (ImportError, AttributeError) as e:
+        logger.error("Erro ao obter formulário %s: %s", form_name, str(e))
+        raise
+
+
+def get_model_class(model_name, app_name="atividades"):
+    """Obtém uma classe de modelo dinamicamente."""
+    try:
+        models_module = import_module(f"{app_name}.models")
+        return getattr(models_module, model_name)
+    except (ImportError, AttributeError) as e:
+        logger.error("Erro ao obter modelo %s: %s", model_name, str(e))
+        raise
+def get_messages():
+    """Importa o módulo messages do Django."""
+    from django.contrib import messages
+    return messages
+
+def get_models():
+    """Obtém os modelos AtividadeAcademica e AtividadeRitualistica."""
+    atividades_module = import_module("atividades.models")
+    AtividadeAcademica = getattr(atividades_module, "AtividadeAcademica")
+    AtividadeRitualistica = getattr(atividades_module, "AtividadeRitualistica")
+    return AtividadeAcademica, AtividadeRitualistica
+
+
+def get_forms():
+    """Obtém os formulários AtividadeAcademicaForm e AtividadeRitualisticaForm."""
+    atividades_forms = import_module("atividades.forms")
+    AtividadeAcademicaForm = getattr(atividades_forms, "AtividadeAcademicaForm")
+    AtividadeRitualisticaForm = getattr(atividades_forms, "AtividadeRitualisticaForm")
+    return AtividadeAcademicaForm, AtividadeRitualisticaForm
 
 
 def get_turma_model():
+    """Obtém o modelo Turma."""
     turmas_module = import_module("turmas.models")
     return getattr(turmas_module, "Turma")
 
 
-class AtividadeAcademica(models.Model):
-    TIPO_CHOICES = (
-        ("aula", "Aula"),
-        ("palestra", "Palestra"),
-        ("workshop", "Workshop"),
-        ("seminario", "Seminário"),
-        ("outro", "Outro"),
-    )
+def get_aluno_model():
+    """Obtém o modelo Aluno."""
+    alunos_module = import_module("alunos.models")
+    return getattr(alunos_module, "Aluno")
 
-    STATUS_CHOICES = (
-        ("agendada", "Agendada"),
-        ("em_andamento", "Em Andamento"),
-        ("concluida", "Concluída"),
-        ("cancelada", "Cancelada"),
-    )
+from importlib import import_module
 
-    nome = models.CharField(max_length=100)
+def get_cursos():
+    Curso = import_module("cursos.models").Curso
+    return Curso.objects.all()
 
-    @property
-    def titulo(self):
-        return self.nome
+def get_turmas(curso_id=None):
+    Turma = import_module("turmas.models").Turma
+    if curso_id:
+        return Turma.objects.filter(curso_id=curso_id)
+    return Turma.objects.all()
 
-    @titulo.setter
-    def titulo(self, value):
-        self.nome = value
-
-    descricao = models.TextField(
-        blank=True, null=True, verbose_name="Descrição"
-    )
-    data_inicio = models.DateTimeField(
-        default=timezone.now, verbose_name="Data de Início"
-    )
-    data_fim = models.DateTimeField(
-        blank=True, null=True, verbose_name="Data de Término"
-    )
-    responsavel = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Responsável"
-    )
-    local = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Local"
-    )
-    tipo_atividade = models.CharField(
-        max_length=20,
-        choices=TIPO_CHOICES,
-        default="aula",
-        verbose_name="Tipo de Atividade",
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="agendada",
-        verbose_name="Status",
-    )
-    
-    # Novo campo para múltiplas turmas
-    turmas = models.ManyToManyField(
-        "turmas.Turma",
-        related_name="atividades_academicas",
-        verbose_name="Turmas"
-    )
-
-    def __str__(self):
-        return self.titulo or self.nome
-
-    class Meta:
-        verbose_name = "Atividade Acadêmica"
-        verbose_name_plural = "Atividades Acadêmicas"
-
-
-class AtividadeRitualistica(models.Model):
-    nome = models.CharField(max_length=100, verbose_name="Nome")
-    descricao = models.TextField(
-        blank=True, null=True, verbose_name="Descrição"
-    )
-    data = models.DateField(verbose_name="Data")
-    hora_inicio = models.TimeField(verbose_name="Hora de Início")
-    hora_fim = models.TimeField(verbose_name="Hora de Término")
-    local = models.CharField(max_length=100, verbose_name="Local")
-    turma = models.ForeignKey(
-        get_turma_model(), on_delete=models.CASCADE, verbose_name="Turma"
-    )
-    participantes = models.ManyToManyField(
-        get_aluno_model(),
-        blank=True,
-        verbose_name="Participantes",
-        related_name="atividades_ritualisticas",
-    )
-
-    def __str__(self):
-        return f"{self.nome} - {self.data}"
-
-    class Meta:
-        verbose_name = "Atividade Ritualística"
-        verbose_name_plural = "Atividades Ritualísticas"
-        ordering = ["-data", "hora_inicio"]
-
+def get_atividades_academicas(curso_id=None, turma_id=None, query=None):
+    from ..models import AtividadeAcademica
+    atividades = AtividadeAcademica.objects.all()
+    if curso_id:
+        atividades = atividades.filter(turma__curso_id=curso_id)
+    if turma_id:
+        atividades = atividades.filter(turma_id=turma_id)
+    if query:
+        from django.db.models import Q
+        atividades = atividades.filter(
+            Q(nome__icontains=query) | Q(descricao__icontains=query)
+        )
+    return atividades.select_related("turma__curso").distinct()
 
 
 ## Arquivos de Template:
 
 
-### Arquivo: atividades\templates\atividades\calendario_atividades.html
+### Arquivo: atividades\templates\atividades\_tabela_atividades.html
 
 html
-{% extends 'base.html' %}
-
-{% block title %}Calendário de Atividades{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css">
-<style>
-    #calendar {
-        max-width: 1100px;
-        margin: 0 auto;
-    }
-    
-    .fc-event {
-        cursor: pointer;
-    }
-    
-    .fc-event-title {
-        font-weight: bold;
-    }
-    
-    .fc-event-time {
-        font-size: 0.9em;
-    }
-    
-    .academica-event {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
-    }
-    
-    .ritualistica-event {
-        background-color: #17a2b8;
-        border-color: #17a2b8;
-    }
-    
-    .agendada-event {
-        border-left: 5px solid #ffc107;
-    }
-    
-    .em_andamento-event {
-        border-left: 5px solid #0dcaf0;
-    }
-    
-    .concluida-event {
-        border-left: 5px solid #198754;
-    }
-    
-    .cancelada-event {
-        border-left: 5px solid #dc3545;
-        text-decoration: line-through;
-        opacity: 0.7;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Calendário de Atividades</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
-            <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-success me-2">
-                <i class="fas fa-chart-bar"></i> Dashboard
-            </a>
-            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning me-2">
-                <i class="fas fa-file-alt"></i> Relatórios
-            </a>
-            <div class="btn-group">
-                <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-outline-primary">Atividades Acadêmicas</a>
-                <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-outline-info">Atividades Ritualísticas</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Filtros</h5>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="mostrar-concluidas" checked>
-                    <label class="form-check-label" for="mostrar-concluidas">Mostrar atividades concluídas</label>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="filtro-tipo" class="form-label">Tipo de Atividade</label>
-                        <select id="filtro-tipo" class="form-select">
-                            <option value="todas" selected>Todas</option>
-                            <option value="academicas">Acadêmicas</option>
-                            <option value="ritualisticas">Ritualísticas</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="filtro-turma" class="form-label">Turma</label>
-                        <select id="filtro-turma" class="form-select">
-                            <option value="todas" selected>Todas</option>
-                            {% for turma in turmas %}
-                                <option value="{{ turma.id }}">{{ turma.nome }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex justify-content-end">
-                <button id="aplicar-filtros" class="btn btn-primary">
-                    <i class="fas fa-filter"></i> Aplicar Filtros
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="card">
-        <div class="card-body">
-            <div id="calendar"></div>
-        </div>
-    </div>
-    
-    <!-- Modal para detalhes da atividade -->
-    <div class="modal fade" id="atividadeModal" tabindex="-1" aria-labelledby="atividadeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="atividadeModalLabel">Detalhes da Atividade</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body" id="atividadeModalBody">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Carregando...</span>
-                        </div>
-                        <p>Carregando detalhes da atividade...</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                    <a href="#" class="btn btn-primary" id="verDetalhesBtn">Ver Detalhes Completos</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales-all.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar o calendário
-        var calendarEl = document.getElementById('calendar');
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
-            },
-            locale: 'pt-br',
-            buttonText: {
-                today: 'Hoje',
-                month: 'Mês',
-                week: 'Semana',
-                day: 'Dia',
-                list: 'Lista'
-            },
-            events: function(info, successCallback, failureCallback) {
-                // Obter filtros
-                const tipoFiltro = document.getElementById('filtro-tipo').value;
-                const turmaFiltro = document.getElementById('filtro-turma').value;
-                const mostrarConcluidas = document.getElementById('mostrar-concluidas').checked;
-                
-                // Construir URL com parâmetros de filtro
-                let url = '{% url "atividades:api_eventos_calendario" %}';
-                url += '?start=' + info.startStr + '&end=' + info.endStr;
-                url += '&tipo=' + tipoFiltro;
-                url += '&turma=' + turmaFiltro;
-                url += '&concluidas=' + (mostrarConcluidas ? '1' : '0');
-                
-                // Fazer requisição AJAX
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
-                        successCallback(data);
-                    })
-                    .catch(error => {
-                        console.error('Erro ao carregar eventos:', error);
-                        failureCallback(error);
-                    });
-            },
-            eventClick: function(info) {
-                // Abrir modal com detalhes do evento
-                const modal = new bootstrap.Modal(document.getElementById('atividadeModal'));
-                const modalBody = document.getElementById('atividadeModalBody');
-                const verDetalhesBtn = document.getElementById('verDetalhesBtn');
-                
-                // Limpar conteúdo anterior e mostrar loader
-                modalBody.innerHTML = `
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Carregando...</span>
-                        </div>
-                        <p>Carregando detalhes da atividade...</p>
-                    </div>
-                `;
-                
-                // Configurar link para detalhes completos
-                const eventoId = info.event.id;
-                const tipoEvento = info.event.extendedProps.tipo;
-                
-                if (tipoEvento === 'academica') {
-                    verDetalhesBtn.href = '{% url "atividades:detalhar_atividade_academica" 0 %}'.replace('0', eventoId);
-                } else {
-                    verDetalhesBtn.href = '{% url "atividades:detalhar_atividade_ritualistica" 0 %}'.replace('0', eventoId);
-                }
-                
-                // Carregar detalhes do evento via AJAX
-                fetch(`/atividades/api/evento/${eventoId}/?tipo=${tipoEvento}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Renderizar detalhes do evento
-                            if (tipoEvento === 'academica') {
-                                modalBody.innerHTML = `
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <p><strong>Nome:</strong> ${data.evento.nome}</p>
-                                            <p><strong>Tipo:</strong> ${data.evento.tipo_display}</p>
-                                            <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(data.evento.status)}">${data.evento.status_display}</span></p>
-                                            <p><strong>Responsável:</strong> ${data.evento.responsavel || 'Não informado'}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <p><strong>Data de Início:</strong> ${data.evento.data_inicio}</p>
-                                            <p><strong>Data de Término:</strong> ${data.evento.data_fim || 'Não definida'}</p>
-                                            <p><strong>Local:</strong> ${data.evento.local || 'Não informado'}</p>
-                                            <p><strong>Turma:</strong> ${data.evento.turma}</p>
-                                        </div>
-                                    </div>
-                                    <hr>
-                                    <div>
-                                        <h6>Descrição:</h6>
-                                        <p>${data.evento.descricao || 'Sem descrição'}</p>
-                                    </div>
-                                `;
-                            } else {
-                                modalBody.innerHTML = `
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <p><strong>Nome:</strong> ${data.evento.nome}</p>
-                                            <p><strong>Data:</strong> ${data.evento.data}</p>
-                                            <p><strong>Horário:</strong> ${data.evento.hora_inicio} - ${data.evento.hora_fim}</p>
-                                            <p><strong>Local:</strong> ${data.evento.local}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <p><strong>Turma:</strong> ${data.evento.turma}</p>
-                                            <p><strong>Total de Participantes:</strong> ${data.evento.total_participantes}</p>
-                                        </div>
-                                    </div>
-                                    <hr>
-                                    <div>
-                                        <h6>Descrição:</h6>
-                                        <p>${data.evento.descricao || 'Sem descrição'}</p>
-                                    </div>
-                                `;
-                            }
-                        } else {
-                            modalBody.innerHTML = `<div class="alert alert-danger">Erro ao carregar detalhes: ${data.error}</div>`;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erro ao carregar detalhes do evento:', error);
-                        modalBody.innerHTML = `<div class="alert alert-danger">Erro ao carregar detalhes do evento.</div>`;
-                    });
-                
-                modal.show();
-            },
-            eventClassNames: function(arg) {
-                const classes = [];
-                
-                // Adicionar classe baseada no tipo de atividade
-                if (arg.event.extendedProps.tipo === 'academica') {
-                    classes.push('academica-event');
-                } else {
-                    classes.push('ritualistica-event');
-                }
-                
-                // Adicionar classe baseada no status (apenas para atividades acadêmicas)
-                if (arg.event.extendedProps.status) {
-                    classes.push(arg.event.extendedProps.status + '-event');
-                }
-                
-                return classes;
-            }
-        });
-        
-        calendar.render();
-        
-        // Função auxiliar para obter classe CSS do badge de status
-        function getStatusBadgeClass(status) {
-            switch (status) {
-                case 'agendada': return 'bg-warning';
-                case 'em_andamento': return 'bg-info';
-                case 'concluida': return 'bg-success';
-                case 'cancelada': return 'bg-secondary';
-                default: return 'bg-secondary';
-            }
-        }
-        
-        // Atualizar calendário quando os filtros mudarem
-        document.getElementById('filtro-tipo').addEventListener('change', function() {
-            calendar.refetchEvents();
-        });
-        
-        document.getElementById('filtro-turma').addEventListener('change', function() {
-            calendar.refetchEvents();
-        });
-        
-        document.getElementById('mostrar-concluidas').addEventListener('change', function() {
-            calendar.refetchEvents();
-        });
-    });
-</script>
-{% endblock %}
+<tbody>
+  {% for atividade in atividades %}
+    <tr>
+      <td>{{ atividade.nome }}</td>
+      <td>{{ atividade.curso.nome }}</td>
+      <td>
+        {% for turma in atividade.turmas.all %}
+          <span class="badge bg-secondary">{{ turma.nome }}</span>
+        {% empty %}
+          <span class="text-muted">Nenhuma</span>
+        {% endfor %}
+      </td>
+      <td>{{ atividade.get_tipo_display }}</td>
+      <td>{{ atividade.get_status_display }}</td>
+      <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+      <td>
+        <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info" title="Detalhes">Detalhes</a>
+        <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar">Editar</a>
+        <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir">Excluir</a>
+      </td>
+    </tr>
+  {% empty %}
+    <tr>
+      <td colspan="7" class="text-center">Nenhuma atividade encontrada.</td>
+    </tr>
+  {% endfor %}
+</tbody>
 
 
 
-### Arquivo: atividades\templates\atividades\confirmar_copia_academica.html
+### Arquivo: atividades\templates\atividades\academicas\confirmar_copia_academica.html
 
 html
 {% extends 'base.html' %}
@@ -1584,50 +2492,7 @@ html
 
 
 
-### Arquivo: atividades\templates\atividades\confirmar_copia_ritualistica.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Copiar Atividade Ritualística{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1>Copiar Atividade Ritualística</h1>
-    
-    <div class="alert alert-info">
-        <p>Você está prestes a criar uma cópia da atividade ritualística <strong>"{{ atividade.nome }}"</strong>.</p>
-        <p>A nova atividade terá os mesmos dados e participantes da original.</p>
-    </div>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Informações da Atividade Original</h5>
-        </div>
-        <div class="card-body">
-            <p><strong>Nome:</strong> {{ atividade.nome }}</p>
-            <p><strong>Descrição:</strong> {{ atividade.descricao|default:"Não informada" }}</p>
-            <p><strong>Data:</strong> {{ atividade.data|date:"d/m/Y" }}</p>
-            <p><strong>Horário:</strong> {{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</p>
-            <p><strong>Local:</strong> {{ atividade.local }}</p>
-            <p><strong>Turma:</strong> {{ atividade.turma }}</p>
-            <p><strong>Total de Participantes:</strong> {{ atividade.participantes.count }}</p>
-        </div>
-    </div>
-    
-    <form method="post">
-        {% csrf_token %}
-        <div class="d-flex">
-            <button type="submit" class="btn btn-primary me-2">Criar Cópia</button>
-            <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-secondary">Cancelar</a>
-        </div>
-    </form>
-</div>
-{% endblock %}
-
-
-
-### Arquivo: atividades\templates\atividades\confirmar_exclusao_academica.html
+### Arquivo: atividades\templates\atividades\academicas\confirmar_exclusao_academica.html
 
 html
 {% extends 'base.html' %}
@@ -1671,50 +2536,7 @@ html
 
 
 
-### Arquivo: atividades\templates\atividades\confirmar_exclusao_ritualistica.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Excluir Atividade Ritualística{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1>Excluir Atividade Ritualística</h1>
-    
-    <div class="alert alert-danger">
-        <p>Tem certeza que deseja excluir a atividade ritualística "{{ atividade.nome }}"?</p>
-        <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
-    </div>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Informações da Atividade</h5>
-        </div>
-        <div class="card-body">
-            <p><strong>Nome:</strong> {{ atividade.nome }}</p>
-            <p><strong>Data:</strong> {{ atividade.data|date:"d/m/Y" }}</p>
-            <p><strong>Horário:</strong> {{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</p>
-            <p><strong>Local:</strong> {{ atividade.local }}</p>
-            <p><strong>Turma:</strong> {{ atividade.turma }}</p>
-            <p><strong>Total de Participantes:</strong> {{ atividade.participantes.count }}</p>
-        </div>
-    </div>
-    
-    <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="return_url" value="{{ return_url }}">
-        <div class="d-flex">
-            <button type="submit" class="btn btn-danger me-2">Sim, excluir</button>
-            <a href="{{ return_url }}" class="btn btn-secondary">Cancelar</a>
-        </div>
-    </form>
-</div>
-{% endblock %}
-
-
-
-### Arquivo: atividades\templates\atividades\copiar_atividade_academica.html
+### Arquivo: atividades\templates\atividades\academicas\copiar_atividade_academica.html
 
 html
 {% extends 'base.html' %}
@@ -1823,687 +2645,6 @@ html
         </div>
     </form>
 </div>
-{% endblock %}
-
-
-
-### Arquivo: atividades\templates\atividades\copiar_atividade_ritualistica.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Copiar Atividade Ritualística{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Copiar Atividade Ritualística</h1>
-        <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
-    </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Atividade Original</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Nome:</strong> {{ atividade_original.nome }}</p>
-                    <p><strong>Data:</strong> {{ atividade_original.data|date:"d/m/Y" }}</p>
-                    <p><strong>Horário:</strong> {{ atividade_original.hora_inicio }} - {{ atividade_original.hora_fim }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Local:</strong> {{ atividade_original.local }}</p>
-                    <p><strong>Turma:</strong> {{ atividade_original.turma.nome }}</p>
-                    <p><strong>Participantes:</strong> {{ atividade_original.participantes.count }}</p>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <p><strong>Descrição:</strong></p>
-                    <p>{{ atividade_original.descricao|default:"Sem descrição"|linebreaks }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <form method="post">
-        {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Informações da Nova Atividade</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.local %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.data %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_inicio %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_fim %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.turma %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
-                    </div>
-                </div>
-                <div class="form-check mt-3">
-                    <input class="form-check-input" type="checkbox" id="copiar_participantes" name="copiar_participantes" checked>
-                    <label class="form-check-label" for="copiar_participantes">
-                        Copiar lista de participantes da atividade original
-                    </label>
-                </div>
-            </div>
-        </div>
-        
-        <div class="d-flex justify-content-between mb-5">
-            <a href="javascript:history.back()" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Criar Cópia</button>
-        </div>
-    </form>
-</div>
-{% endblock %}
-
-
-
-### Arquivo: atividades\templates\atividades\criar_atividade_academica.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Criar Nova Atividade Acadêmica{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Criar Nova Atividade Acadêmica</h1>
-        <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Voltar para a lista</a>
-    </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Informações Básicas</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=<form action="" class="nome"></form> %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.responsavel %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Data e Local</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        {% include 'includes/form_field.html' with field=form.data_inicio %}
-                    </div>
-                    <div class="col-md-3">
-                        {% include 'includes/form_field.html' with field=form.data_fim %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.local %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Classificação</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.tipo_atividade %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.status %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.turma %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="d-flex justify-content-between mb-5">
-            <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Criar Atividade</button>
-        </div>
-    </form>
-</div>
-{% endblock %}
-<div class="d-flex justify-content-between mb-5">
-    <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Voltar para a lista</a>
-    <button type="submit" class="btn btn-primary">Criar Atividade</button>
-</div>
-
-
-
-### Arquivo: atividades\templates\atividades\criar_atividade_ritualistica.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Criar Nova Atividade Ritualística{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Criar Nova Atividade Ritualística</h1>
-        <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">Voltar para a lista</a>
-    </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Informações Básicas</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.local %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Data e Horário</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.data %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_inicio %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_fim %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Turma e Participantes</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.turma %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.todos_alunos %}
-                        <small class="form-text text-muted">Marque esta opção para incluir automaticamente todos os alunos da turma.</small>
-                    </div>
-                </div>
-                
-                <div class="row mt-3" id="participantes-container">
-                    <div class="col-md-12">
-                        <label for="{{ form.participantes.id_for_label }}">{{ form.participantes.label }}</label>
-                        <div class="border p-3 rounded">
-                            {{ form.participantes }}
-                        </div>
-                        {% if form.participantes.errors %}
-                            <div class="text-danger">
-                                {{ form.participantes.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="d-flex justify-content-between mb-5">
-            <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Criar Atividade</button>
-        </div>
-    </form>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const todosAlunosCheckbox = document.getElementById('{{ form.todos_alunos.id_for_label }}');
-        const participantesContainer = document.getElementById('participantes-container');
-        
-        function toggleParticipantes() {
-            if (todosAlunosCheckbox.checked) {
-                participantesContainer.style.display = 'none';
-            } else {
-                participantesContainer.style.display = 'block';
-            }
-        }
-        
-        // Inicializar
-        toggleParticipantes();
-        
-        // Adicionar listener para mudanças
-        todosAlunosCheckbox.addEventListener('change', toggleParticipantes);
-    });
-</script>
-{% endblock %}
-
-
-
-
-### Arquivo: atividades\templates\atividades\dashboard.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Dashboard de Atividades{% endblock %}
-
-{% block extra_css %}
-<style>
-    .stat-card {
-        transition: transform 0.3s;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .chart-container {
-        position: relative;
-        height: 300px;
-        margin-bottom: 20px;
-    }
-    
-    .activity-item {
-        border-left: 4px solid #dee2e6;
-        padding-left: 15px;
-        margin-bottom: 15px;
-        position: relative;
-    }
-    
-    .activity-item.academica {
-        border-left-color: #0d6efd;
-    }
-    
-    .activity-item.ritualistica {
-        border-left-color: #17a2b8;
-    }
-    
-    .activity-item .date {
-        font-size: 0.85rem;
-        color: #6c757d;
-    }
-    
-    .activity-item .title {
-        font-weight: 600;
-        margin: 5px 0;
-    }
-    
-    .activity-item .status {
-        position: absolute;
-        top: 0;
-        right: 0;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Dashboard de Atividades</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
-            <a href="{% url 'atividades:calendario_atividades' %}" class="btn btn-info me-2">
-                <i class="fas fa-calendar-alt"></i> Calendário
-            </a>
-            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning me-2">
-                <i class="fas fa-file-alt"></i> Relatórios
-            </a>
-            <div class="btn-group">
-                <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-outline-primary">Atividades Acadêmicas</a>
-                <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-outline-info">Atividades Ritualísticas</a>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Estatísticas Gerais -->
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="card stat-card h-100 border-primary">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Total de Atividades</h5>
-                    <p class="display-4">{{ total_academicas|add:total_ritualisticas }}</p>
-                    <div class="d-flex justify-content-around mt-3">
-                        <div>
-                            <span class="badge bg-primary">Acadêmicas</span>
-                            <h5>{{ total_academicas }}</h5>
-                        </div>
-                        <div>
-                            <span class="badge bg-info">Ritualísticas</span>
-                            <h5>{{ total_ritualisticas }}</h5>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card stat-card h-100 border-success">
-                <div class="card-body">
-                    <h5 class="card-title text-center">Atividades por Status</h5>
-                    <div class="mt-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Agendadas</span>
-                            <span class="badge bg-warning">{{ academicas_por_status.agendada|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-warning" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_status.agendada|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_status.agendada|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Em Andamento</span>
-                            <span class="badge bg-info">{{ academicas_por_status.em_andamento|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-info" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_status.em_andamento|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_status.em_andamento|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Concluídas</span>
-                            <span class="badge bg-success">{{ academicas_por_status.concluida|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-success" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_status.concluida|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_status.concluida|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Canceladas</span>
-                            <span class="badge bg-danger">{{ academicas_por_status.cancelada|default:"0" }}</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar bg-danger" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_status.cancelada|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_status.cancelada|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card stat-card h-100 border-info">
-                <div class="card-body">
-                    <h5 class="card-title text-center">Atividades por Tipo</h5>
-                    <div class="mt-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Aulas</span>
-                            <span class="badge bg-primary">{{ academicas_por_tipo.aula|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-primary" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_tipo.aula|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_tipo.aula|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Palestras</span>
-                            <span class="badge bg-success">{{ academicas_por_tipo.palestra|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-success" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_tipo.palestra|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_tipo.palestra|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Workshops</span>
-                            <span class="badge bg-warning">{{ academicas_por_tipo.workshop|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-warning" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_tipo.workshop|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_tipo.workshop|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Seminários</span>
-                            <span class="badge bg-info">{{ academicas_por_tipo.seminario|default:"0" }}</span>
-                        </div>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-info" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_tipo.seminario|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_tipo.seminario|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Outros</span>
-                            <span class="badge bg-secondary">{{ academicas_por_tipo.outro|default:"0" }}</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar bg-secondary" role="progressbar" 
-                                 style="width: {% widthratio academicas_por_tipo.outro|default:0 total_academicas 100 %}%" 
-                                 aria-valuenow="{{ academicas_por_tipo.outro|default:0 }}" 
-                                 aria-valuemin="0" aria-valuemax="{{ total_academicas }}"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Gráfico de Atividades por Mês -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Atividades por Mês (Últimos 6 Meses)</h5>
-        </div>
-        <div class="card-body">
-            <div class="chart-container">
-                <canvas id="atividadesPorMesChart"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Atividades Recentes -->
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Atividades Acadêmicas Recentes</h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        {% for atividade in atividades_academicas_recentes %}
-                            <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ atividade.nome }}</h6>
-                                    <small>{{ atividade.data_inicio|date:"d/m/Y" }}</small>
-                                </div>
-                                <p class="mb-1">{{ atividade.descricao|truncatechars:100 }}</p>
-                                <small>
-                                    <span class="badge {% if atividade.status == 'agendada' %}bg-warning{% elif atividade.status == 'em_andamento' %}bg-info{% elif atividade.status == 'concluida' %}bg-success{% else %}bg-secondary{% endif %}">
-                                        {{ atividade.get_status_display }}
-                                    </span>
-                                    <span class="badge bg-primary">{{ atividade.get_tipo_atividade_display }}</span>
-                                </small>
-                            </a>
-                        {% empty %}
-                            <div class="list-group-item">
-                                <p class="mb-0 text-muted">Nenhuma atividade acadêmica recente.</p>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Atividades Ritualísticas Recentes</h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        {% for atividade in atividades_ritualisticas_recentes %}
-                            <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ atividade.nome }}</h6>
-                                    <small>{{ atividade.data|date:"d/m/Y" }}</small>
-                                </div>
-                                <p class="mb-1">{{ atividade.descricao|truncatechars:100 }}</p>
-                                <small>
-                                    <span class="badge bg-info">{{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</span>
-                                    <span class="badge bg-secondary">{{ atividade.local }}</span>
-                                </small>
-                            </a>
-                        {% empty %}
-                            <div class="list-group-item">
-                                <p class="mb-0 text-muted">Nenhuma atividade ritualística recente.</p>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Dados para o gráfico de atividades por mês
-        var ctx = document.getElementById('atividadesPorMesChart').getContext('2d');
-        var myChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: {{ meses|safe }},
-                datasets: [
-                    {
-                        label: 'Atividades Acadêmicas',
-                        data: {{ dados_academicas }},
-                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                        borderColor: 'rgba(13, 110, 253, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Atividades Ritualísticas',
-                        data: {{ dados_ritualisticas }},
-                        backgroundColor: 'rgba(23, 162, 184, 0.7)',
-                        borderColor: 'rgba(23, 162, 184, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    title: {
-                        display: true,
-                        text: 'Atividades por Mês'
-                    }
-                }
-            }
-        });
-    });
-</script>
 {% endblock %}
 
 

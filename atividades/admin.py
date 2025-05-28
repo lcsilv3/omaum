@@ -1,32 +1,55 @@
 from django.contrib import admin
 from .models import AtividadeAcademica, AtividadeRitualistica
 
+@admin.register(AtividadeAcademica)
 class AtividadeAcademicaAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'mostrar_data_inicio', 'data_fim', 'responsavel', 'listar_turmas', 'status']
-    list_filter = ['status', 'tipo_atividade']
-    search_fields = ['nome', 'responsavel']
+    list_display = ('nome', 'tipo_atividade', 'data_inicio', 'data_fim', 
+                    'status', 'curso')
+    list_filter = ('status', 'tipo_atividade', 'curso')
+    search_fields = ('nome', 'descricao')
     date_hierarchy = 'data_inicio'
+    filter_horizontal = ('turmas',)
     
-    def listar_turmas(self, obj):
-        """Retorna uma string com os nomes das turmas associadas à atividade."""
-        if not obj.turmas.exists():
-            return "Nenhuma turma"
-        return ", ".join([turma.nome for turma in obj.turmas.all()])
-    
-    def mostrar_data_inicio(self, obj):
-        """Formata a data de início para exibição."""
-        if obj.data_inicio:
-            return obj.data_inicio.strftime('%d/%m/%Y')
-        return "-"
-    
-    listar_turmas.short_description = "Turmas"
-    mostrar_data_inicio.short_description = "Data de Início"
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('nome', 'descricao', 'tipo_atividade', 'responsavel')
+        }),
+        ('Datas e Horários', {
+            'fields': ('data_inicio', 'data_fim', 'hora_inicio', 'hora_fim')
+        }),
+        ('Localização', {
+            'fields': ('local',)
+        }),
+        ('Relacionamentos', {
+            'fields': ('curso', 'turmas')
+        }),
+        ('Status', {
+            'fields': ('status',)
+        }),
+    )
 
+@admin.register(AtividadeRitualistica)
 class AtividadeRitualisticaAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'data', 'hora_inicio', 'hora_fim', 'local', 'turma']
-    list_filter = ['turma', 'data']
-    search_fields = ['nome', 'local']
+    list_display = ('nome', 'data', 'hora_inicio', 'status')
+    list_filter = ('status',)
+    search_fields = ('nome', 'descricao')
     date_hierarchy = 'data'
-
-admin.site.register(AtividadeAcademica, AtividadeAcademicaAdmin)
-admin.site.register(AtividadeRitualistica, AtividadeRitualisticaAdmin)
+    filter_horizontal = ('participantes',)
+    
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('nome', 'descricao', 'responsavel')
+        }),
+        ('Datas e Horários', {
+            'fields': ('data', 'hora_inicio', 'hora_fim')
+        }),
+        ('Localização', {
+            'fields': ('local',)
+        }),
+        ('Participantes', {
+            'fields': ('participantes',)
+        }),
+        ('Status', {
+            'fields': ('status',)
+        }),
+    )

@@ -4,6 +4,1356 @@
 ## Arquivos forms.py:
 
 
+### Arquivo: pagamentos\templates\pagamentos\dashboard.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Pagamentos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard de Pagamentos</h1>
+        <div>
+            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-primary">
+                <i class="fas fa-list"></i> Listar Pagamentos
+            </a>
+            <a href="{% url 'pagamentos:criar_pagamento' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Novo Pagamento
+            </a>
+        </div>
+    </div>
+
+    <!-- Cards de estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Alunos</h5>
+                    <h2 class="display-4">{{ total_alunos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Pagamentos Pagos</h5>
+                    <h2 class="display-4">{{ pagamentos_pagos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">Pagamentos Pendentes</h5>
+                    <h2 class="display-4">{{ pagamentos_pendentes }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Pagamentos Atrasados</h5>
+                    <h2 class="display-4">{{ pagamentos_atrasados }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de valores -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Total Pago</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="text-success">R$ {{ total_pago|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Total Pendente</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="text-warning">R$ {{ total_pendente|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Total Atrasado</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="text-danger">R$ {{ total_atrasado|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Links para dashboards específicos -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Dashboards Específicos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'pagamentos:dashboard_pagamentos' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-chart-line"></i> Dashboard de Pagamentos
+                        </a>
+                        <a href="{% url 'pagamentos:dashboard_financeiro' %}" class="btn btn-outline-success">
+                            <i class="fas fa-money-bill-wave"></i> Dashboard Financeiro
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Relatórios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'pagamentos:exportar_pagamentos_pdf' %}" class="btn btn-outline-danger">
+                            <i class="fas fa-file-pdf"></i> Exportar Pagamentos (PDF)
+                        </a>
+                        <a href="{% url 'pagamentos:relatorio_financeiro' %}" class="btn btn-outline-info">
+                            <i class="fas fa-chart-pie"></i> Relatório Financeiro
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Pagamentos recentes -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Pagamentos Recentes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Valor</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pagamento in pagamentos_recentes %}
+                                <tr>
+                                    <td>{{ pagamento.aluno.nome }}</td>
+                                    <td>R$ {{ pagamento.valor_pago|default:pagamento.valor|floatformat:2 }}</td>
+                                    <td>{{ pagamento.data_pagamento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Nenhum pagamento recente encontrado.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'pagamentos:listar_pagamentos' %}?status=PAGO" class="btn btn-sm btn-outline-success">Ver todos os pagamentos</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagamentos próximos -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Pagamentos Próximos (7 dias)</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Valor</th>
+                                    <th>Vencimento</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pagamento in pagamentos_proximos %}
+                                <tr>
+                                    <td>{{ pagamento.aluno.nome }}</td>
+                                    <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
+                                    <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Nenhum pagamento próximo encontrado.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'pagamentos:listar_pagamentos' %}?status=PENDENTE" class="btn btn-sm btn-outline-warning">Ver todos os pagamentos pendentes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de pagamentos por mês
+        const ctxMes = document.getElementById('pagamentosPorMes').getContext('2d');
+        new Chart(ctxMes, {
+            type: 'bar',
+            data: {
+                labels: [{% for item in pagamentos_por_mes %}'{{ item.mes }}',{% endfor %}],
+                datasets: [{
+                    label: 'Valor Total',
+                    data: [{% for item in pagamentos_por_mes %}{{ item.total }},{% endfor %}],
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de pagamentos por status
+        const ctxStatus = document.getElementById('pagamentosPorStatus').getContext('2d');
+        new Chart(ctxStatus, {
+            type: 'pie',
+            data: {
+                labels: ['Pago', 'Pendente', 'Cancelado'],
+                datasets: [{
+                    data: [{{ total_pago }}, {{ total_pendente }}, {{ total_cancelado }}],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 205, 86, 0.6)',
+                        'rgba(201, 203, 207, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgb(75, 192, 192)',
+                        'rgb(255, 205, 86)',
+                        'rgb(201, 203, 207)'
+                    ],
+                    borderWidth: 1
+                }]
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+
+
+### Arquivo: pagamentos\templates\pagamentos\dashboard_financeiro.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Financeiro{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Cabeçalho com botões de ação -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Dashboard Financeiro</h1>
+        <div>
+            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-list"></i> Lista de Pagamentos
+            </a>
+            <a href="{% url 'pagamentos:criar_pagamento' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Novo Pagamento
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="ano" class="form-label">Ano</label>
+                    <select class="form-select" id="ano" name="ano">
+                        {% for ano_opcao in anos_disponiveis %}
+                        <option value="{{ ano_opcao }}" {% if ano_opcao == ano_selecionado %}selected{% endif %}>{{ ano_opcao }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="curso" class="form-label">Curso</label>
+                    <select class="form-select" id="curso" name="curso">
+                        <option value="">Todos os cursos</option>
+                        {% for curso in cursos %}
+                        <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == filtros.curso %}selected{% endif %}>{{ curso.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="tipo" class="form-label">Tipo de Pagamento</label>
+                    <select class="form-select" id="tipo" name="tipo">
+                        <option value="">Todos os tipos</option>
+                        <option value="MENSALIDADE" {% if filtros.tipo == 'MENSALIDADE' %}selected{% endif %}>Mensalidade</option>
+                        <option value="MATRICULA" {% if filtros.tipo == 'MATRICULA' %}selected{% endif %}>Matrícula</option>
+                        <option value="MATERIAL" {% if filtros.tipo == 'MATERIAL' %}selected{% endif %}>Material</option>
+                        <option value="OUTRO" {% if filtros.tipo == 'OUTRO' %}selected{% endif %}>Outro</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <a href="{% url 'pagamentos:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Limpar Filtros
+                    </a>
+                    <a href="{% url 'pagamentos:exportar_relatorio_pdf' %}{{ request.GET.urlencode }}" class="btn btn-danger float-end">
+                        <i class="fas fa-file-pdf"></i> Exportar Relatório
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Resumo financeiro -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Receita Total</h5>
+                    <h2>R$ {{ resumo.receita_total|floatformat:2 }}</h2>
+                    <p class="mb-0">{{ resumo.total_pagos }} pagamentos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Pendente</h5>
+                    <h2>R$ {{ resumo.valor_pendente|floatformat:2 }}</h2>
+                    <p class="mb-0">{{ resumo.total_pendentes }} pagamentos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Atrasado</h5>
+                    <h2>R$ {{ resumo.valor_atrasado|floatformat:2 }}</h2>
+                    <p class="mb-0">{{ resumo.total_atrasados }} pagamentos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Previsão Mensal</h5>
+                    <h2>R$ {{ resumo.previsao_mensal|floatformat:2 }}</h2>
+                    <p class="mb-0">Média dos últimos 3 meses</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos financeiros -->
+    <div class="row">
+        <!-- Gráfico de receita mensal -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Receita Mensal ({{ ano_selecionado }})</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoReceitaMensal" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico de distribuição por status -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Distribuição por Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoDistribuicaoStatus" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Gráfico de distribuição por tipo -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Distribuição por Tipo</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoDistribuicaoTipo" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico de distribuição por curso -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Distribuição por Curso</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoDistribuicaoCurso" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pagamentos recentes -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Pagamentos Recentes</h5>
+        </div>
+        <div class="card-body">
+            {% if pagamentos_recentes %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Data</th>
+                            <th>Aluno</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pagamento in pagamentos_recentes %}
+                        <tr>
+                            <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
+                            <td>{{ pagamento.aluno.nome }}</td>
+                            <td>{{ pagamento.descricao|truncatechars:30 }}</td>
+                            <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if pagamento.status == 'PAGO' %}bg-success
+                                    {% elif pagamento.status == 'PENDENTE' %}bg-warning
+                                    {% elif pagamento.status == 'ATRASADO' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ pagamento.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-end mt-3">
+                <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-outline-primary">
+                    Ver todos os pagamentos
+                </a>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Não há pagamentos recentes para exibir.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Pagamentos atrasados -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Pagamentos Atrasados</h5>
+        </div>
+        <div class="card-body">
+            {% if pagamentos_atrasados %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Vencimento</th>
+                            <th>Aluno</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Dias Atrasados</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pagamento in pagamentos_atrasados %}
+                        <tr>
+                            <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
+                            <td>{{ pagamento.aluno.nome }}</td>
+                            <td>{{ pagamento.descricao|truncatechars:30 }}</td>
+                            <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
+                            <td>{{ pagamento.dias_atrasados }}</td>
+                            <td>
+                                <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Não há pagamentos atrasados para exibir.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Gráfico de receita mensal
+    const ctxReceita = document.getElementById('graficoReceitaMensal').getContext('2d');
+    const graficoReceitaMensal = new Chart(ctxReceita, {
+        type: 'bar',
+        data: {
+            labels: {{ meses|safe }},
+            datasets: [{
+                label: 'Receita Mensal (R$)',
+                data: {{ valores_mensais|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Receita Mensal do Ano de {{ ano_selecionado }}'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de distribuição por status
+    const ctxStatus = document.getElementById('graficoDistribuicaoStatus').getContext('2d');
+    const graficoDistribuicaoStatus = new Chart(ctxStatus, {
+        type: 'pie',
+        data: {
+            labels: ['Pago', 'Pendente', 'Atrasado'],
+            datasets: [{
+                data: [{{ resumo.total_pagos }}, {{ resumo.total_pendentes }}, {{ resumo.total_atrasados }}],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.7)',
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(220, 53, 69, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Distribuição de Pagamentos por Status'
+                }
+            }
+        }
+    });
+
+    // Gráfico de distribuição por tipo
+    const ctxTipo = document.getElementById('graficoDistribuicaoTipo').getContext('2d');
+    const graficoDistribuicaoTipo = new Chart(ctxTipo, {
+        type: 'pie',
+        data: {
+            labels: ['Mensalidade', 'Matrícula', 'Material', 'Outro'],
+            datasets: [{
+                data: [{{ resumo.mensalidades }}, {{ resumo.matriculas }}, {{ resumo.materiais }}, {{ resumo.outros }}],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Distribuição de Pagamentos por Tipo'
+                }
+            }
+        }
+    });
+
+    // Gráfico de distribuição por curso
+    const ctxCurso = document.getElementById('graficoDistribuicaoCurso').getContext('2d');
+    const graficoDistribuicaoCurso = new Chart(ctxCurso, {
+        type: 'pie',
+        data: {
+            labels: {{ cursos_nomes|safe }},
+            datasets: [{
+                data: {{ cursos_valores|safe }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Distribuição de Pagamentos por Curso'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+
+
+
+
+### Arquivo: pagamentos\templates\pagamentos\dashboard_pagamentos.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Pagamentos{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard de Pagamentos</h1>
+        <div>
+            <a href="{% url 'pagamentos:dashboard' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-tachometer-alt"></i> Dashboard Principal
+            </a>
+            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-primary">
+                <i class="fas fa-list"></i> Listar Pagamentos
+            </a>
+        </div>
+    </div>
+
+    <!-- Estatísticas do mês atual -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Estatísticas do Mês ({{ mes_atual }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Pagamentos Pagos</h5>
+                            <p class="card-text display-4 text-success">{{ pagos_mes }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Pagamentos Pendentes</h5>
+                            <p class="card-text display-4 text-warning">{{ pendentes_mes }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Pagamentos Atrasados</h5>
+                            <p class="card-text display-4 text-danger">{{ atrasados_mes }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">Valor Pago</h5>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="text-success">R$ {{ valor_pago_mes|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">Valor Pendente</h5>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="text-warning">R$ {{ valor_pendente_mes|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">Valor Atrasado</h5>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="text-danger">R$ {{ valor_atrasado_mes|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo estatístico -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total de Pagamentos</h5>
+                    <p class="card-text display-6">{{ total_pagamentos }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Valor Total</h5>
+                    <p class="card-text display-6">R$ {{ valor_total|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pagamentos por status -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Pagamentos por Status</h5>
+        </div>
+        <div class="card-body">
+            {% if pagamentos_por_status %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Quantidade</th>
+                                <th>Valor Total</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pagamentos_por_status %}
+                                <tr>
+                                    <td>
+                                        <span class="badge {% if item.status == 'pago' %}bg-success{% elif item.status == 'pendente' %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {% if item.status == 'pago' %}Pago{% elif item.status == 'pendente' %}Pendente{% else %}Cancelado{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ item.total }}</td>
+                                    <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'pagamentos:listar_pagamentos' %}?status={{ item.status }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> Ver Pagamentos
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Pagamentos por mês -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Pagamentos por Mês (Últimos 6 meses)</h5>
+        </div>
+        <div class="card-body">
+            {% if pagamentos_por_mes %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Mês</th>
+                                <th>Quantidade</th>
+                                <th>Valor Total</th>
+                                <th>Média por Pagamento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pagamentos_por_mes %}
+                                <tr>
+                                    <td>{{ item.mes }}</td>
+                                    <td>{{ item.total }}</td>
+                                    <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                                    <td>
+                                        {% if item.total > 0 %}
+                                            R$ {{ item.valor_total|floatformat:2|default:0|divisibleby:item.total }}
+                                        {% else %}
+                                            R$ 0,00
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado nos últimos 6 meses.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagamentos por aluno -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Top 5 Alunos por Valor Total</h5>
+        </div>
+        <div class="card-body">
+            {% if pagamentos_por_aluno %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Quantidade de Pagamentos</th>
+                                <th>Valor Total</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pagamentos_por_aluno %}
+                                <tr>
+                                    <td>{{ item.aluno__nome }}</td>
+                                    <td>{{ item.total }}</td>
+                                    <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'pagamentos:listar_pagamentos' %}?aluno={{ item.aluno__cpf }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> Ver Pagamentos
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhum pagamento encontrado.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <!-- Gráfico de pagamentos por dia -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Pagamentos por Dia ({{ mes_atual }})</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="grafico-pagamentos-dia" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de métodos de pagamento -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Métodos de Pagamento</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="grafico-metodos-pagamento" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagamentos atrasados por faixa -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Pagamentos Atrasados por Faixa</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Até 15 dias</h5>
+                            <p class="card-text display-4 text-warning">{{ atrasados_ate_15 }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">15 a 30 dias</h5>
+                            <p class="card-text display-4 text-danger">{{ atrasados_15_30 }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Mais de 30 dias</h5>
+                            <p class="card-text display-4 text-danger">{{ atrasados_mais_30 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 text-center">
+                <a href="{% url 'pagamentos:listar_pagamentos' %}?status=ATRASADO" class="btn btn-outline-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Ver Todos os Pagamentos Atrasados
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="javascript:history.back()" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Gráfico de pagamentos por dia
+    const ctxDia = document.getElementById('grafico-pagamentos-dia').getContext('2d');
+    const graficoPagamentosDia = new Chart(ctxDia, {
+        type: 'line',
+        data: {
+            labels: {{ dias|safe }},
+            datasets: [{
+                label: 'Valor Pago (R$)',
+                data: {{ valores_por_dia|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Pagamentos Recebidos por Dia'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de métodos de pagamento
+    const ctxMetodos = document.getElementById('grafico-metodos-pagamento').getContext('2d');
+    const graficoMetodosPagamento = new Chart(ctxMetodos, {
+        type: 'doughnut',
+        data: {
+            labels: {{ metodos|safe }},
+            datasets: [{
+                data: {{ contagens|safe }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Métodos de Pagamento'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+
+
+
+### Arquivo: pagamentos\templates\pagamentos\detalhar_pagamento.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalhes do Pagamento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Detalhes do Pagamento</h1>
+        <div>
+            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'pagamentos:editar_pagamento' pagamento.id %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'pagamentos:excluir_pagamento' pagamento.id %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Excluir
+            </a>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Informações do Pagamento</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Aluno</h6>
+                    <p>
+                        <a href="{% url 'alunos:detalhar_aluno' pagamento.aluno.cpf %}">
+                            {{ pagamento.aluno.nome }}
+                        </a>
+                    </p>
+                    
+                    <h6>Valor</h6>
+                    <p>R$ {{ pagamento.valor|floatformat:2 }}</p>
+                    
+                    <h6>Data de Vencimento</h6>
+                    <p>{{ pagamento.data_vencimento|date:"d/m/Y" }}</p>
+                    
+                    <h6>Descrição</h6>
+                    <p>{{ pagamento.descricao }}</p>
+                    
+                    <h6>Tipo</h6>
+                    <p>{{ pagamento.get_tipo_display }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Status</h6>
+                    <p>
+                        {% if pagamento.status == 'PAGO' %}
+                            <span class="badge bg-success">{{ pagamento.get_status_display }}</span>
+                        {% elif pagamento.status == 'PENDENTE' %}
+                            <span class="badge bg-warning">{{ pagamento.get_status_display }}</span>
+                        {% elif pagamento.status == 'ATRASADO' %}
+                            <span class="badge bg-danger">{{ pagamento.get_status_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ pagamento.get_status_display }}</span>
+                        {% endif %}
+                    </p>
+                    
+                    {% if pagamento.status == 'PAGO' %}
+                        <h6>Data de Pagamento</h6>
+                        <p>{{ pagamento.data_pagamento|date:"d/m/Y" }}</p>
+                        
+                        <h6>Valor Pago</h6>
+                        <p>R$ {{ pagamento.valor_pago|floatformat:2 }}</p>
+                        
+                        <h6>Método de Pagamento</h6>
+                        <p>{{ pagamento.get_metodo_pagamento_display }}</p>
+                        
+                        {% if pagamento.comprovante %}
+                            <h6>Comprovante</h6>
+                            <p>
+                                <a href="{{ pagamento.comprovante.url }}" target="_blank" class="btn btn-sm btn-info">
+                                    <i class="fas fa-file-download"></i> Visualizar Comprovante
+                                </a>
+                            </p>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <h6 class="mb-2">Ações Disponíveis</h6>
+                            <a href="{% url 'pagamentos:registrar_pagamento' pagamento.id %}" class="btn btn-success">
+                                <i class="fas fa-check-circle"></i> Registrar Pagamento
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if pagamento.observacoes %}
+                <div class="mt-3">
+                    <h6>Observações</h6>
+                    <div class="p-3 bg-light rounded">
+                        {{ pagamento.observacoes|linebreaks }}
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if pagamento.matricula %}
+                <div class="mt-3">
+                    <h6>Matrícula Associada</h6>
+                    <div class="p-3 bg-light rounded">
+                        <p><strong>Curso:</strong> {{ pagamento.matricula.turma.curso.nome }}</p>
+                        <p><strong>Turma:</strong> {{ pagamento.matricula.turma.nome }}</p>
+                        {% if pagamento.numero_parcela %}
+                            <p><strong>Parcela:</strong> {{ pagamento.numero_parcela }} de {{ pagamento.total_parcelas }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-footer text-muted">
+            <small>Criado em: {{ pagamento.created_at|date:"d/m/Y H:i" }}</small>
+            <br>
+            <small>Última atualização: {{ pagamento.updated_at|date:"d/m/Y H:i" }}</small>
+        </div>
+    </div>
+    
+    {% if pagamentos_relacionados %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Pagamentos Relacionados</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pag in pagamentos_relacionados %}
+                                <tr>
+                                    <td>
+                                        {{ pag.descricao }}
+                                        {% if pag.numero_parcela %}
+                                            <br><small>Parcela {{ pag.numero_parcela }}/{{ pag.total_parcelas }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>R$ {{ pag.valor|floatformat:2 }}</td>
+                                    <td>{{ pag.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if pag.status == 'PAGO' %}
+                                            <span class="badge bg-success">Pago</span>
+                                            {% if pag.data_pagamento %}
+                                                <br><small>em {{ pag.data_pagamento|date:"d/m/Y" }}</small>
+                                            {% endif %}
+                                        {% elif pag.status == 'PENDENTE' %}
+                                            <span class="badge bg-warning text-dark">Pendente</span>
+                                        {% elif pag.status == 'ATRASADO' %}
+                                            <span class="badge bg-danger">Atrasado</span>
+                                        {% elif pag.status == 'CANCELADO' %}
+                                            <span class="badge bg-secondary">Cancelado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'pagamentos:detalhar_pagamento' pag.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if pag.status == 'PENDENTE' or pag.status == 'ATRASADO' %}
+                                            <a href="{% url 'pagamentos:registrar_pagamento' pag.id %}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Histórico de Alterações</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Usuário</th>
+                            <th>Ação</th>
+                            <th>Detalhes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in historico %}
+                            <tr>
+                                <td>{{ log.timestamp|date:"d/m/Y H:i" }}</td>
+                                <td>{{ log.usuario.username }}</td>
+                                <td>{{ log.get_acao_display }}</td>
+                                <td>{{ log.detalhes }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">Nenhum registro de alteração encontrado.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
 ### Arquivo: pagamentos\templates\pagamentos\editar_pagamento.html
 
 html
@@ -12,6 +1362,16 @@ html
 {% block title %}Editar Pagamento{% endblock %}
 
 {% block content %}
+<style>
+@keyframes piscarBorda {
+    0%   { box-shadow: 0 0 0 0 red; }
+    50%  { box-shadow: 0 0 8px 2px red; }
+    100% { box-shadow: 0 0 0 0 red; }
+}
+.piscar-erro {
+    animation: piscarBorda 0.8s linear 2;
+}
+</style>
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Editar Pagamento</h1>
@@ -37,9 +1397,16 @@ html
                     <h5 class="mb-0">Dados do Pagamento</h5>
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <form method="post" enctype="multipart/form-data" id="pagamento-form" novalidate>
                         {% csrf_token %}
-                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
                         <div class="mb-3">
                             <label class="form-label">Aluno</label>
                             <div class="input-group">
@@ -68,65 +1435,103 @@ html
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="id_valor" class="form-label">Valor (R$)</label>
-                                    <input type="number" name="valor" id="id_valor" class="form-control" step="0.01" min="0" value="{{ pagamento.valor }}" required>
+                                    <label for="id_valor" class="form-label">Valor (R$) <span class="text-danger">*</span></label>
+                                    <input type="number" name="valor" step="0.01" required id="id_valor"
+                                           class="form-control{% if form.valor.errors %} is-invalid piscar-erro{% endif %}"
+                                           value="{{ form.valor.value|default_if_none:'' }}" placeholder="Ex: 100.00">
+                                    {% for error in form.valor.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="id_data_vencimento" class="form-label">Data de Vencimento</label>
-                                    <input type="date" name="data_vencimento" id="id_data_vencimento" class="form-control" value="{{ pagamento.data_vencimento|date:'Y-m-d' }}" required>
+                                    <label for="id_data_vencimento" class="form-label">Data de Vencimento <span class="text-danger">*</span></label>
+                                    <input type="date" name="data_vencimento" required id="id_data_vencimento"
+                                           class="form-control{% if form.data_vencimento.errors %} is-invalid piscar-erro{% endif %}"
+                                           value="{{ form.data_vencimento.value|date:'Y-m-d' }}">
+                                    {% for error in form.data_vencimento.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
                         
                         <div class="mb-3">
                             <label for="id_observacoes" class="form-label">Observações</label>
-                            <textarea name="observacoes" id="id_observacoes" class="form-control" rows="3">{{ pagamento.observacoes }}</textarea>
+                            <textarea name="observacoes" cols="40" rows="3" id="id_observacoes"
+                                      class="form-control{% if form.observacoes.errors %} is-invalid piscar-erro{% endif %}"
+                                      placeholder="Observações adicionais...">{{ form.observacoes.value|default_if_none:'' }}</textarea>
+                            {% for error in form.observacoes.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_status" class="form-label">Status <span class="text-danger">*</span></label>
+                            <select name="status" id="id_status"
+                                    class="form-select{% if form.status.errors %} is-invalid piscar-erro{% endif %}" required>
+                                <option value="PENDENTE" {% if form.status.value == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                                <option value="PAGO" {% if form.status.value == 'PAGO' %}selected{% endif %}>Pago</option>
+                                <option value="ATRASADO" {% if form.status.value == 'ATRASADO' %}selected{% endif %}>Atrasado</option>
+                                <option value="CANCELADO" {% if form.status.value == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+                            </select>
+                            {% for error in form.status.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3 metodo-pagamento-container" style="display: none;">
+                            <label for="id_metodo_pagamento" class="form-label">Método de Pagamento</label>
+                            <select name="metodo_pagamento" id="id_metodo_pagamento"
+                                    class="form-select{% if form.metodo_pagamento.errors %} is-invalid piscar-erro{% endif %}">
+                                <option value="">Selecione um método</option>
+                                <option value="DINHEIRO" {% if form.metodo_pagamento.value == 'DINHEIRO' %}selected{% endif %}>Dinheiro</option>
+                                <option value="CARTAO_CREDITO" {% if form.metodo_pagamento.value == 'CARTAO_CREDITO' %}selected{% endif %}>Cartão de Crédito</option>
+                                <option value="CARTAO_DEBITO" {% if form.metodo_pagamento.value == 'CARTAO_DEBITO' %}selected{% endif %}>Cartão de Débito</option>
+                                <option value="BOLETO" {% if form.metodo_pagamento.value == 'BOLETO' %}selected{% endif %}>Boleto Bancário</option>
+                                <option value="TRANSFERENCIA" {% if form.metodo_pagamento.value == 'TRANSFERENCIA' %}selected{% endif %}>Transferência</option>
+                                <option value="PIX" {% if form.metodo_pagamento.value == 'PIX' %}selected{% endif %}>PIX</option>
+                                <option value="OUTRO" {% if form.metodo_pagamento.value == 'OUTRO' %}selected{% endif %}>Outro</option>
+                            </select>
+                            {% for error in form.metodo_pagamento.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="id_status" class="form-label">Status</label>
-                                    <select name="status" id="id_status" class="form-select" required>
-                                        <option value="PENDENTE" {% if pagamento.status == 'PENDENTE' %}selected{% endif %}>Pendente</option>
-                                        <option value="PAGO" {% if pagamento.status == 'PAGO' %}selected{% endif %}>Pago</option>
-                                        <option value="ATRASADO" {% if pagamento.status == 'ATRASADO' %}selected{% endif %}>Atrasado</option>
-                                        <option value="CANCELADO" {% if pagamento.status == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3 metodo-pagamento-container" {% if pagamento.status != 'PAGO' %}style="display: none;"{% endif %}>
-                                    <label for="id_metodo_pagamento" class="form-label">Método de Pagamento</label>
-                                    <select name="metodo_pagamento" id="id_metodo_pagamento" class="form-select">
-                                        <option value="">Selecione um método</option>
-                                        <option value="DINHEIRO" {% if pagamento.metodo_pagamento == 'DINHEIRO' %}selected{% endif %}>Dinheiro</option>
-                                        <option value="CARTAO_CREDITO" {% if pagamento.metodo_pagamento == 'CARTAO_CREDITO' %}selected{% endif %}>Cartão de Crédito</option>
-                                        <option value="CARTAO_DEBITO" {% if pagamento.metodo_pagamento == 'CARTAO_DEBITO' %}selected{% endif %}>Cartão de Débito</option>
-                                        <option value="BOLETO" {% if pagamento.metodo_pagamento == 'BOLETO' %}selected{% endif %}>Boleto Bancário</option>
-                                        <option value="TRANSFERENCIA" {% if pagamento.metodo_pagamento == 'TRANSFERENCIA' %}selected{% endif %}>Transferência</option>
-                                        <option value="PIX" {% if pagamento.metodo_pagamento == 'PIX' %}selected{% endif %}>PIX</option>
-                                        <option value="OUTRO" {% if pagamento.metodo_pagamento == 'OUTRO' %}selected{% endif %}>Outro</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3 data-pagamento-container" {% if pagamento.status != 'PAGO' %}style="display: none;"{% endif %}>
+                                <div class="mb-3 data-pagamento-container" style="display: none;">
                                     <label for="id_data_pagamento" class="form-label">Data de Pagamento</label>
-                                    <input type="date" name="data_pagamento" id="id_data_pagamento" class="form-control" value="{{ pagamento.data_pagamento|date:'Y-m-d' }}">
+                                    <input type="date" name="data_pagamento" id="id_data_pagamento"
+                                           class="form-control{% if form.data_pagamento.errors %} is-invalid piscar-erro{% endif %}"
+                                           value="{{ form.data_pagamento.value|date:'Y-m-d' }}">
+                                    {% for error in form.data_pagamento.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3 valor-pago-container" {% if pagamento.status != 'PAGO' %}style="display: none;"{% endif %}>
+                                <div class="mb-3 valor-pago-container" style="display: none;">
                                     <label for="id_valor_pago" class="form-label">Valor Pago (R$)</label>
-                                    <input type="number" name="valor_pago" id="id_valor_pago" class="form-control" step="0.01" min="0" value="{{ pagamento.valor_pago|default:pagamento.valor }}">
+                                    <input type="number" name="valor_pago" id="id_valor_pago"
+                                           class="form-control{% if form.valor_pago.errors %} is-invalid piscar-erro{% endif %}"
+                                           step="0.01" min="0" value="{{ form.valor_pago.value|default_if_none:'' }}">
+                                    {% for error in form.valor_pago.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_comprovante" class="form-label">Comprovante de Pagamento</label>
+                            <input type="file" name="comprovante" id="id_comprovante"
+                                   class="form-control{% if form.comprovante.errors %} is-invalid piscar-erro{% endif %}">
+                            <div class="form-text">Formatos aceitos: PDF, JPG, PNG. Tamanho máximo: 5MB</div>
+                            {% for error in form.comprovante.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         
                         <div class="d-flex justify-content-between">
@@ -676,6 +2081,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Chama ao carregar a página para garantir o estado correto
+    togglePagamentoInfo();
     statusSelect.addEventListener('change', togglePagamentoInfo);
     
     // Inicializar campos de select2
@@ -699,32 +2106,42 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Filtrar turmas com base no curso selecionado
-        $('#{{ form.curso.id_for_label }}').on('change', function() {
-            var cursoId = $(this).val();
+        function carregarTurmas(cursoId, turmaSelecionada) {
             var turmaSelect = $('#{{ form.turma.id_for_label }}');
-            
-            // Limpar turmas
             turmaSelect.empty().append('<option value="">---------</option>');
-            
             if (cursoId) {
-                // Fazer requisição AJAX para obter turmas do curso
                 $.ajax({
-                    url: '{% url "api:turmas_por_curso" %}',
+                    url: '{% url "pagamentos:turmas_por_curso" %}',
                     data: {
                         'curso_id': cursoId
                     },
                     dataType: 'json',
                     success: function(data) {
-                        // Adicionar opções de turmas
                         $.each(data, function(i, turma) {
-                            turmaSelect.append($('<option></option>')
+                            var option = $('<option></option>')
                                 .attr('value', turma.id)
-                                .text(turma.nome));
+                                .text(turma.nome);
+                            if (turmaSelecionada && turma.id == turmaSelecionada) {
+                                option.attr('selected', 'selected');
+                            }
+                            turmaSelect.append(option);
                         });
                     }
                 });
             }
+        }
+
+        $('#{{ form.curso.id_for_label }}').on('change', function() {
+            var cursoId = $(this).val();
+            carregarTurmas(cursoId, null);
         });
+
+        // Ao carregar a página, se já houver curso selecionado, carregar as turmas
+        var cursoInicial = $('#{{ form.curso.id_for_label }}').val();
+        var turmaInicial = $('#{{ form.turma.id_for_label }}').val();
+        if (cursoInicial) {
+            carregarTurmas(cursoInicial, turmaInicial);
+        }
     });
 });
 </script>
@@ -756,1257 +2173,6 @@ html
         <p>O arquivo CSV deve conter as colunas: <strong>cpf, valor, data_vencimento, status, observacoes</strong></p>
     </div>
 </div>
-{% endblock %}
-
-
-
-### Arquivo: pagamentos\templates\pagamentos\listar_pagamentos.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Listar Pagamentos{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Pagamentos</h1>
-        <div>
-            <a href="{% url 'pagamentos:registrar_pagamento_rapido' %}" class="btn btn-success me-2">
-                <i class="fas fa-bolt"></i> Pagamento Rápido
-            </a>
-            <a href="{% url 'pagamentos:criar_pagamento' %}" class="btn btn-primary me-2">
-                <i class="fas fa-plus"></i> Novo Pagamento
-            </a>
-            <a href="{% url 'pagamentos:importar_pagamentos_csv' %}" class="btn btn-outline-secondary me-2">
-                <i class="fas fa-file-import"></i> Importar CSV
-            </a>
-            <div class="btn-group">
-                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-file-export"></i> Exportar
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <a class="dropdown-item" href="{% url 'pagamentos:exportar_pagamentos_csv' %}?q={{ query }}&status={{ status }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}">
-                            <i class="fas fa-file-csv"></i> Exportar CSV
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="{% url 'pagamentos:exportar_pagamentos_excel' %}?q={{ query }}&status={{ status }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}">
-                            <i class="fas fa-file-excel"></i> Exportar Excel
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="{% url 'pagamentos:exportar_pagamentos_pdf' %}?q={{ query }}&status={{ status }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}" target="_blank">
-                            <i class="fas fa-file-pdf"></i> Exportar PDF
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <form method="get" class="mb-3">
-        <div class="row g-2">
-            <div class="col-md-3">
-                <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Buscar por nome, CPF ou número iniciático...">
-            </div>
-            <div class="col-md-2">
-                <select name="status" class="form-select" aria-label="Filtrar por status">
-                    <option value="">Todos os Status</option>
-                    <option value="PENDENTE" {% if status == 'PENDENTE' %}selected{% endif %}>Pendente</option>
-                    <option value="PAGO" {% if status == 'PAGO' %}selected{% endif %}>Pago</option>
-                    <option value="ATRASADO" {% if status == 'ATRASADO' %}selected{% endif %}>Atrasado</option>
-                    <option value="CANCELADO" {% if status == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <input type="date" name="data_inicio" value="{{ data_inicio }}" class="form-control" placeholder="Data início">
-            </div>
-            <div class="col-md-2">
-                <input type="date" name="data_fim" value="{{ data_fim }}" class="form-control" placeholder="Data fim">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-outline-primary w-100">
-                    <i class="fas fa-search"></i> Filtrar
-                </button>
-            </div>
-        </div>
-    </form>
-
-    <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Aluno</th>
-                    <th>Valor</th>
-                    <th>Vencimento</th>
-                    <th>Status</th>
-                    <th>Data Pagamento</th>
-                    <th>Método</th>
-                    <th>Observações</th>
-                    <th class="text-center">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pagamento in pagamentos %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'pagamentos:pagamentos_aluno' pagamento.aluno.cpf %}">
-                                {{ pagamento.aluno.nome }}
-                            </a>
-                        </td>
-                        <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
-                        <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
-                        <td>
-                            {% if pagamento.status == 'PAGO' %}
-                                <span class="badge bg-success">{{ pagamento.get_status_display }}</span>
-                            {% elif pagamento.status == 'PENDENTE' %}
-                                <span class="badge bg-warning text-dark">{{ pagamento.get_status_display }}</span>
-                            {% elif pagamento.status == 'ATRASADO' %}
-                                <span class="badge bg-danger">{{ pagamento.get_status_display }}</span>
-                            {% else %}
-                                <span class="badge bg-secondary">{{ pagamento.get_status_display }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if pagamento.data_pagamento %}
-                                {{ pagamento.data_pagamento|date:"d/m/Y" }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {{ pagamento.get_metodo_pagamento_display|default:"-" }}
-                        </td>
-                        <td>
-                            {{ pagamento.observacoes|truncatechars:30 }}
-                        </td>
-                        <td class="text-center">
-                            <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info" title="Detalhar">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{% url 'pagamentos:editar_pagamento' pagamento.id %}" class="btn btn-sm btn-warning" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button type="button"
-                                    class="btn btn-sm btn-danger btn-excluir-pagamento"
-                                    data-pagamento-id="{{ pagamento.id }}"
-                                    data-aluno="{{ pagamento.aluno.nome }}"
-                                    title="Excluir">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center text-muted">Nenhum pagamento encontrado.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    {% if page_obj.has_other_pages %}
-        <nav>
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}">Anterior</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">Anterior</span></li>
-                {% endif %}
-                {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ query }}&status={{ status }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}">{{ num }}</a></li>
-                    {% endif %}
-                {% endfor %}
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}">Próxima</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">Próxima</span></li>
-                {% endif %}
-            </ul>
-        </nav>
-    {% endif %}
-
-    <div class="mt-4">
-        <div class="row">
-            <div class="col-md-3">
-                <div class="alert alert-success">
-                    <strong>Total Pago:</strong> R$ {{ total_pago|floatformat:2 }}
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="alert alert-warning">
-                    <strong>Total Pendente:</strong> R$ {{ total_pendente|floatformat:2 }}
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="alert alert-danger">
-                    <strong>Total Atrasado:</strong> R$ {{ total_atrasado|floatformat:2 }}
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="alert alert-info">
-                    <strong>Total Geral:</strong> R$ {{ total_geral|floatformat:2 }}
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="alert alert-secondary">
-                    <strong>Total Cancelado:</strong> R$ {{ total_cancelado|floatformat:2 }}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de confirmação de exclusão -->
-<div class="modal fade" id="modalExcluirPagamento" tabindex="-1" aria-labelledby="modalExcluirPagamentoLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="post" id="formExcluirPagamento" action="">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalExcluirPagamentoLabel">Confirmar Exclusão</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-        <div class="modal-body">
-          <p>Tem certeza que deseja excluir o pagamento do aluno <strong id="modalAlunoNome"></strong>?</p>
-          <p class="text-danger mb-0"><small>Esta ação não poderá ser desfeita.</small></p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-danger">Excluir</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Bootstrap 5 modal
-    var modalExcluir = new bootstrap.Modal(document.getElementById('modalExcluirPagamento'));
-    var formExcluir = document.getElementById('formExcluirPagamento');
-    var alunoNomeSpan = document.getElementById('modalAlunoNome');
-
-    document.querySelectorAll('.btn-excluir-pagamento').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var pagamentoId = this.getAttribute('data-pagamento-id');
-            var alunoNome = this.getAttribute('data-aluno');
-            // Atualiza o nome do aluno no modal
-            alunoNomeSpan.textContent = alunoNome;
-            // Atualiza a action do form para o pagamento correto
-            formExcluir.action = "{% url 'pagamentos:excluir_pagamento' 0 %}".replace('/0/', '/' + pagamentoId + '/');
-            // Mostra o modal
-            modalExcluir.show();
-        });
-    });
-});
-</script>
-{% endblock %}
-
-
-
-### Arquivo: pagamentos\templates\pagamentos\pagamento_rapido.html
-
-html
-Vou gerar o código completo para o arquivo pagamento_rapido.html, baseado nos arquivos compartilhados e nas alterações já realizadas:
-
-**File: c:\projetos\omaum\pagamentos\templates\pagamentos\pagamento_rapido.html**
-```html
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Pagamento Rápido{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <!-- Cabeçalho com botões de ação -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Pagamento Rápido</h1>
-        <div>
-            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
-                <i class="fas fa-list"></i> Lista de Pagamentos
-            </a>
-        </div>
-    </div>
-    
-    <!-- Formulário -->
-    <div class="card">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Registrar Pagamento</h5>
-        </div>
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="aluno" class="form-label">Aluno</label>
-                        <select class="form-select" id="aluno" name="aluno" required>
-                            <option value="">Selecione um aluno</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}" {% if form.aluno.value == aluno.cpf %}selected{% endif %}>
-                                    {{ aluno.nome }} ({{ aluno.cpf }})
-                                </option>
-                            {% endfor %}
-                        </select>
-                        {% if form.aluno.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.aluno.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="tipo" class="form-label">Tipo de Pagamento</label>
-                        <select class="form-select" id="tipo" name="tipo" required>
-                            <option value="">Selecione o tipo</option>
-                            <option value="MENSALIDADE" {% if form.tipo.value == 'MENSALIDADE' %}selected{% endif %}>Mensalidade</option>
-                            <option value="MATRICULA" {% if form.tipo.value == 'MATRICULA' %}selected{% endif %}>Matrícula</option>
-                            <option value="MATERIAL" {% if form.tipo.value == 'MATERIAL' %}selected{% endif %}>Material</option>
-                            <option value="OUTRO" {% if form.tipo.value == 'OUTRO' %}selected{% endif %}>Outro</option>
-                        </select>
-                        {% if form.tipo.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.tipo.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="valor" class="form-label">Valor (R$)</label>
-                        <input type="number" step="0.01" class="form-control" id="valor" name="valor" required value="{{ form.valor.value|default:'' }}">
-                        {% if form.valor.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.valor.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="metodo_pagamento" class="form-label">Método de Pagamento</label>
-                        <select class="form-select" id="metodo_pagamento" name="metodo_pagamento" required>
-                            <option value="">Selecione o método</option>
-                            <option value="PIX" {% if form.metodo_pagamento.value == 'PIX' %}selected{% endif %}>PIX</option>
-                            <option value="CARTAO_CREDITO" {% if form.metodo_pagamento.value == 'CARTAO_CREDITO' %}selected{% endif %}>Cartão de Crédito</option>
-                            <option value="CARTAO_DEBITO" {% if form.metodo_pagamento.value == 'CARTAO_DEBITO' %}selected{% endif %}>Cartão de Débito</option>
-                            <option value="DINHEIRO" {% if form.metodo_pagamento.value == 'DINHEIRO' %}selected{% endif %}>Dinheiro</option>
-                            <option value="BOLETO" {% if form.metodo_pagamento.value == 'BOLETO' %}selected{% endif %}>Boleto</option>
-                            <option value="TRANSFERENCIA" {% if form.metodo_pagamento.value == 'TRANSFERENCIA' %}selected{% endif %}>Transferência</option>
-                            <option value="OUTRO" {% if form.metodo_pagamento.value == 'OUTRO' %}selected{% endif %}>Outro</option>
-                        </select>
-                        {% if form.metodo_pagamento.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.metodo_pagamento.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <label for="descricao" class="form-label">Descrição</label>
-                        <input type="text" class="form-control" id="descricao" name="descricao" required value="{{ form.descricao.value|default:'' }}">
-                        {% if form.descricao.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.descricao.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="comprovante" class="form-label">Comprovante (opcional)</label>
-                        <input type="file" class="form-control" id="comprovante" name="comprovante">
-                        {% if form.comprovante.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.comprovante.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="observacoes" class="form-label">Observações (opcional)</label>
-                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ form.observacoes.value|default:'' }}</textarea>
-                        {% if form.observacoes.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.observacoes.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-money-bill-wave"></i> Registrar Pagamento
-                    </button>
-                    <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar o select2 para o campo de aluno
-        $('#aluno').select2({
-            placeholder: 'Selecione um aluno',
-            allowClear: true,
-            width: '100%'
-        });
-        
-        // Atualizar a descrição automaticamente quando o tipo mudar
-        $('#tipo').change(function() {
-            var tipo = $(this).val();
-            var descricao = '';
-            
-            if (tipo === 'MENSALIDADE') {
-                var dataAtual = new Date();
-                var mes = dataAtual.toLocaleString('pt-BR', { month: 'long' });
-                var ano = dataAtual.getFullYear();
-                descricao = 'Mensalidade - ' + mes + '/' + ano;
-            } else if (tipo === 'MATRICULA') {
-                descricao = 'Taxa de Matrícula';
-            } else if (tipo === 'MATERIAL') {
-                descricao = 'Material Didático';
-            }
-            
-            if (descricao) {
-                $('#descricao').val(descricao);
-            }
-        });
-        
-        // Formatar o campo de valor para mostrar como moeda
-        $('#valor').on('input', function() {
-            var value = $(this).val();
-            if (value) {
-                value = parseFloat(value).toFixed(2);
-                if (!isNaN(value)) {
-                    $(this).val(value);
-                }
-            }
-        });
-    });
-</script>
-{% endblock %}
-```
-
-Este template fornece um formulário para registrar pagamentos rapidamente, com campos para selecionar o aluno, tipo de pagamento, valor, método de pagamento, descrição, comprovante e observações. Também inclui JavaScript para melhorar a experiência do usuário, como a inicialização do select2 para o campo de aluno, atualização automática da descrição com base no tipo de pagamento selecionado e formatação do campo de valor para exibir como moeda.{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Pagamento Rápido{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <!-- Cabeçalho com botões de ação -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Pagamento Rápido</h1>
-        <div>
-            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
-                <i class="fas fa-list"></i> Lista de Pagamentos
-            </a>
-        </div>
-    </div>
-    
-    <!-- Formulário -->
-    <div class="card">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Registrar Pagamento</h5>
-        </div>
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="aluno" class="form-label">Aluno</label>
-                        <select class="form-select" id="aluno" name="aluno" required>
-                            <option value="">Selecione um aluno</option>
-                            {% for aluno in alunos %}
-                                <option value="{{ aluno.cpf }}" {% if form.aluno.value == aluno.cpf %}selected{% endif %}>
-                                    {{ aluno.nome }} ({{ aluno.cpf }})
-                                </option>
-                            {% endfor %}
-                        </select>
-                        {% if form.aluno.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.aluno.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="tipo" class="form-label">Tipo de Pagamento</label>
-                        <select class="form-select" id="tipo" name="tipo" required>
-                            <option value="">Selecione o tipo</option>
-                            <option value="MENSALIDADE" {% if form.tipo.value == 'MENSALIDADE' %}selected{% endif %}>Mensalidade</option>
-                            <option value="MATRICULA" {% if form.tipo.value == 'MATRICULA' %}selected{% endif %}>Matrícula</option>
-                            <option value="MATERIAL" {% if form.tipo.value == 'MATERIAL' %}selected{% endif %}>Material</option>
-                            <option value="OUTRO" {% if form.tipo.value == 'OUTRO' %}selected{% endif %}>Outro</option>
-                        </select>
-                        {% if form.tipo.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.tipo.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="valor" class="form-label">Valor (R$)</label>
-                        <input type="number" step="0.01" class="form-control" id="valor" name="valor" required value="{{ form.valor.value|default:'' }}">
-                        {% if form.valor.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.valor.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="metodo_pagamento" class="form-label">Método de Pagamento</label>
-                        <select class="form-select" id="metodo_pagamento" name="metodo_pagamento" required>
-                            <option value="">Selecione o método</option>
-                            <option value="PIX" {% if form.metodo_pagamento.value == 'PIX' %}selected{% endif %}>PIX</option>
-                            <option value="CARTAO_CREDITO" {% if form.metodo_pagamento.value == 'CARTAO_CREDITO' %}selected{% endif %}>Cartão de Crédito</option>
-                            <option value="CARTAO_DEBITO" {% if form.metodo_pagamento.value == 'CARTAO_DEBITO' %}selected{% endif %}>Cartão de Débito</option>
-                            <option value="DINHEIRO" {% if form.metodo_pagamento.value == 'DINHEIRO' %}selected{% endif %}>Dinheiro</option>
-                            <option value="BOLETO" {% if form.metodo_pagamento.value == 'BOLETO' %}selected{% endif %}>Boleto</option>
-                            <option value="TRANSFERENCIA" {% if form.metodo_pagamento.value == 'TRANSFERENCIA' %}selected{% endif %}>Transferência</option>
-                            <option value="OUTRO" {% if form.metodo_pagamento.value == 'OUTRO' %}selected{% endif %}>Outro</option>
-                        </select>
-                        {% if form.metodo_pagamento.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.metodo_pagamento.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <label for="descricao" class="form-label">Descrição</label>
-                        <input type="text" class="form-control" id="descricao" name="descricao" required value="{{ form.descricao.value|default:'' }}">
-                        {% if form.descricao.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.descricao.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="comprovante" class="form-label">Comprovante (opcional)</label>
-                        <input type="file" class="form-control" id="comprovante" name="comprovante">
-                        {% if form.comprovante.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.comprovante.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="observacoes" class="form-label">Observações (opcional)</label>
-                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ form.observacoes.value|default:'' }}</textarea>
-                        {% if form.observacoes.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.observacoes.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-money-bill-wave"></i> Registrar Pagamento
-                    </button>
-                    <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar o select2 para o campo de aluno
-        $('#aluno').select2({
-            placeholder: 'Selecione um aluno',
-            allowClear: true,
-            width: '100%'
-        });
-        
-        // Atualizar a descrição automaticamente quando o tipo mudar
-        $('#tipo').change(function() {
-            var tipo = $(this).val();
-            var descricao = '';
-            
-            if (tipo === 'MENSALIDADE') {
-                var dataAtual = new Date();
-                var mes = dataAtual.toLocaleString('pt-BR', { month: 'long' });
-                var ano = dataAtual.getFullYear();
-                descricao = 'Mensalidade - ' + mes + '/' + ano;
-            } else if (tipo === 'MATRICULA') {
-                descricao = 'Taxa de Matrícula';
-            } else if (tipo === 'MATERIAL') {
-                descricao = 'Material Didático';
-            }
-            
-            if (descricao) {
-                $('#descricao').val(descricao);
-            }
-        });
-        
-        // Formatar o campo de valor para mostrar como moeda
-        $('#valor').on('input', function() {
-            var value = $(this).val();
-            if (value) {
-                value = parseFloat(value).toFixed(2);
-                if (!isNaN(value)) {
-                    $(this).val(value);
-                }
-            }
-        });
-    });
-</script>
-{% endblock %}
-
-
-
-### Arquivo: pagamentos\templates\pagamentos\pagamentos_aluno.html
-
-html
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Pagamentos de {{ aluno.nome }}{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Pagamentos de {{ aluno.nome }}</h1>
-        <div>
-            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary me-2">
-                <i class="fas fa-arrow-left"></i> Voltar para o Perfil
-            </a>
-            <a href="{% url 'pagamentos:registrar_pagamento_rapido' aluno.cpf %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Novo Pagamento
-            </a>
-        </div>
-    </div>
-    
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Total</h5>
-                    <p class="card-text display-6">R$ {{ total_pago|add:total_pendente|add:total_atrasado|add:total_cancelado|floatformat:2 }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Pago</h5>
-                    <p class="card-text display-6">R$ {{ total_pago|floatformat:2 }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Pendente</h5>
-                    <p class="card-text display-6">R$ {{ total_pendente|floatformat:2 }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-danger text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Atrasado</h5>
-                    <p class="card-text display-6">R$ {{ total_atrasado|floatformat:2 }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Lista de Pagamentos</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Descrição</th>
-                                    <th>Valor</th>
-                                    <th>Vencimento</th>
-                                    <th>Status</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for pagamento in pagamentos %}
-                                    <tr>
-                                        <td>
-                                            {% if pagamento.matricula %}
-                                                {{ pagamento.matricula.turma.curso.nome }} - {{ pagamento.matricula.turma.nome }}
-                                                {% if pagamento.numero_parcela %}
-                                                    <br><small>Parcela {{ pagamento.numero_parcela }}/{{ pagamento.total_parcelas }}</small>
-                                                {% endif %}
-                                            {% else %}
-                                                Pagamento Avulso
-                                            {% endif %}
-                                            {% if pagamento.observacoes %}
-                                                <br><small class="text-muted">{{ pagamento.observacoes }}</small>
-                                            {% endif %}
-                                        </td>
-                                        <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
-                                        <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
-                                        <td>
-                                            {% if pagamento.status == 'PAGO' %}
-                                                <span class="badge bg-success">Pago</span>
-                                                {% if pagamento.data_pagamento %}
-                                                    <br><small>em {{ pagamento.data_pagamento|date:"d/m/Y" }}</small>
-                                                {% endif %}
-                                            {% elif pagamento.status == 'PENDENTE' %}
-                                                <span class="badge bg-warning text-dark">Pendente</span>
-                                            {% elif pagamento.status == 'ATRASADO' %}
-                                                <span class="badge bg-danger">Atrasado</span>
-                                            {% elif pagamento.status == 'CANCELADO' %}
-                                                <span class="badge bg-secondary">Cancelado</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            {% if pagamento.status == 'PENDENTE' or pagamento.status == 'ATRASADO' %}
-                                                <a href="{% url 'pagamentos:registrar_pagamento' pagamento.id %}" class="btn btn-sm btn-success">
-                                                    <i class="fas fa-check"></i>
-                                                </a>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>
-                                        <td colspan="5" class="text-center">
-                                            <p class="my-3">Nenhum pagamento registrado para este aluno.</p>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Dados do Aluno</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        {% if aluno.foto %}
-                            <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                 class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
-                        {% else %}
-                            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
-                                 style="width: 60px; height: 60px; color: white;">
-                                {{ aluno.nome|first|upper }}
-                            </div>
-                        {% endif %}
-                        <div>
-                            <h5 class="mb-0">{{ aluno.nome }}</h5>
-                            <p class="text-muted mb-0">CPF: {{ aluno.cpf }}</p>
-                        </div>
-                    </div>
-                    
-                    <p><strong>Email:</strong> {{ aluno.email|default:"Não informado" }}</p>
-                    {% if aluno.numero_iniciatico %}
-                        <p><strong>Nº Iniciático:</strong> {{ aluno.numero_iniciatico }}</p>
-                    {% endif %}
-                </div>
-            </div>
-            
-            {% if matriculas %}
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Matrículas</h5>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group">
-                        {% for matricula in matriculas %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>{{ matricula.turma.curso.nome }}</strong>
-                                    <div>{{ matricula.turma.nome }}</div>
-                                </div>
-                                <span class="badge bg-{{ matricula.status_color }}">{{ matricula.get_status_display }}</span>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-            {% endif %}
-            
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0">Histórico de Pagamentos</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="graficoHistorico" height="200"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Dados para o gráfico de histórico
-        const ctx = document.getElementById('graficoHistorico').getContext('2d');
-        
-        const chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Pago', 'Pendente', 'Atrasado', 'Cancelado'],
-                datasets: [{
-                    label: 'Valor (R$)',
-                    data: [
-                        {{ total_pago|floatformat:2 }}, 
-                        {{ total_pendente|floatformat:2 }}, 
-                        {{ total_atrasado|floatformat:2 }}, 
-                        {{ total_cancelado|floatformat:2 }}
-                    ],
-                    backgroundColor: [
-                        'rgba(40, 167, 69, 0.7)',  // Verde para pago
-                        'rgba(255, 193, 7, 0.7)',  // Amarelo para pendente
-                        'rgba(220, 53, 69, 0.7)',  // Vermelho para atrasado
-                        'rgba(108, 117, 125, 0.7)' // Cinza para cancelado
-                    ],
-                    borderColor: [
-                        'rgb(40, 167, 69)',
-                        'rgb(255, 193, 7)',
-                        'rgb(220, 53, 69)',
-                        'rgb(108, 117, 125)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'R$ ' + context.raw.toFixed(2);
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return 'R$ ' + value;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    });
-</script>
-{% endblock %}
-
-
-
-### Arquivo: pagamentos\templates\pagamentos\pagamentos_por_turma.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Pagamentos por Turma{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Pagamentos por Turma</h1>
-        <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-    </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    {% for item in turmas_com_pagamentos %}
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">{{ item.turma.nome }} - {{ item.turma.curso.nome }}</h5>
-                    <span class="badge bg-light text-dark">{{ item.alunos_count }} alunos</span>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <div class="card text-white bg-success">
-                            <div class="card-body text-center">
-                                <h6 class="card-title">Total Pago</h6>
-                                <p class="card-text h4">R$ {{ item.total_pago|floatformat:2 }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card text-white bg-warning">
-                            <div class="card-body text-center">
-                                <h6 class="card-title">Total Pendente</h6>
-                                <p class="card-text h4">R$ {{ item.total_pendente|floatformat:2 }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card text-white bg-info">
-                            <div class="card-body text-center">
-                                <h6 class="card-title">Total</h6>
-                                <p class="card-text h4">R$ {{ item.total|floatformat:2 }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Aluno</th>
-                                <th>Valor</th>
-                                <th>Vencimento</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for pagamento in item.pagamentos %}
-                                <tr>
-                                    <td>{{ pagamento.aluno.nome }}</td>
-                                    <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
-                                    <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
-                                    <td>
-                                        {% if pagamento.status == 'PAGO' %}
-                                            <span class="badge bg-success">{{ pagamento.get_status_display }}</span>
-                                        {% elif pagamento.status == 'PENDENTE' %}
-                                            <span class="badge bg-warning">{{ pagamento.get_status_display }}</span>
-                                        {% elif pagamento.status == 'ATRASADO' %}
-                                            <span class="badge bg-danger">{{ pagamento.get_status_display }}</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">{{ pagamento.get_status_display }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-sm btn-info">Detalhes</a>
-                                        <a href="{% url 'pagamentos:editar_pagamento' pagamento.id %}" class="btn btn-sm btn-warning">Editar</a>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center">Nenhum pagamento encontrado para esta turma.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    {% empty %}
-        <div class="alert alert-info">
-            <p>Nenhuma turma ativa encontrada.</p>
-        </div>
-    {% endfor %}
-</div>
-{% endblock %}
-
-
-
-### Arquivo: pagamentos\templates\pagamentos\registrar_pagamento.html
-
-html
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Registrar Pagamento{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Registrar Pagamento</h1>
-        <div>
-            <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-        </div>
-    </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Dados do Pagamento</h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info d-flex align-items-center mb-4">
-                        {% if pagamento.aluno.foto %}
-                            <img src="{{ pagamento.aluno.foto.url }}" alt="Foto de {{ pagamento.aluno.nome }}" 
-                                 class="rounded-circle me-3" width="50" height="50" style="object-fit: cover;">
-                        {% else %}
-                            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
-                                 style="width: 50px; height: 50px; color: white;">
-                                {{ pagamento.aluno.nome|first|upper }}
-                            </div>
-                        {% endif %}
-                        <div>
-                            <strong>Aluno:</strong> {{ pagamento.aluno.nome }}
-                            <br>
-                            <small>CPF: {{ pagamento.aluno.cpf }}</small>
-                        </div>
-                    </div>
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Valor</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control" value="{{ pagamento.valor|floatformat:2 }}" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Data de Vencimento</label>
-                                <input type="text" class="form-control" value="{{ pagamento.data_vencimento|date:'d/m/Y' }}" readonly>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Descrição</label>
-                            <input type="text" class="form-control" value="{% if pagamento.matricula %}{{ pagamento.matricula.turma.curso.nome }} - {{ pagamento.matricula.turma.nome }}{% else %}Pagamento Avulso{% endif %}" readonly>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="data_pagamento" class="form-label">Data de Pagamento</label>
-                                <input type="date" name="data_pagamento" id="data_pagamento" class="form-control" value="{{ data_hoje }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="metodo_pagamento" class="form-label">Método de Pagamento</label>
-                                <select name="metodo_pagamento" id="metodo_pagamento" class="form-select" required>
-                                    <option value="">Selecione um método</option>
-                                    <option value="DINHEIRO">Dinheiro</option>
-                                    <option value="CARTAO_CREDITO">Cartão de Crédito</option>
-                                    <option value="CARTAO_DEBITO">Cartão de Débito</option>
-                                    <option value="BOLETO">Boleto Bancário</option>
-                                    <option value="TRANSFERENCIA">Transferência</option>
-                                    <option value="PIX">PIX</option>
-                                    <option value="OUTRO">Outro</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="observacoes" class="form-label">Observações</label>
-                            <textarea name="observacoes" id="observacoes" class="form-control" rows="3">{{ pagamento.observacoes }}</textarea>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-check"></i> Confirmar Pagamento
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Informações</h5>
-                </div>
-                <div class="card-body">
-                    <p>Você está registrando o pagamento para <strong>{{ pagamento.aluno.nome }}</strong>.</p>
-                    <p>Valor a ser pago: <strong>R$ {{ pagamento.valor|floatformat:2 }}</strong></p>
-                    <p>Vencimento: <strong>{{ pagamento.data_vencimento|date:'d/m/Y' }}</strong></p>
-                    
-                    {% if pagamento.status == 'ATRASADO' %}
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle"></i> Este pagamento está <strong>atrasado</strong>.
-                        </div>
-                    {% endif %}
-                    
-                    <hr>
-                    <p class="mb-0"><small>Ao confirmar o pagamento, o status será alterado para "Pago" e não poderá ser revertido facilmente.</small></p>
-                </div>
-            </div>
-            
-            {% if pagamento.matricula %}
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Dados da Matrícula</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Curso:</strong> {{ pagamento.matricula.turma.curso.nome }}</p>
-                    <p><strong>Turma:</strong> {{ pagamento.matricula.turma.nome }}</p>
-                    {% if pagamento.numero_parcela %}
-                        <p><strong>Parcela:</strong> {{ pagamento.numero_parcela }} de {{ pagamento.total_parcelas }}</p>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Definir data de pagamento padrão como hoje
-        const dataPagamentoInput = document.getElementById('data_pagamento');
-        if (!dataPagamentoInput.value) {
-            const hoje = new Date();
-            const ano = hoje.getFullYear();
-            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-            const dia = String(hoje.getDate()).padStart(2, '0');
-            dataPagamentoInput.value = `${ano}-${mes}-${dia}`;
-        }
-        
-        // Validar formulário antes de enviar
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const dataPagamento = document.getElementById('data_pagamento').value;
-            const metodoPagamento = document.getElementById('metodo_pagamento').value;
-            
-            if (!dataPagamento) {
-                e.preventDefault();
-                alert('Por favor, informe a data de pagamento.');
-                return false;
-            }
-            
-            if (!metodoPagamento) {
-                e.preventDefault();
-                alert('Por favor, selecione o método de pagamento.');
-                return false;
-            }
-            
-            return true;
-        });
-    });
-</script>
 {% endblock %}
 
 

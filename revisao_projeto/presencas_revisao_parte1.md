@@ -878,6 +878,345 @@ class Presenca(models.Model):
 
 
 
+## Arquivos de Views Modulares:
+
+
+### Arquivo: presencas\templates\presencas\views\__init__.py
+
+python
+# presencas/views/__init__.py
+
+# Importar funções de listagem
+from .listagem import (
+    listar_presencas
+)
+
+# Importar funções de atividade
+from .atividade import (
+    registrar_presencas_atividade,
+    editar_presenca
+)
+
+# Importar funções de múltiplas presenças
+from .multiplas import (
+    registrar_presencas_multiplas,
+    formulario_presencas_multiplas
+)
+
+# Expor todas as funções para que possam ser importadas de presencas.views
+__all__ = [
+    'listar_presencas',
+    'registrar_presencas_atividade',
+    'editar_presenca',
+    'registrar_presencas_multiplas',
+    'formulario_presencas_multiplas'
+]
+
+
+
+### Arquivo: presencas\templates\presencas\views\atividade.py
+
+python
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from importlib import import_module
+
+def get_model_dynamically(app_name, model_name):
+    """Obtém um modelo dinamicamente para evitar importações circulares."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+def get_form_dynamically(app_name, form_name):
+    """Obtém um formulário dinamicamente."""
+    module = import_module(f"{app_name}.forms")
+    return getattr(module, form_name)
+
+@login_required
+def registrar_presencas_atividade(request):
+    """Registra presenças para uma atividade específica."""
+    AtividadeAcademica = get_model_dynamically("atividades", "AtividadeAcademica")
+    Aluno = get_model_dynamically("alunos", "Aluno")
+    Presenca = get_model_dynamically("presencas", "Presenca")
+    
+    if request.method == 'POST':
+        atividade_id = request.POST.get('atividade')
+        data = request.POST.get('data')
+        
+        if not atividade_id or not data:
+            messages.error(request, "Atividade e data são obrigatórios.")
+            return redirect('presencas:registrar_presencas_atividade')
+        
+        atividade = get_object_or_404(AtividadeAcademica, id=atividade_id)
+        
+        # Processar presenças
+        presentes = request.POST.getlist('presentes', [])
+        
+        # Obter alunos da atividade
+        alunos = []
+        for turma in atividade.turmas.all():
+            # Obter alunos matriculados na turma
+            Matricula = get_model_dynamically("matriculas", "Matricula")
+            matriculas = Matricula.objects.filter(turma=turma, status='A')
+            alunos.extend([m.aluno for m in matriculas])
+        
+        # Remover duplicatas
+        alunos = list(set(alunos))
+        
+        # Registrar presenças
+        for aluno in alunos:
+            presente = aluno.cpf in presentes
+            justificativa = request.POST.get(f'justificativa_{aluno.cpf}', '') if not presente else ''
+            
+            # Verificar se já existe registro
+            presenca, created = Presenca.objects.update_or_create(
+                aluno=aluno,
+                atividade=atividade,
+                data=data,
+                defaults={
+                    'presente': presente,
+                    'justificativa': justificativa,
+                    'registrado_por': request.user
+                }
+            )
+        
+        messages.success(request, "Presenças registradas com sucesso!")
+        return redirect('presencas:listar_presencas')
+    else:
+        # Obter atividades para o formulário
+        atividades = AtividadeAcademica.objects.all().order_by('-data_inicio')
+        
+        context = {
+            'atividades': atividades,
+            'data_hoje': timezone.now().date().strftime('%Y-%m-%d')
+        }
+        
+        return render(request, 'presencas/registrar_presencas_atividade.html', context)
+
+@login_required
+def editar_presenca(request, presenca_id):
+    """Edita um registro de presença existente."""
+    Presenca = get_model_dynamically("presencas", "Presenca")
+    PresencaForm = get_form_dynamically("presencas", "PresencaForm")
+    
+    presenca = get_object_or_404(Presenca, id=presenca_id)
+    
+    if request.method == 'POST':
+        form = PresencaForm(request.POST, instance=presenca)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Presença atualizada com sucesso!")
+            return redirect('presencas:listar_presencas')
+    else:
+        form = PresencaForm(instance=presenca)
+    
+    context = {
+        'form': form,
+        'presenca': presenca
+    }
+    
+    return render(request, 'presencas/editar_presenca.html', context)
+
+
+
+### Arquivo: presencas\templates\presencas\views\listagem.py
+
+python
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.core.paginator import Paginator
+from importlib import import_module
+
+def get_model_dynamically(app_name, model_name):
+    """Obtém um modelo dinamicamente para evitar importações circulares."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+@login_required
+def listar_presencas(request):
+    """Lista todas as presenças registradas."""
+    Presenca = get_model_dynamically("presencas", "Presenca")
+    
+    # Aplicar filtros
+    query = request.GET.get('q', '')
+    aluno_id = request.GET.get('aluno', '')
+    atividade_id = request.GET.get('atividade', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    presente = request.GET.get('presente', '')
+    
+    presencas = Presenca.objects.all().select_related('aluno', 'atividade')
+    
+    if query:
+        presencas = presencas.filter(
+            Q(aluno__nome__icontains=query) |
+            Q(atividade__nome__icontains=query)
+        )
+    
+    if aluno_id:
+        presencas = presencas.filter(aluno__cpf=aluno_id)
+    
+    if atividade_id:
+        presencas = presencas.filter(atividade__id=atividade_id)
+    
+    if data_inicio:
+        presencas = presencas.filter(data__gte=data_inicio)
+    
+    if data_fim:
+        presencas = presencas.filter(data__lte=data_fim)
+    
+    if presente:
+        presencas = presencas.filter(presente=(presente == 'true'))
+    
+    # Ordenação
+    presencas = presencas.order_by('-data', 'aluno__nome')
+    
+    # Paginação
+    paginator = Paginator(presencas, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Obter modelos para filtros
+    Aluno = get_model_dynamically("alunos", "Aluno")
+    AtividadeAcademica = get_model_dynamically("atividades", "AtividadeAcademica")
+    
+    alunos = Aluno.objects.all()
+    atividades = AtividadeAcademica.objects.all()
+    
+    context = {
+        'presencas': page_obj,
+        'page_obj': page_obj,
+        'query': query,
+        'alunos': alunos,
+        'atividades': atividades,
+        'filtros': {
+            'aluno': aluno_id,
+            'atividade': atividade_id,
+            'data_inicio': data_inicio,
+            'data_fim': data_fim,
+            'presente': presente
+        }
+    }
+    
+    return render(request, 'presencas/listar_presencas.html', context)
+
+
+
+### Arquivo: presencas\templates\presencas\views\multiplas.py
+
+python
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from importlib import import_module
+import json
+
+def get_model_dynamically(app_name, model_name):
+    """Obtém um modelo dinamicamente para evitar importações circulares."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+@login_required
+def registrar_presencas_multiplas(request):
+    """Registra presenças para múltiplos alunos em múltiplas atividades."""
+    if request.method == 'POST':
+        # Processar o formulário
+        data = request.POST.get('data')
+        turma_ids = request.POST.getlist('turmas')
+        atividade_ids = request.POST.getlist('atividades')
+        
+        if not data or not turma_ids or not atividade_ids:
+            messages.error(request, "Data, turmas e atividades são obrigatórios.")
+            return redirect('presencas:registrar_presencas_multiplas')
+        
+        # Redirecionar para a página de registro com os parâmetros
+        return redirect('presencas:formulario_presencas_multiplas', 
+                       data=data, 
+                       turmas=','.join(turma_ids), 
+                       atividades=','.join(atividade_ids))
+    else:
+        # Exibir o formulário inicial
+        Turma = get_model_dynamically("turmas", "Turma")
+        AtividadeAcademica = get_model_dynamically("atividades", "AtividadeAcademica")
+        
+        turmas = Turma.objects.filter(status='A')
+        atividades = AtividadeAcademica.objects.all().order_by('-data_inicio')
+        
+        context = {
+            'turmas': turmas,
+            'atividades': atividades,
+            'data_hoje': timezone.now().date().strftime('%Y-%m-%d')
+        }
+        
+        return render(request, 'presencas/formulario_presencas_multiplas_passo1.html', context)
+
+@login_required
+def formulario_presencas_multiplas(request, data, turmas, atividades):
+    """Exibe o formulário para registro de presenças múltiplas."""
+    # Converter parâmetros
+    turma_ids = turmas.split(',')
+    atividade_ids = atividades.split(',')
+    
+    Turma = get_model_dynamically("turmas", "Turma")
+    AtividadeAcademica = get_model_dynamically("atividades", "AtividadeAcademica")
+    Aluno = get_model_dynamically("alunos", "Aluno")
+    
+    # Obter objetos
+    turmas_obj = Turma.objects.filter(id__in=turma_ids)
+    atividades_obj = AtividadeAcademica.objects.filter(id__in=atividade_ids)
+    
+    # Obter alunos das turmas
+    alunos = []
+    for turma in turmas_obj:
+        # Obter alunos matriculados na turma
+        Matricula = get_model_dynamically("matriculas", "Matricula")
+        matriculas = Matricula.objects.filter(turma=turma, status='A')
+        alunos.extend([m.aluno for m in matriculas])
+    
+    # Remover duplicatas
+    alunos = list(set(alunos))
+    
+    if request.method == 'POST':
+        # Processar o formulário
+        Presenca = get_model_dynamically("presencas", "Presenca")
+        presencas_data = json.loads(request.POST.get('presencas_data', '[]'))
+        
+        for presenca_info in presencas_data:
+            aluno_id = presenca_info.get('aluno_id')
+            atividade_id = presenca_info.get('atividade_id')
+            presente = presenca_info.get('presente', True)
+            justificativa = presenca_info.get('justificativa', '')
+            
+            aluno = get_object_or_404(Aluno, cpf=aluno_id)
+            atividade = get_object_or_404(AtividadeAcademica, id=atividade_id)
+            
+            # Verificar se já existe registro
+            presenca, created = Presenca.objects.update_or_create(
+                aluno=aluno,
+                atividade=atividade,
+                data=data,
+                defaults={
+                    'presente': presente,
+                    'justificativa': justificativa,
+                    'registrado_por': request.user
+                }
+            )
+        
+        messages.success(request, "Presenças registradas com sucesso!")
+        return redirect('presencas:listar_presencas')
+    else:
+        context = {
+            'data': data,
+            'turmas': turmas_obj,
+            'atividades': atividades_obj,
+            'alunos': alunos
+        }
+        
+        return render(request, 'presencas/formulario_presencas_multiplas.html', context)
+
+
 ## Arquivos de Template:
 
 
@@ -2151,284 +2490,6 @@ html
     </div>
 </div>
 {% endblock %}
-
-
-
-### Arquivo: presencas\templates\presencas\listar_presencas.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Lista de Presenças{% endblock %}
-
-{% block content %}
-<div class="container-fluid mt-4">
-    <!-- Padronizar cabeçalho com botões -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Lista de Presenças</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-            <a href="{% url 'presencas:registrar_presenca' %}" class="btn btn-primary me-2">
-                <i class="fas fa-plus"></i> Registrar Presença
-            </a>
-            <a href="{% url 'presencas:exportar_presencas' %}" class="btn btn-success me-2">
-                <i class="fas fa-file-export"></i> Exportar CSV
-            </a>
-            <a href="{% url 'presencas:importar_presencas' %}" class="btn btn-info">
-                <i class="fas fa-file-import"></i> Importar CSV
-            </a>
-        </div>
-    </div>
-    
-    <!-- Filtros avançados -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Filtros</h5>
-        </div>
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="aluno" class="form-label">Aluno</label>
-                    <select name="aluno" id="aluno" class="form-select">
-                        <option value="">Todos os alunos</option>
-                        {% for aluno in alunos %}
-                        <option value="{{ aluno.cpf }}" {% if filtros.aluno == aluno.cpf %}selected{% endif %}>
-                            {{ aluno.nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="turma" class="form-label">Turma</label>
-                    <select name="turma" id="turma" class="form-select">
-                        <option value="">Todas as turmas</option>
-                        {% for turma in turmas %}
-                        <option value="{{ turma.id }}" {% if filtros.turma == turma.id|stringformat:"s" %}selected{% endif %}>
-                            {{ turma.nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-2">
-                    <label for="data_inicio" class="form-label">Data Início</label>
-                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio }}">
-                </div>
-                
-                <div class="col-md-2">
-                    <label for="data_fim" class="form-label">Data Fim</label>
-                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ filtros.data_fim }}">
-                </div>
-                
-                <div class="col-md-2">
-                    <label for="presente" class="form-label">Status</label>
-                    <select name="presente" id="presente" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="true" {% if filtros.presente == 'true' %}selected{% endif %}>Presente</option>
-                        <option value="false" {% if filtros.presente == 'false' %}selected{% endif %}>Ausente</option>
-                    </select>
-                </div>
-                
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter"></i> Filtrar
-                    </button>
-                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
-                        <i class="fas fa-undo"></i> Limpar Filtros
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Tabela de presenças -->
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Aluno</th>
-                            <th>Atividade</th>
-                            <th>Turma</th>
-                            <th>Data</th>
-                            <th>Status</th>
-                            <th>Justificativa</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for presenca in presencas %}
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    {% if presenca.aluno.foto %}
-                                    <img src="{{ presenca.aluno.foto.url }}" alt="{{ presenca.aluno.nome }}" 
-                                         class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
-                                    {% else %}
-                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
-                                         style="width: 40px; height: 40px; color: white;">
-                                        {{ presenca.aluno.nome|first|upper }}
-                                    </div>
-                                    {% endif %}
-                                    <div>
-                                        <div>{{ presenca.aluno.nome }}</div>
-                                        <small class="text-muted">{{ presenca.aluno.cpf }}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ presenca.atividade.nome }}</td>
-                            <td>{{ presenca.atividade.turma.nome }}</td>
-                            <td>{{ presenca.data|date:"d/m/Y" }}</td>
-                            <td>
-                                {% if presenca.presente %}
-                                <span class="badge bg-success">Presente</span>
-                                {% else %}
-                                <span class="badge bg-danger">Ausente</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ presenca.justificativa|truncatechars:30|default:"-" }}</td>
-                            <td>
-                                <div class="table-actions">
-                                    <a href="{% url 'presencas:detalhar_presenca' presenca.id %}" class="btn btn-sm btn-info" title="Ver detalhes da presença">
-                                        <i class="fas fa-eye"></i> Detalhes
-                                    </a>
-                                    <a href="{% url 'presencas:editar_presenca' presenca.id %}" class="btn btn-sm btn-warning" title="Editar presença">
-                                        <i class="fas fa-edit"></i> Editar
-                                    </a>
-                                    <a href="{% url 'presencas:excluir_presenca' presenca.id %}" class="btn btn-sm btn-danger" title="Excluir presença">
-                                        <i class="fas fa-trash"></i> Excluir
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-3">
-                                <p class="mb-0">Nenhum registro de presença encontrado com os filtros selecionados.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer d-flex justify-content-between align-items-center">
-            <div>
-                <p class="mb-0">Exibindo {{ presencas|length }} de {{ page_obj.paginator.count }} registros</p>
-            </div>
-            
-            {% if page_obj.has_other_pages %}
-            <nav aria-label="Paginação">
-                <ul class="pagination mb-0">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Anterior">
-                            <span aria-hidden="true">«</span>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link" aria-hidden="true">«</span>
-                    </li>
-                    {% endif %}
-                    
-                    {% for i in page_obj.paginator.page_range %}
-                        {% if page_obj.number == i %}
-                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                        {% else %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ i }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">{{ i }}</a>
-                        </li>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Próxima">
-                            <span aria-hidden="true">»</span>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link" aria-hidden="true">»</span>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar Select2 para melhorar a experiência de seleção
-        if (typeof $.fn.select2 === 'function') {
-            $('#aluno').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Selecione um aluno',
-                allowClear: true
-            });
-            
-            $('#turma').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Selecione uma turma',
-                allowClear: true
-            });
-        }
-    });
-</script>
-{% endblock %}
-
-
-
-
-### Arquivo: presencas\templates\presencas\registrar_presenca.html
-
-html
-{% extends 'base.html' %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1>Registrar Presença</h1>
-
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-
-                {% for field in form %}
-                <div class="mb-3">
-                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="invalid-feedback">
-                            {{ field.errors }}
-                        </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-                <!-- Padronizar botões no formulário -->
-                <div class="d-flex justify-content-between mt-4">
-                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Registrar Presenças
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
 
 
 '''
