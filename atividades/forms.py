@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 
 # Função utilitária para obter modelos dinamicamente
 def get_models():
+
     """
     Obtém todos os modelos necessários dinamicamente.
     Returns:
