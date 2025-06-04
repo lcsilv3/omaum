@@ -99,7 +99,7 @@ def obter_dados_painel_frequencias(request):
         # Obter frequências no período
         frequencias = FrequenciaMensal.objects.filter(
             turma=turma
-        ).select_related('turma')
+        ).prefetch_related('turmas')
         
         # Filtrar pelo período
         frequencias_filtradas = [

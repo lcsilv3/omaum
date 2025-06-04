@@ -209,8 +209,6 @@ class KeyUsageConstraints(ConfigurableMixin):
 
 ## Diretórios de Templates Encontrados
 
-- templates
-  Arquivos:
 - .venv\Lib\site-packages\debug_toolbar\templates
   Arquivos:
   - debug_toolbar\base.html
@@ -489,7 +487,6 @@ class KeyUsageConstraints(ConfigurableMixin):
   - atividades\relatorio_atividades.html
   - atividades\relatorio_atividades_curso_turma.html
   - atividades\visualizar_frequencia.html
-  - atividades\_tabela_atividades.html
   - atividades\academicas\confirmar_copia_academica.html
   - atividades\academicas\confirmar_exclusao_academica.html
   - atividades\academicas\copiar_atividade_academica.html
@@ -500,7 +497,10 @@ class KeyUsageConstraints(ConfigurableMixin):
   - atividades\academicas\formulario_atividade_academica.html
   - atividades\academicas\form_atividade_academica.html
   - atividades\academicas\listar_atividades_academicas.html
-  - atividades\partials\atividades_tabela_body.html
+  - atividades\academicas\partials\atividades_tabela.html
+  - atividades\academicas\partials\atividades_tabela_body.html
+  - atividades\academicas\partials\cursos_options.html
+  - atividades\academicas\partials\turmas_options.html
   - atividades\ritualisticas\confirmar_copia_ritualistica.html
   - atividades\ritualisticas\confirmar_exclusao_ritualistica.html
   - atividades\ritualisticas\copiar_atividade_ritualistica.html

@@ -1,125 +1,151 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block title %}Lista de Atividades Ritualísticas{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Cabeçalho com título e botões na mesma linha -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Lista de Atividades Ritualísticas</h1>
-        <div class="btn-group">
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
-            <!-- Botão para criar nova atividade ritualística -->
-            <a href="{% url 'atividades:criar_atividade_ritualistica' %}?return_url={{ request.path|urlencode }}" class="btn btn-primary me-2">
+        <h1>Atividades Ritualísticas</h1>
+        <div class="d-flex gap-2">
+            <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Voltar ao Painel de Controle">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'atividades:criar_atividade_ritualistica' %}" class="btn btn-success" data-bs-toggle="tooltip" title="Criar nova atividade ritualística">
                 <i class="fas fa-plus"></i> Nova Atividade
             </a>
-            
-            <!-- Botões para as novas funcionalidades -->
-            <a href="{% url 'atividades:calendario_atividades' %}" class="btn btn-info me-2">
+            <a href="{% url 'atividades:calendario_atividades' %}" class="btn btn-info" data-bs-toggle="tooltip" title="Calendário">
                 <i class="fas fa-calendar-alt"></i> Calendário
             </a>
-            
-            <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-success me-2">
-                <i class="fas fa-chart-bar"></i> Dashboard
-            </a>
-            
-            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning">
+            <a href="{% url 'atividades:relatorio_atividades_ritualisticas' %}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Relatórios">
                 <i class="fas fa-file-alt"></i> Relatórios
             </a>
-        </div>
-    </div>    
-    <!-- Barra de busca e filtros -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <form method="get" class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome, descrição ou local..." value="{{ query }}">
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-                </div>
-            </form>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Data</th>
-                            <th>Horário</th>
-                            <th>Local</th>
-                            <th>Turma</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for atividade in atividades %}
-                            <tr>
-                                <td>{{ atividade.nome }}</td>
-                                <td>{{ atividade.data|date:"d/m/Y" }}</td>
-                                <td>{{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</td>
-                                <td>{{ atividade.local }}</td>
-                                <td>{{ atividade.turma }}</td>
-                                <td>
-                                    <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da atividade">Detalhes</a>
-                                    <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar informações da atividade">Editar</a>
-                                    <a href="{% url 'atividades:excluir_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir esta atividade">Excluir</a>
-                                    <!-- Novo botão para copiar atividade -->
-                                    <a href="{% url 'atividades:copiar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-secondary" title="Criar uma cópia desta atividade">Copiar</a>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center">
-                                    <p class="my-3">Nenhuma atividade ritualística cadastrada.</p>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Exportar atividades" data-bs-toggle="tooltip">
+                    <i class="fas fa-file-export"></i> Exportar
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?exportar=csv">Exportar CSV</a></li>
+                    <li><a class="dropdown-item" href="?exportar=excel">Exportar Excel</a></li>
+                    <li><a class="dropdown-item" href="?exportar=pdf" target="_blank">Exportar PDF</a></li>
+                </ul>
             </div>
         </div>
-        <div class="card-footer">
-            <p class="text-muted mb-0">Total: {{ atividades.count|default:"0" }} atividade(s)</p>
-            {% if page_obj.has_other_pages %}
-                <nav aria-label="Paginação">
-                    <ul class="pagination justify-content-center mb-0">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}">Anterior</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Anterior</span>
-                            </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                            {% else %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}&q={{ query }}">{{ num }}</a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}">Próxima</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Próxima</span>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
-        </div>
     </div>
+
+    <!-- Filtros -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label for="id_q" class="form-label">Busca</label>
+            <input type="text" name="q" id="id_q" class="form-control" placeholder="Buscar por nome, descrição ou local" value="{{ query }}">
+        </div>
+        <div class="col-md-3">
+            <label for="id_turma" class="form-label">Turma</label>
+            <select name="turma" id="id_turma" class="form-select">
+                <option value="">Todas as turmas</option>
+                {% for turma in turmas %}
+                    <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == turma_selecionada|stringformat:"s" %}selected{% endif %}>
+                        {{ turma.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-5 d-grid gap-2 d-md-flex justify-content-md-end align-items-end">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Filtrar
+            </button>
+            <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Voltar à listagem">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </form>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Tabela de atividades ritualísticas -->
+    <div class="table-responsive">
+        <table class="table align-middle table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Local</th>
+                    <th>Turma</th>
+                    <th class="text-start">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for atividade in atividades %}
+                <tr>
+                    <td>{{ atividade.nome }}</td>
+                    <td>{{ atividade.data|date:"d/m/Y" }}</td>
+                    <td>{{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</td>
+                    <td>{{ atividade.local }}</td>
+                    <td>
+                        {% if atividade.turma %}
+                            <span class="badge bg-info">{{ atividade.turma }}</span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-start">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-info" title="Detalhar atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.id %}" class="btn btn-warning" title="Editar atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'atividades:excluir_atividade_ritualistica' atividade.id %}" class="btn btn-danger" title="Excluir atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            <a href="{% url 'atividades:copiar_atividade_ritualistica' atividade.id %}" class="btn btn-secondary" title="Copiar atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-copy"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">Nenhuma atividade ritualística encontrada.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginação -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Paginação">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">&laquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">&raquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
 {% endblock %}

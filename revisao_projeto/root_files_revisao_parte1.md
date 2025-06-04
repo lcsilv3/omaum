@@ -1862,107 +1862,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-### Arquivo: static\js\atividades_filtros.js
-
-text
-document.addEventListener("DOMContentLoaded", function () {
-    // Elementos dos filtros
-    const cursoSelect = document.getElementById("filtro-curso");
-    const turmaSelect = document.getElementById("filtro-turma");
-
-    // Função para atualizar turmas ao selecionar curso
-    function atualizarTurmasPorCurso(cursoId, turmaSelectId, endpointUrl) {
-        const turmaSelect = document.getElementById(turmaSelectId);
-        if (!cursoId) {
-            // Se nenhum curso selecionado, limpa as turmas
-            turmaSelect.innerHTML = '<option value="">Todas as turmas</option>';
-            return;
-        }
-        fetch(endpointUrl + "?curso_id=" + cursoId, {
-            headers: { "X-Requested-With": "XMLHttpRequest" }
-        })
-            .then((response) => response.json())
-            .then((turmas) => {
-                turmaSelect.innerHTML = '<option value="">Todas as turmas</option>';
-                turmas.forEach(function (turma) {
-                    turmaSelect.innerHTML += `<option value="${turma.id}">${turma.nome}</option>`;
-                });
-            });
-    }
-
-    // Detecta contexto (listagem, relatório, dashboard)
-    let contexto = "listagem";
-    if (document.getElementById("filtro-relatorio-form")) contexto = "relatorio";
-    if (document.getElementById("filtro-dashboard-form")) contexto = "dashboard";
-
-    // Define endpoints AJAX conforme contexto
-    let endpointTurmas = "/atividades/ajax/turmas-por-curso/";
-    let endpointAtividades = "/atividades/ajax/atividades-filtradas/";
-    if (contexto === "relatorio") {
-        endpointTurmas = "/atividades/ajax/relatorio/turmas-por-curso/";
-        endpointAtividades = "/atividades/ajax/relatorio/atividades-filtradas/";
-    }
-    if (contexto === "dashboard") {
-        endpointTurmas = "/atividades/ajax/dashboard/turmas-por-curso/";
-        endpointAtividades = "/atividades/ajax/dashboard/conteudo/";
-    }
-
-    // Atualiza turmas ao mudar curso
-    if (cursoSelect && turmaSelect) {
-        cursoSelect.addEventListener("change", function () {
-            atualizarTurmasPorCurso(this.value, "filtro-turma", endpointTurmas);
-            // Opcional: resetar turma ao trocar curso
-            turmaSelect.value = "";
-            // Atualiza tabela/conteúdo automaticamente
-            atualizarConteudo();
-        });
-        turmaSelect.addEventListener("change", atualizarConteudo);
-    }
-
-    // Atualiza tabela/conteúdo ao buscar
-    const formId =
-        contexto === "relatorio"
-            ? "filtro-relatorio-form"
-            : contexto === "dashboard"
-            ? "filtro-dashboard-form"
-            : "filtro-atividades-form";
-    const filtroForm = document.getElementById(formId);
-    if (filtroForm) {
-        filtroForm.addEventListener("submit", function (e) {
-            e.preventDefault();
-            atualizarConteudo();
-        });
-        // Busca instantânea ao digitar (opcional)
-        const qInput = filtroForm.querySelector('input[name="q"]');
-        if (qInput) {
-            qInput.addEventListener("input", function () {
-                atualizarConteudo();
-            });
-        }
-    }
-
-    function atualizarConteudo() {
-        // Monta query string dos filtros
-        const params = new URLSearchParams();
-        if (cursoSelect && cursoSelect.value) params.append("curso", cursoSelect.value);
-        if (turmaSelect && turmaSelect.value) params.append("turma", turmaSelect.value);
-        if (filtroForm) {
-            const qInput = filtroForm.querySelector('input[name="q"]');
-            if (qInput && qInput.value) params.append("q", qInput.value);
-        }
-        fetch(endpointAtividades + "?" + params.toString(), {
-            headers: { "X-Requested-With": "XMLHttpRequest" }
-        })
-            .then((response) => response.text())
-            .then((html) => {
-                // Atualiza apenas o tbody da tabela
-                document.getElementById("atividades-tabela-body").innerHTML = html;
-            });
-    }
-});
-
-
-
 ### Arquivo: static\js\csrf_refresh.js
 
 text
@@ -2509,6 +2408,121 @@ $(document).ready(function() {
         
         // Não usar preventDefault() para permitir o envio normal do formulário
         return true;
+    });
+});
+
+
+
+### Arquivo: static\js\atividades\atividades_filtros.js
+
+text
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Inicializando script de filtros de atividades');
+    
+    // Encontrar os elementos do formulário
+    const cursoSelect = document.querySelector('#id_curso');
+    const turmaSelect = document.querySelector('#id_turmas');
+    
+    if (!cursoSelect || !turmaSelect) {
+        console.log('Elementos de filtro não encontrados', {
+            cursoSelect: cursoSelect ? cursoSelect.id : 'não encontrado',
+            turmaSelect: turmaSelect ? turmaSelect.id : 'não encontrado'
+        });
+        return;
+    }
+    
+    console.log('Elementos encontrados:', {
+        cursoSelect: cursoSelect.id,
+        turmaSelect: turmaSelect.id
+    });
+    
+    // Função para atualizar as turmas quando o curso mudar
+    cursoSelect.addEventListener('change', function() {
+        const cursoId = this.value;
+        console.log('Curso selecionado:', cursoId);
+        
+        // Se não houver curso selecionado, limpa as turmas
+        if (!cursoId) {
+            // Manter apenas a primeira opção (Todas as turmas)
+            const primeiraOpcao = turmaSelect.options[0];
+            turmaSelect.innerHTML = '';
+            turmaSelect.appendChild(primeiraOpcao);
+            return;
+        }
+        
+        // Buscar as turmas do curso selecionado
+        fetch(`/atividades/ajax/turmas-por-curso/?curso_id=${cursoId}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erro na resposta: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Turmas recebidas:', data);
+            
+            // Limpar o select de turmas mantendo a primeira opção
+            const primeiraOpcao = turmaSelect.options[0];
+            turmaSelect.innerHTML = '';
+            turmaSelect.appendChild(primeiraOpcao);
+            
+            // Adicionar as novas opções
+            if (data.turmas && data.turmas.length > 0) {
+                data.turmas.forEach(turma => {
+                    const option = document.createElement('option');
+                    option.value = turma.id;
+                    option.textContent = turma.nome;
+                    turmaSelect.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao buscar turmas:', error);
+        });
+    });
+});
+
+
+
+### Arquivo: static\js\atividades\filtros.js
+
+text
+document.addEventListener('DOMContentLoaded', function() {
+    const $form = document.getElementById('filtro-atividades');
+    const $q = document.getElementById('id_q');
+    const $curso = document.getElementById('id_curso');
+    const $turma = document.getElementById('id_turmas');
+    const $tabela = document.querySelector('.table-responsive table');
+
+    function atualizaFiltros() {
+        const params = new URLSearchParams(new FormData($form)).toString();
+        fetch(window.location.pathname + '?' + params, {
+            headers: {'x-requested-with': 'XMLHttpRequest'}
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            $tabela.innerHTML = data.tabela_html;
+            $curso.innerHTML = '<option value="">Todos os cursos</option>' + data.cursos_html;
+            $turma.innerHTML = '<option value="">Todas as turmas</option>' + data.turmas_html;
+        });
+    }
+
+    $q.addEventListener('input', function() {
+        atualizaFiltros();
+    });
+    $curso.addEventListener('change', function() {
+        atualizaFiltros();
+    });
+    $turma.addEventListener('change', function() {
+        atualizaFiltros();
+    });
+    $form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        atualizaFiltros();
     });
 });
 

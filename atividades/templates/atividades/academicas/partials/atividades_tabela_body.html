@@ -1,0 +1,39 @@
+{% if atividades %}
+    {% for atividade in atividades %}
+        <tr>
+            <td>{{ atividade.nome }}</td>
+            <td>
+                {% if atividade.curso %}
+                    {{ atividade.curso.nome }}
+                {% else %}
+                    <span class="text-muted">-</span>
+                {% endif %}
+            </td>
+            <td>
+                {% for turma in atividade.turmas.all %}
+                    <span class="badge bg-info">{{ turma.nome }}</span>
+                {% empty %}
+                    <span class="text-muted">-</span>
+                {% endfor %}
+            </td>
+            <td>
+                {{ atividade.get_tipo_atividade_display|default:atividade.tipo_atividade }}
+            </td>
+            <td>
+                {{ atividade.get_status_display|default:atividade.status }}
+            </td>
+            <td>
+                {{ atividade.data_inicio|date:"d/m/Y" }}
+            </td>
+            <td>
+                <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-warning btn-sm">Editar</a>
+                <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-danger btn-sm">Excluir</a>
+            </td>
+        </tr>
+    {% endfor %}
+{% else %}
+    <tr>
+        <td colspan="7" class="text-center">Nenhuma atividade encontrada.</td>
+    </tr>
+{% endif %}

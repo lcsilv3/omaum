@@ -27,7 +27,7 @@ def listar_frequencias(request):
         FrequenciaMensal, _ = get_models()
         
         # Aplicar filtros
-        frequencias = FrequenciaMensal.objects.all().select_related('turma')
+        frequencias = FrequenciaMensal.objects.all().prefetch_related('turmas')
         
         # Filtrar por turma
         turma_id = request.GET.get('turma')

@@ -706,7 +706,7 @@ def obter_dados_painel_frequencias(request):
         # Obter frequências no período
         frequencias = FrequenciaMensal.objects.filter(
             turma=turma
-        ).select_related('turma')
+        ).prefetch_related('turmas')
         
         # Filtrar pelo período
         frequencias_filtradas = [
@@ -990,7 +990,7 @@ def dashboard(request):
         turma_id = request.GET.get('turma')
         
         # Construir query base
-        frequencias = FrequenciaMensal.objects.all().select_related('turma')
+        frequencias = FrequenciaMensal.objects.all().prefetch_related('turmas')
         carencias = Carencia.objects.all().select_related('frequencia_mensal', 'aluno')
         
         # Aplicar filtros
@@ -1217,7 +1217,7 @@ def visualizar_painel_frequencias(request, turma_id, mes_inicio, ano_inicio, mes
         # Obter frequências no período
         frequencias = FrequenciaMensal.objects.filter(
             turma=turma
-        ).select_related('turma')
+        ).prefetch_related('turmas')
         
         # Filtrar pelo período
         frequencias_filtradas = [
@@ -1450,7 +1450,7 @@ def listar_frequencias(request):
         FrequenciaMensal, _ = get_models()
         
         # Aplicar filtros
-        frequencias = FrequenciaMensal.objects.all().select_related('turma')
+        frequencias = FrequenciaMensal.objects.all().prefetch_related('turmas')
         
         # Filtrar por turma
         turma_id = request.GET.get('turma')

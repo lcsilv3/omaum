@@ -30,7 +30,7 @@ def dashboard_atividades(request):
     if turma_id:
         atividades = atividades.filter(turma_id=turma_id)
 
-    atividades = atividades.select_related("turma__curso").distinct()
+    atividades = atividades.select_related("curso").prefetch_related("turmas").distinct()
 
     # Exemplo de dados para cards
     total_atividades = atividades.count()

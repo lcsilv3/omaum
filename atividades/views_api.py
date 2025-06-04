@@ -3,6 +3,7 @@ from django.template.loader import render_to_string
 from .models import AtividadeAcademica
 from cursos.models import Curso
 from turmas.models import Turma
+from django.db.models import Q
 
 def api_filtrar_atividades(request):
     q = request.GET.get('q', '').strip()
@@ -11,7 +12,7 @@ def api_filtrar_atividades(request):
 
     atividades = AtividadeAcademica.objects.all()
     if q:
-        atividades = atividades.filter(nome__icontains=q)
+        atividades = atividades.filter(Q(nome__icontains=q) | Q(descricao__icontains=q))
     if curso_id:
         atividades = atividades.filter(curso_id=curso_id)
     if turma_id:
@@ -19,7 +20,7 @@ def api_filtrar_atividades(request):
     atividades = atividades.distinct()
 
     # Cursos disponíveis para as atividades filtradas
-    cursos = Curso.objects.filter(atividadeacademica__in=atividades).distinct()
+    cursos = Curso.objects.filter(atividades__in=atividades).distinct()
     
     # Turmas disponíveis para as atividades filtradas
     if curso_id:
@@ -28,16 +29,16 @@ def api_filtrar_atividades(request):
         # Se só turma foi selecionada, mostre apenas essa turma
         turmas = Turma.objects.filter(id=turma_id)
         # Opcional: filtrar cursos para mostrar só o do turma selecionada
-        cursos = Curso.objects.filter(id=turmas.first().curso_id) if turmas.exists() else Curso.objects.none()
+        cursos = Curso.objects.filter(codigo_curso=turmas.first().curso_id) if turmas.exists() else Curso.objects.none()
     else:
         turmas = Turma.objects.all().distinct()
 
     atividades_html = render_to_string(
-        'atividades/_tabela_atividades.html',
+        'atividades/academicas/partials/atividades_tabela_body.html',
         {'atividades': atividades}
     )
 
-    cursos_json = [{'id': c.id, 'nome': c.nome} for c in cursos]
+    cursos_json = [{'id': c.codigo_curso, 'nome': c.nome} for c in cursos]
     turmas_json = [{'id': t.id, 'nome': t.nome} for t in turmas]
 
     return JsonResponse({

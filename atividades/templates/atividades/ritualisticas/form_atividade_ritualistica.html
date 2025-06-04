@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Criar Nova Atividade Ritualística{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Nova Atividade Ritualística</h1>
+        <a href="/atividades/ritualisticas/" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Dados da Atividade</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_nome" class="form-label">Nome da Atividade</label>
+                            <input type="text" name="nome" class="form-control" maxlength="100" required id="id_nome" value="{{ form.nome.value|default_if_none:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_descricao" class="form-label">Descrição</label>
+                            <textarea name="descricao" cols="40" rows="3" class="form-control" id="id_descricao">{{ form.descricao.value|default_if_none:'' }}</textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="id_data" class="form-label">Data</label>
+                                <input type="date" name="data" class="form-control" required id="id_data" value="{{ form.data.value|default_if_none:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="id_hora_inicio" class="form-label">Hora de Início</label>
+                                <input type="time" name="hora_inicio" class="form-control" required id="id_hora_inicio" value="{{ form.hora_inicio.value|default_if_none:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="id_hora_fim" class="form-label">Hora de Término</label>
+                                <input type="time" name="hora_fim" class="form-control" id="id_hora_fim" value="{{ form.hora_fim.value|default_if_none:'' }}">
+                                <small class="form-text text-muted">Opcional. Se não informada, será considerada 1 hora após o início.</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_local" class="form-label">Local</label>
+                            <input type="text" name="local" class="form-control" maxlength="100" id="id_local" value="{{ form.local.value|default_if_none:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_responsavel" class="form-label">Responsável</label>
+                            <input type="text" name="responsavel" class="form-control" maxlength="100" id="id_responsavel" value="{{ form.responsavel.value|default_if_none:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_turma" class="form-label">Turma</label>
+                            <select name="turma" class="form-control" id="id_turma">
+                                {% for turma in form.turma.field.choices %}
+                                    <option value="{{ turma.0 }}" {% if form.turma.value == turma.0 %}selected{% endif %}>{{ turma.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" name="todos_alunos" class="form-check-input" id="id_todos_alunos" {% if form.todos_alunos.value %}checked{% endif %}>
+                                <label class="form-check-label" for="id_todos_alunos">Incluir todos os alunos da turma</label>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="participantes-container">
+                            <label for="id_participantes" class="form-label">Participantes</label>
+                            <select name="participantes" class="form-control" id="id_participantes" multiple>
+                                {% for participante in form.participantes.field.choices %}
+                                    <option value="{{ participante.0 }}" {% if participante.0 in form.participantes.value %}selected{% endif %}>{{ participante.1 }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Selecione os participantes manualmente ou marque "Incluir todos os alunos".</small>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="/atividades/ritualisticas/" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Criar Atividade
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Informações</h5>
+                </div>
+                <div class="card-body">
+                    <p>Preencha os dados para cadastrar uma nova atividade ritualística.</p>
+                    <ul>
+                        <li>Campos obrigatórios estão marcados com <span class="text-danger">*</span>.</li>
+                        <li>Você pode adicionar participantes manualmente ou incluir todos da turma.</li>
+                        <li>Se não informar hora de término, será considerada 1 hora após o início.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const todosAlunosCheckbox = document.getElementById('id_todos_alunos');
+        const participantesContainer = document.getElementById('participantes-container');
+        function toggleParticipantes() {
+            if (todosAlunosCheckbox && participantesContainer) {
+                participantesContainer.style.display = todosAlunosCheckbox.checked ? 'none' : 'block';
+            }
+        }
+        if (todosAlunosCheckbox) {
+            toggleParticipantes();
+            todosAlunosCheckbox.addEventListener('change', toggleParticipantes);
+        }
+    });
+</script>
+{% endblock %}

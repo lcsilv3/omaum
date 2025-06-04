@@ -1,102 +1,99 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Criar Nova Atividade Ritualística{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Criar Nova Atividade Ritualística</h1>
-        <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">Voltar para a lista</a>
+        <h1>Nova Atividade Ritualística</h1>
+        <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
     </div>
-    
+
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
         {% endfor %}
     {% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Informações Básicas</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.local %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
-                    </div>
-                </div>
-            </div>
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
         </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Data e Horário</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.data %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_inicio %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_fim %}
-                    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Dados da Atividade</h5>
                 </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Turma e Participantes</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.turma %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.todos_alunos %}
-                        <small class="form-text text-muted">Marque esta opção para incluir automaticamente todos os alunos da turma.</small>
-                    </div>
-                </div>
-                
-                <div class="row mt-3" id="participantes-container">
-                    <div class="col-md-12">
-                        <label for="{{ form.participantes.id_for_label }}">{{ form.participantes.label }}</label>
-                        <div class="border p-3 rounded">
-                            {{ form.participantes }}
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% include 'includes/form_errors.html' %}
+                        <div class="row">
+                            <div class="col-md-6">{% include 'includes/form_field.html' with field=form.nome %}</div>
+                            <div class="col-md-6">{% include 'includes/form_field.html' with field=form.local %}</div>
                         </div>
-                        {% if form.participantes.errors %}
-                            <div class="text-danger">
-                                {{ form.participantes.errors }}
+                        <div class="row">
+                            <div class="col-md-12">{% include 'includes/form_field.html' with field=form.descricao %}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">{% include 'includes/form_field.html' with field=form.data %}</div>
+                            <div class="col-md-4">{% include 'includes/form_field.html' with field=form.hora_inicio %}</div>
+                            <div class="col-md-4">{% include 'includes/form_field.html' with field=form.hora_fim %}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">{% include 'includes/form_field.html' with field=form.turma %}</div>
+                            <div class="col-md-6">
+                                {% include 'includes/form_field.html' with field=form.todos_alunos %}
+                                <small class="form-text text-muted">Marque para incluir todos os alunos da turma.</small>
                             </div>
-                        {% endif %}
-                    </div>
+                        </div>
+                        <div class="row mt-3" id="participantes-container">
+                            <div class="col-md-12">
+                                <label for="{{ form.participantes.id_for_label }}">{{ form.participantes.label }}</label>
+                                <div class="border p-3 rounded">
+                                    {{ form.participantes }}
+                                </div>
+                                {% if form.participantes.errors %}
+                                    <div class="text-danger">
+                                        {{ form.participantes.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Cadastrar Atividade
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-        
-        <div class="d-flex justify-content-between mb-5">
-            <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Criar Atividade</button>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Informações</h5>
+                </div>
+                <div class="card-body">
+                    <p>Preencha os dados para cadastrar uma nova atividade ritualística.</p>
+                    <ul>
+                        <li>Campos obrigatórios estão marcados com <span class="text-danger">*</span>.</li>
+                        <li>Você pode adicionar participantes manualmente ou incluir todos da turma.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
-    </form>
+    </div>
 </div>
 {% endblock %}
 
@@ -105,20 +102,15 @@
     document.addEventListener('DOMContentLoaded', function() {
         const todosAlunosCheckbox = document.getElementById('{{ form.todos_alunos.id_for_label }}');
         const participantesContainer = document.getElementById('participantes-container');
-        
         function toggleParticipantes() {
-            if (todosAlunosCheckbox.checked) {
-                participantesContainer.style.display = 'none';
-            } else {
-                participantesContainer.style.display = 'block';
+            if (todosAlunosCheckbox && participantesContainer) {
+                participantesContainer.style.display = todosAlunosCheckbox.checked ? 'none' : 'block';
             }
         }
-        
-        // Inicializar
-        toggleParticipantes();
-        
-        // Adicionar listener para mudanças
-        todosAlunosCheckbox.addEventListener('change', toggleParticipantes);
+        if (todosAlunosCheckbox) {
+            toggleParticipantes();
+            todosAlunosCheckbox.addEventListener('change', toggleParticipantes);
+        }
     });
 </script>
 {% endblock %}

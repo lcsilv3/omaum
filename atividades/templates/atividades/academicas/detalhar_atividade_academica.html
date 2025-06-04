@@ -1,16 +1,32 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Detalhes da Atividade Acadêmica{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>{{ atividade.nome }}</h1>
-    <p><strong>Curso:</strong> {{ atividade.curso }}</p>
-    <p><strong>Turmas:</strong>
-        {% for turma in atividade.turmas.all %}
-            {{ turma.nome }}{% if not forloop.last %}, {% endif %}
-        {% endfor %}
-    </p>
-    <!-- demais campos -->
+    <div class="card">
+        <div class="card-header">
+            <h2>{{ atividade.nome }}</h2>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Curso:</dt>
+                <dd class="col-sm-9">{{ atividade.curso }}</dd>
+                <dt class="col-sm-3">Turmas:</dt>
+                <dd class="col-sm-9">
+                    {% for turma in atividade.turmas.all %}
+                        <span class="badge bg-info">{{ turma.nome }}</span>
+                    {% empty %}
+                        <span class="text-muted">-</span>
+                    {% endfor %}
+                </dd>
+                <!-- Adicione outros campos relevantes aqui -->
+            </dl>
+            <div class="mt-4">
+                <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-primary">Editar</a>
+                <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Voltar para a lista</a>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -120,24 +120,15 @@ class AtividadeAcademicaForm(forms.ModelForm):
             'turmas': 'Selecione uma ou mais turmas para esta atividade.',
         }
 
-    def clean(self):
-        cleaned_data = super().clean()
-        data_inicio = cleaned_data.get('data_inicio')
-        data_fim = cleaned_data.get('data_fim')
-        hora_inicio = cleaned_data.get('hora_inicio')
-        hora_fim = cleaned_data.get('hora_fim')
-
-        if data_inicio and not data_fim:
-            cleaned_data['data_fim'] = data_inicio
-
-        if data_inicio and data_fim and data_fim < data_inicio:
-            self.add_error('data_fim', 'A data de término não pode ser anterior à data de início.')
-
-        if (data_inicio and data_fim and data_inicio == data_fim and
-            hora_inicio and hora_fim and hora_fim < hora_inicio):
-            self.add_error('hora_fim', 'A hora de término não pode ser anterior à hora de início no mesmo dia.')
-
-        return cleaned_data
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        models = get_models()  # Adicione esta linha
+        Turma = models['Turma']  # E esta linha
+        curso_id = self.initial.get('curso') or self.data.get('curso')
+        if curso_id:
+            self.fields['turmas'].queryset = Turma.objects.filter(curso_id=curso_id)
+        else:
+            self.fields['turmas'].queryset = Turma.objects.none()
 
 # Formulário de Atividade Ritualística
 def get_atividade_ritualistica_model():

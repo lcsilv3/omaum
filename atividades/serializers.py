@@ -1,18 +1,15 @@
 from rest_framework import serializers
 from importlib import import_module
-
-def get_models():
-    """Obtém os modelos necessários dinamicamente."""
-    atividades_module = import_module("atividades.models")
-    cursos_module = import_module("cursos.models")
-    turmas_module = import_module("turmas.models")
-    
-    return {
-        'AtividadeAcademica': getattr(atividades_module, "AtividadeAcademica"),
-        'Curso': getattr(cursos_module, "Curso"),
-        'Turma': getattr(turmas_module, "Turma"),
-    }
-
+from .utils import (
+    get_models,
+    get_form_class,
+    get_model_class,
+    get_turma_model,
+    get_aluno_model,
+    get_cursos,
+    get_turmas,
+    get_atividades_academicas,
+)
 class CursoSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_models()['Curso']

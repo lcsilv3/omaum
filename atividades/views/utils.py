@@ -39,12 +39,20 @@ def get_messages():
     return messages
 
 def get_models():
-    """Obtém os modelos AtividadeAcademica e AtividadeRitualistica."""
-    atividades_module = import_module("atividades.models")
-    AtividadeAcademica = getattr(atividades_module, "AtividadeAcademica")
-    AtividadeRitualistica = getattr(atividades_module, "AtividadeRitualistica")
-    return AtividadeAcademica, AtividadeRitualistica
-
+    """Obtém os modelos necessários dinamicamente."""
+    try:
+        atividades_module = import_module("atividades.models")
+        cursos_module = import_module("cursos.models")
+        turmas_module = import_module("turmas.models")
+        
+        return {
+            'AtividadeAcademica': getattr(atividades_module, "AtividadeAcademica"),
+            'Curso': getattr(cursos_module, "Curso"),
+            'Turma': getattr(turmas_module, "Turma"),
+        }
+    except (ImportError, AttributeError) as e:
+        logger.error("Erro ao obter modelos: %s", str(e), exc_info=True)
+        raise
 
 def get_forms():
     """Obtém os formulários AtividadeAcademicaForm e AtividadeRitualisticaForm."""
@@ -81,12 +89,12 @@ def get_atividades_academicas(curso_id=None, turma_id=None, query=None):
     from ..models import AtividadeAcademica
     atividades = AtividadeAcademica.objects.all()
     if curso_id:
-        atividades = atividades.filter(turma__curso_id=curso_id)
+        atividades = atividades.filter(curso_id=curso_id)
     if turma_id:
-        atividades = atividades.filter(turma_id=turma_id)
+        atividades = atividades.filter(turmas__id=turma_id)
     if query:
         from django.db.models import Q
         atividades = atividades.filter(
             Q(nome__icontains=query) | Q(descricao__icontains=query)
         )
-    return atividades.select_related("turma__curso").distinct()
+    return atividades.select_related("curso").prefetch_related("turmas").distinct()

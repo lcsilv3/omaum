@@ -290,12 +290,12 @@ class Curso(models.Model):
         validators=[MinValueValidator(1)],
         help_text="Digite um número inteiro positivo",
     )
-    nome = models.CharField("Nome do Curso", max_length=100)
+    nome = models.CharField(max_length=100)
     descricao = models.TextField("Descrição", blank=True)
     duracao = models.PositiveIntegerField("Duração (meses)", default=6)
 
     def __str__(self):
-        return f"{self.codigo_curso} - {self.nome}"
+        return self.nome
 
     class Meta:
         verbose_name = "Curso"

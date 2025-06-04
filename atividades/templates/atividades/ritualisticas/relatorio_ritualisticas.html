@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Relatório de Atividades Ritualísticas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Relatório de Atividades Ritualísticas</h1>
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label for="turma" class="form-label">Turma</label>
+            <select name="turma" id="turma" class="form-select">
+                <option value="">Todas as turmas</option>
+                {% for turma in turmas %}
+                    <option value="{{ turma.id }}" {% if turma_selecionada == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="data" class="form-label">Data</label>
+            <input type="date" name="data" id="data" class="form-control" value="{{ data_selecionada }}">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary me-2">
+                <i class="fas fa-search"></i> Filtrar
+            </button>
+            <a href="{% url 'atividades:relatorio_atividades_ritualisticas' %}" class="btn btn-outline-secondary">
+                Limpar
+            </a>
+        </div>
+    </form>
+    <div class="card">
+        <div class="card-body">
+            {% if atividades %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Data</th>
+                            <th>Horário</th>
+                            <th>Local</th>
+                            <th>Turma</th>
+                            <th>Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for atividade in atividades %}
+                        <tr>
+                            <td>{{ atividade.nome }}</td>
+                            <td>{{ atividade.data|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if atividade.hora_inicio and atividade.hora_fim %}
+                                    {{ atividade.hora_inicio }} - {{ atividade.hora_fim }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ atividade.local }}</td>
+                            <td>
+                                {% if atividade.turma %}
+                                    <span class="badge bg-info">{{ atividade.turma }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ atividade.descricao|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-warning">
+                    Nenhuma atividade ritualística encontrada para o filtro selecionado.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

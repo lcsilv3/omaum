@@ -1,0 +1,72 @@
+<tbody>
+{% for atividade in atividades %}
+    <tr>
+        <td>{{ atividade.nome }}</td>
+        <td>
+            {% if atividade.curso %}
+                {{ atividade.curso.nome }}<tbody>
+{% for atividade in atividades %}
+    <tr>
+        <td>{{ atividade.nome }}</td>
+        <td>
+            {% if atividade.curso %}
+                {{ atividade.curso.nome }}
+            {% else %}
+                <span class="text-muted">-</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if atividade.turmas.exists %}
+                {% for turma in atividade.turmas.all %}
+                    <span class="badge bg-secondary">{{ turma.nome }}</span>
+                {% endfor %}
+            {% else %}
+                <span class="text-muted">Nenhuma</span>
+            {% endif %}
+        </td>
+        <td>{{ atividade.get_tipo_display }}</td>
+        <td>{{ atividade.get_status_display }}</td>
+        <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+        <td>
+            <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info" title="Detalhes">Detalhes</a>
+            <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar">Editar</a>
+            <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir">Excluir</a>
+        </td>
+    </tr>
+{% empty %}
+    <tr>
+        <td colspan="7" class="text-center">Nenhuma atividade encontrada.</td>
+    </tr>
+{% endfor %}</tbody>
+            {% else %}
+                <span class="text-muted">-</span>
+            {% endif %}
+        </td>
+        <td>
+            {% for turma in atividade.turmas.all %}
+                <span class="badge bg-secondary">{{ turma.nome }}</span>
+            {% empty %}
+                <span class="text-muted">Nenhuma</span>
+            {% endfor %}
+        </td>
+        <td>
+            {{ atividade.get_tipo_atividade_display|default:atividade.tipo_atividade }}
+        </td>
+        <td>
+            {{ atividade.get_status_display|default:atividade.status }}
+        </td>
+        <td>
+            {{ atividade.data_inicio|date:"d/m/Y" }}
+        </td>
+        <td>
+            <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info" title="Detalhes">Detalhes</a>
+            <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar">Editar</a>
+            <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir">Excluir</a>
+        </td>
+    </tr>
+{% empty %}
+    <tr>
+        <td colspan="7" class="text-center">Nenhuma atividade encontrada.</td>
+    </tr>
+{% endfor %}
+</tbody>

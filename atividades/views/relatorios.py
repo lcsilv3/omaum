@@ -350,7 +350,7 @@ def relatorio_atividades_curso_turma(request):
     if turma_id:
         atividades = atividades.filter(turma_id=turma_id)
 
-    atividades = atividades.select_related("turma__curso").distinct()
+    atividades = atividades.select_related("curso").prefetch_related("turmas").distinct()
 
     context = {
         "atividades": atividades,
@@ -385,3 +385,32 @@ def ajax_atividades_filtradas_relatorio(request):
     Retorna HTML parcial da tabela.
     """
     return relatorio_atividades_curso_turma(request)
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from ..models import AtividadeRitualistica
+from ..views.utils import get_model_class
+
+@login_required
+def relatorio_atividades_ritualisticas(request):
+    Turma = get_model_class("Turma", "turmas")
+    turmas = Turma.objects.filter(status='A')
+    turma_id = request.GET.get("turma")
+    data = request.GET.get("data")
+
+    atividades = AtividadeRitualistica.objects.all()
+    if turma_id:
+        atividades = atividades.filter(turma_id=turma_id)
+    if data:
+        atividades = atividades.filter(data=data)
+
+    return render(
+        request,
+        "atividades/ritualisticas/relatorio_ritualisticas.html",
+        {
+            "atividades": atividades,
+            "turmas": turmas,
+            "turma_selecionada": turma_id,
+            "data_selecionada": data,
+        }
+    )
