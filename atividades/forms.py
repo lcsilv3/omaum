@@ -122,7 +122,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
             'local': forms.TextInput(attrs={'class': 'form-control'}),
             'responsavel': forms.TextInput(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
-            'curso': forms.Select(attrs={'class': 'form-control'}),
+            'curso': forms.Select(attrs={'class': 'form-select'}),
             'turmas': forms.SelectMultiple(attrs={'class': 'form-control'}),
         }
         labels = {
@@ -161,6 +161,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
             )
         else:
             self.fields['turmas'].queryset = Turma.objects.none()
+        self.fields['curso'].empty_label = "Selecione um curso"
 
 
 def get_atividade_ritualistica_model():

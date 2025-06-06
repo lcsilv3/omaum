@@ -3,15 +3,15 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# ... outras configurações ...
+print(f"BASE_DIR: {BASE_DIR}")
+# ... outras configuraï¿½ï¿½es ...
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             os.path.join(BASE_DIR, 'omaum', 'templates'),
-            os.path.join(BASE_DIR, 'templates'),  # Mantido para compatibilidade, caso necessário
+            os.path.join(BASE_DIR, 'templates'),  # Mantido para compatibilidade, caso necessï¿½rio
         ],
         'APP_DIRS': True,
         'OPTIONS': {

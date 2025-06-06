@@ -1,221 +1,162 @@
-{% extends 'base.html' %}
-{% load static %}
-{% block title %}Criar Nova Atividade Acadêmica{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Nova Atividade Acadêmica</h1>
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="id_nome" class="form-label">Nome da Atividade</label>
+        {{ form.nome }}
+        {% for error in form.nome.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_descricao" class="form-label">Descrição</label>
+        {{ form.descricao }}
+        {% for error in form.descricao.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_tipo_atividade" class="form-label">Tipo de Atividade</label>
+        {{ form.tipo_atividade }}
+        {% for error in form.tipo_atividade.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_status" class="form-label">Status</label>
+        {{ form.status }}
+        {% for error in form.status.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_data_inicio" class="form-label">Data de Início</label>
+        {{ form.data_inicio }}
+        {% for error in form.data_inicio.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_data_fim" class="form-label">Data de Término</label>
+        {{ form.data_fim }}
+        {% for error in form.data_fim.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+        <small class="form-text text-muted">Opcional. Se não informada, será considerada a mesma data de início.</small>
+    </div>
+    <div class="mb-3">
+        <label for="id_hora_inicio" class="form-label">Hora de Início</label>
+        {{ form.hora_inicio }}
+        {% for error in form.hora_inicio.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_hora_fim" class="form-label">Hora de Término</label>
+        {{ form.hora_fim }}
+        {% for error in form.hora_fim.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+        <small class="form-text text-muted">Opcional. Se não informada, será considerada 1 hora após o início.</small>
+    </div>
+    <div class="mb-3">
+        <label for="id_local" class="form-label">Local</label>
+        {{ form.local }}
+        {% for error in form.local.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_responsavel" class="form-label">Responsável</label>
+        {{ form.responsavel }}
+        {% for error in form.responsavel.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_curso" class="form-label">Curso</label>
+        {{ form.curso }}
+        {% for error in form.curso.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_turmas" class="form-label">Turmas</label>
+        <div class="d-flex align-items-center mb-2">
+            <input type="checkbox" id="select-all-turmas" class="form-check-input me-2">
+            <label for="select-all-turmas" class="form-check-label">Selecionar todas as turmas</label>
+        </div>
+        {{ form.turmas }}
+        {% for error in form.turmas.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+        <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
+    </div>
+    <div class="d-flex justify-content-between mb-4">
         <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar
+            <i class="fas fa-times"></i> Cancelar
         </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Criar Atividade
+        </button>
     </div>
-    <div class="row">
-        <div class="col-md-8">
-            <form method="post" enctype="multipart/form-data" novalidate>
-                {% csrf_token %}
-                <!-- Seção 1: Informações Básicas -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Informações Básicas</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="id_nome" class="form-label">Nome da Atividade</label>
-                            {{ form.nome }}
-                            {% for error in form.nome.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="mb-3">
-                            <label for="id_descricao" class="form-label">Descrição</label>
-                            {{ form.descricao }}
-                            {% for error in form.descricao.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_tipo_atividade" class="form-label">Tipo de Atividade</label>
-                                {{ form.tipo_atividade }}
-                                {% for error in form.tipo_atividade.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_status" class="form-label">Status</label>
-                                {{ form.status }}
-                                {% for error in form.status.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Seção 2: Datas e Horários -->
-                <div class="card mb-4">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">Datas e Horários</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_data_inicio" class="form-label">Data de Início</label>
-                                {{ form.data_inicio }}
-                                {% for error in form.data_inicio.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_data_fim" class="form-label">Data de Término</label>
-                                {{ form.data_fim }}
-                                {% for error in form.data_fim.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                                <small class="form-text text-muted">Opcional. Se não informada, será considerada a mesma data de início.</small>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_hora_inicio" class="form-label">Hora de Início</label>
-                                {{ form.hora_inicio }}
-                                {% for error in form.hora_inicio.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_hora_fim" class="form-label">Hora de Término</label>
-                                {{ form.hora_fim }}
-                                {% for error in form.hora_fim.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                                <small class="form-text text-muted">Opcional. Se não informada, será considerada 1 hora após o início.</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Seção 3: Vínculos -->
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Vínculos</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="id_local" class="form-label">Local</label>
-                            {{ form.local }}
-                            {% for error in form.local.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="mb-3">
-                            <label for="id_responsavel" class="form-label">Responsável</label>
-                            {{ form.responsavel }}
-                            {% for error in form.responsavel.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="mb-3 position-relative" style="position: relative;">
-                            <label for="id_curso" class="form-label">Curso</label>
-                            <select name="curso" class="form-control curso-dropdown" id="id_curso">
-                                <option value="">Selecione...</option>
-                                {% for curso in form.fields.curso.queryset %}
-                                    <option value="{{ curso.id }}">{{ curso.nome }}</option>
-                                {% endfor %}
-                            </select>
-                            <span class="dropdown-arrow"></span>
-                            {% for error in form.curso.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="mb-3">
-                            <label for="id_turmas" class="form-label">Turmas</label>
-                            <div class="d-flex align-items-center mb-2">
-                                <input type="checkbox" id="select-all-turmas" class="form-check-input me-2">
-                                <label for="select-all-turmas" class="form-check-label">Selecionar todas as turmas</label>
-                            </div>
-                            {{ form.turmas }}
-                            {% for error in form.turmas.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                            <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between mb-4">
-                    <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Criar Atividade
-                    </button>
-                </div>
-            </form>
-        </div>
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Dicas</h5>
-                </div>
-                <div class="card-body">
-                    <ul>
-                        <li>Preencha todos os campos obrigatórios <span class="text-danger">*</span>.</li>
-                        <li>Use datas e horários corretos para evitar conflitos.</li>
-                        <li>Associe a atividade a uma ou mais turmas.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+</form>
 
-{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const cursoSelect = document.getElementById('id_curso');
     const turmasSelect = document.getElementById('id_turmas');
     const selectAllTurmas = document.getElementById('select-all-turmas');
+    let noTurmasMsg = document.getElementById('no-turmas-msg');
+    if (!noTurmasMsg) {
+        noTurmasMsg = document.createElement('div');
+        noTurmasMsg.id = 'no-turmas-msg';
+        noTurmasMsg.className = 'text-muted mt-2';
+        turmasSelect.parentNode.appendChild(noTurmasMsg);
+    }
 
     function atualizarTurmas(cursoId, turmasSelecionadas=[]) {
         if (!cursoId) {
             turmasSelect.innerHTML = '';
+            noTurmasMsg.textContent = '';
             return;
         }
         fetch(`/atividades/ajax/turmas-por-curso/?curso=${cursoId}`)
             .then(response => response.json())
             .then(data => {
                 turmasSelect.innerHTML = '';
-                data.turmas.forEach(function(turma) {
-                    const option = document.createElement('option');
-                    option.value = turma.id;
-                    option.textContent = turma.nome;
-                    if (turmasSelecionadas.includes(String(turma.id))) {
-                        option.selected = true;
-                    }
-                    turmasSelect.appendChild(option);
-                });
+                if (data.turmas.length === 0) {
+                    noTurmasMsg.textContent = 'Não há turmas para este curso.';
+                } else {
+                    noTurmasMsg.textContent = '';
+                    data.turmas.forEach(function(turma) {
+                        const option = document.createElement('option');
+                        option.value = turma.id;
+                        option.textContent = turma.nome;
+                        if (turmasSelecionadas.includes(String(turma.id))) {
+                            option.selected = true;
+                        }
+                        turmasSelect.appendChild(option);
+                    });
+                }
             });
     }
 
-    // Ao trocar o curso, filtra as turmas
     if (cursoSelect) {
         cursoSelect.addEventListener('change', function() {
             atualizarTurmas(this.value);
         });
     }
 
-    // Ao carregar a página, filtra as turmas se já houver curso selecionado
     if (cursoSelect && turmasSelect) {
-        // Coleta as turmas já selecionadas (útil para edição)
         const turmasSelecionadas = Array.from(turmasSelect.selectedOptions).map(opt => opt.value);
         if (cursoSelect.value) {
             atualizarTurmas(cursoSelect.value, turmasSelecionadas);
         } else {
             turmasSelect.innerHTML = '';
+            noTurmasMsg.textContent = '';
         }
     }
 
-    // Selecionar todas as turmas
     if (selectAllTurmas && turmasSelect) {
         selectAllTurmas.addEventListener('change', function() {
             for (let option of turmasSelect.options) {
@@ -228,4 +169,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock %}
+
+{% comment %}
+Returns:
+    dict: Dicionário com todos os modelos necessários
+Raises:
+    ImportError: Se algum módulo não puder ser importado
+    AttributeError: Se algum modelo não for encontrado no módulo
+"""
+try:
+    atividades_module = import_module("atividades.models")
+    cursos_module = import_module("cursos.models")
+    turmas_module = import_module("turmas.models")
+    alunos_module = import_module("alunos.models")
+
+    return {
+        'AtividadeAcademica': getattr(atividades_module, "AtividadeAcademica"),
+        'AtividadeRitualistica': getattr(atividades_module, "AtividadeRitualistica"),
+        'Curso': getattr(cursos_module, "Curso"),
+        'Turma': getattr(turmas_module, "Turma"),
+        'Aluno': getattr(alunos_module, "Aluno"),
+    }
+except (ImportError, AttributeError) as e:
+    logger.error("Erro ao obter modelos: %s", e)
+    raise
+{% endcomment %}

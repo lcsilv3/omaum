@@ -98,7 +98,7 @@ def criar_atividade_academica(request):
             form = AtividadeAcademicaForm()
         return render(
             request,
-            "atividades/academicas/form_atividade_academica.html",
+            "atividades/academicas/criar_atividade_academica.html",  # <-- Corrija aqui
             {"form": form}
         )
     except Exception as e:

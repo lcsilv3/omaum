@@ -9,9 +9,9 @@ def update_template_extends(root_dir):
                 with open(filepath, "r", encoding="utf-8") as file:
                     content = file.read()
 
-                if '{% extends "core/base.html" %}' in content:
+                if '{% extends "base.html" %}' in content:
                     content = content.replace(
-                        '{% extends "core/base.html" %}',
+                        '{% extends "base.html" %}',
                         '{% extends "base.html" %}',
                     )
                     with open(filepath, "w", encoding="utf-8") as file:

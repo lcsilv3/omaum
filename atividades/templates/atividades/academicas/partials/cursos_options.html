@@ -1,3 +1,4 @@
+<option value="">Selecione um curso</option>
 {% for curso in cursos %}
     <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_selecionado|stringformat:"s" %}selected{% endif %}>
         {{ curso.codigo_curso }} - {{ curso.nome }}

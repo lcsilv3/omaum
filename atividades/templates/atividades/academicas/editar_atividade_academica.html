@@ -58,3 +58,10 @@
     </form>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/atividades_ajax.js' %}"></script>
+<script>
+    window.initTurmasAjax();
+</script>
+{% endblock %}

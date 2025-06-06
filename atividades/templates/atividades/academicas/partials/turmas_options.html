@@ -1,3 +1,4 @@
+<option value="">Selecione uma turma</option>
 {% for turma in turmas %}
     <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == turma_selecionada|stringformat:"s" %}selected{% endif %}>
         {{ turma.nome }}

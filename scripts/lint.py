@@ -12,16 +12,22 @@ ROOT_DIR = Path(__file__).parent.parent
 
 # Diretórios a serem verificados
 DIRS_TO_CHECK = [
-    "alunos",
-    "atividades",
-    "core",
-    "cursos",
-    "matriculas",
-    "notas",
-    "pagamentos",
-    "turmas",
+    
     "omaum",
-    "scripts",
+    'core',
+    'alunos',
+    'atividades',
+    'cargos',
+    'cursos',
+    'frequencias',
+    'iniciacoes',
+    'matriculas',
+    'notas',
+    'pagamentos',
+    'presencas',
+    'punicoes',
+    'relatorios',
+    'turmas',
 ]
 
 
