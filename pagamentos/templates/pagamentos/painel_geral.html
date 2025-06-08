@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard de Pagamentos{% endblock %}
+{% block title %}Painel Geral de Pagamentos{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Dashboard de Pagamentos</h1>
+        <h1>Painel de Pagamentos</h1>
         <div>
             <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-primary">
                 <i class="fas fa-list"></i> Listar Pagamentos
@@ -47,7 +47,7 @@
             <div class="card bg-danger text-white">
                 <div class="card-body">
                     <h5 class="card-title">Pagamentos Atrasados</h5>
-                    <h2 class="display-4">{{ pagamentos_atrasados }}</h2>
+                    <h2 class="display-4">{{ pagamentos_atrasados_count }}</h2>
                 </div>
             </div>
         </div>
@@ -92,15 +92,15 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Dashboards Específicos</h5>
+                    <h5 class="mb-0">Painéis Específicos</h5>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'pagamentos:dashboard_pagamentos' %}" class="btn btn-outline-primary">
-                            <i class="fas fa-chart-line"></i> Dashboard de Pagamentos
+                        <a href="{% url 'pagamentos:painel_mensal' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-chart-line"></i> Painel de Pagamentos
                         </a>
-                        <a href="{% url 'pagamentos:dashboard_financeiro' %}" class="btn btn-outline-success">
-                            <i class="fas fa-money-bill-wave"></i> Dashboard Financeiro
+                        <a href="{% url 'pagamentos:painel_financeiro' %}" class="btn btn-outline-success">
+                            <i class="fas fa-money-bill-wave"></i> Painel Financeiro
                         </a>
                     </div>
                 </div>

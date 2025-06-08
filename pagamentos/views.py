@@ -35,9 +35,9 @@ from .views.relatorio_views import (
 )
 
 from .views.dashboard_views import (
-    dashboard,
-    dashboard_pagamentos,
-    dashboard_financeiro,
+    painel_geral,
+    painel_mensal,
+    painel_financeiro,
 )
 
 def editar_pagamento(request, id):

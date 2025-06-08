@@ -50,3 +50,14 @@
     margin-top: 10px;
     width: 100%;
 }
+
+@keyframes piscar {
+    0%, 100% { box-shadow: 0 0 0 2px #dc3545; }
+    50% { box-shadow: 0 0 8px 4px #dc3545; }
+}
+
+.is-required-error {
+    border-color: #dc3545 !important;
+    animation: piscar 1s linear 3;
+    background-color: #fff0f0 !important;
+}

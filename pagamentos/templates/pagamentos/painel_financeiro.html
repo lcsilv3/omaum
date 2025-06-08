@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard Financeiro{% endblock %}
+{% block title %}Painel Financeiro{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
@@ -60,7 +60,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter"></i> Filtrar
                     </button>
-                    <a href="{% url 'pagamentos:dashboard' %}" class="btn btn-secondary">
+                    <a href="{% url 'pagamentos:painel_geral' %}" class="btn btn-secondary">
                         <i class="fas fa-undo"></i> Limpar Filtros
                     </a>
                     <a href="{% url 'pagamentos:exportar_relatorio_pdf' %}{{ request.GET.urlencode }}" class="btn btn-danger float-end">

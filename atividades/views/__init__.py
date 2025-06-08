@@ -33,7 +33,8 @@ from .relatorios import (
 )
 
 from .importacao import (
-    importar_atividades,
+    importar_atividades_academicas,
+    importar_atividades_ritualisticas,
 )
 
 from .calendario import (

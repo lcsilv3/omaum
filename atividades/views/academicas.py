@@ -134,7 +134,7 @@ def editar_atividade_academica(request, id):
             form = AtividadeAcademicaForm(instance=atividade)
         return render(
             request,
-            "atividades/academicas/form_atividade_academica.html",
+            "atividades/academicas/editar_atividade_academica.html",
             {"form": form, "atividade": atividade}
         )
     except Exception as e:

@@ -28,7 +28,13 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
+                        <label for="id_nome" class="form-label">
+                            {{ form.nome.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.nome }}
+                        {% for error in form.nome.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
                     </div>
                     <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.local %}
@@ -49,10 +55,22 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.data %}
+                        <label for="id_data" class="form-label">
+                            {{ form.data.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.data }}
+                        {% for error in form.data.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
                     </div>
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_inicio %}
+                        <label for="id_hora_inicio" class="form-label">
+                            {{ form.hora_inicio.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.hora_inicio }}
+                        {% for error in form.hora_inicio.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
                     </div>
                     <div class="col-md-4">
                         {% include 'includes/form_field.html' with field=form.hora_fim %}
@@ -92,7 +110,19 @@
             </div>
         </div>
         
-        <div class="d-flex justify-content-between mb-5">
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label for="id_status" class="form-label">
+                    {{ form.status.label }} <span class="text-danger">*</span>
+                </label>
+                {{ form.status }}
+                {% for error in form.status.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mb-5 mt-4">
             <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">Atualizar Atividade</button>
         </div>
@@ -107,18 +137,47 @@
         const participantesContainer = document.getElementById('participantes-container');
         
         function toggleParticipantes() {
-            if (todosAlunosCheckbox.checked) {
-                participantesContainer.style.display = 'none';
-            } else {
-                participantesContainer.style.display = 'block';
+            if (todosAlunosCheckbox && participantesContainer) {
+                participantesContainer.style.display = todosAlunosCheckbox.checked ? 'none' : 'block';
             }
         }
-        
-        // Inicializar
-        toggleParticipantes();
-        
-        // Adicionar listener para mudanças
-        todosAlunosCheckbox.addEventListener('change', toggleParticipantes);
+        if (todosAlunosCheckbox) {
+            toggleParticipantes();
+            todosAlunosCheckbox.addEventListener('change', toggleParticipantes);
+        }
+
+        // Highlight campos obrigatórios
+        function highlightRequiredFields(form) {
+            const obrigatorios = [
+                'id_nome',
+                'id_data',
+                'id_hora_inicio',
+                'id_status'
+            ];
+            let algumErro = false;
+            obrigatorios.forEach(function(id) {
+                const field = document.getElementById(id);
+                if (field) {
+                    field.classList.remove('is-required-error');
+                    if (!field.value || (field.type === "select-one" && !field.value)) {
+                        field.classList.add('is-required-error');
+                        algumErro = true;
+                    }
+                }
+            });
+            return !algumErro;
+        }
+
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!highlightRequiredFields(form)) {
+                    e.preventDefault();
+                    const erro = form.querySelector('.is-required-error');
+                    if (erro) erro.focus();
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

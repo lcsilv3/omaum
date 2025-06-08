@@ -106,7 +106,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
             'descricao': forms.Textarea(
                 attrs={'class': 'form-control', 'rows': 3}
             ),
-            'tipo_atividade': forms.Select(attrs={'class': 'form-control'}),
+            'tipo_atividade': forms.Select(attrs={'class': 'form-select'}),
             'data_inicio': forms.DateInput(
                 attrs={'class': 'form-control', 'type': 'date'}
             ),
@@ -121,7 +121,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
             ),
             'local': forms.TextInput(attrs={'class': 'form-control'}),
             'responsavel': forms.TextInput(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
             'curso': forms.Select(attrs={'class': 'form-select'}),
             'turmas': forms.SelectMultiple(attrs={'class': 'form-control'}),
         }

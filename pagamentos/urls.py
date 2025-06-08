@@ -9,7 +9,7 @@ from .views.relatorio_views import (
     relatorio_financeiro, pagamentos_por_turma,
     dados_grafico_pagamentos, dados_distribuicao_pagamentos
 )
-from .views.dashboard_views import dashboard, dashboard_pagamentos, dashboard_financeiro
+from .views.dashboard_views import painel_geral, painel_mensal, painel_financeiro
 
 app_name = 'pagamentos'
 
@@ -35,10 +35,11 @@ urlpatterns = [
     path('relatorio/', relatorio_financeiro, name='relatorio_financeiro'),
     path('relatorio/turma/', pagamentos_por_turma, name='relatorio_pagamentos_turma'),
 
-    # Dashboards
-    path('dashboard/', dashboard, name='dashboard'),
-    path('dashboard/pagamentos/', dashboard_pagamentos, name='dashboard_pagamentos'),
-    path('dashboard/financeiro/', dashboard_financeiro, name='dashboard_financeiro'),
+   
+    # Painéis novos
+    path('painel/', painel_geral, name='painel_geral'),
+    path('painel/mensal/', painel_mensal, name='painel_mensal'),
+    path('painel/financeiro/', painel_financeiro, name='painel_financeiro'),
 
     # APIs para gráficos
     path('pagamentos/grafico-pagamentos/', dados_grafico_pagamentos, name='dados_grafico_pagamentos'),
