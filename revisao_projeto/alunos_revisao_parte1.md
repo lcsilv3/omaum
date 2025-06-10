@@ -564,7 +564,7 @@ def detalhar_aluno(request, cpf):
         matriculas_module = import_module("matriculas.models")
         Matricula = getattr(matriculas_module, "Matricula")
         # Buscar matrículas do aluno
-        matriculas = Matricula.objects.filter(aluno=aluno).select_related("turma__curso")
+        matriculas = Matricula.objects.filter(aluno=aluno).select_related("curso").prefetch_related("turmas")
     except (ImportError, AttributeError):
         pass
     

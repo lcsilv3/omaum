@@ -20,48 +20,48 @@ class TurmaForm(forms.ModelForm):
     class Meta:
         model = get_turma_model()
         fields = [
-            "nome", "curso", "vagas", "status", "data_inicio", "data_fim",
-            "instrutor", "instrutor_auxiliar", "auxiliar_instrucao",
-            "dias_semana", "local", "horario", "descricao"
+            "curso",
+            "nome",
+            "descricao",
+            "num_livro",
+            "perc_carencia",
+            "data_iniciacao",
+            "data_inicio_ativ",
+            "data_termino_atividades",
+            "data_prim_aula",
+            "dias_semana",
+            "horario",
+            "local",
+            "vagas",
+            "status",
+            "instrutor",
+            "instrutor_auxiliar",
+            "auxiliar_instrucao",
+            "alerta_instrutor",
+            "alerta_mensagem",
         ]
-        widgets = {
-            "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "curso": forms.Select(attrs={"class": "form-select"}),
-            "vagas": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
-            "status": forms.Select(attrs={"class": "form-select"}),
-            "data_inicio": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "data_fim": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "instrutor": forms.Select(attrs={"class": "form-control"}),
-            "instrutor_auxiliar": forms.Select(attrs={"class": "form-control"}),
-            "auxiliar_instrucao": forms.Select(attrs={"class": "form-control"}),
-            "dias_semana": forms.TextInput(attrs={"class": "form-control"}),
-            "local": forms.TextInput(attrs={"class": "form-control"}),
-            "horario": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-        }
         labels = {
-            "nome": "Nome da Turma",
             "curso": "Curso",
-            "vagas": "Número de Vagas",
-            "status": "Status",
-            "data_inicio": "Data de Início",
-            "data_fim": "Data de Término",
-            "instrutor": "Instrutor Principal",
-            "instrutor_auxiliar": "Instrutor Auxiliar",
-            "auxiliar_instrucao": "Auxiliar de Instrução",
-            "dias_semana": "Dias da Semana",
-            "local": "Local",
-            "horario": "Horário",
-            "descricao": "Descrição",
+            "nome": "Nome da Turma",
+            "data_inicio_ativ": "Data de Início das Atividades",
+            "data_termino_atividades": "Data de Término das Atividades",
+            "data_iniciacao": "Data de Iniciação",
+            "data_prim_aula": "Data da Primeira Aula",
+            "num_livro": "Nº do Livro de Presenças",
+            "perc_carencia": "Percentual de Carência (%)",
         }
         help_texts = {
-            "nome": "Digite um nome descritivo para a turma.",
-            "vagas": "Quantidade máxima de alunos na turma.",
-            "status": "Situação atual da turma.",
-            "data_inicio": "Data prevista para início do curso.",
-            "data_fim": "Data prevista para término do curso.",
-            "dias_semana": "Exemplo: 'Segunda, Quarta e Sexta' ou 'Terças e Quintas'.",
-            "horario": "Exemplo: '19h às 21h'.",
+            "perc_carencia": "Percentual mínimo de faltas permitido para a turma.",
+            "horario": "Exemplo: 13:30 às 15:30",
+        }
+        widgets = {
+            "data_inicio_ativ": forms.DateInput(attrs={"type": "date"}),
+            "data_termino_atividades": forms.DateInput(attrs={"type": "date"}),
+            "data_iniciacao": forms.DateInput(attrs={"type": "date"}),
+            "data_prim_aula": forms.DateInput(attrs={"type": "date"}),
+            "curso": forms.Select(attrs={"class": "curso-select", "placeholder": "Selecione o Curso desejado"}),
+            "horario": forms.TextInput(attrs={"placeholder": "13:30 às 15:30"}),
+            "num_livro": forms.NumberInput(attrs={"placeholder": "999"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -78,53 +78,25 @@ class TurmaForm(forms.ModelForm):
         # Tornar os campos de instrutor auxiliar e auxiliar de instrução opcionais
         self.fields["instrutor_auxiliar"].required = False
         self.fields["auxiliar_instrucao"].required = False
-        
-        # Melhorias para garantir que as datas apareçam corretamente na edição
-        if self.instance and self.instance.pk:
-            if self.instance.data_inicio:
-                # Garantir que a data esteja no formato correto para o campo de entrada
-                self.initial['data_inicio'] = self.instance.data_inicio.strftime('%Y-%m-%d')
-            
-            if self.instance.data_fim:
-                # Garantir que a data esteja no formato correto para o campo de entrada
-                self.initial['data_fim'] = self.instance.data_fim.strftime('%Y-%m-%d')
+
+        # Torna os campos iniciáticos obrigatórios
+        self.fields["num_livro"].required = True
+        self.fields["perc_carencia"].required = True
+        self.fields["data_iniciacao"].required = True
+        self.fields["data_inicio_ativ"].required = True
+        self.fields["data_prim_aula"].required = True
+        self.fields["data_termino_atividades"].required = True
+
+        # Troca o texto do option vazio para "Selecione"
+        for field_name, field in self.fields.items():
+            if isinstance(field, forms.models.ModelChoiceField):
+                field.empty_label = "Selecione"
 
     def clean(self):
         """Validação adicional dos campos do formulário."""
         cleaned_data = super().clean()
-        data_inicio = cleaned_data.get("data_inicio")
-        data_fim = cleaned_data.get("data_fim")
-        
-        # Validar que a data de início seja hoje ou no futuro
-        if data_inicio and data_inicio < timezone.localdate():
-            self.add_error(
-                "data_inicio", 
-                "A data de início não pode ser anterior à data atual."
-            )
-        
-        # Validar que a data de término seja depois da data de início
-        if data_inicio and data_fim and data_fim < data_inicio:
-            self.add_error(
-                "data_fim", 
-                "A data de término deve ser posterior à data de início."
-            )
-        
-        # Validar que o instrutor principal não seja também instrutor auxiliar ou auxiliar de instrução
-        instrutor = cleaned_data.get("instrutor")
         instrutor_auxiliar = cleaned_data.get("instrutor_auxiliar")
         auxiliar_instrucao = cleaned_data.get("auxiliar_instrucao")
-        
-        if instrutor and instrutor_auxiliar and instrutor == instrutor_auxiliar:
-            self.add_error(
-                "instrutor_auxiliar", 
-                "O instrutor auxiliar não pode ser o mesmo que o instrutor principal."
-            )
-        
-        if instrutor and auxiliar_instrucao and instrutor == auxiliar_instrucao:
-            self.add_error(
-                "auxiliar_instrucao", 
-                "O auxiliar de instrução não pode ser o mesmo que o instrutor principal."
-            )
         
         # Validar que instrutor auxiliar e auxiliar de instrução não sejam a mesma pessoa
         if instrutor_auxiliar and auxiliar_instrucao and instrutor_auxiliar == auxiliar_instrucao:
@@ -137,5 +109,20 @@ class TurmaForm(forms.ModelForm):
         vagas = cleaned_data.get("vagas")
         if vagas is not None and vagas <= 0:
             self.add_error("vagas", "O número de vagas deve ser maior que zero.")
+        
+        # Validação extra para garantir que os campos obrigatórios não estejam vazios
+        for field in ["num_livro", "perc_carencia", "data_iniciacao", "data_inicio_ativ", "data_prim_aula", "data_termino_atividades"]:
+            if not cleaned_data.get(field):
+                self.add_error(field, "Este campo é obrigatório.")
+        
+        # Validar que a data de término das atividades não seja anterior à de início
+        data_inicio_ativ = cleaned_data.get("data_inicio_ativ")
+        data_termino_atividades = cleaned_data.get("data_termino_atividades")
+        if data_inicio_ativ and data_termino_atividades:
+            if data_termino_atividades < data_inicio_ativ:
+                self.add_error(
+                    "data_termino_atividades",
+                    "A data de término das atividades não pode ser anterior à data de início das atividades."
+                )
         
         return cleaned_data

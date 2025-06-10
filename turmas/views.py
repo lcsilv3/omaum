@@ -654,7 +654,7 @@ def exportar_turmas(request):
     try:
         import csv
         from django.http import HttpResponse
-        Turma = get_models()
+        Turma = get_turma_model()
         turmas = Turma.objects.all()
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="turmas.csv"'
@@ -669,7 +669,12 @@ def exportar_turmas(request):
             "Data Fim",
             "Instrutor",
             "Local",
-            "Horário"
+            "Horário",
+            "Número do Livro",
+            "Percentual de Carência",
+            "Data de Iniciação",
+            "Data de Início das Atividades",
+            "Data da Primeira Aula"
         ])
         for turma in turmas:
             writer.writerow([
@@ -682,7 +687,12 @@ def exportar_turmas(request):
                 turma.data_fim,
                 turma.instrutor.nome if turma.instrutor else "",
                 turma.local,
-                turma.horario
+                turma.horario,
+                turma.num_livro,
+                turma.perc_carencia,
+                turma.data_iniciacao,
+                turma.data_inicio_ativ,
+                turma.data_prim_aula
             ])
         return response
     except Exception as e:
@@ -697,16 +707,16 @@ def importar_turmas(request):
             import csv
             from io import TextIOWrapper
             from django.utils import timezone
-            
-            Turma = get_models()
-            Curso = get_model("cursos", "Curso")
-            Aluno = get_model("alunos", "Aluno")
-            
+
+            Turma = get_turma_model()
+            Curso = get_curso_model()
+            Aluno = get_aluno_model()
+
             csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
             reader = csv.DictReader(csv_file)
             count = 0
             errors = []
-            
+
             for row in reader:
                 try:
                     # Buscar curso pelo nome ou código
@@ -721,7 +731,7 @@ def importar_turmas(request):
                             except Curso.DoesNotExist:
                                 errors.append(f"Curso não encontrado: {curso_nome}")
                                 continue
-                    
+
                     # Buscar instrutor pelo nome ou CPF
                     instrutor = None
                     instrutor_nome = row.get("Instrutor", "").strip()
@@ -734,10 +744,13 @@ def importar_turmas(request):
                             except Aluno.DoesNotExist:
                                 errors.append(f"Instrutor não encontrado: {instrutor_nome}")
                                 continue
-                    
+
                     # Processar datas
                     data_inicio = None
                     data_fim = None
+                    data_iniciacao = None
+                    data_inicio_ativ = None
+                    data_prim_aula = None
                     try:
                         if row.get("Data Início"):
                             data_inicio = timezone.datetime.strptime(
@@ -747,10 +760,35 @@ def importar_turmas(request):
                             data_fim = timezone.datetime.strptime(
                                 row.get("Data Fim"), "%d/%m/%Y"
                             ).date()
+                        if row.get("Data de Iniciação"):
+                            data_iniciacao = timezone.datetime.strptime(
+                                row.get("Data de Iniciação"), "%d/%m/%Y"
+                            ).date()
+                        if row.get("Data de Início das Atividades"):
+                            data_inicio_ativ = timezone.datetime.strptime(
+                                row.get("Data de Início das Atividades"), "%d/%m/%Y"
+                            ).date()
+                        if row.get("Data da Primeira Aula"):
+                            data_prim_aula = timezone.datetime.strptime(
+                                row.get("Data da Primeira Aula"), "%d/%m/%Y"
+                            ).date()
                     except ValueError as e:
                         errors.append(f"Erro no formato de data: {str(e)}")
                         continue
-                    
+
+                    # Validar obrigatoriedade dos campos iniciáticos
+                    obrigatorios = [
+                        ("Número do Livro", row.get("Número do Livro")),
+                        ("Percentual de Carência", row.get("Percentual de Carência")),
+                        ("Data de Iniciação", data_iniciacao),
+                        ("Data de Início das Atividades", data_inicio_ativ),
+                        ("Data da Primeira Aula", data_prim_aula),
+                    ]
+                    for label, valor in obrigatorios:
+                        if not valor:
+                            errors.append(f"Campo obrigatório não informado: {label}")
+                            continue
+
                     # Criar a turma
                     Turma.objects.create(
                         nome=row.get("Nome", "").strip(),
@@ -761,12 +799,17 @@ def importar_turmas(request):
                         data_fim=data_fim,
                         instrutor=instrutor,
                         local=row.get("Local", "").strip(),
-                        horario=row.get("Horário", "").strip()
+                        horario=row.get("Horário", "").strip(),
+                        num_livro=row.get("Número do Livro"),
+                        perc_carencia=row.get("Percentual de Carência"),
+                        data_iniciacao=data_iniciacao,
+                        data_inicio_ativ=data_inicio_ativ,
+                        data_prim_aula=data_prim_aula,
                     )
                     count += 1
                 except Exception as e:
                     errors.append(f"Erro na linha {count+1}: {str(e)}")
-            
+
             if errors:
                 messages.warning(
                     request,
@@ -785,7 +828,7 @@ def importar_turmas(request):
             return redirect("turmas:listar_turmas")
         except Exception as e:
             messages.error(request, f"Erro ao importar turmas: {str(e)}")
-    
+
     return render(request, "turmas/importar_turmas.html")
 
 @login_required

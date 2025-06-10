@@ -5,13 +5,6 @@
 
 
 
-### Arquivo: settings.py
-
-python
-
-
-
-
 ### Arquivo: .venv\Lib\site-packages\debug_toolbar\settings.py
 
 python

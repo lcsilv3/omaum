@@ -350,6 +350,7 @@ class KeyUsageConstraints(ConfigurableMixin):
   - django\forms\widgets\checkbox_option.html
   - django\forms\widgets\checkbox_select.html
   - django\forms\widgets\clearable_file_input.html
+  - django\forms\widgets\color.html
   - django\forms\widgets\date.html
   - django\forms\widgets\datetime.html
   - django\forms\widgets\email.html
@@ -364,11 +365,13 @@ class KeyUsageConstraints(ConfigurableMixin):
   - django\forms\widgets\password.html
   - django\forms\widgets\radio.html
   - django\forms\widgets\radio_option.html
+  - django\forms\widgets\search.html
   - django\forms\widgets\select.html
   - django\forms\widgets\select_date.html
   - django\forms\widgets\select_option.html
   - django\forms\widgets\splitdatetime.html
   - django\forms\widgets\splithiddendatetime.html
+  - django\forms\widgets\tel.html
   - django\forms\widgets\text.html
   - django\forms\widgets\textarea.html
   - django\forms\widgets\time.html
@@ -484,7 +487,6 @@ class KeyUsageConstraints(ConfigurableMixin):
   - atividades\index.html
   - atividades\listar_atividades.html
   - atividades\registrar_frequencia.html
-  - atividades\relatorio_atividades.html
   - atividades\relatorio_atividades_curso_turma.html
   - atividades\visualizar_frequencia.html
   - atividades\academicas\confirmar_copia_academica.html
@@ -494,9 +496,10 @@ class KeyUsageConstraints(ConfigurableMixin):
   - atividades\academicas\detalhar_atividade_academica.html
   - atividades\academicas\editar_atividade_academica.html
   - atividades\academicas\excluir_atividade_academica.html
-  - atividades\academicas\formulario_atividade_academica.html
   - atividades\academicas\form_atividade_academica.html
+  - atividades\academicas\importar_atividades_academicas.html
   - atividades\academicas\listar_atividades_academicas.html
+  - atividades\academicas\relatorio_atividades_academicas.html
   - atividades\academicas\partials\atividades_tabela.html
   - atividades\academicas\partials\atividades_tabela_body.html
   - atividades\academicas\partials\cursos_options.html
@@ -509,7 +512,10 @@ class KeyUsageConstraints(ConfigurableMixin):
   - atividades\ritualisticas\editar_atividade_ritualistica.html
   - atividades\ritualisticas\excluir_atividade_ritualistica.html
   - atividades\ritualisticas\formulario_atividade_ritualistica.html
+  - atividades\ritualisticas\form_atividade_ritualistica.html
+  - atividades\ritualisticas\importar_atividades_ritualisticas.html
   - atividades\ritualisticas\listar_atividades_ritualisticas.html
+  - atividades\ritualisticas\relatorio_atividades_ritualisticas.html
 - cargos\templates
   Arquivos:
   - cargos\atribuir_cargo.html
@@ -624,9 +630,6 @@ class KeyUsageConstraints(ConfigurableMixin):
   Arquivos:
   - __init__.py
   - pagamentos\criar_pagamento.html
-  - pagamentos\dashboard.html
-  - pagamentos\dashboard_financeiro.html
-  - pagamentos\dashboard_pagamentos.html
   - pagamentos\detalhar_pagamento.html
   - pagamentos\editar_pagamento.html
   - pagamentos\excluir_pagamento.html
@@ -637,6 +640,9 @@ class KeyUsageConstraints(ConfigurableMixin):
   - pagamentos\pagamentos_aluno.html
   - pagamentos\pagamentos_por_turma.html
   - pagamentos\pagamento_rapido.html
+  - pagamentos\painel_financeiro.html
+  - pagamentos\painel_geral.html
+  - pagamentos\painel_mensal.html
   - pagamentos\registrar_pagamento.html
   - pagamentos\registrar_pagamento_rapido.html
   - pagamentos\relatorio_financeiro.html

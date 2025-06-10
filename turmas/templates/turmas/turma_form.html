@@ -1,10 +1,101 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h1>Criar Turma</h1>
-  <form method="post">
+  <h1>{% if turma and turma.id %}Editar{% else %}Criar{% endif %} Turma</h1>
+  <form method="post" novalidate>
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Criar</button>
+
+    <!-- Seção: Dados Básicos (não recolhível) -->
+    <div class="card mb-3">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Informações Básicas</h5>
+      </div>
+      <div class="card-body">
+        {% include "includes/form_field.html" with field=form.curso %}
+        {% include "includes/form_field.html" with field=form.nome %}
+        {% include "includes/form_field.html" with field=form.descricao %}
+        {% include "includes/form_field.html" with field=form.vagas %}
+        {% include "includes/form_field.html" with field=form.status %}
+      </div>
+    </div>
+
+    <!-- Seção: Dados Iniciáticos (recolhível, fechada por padrão) -->
+    <div class="card mb-3">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+          <a class="text-dark text-decoration-none" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
+            Dados Iniciáticos
+          </a>
+        </h5>
+      </div>
+      <div id="dados-iniciaticos" class="collapse card-body">
+        {% include "includes/form_field.html" with field=form.num_livro %}
+        {% include "includes/form_field.html" with field=form.perc_carencia %}
+        {% include "includes/form_field.html" with field=form.data_iniciacao %}
+        {% include "includes/form_field.html" with field=form.data_inicio_ativ %}
+        {% include "includes/form_field.html" with field=form.data_prim_aula %}
+        {% include "includes/form_field.html" with field=form.data_termino_atividades %}
+      </div>
+    </div>
+
+    <!-- Seção: Agendamento (recolhível, fechada por padrão) -->
+    <div class="card mb-3">
+      <div class="card-header bg-info text-dark">
+        <h5 class="mb-0">
+          <a class="text-dark text-decoration-none" data-bs-toggle="collapse" href="#agendamento" role="button" aria-expanded="false" aria-controls="agendamento">
+            Agendamento
+          </a>
+        </h5>
+      </div>
+      <div id="agendamento" class="collapse card-body">
+        {% include "includes/form_field.html" with field=form.dias_semana %}
+        {% include "includes/form_field.html" with field=form.horario %}
+        {% include "includes/form_field.html" with field=form.local %}
+      </div>
+    </div>
+
+    <!-- Seção: Instrutores (recolhível, fechada por padrão) -->
+    <div class="card mb-3">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+          <a class="text-white text-decoration-none" data-bs-toggle="collapse" href="#instrutores" role="button" aria-expanded="false" aria-controls="instrutores">
+            Instrutores
+          </a>
+        </h5>
+      </div>
+      <div id="instrutores" class="collapse card-body">
+        {% include "includes/form_field.html" with field=form.instrutor %}
+        {% include "includes/form_field.html" with field=form.instrutor_auxiliar %}
+        {% include "includes/form_field.html" with field=form.auxiliar_instrucao %}
+        <div class="alert alert-info mt-3">
+          <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
+          O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
+        </div>
+      </div>
+    </div>
+
+    <!-- Seção: Alertas (recolhível, fechada por padrão) -->
+    <div class="card mb-3">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+          <a class="text-white text-decoration-none" data-bs-toggle="collapse" href="#alertas" role="button" aria-expanded="false" aria-controls="alertas">
+            Alertas
+          </a>
+        </h5>
+      </div>
+      <div id="alertas" class="collapse card-body">
+        {% include "includes/form_field.html" with field=form.alerta_instrutor %}
+        {% include "includes/form_field.html" with field=form.alerta_mensagem %}
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between mb-5">
+      <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Cancelar
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> {% if turma and turma.id %}Atualizar{% else %}Criar{% endif %} Turma
+      </button>
+    </div>
   </form>
 {% endblock %}

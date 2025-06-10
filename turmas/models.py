@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django import forms
 
 class Turma(models.Model):
     """
@@ -27,9 +28,40 @@ class Turma(models.Model):
         blank=True, null=True, verbose_name="Descrição"
     )
 
-    # Datas
-    data_inicio = models.DateField(verbose_name="Data de Início")
-    data_fim = models.DateField(verbose_name="Data de Fim")
+    # Novos campos solicitados
+    num_livro = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name="Nº do Livro de Presenças"
+    )
+    perc_carencia = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Percentual de Carência (%)",
+        help_text="Percentual mínimo de faltas permitido para a turma."
+    )
+    data_iniciacao = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Data de Iniciação"
+    )
+    data_inicio_ativ = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Data de Início das Atividades"
+    )
+    data_prim_aula = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Data da Primeira Aula"
+    )
+    data_termino_atividades = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Data de Término das Atividades"
+    )
 
     # Informações de agendamento
     dias_semana = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dias da Semana")
@@ -97,7 +129,7 @@ class Turma(models.Model):
     class Meta:
         verbose_name = "Turma"
         verbose_name_plural = "Turmas"
-        ordering = ["-data_inicio"]
+        ordering = ["-data_inicio_ativ"]
 
     @property
     def vagas_disponiveis(self):
@@ -114,7 +146,12 @@ class Turma(models.Model):
     def esta_em_andamento(self):
         """Verifica se a turma está em andamento (começou mas não terminou)."""
         hoje = timezone.now().date()
-        return self.data_inicio <= hoje <= self.data_fim and self.status == "A"
+        return (
+            self.data_inicio_ativ
+            and self.data_termino_atividades
+            and self.data_inicio_ativ <= hoje <= self.data_termino_atividades
+            and self.status == "A"
+        )
 
     def clean(self):
         super().clean()
@@ -131,10 +168,12 @@ class Turma(models.Model):
                         "Por favor, escolha um nome diferente."
                     }
                 )
-        if self.data_fim < self.data_inicio:
-            raise ValidationError(
-                _("A data de fim não pode ser anterior à data de início.")
-            )
+        # Validação das datas
+        if self.data_inicio_ativ and self.data_termino_atividades:
+            if self.data_termino_atividades < self.data_inicio_ativ:
+                raise ValidationError(
+                    _("A data de término das atividades não pode ser anterior à data de início das atividades.")
+                )
 
     @classmethod
     def get_by_codigo(cls, codigo_turma):
@@ -147,3 +186,12 @@ class Turma(models.Model):
             # return Turma.objects.get(nome=codigo_turma)
         except Turma.DoesNotExist:
             return None
+
+class TurmaForm(forms.ModelForm):
+    class Meta:
+        model = Turma
+        fields = '__all__'  # Ou especifique os campos desejados
+        widgets = {
+            'curso': forms.Select(attrs={'empty_label': 'Selecione'}),
+            # Repita para outros campos de select se necessário
+        }

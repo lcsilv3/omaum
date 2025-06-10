@@ -2,40 +2,187 @@
 
 {% block title %}Detalhes da Turma{% endblock %}
 
+{% block extra_css %}
+<style>
+    .collapse-toggle {
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.2s;
+    }
+    .collapse-toggle:hover {
+        color: #0d6efd;
+        text-decoration: underline;
+    }
+    .chevron {
+        transition: transform 0.3s;
+        margin-right: 6px;
+    }
+    .collapsed .chevron {
+        transform: rotate(0deg);
+    }
+    .chevron {
+        transform: rotate(90deg);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <h1>Detalhes da Turma</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Detalhes da Turma</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
+    </div>
+
+    <!-- Seção: Dados Básicos (recolhível, aberta por padrão) -->
     <div class="card mb-4">
-        <div class="card-header">
-            <h2>{{ turma.nome }}</h2>
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#info-basicas" role="button" aria-expanded="true" aria-controls="info-basicas">
+                    <span class="chevron">&#9654;</span>
+                    Informações Básicas <small class="text-light">(clique para expandir/recolher)</small>
+                </a>
+            </h5>
         </div>
-        <div class="card-body">
-            <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
-            <p><strong>Status:</strong> {{ turma.get_status_display }}</p>
-            <p><strong>Data de Início:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
-            <p><strong>Data de Fim:</strong> {{ turma.data_fim|date:"d/m/Y" }}</p>
+        <div id="info-basicas" class="collapse show card-body">
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Nome:</strong> {{ turma.nome }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-4">
+                    <p><strong>Status:</strong> {{ turma.get_status_display }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Data de Início:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Data de Fim:</strong> {{ turma.data_fim|date:"d/m/Y" }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-4">
+                    <p><strong>Vagas:</strong> {{ turma.vagas }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Dias da Semana:</strong> {{ turma.dias_semana }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Horário:</strong> {{ turma.horario }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <p><strong>Local:</strong> {{ turma.local }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Descrição:</strong> {{ turma.descricao }}</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <h3>Alunos da Turma</h3>
-    <ul>
-        {% for matricula in turma.matriculas.all %}
-            <li>{{ matricula.aluno.nome }}</li>
-        {% empty %}
-            <li>Nenhum aluno matriculado.</li>
-        {% endfor %}
-    </ul>
+    <!-- Seção Dados Iniciáticos (recolhível) -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
+                    <span class="chevron">&#9654;</span>
+                    Dados Iniciáticos <small class="text-muted">(clique para expandir)</small>
+                </a>
+            </h5>
+        </div>
+        <div id="dados-iniciaticos" class="collapse card-body">
+            <div class="row mb-2">
+                <div class="col-md-4">
+                    <p><strong>Número do Livro:</strong> {{ turma.num_livro }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Percentual de Carência:</strong> {{ turma.perc_carencia }}%</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Data de Iniciação:</strong> {{ turma.data_iniciacao|date:"d/m/Y" }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <p><strong>Data de Início das Atividades:</strong> {{ turma.data_inicio_ativ|date:"d/m/Y" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Data da Primeira Aula:</strong> {{ turma.data_prim_aula|date:"d/m/Y" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <h3>Atividades Relacionadas</h3>
-    <ul>
-        {% for atividade in turma.atividades_academicas.all %}
-            <li>
-                {{ atividade.nome }} - {{ atividade.get_tipo_atividade_display }} ({{ atividade.data_inicio|date:"d/m/Y H:i" }})
-                <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
-            </li>
-        {% empty %}
-            <li>Nenhuma atividade relacionada.</li>
-        {% endfor %}
-    </ul>
+    <!-- Seção Alunos (recolhível) -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-dark">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#alunos-turma" role="button" aria-expanded="false" aria-controls="alunos-turma">
+                    <span class="chevron">&#9654;</span>
+                    Alunos da Turma <small class="text-muted">(clique para expandir)</small>
+                </a>
+            </h5>
+        </div>
+        <div id="alunos-turma" class="collapse card-body">
+            <ul class="mb-0">
+                {% for matricula in turma.matriculas.all %}
+                    <li>{{ matricula.aluno.nome }}</li>
+                {% empty %}
+                    <li>Nenhum aluno matriculado.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Seção Atividades Relacionadas (recolhível) -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#atividades-relacionadas" role="button" aria-expanded="false" aria-controls="atividades-relacionadas">
+                    <span class="chevron">&#9654;</span>
+                    Atividades Relacionadas <small class="text-light">(clique para expandir)</small>
+                </a>
+            </h5>
+        </div>
+        <div id="atividades-relacionadas" class="collapse card-body">
+            <ul class="mb-0">
+                {% for atividade in turma.atividades_academicas.all %}
+                    <li>
+                        {{ atividade.nome }} - {{ atividade.get_tipo_atividade_display }} ({{ atividade.data_inicio|date:"d/m/Y H:i" }})
+                        <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
+                    </li>
+                {% empty %}
+                    <li>Nenhuma atividade relacionada.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Rotaciona o chevron ao expandir/recolher
+    document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function() {
+            setTimeout(() => {
+                document.querySelectorAll('.collapse-toggle').forEach(function(t) {
+                    const chevron = t.querySelector('.chevron');
+                    const targetId = t.getAttribute('href');
+                    const target = document.querySelector(targetId);
+                    if (target && target.classList.contains('show')) {
+                        chevron.style.transform = 'rotate(90deg)';
+                    } else {
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
+                });
+            }, 350);
+        });
+    });
+</script>
 {% endblock %}

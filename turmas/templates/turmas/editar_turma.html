@@ -5,22 +5,42 @@
 
 {% block extra_css %}
 <style>
-    /* Ocultar os selects originais */
     #id_instrutor, #id_instrutor_auxiliar, #id_auxiliar_instrucao {
         display: none;
     }
-    
-    /* Estilo para os resultados da busca */
     .list-group-item-action {
         cursor: pointer;
     }
-    
-    /* Estilo para o contêiner de instrutor selecionado */
     .selected-instrutor {
         border: 1px solid #ddd;
         padding: 10px;
         border-radius: 5px;
         margin-top: 10px;
+    }
+    .collapse-toggle {
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.2s;
+    }
+    .collapse-toggle:hover {
+        color: #0d6efd;
+        text-decoration: underline;
+    }
+    .chevron {
+        transition: transform 0.3s;
+        margin-right: 6px;
+    }
+    .collapsed .chevron {
+        transform: rotate(0deg);
+    }
+    .chevron {
+        transform: rotate(90deg);
+    }
+    /* Remove o tracejado do select de Curso */
+    #id_curso:focus {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: #ced4da !important;
     }
 </style>
 {% endblock %}
@@ -44,18 +64,23 @@
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
         
-        <!-- Seção de Informações Básicas -->
+        <!-- Seção de Informações Básicas (recolhível, aberta por padrão) -->
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
-                <h5>Informações Básicas</h5>
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#info-basicas" role="button" aria-expanded="true" aria-controls="info-basicas">
+                        <span class="chevron">&#9654;</span>
+                        Informações Básicas <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
             </div>
-            <div class="card-body">
+            <div id="info-basicas" class="collapse show card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
+                        {% include 'includes/form_field.html' with field=form.curso %}
                     </div>
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.curso %}
+                        {% include 'includes/form_field.html' with field=form.nome %}
                     </div>
                 </div>
                 <div class="row">
@@ -92,13 +117,51 @@
                 </div>
             </div>
         </div>
+
+        <!-- Seção de Dados Iniciáticos (recolhível, fechada por padrão) -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
+                        <span class="chevron">&#9654;</span>
+                        Dados Iniciáticos <small class="text-muted">(clique para expandir)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="dados-iniciaticos" class="collapse card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.num_livro %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.perc_carencia %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.data_iniciacao %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_inicio_ativ %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_prim_aula %}
+                    </div>
+                </div>
+            </div>
+        </div>
         
-        <!-- Seção de Instrutores -->
+        <!-- Seção de Instrutores (recolhível, fechada por padrão) -->
         <div class="card mb-4">
             <div class="card-header bg-success text-white">
-                <h5>Instrutores</h5>
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#instrutores" role="button" aria-expanded="false" aria-controls="instrutores">
+                        <span class="chevron">&#9654;</span>
+                        Instrutores <small class="text-light">(clique para expandir)</small>
+                    </a>
+                </h5>
             </div>
-            <div class="card-body">
+            <div id="instrutores" class="collapse card-body">
                 <div class="row">
                     <!-- Instrutor Principal -->
                     <div class="col-md-4 mb-3">
@@ -111,7 +174,6 @@
                             </div>
                         </div>
                         <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
-                        <!-- Campo original oculto via CSS -->
                         {{ form.instrutor }}
                     </div>
                     
@@ -126,7 +188,6 @@
                             </div>
                         </div>
                         <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
-                        <!-- Campo original oculto via CSS -->
                         {{ form.instrutor_auxiliar }}
                     </div>
                     
@@ -141,7 +202,6 @@
                             </div>
                         </div>
                         <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
-                        <!-- Campo original oculto via CSS -->
                         {{ form.auxiliar_instrucao }}
                     </div>
                 </div>
@@ -162,4 +222,23 @@
 
 {% block extra_js %}
 <script src="{% static 'js/instrutor_search.js' %}"></script>
+<script>
+    // Rotaciona o chevron ao expandir/recolher
+    document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function() {
+            setTimeout(() => {
+                document.querySelectorAll('.collapse-toggle').forEach(function(t) {
+                    const chevron = t.querySelector('.chevron');
+                    const targetId = t.getAttribute('href');
+                    const target = document.querySelector(targetId);
+                    if (target && target.classList.contains('show')) {
+                        chevron.style.transform = 'rotate(90deg)';
+                    } else {
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
+                });
+            }, 350);
+        });
+    });
+</script>
 {% endblock %}

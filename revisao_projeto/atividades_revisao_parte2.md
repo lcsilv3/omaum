@@ -4,11 +4,504 @@
 ## Arquivos forms.py:
 
 
+### Arquivo: atividades\templates\atividades\academicas\criar_atividade_academica.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Criar Nova Atividade Acadêmica{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Nova Atividade Acadêmica</h1>
+        <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    <div class="row">
+        <div class="col-md-8">
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <!-- Seção 1: Informações Básicas -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Informações Básicas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="id_nome" class="form-label">
+                                Nome da Atividade <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nome }}
+                            {% for error in form.nome.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_descricao" class="form-label">Descrição</label>
+                            {{ form.descricao }}
+                            {% for error in form.descricao.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_tipo_atividade" class="form-label">
+                                    Tipo de Atividade <span class="text-danger">*</span>
+                                </label>
+                                {{ form.tipo_atividade }}
+                                {% for error in form.tipo_atividade.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_status" class="form-label">
+                                    Status <span class="text-danger">*</span>
+                                </label>
+                                {{ form.status }}
+                                {% for error in form.status.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Seção 2: Datas e Horários -->
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Datas e Horários</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_data_inicio" class="form-label">
+                                    Data de Início <span class="text-danger">*</span>
+                                </label>
+                                {{ form.data_inicio }}
+                                {% for error in form.data_inicio.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_data_fim" class="form-label">Data de Término</label>
+                                {{ form.data_fim }}
+                                {% for error in form.data_fim.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <small class="form-text text-muted">Opcional. Se não informada, será considerada a mesma data de início.</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_hora_inicio" class="form-label">
+                                    Hora de Início <span class="text-danger">*</span>
+                                </label>
+                                {{ form.hora_inicio }}
+                                {% for error in form.hora_inicio.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_hora_fim" class="form-label">Hora de Término</label>
+                                {{ form.hora_fim }}
+                                {% for error in form.hora_fim.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <small class="form-text text-muted">Opcional. Se não informada, será considerada 1 hora após o início.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Seção 3: Vínculos -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Vínculos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="id_local" class="form-label">Local</label>
+                            {{ form.local }}
+                            {% for error in form.local.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_responsavel" class="form-label">Responsável</label>
+                            {{ form.responsavel }}
+                            {% for error in form.responsavel.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3 position-relative">
+                            <label for="id_curso" class="form-label">Curso</label>
+                            {{ form.curso }}
+                            {% for error in form.curso.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_turmas" class="form-label">Turmas</label>
+                            <div class="d-flex align-items-center mb-2">
+                                <input type="checkbox" id="select-all-turmas" class="form-check-input me-2">
+                                <label for="select-all-turmas" class="form-check-label">Selecionar todas as turmas</label>
+                            </div>
+                            {{ form.turmas }}
+                            <div id="no-turmas-msg" class="text-muted mt-2"></div>
+                            {% for error in form.turmas.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                            <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mb-4">
+                    <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Criar Atividade
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Dicas</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li>Preencha todos os campos obrigatórios <span class="text-danger">*</span>.</li>
+                        <li>Use datas e horários corretos para evitar conflitos.</li>
+                        <li>Associe a atividade a uma ou mais turmas.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/atividades_ajax.js' %}"></script>
+<script>
+    window.initTurmasAjax();
+
+    function highlightRequiredFields(form) {
+        // IDs dos campos obrigatórios
+        const obrigatorios = [
+            'id_nome',
+            'id_tipo_atividade',
+            'id_data_inicio',
+            'id_hora_inicio',
+            'id_status'
+        ];
+        let algumErro = false;
+        obrigatorios.forEach(function(id) {
+            const field = document.getElementById(id);
+            if (field) {
+                // Remove highlight anterior
+                field.classList.remove('is-required-error');
+                // Checa se está vazio
+                if (!field.value || (field.type === "select-one" && !field.value)) {
+                    field.classList.add('is-required-error');
+                    algumErro = true;
+                }
+            }
+        });
+        return !algumErro;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!highlightRequiredFields(form)) {
+                    e.preventDefault();
+                    // Foca no primeiro campo com erro
+                    const erro = form.querySelector('.is-required-error');
+                    if (erro) erro.focus();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+
+
+
+### Arquivo: atividades\templates\atividades\academicas\detalhar_atividade_academica.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Detalhes da Atividade AcadÃªmica{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2>{{ atividade.nome }}</h2>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Curso:</dt>
+                <dd class="col-sm-9">{{ atividade.curso }}</dd>
+                <dt class="col-sm-3">Turmas:</dt>
+                <dd class="col-sm-9">
+                    {% for turma in atividade.turmas.all %}
+                        <span class="badge bg-info">{{ turma.nome }}</span>
+                    {% empty %}
+                        <span class="text-muted">-</span>
+                    {% endfor %}
+                </dd>
+                <!-- Adicione outros campos relevantes aqui -->
+            </dl>
+            <div class="mt-4">
+                <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-primary">Editar</a>
+                <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Voltar para a lista</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: atividades\templates\atividades\academicas\editar_atividade_academica.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Editar Atividade Acadêmica{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Editar Atividade Acadêmica</h1>
+        <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para detalhes
+        </a>
+    </div>
+    <div class="row">
+        <div class="col-md-8">
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <!-- Seção 1: Informações Básicas -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Informações Básicas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="id_nome" class="form-label">
+                                Nome da Atividade <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nome }}
+                            {% for error in form.nome.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_descricao" class="form-label">Descrição</label>
+                            {{ form.descricao }}
+                            {% for error in form.descricao.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_tipo_atividade" class="form-label">
+                                    Tipo de Atividade <span class="text-danger">*</span>
+                                </label>
+                                {{ form.tipo_atividade }}
+                                {% for error in form.tipo_atividade.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_status" class="form-label">
+                                    Status <span class="text-danger">*</span>
+                                </label>
+                                {{ form.status }}
+                                {% for error in form.status.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Seção 2: Datas e Horários -->
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Datas e Horários</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_data_inicio" class="form-label">
+                                    Data de Início <span class="text-danger">*</span>
+                                </label>
+                                {{ form.data_inicio }}
+                                {% for error in form.data_inicio.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_data_fim" class="form-label">Data de Término</label>
+                                {{ form.data_fim }}
+                                {% for error in form.data_fim.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <small class="form-text text-muted">Opcional. Se não informada, será considerada a mesma data de início.</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_hora_inicio" class="form-label">
+                                    Hora de Início <span class="text-danger">*</span>
+                                </label>
+                                {{ form.hora_inicio }}
+                                {% for error in form.hora_inicio.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_hora_fim" class="form-label">Hora de Término</label>
+                                {{ form.hora_fim }}
+                                {% for error in form.hora_fim.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <small class="form-text text-muted">Opcional. Se não informada, será considerada 1 hora após o início.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Seção 3: Vínculos -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Vínculos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="id_local" class="form-label">Local</label>
+                            {{ form.local }}
+                            {% for error in form.local.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_responsavel" class="form-label">Responsável</label>
+                            {{ form.responsavel }}
+                            {% for error in form.responsavel.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3 position-relative">
+                            <label for="id_curso" class="form-label">Curso</label>
+                            {{ form.curso }}
+                            {% for error in form.curso.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_turmas" class="form-label">Turmas</label>
+                            <div class="d-flex align-items-center mb-2">
+                                <input type="checkbox" id="select-all-turmas" class="form-check-input me-2">
+                                <label for="select-all-turmas" class="form-check-label">Selecionar todas as turmas</label>
+                            </div>
+                            {{ form.turmas }}
+                            <div id="no-turmas-msg" class="text-muted mt-2"></div>
+                            {% for error in form.turmas.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                            <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mb-4">
+                    <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Dicas</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li>Preencha todos os campos obrigatórios <span class="text-danger">*</span>.</li>
+                        <li>Use datas e horários corretos para evitar conflitos.</li>
+                        <li>Associe a atividade a uma ou mais turmas.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/atividades_ajax.js' %}"></script>
+<script>
+    window.initTurmasAjax();
+
+    function highlightRequiredFields(form) {
+        // IDs dos campos obrigatórios
+        const obrigatorios = [
+            'id_nome',
+            'id_tipo_atividade',
+            'id_data_inicio',
+            'id_hora_inicio',
+            'id_status'
+        ];
+        let algumErro = false;
+        obrigatorios.forEach(function(id) {
+            const field = document.getElementById(id);
+            if (field) {
+                // Remove highlight anterior
+                field.classList.remove('is-required-error');
+                // Checa se está vazio
+                if (!field.value || (field.type === "select-one" && !field.value)) {
+                    field.classList.add('is-required-error');
+                    algumErro = true;
+                }
+            }
+        });
+        return !algumErro;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!highlightRequiredFields(form)) {
+                    e.preventDefault();
+                    // Foca no primeiro campo com erro
+                    const erro = form.querySelector('.is-required-error');
+                    if (erro) erro.focus();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+
+
+
+
 ### Arquivo: atividades\templates\atividades\academicas\excluir_atividade_academica.html
 
 html
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Excluir Atividade Acadêmica{% endblock %}
 
 {% block content %}
@@ -37,83 +530,225 @@ html
 ### Arquivo: atividades\templates\atividades\academicas\form_atividade_academica.html
 
 html
-{% extends 'base.html' %}
-
-{% block title %}
-    {% if atividade %}Editar{% else %}Nova{% endif %} Atividade Acadêmica
-{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1>{% if atividade %}Editar{% else %}Nova{% endif %} Atividade Acadêmica</h1>
-    <form method="post" enctype="multipart/form-data" novalidate>
-        {% csrf_token %}
-        {% for field in form %}
-            <div class="mb-3">
-                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="id_nome" class="form-label">Nome da Atividade</label>
+        {{ form.nome }}
+        {% for error in form.nome.errors %}
+            <div class="text-danger">{{ error }}</div>
         {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_descricao" class="form-label">Descrição</label>
+        {{ form.descricao }}
+        {% for error in form.descricao.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_tipo_atividade" class="form-label">Tipo de Atividade</label>
+        {{ form.tipo_atividade }}
+        {% for error in form.tipo_atividade.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_status" class="form-label">Status</label>
+        {{ form.status }}
+        {% for error in form.status.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_data_inicio" class="form-label">Data de Início</label>
+        {{ form.data_inicio }}
+        {% for error in form.data_inicio.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_data_fim" class="form-label">Data de Término</label>
+        {{ form.data_fim }}
+        {% for error in form.data_fim.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+        <small class="form-text text-muted">Opcional. Se não informada, será considerada a mesma data de início.</small>
+    </div>
+    <div class="mb-3">
+        <label for="id_hora_inicio" class="form-label">Hora de Início</label>
+        {{ form.hora_inicio }}
+        {% for error in form.hora_inicio.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_hora_fim" class="form-label">Hora de Término</label>
+        {{ form.hora_fim }}
+        {% for error in form.hora_fim.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+        <small class="form-text text-muted">Opcional. Se não informada, será considerada 1 hora após o início.</small>
+    </div>
+    <div class="mb-3">
+        <label for="id_local" class="form-label">Local</label>
+        {{ form.local }}
+        {% for error in form.local.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_responsavel" class="form-label">Responsável</label>
+        {{ form.responsavel }}
+        {% for error in form.responsavel.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_curso" class="form-label">Curso</label>
+        {{ form.curso }}
+        {% for error in form.curso.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label for="id_turmas" class="form-label">Turmas</label>
+        <div class="d-flex align-items-center mb-2">
+            <input type="checkbox" id="select-all-turmas" class="form-check-input me-2">
+            <label for="select-all-turmas" class="form-check-label">Selecionar todas as turmas</label>
+        </div>
+        {{ form.turmas }}
+        {% for error in form.turmas.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+        <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
+    </div>
+    <div class="d-flex justify-content-between mb-4">
+        <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Cancelar
+        </a>
         <button type="submit" class="btn btn-primary">
-            {% if atividade %}Salvar{% else %}Criar{% endif %}
+            <i class="fas fa-save"></i> Criar Atividade
         </button>
-        <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Cancelar</a>
-    </form>
-</div>
-{% endblock %}
+    </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cursoSelect = document.getElementById('id_curso');
+    const turmasSelect = document.getElementById('id_turmas');
+    const selectAllTurmas = document.getElementById('select-all-turmas');
+    let noTurmasMsg = document.getElementById('no-turmas-msg');
+    if (!noTurmasMsg) {
+        noTurmasMsg = document.createElement('div');
+        noTurmasMsg.id = 'no-turmas-msg';
+        noTurmasMsg.className = 'text-muted mt-2';
+        turmasSelect.parentNode.appendChild(noTurmasMsg);
+    }
+
+    function atualizarTurmas(cursoId, turmasSelecionadas=[]) {
+        if (!cursoId) {
+            turmasSelect.innerHTML = '';
+            noTurmasMsg.textContent = '';
+            return;
+        }
+        fetch(`/atividades/ajax/turmas-por-curso/?curso=${cursoId}`)
+            .then(response => response.json())
+            .then(data => {
+                turmasSelect.innerHTML = '';
+                if (data.turmas.length === 0) {
+                    noTurmasMsg.textContent = 'Não há turmas para este curso.';
+                } else {
+                    noTurmasMsg.textContent = '';
+                    data.turmas.forEach(function(turma) {
+                        const option = document.createElement('option');
+                        option.value = turma.id;
+                        option.textContent = turma.nome;
+                        if (turmasSelecionadas.includes(String(turma.id))) {
+                            option.selected = true;
+                        }
+                        turmasSelect.appendChild(option);
+                    });
+                }
+            });
+    }
+
+    if (cursoSelect) {
+        cursoSelect.addEventListener('change', function() {
+            atualizarTurmas(this.value);
+        });
+    }
+
+    if (cursoSelect && turmasSelect) {
+        const turmasSelecionadas = Array.from(turmasSelect.selectedOptions).map(opt => opt.value);
+        if (cursoSelect.value) {
+            atualizarTurmas(cursoSelect.value, turmasSelecionadas);
+        } else {
+            turmasSelect.innerHTML = '';
+            noTurmasMsg.textContent = '';
+        }
+    }
+
+    if (selectAllTurmas && turmasSelect) {
+        selectAllTurmas.addEventListener('change', function() {
+            for (let option of turmasSelect.options) {
+                option.selected = this.checked;
+            }
+        });
+        turmasSelect.addEventListener('change', function() {
+            selectAllTurmas.checked = Array.from(turmasSelect.options).every(opt => opt.selected);
+        });
+    }
+});
+</script>
+
+{% comment %}
+Returns:
+    dict: Dicionário com todos os modelos necessários
+Raises:
+    ImportError: Se algum módulo não puder ser importado
+    AttributeError: Se algum modelo não for encontrado no módulo
+"""
+try:
+    atividades_module = import_module("atividades.models")
+    cursos_module = import_module("cursos.models")
+    turmas_module = import_module("turmas.models")
+    alunos_module = import_module("alunos.models")
+
+    return {
+        'AtividadeAcademica': getattr(atividades_module, "AtividadeAcademica"),
+        'AtividadeRitualistica': getattr(atividades_module, "AtividadeRitualistica"),
+        'Curso': getattr(cursos_module, "Curso"),
+        'Turma': getattr(turmas_module, "Turma"),
+        'Aluno': getattr(alunos_module, "Aluno"),
+    }
+except (ImportError, AttributeError) as e:
+    logger.error("Erro ao obter modelos: %s", e)
+    raise
+{% endcomment %}
 
 
 
-### Arquivo: atividades\templates\atividades\academicas\formulario_atividade_academica.html
+### Arquivo: atividades\templates\atividades\academicas\importar_atividades_academicas.html
 
 html
+<!-- filepath: c:\projetos\omaum\atividades\templates\atividades\importar_atividades_academicas.html -->
 {% extends 'base.html' %}
-{% block title %}{% if atividade %}Editar{% else %}Nova{% endif %} Atividade Acadêmica{% endblock %}
+{% block title %}Importar Atividades Acadêmicas{% endblock %}
 {% block content %}
 <div class="container mt-4">
-    <h1>{% if atividade %}Editar{% else %}Nova{% endif %} Atividade Acadêmica</h1>
-    <form method="post">
+    <h2>Importar Atividades Acadêmicas (CSV)</h2>
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form.as_p }}
-        {% if form.instance.pk and form.instance.turmas.all %}
-            <div class="mb-3">
-                <label class="form-label">Curso</label>
-                <input type="text" class="form-control" value="{{ form.instance.curso }}" readonly aria-label="Curso">
-            </div>
-        {% endif %}
-        <button type="submit" class="btn btn-primary">Salvar</button>
+        <div class="mb-3">
+            <label for="csv_file" class="form-label">Arquivo CSV</label>
+            <input type="file" name="csv_file" id="csv_file" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Importar</button>
         <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}
-
-{% block extra_js %}
-<script>
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-        new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-    document.querySelectorAll('.has-error input, .has-error select, .has-error textarea').forEach(function(el) {
-        el.classList.add('is-invalid', 'animate-blink');
-    });
-</script>
-<style>
-    .animate-blink {
-        animation: blink 1s linear infinite;
-    }
-    @keyframes blink {
-        0%, 100% { background-color: #fff; }
-        50% { background-color: #ffcccc; }
-    }
-</style>
-{% endblock %}
-
 
 
 
@@ -121,73 +756,185 @@ html
 
 html
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Atividades Acadêmicas{% endblock %}
+{% block title %}Lista de Atividades Acadêmicas{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Barra superior com título e botão -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Atividades Acadêmicas</h1>
-        <a href="{% url 'atividades:criar_atividade_academica' %}" class="btn btn-primary me-2">
-            <i class="fas fa-plus"></i> Nova Atividade
+        <div class="d-flex gap-2">
+            <!-- 1. Voltar ao Painel de Controle -->
+            <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Voltar ao Painel de Controle">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <!-- 2. Nova Atividade -->
+            <a href="{% url 'atividades:criar_atividade_academica' %}" class="btn btn-success" data-bs-toggle="tooltip" title="Criar nova atividade">
+                <i class="fas fa-plus"></i> Nova Atividade
+            </a>
+            <!-- 3. Relatórios -->
+            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Relatórios">
+                <i class="fas fa-file-alt"></i> Relatórios
+            </a>
+            <!-- 4. Importar CSV -->
+            <a href="{% url 'atividades:importar_atividades_academicas' %}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Importar atividades via CSV">
+                <i class="fas fa-file-import"></i> Importar CSV
+            </a>
+            <!-- 5. Exportar -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Exportar atividades" data-bs-toggle="tooltip">
+                    <i class="fas fa-file-export"></i> Exportar
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?exportar=csv">Exportar CSV</a></li>
+                    <li><a class="dropdown-item" href="?exportar=excel">Exportar Excel</a></li>
+                    <li><a class="dropdown-item" href="?exportar=pdf" target="_blank">Exportar PDF</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label for="id_q" class="form-label">Busca</label>
+            <input type="text" name="q" id="id_q" class="form-control" placeholder="Buscar por nome ou descrição" value="{{ query }}">
+        </div>
+        <div class="col-md-3">
+            <label for="id_curso" class="form-label">Curso</label>
+            <select name="curso" id="id_curso" class="form-select">
+                <option value="">Todos os cursos</option>
+                {% for curso in cursos %}
+                    <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_selecionado|stringformat:"s" %}selected{% endif %}>
+                        {{ curso.codigo_curso }} - {{ curso.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="id_turma" class="form-label">Turma</label>
+            <select name="turma" id="id_turma" class="form-select">
+                <option value="">Todas as turmas</option>
+                {% for turma in turmas %}
+                    <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == turma_selecionada|stringformat:"s" %}selected{% endif %}>
+                        {{ turma.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3 d-grid gap-2 d-md-flex justify-content-md-end align-items-end">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Filtrar
+            </button>
+        </div>
+    </form>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Tabela de atividades -->
+    <div class="table-responsive">
+        <table class="table align-middle table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Curso</th>
+                    <th>Turmas</th>
+                    <th>Tipo</th>
+                    <th>Status</th>
+                    <th>Data Início</th>
+                    <th class="text-start">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for atividade in atividades %}
+                <tr>
+                    <td>{{ atividade.nome }}</td>
+                    <td>{{ atividade.curso }}</td>
+                    <td>
+                        {% for turma in atividade.turmas.all %}
+                            <span class="badge bg-info">{{ turma.nome }}</span>
+                        {% empty %}
+                            <span class="text-muted">-</span>
+                        {% endfor %}
+                    </td>
+                    <td>{{ atividade.get_tipo_atividade_display }}</td>
+                    <td>
+                        {% if atividade.status == 'CONFIRMADA' %}
+                            <span class="badge bg-success">Confirmada</span>
+                        {% elif atividade.status == 'PENDENTE' %}
+                            <span class="badge bg-warning text-dark">Pendente</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ atividade.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+                    <td class="text-start">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-info" title="Detalhar atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-warning" title="Editar atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-danger" title="Excluir atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            <a href="{% url 'atividades:copiar_atividade_academica' atividade.id %}" class="btn btn-secondary" title="Copiar atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-copy"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">Nenhuma atividade encontrada.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginação -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Paginação">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">&laquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">&raquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <!-- Botão Voltar ao final da listagem -->
+    <div class="mt-3">
+        <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
         </a>
     </div>
-    <div class="card mb-4">
-        <!-- Filtro no card-header -->
-        <div class="card-header">
-            <form method="get" id="filtro-atividades" class="row g-3">
-                <div class="col-md-4">
-                    <label for="id_q" class="form-label">Buscar</label>
-                    <input type="text" name="q" id="id_q" class="form-control" placeholder="Buscar por nome ou descrição..." value="{{ query }}">
-                </div>
-                <div class="col-md-4">
-                    <label for="id_curso" class="form-label">Curso</label>
-                    <select name="curso" id="id_curso" class="form-select">
-                        <option value="">Todos os cursos</option>
-                        {% include 'atividades/academicas/partials/cursos_options.html' %}
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label for="id_turmas" class="form-label">Turmas</label>
-                    <select name="turma" id="id_turmas" class="form-select">
-                        <option value="">Todas as turmas</option>
-                        {% include 'atividades/academicas/partials/turmas_options.html' %}
-                    </select>
-                </div>
-                <div class="col-12 col-md-2 mt-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-search"></i> Filtrar
-                    </button>
-                </div>
-            </form>
-        </div>
-        <!-- Tabela de atividades no card-body -->
-        <div class="card-body table-responsive">
-            <table class="table table-striped align-middle">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Curso</th>
-                        <th>Turmas</th>
-                        <th>Tipo</th>
-                        <th>Status</th>
-                        <th>Data Início</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                            <tbody>
-                                {% include 'atividades/academicas/partials/atividades_tabela.html' %}
-                            </tbody>
-            </table>
-        </div>
-    </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-{% load static %}
-<script src="{% static 'js/atividades/filtros.js' %}"></script>
 {% endblock %}
 
 
@@ -202,58 +949,22 @@ html
         <td>{{ atividade.nome }}</td>
         <td>
             {% if atividade.curso %}
-                {{ atividade.curso.nome }}<tbody>
-{% for atividade in atividades %}
-    <tr>
-        <td>{{ atividade.nome }}</td>
-        <td>
-            {% if atividade.curso %}
                 {{ atividade.curso.nome }}
             {% else %}
                 <span class="text-muted">-</span>
             {% endif %}
         </td>
         <td>
-            {% for turma in atividade.turmas.all %}
-                <span class="badge bg-secondary">{{ turma.nome }}</span>
-            {% empty %}
-                <span class="text-muted">Nenhuma</span>
-            {% endfor %}
-        </td>
-        <td>
-            {{ atividade.get_tipo_atividade_display|default:atividade.tipo_atividade }}
-        </td>
-        <td>
-            {{ atividade.get_status_display|default:atividade.status }}
-        </td>
-        <td>
-            {{ atividade.data_inicio|date:"d/m/Y" }}
-        </td>
-        <td>
-            <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info" title="Detalhes">Detalhes</a>
-            <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar">Editar</a>
-            <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir">Excluir</a>
-        </td>
-    </tr>
-{% empty %}
-    <tr>
-        <td colspan="7" class="text-center">Nenhuma atividade encontrada.</td>
-    </tr>
-{% endfor %}
-</tbody>
+            {% if atividade.turmas.exists %}
+                {% for turma in atividade.turmas.all %}
+                    <span class="badge bg-secondary">{{ turma.nome }}</span>
+                {% endfor %}
             {% else %}
-                <span class="text-muted">-</span>
+                <span class="text-muted">Nenhuma</span>
             {% endif %}
         </td>
         <td>
-            {% for turma in atividade.turmas.all %}
-                <span class="badge bg-secondary">{{ turma.nome }}</span>
-            {% empty %}
-                <span class="text-muted">Nenhuma</span>
-            {% endfor %}
-        </td>
-        <td>
-            {{ atividade.get_tipo_atividade_display|default:atividade.tipo_atividade }}
+            {{ atividade.get_tipo_atividade_display|default:atividade.get_tipo_display }}
         </td>
         <td>
             {{ atividade.get_status_display|default:atividade.status }}
@@ -325,6 +1036,7 @@ html
 ### Arquivo: atividades\templates\atividades\academicas\partials\cursos_options.html
 
 html
+<option value="">Selecione um curso</option>
 {% for curso in cursos %}
     <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_selecionado|stringformat:"s" %}selected{% endif %}>
         {{ curso.codigo_curso }} - {{ curso.nome }}
@@ -336,6 +1048,7 @@ html
 ### Arquivo: atividades\templates\atividades\academicas\partials\turmas_options.html
 
 html
+<option value="">Selecione uma turma</option>
 {% for turma in turmas %}
     <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == turma_selecionada|stringformat:"s" %}selected{% endif %}>
         {{ turma.nome }}
@@ -344,11 +1057,73 @@ html
 
 
 
+### Arquivo: atividades\templates\atividades\academicas\relatorio_atividades_academicas.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Relatório de Atividades Acadêmicas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Relatório de Atividades Acadêmicas</h1>
+        <a href="{% url 'listar_atividades_academicas' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+    <form method="get" class="mb-3">
+        <select name="curso" class="form-select w-auto d-inline" onchange="this.form.submit()">
+            <option value="">Todos os cursos</option>
+            {% for curso in cursos %}
+                <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == curso_id %}selected{% endif %}>
+                    {{ curso.nome }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+    {% for curso, atividades_curso in cursos_dict.items %}
+        <h3>{{ curso }}</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Turmas</th>
+                    <th>Tipo</th>
+                    <th>Status</th>
+                    <th>Início</th>
+                    <th>Término</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for atividade in atividades_curso %}
+                <tr>
+                    <td>{{ atividade.nome }}</td>
+                    <td>
+                        {% for turma in atividade.turmas.all %}
+                            {{ turma.nome }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>{{ atividade.get_tipo_atividade_display }}</td>
+                    <td>{{ atividade.get_status_display }}</td>
+                    <td>{{ atividade.data_inicio|date:"d/m/Y H:i" }}</td>
+                    <td>{{ atividade.data_fim|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+    <div class="d-flex justify-content-end mt-4">
+        <a href="{% url 'listar_atividades_academicas' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+</div>
+{% endblock %}
+
+
+
 ### Arquivo: atividades\templates\atividades\calendario_atividades.html
 
 html
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Calendário de Atividades{% endblock %}
 
 {% block content %}
@@ -389,6 +1164,7 @@ html
 
 html
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Dashboard de Atividades{% endblock %}
 {% block content %}
 <div class="container mt-4">
@@ -462,7 +1238,7 @@ html
 
 html
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Dashboard de Atividades{% endblock %}
 
 {% block content %}
@@ -503,7 +1279,7 @@ html
 
 html
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Importar Atividades{% endblock %}
 
 {% block content %}
@@ -796,7 +1572,7 @@ html
 
 html
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Registrar Frequência - {{ atividade.nome }}{% endblock %}
 
 {% block content %}
@@ -959,65 +1735,11 @@ html
 
 
 
-### Arquivo: atividades\templates\atividades\relatorio_atividades.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Relatório de Atividades{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1>Relatório de Atividades</h1>
-    <form method="get" class="mb-3">
-        <select name="curso" class="form-select w-auto d-inline" onchange="this.form.submit()">
-            <option value="">Todos os cursos</option>
-            {% for curso in cursos %}
-                <option value="{{ curso.codigo_curso }}" {% if curso.codigo_curso|stringformat:"s" == curso_id %}selected{% endif %}>
-                    {{ curso.nome }}
-                </option>
-            {% endfor %}
-        </select>
-    </form>
-    {% for curso, atividades_curso in cursos_dict.items %}
-        <h3>{{ curso }}</h3>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Turmas</th>
-                    <th>Tipo</th>
-                    <th>Status</th>
-                    <th>Início</th>
-                    <th>Término</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for atividade in atividades_curso %}
-                <tr>
-                    <td>{{ atividade.nome }}</td>
-                    <td>
-                        {% for turma in atividade.turmas.all %}
-                            {{ turma.nome }}{% if not forloop.last %}, {% endif %}
-                        {% endfor %}
-                    </td>
-                    <td>{{ atividade.get_tipo_atividade_display }}</td>
-                    <td>{{ atividade.get_status_display }}</td>
-                    <td>{{ atividade.data_inicio|date:"d/m/Y H:i" }}</td>
-                    <td>{{ atividade.data_fim|date:"d/m/Y H:i" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endfor %}</div>
-{% endblock %}{% endblock %}
-
-
-
 ### Arquivo: atividades\templates\atividades\relatorio_atividades_curso_turma.html
 
 html
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Relatório de Atividades por Curso e Turma{% endblock %}
 {% block content %}
 <div class="container mt-4">
@@ -1096,7 +1818,7 @@ html
 
 html
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Copiar Atividade Ritualística{% endblock %}
 
 {% block content %}
@@ -1139,7 +1861,7 @@ html
 
 html
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Excluir Atividade Ritualística{% endblock %}
 
 {% block content %}
@@ -1182,7 +1904,7 @@ html
 
 html
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Copiar Atividade Ritualística{% endblock %}
 
 {% block content %}
@@ -1287,104 +2009,144 @@ html
 
 html
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Criar Nova Atividade Ritualística{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Criar Nova Atividade Ritualística</h1>
-        <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">Voltar para a lista</a>
+        <h1>Nova Atividade Ritualística</h1>
+        <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
     </div>
-    
+
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
         {% endfor %}
     {% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Informações Básicas</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.local %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
-                    </div>
-                </div>
-            </div>
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
         </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Data e Horário</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.data %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_inicio %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_fim %}
-                    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Dados da Atividade</h5>
                 </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Turma e Participantes</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.turma %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.todos_alunos %}
-                        <small class="form-text text-muted">Marque esta opção para incluir automaticamente todos os alunos da turma.</small>
-                    </div>
-                </div>
-                
-                <div class="row mt-3" id="participantes-container">
-                    <div class="col-md-12">
-                        <label for="{{ form.participantes.id_for_label }}">{{ form.participantes.label }}</label>
-                        <div class="border p-3 rounded">
-                            {{ form.participantes }}
-                        </div>
-                        {% if form.participantes.errors %}
-                            <div class="text-danger">
-                                {{ form.participantes.errors }}
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% include 'includes/form_errors.html' %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="id_nome" class="form-label">
+                                    {{ form.nome.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.nome }}
+                                {% for error in form.nome.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
                             </div>
-                        {% endif %}
-                    </div>
+                            <div class="col-md-6">
+                                {% include 'includes/form_field.html' with field=form.local %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                {% include 'includes/form_field.html' with field=form.descricao %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="id_data" class="form-label">
+                                    {{ form.data.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.data }}
+                                {% for error in form.data.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="id_hora_inicio" class="form-label">
+                                    {{ form.hora_inicio.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.hora_inicio }}
+                                {% for error in form.hora_inicio.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4">
+                                {% include 'includes/form_field.html' with field=form.hora_fim %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {% include 'includes/form_field.html' with field=form.turma %}
+                            </div>
+                            <div class="col-md-6">
+                                {% include 'includes/form_field.html' with field=form.todos_alunos %}
+                                <small class="form-text text-muted">Marque para incluir todos os alunos da turma.</small>
+                            </div>
+                        </div>
+                        <div class="row mt-3" id="participantes-container">
+                            <div class="col-md-12">
+                                <label for="{{ form.participantes.id_for_label }}">{{ form.participantes.label }}</label>
+                                <div class="border p-3 rounded">
+                                    {{ form.participantes }}
+                                </div>
+                                {% if form.participantes.errors %}
+                                    <div class="text-danger">
+                                        {{ form.participantes.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label for="id_status" class="form-label">
+                                    {{ form.status.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.status }}
+                                {% for error in form.status.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Cadastrar Atividade
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-        
-        <div class="d-flex justify-content-between mb-5">
-            <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Criar Atividade</button>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Informações</h5>
+                </div>
+                <div class="card-body">
+                    <p>Preencha os dados para cadastrar uma nova atividade ritualística.</p>
+                    <ul>
+                        <li>Campos obrigatórios estão marcados com <span class="text-danger">*</span>.</li>
+                        <li>Você pode adicionar participantes manualmente ou incluir todos da turma.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
-    </form>
+    </div>
 </div>
 {% endblock %}
 
@@ -1393,20 +2155,48 @@ html
     document.addEventListener('DOMContentLoaded', function() {
         const todosAlunosCheckbox = document.getElementById('{{ form.todos_alunos.id_for_label }}');
         const participantesContainer = document.getElementById('participantes-container');
-        
         function toggleParticipantes() {
-            if (todosAlunosCheckbox.checked) {
-                participantesContainer.style.display = 'none';
-            } else {
-                participantesContainer.style.display = 'block';
+            if (todosAlunosCheckbox && participantesContainer) {
+                participantesContainer.style.display = todosAlunosCheckbox.checked ? 'none' : 'block';
             }
         }
-        
-        // Inicializar
-        toggleParticipantes();
-        
-        // Adicionar listener para mudanças
-        todosAlunosCheckbox.addEventListener('change', toggleParticipantes);
+        if (todosAlunosCheckbox) {
+            toggleParticipantes();
+            todosAlunosCheckbox.addEventListener('change', toggleParticipantes);
+        }
+
+        // Highlight campos obrigatórios
+        function highlightRequiredFields(form) {
+            const obrigatorios = [
+                'id_nome',
+                'id_data',
+                'id_hora_inicio',
+                'id_status'
+            ];
+            let algumErro = false;
+            obrigatorios.forEach(function(id) {
+                const field = document.getElementById(id);
+                if (field) {
+                    field.classList.remove('is-required-error');
+                    if (!field.value || (field.type === "select-one" && !field.value)) {
+                        field.classList.add('is-required-error');
+                        algumErro = true;
+                    }
+                }
+            });
+            return !algumErro;
+        }
+
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!highlightRequiredFields(form)) {
+                    e.preventDefault();
+                    const erro = form.querySelector('.is-required-error');
+                    if (erro) erro.focus();
+                }
+            });
+        }
     });
 </script>
 {% endblock %}
@@ -1418,7 +2208,7 @@ html
 
 html
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Detalhes da Atividade Ritualística{% endblock %}
 
 {% block content %}
@@ -1506,603 +2296,6 @@ html
 </div>
 {% endblock %}
 
-
-
-
-### Arquivo: atividades\templates\atividades\ritualisticas\editar_atividade_ritualistica.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Editar Atividade Ritualística{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Editar Atividade Ritualística</h1>
-        <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-secondary">Voltar para detalhes</a>
-    </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Informações Básicas</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.local %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Data e Horário</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.data %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_inicio %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_fim %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Turma e Participantes</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.turma %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.todos_alunos %}
-                        <small class="form-text text-muted">Marque esta opção para incluir automaticamente todos os alunos da turma.</small>
-                    </div>
-                </div>
-                
-                <div class="row mt-3" id="participantes-container">
-                    <div class="col-md-12">
-                        <label for="{{ form.participantes.id_for_label }}">{{ form.participantes.label }}</label>
-                        <div class="border p-3 rounded">
-                            {{ form.participantes }}
-                        </div>
-                        {% if form.participantes.errors %}
-                            <div class="text-danger">
-                                {{ form.participantes.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="d-flex justify-content-between mb-5">
-            <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Atualizar Atividade</button>
-        </div>
-    </form>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const todosAlunosCheckbox = document.getElementById('{{ form.todos_alunos.id_for_label }}');
-        const participantesContainer = document.getElementById('participantes-container');
-        
-        function toggleParticipantes() {
-            if (todosAlunosCheckbox.checked) {
-                participantesContainer.style.display = 'none';
-            } else {
-                participantesContainer.style.display = 'block';
-            }
-        }
-        
-        // Inicializar
-        toggleParticipantes();
-        
-        // Adicionar listener para mudanças
-        todosAlunosCheckbox.addEventListener('change', toggleParticipantes);
-    });
-</script>
-{% endblock %}
-
-
-
-
-### Arquivo: atividades\templates\atividades\ritualisticas\excluir_atividade_ritualistica.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Excluir Atividade Ritualística{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1>Excluir Atividade Ritualística</h1>
-    
-    <div class="alert alert-danger">
-        <p>Tem certeza que deseja excluir a atividade ritualística "{{ atividade.nome }}"?</p>
-        <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
-    </div>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Informações da Atividade</h5>
-        </div>
-        <div class="card-body">
-            <p><strong>Nome:</strong> {{ atividade.nome }}</p>
-            <p><strong>Data:</strong> {{ atividade.data|date:"d/m/Y" }}</p>
-            <p><strong>Horário:</strong> {{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</p>
-            <p><strong>Local:</strong> {{ atividade.local }}</p>
-            <p><strong>Turma:</strong> {{ atividade.turma }}</p>
-            <p><strong>Total de Participantes:</strong> {{ atividade.participantes.count }}</p>
-        </div>
-    </div>
-    
-    <form method="post">
-        {% csrf_token %}
-        <div class="d-flex">
-            <button type="submit" class="btn btn-danger me-2">Sim, excluir</button>
-            <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-secondary">Cancelar</a>
-        </div>
-    </form>
-</div>
-{% endblock %}
-
-
-
-
-### Arquivo: atividades\templates\atividades\ritualisticas\formulario_atividade_ritualistica.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}{% if atividade %}Editar{% else %}Nova{% endif %} Atividade Ritualística{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{% if atividade %}Editar{% else %}Nova{% endif %} Atividade Ritualística</h1>
-        <a href="{{ return_url }}" class="btn btn-secondary">Voltar para a lista</a>
-    </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Informações Básicas</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.local %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Data e Horário</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.data %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_inicio %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.hora_fim %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Turma e Participantes</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.turma %}
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.participantes %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="d-flex justify-content-between mb-5">
-            <a href="{{ return_url }}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">
-                {% if atividade %}Atualizar{% else %}Criar{% endif %} Atividade
-            </button>
-        </div>
-    </form>
-</div>
-{% endblock %}
-
-
-
-### Arquivo: atividades\templates\atividades\ritualisticas\listar_atividades_ritualisticas.html
-
-html
-{% extends 'base.html' %}
-{% load static %}
-{% block title %}Lista de Atividades Ritualísticas{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <!-- Cabeçalho com título e botões na mesma linha -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Lista de Atividades Ritualísticas</h1>
-        <div class="btn-group">
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
-            <!-- Botão para criar nova atividade ritualística -->
-            <a href="{% url 'atividades:criar_atividade_ritualistica' %}?return_url={{ request.path|urlencode }}" class="btn btn-primary me-2">
-                <i class="fas fa-plus"></i> Nova Atividade
-            </a>
-            
-            <!-- Botões para as novas funcionalidades -->
-            <a href="{% url 'atividades:calendario_atividades' %}" class="btn btn-info me-2">
-                <i class="fas fa-calendar-alt"></i> Calendário
-            </a>
-            
-            <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-success me-2">
-                <i class="fas fa-chart-bar"></i> Dashboard
-            </a>
-            
-            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning">
-                <i class="fas fa-file-alt"></i> Relatórios
-            </a>
-        </div>
-    </div>    
-    <!-- Barra de busca e filtros -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <form method="get" class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome, descrição ou local..." value="{{ query }}">
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-                </div>
-            </form>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Data</th>
-                            <th>Horário</th>
-                            <th>Local</th>
-                            <th>Turma</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for atividade in atividades %}
-                            <tr>
-                                <td>{{ atividade.nome }}</td>
-                                <td>{{ atividade.data|date:"d/m/Y" }}</td>
-                                <td>{{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</td>
-                                <td>{{ atividade.local }}</td>
-                                <td>{{ atividade.turma }}</td>
-                                <td>
-                                    <a href="{% url 'atividades:detalhar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da atividade">Detalhes</a>
-                                    <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-warning" title="Editar informações da atividade">Editar</a>
-                                    <a href="{% url 'atividades:excluir_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir esta atividade">Excluir</a>
-                                    <!-- Novo botão para copiar atividade -->
-                                    <a href="{% url 'atividades:copiar_atividade_ritualistica' atividade.id %}" class="btn btn-sm btn-secondary" title="Criar uma cópia desta atividade">Copiar</a>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center">
-                                    <p class="my-3">Nenhuma atividade ritualística cadastrada.</p>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer">
-            <p class="text-muted mb-0">Total: {{ atividades.count|default:"0" }} atividade(s)</p>
-            {% if page_obj.has_other_pages %}
-                <nav aria-label="Paginação">
-                    <ul class="pagination justify-content-center mb-0">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}">Anterior</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Anterior</span>
-                            </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                            {% else %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}&q={{ query }}">{{ num }}</a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}">Próxima</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Próxima</span>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-
-
-
-### Arquivo: atividades\templates\atividades\visualizar_frequencia.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Frequência - {{ atividade.nome }}{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Frequência: {{ atividade.nome }}</h1>
-        <div>
-            <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-secondary me-2">Voltar</a>
-            <a href="{% url 'atividades:registrar_frequencia_atividade' atividade.id %}" class="btn btn-primary">Registrar Nova Frequência</a>
-        </div>
-    </div>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Selecionar Data</h5>
-                <div>
-                    <form method="get" class="d-flex align-items-center">
-                        <label for="data" class="me-2">Data:</label>
-                        <select name="data" id="data" class="form-select" style="width: auto;" onchange="this.form.submit()">
-                            <option value="">Selecione uma data</option>
-                            {% for data in datas_disponiveis %}
-                                <option value="{{ data|date:'Y-m-d' }}" {% if data|date:'Y-m-d' == data_selecionada|date:'Y-m-d' %}selected{% endif %}>
-                                    {{ data|date:"d/m/Y" }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    {% if data_selecionada %}
-        <!-- Estatísticas -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card text-white bg-primary">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">Total de Alunos</h5>
-                        <p class="display-4">{{ total_registros }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-white bg-success">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">Presentes</h5>
-                        <p class="display-4">{{ presentes }}</p>
-                        <p>{{ taxa_presenca|floatformat:1 }}%</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-white bg-danger">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">Ausentes</h5>
-                        <p class="display-4">{{ ausentes }}</p>
-                        <p>{{ 100|subtract:taxa_presenca|floatformat:1 }}%</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Gráfico -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Gráfico de Frequência</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="frequenciaChart" height="200"></canvas>
-            </div>
-        </div>
-        
-        <!-- Lista de Alunos -->
-        <div class="card">
-            <div class="card-header">
-                <h5>Lista de Frequência - {{ data_selecionada|date:"d/m/Y" }}</h5>
-            </div>
-            <div class="card-body">
-                {% if frequencias %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th style="width: 50px;">#</th>
-                                    <th>Aluno</th>
-                                    <th style="width: 120px;">Status</th>
-                                    <th>Justificativa</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for frequencia in frequencias %}
-                                <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            {% if frequencia.aluno.foto %}
-                                                <img src="{{ frequencia.aluno.foto.url }}" alt="Foto de {{ frequencia.aluno.nome }}" 
-                                                     class="rounded-circle me-2" width="30" height="30" 
-                                                     style="object-fit: cover;">
-                                            {% else %}
-                                                <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" 
-                                                     style="width: 30px; height: 30px; color: white;">
-                                                    {{ frequencia.aluno.nome|first|upper }}
-                                                </div>
-                                            {% endif %}
-                                            <div>
-                                                <div>{{ frequencia.aluno.nome }}</div>
-                                                <small class="text-muted">{{ frequencia.aluno.numero_iniciatico|default:"Sem número iniciático" }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        {% if frequencia.presente %}
-                                            <span class="badge bg-success">Presente</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">Ausente</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if not frequencia.presente %}
-                                            {{ frequencia.justificativa|default:"Sem justificativa" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="alert alert-info">
-                        <p>Não há registros de frequência para esta data.</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    {% else %}
-        <div class="alert alert-info">
-            <p>Selecione uma data para visualizar os registros de frequência.</p>
-        </div>
-    {% endif %}
-</div>
-{% endblock %}
-
-{% block extra_js %}
-{% if data_selecionada %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var ctx = document.getElementById('frequenciaChart').getContext('2d');
-        var myChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Presentes', 'Ausentes'],
-                datasets: [{
-                    data: [{{ presentes }}, {{ ausentes }}],
-                    backgroundColor: [
-                        'rgba(40, 167, 69, 0.8)',
-                        'rgba(220, 53, 69, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgba(40, 167, 69, 1)',
-                        'rgba(220, 53, 69, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    title: {
-                        display: true,
-                        text: 'Distribuição de Frequência'
-                    }
-                }
-            }
-        });
-    });
-</script>
-{% endif %}
-{% endblock %}
 
 
 '''

@@ -538,42 +538,6 @@ Erro ao ler o arquivo: 'utf-8' codec can't decode byte 0xff in position 0: inval
 
 
 
-### Arquivo: listar_cursos_turmas_atividades.py
-
-python
-from cursos.models import Curso
-from turmas.models import Turma
-from atividades.models import AtividadeAcademica
-
-print("Iniciando listagem de cursos, turmas e atividades...\n")
-
-try:
-    cursos = Curso.objects.all()
-    if not cursos.exists():
-        print("Nenhum curso encontrado.")
-    for curso in cursos:
-        print(f'Curso: {curso.nome} (CÃ³digo: {curso.codigo_curso})')
-        turmas = Turma.objects.filter(curso=curso)
-        if not turmas.exists():
-            print('  Nenhuma turma para este curso.')
-        else:
-            for turma in turmas:
-                print(f'  Turma: {turma.nome} (ID: {turma.id})')
-                try:
-                    atividades = AtividadeAcademica.objects.filter(turmas=turma)
-                    if atividades.exists():
-                        for atividade in atividades:
-                            print(f'    Atividade: {atividade.nome} (ID: {atividade.id})')
-                    else:
-                        print('    Nenhuma atividade para esta turma.')
-                except Exception as e:
-                    print(f'    Erro ao buscar atividades para a turma {turma.nome}: {e}')
-except Exception as e:
-    print(f'Erro geral ao buscar cursos/turmas/atividades: {e}')
-
-
-
-
 ### Arquivo: manage.py
 
 python
@@ -766,87 +730,36 @@ XlsxWriter==3.2.2
 ### Arquivo: requirements.txt
 
 text
-arabic-reshaper==3.0.0
 asgiref==3.8.1
-asn1crypto==1.5.1
 astroid==3.3.9
-autopep8==2.3.2
 black==25.1.0
-Brotli==1.1.0
-certifi==2025.4.26
-cffi==1.17.1
-cfgv==3.4.0
 chardet==5.2.0
-charset-normalizer==3.4.1
 click==8.1.8
 colorama==0.4.6
-cryptography==44.0.3
-cssselect2==0.8.0
-defusedxml==0.7.1
 dill==0.3.9
-distlib==0.3.9
-Django==5.1.7
+Django==5.2.2
 django-crispy-forms==2.3
 django-debug-toolbar==5.1.0
 django-extensions==3.2.3
 django-widget-tweaks==1.5.0
-docformatter==1.7.5
+djangorestframework==3.16.0
 Faker==37.1.0
-filelock==3.18.0
 flake8==7.2.0
-fonttools==4.58.0
-html5lib==1.1
-identify==2.6.9
-idna==3.10
 isort==6.0.1
-lxml==5.4.0
 mccabe==0.7.0
 mypy-extensions==1.0.0
-nodeenv==1.9.1
-numpy==2.2.5
-oscrypto==1.3.0
 packaging==24.2
-pandas==2.2.3
 pathspec==0.12.1
 pillow==11.1.0
 platformdirs==4.3.7
-pre_commit==4.2.0
 pycodestyle==2.13.0
-pycparser==2.22
-pydyf==0.11.0
 pyflakes==3.3.2
-pyHanko==0.26.0
-pyhanko-certvalidator==0.26.8
 pylint==3.3.6
-pypdf==5.5.0
-pyphen==0.17.2
-python-bidi==0.6.6
-python-dateutil==2.9.0.post0
-python-dotenv==1.1.0
-pytz==2025.2
-PyYAML==6.0.2
-qrcode==8.2
 reportlab==4.3.1
-requests==2.32.3
-six==1.17.0
 sqlparse==0.5.3
-svglib==1.5.1
-tinycss2==1.4.0
-tinyhtml5==2.0.0
 tomlkit==0.13.2
 tzdata==2025.1
-tzlocal==5.3.1
-untokenize==0.1.1
-uritools==5.0.0
-urllib3==2.4.0
-virtualenv==20.30.0
-weasyprint==65.1
-webdriver-manager==4.0.2
-webencodings==0.5.1
-xhtml2pdf==0.2.17
 XlsxWriter==3.2.2
-xlwt==1.3.0
-zopfli==0.2.3.post1
 
 
 
@@ -1077,13 +990,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-### Arquivo: settings.py
-
-python
 
 
 
@@ -1358,6 +1264,17 @@ text
     width: 100%;
 }
 
+@keyframes piscar {
+    0%, 100% { box-shadow: 0 0 0 2px #dc3545; }
+    50% { box-shadow: 0 0 8px 4px #dc3545; }
+}
+
+.is-required-error {
+    border-color: #dc3545 !important;
+    animation: piscar 1s linear 3;
+    background-color: #fff0f0 !important;
+}
+
 
 
 ### Arquivo: static\css\Piscar.css
@@ -1365,14 +1282,13 @@ text
 text
 <!-- No bloco head ou em um arquivo CSS separado -->
 <style>
-    @keyframes blink {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
+    @keyframes piscar {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
     }
     
     .blink {
-        animation: blink 1s linear infinite;
+        animation: piscar 1s linear infinite;
     }
 </style>
 
@@ -1555,6 +1471,23 @@ body {
 .text-xs {
     font-size: 0.75rem;
 }
+
+select.form-control {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' fill='gray' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4' stroke='gray' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.2em;
+    padding-right: 2.5em;
+}
+
+select.form-select {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' fill='gray' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4' stroke='gray' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.2em;
+    padding-right: 2.5em;
+}
+
 /* Estilos personalizados para o sistema OMAUM */
 
 
@@ -1640,6 +1573,28 @@ text
     padding: 0.375rem 0.75rem;
     border: 1px solid #ced4da;
     border-radius: 0.25rem;
+}
+
+.curso-dropdown {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #fff;
+    padding-right: 2rem;
+    position: relative;
+}
+
+.dropdown-arrow {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    border-style: solid;
+    border-width: 6px 6px 0 6px;
+    border-color: #888 transparent transparent transparent;
+    transform: translateY(-50%);
 }
 
 
@@ -1859,6 +1814,87 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
+
+
+### Arquivo: static\js\atividades_ajax.js
+
+text
+/**
+ * Centraliza o carregamento dinâmico das turmas ao selecionar um curso.
+ * Para funcionar, os campos devem ter os IDs padrão: id_curso e id_turmas.
+ * Opcional: inclua um elemento com id="no-turmas-msg" para mensagens.
+ * 
+ * Chame: window.initTurmasAjax({ url: '/atividades/ajax/turmas-por-curso/' });
+ */
+window.initTurmasAjax = function(options) {
+    const cursoSelect = document.getElementById('id_curso');
+    const turmasSelect = document.getElementById('id_turmas');
+    const selectAllTurmas = document.getElementById('select-all-turmas');
+    let noTurmasMsg = document.getElementById('no-turmas-msg');
+    const url = options && options.url ? options.url : '/atividades/ajax/turmas-por-curso/';
+
+    if (!cursoSelect || !turmasSelect) return;
+
+    if (!noTurmasMsg) {
+        noTurmasMsg = document.createElement('div');
+        noTurmasMsg.id = 'no-turmas-msg';
+        noTurmasMsg.className = 'text-muted mt-2';
+        turmasSelect.parentNode.appendChild(noTurmasMsg);
+    }
+
+    function atualizarTurmas(cursoId, turmasSelecionadas=[]) {
+        if (!cursoId) {
+            turmasSelect.innerHTML = '';
+            noTurmasMsg.textContent = '';
+            return;
+        }
+        fetch(`${url}?curso=${cursoId}`)
+            .then(response => response.json())
+            .then(data => {
+                turmasSelect.innerHTML = '';
+                if (data.turmas.length === 0) {
+                    noTurmasMsg.textContent = 'Não há turmas para este curso.';
+                } else {
+                    noTurmasMsg.textContent = '';
+                    data.turmas.forEach(function(turma) {
+                        const option = document.createElement('option');
+                        option.value = turma.id;
+                        option.textContent = turma.nome;
+                        if (turmasSelecionadas.includes(String(turma.id))) {
+                            option.selected = true;
+                        }
+                        turmasSelect.appendChild(option);
+                    });
+                }
+            });
+    }
+
+    cursoSelect.addEventListener('change', function() {
+        atualizarTurmas(this.value);
+    });
+
+    // Ao carregar a página, filtra as turmas se já houver curso selecionado
+    const turmasSelecionadas = Array.from(turmasSelect.selectedOptions).map(opt => opt.value);
+    if (cursoSelect.value) {
+        atualizarTurmas(cursoSelect.value, turmasSelecionadas);
+    } else {
+        turmasSelect.innerHTML = '';
+        noTurmasMsg.textContent = '';
+    }
+
+    // Selecionar todas as turmas (se existir o checkbox)
+    if (selectAllTurmas && turmasSelect) {
+        selectAllTurmas.addEventListener('change', function() {
+            for (let option of turmasSelect.options) {
+                option.selected = this.checked;
+            }
+        });
+        turmasSelect.addEventListener('change', function() {
+            selectAllTurmas.checked = Array.from(turmasSelect.options).every(opt => opt.selected);
+        });
+    }
+};
 
 
 
@@ -2491,38 +2527,116 @@ document.addEventListener('DOMContentLoaded', function() {
 ### Arquivo: static\js\atividades\filtros.js
 
 text
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const $form = document.getElementById('filtro-atividades');
     const $q = document.getElementById('id_q');
     const $curso = document.getElementById('id_curso');
     const $turma = document.getElementById('id_turmas');
-    const $tabela = document.querySelector('.table-responsive table');
+    const $tabela = document.querySelector('.table-responsive tbody');
+    const $alerta = document.getElementById('alerta-nenhum-resultado');
 
-    function atualizaFiltros() {
+    // Dica extra: sempre inicia o alerta oculto
+    $alerta.style.display = 'none';
+
+    function atualizaFiltros(mantemCurso = true, mantemTurma = true) {
         const params = new URLSearchParams(new FormData($form)).toString();
-        fetch(window.location.pathname + '?' + params, {
-            headers: {'x-requested-with': 'XMLHttpRequest'}
+        fetch('/atividades/api/filtrar-atividades/?' + params, {
+            headers: { 'x-requested-with': 'XMLHttpRequest' }
         })
-        .then(resp => resp.json())
-        .then(data => {
-            $tabela.innerHTML = data.tabela_html;
-            $curso.innerHTML = '<option value="">Todos os cursos</option>' + data.cursos_html;
-            $turma.innerHTML = '<option value="">Todas as turmas</option>' + data.turmas_html;
-        });
+            .then(resp => resp.json())
+            .then(data => {
+                // Atualiza tabela
+                $tabela.innerHTML = data.atividades_html;
+
+                // Mostra/oculta alerta de nenhum resultado
+                if (
+                    data.atividades_html.includes('Nenhuma atividade encontrada')
+                ) {
+                    $alerta.style.display = 'block';
+                } else {
+                    $alerta.style.display = 'none';
+                }
+
+                // Atualiza cursos mantendo seleção
+                const cursoSelecionado = mantemCurso ? $curso.value : '';
+                $curso.innerHTML = '';
+                const optTodosCursos = document.createElement('option');
+                optTodosCursos.value = '';
+                optTodosCursos.textContent = 'Todos os cursos';
+                $curso.appendChild(optTodosCursos);
+
+                if (data.cursos.length > 0) {
+                    data.cursos.forEach(curso => {
+                        const opt = document.createElement('option');
+                        opt.value = curso.id;
+                        opt.textContent = curso.nome;
+                        if (String(curso.id) === String(cursoSelecionado)) {
+                            opt.selected = true;
+                        }
+                        $curso.appendChild(opt);
+                    });
+                } else {
+                    // Se não houver cursos, mantém apenas a opção "Todos"
+                    optTodosCursos.selected = true;
+                }
+
+                // Atualiza turmas mantendo seleção
+                const turmaSelecionada = mantemTurma ? $turma.value : '';
+                $turma.innerHTML = '';
+                const optTodasTurmas = document.createElement('option');
+                optTodasTurmas.value = '';
+                optTodasTurmas.textContent = 'Todas as turmas';
+                $turma.appendChild(optTodasTurmas);
+
+                if (data.turmas.length > 0) {
+                    data.turmas.forEach(turma => {
+                        const opt = document.createElement('option');
+                        opt.value = turma.id;
+                        opt.textContent = turma.nome;
+                        if (String(turma.id) === String(turmaSelecionada)) {
+                            opt.selected = true;
+                        }
+                        $turma.appendChild(opt);
+                    });
+                } else {
+                    // Se não houver turmas, mantém apenas a opção "Todas"
+                    optTodasTurmas.selected = true;
+                }
+
+                // Se só houver um curso possível para a turma selecionada, seleciona automaticamente
+                if (!cursoSelecionado && data.cursos.length === 1) {
+                    $curso.value = data.cursos[0].id;
+                }
+                // Se só houver uma turma possível para o curso selecionado, seleciona automaticamente
+                if (!turmaSelecionada && data.turmas.length === 1) {
+                    $turma.value = data.turmas[0].id;
+                }
+            });
     }
 
-    $q.addEventListener('input', function() {
-        atualizaFiltros();
+    // Atualiza a tabela automaticamente ao digitar (com debounce)
+    let debounceTimer;
+    $q.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            atualizaFiltros(true, true);
+        }, 300); // 300ms de atraso
     });
-    $curso.addEventListener('change', function() {
-        atualizaFiltros();
+
+    $curso.addEventListener('change', function () {
+        // Ao trocar o curso, limpa turma selecionada
+        $turma.value = '';
+        atualizaFiltros(true, false);
     });
-    $turma.addEventListener('change', function() {
-        atualizaFiltros();
+
+    $turma.addEventListener('change', function () {
+        // Ao trocar a turma, pode ser necessário ajustar o curso
+        atualizaFiltros(false, true);
     });
-    $form.addEventListener('submit', function(e) {
+
+    $form.addEventListener('submit', function (e) {
         e.preventDefault();
-        atualizaFiltros();
+        atualizaFiltros(true, true);
     });
 });
 
@@ -2606,371 +2720,6 @@ const DiasSemana = {
         });
     }
 };
-
-
-
-
-### Arquivo: static\js\modules\instrutor-search.js
-
-text
-// Módulo de busca de instrutores
-const InstrutorSearch = {
-    ignoreEligibility: false,
-    csrfToken: null,
-    
-    init: function(csrfToken, ignoreEligibility) {
-        this.csrfToken = csrfToken;
-        this.ignoreEligibility = ignoreEligibility || false;
-        
-        // Configuração única para todos os campos de busca de instrutor
-        const camposInstrutor = [
-            {
-                inputId: 'search-instrutor',
-                resultsId: 'search-results-instrutor',
-                containerId: 'selected-instrutor-container',
-                infoId: 'selected-instrutor-info',
-                selectId: 'id_instrutor',
-                errorId: 'instrutor-error'
-            },
-            {
-                inputId: 'search-instrutor-auxiliar',
-                resultsId: 'search-results-instrutor-auxiliar',
-                containerId: 'selected-instrutor-auxiliar-container',
-                infoId: 'selected-instrutor-auxiliar-info',
-                selectId: 'id_instrutor_auxiliar',
-                errorId: 'instrutor-auxiliar-error'
-            },
-            {
-                inputId: 'search-auxiliar-instrucao',
-                resultsId: 'search-results-auxiliar-instrucao',
-                containerId: 'selected-auxiliar-instrucao-container',
-                infoId: 'selected-auxiliar-instrucao-info',
-                selectId: 'id_auxiliar_instrucao',
-                errorId: 'auxiliar-instrucao-error'
-            }
-        ];
-        
-        // Configurar cada campo de busca
-        camposInstrutor.forEach(campo => {
-            const inputElement = document.getElementById(campo.inputId);
-            if (inputElement) {
-                this.configurarBuscaInstrutores(
-                    campo.inputId,
-                    campo.resultsId,
-                    campo.containerId,
-                    campo.infoId,
-                    campo.selectId,
-                    campo.errorId
-                );
-                
-                // Garantir que cada botão "Limpar seleção" seja único
-                this.garantirBotaoLimparUnico(campo.containerId);
-            }
-        });
-    },
-    
-    setIgnoreEligibility: function(value) {
-        this.ignoreEligibility = value;
-    },
-    
-    configurarBuscaInstrutores: function(inputId, resultadosId, selecionadoContainerId, selecionadoInfoId, selectId, errorId) {
-        const inputBusca = document.getElementById(inputId);
-        const resultadosContainer = document.getElementById(resultadosId);
-        const selecionadoContainer = document.getElementById(selecionadoContainerId);
-        const selecionadoInfo = document.getElementById(selecionadoInfoId);
-        const selectElement = document.getElementById(selectId);
-        const errorElement = document.getElementById(errorId);
-        
-        if (!inputBusca || !resultadosContainer || !selecionadoContainer || !selectElement) {
-            console.error('Elementos não encontrados para configurar busca:', inputId);
-            return;
-        }
-        
-        // Função para buscar alunos
-        const buscarAlunos = (query) => {
-            if (query.length < 2) {
-                resultadosContainer.style.display = 'none';
-                return;
-            }
-            
-            // Fazer requisição AJAX para buscar alunos
-            fetch(`/alunos/api/search-instrutores/?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Limpar resultados anteriores
-                    resultadosContainer.innerHTML = '';
-                    
-                    if (data.length === 0) {
-                        // Nenhum resultado encontrado
-                        const noResults = document.createElement('div');
-                        noResults.className = 'list-group-item';
-                        noResults.textContent = 'Nenhum resultado encontrado';
-                        resultadosContainer.appendChild(noResults);
-                    } else {
-                        // Adicionar cada aluno encontrado à lista de resultados
-                        data.forEach(aluno => {
-                            const item = document.createElement('a');
-                            item.href = '#';
-                            item.className = 'list-group-item list-group-item-action';
-                            item.dataset.cpf = aluno.cpf;
-                            item.dataset.nome = aluno.nome;
-                            item.dataset.numeroIniciativo = aluno.numero_iniciatico;
-                            item.dataset.situacao = aluno.situacao;
-                            
-                            // Verificar se o aluno está ativo
-                            if (aluno.situacao_codigo !== 'ATIVO') {
-                                item.classList.add('text-danger');
-                            }
-                            
-                            // Criar HTML para o item de resultado
-                            item.innerHTML = `
-                                <div class="d-flex align-items-center">
-                                    <div class="me-2">
-                                        ${aluno.foto ? `<img src="${aluno.foto}" width="32" height="32" class="rounded-circle">` :
-                                        `<div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
-                                              style="width: 32px; height: 32px; font-size: 14px;">
-                                            ${aluno.nome.charAt(0).toUpperCase()}
-                                         </div>`}
-                                    </div>
-                                    <div>
-                                        <div><strong>${aluno.nome}</strong></div>
-                                        <small>CPF: ${aluno.cpf} | Nº Iniciático: ${aluno.numero_iniciatico || 'N/A'}</small>
-                                    </div>
-                                </div>
-                            `;
-                            
-                            // Adicionar evento de clique para selecionar o aluno
-                            item.addEventListener('click', (e) => {
-                                e.preventDefault();
-                                
-                                // Verificar elegibilidade do aluno se necessário
-                                fetch(`/alunos/api/verificar-elegibilidade/${aluno.cpf}/`)
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        // Selecionar o aluno
-                                        inputBusca.value = aluno.nome;
-                                        
-                                        // Atualizar o select oculto
-                                        selectElement.value = aluno.cpf;
-                                        
-                                        // Atualizar a exibição do aluno selecionado
-                                        selecionadoInfo.innerHTML = `
-                                            <strong>${aluno.nome}</strong><br>
-                                            CPF: ${aluno.cpf}<br>
-                                            Número Iniciático: ${aluno.numero_iniciatico || 'N/A'}<br>
-                                            <span class="badge bg-${getSituacaoClass(aluno.situacao)}">${aluno.situacao}</span>
-                                            <div class="mt-2 small">
-                                                <div><strong>Status como instrutor:</strong> <span id="${tipo}-status">Verificando...</span></div>
-                                                <div class="mt-1"><strong>Turmas:</strong> <span id="${tipo}-turmas">Carregando...</span></div>
-                                            </div>
-                                        `;
-                                        
-                                        // Fazer uma requisição adicional para obter mais informações sobre o aluno
-                                        fetch(`/alunos/api/detalhes/${aluno.cpf}/`)
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                // Para instrutor principal
-                                                $(`#instrutor-status`).text(data.e_instrutor ? 'É instrutor' : 'Não é instrutor');
-                                                $(`#instrutor-turmas`).html(turmasHtml);
-
-                                                // Para instrutor auxiliar
-                                                $(`#instrutor-auxiliar-status`).text(data.e_instrutor ? 'É instrutor' : 'Não é instrutor');
-                                                $(`#instrutor-auxiliar-turmas`).html(turmasHtml);
-
-                                                // Para auxiliar de instrução
-                                                $(`#auxiliar-instrucao-status`).text(data.e_instrutor ? 'É instrutor' : 'Não é instrutor');
-                                                $(`#auxiliar-instrucao-turmas`).html(turmasHtml);
-                                            })
-                                            .catch(error => {
-                                                console.error('Erro ao buscar detalhes do aluno:', error);
-                                                $(`#${tipo}-status`).text('Informação não disponível');
-                                                $(`#${tipo}-turmas`).text('Informação não disponível');
-                                            });
-                                        
-                                        // Exibir o container do aluno selecionado
-                                        selecionadoContainer.classList.remove('d-none');
-                                        
-                                        // Exibir aviso se o aluno não for elegível
-                                        if (!data.elegivel && errorElement && !this.ignoreEligibility) {
-                                            errorElement.innerHTML = `<strong>Aviso:</strong> ${data.motivo}`;
-                                            errorElement.classList.remove('d-none');
-                                        } else if (errorElement) {
-                                            errorElement.classList.add('d-none');
-                                        }
-                                        
-                                        // Ocultar os resultados da busca
-                                        resultadosContainer.style.display = 'none';
-                                    });
-                            });
-                            
-                            resultadosContainer.appendChild(item);
-                        });
-                    }
-                    
-                    // Mostrar container de resultados
-                    resultadosContainer.style.display = 'block';
-                })
-                .catch(error => {
-                    console.error('Erro ao buscar alunos:', error);
-                    // Mostrar erro no console mas não interromper a experiência do usuário
-                });
-        };
-        
-        // Adicionar evento de input para buscar alunos enquanto digita
-        inputBusca.addEventListener('input', function() {
-            const query = this.value.trim();
-            buscarAlunos(query);
-        });
-        
-        // Adicionar evento de clique para limpar e fechar ao clicar fora
-        document.addEventListener('click', function(e) {
-            if (!inputBusca.contains(e.target) && !resultadosContainer.contains(e.target)) {
-                resultadosContainer.style.display = 'none';
-            }
-        });
-        
-        // Adicionar evento de foco para mostrar resultados novamente
-        inputBusca.addEventListener('focus', function() {
-            const query = this.value.trim();
-            if (query.length >= 2) {
-                buscarAlunos(query);
-            }
-        });
-        
-        // Adicionar botão para limpar a seleção se ainda não existir
-        if (!selecionadoContainer.nextElementSibling || !selecionadoContainer.nextElementSibling.classList.contains('btn-outline-secondary')) {
-            const limparBtn = document.createElement('button');
-            limparBtn.type = 'button';
-            limparBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
-            limparBtn.textContent = 'Limpar seleção';
-            limparBtn.addEventListener('click', function() {
-                // Limpar o input de busca
-                inputBusca.value = '';
-                
-                // Limpar o select oculto
-                selectElement.value = '';
-                
-                // Esconder o container de aluno selecionado
-                selecionadoContainer.classList.add('d-none');
-                
-                // Esconder mensagens de erro
-                if (errorElement) {
-                    errorElement.classList.add('d-none');
-                }
-            });
-            
-            // Adicionar o botão após o container de aluno selecionado
-            selecionadoContainer.parentNode.insertBefore(limparBtn, selecionadoContainer.nextSibling);
-        }
-    }
-};
-
-// Função auxiliar para determinar a classe do badge de situação
-function getSituacaoClass(situacao) {
-    switch(situacao) {
-        case 'Ativo': return 'success';
-        case 'Inativo': return 'warning';
-        case 'Afastado': return 'warning';
-        case 'Excluído': return 'danger';
-        case 'Falecido': return 'dark';
-        default: return 'secondary';
-    }
-}
-
-
-
-
-### Arquivo: static\js\turmas\form.js
-
-text
-// Inicialização dos módulos para o formulário de turmas
-document.addEventListener('DOMContentLoaded', function() {
-    // PARTE 1: Corrigir carregamento das datas
-    function formatarDataParaInput(dataStr) {
-        if (!dataStr) return '';
-        
-        // Se já estiver no formato correto, retorna
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) return dataStr;
-        
-        // Tentar extrair data do formato DD/MM/YYYY
-        const partes = dataStr.split('/');
-        if (partes.length === 3) {
-            return `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
-        }
-        
-        return '';
-    }
-    
-    const dataInicioInput = document.getElementById('id_data_inicio');
-    const dataFimInput = document.getElementById('id_data_fim');
-    
-    if (dataInicioInput) {
-        const dataInicioTexto = dataInicioInput.nextElementSibling ? dataInicioInput.nextElementSibling.textContent : '';
-        const match = dataInicioTexto.match(/Data atual: (\d{2}\/\d{2}\/\d{4})/);
-        if (match && match[1]) {
-            dataInicioInput.value = formatarDataParaInput(match[1]);
-            console.log('Data início definida como:', dataInicioInput.value);
-        }
-    }
-    
-    if (dataFimInput) {
-        const dataFimTexto = dataFimInput.nextElementSibling ? dataFimInput.nextElementSibling.textContent : '';
-        const match = dataFimTexto.match(/Data atual: (\d{2}\/\d{2}\/\d{4})/);
-        if (match && match[1]) {
-            dataFimInput.value = formatarDataParaInput(match[1]);
-            console.log('Data fim definida como:', dataFimInput.value);
-        }
-    }
-    
-    // PARTE 2: Remover botões "Limpar seleção" duplicados
-    function removerBotoesDuplicados() {
-        // Definir os elementos que devem ter apenas um botão de limpar
-        const containers = [
-            'selected-instrutor-container',
-            'selected-instrutor-auxiliar-container',
-            'selected-auxiliar-instrucao-container'
-        ];
-        
-        containers.forEach(containerId => {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            
-            // Encontrar todos os botões de limpar após este container
-            const botoes = [];
-            let proximoElemento = container.nextElementSibling;
-            
-            while (proximoElemento) {
-                if (proximoElemento.tagName === 'BUTTON' && 
-                    proximoElemento.textContent.trim() === 'Limpar seleção') {
-                    botoes.push(proximoElemento);
-                }
-                proximoElemento = proximoElemento.nextElementSibling;
-            }
-            
-            // Manter apenas o primeiro botão e remover os outros
-            if (botoes.length > 1) {
-                for (let i = 1; i < botoes.length; i++) {
-                    if (botoes[i].parentNode) {
-                        botoes[i].parentNode.removeChild(botoes[i]);
-                    }
-                }
-            }
-        });
-    }
-    
-    // Executar a remoção de botões duplicados após um pequeno atraso
-    // para garantir que todos os elementos estejam carregados
-    setTimeout(removerBotoesDuplicados, 500);
-});
-
-// Adicione este código ao seu arquivo JavaScript para inicializar o Select2
-$(document).ready(function() {
-    // Inicializar Select2 para o dropdown de cursos
-    $('.curso-select').select2({
-        theme: 'bootstrap4',
-        width: '100%'
-    });
-});
 
 
 

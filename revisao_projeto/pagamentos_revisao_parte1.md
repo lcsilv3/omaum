@@ -194,9 +194,9 @@ from .views.relatorio_views import (
 )
 
 from .views.dashboard_views import (
-    dashboard,
-    dashboard_pagamentos,
-    dashboard_financeiro,
+    painel_geral,
+    painel_mensal,
+    painel_financeiro,
 )
 
 def editar_pagamento(request, id):
@@ -234,7 +234,7 @@ from .views.relatorio_views import (
     relatorio_financeiro, pagamentos_por_turma,
     dados_grafico_pagamentos, dados_distribuicao_pagamentos
 )
-from .views.dashboard_views import dashboard, dashboard_pagamentos, dashboard_financeiro
+from .views.dashboard_views import painel_geral, painel_mensal, painel_financeiro
 
 app_name = 'pagamentos'
 
@@ -260,10 +260,11 @@ urlpatterns = [
     path('relatorio/', relatorio_financeiro, name='relatorio_financeiro'),
     path('relatorio/turma/', pagamentos_por_turma, name='relatorio_pagamentos_turma'),
 
-    # Dashboards
-    path('dashboard/', dashboard, name='dashboard'),
-    path('dashboard/pagamentos/', dashboard_pagamentos, name='dashboard_pagamentos'),
-    path('dashboard/financeiro/', dashboard_financeiro, name='dashboard_financeiro'),
+   
+    # Painéis novos
+    path('painel/', painel_geral, name='painel_geral'),
+    path('painel/mensal/', painel_mensal, name='painel_mensal'),
+    path('painel/financeiro/', painel_financeiro, name='painel_financeiro'),
 
     # APIs para gráficos
     path('pagamentos/grafico-pagamentos/', dados_grafico_pagamentos, name='dados_grafico_pagamentos'),
@@ -512,9 +513,9 @@ def get_aluno_model():
     return Aluno
 
 @login_required
-def dashboard(request):
+def painel_geral(request):
     """
-    Dashboard principal do módulo de pagamentos.
+    Painel geral do módulo de pagamentos.
     Exibe estatísticas gerais e links para outras seções.
     """
     Pagamento = get_pagamento_model()
@@ -535,6 +536,27 @@ def dashboard(request):
         data_vencimento__gte=hoje,
         data_vencimento__lte=data_limite
     ).order_by('data_vencimento')[:5]
+    pagamentos_cancelados = Pagamento.objects.filter(status='CANCELADO').count()
+    hoje = timezone.now().date()
+    pagamentos_por_mes = []
+    for i in range(5, -1, -1):
+        mes_data = hoje.replace(day=1)
+        if i > 0:
+            ano = mes_data.year
+            mes = mes_data.month - i
+            if mes <= 0:
+                mes = 12 + mes
+                ano -= 1
+            mes_data = mes_data.replace(year=ano, month=mes)
+        if mes_data.month == 12:
+            ultimo_dia = mes_data.replace(year=mes_data.year + 1, month=1, day=1) - datetime.timedelta(days=1)
+        else:
+            ultimo_dia = mes_data.replace(month=mes_data.month + 1, day=1) - datetime.timedelta(days=1)
+        total_mes = Pagamento.objects.filter(
+            data_vencimento__gte=mes_data,
+            data_vencimento__lte=ultimo_dia
+        ).aggregate(Sum('valor'))['valor__sum'] or 0
+        pagamentos_por_mes.append({'mes': mes_data.strftime('%b/%Y'), 'total': float(total_mes)})
     context = {
         'total_alunos': total_alunos,
         'total_pagamentos': total_pagamentos,
@@ -546,13 +568,20 @@ def dashboard(request):
         'total_atrasado': total_atrasado,
         'pagamentos_recentes': pagamentos_recentes,
         'pagamentos_proximos': pagamentos_proximos,
+        'pagamentos_por_mes': pagamentos_por_mes,
+        'total_cancelado': pagamentos_cancelados,
     }
-    return render(request, 'pagamentos/dashboard.html', context)
+    # Adicione ao contexto de cada view que renderiza templates com base.html
+    Pagamento = get_pagamento_model()
+    pagamentos_atrasados_qs = Pagamento.objects.filter(status='ATRASADO')
+    context['pagamentos_atrasados'] = pagamentos_atrasados_qs  # queryset para o menu
+    context['pagamentos_atrasados_count'] = pagamentos_atrasados_qs.count()  # inteiro para badge/card
+    return render(request, 'pagamentos/painel_geral.html', context)
 
 @login_required
-def dashboard_pagamentos(request):
+def painel_mensal(request):
     """
-    Dashboard específico para análise de pagamentos.
+    Painel mensal específico para análise de pagamentos.
     Exibe gráficos e estatísticas sobre pagamentos.
     """
     Pagamento = get_pagamento_model()
@@ -624,11 +653,16 @@ def dashboard_pagamentos(request):
         'atrasados_mais_30': atrasados_mais_30,
         'mes_atual': mes_atual.strftime('%B/%Y')
     }
-    return render(request, 'pagamentos/dashboard_pagamentos.html', context)
+    # Adicione ao contexto de cada view que renderiza templates com base.html
+    Pagamento = get_pagamento_model()
+    pagamentos_atrasados_qs = Pagamento.objects.filter(status='ATRASADO')
+    context['pagamentos_atrasados'] = pagamentos_atrasados_qs
+    context['pagamentos_atrasados_count'] = pagamentos_atrasados_qs.count()
+    return render(request, 'pagamentos/painel_mensal.html', context)
 
 @login_required
-def dashboard_financeiro(request):
-    """Exibe o dashboard financeiro."""
+def painel_financeiro(request):
+    """Exibe o painel financeiro."""
     Pagamento = get_pagamento_model()
     hoje = timezone.now().date()
     pagamentos_pagos = Pagamento.objects.filter(status='PAGO')
@@ -682,7 +716,12 @@ def dashboard_financeiro(request):
         'metodos': json.dumps(metodos),
         'contagens': json.dumps(contagens)
     }
-    return render(request, 'pagamentos/dashboard_financeiro.html', context)
+    # Adicione ao contexto de cada view que renderiza templates com base.html
+    Pagamento = get_pagamento_model()
+    pagamentos_atrasados_qs = Pagamento.objects.filter(status='ATRASADO')
+    context['pagamentos_atrasados'] = pagamentos_atrasados_qs
+    context['pagamentos_atrasados_count'] = pagamentos_atrasados_qs.count()
+    return render(request, 'pagamentos/painel_financeiro.html', context)
 
 
 
@@ -2415,6 +2454,7 @@ html
     });
 </script>
 {% endblock %}
+
 
 
 '''

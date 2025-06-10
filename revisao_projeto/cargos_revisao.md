@@ -503,7 +503,7 @@ html
 ### Arquivo: cargos\templates\cargos\detalhar_cargo.html
 
 html
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}Detalhes do Cargo Administrativo{% endblock %}
 
