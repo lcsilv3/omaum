@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ titulo }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.aluno.id_for_label }}" class="form-label">{{ form.aluno.label }}</label>
+                            {{ form.aluno }}
+                            {% if form.aluno.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.aluno.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.aluno.help_text %}
+                            <div class="form-text">{{ form.aluno.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.atividade.id_for_label }}" class="form-label">{{ form.atividade.label }}</label>
+                            {{ form.atividade }}
+                            {% if form.atividade.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.atividade.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.atividade.help_text %}
+                            <div class="form-text">{{ form.atividade.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.data.id_for_label }}" class="form-label">{{ form.data.label }}</label>
+                            {{ form.data }}
+                            {% if form.data.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.data.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.data.help_text %}
+                            <div class="form-text">{{ form.data.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.situacao.id_for_label }}" class="form-label">{{ form.situacao.label }}</label>
+                            {{ form.situacao }}
+                            {% if form.situacao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.situacao.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.situacao.help_text %}
+                            <div class="form-text">{{ form.situacao.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3" id="justificativa-container">
+                            <label for="{{ form.justificativa.id_for_label }}" class="form-label">{{ form.justificativa.label }}</label>
+                            {{ form.justificativa }}
+                            {% if form.justificativa.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.justificativa.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.justificativa.help_text %}
+                            <div class="form-text">{{ form.justificativa.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar Select2 para melhorar a experiência de seleção
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+        
+        // Mostrar/ocultar campo de justificativa com base na situação
+        const situacaoSelect = document.getElementById('id_situacao');
+        const justificativaContainer = document.getElementById('justificativa-container');
+        
+        function toggleJustificativa() {
+            if (situacaoSelect.value === 'JUSTIFICADO') {
+                justificativaContainer.style.display = 'block';
+                document.getElementById('id_justificativa').setAttribute('required', 'required');
+            } else {
+                justificativaContainer.style.display = 'none';
+                document.getElementById('id_justificativa').removeAttribute('required');
+            }
+        }
+        
+        // Executar na inicialização
+        toggleJustificativa();
+        
+        // Adicionar evento de mudança
+        situacaoSelect.addEventListener('change', toggleJustificativa);
+    });
+</script>
+{% endblock %}

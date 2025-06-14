@@ -364,6 +364,48 @@ $(document).ready(function() {
     });
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+  // Máscara para horário (__:__ às __:__)
+  const horarioInput = document.querySelector('input[name="horario"]');
+  if (horarioInput) {
+    horarioInput.addEventListener("input", function (e) {
+      let v = e.target.value.replace(/\D/g, "");
+      if (v.length > 4) v = v.slice(0, 8);
+      if (v.length >= 4) {
+        e.target.value = v.slice(0, 2) + ":" + v.slice(2, 4) + " às " + (v.slice(4, 6) || "") + (v.length > 6 ? ":" + v.slice(6, 8) : "");
+      } else if (v.length >= 2) {
+        e.target.value = v.slice(0, 2) + ":" + v.slice(2, 4);
+      } else {
+        e.target.value = v;
+      }
+    });
+  }
+
+  // Máscara para número do livro (apenas números)
+  const numLivroInput = document.querySelector('input[name="num_livro"]');
+  if (numLivroInput) {
+    numLivroInput.addEventListener("input", function (e) {
+      e.target.value = e.target.value.replace(/\D/g, "").slice(0, 3);
+    });
+  }
+
+  // Atualizar data de término das atividades ao alterar início (padrão: +90 dias)
+  const inicioInput = document.querySelector('input[name="data_inicio_ativ"]');
+  const terminoInput = document.querySelector('input[name="data_termino_atividades"]');
+  if (inicioInput && terminoInput) {
+    inicioInput.addEventListener("change", function () {
+      if (!terminoInput.value) {
+        const inicio = new Date(inicioInput.value);
+        if (!isNaN(inicio)) {
+          const termino = new Date(inicio);
+          termino.setDate(termino.getDate() + 90);
+          terminoInput.value = termino.toISOString().split("T")[0];
+        }
+      }
+    });
+  }
+});
+
 
 
 

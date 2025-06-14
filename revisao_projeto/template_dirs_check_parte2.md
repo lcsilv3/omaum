@@ -650,29 +650,38 @@ class KeyUsageConstraints(ConfigurableMixin):
   - pagamentos\pdf\pagamentos_pdf.html
 - presencas\templates
   Arquivos:
-  - presencas\detalhar_presenca.html
-  - presencas\editar_presenca.html
-  - presencas\excluir_presenca.html
-  - presencas\filtro_presencas.html
-  - presencas\formulario_presenca.html
-  - presencas\formulario_presencas_multiplas.html
-  - presencas\formulario_presencas_multiplas_passo1.html
-  - presencas\formulario_presencas_multiplas_passo2.html
-  - presencas\historico_presencas.html
-  - presencas\importar_presencas.html
-  - presencas\listar_presencas.html
-  - presencas\registrar_presenca.html
-  - presencas\registrar_presencas_multiplas.html
-  - presencas\registrar_presenca_em_massa.html
-  - presencas\relatorio_presencas.html
-  - presencas\views\atividade.py
-  - presencas\views\listagem.py
-  - presencas\views\multiplas.py
-  - presencas\views\__init__.py
-  - presencas\views\__pycache__\atividade.cpython-312.pyc
-  - presencas\views\__pycache__\listagem.cpython-312.pyc
-  - presencas\views\__pycache__\multiplas.cpython-312.pyc
-  - presencas\views\__pycache__\__init__.cpython-312.pyc
+  - presencas\academicas\detalhar_presenca_academica.html
+  - presencas\academicas\editar_presenca_academica.html
+  - presencas\academicas\excluir_presenca_academica.html
+  - presencas\academicas\filtro_presencas_academica.html
+  - presencas\academicas\formulario_presencas_multiplas_academica.html
+  - presencas\academicas\formulario_presencas_multiplas_academica_passo1.html
+  - presencas\academicas\formulario_presencas_multiplas_academica_passo2.html
+  - presencas\academicas\formulario_presenca_academica.html
+  - presencas\academicas\historico_presencas_academica.html
+  - presencas\academicas\importar_presencas_academica.html
+  - presencas\academicas\listar_observacoes_presenca_academica.html
+  - presencas\academicas\listar_presencas_academica.html
+  - presencas\academicas\registrar_presencas_multiplas_academica.html
+  - presencas\academicas\registrar_presenca_academica.html
+  - presencas\academicas\registrar_presenca_em_massa_academica.html
+  - presencas\academicas\relatorio_presencas_academica.html
+  - presencas\ritualisticas\detalhar_presenca_ritualistica.html
+  - presencas\ritualisticas\editar_presenca_ritualistica.html
+  - presencas\ritualisticas\excluir_presenca_ritualistica.html
+  - presencas\ritualisticas\filtro_presencas_ritualistica.html
+  - presencas\ritualisticas\formulario_presencas_multiplas_ritualistica.html
+  - presencas\ritualisticas\formulario_presencas_multiplas_ritualistica_passo1.html
+  - presencas\ritualisticas\formulario_presencas_multiplas_ritualistica_passo2.html
+  - presencas\ritualisticas\formulario_presenca_ritualistica.html
+  - presencas\ritualisticas\historico_presencas_ritualistica.html
+  - presencas\ritualisticas\importar_presencas_ritualistica.html
+  - presencas\ritualisticas\listar_observacoes_presenca_ritualistica.html
+  - presencas\ritualisticas\listar_presencas_ritualistica.html
+  - presencas\ritualisticas\registrar_presencas_multiplas_ritualistica.html
+  - presencas\ritualisticas\registrar_presenca_em_massa_ritualistica.html
+  - presencas\ritualisticas\registrar_presenca_ritualistica.html
+  - presencas\ritualisticas\relatorio_presencas_ritualistica.html
 - punicoes\templates
   Arquivos:
   - punicoes\criar_punicao.html
@@ -700,6 +709,7 @@ class KeyUsageConstraints(ConfigurableMixin):
   - relatorios\relatorio_punicoes_pdf.html
 - turmas\templates
   Arquivos:
+  - includes\form_field.html
   - turmas\adicionar_aluno.html
   - turmas\cancelar_matricula.html
   - turmas\confirmar_cancelamento_matricula.html

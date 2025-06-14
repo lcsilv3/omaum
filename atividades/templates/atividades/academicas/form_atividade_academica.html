@@ -91,6 +91,13 @@
         {% endfor %}
         <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
     </div>
+    <div class="mb-3 form-check">
+        {{ form.convocacao }}
+        <label class="form-check-label" for="id_convocacao">Convocação</label>
+        {% for error in form.convocacao.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
     <div class="d-flex justify-content-between mb-4">
         <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">
             <i class="fas fa-times"></i> Cancelar

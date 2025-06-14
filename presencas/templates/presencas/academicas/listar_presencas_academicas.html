@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Lista de Presenças{% endblock %}
+{% block title %}Presenças Acadêmicas{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -11,13 +11,13 @@
             <a href="javascript:history.back()" class="btn btn-secondary me-2">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <a href="{% url 'presencas:registrar_presenca' %}" class="btn btn-primary me-2">
+            <a href="{% url 'presencas:registrar_presenca_academica' %}" class="btn btn-primary me-2">
                 <i class="fas fa-plus"></i> Registrar Presença
             </a>
-            <a href="{% url 'presencas:exportar_presencas' %}" class="btn btn-success me-2">
+            <a href="{% url 'presencas:exportar_presencas_academicas' %}" class="btn btn-success me-2">
                 <i class="fas fa-file-export"></i> Exportar CSV
             </a>
-            <a href="{% url 'presencas:importar_presencas' %}" class="btn btn-info">
+            <a href="{% url 'presencas:importar_presencas_academicas' %}" class="btn btn-info">
                 <i class="fas fa-file-import"></i> Importar CSV
             </a>
         </div>
@@ -77,7 +77,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter"></i> Filtrar
                     </button>
-                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+                    <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary">
                         <i class="fas fa-undo"></i> Limpar Filtros
                     </a>
                 </div>
@@ -134,13 +134,13 @@
                             <td>{{ presenca.justificativa|truncatechars:30|default:"-" }}</td>
                             <td>
                                 <div class="table-actions">
-                                    <a href="{% url 'presencas:detalhar_presenca' presenca.id %}" class="btn btn-sm btn-info" title="Ver detalhes da presença">
+                                    <a href="{% url 'presencas:detalhar_presenca_academica' presenca.id %}" class="btn btn-sm btn-info" title="Ver detalhes da presença">
                                         <i class="fas fa-eye"></i> Detalhes
                                     </a>
-                                    <a href="{% url 'presencas:editar_presenca' presenca.id %}" class="btn btn-sm btn-warning" title="Editar presença">
+                                    <a href="{% url 'presencas:editar_presenca_academica' presenca.id %}" class="btn btn-sm btn-warning" title="Editar presença">
                                         <i class="fas fa-edit"></i> Editar
                                     </a>
-                                    <a href="{% url 'presencas:excluir_presenca' presenca.id %}" class="btn btn-sm btn-danger" title="Excluir presença">
+                                    <a href="{% url 'presencas:excluir_presenca_academica' presenca.id %}" class="btn btn-sm btn-danger" title="Excluir presença">
                                         <i class="fas fa-trash"></i> Excluir
                                     </a>
                                 </div>

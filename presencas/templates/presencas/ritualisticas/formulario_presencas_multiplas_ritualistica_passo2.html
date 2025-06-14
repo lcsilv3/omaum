@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Registro de Presenças Múltiplas - Passo 2{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Registro de Presenças Múltiplas - Passo 2</h4>
+                <div>
+                    <span class="badge bg-light text-dark">Data: {{ data_formatada }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Marque a situação de presença para cada aluno nas atividades selecionadas.
+            </div>
+            
+            <div class="mb-3">
+                <h5>Turmas selecionadas:</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for turma in turmas %}
+                    <span class="badge bg-primary">{{ turma.nome }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <h5>Atividades selecionadas:</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for atividade in atividades %}
+                    <span class="badge bg-info">{{ atividade.titulo }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <form id="form-presencas-multiplas">
+                {% csrf_token %}
+                <input type="hidden" name="data" value="{{ data }}">
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 30%">Aluno</th>
+                                {% for atividade in atividades %}
+                                <th>{{ atividade.titulo }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aluno in alunos %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if aluno.foto %}
+                                        <img src="{{ aluno.foto.url }}" alt="{{ aluno.nome }}" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        {% else %}
+                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                             style="width: 40px; height: 40px; color: white;">
+                                            {{ aluno.nome|first|upper }}
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <div>{{ aluno.nome }}</div>
+                                            <small class="text-muted">{{ aluno.cpf }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                {% for atividade in atividades %}
+                                <td>
+                                    {% with key=aluno.cpf|add:'_'|add:atividade.id|stringformat:'s' %}
+                                    {% with presenca=presencas_dict|get_item:key %}
+                                    <div class="btn-group" role="group">
+                                        <input type="radio" class="btn-check" name="presenca_{{ aluno.cpf }}_{{ atividade.id }}" 
+                                               id="presente_{{ aluno.cpf }}_{{ atividade.id }}" value="PRESENTE"
+                                               {% if presenca and presenca.situacao == 'PRESENTE' %}checked{% elif not presenca %}checked{% endif %}>
+                                        <label class="btn btn-outline-success

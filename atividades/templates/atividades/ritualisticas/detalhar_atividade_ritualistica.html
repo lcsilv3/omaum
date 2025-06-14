@@ -35,6 +35,13 @@
                     <p><strong>Horário:</strong> {{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</p>
                     <p><strong>Local:</strong> {{ atividade.local }}</p>
                     <p><strong>Turma:</strong> {{ atividade.turma }}</p>
+                    <p><strong>Convocação:</strong>
+    {% if atividade.convocacao %}
+        <span class="badge bg-success">Sim</span>
+    {% else %}
+        <span class="badge bg-secondary">Não</span>
+    {% endif %}
+</p>
                 </div>
             </div>
         </div>

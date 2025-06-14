@@ -20,6 +20,14 @@
                         <span class="text-muted">-</span>
                     {% endfor %}
                 </dd>
+                <dt class="col-sm-3">Convocação:</dt>
+                <dd class="col-sm-9">
+                    {% if atividade.convocacao %}
+                        <span class="badge bg-success">Sim</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Não</span>
+                    {% endif %}
+                </dd>
                 <!-- Adicione outros campos relevantes aqui -->
             </dl>
             <div class="mt-4">

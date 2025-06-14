@@ -99,7 +99,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
         fields = [
             'nome', 'descricao', 'tipo_atividade', 'data_inicio', 'data_fim',
             'hora_inicio', 'hora_fim', 'local', 'responsavel', 'status',
-            'curso', 'turmas'
+            'curso', 'turmas', 'convocacao'
         ]
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
@@ -124,6 +124,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
             'status': forms.Select(attrs={'class': 'form-select'}),
             'curso': forms.Select(attrs={'class': 'form-select'}),
             'turmas': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'convocacao': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {
             'nome': 'Nome da Atividade',
@@ -138,6 +139,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
             'status': 'Status',
             'curso': 'Curso',
             'turmas': 'Turmas',
+            'convocacao': 'Convocação',
         }
         help_texts = {
             'data_fim': (
@@ -176,7 +178,7 @@ class AtividadeRitualisticaForm(forms.ModelForm):
         model = get_atividade_ritualistica_model()
         fields = [
             'nome', 'descricao', 'data', 'hora_inicio', 'hora_fim',
-            'local', 'responsavel', 'status', 'participantes'
+            'local', 'responsavel', 'status', 'participantes', 'convocacao'
         ]
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
@@ -198,6 +200,7 @@ class AtividadeRitualisticaForm(forms.ModelForm):
             'participantes': forms.SelectMultiple(
                 attrs={'class': 'form-control'}
             ),
+            'convocacao': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {
             'nome': 'Nome da Atividade',
@@ -209,6 +212,7 @@ class AtividadeRitualisticaForm(forms.ModelForm):
             'responsavel': 'Responsável',
             'status': 'Status',
             'participantes': 'Participantes',
+            'convocacao': 'Convocação',
         }
         help_texts = {
             'hora_fim': (
