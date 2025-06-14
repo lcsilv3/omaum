@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Presença em Massa{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Registrar Presença em Massa</h1>
+        <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Selecione a Turma e a Data</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="turma" class="form-label">Turma</label>
+                        <select name="turma" id="turma" class="form-select" required>
+                            <option value="">Selecione uma turma</option>
+                            {% for turma in turmas %}
+                                <option value="{{ turma.id }}">{{ turma.nome }} - {{ turma.curso.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="data" class="form-label">Data</label>
+                        <input type="date" name="data" id="data" class="form-control" 
+                               value="{{ data_hoje|date:'Y-m-d' }}" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="atividade" class="form-label">Atividade</label>
+                    <select name="atividade" id="atividade" class="form-select" required>
+                        <option value="">Selecione uma atividade</option>
+                        <!-- As atividades serão carregadas via JavaScript quando uma turma for selecionada -->
+                    </select>
+                </div>
+                
+                <div id="lista-alunos" class="mt-4" style="display: none;">
+                    <h5>Lista de Alunos</h5>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="marcar-todos" checked>
+                        <label class="form-check-label" for="marcar-todos">Marcar/Desmarcar Todos</label>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">#</th>
+                                    <th>Aluno</th>
+                                    <th style="width: 120px;">Presente</th>
+                                    <th>Justificativa (se ausente)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-alunos">
+                                <!-- Os alunos serão carregados via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary" id="btn-registrar" disabled>
+                        <i class="fas fa-save"></i> Registrar Presenças
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const turmaSelect = document.getElementById('turma');
+        const atividadeSelect = document.getElementById('atividade');
+        const listaAlunos = document.getElementById('lista-alunos');
+        const tbodyAlunos = document.getElementById('tbody-alunos');
+        const btnRegistrar = document.getElementById('btn-registrar');
+        const marcarTodosCheckbox = document.getElementById('marcar-todos');
+        
+        // Carregar atividades quando uma turma for selecionada
+        turmaSelect.addEventListener('change', function() {
+            const turmaId = this.value;
+            
+            if (!turmaId) {
+                atividadeSelect.innerHTML = '<option value="">Selecione uma atividade</option>';
+                listaAlunos.style.display = 'none';
+                btnRegistrar.disabled = true;
+                return;
+            }
+            
+            // Fazer requisição AJAX para buscar atividades da turma
+            fetch(`/api/atividades-por-turma/${turmaId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    atividadeSelect.innerHTML = '<option value="">Selecione uma atividade</option>';
+                    
+                    if (data.atividades && data.atividades.length > 0) {
+                        data.atividades.forEach(atividade => {
+                            const option = document.createElement('option');
+                            option.value = atividade.id;
+                            option.textContent = atividade.nome;
+                            atividadeSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = "";
+                        option.textContent = "Nenhuma atividade encontrada para esta turma";
+                        option.disabled = true;
+                        atividadeSelect.appendChild(option);
+                    }
+                })
+                .catch(error => console.error('Erro ao buscar atividades:', error));
+        });
+        
+        // Carregar alunos quando uma atividade for selecionada
+        atividadeSelect.addEventListener('change', function() {
+            const atividadeId = this.value;
+            const turmaId = turmaSelect.value;
+            
+            if (!atividadeId || !turmaId) {
+                listaAlunos.style.display = 'none';
+                btnRegistrar.disabled = true;
+                return;
+            }
+            
+            // Fazer requisição AJAX para buscar alunos da turma
+            fetch(`/api/alunos-por-turma/${turmaId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    tbodyAlunos.innerHTML = '';
+                    
+                    if (data.alunos && data.alunos.length > 0) {
+                        data.alunos.forEach((aluno, index) => {
+                            const tr = document.createElement('tr');
+                            
+                            tr.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        ${aluno.foto ? 
+                                            `<img src="${aluno.foto}" alt="${aluno.nome}" 
+                                                 class="rounded-circle me-2" width="40" height="40" 
+                                                 style="object-fit: cover;">` : 
+                                            `<div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px; color: white;">
+                                                ${aluno.nome.charAt(0).toUpperCase()}
+                                            </div>`
+                                        }
+                                        <div>
+                                            <div>${aluno.nome}</div>
+                                            <small class="text-muted">${aluno.cpf}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input presenca-checkbox" type="checkbox" 
+                                               name="presentes" value="${aluno.cpf}" id="presente_${aluno.cpf}" checked>
+                                        <label class="form-check-label" for="presente_${aluno.cpf}">
+                                            Presente
+                                        </label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <textarea class="form-control justificativa-field" 
+                                              name="justificativa_${aluno.cpf}" rows="1" 
+                                              placeholder="Justificativa para ausência" disabled></textarea>
+                                </td>
+                            `;
+                            
+                            tbodyAlunos.appendChild(tr);
+                        });
+                        
+                        // Adicionar eventos para os checkboxes de presença
+                        const checkboxes = document.querySelectorAll('.presenca-checkbox');
+                        checkboxes.forEach(function(checkbox) {
+                            checkbox.addEventListener('change', function() {
+                                const row = this.closest('tr');
+                                const justificativa = row.querySelector('.justificativa-field');
+                                
+                                if (this.checked) {
+                                    justificativa.disabled = true;
+                                    justificativa.value = '';
+                                } else {
+                                    justificativa.disabled = false;
+                                }
+                            });
+                        });
+                        
+                        // Marcar/Desmarcar todos
+                        marcarTodosCheckbox.addEventListener('change', function() {
+                            checkboxes.forEach(function(checkbox) {
+                                checkbox.checked = marcarTodosCheckbox.checked;
+                                const row = checkbox.closest('tr');
+                                const justificativa = row.querySelector('.justificativa-field');
+                                
+                                if (checkbox.checked) {
+                                    justificativa.disabled = true;
+                                    justificativa.value = '';
+                                } else {
+                                    justificativa.disabled = false;
+                                }
+                            });
+                        });
+                        
+                        listaAlunos.style.display = 'block';
+                        btnRegistrar.disabled = false;
+                    } else {
+                        tbodyAlunos.innerHTML = `
+                            <tr>
+                                <td colspan="4" class="text-center py-3">
+                                    <p class="mb-0">Nenhum aluno encontrado para esta turma.</p>
+                                </td>
+                            </tr>
+                        `;
+                        
+                        listaAlunos.style.display = 'block';
+                        btnRegistrar.disabled = true;
+                    }
+                })
+                .catch(error => console.error('Erro ao buscar alunos:', error));
+        });
+    });
+</script>
+{% endblock %}

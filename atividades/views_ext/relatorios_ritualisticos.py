@@ -1,7 +1,7 @@
 import logging
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from ..views.utils import get_model_class, get_turma_model
+from ..views_ext.utils import get_model_class, get_turma_model
 
 logger = logging.getLogger(__name__)
 

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Exportar Presenças Acadêmicas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Exportação de Presenças Acadêmicas</h2>
+    <p>Funcionalidade de exportação de presenças acadêmicas. Implemente aqui a lógica de exportação (CSV, Excel, etc).</p>
+    <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary mt-3">Voltar</a>
+</div>
+{% endblock %}

@@ -112,6 +112,7 @@ omaum/
                 97f917c454f371d9787bb7588ea7123e753964
                 a435d8bd0aefa07c4a814fd4fe334f0b534c83
                 a5732e4c29ef5a83b20f0529732a5dff384b5f
+                abef8b8b7f3efa037821601877342fb2d455c0
                 aea589d22ba8c5a8bb343a92ae20191331b8cf
                 fdebf9c025ddc56e209f263122fd02f91d642d
             04/
@@ -161,6 +162,7 @@ omaum/
             07/
                 0603bbbb9b0bd3282e5d1b2fcb983ca84b87bb
                 0c9ea33e490561c26bda6199988d73a65b0317
+                4b6f6f72f06f59fa025a8fdc8c2c3ff96d2509
                 555661ad526d05d6b368f66bdfaae0c91fb3b6
                 5e71f73283eef01ae68871b7ab55cecdb9f4ff
                 7bc930a9237694313b40be6f26de95eb832a7d
@@ -204,6 +206,7 @@ omaum/
                 08e8ead3d2007d0a44abe481ea9ef98ae3ac5a
                 0b8a5072945fb7bedf757b869fa674c8ac8668
                 14dc383a76d9e328a02b8a5b09e70da6e4b740
+                241d90cb161e52b31ee788eb64897d3d89c7b2
                 5804eb5c1202cd734295ea175e55424753f38a
                 66779a623b7d18b3938a1f6dfe648ac6fc9760
                 94b1182bff9c6b1771278bfeee5952845d9c9b
@@ -245,6 +248,7 @@ omaum/
                 d8c946354c75cc14f9ac74e738117bf06ee713
                 dd10cfa30da5e648130b41a7255ae33e677e88
                 f959b2acacbe15b503f56d9b071a8a4bed88d8
+                fb7da0484d787d91bba905485e113ce31c1dc2
                 fccd19edd647c78ed09f507de28077869111cc
             0d/
                 1e8f9676335d6e55f2183b4af1c63d6a0698e8
@@ -475,6 +479,7 @@ omaum/
                 33957814fabaaa3b1def1058a0ee15f4ff6e17
                 3623d46f87210a77b38db64135dba738b1c2c1
                 4a4ea56b20cc7c3cddbdc0ccaad61bcbd886dc
+                4b2805e9d03e72ac00f6de8fbf7ad11588e02e
                 567d6be3156e966a394ff4e2a9f41ac68f99d0
                 60cf8e3e398db4bbad9910614f03edb19cd90c
                 822c2f20d6e006d0c5e99671a1d052f3d45616
@@ -809,6 +814,7 @@ omaum/
                 1d9178f815abc9b19a6c2721510b19d666ceb5
                 20c364ad5f1a03a730481075e5ee20902a48b8
                 44b4a2c1f42b24f2428b25e8831fe1cbe8f98f
+                686884deb1f134e97c5105156627b1f890674b
                 7476c18c3b9acbe23916cea4fe16812fdc46d7
                 837c8d3c9555c386cb3f60232af1ec1a2b9154
                 8615d9214070b807d39375c87356b409ce2726
@@ -956,6 +962,7 @@ omaum/
                 6ca93f9bb00bc48f44d9946272a50264ee1005
                 91f2c1669022f867ac7542d574871af99f77d3
                 a1ff87af29bfcb58c2c811e7d0cd2cf0fd7591
+                a5bba5deaecdc9ba3085fa543da2a3e5918f65
                 afc7de10adeb6dbda11b9ba0f8e8d6d035291a
                 b6e548bb2b81b7ca9268cd7a22669620398b45
                 c985fb1f78f3051c9d0f41758f0c6d696b8587
@@ -1019,6 +1026,7 @@ omaum/
                 c791b3f18a601f331150e0ee7aa05a16a268c7
                 c99cf6122cca55187f8e30a8767d15e48d75ad
                 cee9e520afaadae00513c8a98a50e6694e1d19
+                ecbfab074b485882d15157461950a991189818
                 ef55bafcecc2cacc8f18fcac12ab5c2816917e
             48/
                 1f2fa7c5f886feb3fc17d172741efe780cf0e4
@@ -1060,6 +1068,7 @@ omaum/
                 ff9d4c6f9d1f077fb8ad1a485b6f76d904101e
             4b/
                 10c2d1a8d810df8d3e00499ac44cc76db14c68
+                78e0b6bda058402571d84d10fb92a0505d6851
                 a055debe784bae9f62aba389d4b5c93bf5bcb3
                 acd3143b1408228b5ee81a48d89dda517985e0
                 dfa18017bf3a8c33108bb6e31bbab6876c4130
@@ -1132,6 +1141,7 @@ omaum/
                 fd8788cd8c512f1bc6ff4f83a94c34e57b5745
             51/
                 342be71877d0e1e9fc4842a0917f57ac3b5d6b
+                58f638dfd9a41393059f333b9619aa5bf53a3b
                 6716c19785a377d1a7fac13ddaa784c199b8b9
                 6b8411996efea0947fe3c8893f2a1d7f1e561c
                 8c6114d5801561e23a0df5d52189ae68598198
@@ -1436,6 +1446,7 @@ omaum/
                 e10537ba769aa08ba61127bc209db67534e79f
             68/
                 1a586c8a20f211ec77bac87eca9189a04f052b
+                48628746dc1ab0c771be40f8005e0b7c15a84e
                 9c0a16d9f906612e1fe4389c823682438d1560
                 a43d39e18f346958fa54a2c76d11ef448b594c
                 d70278560ed482a07b38990bd0414ad177054d
@@ -1490,6 +1501,7 @@ omaum/
             6d/
                 0146b99b4e758d5a51467cf62718ef01820ec5
                 0e99599e36f0e4be0af9181261525b5bee85cb
+                2cbefafb1770efe7f06eb1ac27b6ee5b66cb79
                 365913cfa25742970be9b60932cd75b6615e5d
                 4e05d1c371442906ecbc6239e1e13485977b02
                 529b53d6897a5c6ed518abbaaa2101abba0314
@@ -1506,6 +1518,7 @@ omaum/
             6e/
                 01a4758a4f43d0bc41200d72b52dddd138423e
                 24a38e4a68bbe7bb349b87d5653bc4379c6be9
+                30d57d7656a599e819170622750cf6b215644c
                 5ca07450b086c627939e1ee6fcdc5747bd7a09
                 6ac448a7b99610c9a27839ffbcedc72786c24a
                 87ff3c29e8f4ac60b776334f1dc4f5a6df1f2c
@@ -1578,6 +1591,7 @@ omaum/
                 60207874455b1f605f9f942e13c33ed4f336e3
                 815214317b7beafc47b352bae5bdc2dffb7be3
                 b2b8a8f1ec5532bc1c197440ca91298b519699
+                bf687363e389036102afc24dd0ae8ca0d3f3f0
                 ce187a3da173f96627c749ae37b4d62bb9b511
                 ea49ed732cba13248ce644f6c1bc2e95677519
                 f622a8309c737a4ba53df47e07b8dd1f10c88c
@@ -1609,6 +1623,7 @@ omaum/
                 7bfb5b80dc90571a9bf6e0f19839a1024987d0
                 8040486cce4297fc52d8fb69cc117030b80885
                 c313b58478e8a20059e39cc6488ecb05d496d3
+                c4b2125efcd66e0414b00b7c2f53a90d4d2a4d
                 d4b401fe877b7e3de47227791ac1c42ec15484
                 d5fd92154ca538597078292f30c0bfd5fb655f
                 eeb78a60e652e5c9bbfd28d84c152e8c8deb92
@@ -1723,6 +1738,7 @@ omaum/
                 188ab2e217e798cecba6080b995c4e7a145d5b
                 268ff0f9c0d37dc0004f47988ffe08973e48a3
                 2ab015f8f2665ecd511a5cb2b5dc63b02cd799
+                39a529ce1bac3b1ddcae18beb817852df5ab0a
                 49f10ed5937b1f302bfb014b76d7e4b59cc315
                 6c538c9b8a5b71b0f61b9cc1d5596f781c4b35
                 7203bc547902d0541200988d686a6253ceeda0
@@ -1764,6 +1780,7 @@ omaum/
                 99bec882d3447ad0ab2b8072a1efeff459d2a6
                 a58f85edd09f232a1692232d947ccd0f4e7f27
                 dbd495d0c05fc6c46b642ad6a98f0c81d62f8b
+                f182910f985f4166329be74a99755c461f0932
             84/
                 0e9bfe7c45a0c6c9bd747198ad287dc85e8db1
                 517ac2cbeec89fd98d60db4bc929694680e502
@@ -1771,6 +1788,7 @@ omaum/
                 861167135a926438703dc94945bf6f671e2b01
                 96db094337743fef5eba3117c0d1216fe48f3d
                 b59efc236cb2642175df4e2ad3faf6d3845504
+                cb4ba8d8b393a6d9c59b845d54276a6a969171
                 d0ef14a48a9ed6ec9237d912d612f45d1c014c
                 d0fab17d15e17047401c47c9c33a46bfe5882e
                 d20044559a91a3b425887b849b4a89d21fc1a7
@@ -1826,6 +1844,7 @@ omaum/
             89/
                 1264e89effafa8f02cad3a3b7b4fbc1a5a6647
                 166f6801ad93df63da27dedbea3660f7105a61
+                23a37ab7e085ae16567053541c82546f17e3bc
                 39b3c799665a06e396764a455e88583f3e908d
                 49b77f2fcd30f8f5eb8d4f9c0fb3de8154a13d
                 60379fc15d00c65a76b8e5a4e602cbc2ad9be6
@@ -1878,6 +1897,7 @@ omaum/
                 683cf9c31ece429bca0a3afd5fc02150935a43
                 7475b6b2da2c761c88b8883d67a393d03b8ee8
                 adaf0470ea1ef835798da7ef861d19028a4ec9
+                cb63405617557d83e35c73514c65c40bc8bf78
                 e019b66f4ab806f97647ca20115d0e7f32ca1f
                 e18bf73363ab522050f6a7b0e7ed0f1449ce9a
                 e35c389375bde60fb8273e7287091cd5fc76ef
@@ -2102,6 +2122,7 @@ omaum/
                 e10f501fcf306ba48cbfa8c01a2a2d7dba29eb
                 e64d2237c994e2e2ae3698f01af5f9b3f4cb2b
             a1/
+                31dcd51efb2af35dc8c8196dd79faf11255b72
                 5f10f45d922ae803cd4e0e0292c34feb3def0f
                 68dc2e5a508ecad5e5c58f8d1d566a4fae443b
                 6fc36780226575338f81fa157afe140d2ca60a
@@ -2156,6 +2177,7 @@ omaum/
                 6042e074f5d501693352133ce50b031b047564
                 6971d4fda75a2b611cabac213f7d78a34e01f8
                 7882b0c5e9a3703acd224a505469280082d75a
+                aa3413883efa2fde2811a1ed42bdb4c8db19e4
                 c9548366ed6187cb56d8d187b50173b81a4dbe
                 d9d7b185f7fd6d586803114563d6183f69c83e
             a7/
@@ -2174,6 +2196,7 @@ omaum/
                 57f990f00777d156657acb2ec78ca5da616863
                 6da15b1499c8d5b9c262f40c1cefe36d266f9b
                 9b99857c75717b0fc9010fc11fc9e909e61697
+                aa25a26d5609222881c78e551c9546b8b8769e
                 c856db778984016fa485b1aee13b8461e04f10
                 e4873367aeb10e7a81a83d999178ed763e789e
                 ea853be0f344a23e0cfb098321d6541c27b0d1
@@ -2206,6 +2229,7 @@ omaum/
                 2012c2011a6aff564a45ab83bf8f3fb06ff177
                 7fa2d9ccbda273c9f7d69fac9a88848109dee8
                 89ae7624b4968b07fad4aa00329a5983c99145
+                89cc0c2659e572f7a416fcf4f3e0fbd4ea06b4
                 8d416cf31781c831d7ba23f7dd0e5afebd81b4
                 8e3fe37726b6a0e208c233140202197833799f
                 9d76b252ee1d77b48df80e8e66ea0087a73f33
@@ -2521,6 +2545,7 @@ omaum/
                 3dca609a312fd4382a2068563745e341db4779
                 84495115b9d853e6e941a609d4870b9c6bc6ec
                 8b14445d206382d12daa9905d0dbf91647ce6f
+                9e9a823293043009c64cee3a4820a59960f3be
                 c6022f2982e8dae64cebd6b9a2b59f2547faad
                 ca8d99316b4b66fde45eff7a4f435116a5dc23
                 e7bc496410090b9247fb86fd2145e774544cc8
@@ -2549,6 +2574,7 @@ omaum/
                 946ec850982d745d2e96e6480c98547f001942
                 9e14a0f40ef172c0aed120e6a78c4e114f6c50
                 c299ceb8a955b522413147e7249ee592a92dd1
+                d63a98229d5dfd94553a5eee555b85a02652af
                 d676d6e61ac2d8465c7a64dd41baa0858e88fd
                 e23c6bf9261fa069fc7bc2026532b97299dcd0
                 e929d2d4a286c44ad794434f71e1a34c595490
@@ -2646,6 +2672,7 @@ omaum/
                 8f7bf5c3866a3b010d503b3d7bddd8cb699301
                 91fbf875ed4902236edbfe2f51837f24a6454d
                 a98c18460b3e8f4546e6c5cb1914de373335bb
+                e1284ecd95a9d9924c680ea1cc904bcf489c29
             cf/
                 00d18a502f8f347206f8b60fb4bc38624845a4
                 02e05296af287118e17d6eb312089e4cee61d7
@@ -2655,6 +2682,7 @@ omaum/
                 36c955f42238d48bc96309de299b82744a42db
                 949cc52686c78e5824c570baeb28d1ef1f5a5d
                 a28e540a673b62e3f15bde3d755d22811620b0
+                bfc5e81191074e2605ed5acaf467167335184c
                 c3b26ebbcdc9c18c3b1ea3fdda9657596295ed
                 e366e1b05b6c6d6e5ba6124f8993eed5159c4e
             d0/
@@ -2717,6 +2745,7 @@ omaum/
                 45fe5aabf3ee4849628a7f1e2b29514c0dc9ce
                 5c22cfd88e2b88976b46d4171a502b602658ec
                 69cf375519ed40900ace76903d01a95a8bedbc
+                8d6f8391311a2629cf7267b0ef22af2e384cdc
                 b19f02dea098d04ae8a05abde487ed89a7e866
                 b62e68ae8e91d297cae085901496f5d3cac72b
                 d415d43294a6e6e2af7360735243b3e3c5d26a
@@ -2734,6 +2763,7 @@ omaum/
                 34c141b6a482d2c14c7b230c6af37fe424352b
                 5ca34d4dceea4e2ea35fcaca7fbb0cf0292f15
                 95c810f8119d32a39edc084a4b57130d8d0f80
+                9b577da655bb1741ed84612829872fbdb646f6
                 9b90df3cecd2e6b05faa63ca626412f5e5fe6f
                 a1a4a9f215c5f57910117d894eb3b210320056
                 b860fb6be2523347b6f7f17f0a9bcd20ae2e6e
@@ -2929,6 +2959,7 @@ omaum/
                 ac7ea3a2f33c06780adc987c363af4086f8d80
                 cbe193da85adc180491913e5cf19299c767a4b
                 d4b08284b0708792931afb8cb9af34912cb072
+                e2a4505b2e535571fa05784c7c4cc98aadc8f1
                 e4f623aa6c26322ad84fd1dd3d834c3883fd70
                 eb75f561eba51114d51b02fba658b3fa43dd5e
             e5/
@@ -2973,6 +3004,7 @@ omaum/
                 78122862f1d4a42ef7d749f7929edfa23ac2c5
                 bffa4678989725238cd8a13bff59746685f402
                 c26666fd99096997b5b8e898fd2770b42b757c
+                cff2eaa8ec96ae0015b2746b50255cbec8c748
                 e1d531440f9c1f51ca61d33d6ba0f1c6f00359
             e9/
                 1ad84cda87a046d4aac16fe4325a2c1abcd1d7
@@ -2983,11 +3015,13 @@ omaum/
                 608f38ff3375151ffbeac6ce7b54e49067b132
                 7e0279bbc07d354fc62b39ccdc8a641a74b35a
                 96f52b249361d986286dde9e6c862006c84734
+                b40869132066c06969155775d2bacf8ef3a296
                 b581cc897d4e08b66843dc5b85d7c0e139f2ef
             ea/
                 156667638dcfc638126d4209924cd9603d8e05
                 1c93ae23b23ab76a153213a8944424f9d54f35
                 2476aa2e7222e5a0ab764a97db7ee4fe9ff324
+                331170241dde3185427db084ce2d3f3decd20f
                 4e08ffd7b6f99190b28542715f4bdd41c589f9
                 5134dd06e40cdc46c8b6bad8dc5cac44e9e016
                 5a0756dd7c6cf6a40d429108263d0b51c4eb36
@@ -3066,6 +3100,7 @@ omaum/
                 5f5f5272e560a6581c32b8f947579584952a92
                 9c765ac971765c2f01fb41c1e3c70126c9e1a1
                 aaca9053ebeaeb3fb733abb95037976b05586d
+                e257306680661c5d9db156029622b2bb0f16e9
                 f2c20514ceecbf7e0d16818debbe4b9ee9017b
             f0/
                 0290a1a01f49507a10cba65e65de8a179f963d
@@ -3198,6 +3233,7 @@ omaum/
             fa/
                 08850ec769d33e39128c9398b87bc62f7a93ba
                 1a9f116055f71cf45e45e832e9425dea9c1241
+                1ceb0777cc56c4320f0ca53de5358bd98d5777
                 20b11c9548e9afb69a3d03c2f2c8798f7fc25b
                 247d52e739706351c9eeaa23913098afae136f
                 5e1c1adb40e659e0e33c34b4d343cb2b953248
@@ -3245,12 +3281,14 @@ omaum/
                 a981a8f98bce853057744735a5198f65c94651
                 b4f6ac25534a214b573b5e37def9812abcf011
                 c8b7892d1fe7688bdf903be683822c18398338
+                dbe4487d7949bc8761659c3c35a63be8a5d1da
             fe/
                 041d2951aa29a4cff25cb00f0fc4541f29afd6
                 0de56a8b25f6ea5a78d994db66f80a72b7310c
                 348e8b1591310575ffbca30cf09ed035ec72a6
                 3dbde3f9cfe4e9fe37f908f08ae50e65efb2c2
                 44fa4a77f5555f34f4fb2edfe63f165c9395d8
+                55f64bcea1afaa5fba8d3844596ba4814f4228
                 57aa2af3952e7f0e1cc999f9d803ffe86f7693
                 59694082201b9707c7f0d0f6302bc5145c81b7
                 71425fd5893cfeccc73002cb788e4eab110178
@@ -3861,30 +3899,49 @@ omaum/
         old/
         templates/
             presencas/
-                detalhar_presenca.html
-                editar_presenca.html
-                excluir_presenca.html
-                filtro_presencas.html
-                formulario_presenca.html
-                formulario_presencas_multiplas.html
-                formulario_presencas_multiplas_passo1.html
-                formulario_presencas_multiplas_passo2.html
-                historico_presencas.html
-                importar_presencas.html
-                listar_presencas.html
-                registrar_presenca.html
-                registrar_presencas_multiplas.html
-                registrar_presenca_em_massa.html
-                relatorio_presencas.html
-                views/
-                    atividade.py
-                    listagem.py
-                    multiplas.py
-                    __init__.py
+                academicas/
+                    detalhar_presenca_academica.html
+                    editar_presenca_academica.html
+                    excluir_presenca_academica.html
+                    filtro_presencas_academica.html
+                    formulario_presencas_multiplas_academica.html
+                    formulario_presencas_multiplas_academica_passo1.html
+                    formulario_presencas_multiplas_academica_passo2.html
+                    formulario_presenca_academica.html
+                    historico_presencas_academica.html
+                    importar_presencas_academica.html
+                    listar_observacoes_presenca_academica.html
+                    listar_presencas_academica.html
+                    registrar_presencas_multiplas_academica.html
+                    registrar_presenca_academica.html
+                    registrar_presenca_em_massa_academica.html
+                    relatorio_presencas_academica.html
+                ritualisticas/
+                    detalhar_presenca_ritualistica.html
+                    editar_presenca_ritualistica.html
+                    excluir_presenca_ritualistica.html
+                    filtro_presencas_ritualistica.html
+                    formulario_presencas_multiplas_ritualistica.html
+                    formulario_presencas_multiplas_ritualistica_passo1.html
+                    formulario_presencas_multiplas_ritualistica_passo2.html
+                    formulario_presenca_ritualistica.html
+                    historico_presencas_ritualistica.html
+                    importar_presencas_ritualistica.html
+                    listar_observacoes_presenca_ritualistica.html
+                    listar_presencas_ritualistica.html
+                    registrar_presencas_multiplas_ritualistica.html
+                    registrar_presenca_em_massa_ritualistica.html
+                    registrar_presenca_ritualistica.html
+                    relatorio_presencas_ritualistica.html
         tests/
             test_forms.py
             test_models.py
             test_views.py
+        views/
+            atividade.py
+            listagem.py
+            multiplas.py
+            __init__.py
     punicoes/
         admin.py
         apps.py
@@ -3962,18 +4019,16 @@ omaum/
         pagamentos_revisao_parte3.md
         presencas_revisao_parte1.md
         presencas_revisao_parte2.md
+        presencas_revisao_parte3.md
         project_structure_parte1.md
-        project_structure_parte1.md.bak
         punicoes_revisao.md
         relatorios_revisao.md
         root_files_revisao_parte1.md
         root_files_revisao_parte2.md
-        templates_revisao.md
         template_dirs_check_parte1.md
         template_dirs_check_parte2.md
         turmas_revisao_parte1.md
         turmas_revisao_parte2.md
-        views_revisao.md
     scripts/
         alunosteststest_models.py
         alunosteststest_views.py
@@ -4115,8 +4170,12 @@ omaum/
             0005_remove_turma_alerta_instrutor_and_more.py
             0006_turma_alerta_instrutor_turma_alerta_mensagem_and_more.py
             0007_alter_turma_status.py
+            0008_turma_data_iniciacao_turma_data_inicio_ativ_and_more.py
+            0009_alter_turma_options_remove_turma_data_fim_and_more.py
             __init__.py
         templates/
+            includes/
+                form_field.html
             turmas/
                 adicionar_aluno.html
                 cancelar_matricula.html

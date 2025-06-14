@@ -90,6 +90,7 @@
                     <th>Tipo</th>
                     <th>Status</th>
                     <th>Data Início</th>
+                    <th>Convocação</th>
                     <th class="text-start">Ações</th>
                 </tr>
             </thead>
@@ -116,6 +117,13 @@
                         {% endif %}
                     </td>
                     <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if atividade.convocacao %}
+        <span class="badge bg-success">Sim</span>
+    {% else %}
+        <span class="badge bg-secondary">Não</span>
+    {% endif %}
+                    </td>
                     <td class="text-start">
                         <div class="btn-group btn-group-sm" role="group">
                             <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-info" title="Detalhar atividade" data-bs-toggle="tooltip">
@@ -135,7 +143,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center">Nenhuma atividade encontrada.</td>
+                    <td colspan="8" class="text-center">Nenhuma atividade encontrada.</td>
                 </tr>
                 {% endfor %}
             </tbody>

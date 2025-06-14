@@ -389,7 +389,7 @@ def ajax_atividades_filtradas_relatorio(request):
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from ..models import AtividadeRitualistica
-from ..views.utils import get_model_class
+from ..views_ext.utils import get_model_class
 
 @login_required
 def relatorio_atividades_ritualisticas(request):

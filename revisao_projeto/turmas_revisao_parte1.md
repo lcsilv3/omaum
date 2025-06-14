@@ -29,48 +29,48 @@ class TurmaForm(forms.ModelForm):
     class Meta:
         model = get_turma_model()
         fields = [
-            "nome", "curso", "vagas", "status", "data_inicio", "data_fim",
-            "instrutor", "instrutor_auxiliar", "auxiliar_instrucao",
-            "dias_semana", "local", "horario", "descricao"
+            "curso",
+            "nome",
+            "descricao",
+            "num_livro",
+            "perc_carencia",
+            "data_iniciacao",
+            "data_inicio_ativ",
+            "data_termino_atividades",
+            "data_prim_aula",
+            "dias_semana",
+            "horario",
+            "local",
+            "vagas",
+            "status",
+            "instrutor",
+            "instrutor_auxiliar",
+            "auxiliar_instrucao",
+            "alerta_instrutor",
+            "alerta_mensagem",
         ]
-        widgets = {
-            "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "curso": forms.Select(attrs={"class": "form-select"}),
-            "vagas": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
-            "status": forms.Select(attrs={"class": "form-select"}),
-            "data_inicio": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "data_fim": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "instrutor": forms.Select(attrs={"class": "form-control"}),
-            "instrutor_auxiliar": forms.Select(attrs={"class": "form-control"}),
-            "auxiliar_instrucao": forms.Select(attrs={"class": "form-control"}),
-            "dias_semana": forms.TextInput(attrs={"class": "form-control"}),
-            "local": forms.TextInput(attrs={"class": "form-control"}),
-            "horario": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-        }
         labels = {
-            "nome": "Nome da Turma",
             "curso": "Curso",
-            "vagas": "Número de Vagas",
-            "status": "Status",
-            "data_inicio": "Data de Início",
-            "data_fim": "Data de Término",
-            "instrutor": "Instrutor Principal",
-            "instrutor_auxiliar": "Instrutor Auxiliar",
-            "auxiliar_instrucao": "Auxiliar de Instrução",
-            "dias_semana": "Dias da Semana",
-            "local": "Local",
-            "horario": "Horário",
-            "descricao": "Descrição",
+            "nome": "Nome da Turma",
+            "data_inicio_ativ": "Data de Início das Atividades",
+            "data_termino_atividades": "Data de Término das Atividades",
+            "data_iniciacao": "Data de Iniciação",
+            "data_prim_aula": "Data da Primeira Aula",
+            "num_livro": "Nº do Livro de Presenças",
+            "perc_carencia": "Percentual de Carência (%)",
         }
         help_texts = {
-            "nome": "Digite um nome descritivo para a turma.",
-            "vagas": "Quantidade máxima de alunos na turma.",
-            "status": "Situação atual da turma.",
-            "data_inicio": "Data prevista para início do curso.",
-            "data_fim": "Data prevista para término do curso.",
-            "dias_semana": "Exemplo: 'Segunda, Quarta e Sexta' ou 'Terças e Quintas'.",
-            "horario": "Exemplo: '19h às 21h'.",
+            "perc_carencia": "Percentual mínimo de faltas permitido para a turma.",
+            "horario": "Exemplo: 13:30 às 15:30",
+        }
+        widgets = {
+            "data_inicio_ativ": forms.DateInput(attrs={"type": "date"}),
+            "data_termino_atividades": forms.DateInput(attrs={"type": "date"}),
+            "data_iniciacao": forms.DateInput(attrs={"type": "date"}),
+            "data_prim_aula": forms.DateInput(attrs={"type": "date"}),
+            "curso": forms.Select(attrs={"class": "curso-select", "placeholder": "Selecione o Curso desejado"}),
+            "horario": forms.TextInput(attrs={"placeholder": "13:30 às 15:30"}),
+            "num_livro": forms.NumberInput(attrs={"placeholder": "999"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -87,53 +87,25 @@ class TurmaForm(forms.ModelForm):
         # Tornar os campos de instrutor auxiliar e auxiliar de instrução opcionais
         self.fields["instrutor_auxiliar"].required = False
         self.fields["auxiliar_instrucao"].required = False
-        
-        # Melhorias para garantir que as datas apareçam corretamente na edição
-        if self.instance and self.instance.pk:
-            if self.instance.data_inicio:
-                # Garantir que a data esteja no formato correto para o campo de entrada
-                self.initial['data_inicio'] = self.instance.data_inicio.strftime('%Y-%m-%d')
-            
-            if self.instance.data_fim:
-                # Garantir que a data esteja no formato correto para o campo de entrada
-                self.initial['data_fim'] = self.instance.data_fim.strftime('%Y-%m-%d')
+
+        # Torna os campos iniciáticos obrigatórios
+        self.fields["num_livro"].required = True
+        self.fields["perc_carencia"].required = True
+        self.fields["data_iniciacao"].required = True
+        self.fields["data_inicio_ativ"].required = True
+        self.fields["data_prim_aula"].required = True
+        self.fields["data_termino_atividades"].required = True
+
+        # Troca o texto do option vazio para "Selecione"
+        for field_name, field in self.fields.items():
+            if isinstance(field, forms.models.ModelChoiceField):
+                field.empty_label = "Selecione"
 
     def clean(self):
         """Validação adicional dos campos do formulário."""
         cleaned_data = super().clean()
-        data_inicio = cleaned_data.get("data_inicio")
-        data_fim = cleaned_data.get("data_fim")
-        
-        # Validar que a data de início seja hoje ou no futuro
-        if data_inicio and data_inicio < timezone.localdate():
-            self.add_error(
-                "data_inicio", 
-                "A data de início não pode ser anterior à data atual."
-            )
-        
-        # Validar que a data de término seja depois da data de início
-        if data_inicio and data_fim and data_fim < data_inicio:
-            self.add_error(
-                "data_fim", 
-                "A data de término deve ser posterior à data de início."
-            )
-        
-        # Validar que o instrutor principal não seja também instrutor auxiliar ou auxiliar de instrução
-        instrutor = cleaned_data.get("instrutor")
         instrutor_auxiliar = cleaned_data.get("instrutor_auxiliar")
         auxiliar_instrucao = cleaned_data.get("auxiliar_instrucao")
-        
-        if instrutor and instrutor_auxiliar and instrutor == instrutor_auxiliar:
-            self.add_error(
-                "instrutor_auxiliar", 
-                "O instrutor auxiliar não pode ser o mesmo que o instrutor principal."
-            )
-        
-        if instrutor and auxiliar_instrucao and instrutor == auxiliar_instrucao:
-            self.add_error(
-                "auxiliar_instrucao", 
-                "O auxiliar de instrução não pode ser o mesmo que o instrutor principal."
-            )
         
         # Validar que instrutor auxiliar e auxiliar de instrução não sejam a mesma pessoa
         if instrutor_auxiliar and auxiliar_instrucao and instrutor_auxiliar == auxiliar_instrucao:
@@ -146,6 +118,21 @@ class TurmaForm(forms.ModelForm):
         vagas = cleaned_data.get("vagas")
         if vagas is not None and vagas <= 0:
             self.add_error("vagas", "O número de vagas deve ser maior que zero.")
+        
+        # Validação extra para garantir que os campos obrigatórios não estejam vazios
+        for field in ["num_livro", "perc_carencia", "data_iniciacao", "data_inicio_ativ", "data_prim_aula", "data_termino_atividades"]:
+            if not cleaned_data.get(field):
+                self.add_error(field, "Este campo é obrigatório.")
+        
+        # Validar que a data de término das atividades não seja anterior à de início
+        data_inicio_ativ = cleaned_data.get("data_inicio_ativ")
+        data_termino_atividades = cleaned_data.get("data_termino_atividades")
+        if data_inicio_ativ and data_termino_atividades:
+            if data_termino_atividades < data_inicio_ativ:
+                self.add_error(
+                    "data_termino_atividades",
+                    "A data de término das atividades não pode ser anterior à data de início das atividades."
+                )
         
         return cleaned_data
 
@@ -813,7 +800,7 @@ def exportar_turmas(request):
     try:
         import csv
         from django.http import HttpResponse
-        Turma = get_models()
+        Turma = get_turma_model()
         turmas = Turma.objects.all()
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="turmas.csv"'
@@ -828,7 +815,12 @@ def exportar_turmas(request):
             "Data Fim",
             "Instrutor",
             "Local",
-            "Horário"
+            "Horário",
+            "Número do Livro",
+            "Percentual de Carência",
+            "Data de Iniciação",
+            "Data de Início das Atividades",
+            "Data da Primeira Aula"
         ])
         for turma in turmas:
             writer.writerow([
@@ -841,7 +833,12 @@ def exportar_turmas(request):
                 turma.data_fim,
                 turma.instrutor.nome if turma.instrutor else "",
                 turma.local,
-                turma.horario
+                turma.horario,
+                turma.num_livro,
+                turma.perc_carencia,
+                turma.data_iniciacao,
+                turma.data_inicio_ativ,
+                turma.data_prim_aula
             ])
         return response
     except Exception as e:
@@ -856,16 +853,16 @@ def importar_turmas(request):
             import csv
             from io import TextIOWrapper
             from django.utils import timezone
-            
-            Turma = get_models()
-            Curso = get_model("cursos", "Curso")
-            Aluno = get_model("alunos", "Aluno")
-            
+
+            Turma = get_turma_model()
+            Curso = get_curso_model()
+            Aluno = get_aluno_model()
+
             csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
             reader = csv.DictReader(csv_file)
             count = 0
             errors = []
-            
+
             for row in reader:
                 try:
                     # Buscar curso pelo nome ou código
@@ -880,7 +877,7 @@ def importar_turmas(request):
                             except Curso.DoesNotExist:
                                 errors.append(f"Curso não encontrado: {curso_nome}")
                                 continue
-                    
+
                     # Buscar instrutor pelo nome ou CPF
                     instrutor = None
                     instrutor_nome = row.get("Instrutor", "").strip()
@@ -893,10 +890,13 @@ def importar_turmas(request):
                             except Aluno.DoesNotExist:
                                 errors.append(f"Instrutor não encontrado: {instrutor_nome}")
                                 continue
-                    
+
                     # Processar datas
                     data_inicio = None
                     data_fim = None
+                    data_iniciacao = None
+                    data_inicio_ativ = None
+                    data_prim_aula = None
                     try:
                         if row.get("Data Início"):
                             data_inicio = timezone.datetime.strptime(
@@ -906,10 +906,35 @@ def importar_turmas(request):
                             data_fim = timezone.datetime.strptime(
                                 row.get("Data Fim"), "%d/%m/%Y"
                             ).date()
+                        if row.get("Data de Iniciação"):
+                            data_iniciacao = timezone.datetime.strptime(
+                                row.get("Data de Iniciação"), "%d/%m/%Y"
+                            ).date()
+                        if row.get("Data de Início das Atividades"):
+                            data_inicio_ativ = timezone.datetime.strptime(
+                                row.get("Data de Início das Atividades"), "%d/%m/%Y"
+                            ).date()
+                        if row.get("Data da Primeira Aula"):
+                            data_prim_aula = timezone.datetime.strptime(
+                                row.get("Data da Primeira Aula"), "%d/%m/%Y"
+                            ).date()
                     except ValueError as e:
                         errors.append(f"Erro no formato de data: {str(e)}")
                         continue
-                    
+
+                    # Validar obrigatoriedade dos campos iniciáticos
+                    obrigatorios = [
+                        ("Número do Livro", row.get("Número do Livro")),
+                        ("Percentual de Carência", row.get("Percentual de Carência")),
+                        ("Data de Iniciação", data_iniciacao),
+                        ("Data de Início das Atividades", data_inicio_ativ),
+                        ("Data da Primeira Aula", data_prim_aula),
+                    ]
+                    for label, valor in obrigatorios:
+                        if not valor:
+                            errors.append(f"Campo obrigatório não informado: {label}")
+                            continue
+
                     # Criar a turma
                     Turma.objects.create(
                         nome=row.get("Nome", "").strip(),
@@ -920,12 +945,17 @@ def importar_turmas(request):
                         data_fim=data_fim,
                         instrutor=instrutor,
                         local=row.get("Local", "").strip(),
-                        horario=row.get("Horário", "").strip()
+                        horario=row.get("Horário", "").strip(),
+                        num_livro=row.get("Número do Livro"),
+                        perc_carencia=row.get("Percentual de Carência"),
+                        data_iniciacao=data_iniciacao,
+                        data_inicio_ativ=data_inicio_ativ,
+                        data_prim_aula=data_prim_aula,
                     )
                     count += 1
                 except Exception as e:
                     errors.append(f"Erro na linha {count+1}: {str(e)}")
-            
+
             if errors:
                 messages.warning(
                     request,
@@ -944,7 +974,7 @@ def importar_turmas(request):
             return redirect("turmas:listar_turmas")
         except Exception as e:
             messages.error(request, f"Erro ao importar turmas: {str(e)}")
-    
+
     return render(request, "turmas/importar_turmas.html")
 
 @login_required
@@ -1160,6 +1190,7 @@ from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django import forms
 
 class Turma(models.Model):
     """
@@ -1184,9 +1215,40 @@ class Turma(models.Model):
         blank=True, null=True, verbose_name="Descrição"
     )
 
-    # Datas
-    data_inicio = models.DateField(verbose_name="Data de Início")
-    data_fim = models.DateField(verbose_name="Data de Fim")
+    # Novos campos solicitados
+    num_livro = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name="Nº do Livro de Presenças"
+    )
+    perc_carencia = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Percentual de Carência (%)",
+        help_text="Percentual mínimo de faltas permitido para a turma."
+    )
+    data_iniciacao = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Data de Iniciação"
+    )
+    data_inicio_ativ = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Data de Início das Atividades"
+    )
+    data_prim_aula = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Data da Primeira Aula"
+    )
+    data_termino_atividades = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Data de Término das Atividades"
+    )
 
     # Informações de agendamento
     dias_semana = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dias da Semana")
@@ -1254,7 +1316,7 @@ class Turma(models.Model):
     class Meta:
         verbose_name = "Turma"
         verbose_name_plural = "Turmas"
-        ordering = ["-data_inicio"]
+        ordering = ["-data_inicio_ativ"]
 
     @property
     def vagas_disponiveis(self):
@@ -1271,7 +1333,12 @@ class Turma(models.Model):
     def esta_em_andamento(self):
         """Verifica se a turma está em andamento (começou mas não terminou)."""
         hoje = timezone.now().date()
-        return self.data_inicio <= hoje <= self.data_fim and self.status == "A"
+        return (
+            self.data_inicio_ativ
+            and self.data_termino_atividades
+            and self.data_inicio_ativ <= hoje <= self.data_termino_atividades
+            and self.status == "A"
+        )
 
     def clean(self):
         super().clean()
@@ -1288,10 +1355,12 @@ class Turma(models.Model):
                         "Por favor, escolha um nome diferente."
                     }
                 )
-        if self.data_fim < self.data_inicio:
-            raise ValidationError(
-                _("A data de fim não pode ser anterior à data de início.")
-            )
+        # Validação das datas
+        if self.data_inicio_ativ and self.data_termino_atividades:
+            if self.data_termino_atividades < self.data_inicio_ativ:
+                raise ValidationError(
+                    _("A data de término das atividades não pode ser anterior à data de início das atividades.")
+                )
 
     @classmethod
     def get_by_codigo(cls, codigo_turma):
@@ -1305,8 +1374,38 @@ class Turma(models.Model):
         except Turma.DoesNotExist:
             return None
 
+class TurmaForm(forms.ModelForm):
+    class Meta:
+        model = Turma
+        fields = '__all__'  # Ou especifique os campos desejados
+        widgets = {
+            'curso': forms.Select(attrs={'empty_label': 'Selecione'}),
+            # Repita para outros campos de select se necessário
+        }
+
 
 ## Arquivos de Template:
+
+
+### Arquivo: turmas\templates\includes\form_field.html
+
+html
+<div class="mb-3">
+  <label for="{{ field.id_for_label }}" class="form-label">
+    {{ field.label }}
+    {% if field.field.required %}
+      <span class="text-danger" title="Campo obrigatÃ³rio">*</span>
+    {% endif %}
+  </label>
+  {{ field }}
+  {% if field.help_text %}
+    <div class="form-text">{{ field.help_text }}</div>
+  {% endif %}
+  {% for error in field.errors %}
+    <div class="invalid-feedback d-block">{{ error }}</div>
+  {% endfor %}
+</div>
+
 
 
 ### Arquivo: turmas\templates\turmas\adicionar_aluno.html
@@ -1475,18 +1574,40 @@ html
     #id_instrutor, #id_instrutor_auxiliar, #id_auxiliar_instrucao {
         display: none;
     }
-    
-    /* Estilo para os resultados da busca */
     .list-group-item-action {
         cursor: pointer;
     }
-    
-    /* Estilo para o contêiner de instrutor selecionado */
     .selected-instrutor {
         border: 1px solid #ddd;
         padding: 10px;
         border-radius: 5px;
         margin-top: 10px;
+    }
+    .collapse-toggle {
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.2s;
+    }
+    .collapse-toggle:hover {
+        color: #0d6efd;
+        text-decoration: underline;
+    }
+    .chevron {
+        transition: transform 0.3s;
+        margin-right: 6px;
+    }
+    .collapsed .chevron {
+        transform: rotate(0deg);
+    }
+    .chevron {
+        transform: rotate(90deg);
+    }
+
+    /* Remove o tracejado do select de Curso */
+    #id_curso:focus {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: #ced4da !important;
     }
 </style>
 {% endblock %}
@@ -1510,17 +1631,23 @@ html
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
         
+        <!-- Seção de Informações Básicas (recolhível, aberta por padrão) -->
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
-                <h5>Informações Básicas</h5>
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#info-basicas" role="button" aria-expanded="true" aria-controls="info-basicas">
+                        <span class="chevron">&#9654;</span>
+                        Informações Básicas <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
             </div>
-            <div class="card-body">
+            <div id="info-basicas" class="collapse show card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
+                        {% include 'includes/form_field.html' with field=form.curso %}
                     </div>
                     <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.curso %}
+                        {% include 'includes/form_field.html' with field=form.nome %}
                     </div>
                 </div>
                 <div class="row">
@@ -1557,12 +1684,51 @@ html
                 </div>
             </div>
         </div>
+
+        <!-- Seção de Dados Iniciáticos (recolhível, fechada por padrão) -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
+                        <span class="chevron">&#9654;</span>
+                        Dados Iniciáticos <small class="text-muted">(clique para expandir)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="dados-iniciaticos" class="collapse card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.num_livro %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.perc_carencia %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.data_iniciacao %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_inicio_ativ %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_prim_aula %}
+                    </div>
+                </div>
+            </div>
+        </div>
         
+        <!-- Seção de Instrutores (recolhível, fechada por padrão) -->
         <div class="card mb-4">
             <div class="card-header bg-success text-white">
-                <h5>Instrutores</h5>
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#instrutores" role="button" aria-expanded="false" aria-controls="instrutores">
+                        <span class="chevron">&#9654;</span>
+                        Instrutores <small class="text-light">(clique para expandir)</small>
+                    </a>
+                </h5>
             </div>
-            <div class="card-body">
+            <div id="instrutores" class="collapse card-body">
                 <div class="row">
                     <!-- Instrutor Principal -->
                     <div class="col-md-4 mb-3">
@@ -1575,7 +1741,6 @@ html
                             </div>
                         </div>
                         <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
-                        <!-- Campo original oculto via CSS -->
                         {{ form.instrutor }}
                     </div>
                     
@@ -1590,7 +1755,6 @@ html
                             </div>
                         </div>
                         <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
-                        <!-- Campo original oculto via CSS -->
                         {{ form.instrutor_auxiliar }}
                     </div>
                     
@@ -1605,7 +1769,6 @@ html
                             </div>
                         </div>
                         <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
-                        <!-- Campo original oculto via CSS -->
                         {{ form.auxiliar_instrucao }}
                     </div>
                 </div>
@@ -1626,6 +1789,25 @@ html
 
 {% block extra_js %}
 <script src="{% static 'js/instrutor_search.js' %}"></script>
+<script>
+    // Rotaciona o chevron ao expandir/recolher
+    document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function() {
+            setTimeout(() => {
+                document.querySelectorAll('.collapse-toggle').forEach(function(t) {
+                    const chevron = t.querySelector('.chevron');
+                    const targetId = t.getAttribute('href');
+                    const target = document.querySelector(targetId);
+                    if (target && target.classList.contains('show')) {
+                        chevron.style.transform = 'rotate(90deg)';
+                    } else {
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
+                });
+            }, 350);
+        });
+    });
+</script>
 {% endblock %}
 
 
@@ -2208,73 +2390,26 @@ html
 
 {% block title %}Detalhes da Turma{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>Detalhes da Turma</h1>
-    <div class="card mb-4">
-        <div class="card-header">
-            <h2>{{ turma.nome }}</h2>
-        </div>
-        <div class="card-body">
-            <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
-            <p><strong>Status:</strong> {{ turma.get_status_display }}</p>
-            <p><strong>Data de In√≠cio:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
-            <p><strong>Data de Fim:</strong> {{ turma.data_fim|date:"d/m/Y" }}</p>
-        </div>
-    </div>
-
-    <h3>Alunos da Turma</h3>
-    <ul>
-        {% for matricula in turma.matriculas.all %}
-            <li>{{ matricula.aluno.nome }}</li>
-        {% empty %}
-            <li>Nenhum aluno matriculado.</li>
-        {% endfor %}
-    </ul>
-
-    <h3>Atividades Relacionadas</h3>
-    <ul>
-        {% for atividade in turma.atividades_academicas.all %}
-            <li>
-                {{ atividade.nome }} - {{ atividade.get_tipo_atividade_display }} ({{ atividade.data_inicio|date:"d/m/Y H:i" }})
-                <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
-            </li>
-        {% empty %}
-            <li>Nenhuma atividade relacionada.</li>
-        {% endfor %}
-    </ul>
-</div>
-{% endblock %}
-
-
-
-
-### Arquivo: turmas\templates\turmas\editar_turma.html
-
-html
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Editar Turma{% endblock %}
-
 {% block extra_css %}
 <style>
-    /* Ocultar os selects originais */
-    #id_instrutor, #id_instrutor_auxiliar, #id_auxiliar_instrucao {
-        display: none;
-    }
-    
-    /* Estilo para os resultados da busca */
-    .list-group-item-action {
+    .collapse-toggle {
         cursor: pointer;
+        user-select: none;
+        transition: color 0.2s;
     }
-    
-    /* Estilo para o contêiner de instrutor selecionado */
-    .selected-instrutor {
-        border: 1px solid #ddd;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 10px;
+    .collapse-toggle:hover {
+        color: #0d6efd;
+        text-decoration: underline;
+    }
+    .chevron {
+        transition: transform 0.3s;
+        margin-right: 6px;
+    }
+    .collapsed .chevron {
+        transform: rotate(0deg);
+    }
+    .chevron {
+        transform: rotate(90deg);
     }
 </style>
 {% endblock %}
@@ -2282,183 +2417,163 @@ html
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Editar Turma: {{ turma.nome }}</h1>
+        <h1>Detalhes da Turma</h1>
         <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
     </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
+
+    <!-- Seção: Dados Básicos (recolhível, aberta por padrão) -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#info-basicas" role="button" aria-expanded="true" aria-controls="info-basicas">
+                    <span class="chevron">&#9654;</span>
+                    Informações Básicas <small class="text-light">(clique para expandir/recolher)</small>
+                </a>
+            </h5>
+        </div>
+        <div id="info-basicas" class="collapse show card-body">
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Nome:</strong> {{ turma.nome }}</p>
+                </div>
             </div>
-        {% endfor %}
-    {% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
-        {% include 'includes/form_errors.html' %}
-        
-        <!-- Seção de Informações Básicas -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5>Informações Básicas</h5>
+            <div class="row mb-2">
+                <div class="col-md-4">
+                    <p><strong>Status:</strong> {{ turma.get_status_display }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Data de Início:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Data de Fim:</strong> {{ turma.data_fim|date:"d/m/Y" }}</p>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.curso %}
-                    </div>
+            <div class="row mb-2">
+                <div class="col-md-4">
+                    <p><strong>Vagas:</strong> {{ turma.vagas }}</p>
                 </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.vagas %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.status %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.dias_semana %}
-                    </div>
+                <div class="col-md-4">
+                    <p><strong>Dias da Semana:</strong> {{ turma.dias_semana }}</p>
                 </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_inicio %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_fim %}
-                    </div>
+                <div class="col-md-4">
+                    <p><strong>Horário:</strong> {{ turma.horario }}</p>
                 </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.local %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.horario %}
-                    </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <p><strong>Local:</strong> {{ turma.local }}</p>
                 </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'includes/form_field.html' with field=form.descricao %}
-                    </div>
+                <div class="col-md-6">
+                    <p><strong>Descrição:</strong> {{ turma.descricao }}</p>
                 </div>
             </div>
         </div>
-        
-        <!-- Seção de Instrutores -->
-        <div class="card mb-4">
-            <div class="card-header bg-success text-white">
-                <h5>Instrutores</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <!-- Instrutor Principal -->
-                    <div class="col-md-4 mb-3">
-                        <label for="search-instrutor" class="form-label">Instrutor Principal</label>
-                        <input type="text" id="search-instrutor" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
-                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none"></div>
-                        <div id="selected-instrutor-container" class="p-3 border rounded mt-2 d-none">
-                            <div id="selected-instrutor-info">
-                                Nenhum instrutor selecionado
-                            </div>
-                        </div>
-                        <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
-                        <!-- Campo original oculto via CSS -->
-                        {{ form.instrutor }}
-                    </div>
-                    
-                    <!-- Instrutor Auxiliar -->
-                    <div class="col-md-4 mb-3">
-                        <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
-                        <input type="text" id="search-instrutor-auxiliar" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
-                        <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
-                        <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 d-none">
-                            <div id="selected-instrutor-auxiliar-info">
-                                Nenhum instrutor auxiliar selecionado
-                            </div>
-                        </div>
-                        <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
-                        <!-- Campo original oculto via CSS -->
-                        {{ form.instrutor_auxiliar }}
-                    </div>
-                    
-                    <!-- Auxiliar de Instrução -->
-                    <div class="col-md-4 mb-3">
-                        <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
-                        <input type="text" id="search-auxiliar-instrucao" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
-                        <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
-                        <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 d-none">
-                            <div id="selected-auxiliar-instrucao-info">
-                                Nenhum auxiliar de instrução selecionado
-                            </div>
-                        </div>
-                        <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
-                        <!-- Campo original oculto via CSS -->
-                        {{ form.auxiliar_instrucao }}
-                    </div>
+    </div>
+
+    <!-- Seção Dados Iniciáticos (recolhível) -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
+                    <span class="chevron">&#9654;</span>
+                    Dados Iniciáticos <small class="text-muted">(clique para expandir)</small>
+                </a>
+            </h5>
+        </div>
+        <div id="dados-iniciaticos" class="collapse card-body">
+            <div class="row mb-2">
+                <div class="col-md-4">
+                    <p><strong>Número do Livro:</strong> {{ turma.num_livro }}</p>
                 </div>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
-                    O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
+                <div class="col-md-4">
+                    <p><strong>Percentual de Carência:</strong> {{ turma.perc_carencia }}%</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Data de Iniciação:</strong> {{ turma.data_iniciacao|date:"d/m/Y" }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <p><strong>Data de Início das Atividades:</strong> {{ turma.data_inicio_ativ|date:"d/m/Y" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Data da Primeira Aula:</strong> {{ turma.data_prim_aula|date:"d/m/Y" }}</p>
                 </div>
             </div>
         </div>
-        
-        <div class="d-flex justify-content-between mb-5">
-            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Atualizar Turma</button>
+    </div>
+
+    <!-- Seção Alunos (recolhível) -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-dark">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#alunos-turma" role="button" aria-expanded="false" aria-controls="alunos-turma">
+                    <span class="chevron">&#9654;</span>
+                    Alunos da Turma <small class="text-muted">(clique para expandir)</small>
+                </a>
+            </h5>
         </div>
-    </form>
+        <div id="alunos-turma" class="collapse card-body">
+            <ul class="mb-0">
+                {% for matricula in turma.matriculas.all %}
+                    <li>{{ matricula.aluno.nome }}</li>
+                {% empty %}
+                    <li>Nenhum aluno matriculado.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Seção Atividades Relacionadas (recolhível) -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#atividades-relacionadas" role="button" aria-expanded="false" aria-controls="atividades-relacionadas">
+                    <span class="chevron">&#9654;</span>
+                    Atividades Relacionadas <small class="text-light">(clique para expandir)</small>
+                </a>
+            </h5>
+        </div>
+        <div id="atividades-relacionadas" class="collapse card-body">
+            <ul class="mb-0">
+                {% for atividade in turma.atividades_academicas.all %}
+                    <li>
+                        {{ atividade.nome }} - {{ atividade.get_tipo_atividade_display }} ({{ atividade.data_inicio|date:"d/m/Y H:i" }})
+                        <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
+                    </li>
+                {% empty %}
+                    <li>Nenhuma atividade relacionada.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/instrutor_search.js' %}"></script>
+<script>
+    // Rotaciona o chevron ao expandir/recolher
+    document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function() {
+            setTimeout(() => {
+                document.querySelectorAll('.collapse-toggle').forEach(function(t) {
+                    const chevron = t.querySelector('.chevron');
+                    const targetId = t.getAttribute('href');
+                    const target = document.querySelector(targetId);
+                    if (target && target.classList.contains('show')) {
+                        chevron.style.transform = 'rotate(90deg)';
+                    } else {
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
+                });
+            }, 350);
+        });
+    });
+</script>
 {% endblock %}
-
-
-
-
-### Arquivo: turmas\templates\turmas\excluir_turma.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Excluir Turma: {{ turma.nome }}{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1>Excluir Turma: {{ turma.nome }}</h1>
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    <div class="alert alert-danger">
-        <p>Você tem certeza que deseja excluir esta turma?</p>
-        <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
-    </div>
-
-    <!-- Padronizar botões de confirmação -->
-    <form method="post">
-        {% csrf_token %}
-        <div class="d-flex justify-content-between">
-            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Cancelar
-            </a>
-            <button type="submit" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Confirmar Exclusão
-            </button>
-        </div>
-    </form>
-</div>
-{% endblock %}
-
 
 
 

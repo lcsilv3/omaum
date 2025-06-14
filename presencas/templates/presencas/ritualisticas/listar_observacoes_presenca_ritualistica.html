@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Detalhes da Presença</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Informações do Registro</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Aluno:</strong> {{ presenca.aluno.nome }}</p>
+                    <p><strong>Turma:</strong> {{ presenca.turma.nome }}</p>
+                    <p><strong>Data:</strong> {{ presenca.data|date:"d/m/Y" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Status:</strong> {% if presenca.presente %}Presente{% else %}Ausente{% endif %}</p>
+                    <p><strong>Registrado por:</strong> {{ presenca.registrado_por.username }}</p>
+                    <p><strong>Data de Registro:</strong> {{ presenca.data_registro|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+
+            {% if presenca.justificativa %}
+            <div class="mt-3">
+                <h6>Justificativa:</h6>
+                <div class="p-3 bg-light rounded">
+                    {{ presenca.justificativa }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Voltar para a lista
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

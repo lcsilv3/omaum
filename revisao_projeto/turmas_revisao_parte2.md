@@ -4,6 +4,299 @@
 ## Arquivos forms.py:
 
 
+### Arquivo: turmas\templates\turmas\editar_turma.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Turma{% endblock %}
+
+{% block extra_css %}
+<style>
+    #id_instrutor, #id_instrutor_auxiliar, #id_auxiliar_instrucao {
+        display: none;
+    }
+    .list-group-item-action {
+        cursor: pointer;
+    }
+    .selected-instrutor {
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    .collapse-toggle {
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.2s;
+    }
+    .collapse-toggle:hover {
+        color: #0d6efd;
+        text-decoration: underline;
+    }
+    .chevron {
+        transition: transform 0.3s;
+        margin-right: 6px;
+    }
+    .collapsed .chevron {
+        transform: rotate(0deg);
+    }
+    .chevron {
+        transform: rotate(90deg);
+    }
+    /* Remove o tracejado do select de Curso */
+    #id_curso:focus {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: #ced4da !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Editar Turma: {{ turma.nome }}</h1>
+        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <form method="post">
+        {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
+        
+        <!-- Seção de Informações Básicas (recolhível, aberta por padrão) -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#info-basicas" role="button" aria-expanded="true" aria-controls="info-basicas">
+                        <span class="chevron">&#9654;</span>
+                        Informações Básicas <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="info-basicas" class="collapse show card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.curso %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.nome %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.vagas %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.status %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.dias_semana %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_inicio %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_fim %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.local %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.horario %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        {% include 'includes/form_field.html' with field=form.descricao %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de Dados Iniciáticos (recolhível, fechada por padrão) -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
+                        <span class="chevron">&#9654;</span>
+                        Dados Iniciáticos <small class="text-muted">(clique para expandir)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="dados-iniciaticos" class="collapse card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.num_livro %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.perc_carencia %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.data_iniciacao %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_inicio_ativ %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_prim_aula %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção de Instrutores (recolhível, fechada por padrão) -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#instrutores" role="button" aria-expanded="false" aria-controls="instrutores">
+                        <span class="chevron">&#9654;</span>
+                        Instrutores <small class="text-light">(clique para expandir)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="instrutores" class="collapse card-body">
+                <div class="row">
+                    <!-- Instrutor Principal -->
+                    <div class="col-md-4 mb-3">
+                        <label for="search-instrutor" class="form-label">Instrutor Principal</label>
+                        <input type="text" id="search-instrutor" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none"></div>
+                        <div id="selected-instrutor-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-instrutor-info">
+                                Nenhum instrutor selecionado
+                            </div>
+                        </div>
+                        <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
+                        {{ form.instrutor }}
+                    </div>
+                    
+                    <!-- Instrutor Auxiliar -->
+                    <div class="col-md-4 mb-3">
+                        <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar</label>
+                        <input type="text" id="search-instrutor-auxiliar" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-instrutor-auxiliar-info">
+                                Nenhum instrutor auxiliar selecionado
+                            </div>
+                        </div>
+                        <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
+                        {{ form.instrutor_auxiliar }}
+                    </div>
+                    
+                    <!-- Auxiliar de Instrução -->
+                    <div class="col-md-4 mb-3">
+                        <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução</label>
+                        <input type="text" id="search-auxiliar-instrucao" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-auxiliar-instrucao-info">
+                                Nenhum auxiliar de instrução selecionado
+                            </div>
+                        </div>
+                        <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
+                        {{ form.auxiliar_instrucao }}
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
+                    O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mb-5">
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Atualizar Turma</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/instrutor_search.js' %}"></script>
+<script>
+    // Rotaciona o chevron ao expandir/recolher
+    document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function() {
+            setTimeout(() => {
+                document.querySelectorAll('.collapse-toggle').forEach(function(t) {
+                    const chevron = t.querySelector('.chevron');
+                    const targetId = t.getAttribute('href');
+                    const target = document.querySelector(targetId);
+                    if (target && target.classList.contains('show')) {
+                        chevron.style.transform = 'rotate(90deg)';
+                    } else {
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
+                });
+            }, 350);
+        });
+    });
+</script>
+{% endblock %}
+
+
+
+
+### Arquivo: turmas\templates\turmas\excluir_turma.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Excluir Turma: {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Turma: {{ turma.nome }}</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div class="alert alert-danger">
+        <p>Você tem certeza que deseja excluir esta turma?</p>
+        <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
+    </div>
+
+    <!-- Padronizar botões de confirmação -->
+    <form method="post">
+        {% csrf_token %}
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Confirmar Exclusão
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+
+
+
+
 ### Arquivo: turmas\templates\turmas\formulario_instrutoria.html
 
 html
@@ -1095,11 +1388,102 @@ html
 {% extends 'base.html' %}
 
 {% block content %}
-  <h1>Criar Turma</h1>
-  <form method="post">
+  <h1>{% if turma and turma.id %}Editar{% else %}Criar{% endif %} Turma</h1>
+  <form method="post" novalidate>
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Criar</button>
+
+    <!-- Seção: Dados Básicos (não recolhível) -->
+    <div class="card mb-3">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Informações Básicas</h5>
+      </div>
+      <div class="card-body">
+        {% include "includes/form_field.html" with field=form.curso %}
+        {% include "includes/form_field.html" with field=form.nome %}
+        {% include "includes/form_field.html" with field=form.descricao %}
+        {% include "includes/form_field.html" with field=form.vagas %}
+        {% include "includes/form_field.html" with field=form.status %}
+      </div>
+    </div>
+
+    <!-- Seção: Dados Iniciáticos (recolhível, fechada por padrão) -->
+    <div class="card mb-3">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+          <a class="text-dark text-decoration-none" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
+            Dados Iniciáticos
+          </a>
+        </h5>
+      </div>
+      <div id="dados-iniciaticos" class="collapse card-body">
+        {% include "includes/form_field.html" with field=form.num_livro %}
+        {% include "includes/form_field.html" with field=form.perc_carencia %}
+        {% include "includes/form_field.html" with field=form.data_iniciacao %}
+        {% include "includes/form_field.html" with field=form.data_inicio_ativ %}
+        {% include "includes/form_field.html" with field=form.data_prim_aula %}
+        {% include "includes/form_field.html" with field=form.data_termino_atividades %}
+      </div>
+    </div>
+
+    <!-- Seção: Agendamento (recolhível, fechada por padrão) -->
+    <div class="card mb-3">
+      <div class="card-header bg-info text-dark">
+        <h5 class="mb-0">
+          <a class="text-dark text-decoration-none" data-bs-toggle="collapse" href="#agendamento" role="button" aria-expanded="false" aria-controls="agendamento">
+            Agendamento
+          </a>
+        </h5>
+      </div>
+      <div id="agendamento" class="collapse card-body">
+        {% include "includes/form_field.html" with field=form.dias_semana %}
+        {% include "includes/form_field.html" with field=form.horario %}
+        {% include "includes/form_field.html" with field=form.local %}
+      </div>
+    </div>
+
+    <!-- Seção: Instrutores (recolhível, fechada por padrão) -->
+    <div class="card mb-3">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+          <a class="text-white text-decoration-none" data-bs-toggle="collapse" href="#instrutores" role="button" aria-expanded="false" aria-controls="instrutores">
+            Instrutores
+          </a>
+        </h5>
+      </div>
+      <div id="instrutores" class="collapse card-body">
+        {% include "includes/form_field.html" with field=form.instrutor %}
+        {% include "includes/form_field.html" with field=form.instrutor_auxiliar %}
+        {% include "includes/form_field.html" with field=form.auxiliar_instrucao %}
+        <div class="alert alert-info mt-3">
+          <i class="fas fa-info-circle"></i> Você pode selecionar qualquer aluno como instrutor.
+          O sistema verificará a elegibilidade e mostrará um aviso caso o aluno não atenda aos requisitos.
+        </div>
+      </div>
+    </div>
+
+    <!-- Seção: Alertas (recolhível, fechada por padrão) -->
+    <div class="card mb-3">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+          <a class="text-white text-decoration-none" data-bs-toggle="collapse" href="#alertas" role="button" aria-expanded="false" aria-controls="alertas">
+            Alertas
+          </a>
+        </h5>
+      </div>
+      <div id="alertas" class="collapse card-body">
+        {% include "includes/form_field.html" with field=form.alerta_instrutor %}
+        {% include "includes/form_field.html" with field=form.alerta_mensagem %}
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between mb-5">
+      <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Cancelar
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> {% if turma and turma.id %}Atualizar{% else %}Criar{% endif %} Turma
+      </button>
+    </div>
   </form>
 {% endblock %}
 

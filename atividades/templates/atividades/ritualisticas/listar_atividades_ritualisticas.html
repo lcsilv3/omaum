@@ -78,6 +78,7 @@
                     <th>Horário</th>
                     <th>Local</th>
                     <th>Turma</th>
+                    <th>Convocação</th>
                     <th class="text-start">Ações</th>
                 </tr>
             </thead>
@@ -93,6 +94,13 @@
                             <span class="badge bg-info">{{ atividade.turma }}</span>
                         {% else %}
                             <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if atividade.convocacao %}
+                            <span class="badge bg-success">Sim</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Não</span>
                         {% endif %}
                     </td>
                     <td class="text-start">
@@ -114,7 +122,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center">Nenhuma atividade ritualística encontrada.</td>
+                    <td colspan="7" class="text-center">Nenhuma atividade ritualística encontrada.</td>
                 </tr>
                 {% endfor %}
             </tbody>
