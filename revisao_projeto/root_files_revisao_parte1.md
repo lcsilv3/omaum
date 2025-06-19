@@ -5,6 +5,15 @@
 ### Arquivo: collect_code.py
 
 python
+"""
+OMAUM - Sistema de Gestão de Iniciados
+Script: collect_code.py
+Descrição: Utilitário para coletar e documentar arquivos do projeto Django por app.
+Uso: python collect_code.py
+Responsável: Equipe OMAUM
+Última atualização: 2025-06-15
+"""
+
 import os
 import chardet
 import shutil
@@ -767,6 +776,15 @@ XlsxWriter==3.2.2
 ### Arquivo: script_revisao_projeto.py
 
 python
+"""
+OMAUM - Sistema de Gestão de Iniciados
+Script: script_revisao_projeto.py
+Descrição: Utilitário para revisão e documentação da estrutura do projeto Django.
+Uso: python script_revisao_projeto.py
+Responsável: Equipe OMAUM
+Última atualização: 2025-06-15
+"""
+
 import os
 import chardet
 import shutil
@@ -1061,6 +1079,14 @@ p, li {
 ### Arquivo: static\css\alunos.css
 
 text
+/*
+ * OMAUM - Sistema de Gestão de Iniciados
+ * Arquivo: alunos.css
+ * Descrição: Estilos específicos para telas e componentes do módulo de alunos.
+ * Responsável: Equipe OMAUM
+ * Última atualização: 2025-06-15
+ */
+
 /* Estilos para o módulo de alunos */
 
 /* Cores para os cards */
@@ -1298,6 +1324,14 @@ text
 ### Arquivo: static\css\styles.css
 
 text
+/*
+ * OMAUM - Sistema de Gestão de Iniciados
+ * Arquivo: styles.css
+ * Descrição: Estilos globais complementares ao Bootstrap para todo o sistema.
+ * Responsável: Equipe OMAUM
+ * Última atualização: 2025-06-15
+ */
+
 /* OMAUM - Sistema de Gestão de Iniciados */
 /* Estilos globais complementares ao Bootstrap */
 
@@ -1701,6 +1735,14 @@ Erro ao ler o arquivo: 'utf-8' codec can't decode byte 0x89 in position 0: inval
 ### Arquivo: static\js\aluno-search.js
 
 text
+/**
+ * OMAUM - Sistema de Gestão de Iniciados
+ * Arquivo: aluno-search.js
+ * Descrição: Busca dinâmica de alunos via AJAX para formulários.
+ * Responsável: Equipe OMAUM
+ * Última atualização: 2025-06-15
+ */
+
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('search-aluno');
     const searchResults = document.getElementById('search-results');
@@ -1766,7 +1808,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div>${aluno.nome}</div>
                             <div class="text-muted">
                                 <small>CPF: ${aluno.cpf}</small>
-                                ${aluno.numero_iniciatico !== "N/A" ? `<small class="ms-2">NÂº: ${aluno.numero_iniciatico}</small>` : ''}
+                                ${aluno.numero_iniciatico !== "N/A" ? `<small class="ms-2">Nº: ${aluno.numero_iniciatico}</small>` : ''}
                             </div>
                         </div>
                     `;
@@ -2005,6 +2047,14 @@ document.addEventListener('DOMContentLoaded', function() {
 ### Arquivo: static\js\inicializar_select2.js
 
 text
+/**
+ * OMAUM - Sistema de Gestão de Iniciados
+ * Arquivo: inicializar_select2.js
+ * Descrição: Inicialização global do Select2 para garantir consistência visual e funcional.
+ * Responsável: Equipe OMAUM
+ * Última atualização: 2025-06-15
+ */
+
 /**
  * Inicialização global do Select2 para o sistema OMAUM
  * Este arquivo centraliza a configuração do Select2 para garantir consistência

@@ -41,8 +41,19 @@ def listar_atividades_academicas(request):
     if query:
         atividades = atividades.filter(nome__icontains=query)
 
+    # Adicionando paginação
+    paginator = Paginator(atividades.distinct(), 15)  # 15 por página
+    page = request.GET.get('page')
+    try:
+        atividades_paginadas = paginator.page(page)
+    except PageNotAnInteger:
+        atividades_paginadas = paginator.page(1)
+    except EmptyPage:
+        atividades_paginadas = paginator.page(paginator.num_pages)
+
     context = {
-        'atividades': atividades.distinct(),
+        'atividades': atividades_paginadas,
+        'page_obj': atividades_paginadas,
         'cursos': cursos,
         'turmas': turmas,
         'curso_selecionado': curso_id,

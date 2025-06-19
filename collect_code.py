@@ -1,3 +1,12 @@
+"""
+OMAUM - Sistema de Gestão de Iniciados
+Script: collect_code.py
+Descrição: Utilitário para coletar e documentar arquivos do projeto Django por app.
+Uso: python collect_code.py
+Responsável: Equipe OMAUM
+Última atualização: 2025-06-15
+"""
+
 import os
 import chardet
 import shutil

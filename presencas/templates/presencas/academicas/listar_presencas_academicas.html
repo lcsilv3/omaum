@@ -4,15 +4,16 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <!-- Padronizar cabeçalho com botões -->
+    <!-- Cabeçalho com botões -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Lista de Presenças</h1>
+        <h1>Presenças Acadêmicas</h1>
         <div>
             <a href="javascript:history.back()" class="btn btn-secondary me-2">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <a href="{% url 'presencas:registrar_presenca_academica' %}" class="btn btn-primary me-2">
-                <i class="fas fa-plus"></i> Registrar Presença
+            <!-- Botão do novo fluxo passo a passo -->
+            <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-success me-2">
+                <i class="fas fa-plus"></i> Registrar Nova Presença (Fluxo Passo a Passo)
             </a>
             <a href="{% url 'presencas:exportar_presencas_academicas' %}" class="btn btn-success me-2">
                 <i class="fas fa-file-export"></i> Exportar CSV
@@ -29,57 +30,53 @@
             <h5 class="mb-0">Filtros</h5>
         </div>
         <div class="card-body">
-            <form method="get" class="row g-3">
+            <form id="filtro-presencas" method="get" class="row g-3 mb-4">
                 <div class="col-md-3">
-                    <label for="aluno" class="form-label">Aluno</label>
-                    <select name="aluno" id="aluno" class="form-select">
-                        <option value="">Todos os alunos</option>
-                        {% for aluno in alunos %}
-                        <option value="{{ aluno.cpf }}" {% if filtros.aluno == aluno.cpf %}selected{% endif %}>
-                            {{ aluno.nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="turma" class="form-label">Turma</label>
-                    <select name="turma" id="turma" class="form-select">
-                        <option value="">Todas as turmas</option>
-                        {% for turma in turmas %}
-                        <option value="{{ turma.id }}" {% if filtros.turma == turma.id|stringformat:"s" %}selected{% endif %}>
-                            {{ turma.nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-2">
-                    <label for="data_inicio" class="form-label">Data Início</label>
-                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio }}">
-                </div>
-                
-                <div class="col-md-2">
-                    <label for="data_fim" class="form-label">Data Fim</label>
-                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ filtros.data_fim }}">
-                </div>
-                
-                <div class="col-md-2">
-                    <label for="presente" class="form-label">Status</label>
-                    <select name="presente" id="presente" class="form-select">
+                    <label for="id_curso" class="form-label">Curso</label>
+                    <select id="id_curso" name="curso" class="form-select">
                         <option value="">Todos</option>
-                        <option value="true" {% if filtros.presente == 'true' %}selected{% endif %}>Presente</option>
-                        <option value="false" {% if filtros.presente == 'false' %}selected{% endif %}>Ausente</option>
+                        {% for curso in cursos %}
+                            <option value="{{ curso.id }}" {% if request.GET.curso == curso.id|stringformat:"s" %}selected{% endif %}>{{ curso.nome }}</option>
+                        {% endfor %}
                     </select>
                 </div>
-                
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter"></i> Filtrar
-                    </button>
-                    <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary">
-                        <i class="fas fa-undo"></i> Limpar Filtros
-                    </a>
+                <div class="col-md-3">
+                    <label for="id_turma" class="form-label">Turma</label>
+                    <select id="id_turma" name="turma" class="form-select">
+                        <option value="">Todas</option>
+                        {% for turma in turmas %}
+                            <option value="{{ turma.id }}" {% if request.GET.turma == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="id_atividade" class="form-label">Atividade</label>
+                    <select id="id_atividade" name="atividade" class="form-select">
+                        <option value="">Todas</option>
+                        {% for atividade in atividades %}
+                            <option value="{{ atividade.id }}" {% if request.GET.atividade == atividade.id|stringformat:"s" %}selected{% endif %}>{{ atividade.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="id_aluno" class="form-label">Aluno</label>
+                    <select id="id_aluno" name="aluno" class="form-select">
+                        <option value="">Todos</option>
+                        {% for aluno in alunos %}
+                            <option value="{{ aluno.id }}" {% if request.GET.aluno == aluno.id|stringformat:"s" %}selected{% endif %}>{{ aluno.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="id_data_inicio" class="form-label">Data início</label>
+                    <input type="date" id="id_data_inicio" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="id_data_fim" class="form-label">Data fim</label>
+                    <input type="date" id="id_data_fim" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
+                </div>
+                <div class="col-md-3 align-self-end">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
                 </div>
             </form>
         </div>
@@ -204,7 +201,7 @@
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock content %}
 
 {% block extra_js %}
 <script>
@@ -223,6 +220,43 @@
                 allowClear: true
             });
         }
+
+        const cursoSelect = document.getElementById('id_curso');
+        const turmaSelect = document.getElementById('id_turma');
+        const atividadeSelect = document.getElementById('id_atividade');
+
+        cursoSelect.addEventListener('change', function() {
+            const cursoId = this.value;
+            turmaSelect.innerHTML = '<option value="">Carregando...</option>';
+            fetch(`/presencas/registrar-presenca/turmas-por-curso/?curso_id=${cursoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    turmaSelect.innerHTML = '<option value="">Todas</option>';
+                    data.forEach(turma => {
+                        const opt = document.createElement('option');
+                        opt.value = turma.id;
+                        opt.textContent = turma.nome;
+                        turmaSelect.appendChild(opt);
+                    });
+                    atividadeSelect.innerHTML = '<option value="">Todas</option>';
+                });
+        });
+
+        turmaSelect.addEventListener('change', function() {
+            const turmaId = this.value;
+            atividadeSelect.innerHTML = '<option value="">Carregando...</option>';
+            fetch(`/presencas/registrar-presenca/atividades-por-turma/?turma_id=${turmaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    atividadeSelect.innerHTML = '<option value="">Todas</option>';
+                    data.forEach(atividade => {
+                        const opt = document.createElement('option');
+                        opt.value = atividade.id;
+                        opt.textContent = atividade.nome;
+                        atividadeSelect.appendChild(opt);
+                    });
+                });
+        });
     });
 </script>
 {% endblock %}

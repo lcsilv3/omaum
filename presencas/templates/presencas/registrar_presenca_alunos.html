@@ -1,0 +1,52 @@
+<!-- filepath: presencas/templates/presencas/registrar_presenca_alunos.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Registrar Presença - Marque os Alunos Presentes</h2>
+    <form id="form-alunos-presenca" method="post" autocomplete="off">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.alunos_presentes }}
+        </div>
+        <button type="submit" class="btn btn-primary">Confirmar e Avançar</button>
+    </form>
+    <div id="form-errors" class="alert alert-danger mt-3 d-none"></div>
+    <div id="ajax-error" class="alert alert-danger mt-3 d-none"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-alunos-presenca');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        fetch("{% url 'presencas:registrar_presenca_alunos_ajax' %}", {
+            method: "POST",
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else if (data.errors) {
+                let errorDiv = document.getElementById('form-errors');
+                errorDiv.innerHTML = '';
+                for (const [field, errors] of Object.entries(data.errors)) {
+                    errorDiv.innerHTML += `<strong>${field}:</strong> ${errors.join('<br>')}<br>`;
+                }
+                errorDiv.classList.remove('d-none');
+            } else if (data.erro) {
+                let ajaxError = document.getElementById('ajax-error');
+                ajaxError.textContent = data.erro;
+                ajaxError.classList.remove('d-none');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

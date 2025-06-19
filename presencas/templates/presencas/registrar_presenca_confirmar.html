@@ -1,0 +1,55 @@
+<!-- filepath: presencas/templates/presencas/registrar_presenca_confirmar.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Confirmar Registro de Presença</h2>
+    <div class="mb-3">
+        <strong>Turma:</strong> {{ turma }}<br>
+        <strong>Ano:</strong> {{ ano }}<br>
+        <strong>Mês:</strong> {{ mes }}<br>
+        <strong>Atividade:</strong> {{ atividade }}<br>
+        <strong>Alunos Presentes:</strong>
+        <ul>
+            {% for aluno in alunos_presentes %}
+                <li>{{ aluno }}</li>
+            {% empty %}
+                <li>Nenhum aluno selecionado.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <form id="form-confirmar-presenca" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">Confirmar e Salvar</button>
+    </form>
+    <div id="form-errors" class="alert alert-danger mt-3 d-none"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-confirmar-presenca');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        fetch("{% url 'presencas:registrar_presenca_confirmar_ajax' %}", {
+            method: "POST",
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                let errorDiv = document.getElementById('form-errors');
+                errorDiv.innerHTML = 'Erro ao salvar presença.';
+                errorDiv.classList.remove('d-none');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -153,6 +153,13 @@ html
                             {% endfor %}
                             <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
                         </div>
+                        <div class="mb-3 form-check">
+                            {{ form.convocacao }}
+                            <label class="form-check-label" for="id_convocacao">Convocação</label>
+                            {% for error in form.convocacao.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
                 <div class="d-flex justify-content-between mb-4">
@@ -236,7 +243,7 @@ html
 html
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Detalhes da Atividade AcadÃªmica{% endblock %}
+{% block title %}Detalhes da Atividade Acadêmica{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -255,6 +262,14 @@ html
                     {% empty %}
                         <span class="text-muted">-</span>
                     {% endfor %}
+                </dd>
+                <dt class="col-sm-3">Convocação:</dt>
+                <dd class="col-sm-9">
+                    {% if atividade.convocacao %}
+                        <span class="badge bg-success">Sim</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Não</span>
+                    {% endif %}
                 </dd>
                 <!-- Adicione outros campos relevantes aqui -->
             </dl>
@@ -417,6 +432,13 @@ html
                                 <div class="text-danger">{{ error }}</div>
                             {% endfor %}
                             <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ form.convocacao }}
+                            <label class="form-check-label" for="id_convocacao">Convocação</label>
+                            {% for error in form.convocacao.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
@@ -623,6 +645,13 @@ html
         {% endfor %}
         <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
     </div>
+    <div class="mb-3 form-check">
+        {{ form.convocacao }}
+        <label class="form-check-label" for="id_convocacao">Convocação</label>
+        {% for error in form.convocacao.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
     <div class="d-flex justify-content-between mb-4">
         <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">
             <i class="fas fa-times"></i> Cancelar
@@ -806,7 +835,8 @@ html
             <select name="curso" id="id_curso" class="form-select">
                 <option value="">Todos os cursos</option>
                 {% for curso in cursos %}
-                    <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_selecionado|stringformat:"s" %}selected{% endif %}>
+                    <option value="{{ curso.codigo_curso }}"
+                        {% if curso.codigo_curso|stringformat:"s" == curso_selecionado|stringformat:"s" %}selected{% endif %}>
                         {{ curso.codigo_curso }} - {{ curso.nome }}
                     </option>
                 {% endfor %}
@@ -847,6 +877,7 @@ html
                     <th>Tipo</th>
                     <th>Status</th>
                     <th>Data Início</th>
+                    <th>Convocação</th>
                     <th class="text-start">Ações</th>
                 </tr>
             </thead>
@@ -873,6 +904,13 @@ html
                         {% endif %}
                     </td>
                     <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if atividade.convocacao %}
+        <span class="badge bg-success">Sim</span>
+    {% else %}
+        <span class="badge bg-secondary">Não</span>
+    {% endif %}
+                    </td>
                     <td class="text-start">
                         <div class="btn-group btn-group-sm" role="group">
                             <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-info" title="Detalhar atividade" data-bs-toggle="tooltip">
@@ -892,7 +930,7 @@ html
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center">Nenhuma atividade encontrada.</td>
+                    <td colspan="8" class="text-center">Nenhuma atividade encontrada.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -2120,6 +2158,13 @@ html
                                 {% endfor %}
                             </div>
                         </div>
+                        <div class="mb-3 form-check">
+                            {{ form.convocacao }}
+                            <label class="form-check-label" for="id_convocacao">Convocação</label>
+                            {% for error in form.convocacao.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancelar
@@ -2199,101 +2244,6 @@ html
         }
     });
 </script>
-{% endblock %}
-
-
-
-
-### Arquivo: atividades\templates\atividades\ritualisticas\detalhar_atividade_ritualistica.html
-
-html
-{% extends 'base.html' %}
-{% load static %}
-{% block title %}Detalhes da Atividade Ritualística{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{{ atividade.nome }}</h1>
-        <div>
-            <a href="{{ return_url }}" class="btn btn-secondary me-2">Voltar</a>
-            <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary me-2">Lista de Atividades</a>
-            <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.id %}?return_url={{ request.path|urlencode }}" class="btn btn-warning me-2">Editar</a>
-            <!-- Novo botão para copiar atividade -->
-            <a href="{% url 'atividades:copiar_atividade_ritualistica' atividade.id %}" class="btn btn-secondary me-2">Copiar</a>
-            <a href="{% url 'atividades:confirmar_exclusao_ritualistica' atividade.id %}?return_url={{ request.path|urlencode }}" class="btn btn-danger">Excluir</a>
-        </div>
-    </div>    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Informações Básicas</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Descrição:</strong> {{ atividade.descricao|default:"Não informada" }}</p>
-                    <p><strong>Data:</strong> {{ atividade.data|date:"d/m/Y" }}</p>
-                    <p><strong>Horário:</strong> {{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</p>
-                    <p><strong>Local:</strong> {{ atividade.local }}</p>
-                    <p><strong>Turma:</strong> {{ atividade.turma }}</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Estatísticas</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Total de Participantes:</strong> {{ total_participantes }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Participantes</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Número Iniciático</th>
-                            <th>Email</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for aluno in atividade.participantes.all %}
-                            <tr>
-                                <td>{{ aluno.nome }}</td>
-                                <td>{{ aluno.numero_iniciatico|default:"N/A" }}</td>
-                                <td>{{ aluno.email }}</td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="3" class="text-center">
-                                    <p class="my-3">Nenhum participante cadastrado para esta atividade.</p>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 

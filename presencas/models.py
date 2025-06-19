@@ -17,19 +17,8 @@ def get_atividade_model():
 class Presenca(models.Model):
     """
     Modelo para registro de presença de alunos em atividades.
-    
-    Este modelo armazena informações sobre a presença ou ausência de um aluno
-    em uma determinada atividade, incluindo a data, status e justificativa
-    em caso de ausência.
-    
-    Attributes:
-        aluno (ForeignKey): Referência ao aluno cuja presença está sendo registrada.
-        atividade (ForeignKey): Referência à atividade em que a presença está sendo registrada.
-        data (DateField): Data do registro de presença.
-        presente (BooleanField): Indica se o aluno estava presente (True) ou ausente (False).
-        justificativa (TextField): Justificativa para a ausência, se aplicável.
-        registrado_por (ForeignKey): Usuário que registrou a presença.
-        data_registro (DateTimeField): Data e hora em que o registro foi criado.
+
+    Armazena informações sobre presença, ausência e justificativas de alunos em atividades acadêmicas ou ritualísticas.
     """
     
     aluno = models.ForeignKey(
@@ -94,3 +83,61 @@ class Presenca(models.Model):
             raise ValidationError(
                 {"justificativa": "É necessário fornecer uma justificativa para a ausência."}
             )
+
+class TotalAtividadeMes(models.Model):
+    atividade = models.ForeignKey(get_atividade_model(), on_delete=models.CASCADE)
+    turma = models.ForeignKey(get_turma_model(), on_delete=models.CASCADE)
+    ano = models.IntegerField()
+    mes = models.IntegerField()
+    qtd_ativ_mes = models.PositiveIntegerField(default=0)
+    registrado_por = models.CharField(max_length=100, default="Sistema")
+    data_registro = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ["atividade", "turma", "ano", "mes"]
+        verbose_name = "Total de Atividade no Mês"
+        verbose_name_plural = "Totais de Atividades no Mês"
+
+    def __str__(self):
+        return f"{self.atividade} - {self.turma} - {self.mes}/{self.ano}: {self.qtd_ativ_mes}"
+
+class ObservacaoPresenca(models.Model):
+    aluno = models.ForeignKey(
+        'alunos.Aluno',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        verbose_name="Aluno",
+        related_name="observacoes_presenca_presencas"
+    )
+    turma = models.ForeignKey(
+        'turmas.Turma',
+        on_delete=models.CASCADE,
+        verbose_name="Turma",
+        related_name="observacoes_presenca_presencas"
+    )
+    data = models.DateField(verbose_name="Data")
+    atividade_academica = models.ForeignKey(
+        'atividades.AtividadeAcademica',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        verbose_name="Atividade Acadêmica",
+        related_name="observacoes_presenca_presencas"
+    )
+    atividade_ritualistica = models.ForeignKey(
+        'atividades.AtividadeRitualistica',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        verbose_name="Atividade Ritualística",
+        related_name="observacoes_presenca_presencas"
+    )
+    texto = models.TextField(verbose_name="Observação", blank=True, null=True)
+    registrado_por = models.CharField(max_length=100, default="Sistema", verbose_name="Registrado por")
+    data_registro = models.DateTimeField(default=timezone.now, verbose_name="Data de registro")
+
+    class Meta:
+        verbose_name = "Observação de Presença"
+        verbose_name_plural = "Observações de Presença"
+        ordering = ["-data"]
+
+    def __str__(self):
+        return f"{self.data} - {self.atividade_academica or self.atividade_ritualistica} - {self.texto[:30]}"

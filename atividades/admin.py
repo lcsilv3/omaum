@@ -4,9 +4,8 @@ from .models import (
     AtividadeRitualistica,
     PresencaAcademica,
     PresencaRitualistica,
-    ObservacaoPresenca,
-)
 
+)
 @admin.register(AtividadeAcademica)
 class AtividadeAcademicaAdmin(admin.ModelAdmin):
     list_display = ('nome', 'tipo_atividade', 'data_inicio', 'data_fim', 'status', 'curso', 'convocacao')
@@ -71,9 +70,3 @@ class PresencaRitualisticaAdmin(admin.ModelAdmin):
     search_fields = ('aluno__nome', 'aluno__cpf', 'turma__nome', 'atividade__nome')
     date_hierarchy = 'data'
 
-@admin.register(ObservacaoPresenca)
-class ObservacaoPresencaAdmin(admin.ModelAdmin):
-    list_display = ('aluno', 'turma', 'data', 'atividade_academica', 'atividade_ritualistica', 'registrado_por')
-    list_filter = ('turma', 'data', 'atividade_academica', 'atividade_ritualistica')
-    search_fields = ('aluno__nome', 'aluno__cpf', 'turma__nome')
-    date_hierarchy = 'data'

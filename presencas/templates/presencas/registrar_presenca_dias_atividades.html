@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load static %}
+{% load presenca_extras %}
+
+{% block content %}
+<h2>Designação dos Dias das Atividades</h2>
+
+<style>
+    .atividades-container {
+        display: flex;
+        overflow-x: auto;
+        gap: 24px;
+        padding-bottom: 16px;
+    }
+    .atividade-quadro {
+        min-width: 260px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 16px;
+        background: #fafafa;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .minicalendario {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 8px;
+        justify-content: flex-start;
+        width: 100%;
+    }
+    .minicalendario .dia-linha {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 2px;
+    }
+    .minicalendario label {
+        width: 32px;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 0;
+    }
+    .minicalendario input[type="text"] {
+        flex: 1;
+        min-width: 0;
+        max-width: 140px;
+        font-size: 0.95em;
+    }
+    .matriz-confirmada {
+        margin-top: 12px;
+        border-top: 1px solid #ddd;
+        padding-top: 8px;
+        font-size: 0.95em;
+    }
+    .obs-curta {
+        display: inline;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+        vertical-align: bottom;
+    }
+</style>
+
+<form id="form-presenca" method="post">
+    {% csrf_token %}
+    <div id="mensagem-ajax" class="alert d-none" role="alert"></div>
+    <div id="mensagem-erro-ajax" class="alert alert-danger d-none"></div>
+    <div class="atividades-container">
+        {% for atividade in atividades %}
+        <div class="atividade-quadro" id="quadro-{{ atividade.id }}">
+            <strong>
+                {{ atividade.nome }} ({{ atividade.qtd_ativ_mes }})
+            </strong>
+            <div>
+                <small>Mês: {{ mes }}/{{ ano }}</small>
+            </div>
+            <div class="minicalendario">
+                {% for dia in dias_do_mes %}
+                <div class="dia-linha">
+                    <label>
+                        <input type="checkbox"
+                            class="dia-checkbox"
+                            name="presenca_{{ atividade.id }}"
+                            value="{{ dia }}"
+                            data-atividade="{{ atividade.id }}"
+                            data-dia="{{ dia }}"
+                            {% if dia in presencas|get_item:atividade.id %}checked{% endif %}>
+                        {{ dia }}
+                    </label>
+                    <input type="text"
+                        name="obs_{{ atividade.id }}_{{ dia }}"
+                        maxlength="200"
+                        class="form-control obs-dia"
+                        placeholder="Obs. deste dia"
+                        value="{% if presencas_obs and presencas_obs|get_item:atividade.id and presencas_obs|get_item:atividade.id|get_item:dia %}{{ presencas_obs|get_item:atividade.id|get_item:dia }}{% endif %}">
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button"
+                class="btn btn-success btn-confirmar"
+                data-atividade="{{ atividade.id }}"
+                data-qtd="{{ atividade.qtd_ativ_mes }}">
+                Confirmar
+            </button>
+            <div class="matriz-confirmada" id="matriz-{{ atividade.id }}" style="display:none;">
+                <!-- Lista dos dias e observações confirmadas aparecerá aqui -->
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar e avançar</button>
+</form>
+
+<script src="{% static 'js/presencas/registrar_presenca_dias_atividades.js' %}"></script>
+{% endblock %}

@@ -1,3 +1,12 @@
+"""
+OMAUM - Sistema de Gestão de Iniciados
+Script: script_revisao_projeto.py
+Descrição: Utilitário para revisão e documentação da estrutura do projeto Django.
+Uso: python script_revisao_projeto.py
+Responsável: Equipe OMAUM
+Última atualização: 2025-06-15
+"""
+
 import os
 import chardet
 import shutil

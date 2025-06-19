@@ -4,6 +4,108 @@
 ## Arquivos forms.py:
 
 
+### Arquivo: atividades\templates\atividades\ritualisticas\detalhar_atividade_ritualistica.html
+
+html
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Detalhes da Atividade Ritualística{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ atividade.nome }}</h1>
+        <div>
+            <a href="{{ return_url }}" class="btn btn-secondary me-2">Voltar</a>
+            <a href="{% url 'atividades:listar_atividades_ritualisticas' %}" class="btn btn-secondary me-2">Lista de Atividades</a>
+            <a href="{% url 'atividades:editar_atividade_ritualistica' atividade.id %}?return_url={{ request.path|urlencode }}" class="btn btn-warning me-2">Editar</a>
+            <!-- Novo botão para copiar atividade -->
+            <a href="{% url 'atividades:copiar_atividade_ritualistica' atividade.id %}" class="btn btn-secondary me-2">Copiar</a>
+            <a href="{% url 'atividades:confirmar_exclusao_ritualistica' atividade.id %}?return_url={{ request.path|urlencode }}" class="btn btn-danger">Excluir</a>
+        </div>
+    </div>    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Informações Básicas</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Descrição:</strong> {{ atividade.descricao|default:"Não informada" }}</p>
+                    <p><strong>Data:</strong> {{ atividade.data|date:"d/m/Y" }}</p>
+                    <p><strong>Horário:</strong> {{ atividade.hora_inicio }} - {{ atividade.hora_fim }}</p>
+                    <p><strong>Local:</strong> {{ atividade.local }}</p>
+                    <p><strong>Turma:</strong> {{ atividade.turma }}</p>
+                    <p><strong>Convocação:</strong>
+    {% if atividade.convocacao %}
+        <span class="badge bg-success">Sim</span>
+    {% else %}
+        <span class="badge bg-secondary">Não</span>
+    {% endif %}
+</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Estatísticas</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Total de Participantes:</strong> {{ total_participantes }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Participantes</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Número Iniciático</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aluno in atividade.participantes.all %}
+                            <tr>
+                                <td>{{ aluno.nome }}</td>
+                                <td>{{ aluno.numero_iniciatico|default:"N/A" }}</td>
+                                <td>{{ aluno.email }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">
+                                    <p class="my-3">Nenhum participante cadastrado para esta atividade.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
 ### Arquivo: atividades\templates\atividades\ritualisticas\editar_atividade_ritualistica.html
 
 html
@@ -129,6 +231,14 @@ html
                     <div class="text-danger">{{ error }}</div>
                 {% endfor %}
             </div>
+        </div>
+        
+        <div class="mb-3 form-check">
+            {{ form.convocacao }}
+            <label class="form-check-label" for="id_convocacao">Convocação</label>
+            {% for error in form.convocacao.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
         </div>
         
         <div class="d-flex justify-content-between mb-5 mt-4">
@@ -314,6 +424,13 @@ html
                                 {% endfor %}
                             </select>
                             <small class="form-text text-muted">Selecione os participantes manualmente ou marque "Incluir todos os alunos".</small>
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ form.convocacao }}
+                            <label class="form-check-label" for="id_convocacao">Convocação</label>
+                            {% for error in form.convocacao.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         <div class="d-flex justify-content-between">
                             <a href="/atividades/ritualisticas/" class="btn btn-secondary">
@@ -568,6 +685,7 @@ html
                     <th>Horário</th>
                     <th>Local</th>
                     <th>Turma</th>
+                    <th>Convocação</th>
                     <th class="text-start">Ações</th>
                 </tr>
             </thead>
@@ -583,6 +701,13 @@ html
                             <span class="badge bg-info">{{ atividade.turma }}</span>
                         {% else %}
                             <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if atividade.convocacao %}
+                            <span class="badge bg-success">Sim</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Não</span>
                         {% endif %}
                     </td>
                     <td class="text-start">
@@ -604,7 +729,7 @@ html
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center">Nenhuma atividade ritualística encontrada.</td>
+                    <td colspan="7" class="text-center">Nenhuma atividade ritualística encontrada.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -696,6 +821,7 @@ html
                             <th>Horário</th>
                             <th>Local</th>
                             <th>Turma</th>
+                            <th>Convocação</th> <!-- NOVA COLUNA -->
                             <th>Descrição</th>
                         </tr>
                     </thead>
@@ -717,6 +843,13 @@ html
                                     <span class="badge bg-info">{{ atividade.turma }}</span>
                                 {% else %}
                                     <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if atividade.convocacao %}
+                                    <span class="badge bg-success">Sim</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Não</span>
                                 {% endif %}
                             </td>
                             <td>{{ atividade.descricao|default:"-" }}</td>

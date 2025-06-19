@@ -36,7 +36,11 @@ def get_matricula_model():
 @login_required
 @require_POST
 def obter_alunos_por_turmas(request):
-    """API para obter alunos de turmas específicas."""
+    """
+    API para obter alunos de turmas específicas.
+
+    Retorna lista de alunos e atividades, ou mensagem de erro padronizada.
+    """
     try:
         # Obter dados do corpo da requisição
         data = json.loads(request.body)
@@ -90,7 +94,7 @@ def obter_alunos_por_turmas(request):
     
     except Exception as e:
         logger.error(f"Erro ao obter alunos por turmas: {str(e)}", exc_info=True)
-        return JsonResponse({'error': f"Erro ao obter alunos: {str(e)}"}, status=500)
+        return JsonResponse({'error': 'Ocorreu um erro inesperado ao buscar alunos. Tente novamente mais tarde.'}, status=500)
 
 @login_required
 @require_GET

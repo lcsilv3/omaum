@@ -1,0 +1,107 @@
+<!-- filepath: presencas/templates/presencas/registrar_presenca_totais_atividades.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Registrar Presença - Totais de Atividades</h2>
+    <p>Informe a quantidade de dias em que cada atividade ocorreu neste mês. Caso alguma atividade não tenha sido realizada, informe zero. As atividades não informadas não poderão sofrer alterações na seção seguinte.</p>
+    {% if totais_registrados %}
+        <div class="alert alert-info">
+            <strong>Totais já registrados neste mês:</strong>
+            <ul>
+                {% for total in totais_registrados %}
+                    <li>{{ total.atividade.nome }}: {{ total.qtd_ativ_mes }} dia(s)</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    {% if curso and turma and ano and mes %}
+    <div class="alert alert-info d-flex justify-content-between align-items-center">
+        <div>
+            <strong>Seleção atual:</strong>
+            Curso: {{ curso.nome }} |
+            Turma: {{ turma.nome }} |
+            Ano: {{ ano }} |
+            Mês: {{ mes }}
+        </div>
+        <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-arrow-left"></i> Alterar seleção
+        </a>
+    </div>
+    {% endif %}
+    <div id="form-errors" class="alert alert-danger d-none"></div>
+    <div id="mensagem-erro-ajax" class="alert alert-danger d-none"></div>
+    <form id="form-totais-atividades" method="post" autocomplete="off">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Atividade</th>
+                            <th>Qtd. Dias</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field in form %}
+                            <tr>
+                                <td>{{ field.label }}</td>
+                                <td>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors|join:", " }}</div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Confirmar e Avançar</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-totais-atividades');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        // Limpa mensagens anteriores
+        document.getElementById('form-errors').classList.add('d-none');
+        document.getElementById('mensagem-erro-ajax').classList.add('d-none');
+        const formData = new FormData(form);
+        fetch("{% url 'presencas:registrar_presenca_totais_atividades_ajax' %}", {
+            method: "POST",
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else if (data.errors) {
+                let errorDiv = document.getElementById('form-errors');
+                errorDiv.innerHTML = '';
+                for (const [field, errors] of Object.entries(data.errors)) {
+                    errorDiv.innerHTML += `<strong>${field}:</strong> ${errors.join('<br>')}<br>`;
+                }
+                errorDiv.classList.remove('d-none');
+            } else if (data.erro || (data.errors && data.errors.atividade)) {
+                let ajaxError = document.getElementById('mensagem-erro-ajax');
+                ajaxError.textContent = data.erro || (data.errors && data.errors.atividade ? data.errors.atividade[0] : '');
+                ajaxError.classList.remove('d-none');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

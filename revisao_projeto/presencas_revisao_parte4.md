@@ -1,0 +1,519 @@
+'''
+# Revisão da Funcionalidade: presencas
+
+## Arquivos forms.py:
+
+
+### Arquivo: presencas\templates\presencas\ritualisticas\relatorio_presencas_ritualistica.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Presenças{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Relatório de Presenças</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
+            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-primary me-2">
+                <i class="fas fa-list"></i> Lista de Presenças
+            </a>
+            <button onclick="window.print()" class="btn btn-success">
+                <i class="fas fa-print"></i> Imprimir Relatório
+            </button>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4 no-print">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="aluno" class="form-label">Aluno</label>
+                    <select name="aluno" id="aluno" class="form-select">
+                        <option value="">Todos os alunos</option>
+                        {% for aluno in alunos %}
+                        <option value="{{ aluno.cpf }}" {% if filtros.aluno == aluno.cpf %}selected{% endif %}>
+                            {{ aluno.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="turma" class="form-label">Turma</label>
+                    <select name="turma" id="turma" class="form-select">
+                        <option value="">Todas as turmas</option>
+                        {% for turma in turmas %}
+                        <option value="{{ turma.id }}" {% if filtros.turma == turma.id|stringformat:"s" %}selected{% endif %}>
+                            {{ turma.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ filtros.data_fim }}">
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <a href="{% url 'presencas:relatorio_presencas' %}" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Limpar Filtros
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Estatísticas Gerais -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total de Registros</h5>
+                    <p class="display-4">{{ total }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Presenças</h5>
+                    <p class="display-4">{{ presentes }}</p>
+                    <p>{{ taxa_presenca|floatformat:1 }}%</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card bg-danger text-white h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Ausências</h5>
+                    <p class="display-4">{{ ausentes }}</p>
+                    <p>{{ 100|subtract:taxa_presenca|floatformat:1 }}%</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Média de Presença</h5>
+                    <p class="display-4">{{ taxa_presenca|floatformat:1 }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Presença por Aluno (Top 10)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="alunosChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Presença por Turma</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="turmasChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Evolução de Presença por Data</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="datasChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabelas de Estatísticas -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Estatísticas por Aluno</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Presenças</th>
+                                    <th>Ausências</th>
+                                    <th>Total</th>
+                                    <th>Percentual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for aluno in alunos_stats %}
+                                <tr>
+                                    <td>{{ aluno.aluno__nome }}</td>
+                                    <td>{{ aluno.presentes }}</td>
+                                    <td>{{ aluno.ausentes }}</td>
+                                    <td>{{ aluno.total }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if aluno.percentual < 75 %}bg-danger{% elif aluno.percentual < 85 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                 role="progressbar" style="width: {{ aluno.percentual }}%;" 
+                                                 aria-valuenow="{{ aluno.percentual }}" aria-valuemin="0" aria-valuemax="100">
+                                                {{ aluno.percentual|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">Nenhum dado disponível</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Estatísticas por Turma</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Turma</th>
+                                    <th>Presenças</th>
+                                    <th>Ausências</th>
+                                    <th>Total</th>
+                                    <th>Percentual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for turma in turmas_stats %}
+                                <tr>
+                                    <td>{{ turma.atividade__turmas__nome }}</td>
+                                    <td>{{ turma.presentes }}</td>
+                                    <td>{{ turma.ausentes }}</td>
+                                    <td>{{ turma.total }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if turma.percentual < 75 %}bg-danger{% elif turma.percentual < 85 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                 role="progressbar" style="width: {{ turma.percentual }}%;" 
+                                                 aria-valuenow="{{ turma.percentual }}" aria-valuemin="0" aria-valuemax="100">
+                                                {{ turma.percentual|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">Nenhum dado disponível</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Estatísticas por Data</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Presenças</th>
+                                    <th>Ausências</th>
+                                    <th>Total</th>
+                                    <th>Percentual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in datas_stats %}
+                                <tr>
+                                    <td>{{ data.data|date:"d/m/Y" }}</td>
+                                    <td>{{ data.presentes }}</td>
+                                    <td>{{ data.ausentes }}</td>
+                                    <td>{{ data.total }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if data.percentual < 75 %}bg-danger{% elif data.percentual < 85 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                 role="progressbar" style="width: {{ data.percentual }}%;" 
+                                                 aria-valuenow="{{ data.percentual }}" aria-valuemin="0" aria-valuemax="100">
+                                                {{ data.percentual|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">Nenhum dado disponível</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de presença por aluno
+        var ctxAlunos = document.getElementById('alunosChart').getContext('2d');
+        new Chart(ctxAlunos, {
+            type: 'bar',
+            data: {
+                labels: {{ alunos_labels|safe }},
+                datasets: [{
+                    label: 'Percentual de Presença',
+                    data: {{ alunos_presenca|safe }},
+                    backgroundColor: function(context) {
+                        const value = context.dataset.data[context.dataIndex];
+                        return value < 75 ? 'rgba(220, 53, 69, 0.7)' : 
+                               value < 85 ? 'rgba(255, 193, 7, 0.7)' : 
+                               'rgba(40, 167, 69, 0.7)';
+                    },
+                    borderColor: function(context) {
+                        const value = context.dataset.data[context.dataIndex];
+                        return value < 75 ? 'rgba(220, 53, 69, 1)' : 
+                               value < 85 ? 'rgba(255, 193, 7, 1)' : 
+                               'rgba(40, 167, 69, 1)';
+                    },
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de presença por turma
+        var ctxTurmas = document.getElementById('turmasChart').getContext('2d');
+        new Chart(ctxTurmas, {
+            type: 'bar',
+            data: {
+                labels: {{ turmas_labels|safe }},
+                datasets: [{
+                    label: 'Percentual de Presença',
+                    data: {{ turmas_presenca|safe }},
+                    backgroundColor: function(context) {
+                        const value = context.dataset.data[context.dataIndex];
+                        return value < 75 ? 'rgba(220, 53, 69, 0.7)' : 
+                               value < 85 ? 'rgba(255, 193, 7, 0.7)' : 
+                               'rgba(40, 167, 69, 0.7)';
+                    },
+                    borderColor: function(context) {
+                        const value = context.dataset.data[context.dataIndex];
+                        return value < 75 ? 'rgba(220, 53, 69, 1)' : 
+                               value < 85 ? 'rgba(255, 193, 7, 1)' : 
+                               'rgba(40, 167, 69, 1)';
+                    },
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de evolução de presença por data
+        var ctxDatas = document.getElementById('datasChart').getContext('2d');
+        new Chart(ctxDatas, {
+            type: 'line',
+            data: {
+                labels: {{ datas_labels|safe }},
+                datasets: [{
+                    label: 'Percentual de Presença',
+                    data: {{ datas_presenca|safe }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.raw.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Inicializar Select2 para melhorar a experiência de seleção
+        if (typeof $.fn.select2 === 'function') {
+            $('#aluno').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Selecione um aluno',
+                allowClear: true
+            });
+            
+            $('#turma').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Selecione uma turma',
+                allowClear: true
+            });
+        }
+    });
+</script>
+
+<style type="text/css" media="print">
+    .no-print, .no-print * {
+        display: none !important;
+    }
+    
+    .container-fluid {
+        width: 100%;
+        padding: 0;
+    }
+    
+    .card {
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+        break-inside: avoid;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    @page {
+        size: landscape;
+        margin: 1cm;
+    }
+</style>
+{% endblock %}
+
+
+'''

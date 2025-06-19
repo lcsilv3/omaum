@@ -62,43 +62,6 @@ class PresencaRitualistica(PresencaBase):
         verbose_name = "Presença Ritualística"
         verbose_name_plural = "Presenças Ritualísticas"
         unique_together = ["aluno", "turma", "atividade", "data"]
-
-class ObservacaoPresenca(models.Model):
-    """
-    Observação por dia/atividade/aluno.
-    """
-    aluno = models.ForeignKey(
-        'alunos.Aluno',
-        on_delete=models.CASCADE,
-        verbose_name="Aluno"
-    )
-    turma = models.ForeignKey(
-        'turmas.Turma',
-        on_delete=models.CASCADE,
-        verbose_name="Turma"
-    )
-    data = models.DateField(verbose_name="Data")
-    atividade_academica = models.ForeignKey(
-        'AtividadeAcademica',
-        on_delete=models.CASCADE,
-        null=True, blank=True,
-        verbose_name="Atividade Acadêmica"
-    )
-    atividade_ritualistica = models.ForeignKey(
-        'AtividadeRitualistica',
-        on_delete=models.CASCADE,
-        null=True, blank=True,
-        verbose_name="Atividade Ritualística"
-    )
-    texto = models.TextField(verbose_name="Observação", blank=True, null=True)
-    registrado_por = models.CharField(max_length=100, default="Sistema", verbose_name="Registrado por")
-    data_registro = models.DateTimeField(default=timezone.now, verbose_name="Data de registro")
-
-    class Meta:
-        verbose_name = "Observação de Presença"
-        verbose_name_plural = "Observações de Presença"
-        ordering = ["-data", "aluno__nome"]
-
 class AtividadeBase(models.Model):
     TIPO_CHOICES = (
         ('academica', 'Acadêmica'),

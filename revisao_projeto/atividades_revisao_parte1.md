@@ -108,7 +108,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
         fields = [
             'nome', 'descricao', 'tipo_atividade', 'data_inicio', 'data_fim',
             'hora_inicio', 'hora_fim', 'local', 'responsavel', 'status',
-            'curso', 'turmas'
+            'curso', 'turmas', 'convocacao'
         ]
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
@@ -133,6 +133,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
             'status': forms.Select(attrs={'class': 'form-select'}),
             'curso': forms.Select(attrs={'class': 'form-select'}),
             'turmas': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'convocacao': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {
             'nome': 'Nome da Atividade',
@@ -147,6 +148,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
             'status': 'Status',
             'curso': 'Curso',
             'turmas': 'Turmas',
+            'convocacao': 'Convocação',
         }
         help_texts = {
             'data_fim': (
@@ -185,7 +187,7 @@ class AtividadeRitualisticaForm(forms.ModelForm):
         model = get_atividade_ritualistica_model()
         fields = [
             'nome', 'descricao', 'data', 'hora_inicio', 'hora_fim',
-            'local', 'responsavel', 'status', 'participantes'
+            'local', 'responsavel', 'status', 'participantes', 'convocacao'
         ]
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
@@ -207,6 +209,7 @@ class AtividadeRitualisticaForm(forms.ModelForm):
             'participantes': forms.SelectMultiple(
                 attrs={'class': 'form-control'}
             ),
+            'convocacao': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {
             'nome': 'Nome da Atividade',
@@ -218,6 +221,7 @@ class AtividadeRitualisticaForm(forms.ModelForm):
             'responsavel': 'Responsável',
             'status': 'Status',
             'participantes': 'Participantes',
+            'convocacao': 'Convocação',
         }
         help_texts = {
             'hora_fim': (
@@ -376,32 +380,32 @@ def ajax_atividades_filtradas(request):
 
 python
 from django.urls import path
-from . import views
+from . import views_ext
 from . import views_api
-from .views.relatorios_academicos import relatorio_atividades_academicas
-from .views.relatorios_ritualisticos import relatorio_atividades_ritualisticas
-from .views import importacao
+from .views_ext.relatorios_academicos import relatorio_atividades_academicas
+from .views_ext.relatorios_ritualisticos import relatorio_atividades_ritualisticas
+from .views_ext import importacao
 
 app_name = "atividades"
 
 urlpatterns = [
     # Atividades Acadêmicas
-    path("academicas/", views.academicas.listar_atividades_academicas, name="listar_atividades_academicas"),
-    path("academicas/criar/", views.academicas.criar_atividade_academica, name="criar_atividade_academica"),
-    path("academicas/<int:id>/editar/", views.academicas.editar_atividade_academica, name="editar_atividade_academica"),
-    path("academicas/<int:id>/detalhes/", views.academicas.detalhar_atividade_academica, name="detalhar_atividade_academica"),
-    path("academicas/<int:id>/excluir/", views.academicas.excluir_atividade_academica, name="excluir_atividade_academica"),
-    path("academicas/<int:id>/copiar/", views.academicas.copiar_atividade_academica, name="copiar_atividade_academica"),
+    path("academicas/", views_ext.academicas.listar_atividades_academicas, name="listar_atividades_academicas"),
+    path("academicas/criar/", views_ext.academicas.criar_atividade_academica, name="criar_atividade_academica"),
+    path("academicas/<int:id>/editar/", views_ext.academicas.editar_atividade_academica, name="editar_atividade_academica"),
+    path("academicas/<int:id>/detalhes/", views_ext.academicas.detalhar_atividade_academica, name="detalhar_atividade_academica"),
+    path("academicas/<int:id>/excluir/", views_ext.academicas.excluir_atividade_academica, name="excluir_atividade_academica"),
+    path("academicas/<int:id>/copiar/", views_ext.academicas.copiar_atividade_academica, name="copiar_atividade_academica"),
 
     # AJAX: turmas por curso (listagem)
-    path("ajax/turmas-por-curso/", views.academicas.ajax_turmas_por_curso, name="ajax_turmas_por_curso"),
+    path("ajax/turmas-por-curso/", views_ext.academicas.ajax_turmas_por_curso, name="ajax_turmas_por_curso"),
     # AJAX: atividades filtradas (listagem)
-    path("ajax/atividades-filtradas/", views.academicas.ajax_atividades_filtradas, name="ajax_atividades_filtradas"),
+    path("ajax/atividades-filtradas/", views_ext.academicas.ajax_atividades_filtradas, name="ajax_atividades_filtradas"),
 
     # Relatório de atividades por curso/turma
     path(
         "relatorio/curso-turma/",
-        views.relatorios.relatorio_atividades_curso_turma,
+        views_ext.relatorios.relatorio_atividades_curso_turma,
         name="relatorio_atividades"
     ),
     # Relatório de atividades acadêmicas
@@ -417,27 +421,27 @@ urlpatterns = [
         name="relatorio_atividades_ritualisticas"
     ),
     # AJAX: turmas por curso (relatório)
-    path("ajax/relatorio/turmas-por-curso/", views.relatorios.ajax_turmas_por_curso_relatorio, name="ajax_turmas_por_curso_relatorio"),
+    path("ajax/relatorio/turmas-por-curso/", views_ext.relatorios.ajax_turmas_por_curso_relatorio, name="ajax_turmas_por_curso_relatorio"),
     # AJAX: atividades filtradas (relatório)
-    path("ajax/relatorio/atividades-filtradas/", views.relatorios.ajax_atividades_filtradas_relatorio, name="ajax_atividades_filtradas_relatorio"),
+    path("ajax/relatorio/atividades-filtradas/", views_ext.relatorios.ajax_atividades_filtradas_relatorio, name="ajax_atividades_filtradas_relatorio"),
 
     # Dashboard de atividades
-    path("dashboard/", views.dashboard.dashboard_atividades, name="dashboard_atividades"),
+    path("dashboard/", views_ext.dashboard.dashboard_atividades, name="dashboard_atividades"),
     # AJAX: turmas por curso (dashboard)
-    path("ajax/dashboard/turmas-por-curso/", views.dashboard.ajax_turmas_por_curso_dashboard, name="ajax_turmas_por_curso_dashboard"),
+    path("ajax/dashboard/turmas-por-curso/", views_ext.dashboard.ajax_turmas_por_curso_dashboard, name="ajax_turmas_por_curso_dashboard"),
     # AJAX: dashboard filtrado
-    path("ajax/dashboard/conteudo/", views.dashboard.ajax_dashboard_conteudo, name="ajax_dashboard_conteudo"),
+    path("ajax/dashboard/conteudo/", views_ext.dashboard.ajax_dashboard_conteudo, name="ajax_dashboard_conteudo"),
 
     # Atividades Ritualísticas
-    path("ritualisticas/", views.ritualisticas.listar_atividades_ritualisticas, name="listar_atividades_ritualisticas"),
-    path("ritualisticas/criar/", views.ritualisticas.criar_atividade_ritualistica, name="criar_atividade_ritualistica"),
-    path("ritualisticas/<int:id>/editar/", views.ritualisticas.editar_atividade_ritualistica, name="editar_atividade_ritualistica"),
-    path("ritualisticas/<int:id>/detalhes/", views.ritualisticas.detalhar_atividade_ritualistica, name="detalhar_atividade_ritualistica"),
-    path("ritualisticas/<int:id>/excluir/", views.ritualisticas.excluir_atividade_ritualistica, name="excluir_atividade_ritualistica"),
-    path("ritualisticas/<int:id>/copiar/", views.ritualisticas.copiar_atividade_ritualistica, name="copiar_atividade_ritualistica"),
+    path("ritualisticas/", views_ext.ritualisticas.listar_atividades_ritualisticas, name="listar_atividades_ritualisticas"),
+    path("ritualisticas/criar/", views_ext.ritualisticas.criar_atividade_ritualistica, name="criar_atividade_ritualistica"),
+    path("ritualisticas/<int:id>/editar/", views_ext.ritualisticas.editar_atividade_ritualistica, name="editar_atividade_ritualistica"),
+    path("ritualisticas/<int:id>/detalhes/", views_ext.ritualisticas.detalhar_atividade_ritualistica, name="detalhar_atividade_ritualistica"),
+    path("ritualisticas/<int:id>/excluir/", views_ext.ritualisticas.excluir_atividade_ritualistica, name="excluir_atividade_ritualistica"),
+    path("ritualisticas/<int:id>/copiar/", views_ext.ritualisticas.copiar_atividade_ritualistica, name="copiar_atividade_ritualistica"),
 
     # Calendário de Atividades
-    path("calendario_atividades/", views.calendario.calendario_atividades, name="calendario_atividades"),
+    path("calendario_atividades/", views_ext.calendario.calendario_atividades, name="calendario_atividades"),
 
     # API
     path("api/filtrar-atividades/", views_api.api_filtrar_atividades, name="api_filtrar_atividades"),
@@ -479,12 +483,12 @@ class PresencaBase(models.Model):
     Modelo abstrato para presenças (campos comuns).
     """
     aluno = models.ForeignKey(
-        get_aluno_model(),
+        'alunos.Aluno',
         on_delete=models.CASCADE,
         verbose_name="Aluno"
     )
     turma = models.ForeignKey(
-        get_turma_model(),
+        'turmas.Turma',
         on_delete=models.CASCADE,
         verbose_name="Turma"
     )
@@ -526,51 +530,135 @@ class PresencaRitualistica(PresencaBase):
         verbose_name = "Presença Ritualística"
         verbose_name_plural = "Presenças Ritualísticas"
         unique_together = ["aluno", "turma", "atividade", "data"]
-
-class ObservacaoPresenca(models.Model):
-    """
-    Observação por dia/atividade/aluno.
-    """
-    aluno = models.ForeignKey(
-        get_aluno_model(),
-        on_delete=models.CASCADE,
-        verbose_name="Aluno"
+class AtividadeBase(models.Model):
+    TIPO_CHOICES = (
+        ('academica', 'Acadêmica'),
+        ('ritualistica', 'Ritualística'),
     )
-    turma = models.ForeignKey(
-        get_turma_model(),
-        on_delete=models.CASCADE,
-        verbose_name="Turma"
-    )
-    data = models.DateField(verbose_name="Data")
-    atividade_academica = models.ForeignKey(
-        'AtividadeAcademica',
-        on_delete=models.CASCADE,
-        null=True, blank=True,
-        verbose_name="Atividade Acadêmica"
-    )
-    atividade_ritualistica = models.ForeignKey(
-        'AtividadeRitualistica',
-        on_delete=models.CASCADE,
-        null=True, blank=True,
-        verbose_name="Atividade Ritualística"
-    )
-    texto = models.TextField(verbose_name="Observação", blank=True, null=True)
-    registrado_por = models.CharField(max_length=100, default="Sistema", verbose_name="Registrado por")
-    data_registro = models.DateTimeField(default=timezone.now, verbose_name="Data de registro")
+    nome = models.CharField(max_length=255)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='academica')  # <-- Adicione default aqui
+    # ...outros campos comuns...
 
     class Meta:
-        verbose_name = "Observação de Presença"
-        verbose_name_plural = "Observações de Presença"
-        ordering = ["-data", "aluno__nome"]
+        abstract = True
 
-# Remover/refatorar o modelo antigo Presenca para evitar duplicidade.
+class AtividadeAcademica(AtividadeBase):
+    """
+    Modelo para atividades acadêmicas como aulas, palestras, workshops, etc.
+    """
+    TIPO_CHOICES = [
+        ('AULA', 'Aula'),
+        ('PALESTRA', 'Palestra'),
+        ('WORKSHOP', 'Workshop'),
+        ('SEMINARIO', 'Seminário'),
+        ('OUTRO', 'Outro'),
+    ]
+
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('CONFIRMADA', 'Confirmada'),
+        ('REALIZADA', 'Realizada'),
+        ('CANCELADA', 'Cancelada'),
+    ]
+
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(blank=True, null=True)
+    tipo_atividade = models.CharField(
+        max_length=20,
+        choices=TIPO_CHOICES,
+        default='AULA'
+    )
+    data_inicio = models.DateField()
+    data_fim = models.DateField(blank=True, null=True)
+    hora_inicio = models.TimeField()
+    hora_fim = models.TimeField(blank=True, null=True)
+    local = models.CharField(max_length=100, blank=True, null=True)
+    responsavel = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='PENDENTE'
+    )
+    convocacao = models.BooleanField(default=False, verbose_name="Convocação")
+
+    # Relacionamentos
+    curso = models.ForeignKey(
+        'cursos.Curso',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='atividades'
+    )
+    turmas = models.ManyToManyField(
+        'turmas.Turma',
+        blank=True,
+        related_name='atividades'
+    )
+
+    # Metadados
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.nome
+
+    class Meta:
+        verbose_name = 'Atividade Acadêmica'
+        verbose_name_plural = 'Atividades Acadêmicas'
+        ordering = ['-data_inicio', 'hora_inicio']
+
+
+class AtividadeRitualistica(AtividadeBase):
+    """
+    Modelo para atividades ritualísticas.
+    """
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('CONFIRMADA', 'Confirmada'),
+        ('REALIZADA', 'Realizada'),
+        ('CANCELADA', 'Cancelada'),
+    ]
+
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(blank=True, null=True)
+    data = models.DateField()
+    hora_inicio = models.TimeField()
+    hora_fim = models.TimeField(blank=True, null=True)
+    local = models.CharField(max_length=100, blank=True, null=True)
+    responsavel = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='PENDENTE'
+    )
+    convocacao = models.BooleanField(default=False, verbose_name="Convocação")
+
+    # Relacionamentos
+    participantes = models.ManyToManyField(
+        'alunos.Aluno',
+        blank=True,
+        related_name='atividades_ritualisticas'
+    )
+
+    # Metadados
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.nome
+
+    class Meta:
+        verbose_name = 'Atividade Ritualística'
+        verbose_name_plural = 'Atividades Ritualísticas'
+        ordering = ['-data', 'hora_inicio']
+
 
 
 
 ## Arquivos de Views Modulares:
 
 
-### Arquivo: atividades\views\__init__.py
+### Arquivo: atividades\views_ext\__init__.py
 
 python
 from .academicas import (
@@ -621,7 +709,7 @@ from .calendario import (
 
 
 
-### Arquivo: atividades\views\academicas.py
+### Arquivo: atividades\views_ext\academicas.py
 
 python
 import logging
@@ -667,8 +755,19 @@ def listar_atividades_academicas(request):
     if query:
         atividades = atividades.filter(nome__icontains=query)
 
+    # Adicionando paginação
+    paginator = Paginator(atividades.distinct(), 15)  # 15 por página
+    page = request.GET.get('page')
+    try:
+        atividades_paginadas = paginator.page(page)
+    except PageNotAnInteger:
+        atividades_paginadas = paginator.page(1)
+    except EmptyPage:
+        atividades_paginadas = paginator.page(paginator.num_pages)
+
     context = {
-        'atividades': atividades.distinct(),
+        'atividades': atividades_paginadas,
+        'page_obj': atividades_paginadas,
         'cursos': cursos,
         'turmas': turmas,
         'curso_selecionado': curso_id,
@@ -1059,7 +1158,7 @@ def api_get_cursos_por_turma(request):
 
 
 
-### Arquivo: atividades\views\calendario.py
+### Arquivo: atividades\views_ext\calendario.py
 
 python
 import logging
@@ -1230,7 +1329,7 @@ def api_detalhe_evento(request, evento_id):
 
 
 
-### Arquivo: atividades\views\dashboard.py
+### Arquivo: atividades\views_ext\dashboard.py
 
 python
 from django.shortcuts import render
@@ -1311,7 +1410,7 @@ def ajax_dashboard_conteudo(request):
 
 
 
-### Arquivo: atividades\views\importacao.py
+### Arquivo: atividades\views_ext\importacao.py
 
 python
 from django.shortcuts import render, redirect
@@ -1449,7 +1548,7 @@ def importar_atividades_ritualisticas(request):
 
 
 
-### Arquivo: atividades\views\relatorios.py
+### Arquivo: atividades\views_ext\relatorios.py
 
 python
 import logging
@@ -1843,7 +1942,7 @@ def ajax_atividades_filtradas_relatorio(request):
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from ..models import AtividadeRitualistica
-from ..views.utils import get_model_class
+from ..views_ext.utils import get_model_class
 
 @login_required
 def relatorio_atividades_ritualisticas(request):
@@ -1872,13 +1971,13 @@ def relatorio_atividades_ritualisticas(request):
 
 
 
-### Arquivo: atividades\views\relatorios_academicos.py
+### Arquivo: atividades\views_ext\relatorios_academicos.py
 
 python
 import logging
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from ..views.utils import get_cursos, get_turmas, get_atividades_academicas
+from ..views_ext.utils import get_cursos, get_turmas, get_atividades_academicas
 
 logger = logging.getLogger(__name__)
 
@@ -1906,13 +2005,13 @@ def relatorio_atividades_academicas(request):
 
 
 
-### Arquivo: atividades\views\relatorios_ritualisticos.py
+### Arquivo: atividades\views_ext\relatorios_ritualisticos.py
 
 python
 import logging
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from ..views.utils import get_model_class, get_turma_model
+from ..views_ext.utils import get_model_class, get_turma_model
 
 logger = logging.getLogger(__name__)
 
@@ -1944,7 +2043,7 @@ def relatorio_atividades_ritualisticas(request):
 
 
 
-### Arquivo: atividades\views\ritualisticas.py
+### Arquivo: atividades\views_ext\ritualisticas.py
 
 python
 import logging
@@ -2217,7 +2316,7 @@ def copiar_atividade_ritualistica(request, id):
 
 
 
-### Arquivo: atividades\views\utils.py
+### Arquivo: atividades\views_ext\utils.py
 
 python
 import logging

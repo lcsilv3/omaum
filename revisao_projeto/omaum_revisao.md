@@ -588,7 +588,9 @@ html
                                 <ul class="dropdown-menu" aria-labelledby="frequenciaDropdown">
                                     <li><a class="dropdown-item" href="{% url 'atividades:listar_atividades_academicas' %}">Atividades Acadêmicas</a></li>
                                     <li><a class="dropdown-item" href="{% url 'atividades:listar_atividades_ritualisticas' %}">Atividades Ritualísticas</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'presencas:listar_presencas' %}">Presenças</a></li>
+                                    <!-- Corrigido: usar uma view existente de presenças -->
+                                    <li><a class="dropdown-item" href="{% url 'presencas:listar_presencas_academicas' %}">Presenças Acadêmicas</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'presencas:listar_presencas_ritualisticas' %}">Presenças Ritualísticas</a></li>
                                     <li><a class="dropdown-item" href="{% url 'frequencias:listar_frequencias' %}">Frequências</a></li>
                                 </ul>
                             </li>
@@ -843,8 +845,12 @@ html
                                 <i class="fas fa-clipboard-check text-secondary"></i> Presenças
                             </h5>
                             <p class="card-text">Controle de presenças em atividades e aulas.</p>
-                            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
-                                <i class="fas fa-clipboard-check"></i> Acessar Presenças
+                            <!-- Corrigido: usar rotas válidas -->
+                            <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary mb-2">
+                                <i class="fas fa-clipboard-check"></i> Presenças Acadêmicas
+                            </a>
+                            <a href="{% url 'presencas:listar_presencas_ritualisticas' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-clipboard-check"></i> Presenças Ritualísticas
                             </a>
                         </div>
                     </div>
