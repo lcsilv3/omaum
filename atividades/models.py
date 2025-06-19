@@ -62,9 +62,6 @@ class PresencaRitualistica(PresencaBase):
         verbose_name = "Presença Ritualística"
         verbose_name_plural = "Presenças Ritualísticas"
         unique_together = ["aluno", "turma", "atividade", "data"]
-<<<<<<< HEAD
-=======
-
 class ObservacaoPresenca(models.Model):
     """
     Observação por dia/atividade/aluno.
@@ -100,8 +97,6 @@ class ObservacaoPresenca(models.Model):
         verbose_name = "Observação de Presença"
         verbose_name_plural = "Observações de Presença"
         ordering = ["-data", "aluno__nome"]
-
->>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 class AtividadeBase(models.Model):
     TIPO_CHOICES = (
         ('academica', 'Acadêmica'),

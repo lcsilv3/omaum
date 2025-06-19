@@ -185,12 +185,7 @@ def registrar_presenca_academica(request):
         'atividades': atividades,
         'data_hoje': timezone.now().date()
     }
-<<<<<<< HEAD
     return render(request, 'presencas/academicas/registrar_presenca_academica.html', context)
-=======
-    return render(request, 'presencas/registrar_presenca_academica.html', context)
->>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
-
 @login_required
 def registrar_presenca_ritualistica(request):
     Presenca = get_model_ritualistica()
