@@ -17,7 +17,15 @@ urlpatterns = [
     path("academicas/excluir/<int:pk>/", views.excluir_presenca_academica, name="excluir_presenca_academica"),
     path("academicas/detalhar/<int:pk>/", views.detalhar_presenca_academica, name="detalhar_presenca_academica"),
     path("academicas/exportar/", views.exportar_presencas_academicas, name="exportar_presencas_academicas"),
+<<<<<<< HEAD
     path("academicas/importar/", views.importar_presencas_academicas, name="importar_presencas_academicas"),
+=======
+    path(
+        "academicas/importar/",
+        views.importar_presencas_academicas,
+        name="importar_presencas_academicas"
+    ),
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
     # Presenças ritualísticas
     path("ritualisticas/", views.listar_presencas_ritualisticas, name="listar_presencas_ritualisticas"),
@@ -26,6 +34,7 @@ urlpatterns = [
     path("ritualisticas/excluir/<int:pk>/", views.excluir_presenca_ritualistica, name="excluir_presenca_ritualistica"),
     path("ritualisticas/detalhar/<int:pk>/", views.detalhar_presenca_ritualistica, name="detalhar_presenca_ritualistica"),
     path("ritualisticas/exportar/", views.exportar_presencas_ritualisticas, name="exportar_presencas_ritualisticas"),
+<<<<<<< HEAD
     path("ritualisticas/importar/", views.importar_presencas_ritualisticas, name="importar_presencas_ritualisticas"),
 
     # Observações de presença
@@ -61,4 +70,19 @@ urlpatterns = [
 
     # Limites do calendário - AJAX
     path('registrar-presenca/limites-calendario/', registro_presenca_views.obter_limites_calendario_ajax, name='registrar_presenca_limites_calendario_ajax'),
+=======
+    path(
+        "ritualisticas/importar/",
+        views.importar_presencas_ritualisticas,
+        name="importar_presencas_ritualisticas"
+    ),
+
+    # Observações de presença
+    path("observacoes/", views.listar_observacoes_presenca, name="listar_observacoes_presenca"),
+    
+    # Outras rotas dos submódulos, se necessário
+    path("multiplas/", registrar_presencas_multiplas, name="registrar_presencas_multiplas"),
+    path("multiplas/formulario/", formulario_presencas_multiplas, name="formulario_presencas_multiplas"),
+    # etc.
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 ]

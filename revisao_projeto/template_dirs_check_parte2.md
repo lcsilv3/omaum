@@ -650,6 +650,7 @@ class KeyUsageConstraints(ConfigurableMixin):
   - pagamentos\pdf\pagamentos_pdf.html
 - presencas\templates
   Arquivos:
+<<<<<<< HEAD
   - presencas\registrar_presenca_alunos.html
   - presencas\registrar_presenca_confirmar.html
   - presencas\registrar_presenca_dados_basicos.html
@@ -659,6 +660,11 @@ class KeyUsageConstraints(ConfigurableMixin):
   - presencas\academicas\editar_presenca_academica.html
   - presencas\academicas\excluir_presenca_academica.html
   - presencas\academicas\exportar_presencas_academicas.html
+=======
+  - presencas\academicas\detalhar_presenca_academica.html
+  - presencas\academicas\editar_presenca_academica.html
+  - presencas\academicas\excluir_presenca_academica.html
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
   - presencas\academicas\filtro_presencas_academica.html
   - presencas\academicas\formulario_presencas_multiplas_academica.html
   - presencas\academicas\formulario_presencas_multiplas_academica_passo1.html
@@ -667,7 +673,11 @@ class KeyUsageConstraints(ConfigurableMixin):
   - presencas\academicas\historico_presencas_academica.html
   - presencas\academicas\importar_presencas_academica.html
   - presencas\academicas\listar_observacoes_presenca_academica.html
+<<<<<<< HEAD
   - presencas\academicas\listar_presencas_academicas.html
+=======
+  - presencas\academicas\listar_presencas_academica.html
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
   - presencas\academicas\registrar_presencas_multiplas_academica.html
   - presencas\academicas\registrar_presenca_academica.html
   - presencas\academicas\registrar_presenca_em_massa_academica.html
@@ -675,7 +685,10 @@ class KeyUsageConstraints(ConfigurableMixin):
   - presencas\ritualisticas\detalhar_presenca_ritualistica.html
   - presencas\ritualisticas\editar_presenca_ritualistica.html
   - presencas\ritualisticas\excluir_presenca_ritualistica.html
+<<<<<<< HEAD
   - presencas\ritualisticas\exportar_presencas_ritualisticas.html
+=======
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
   - presencas\ritualisticas\filtro_presencas_ritualistica.html
   - presencas\ritualisticas\formulario_presencas_multiplas_ritualistica.html
   - presencas\ritualisticas\formulario_presencas_multiplas_ritualistica_passo1.html
@@ -683,9 +696,14 @@ class KeyUsageConstraints(ConfigurableMixin):
   - presencas\ritualisticas\formulario_presenca_ritualistica.html
   - presencas\ritualisticas\historico_presencas_ritualistica.html
   - presencas\ritualisticas\importar_presencas_ritualistica.html
+<<<<<<< HEAD
   - presencas\ritualisticas\importar_presencas_ritualisticas.html
   - presencas\ritualisticas\listar_observacoes_presenca_ritualistica.html
   - presencas\ritualisticas\listar_presencas_ritualisticas.html
+=======
+  - presencas\ritualisticas\listar_observacoes_presenca_ritualistica.html
+  - presencas\ritualisticas\listar_presencas_ritualistica.html
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
   - presencas\ritualisticas\registrar_presencas_multiplas_ritualistica.html
   - presencas\ritualisticas\registrar_presenca_em_massa_ritualistica.html
   - presencas\ritualisticas\registrar_presenca_ritualistica.html

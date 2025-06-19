@@ -120,7 +120,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from importlib import import_module
 from django.utils import timezone
+<<<<<<< HEAD
 from django.http import JsonResponse, HttpResponse
+=======
+from django.http import JsonResponse
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 import logging
 from datetime import datetime
 
@@ -196,8 +200,12 @@ def listar_presencas_academicas(request):
             'data_fim': data_fim
         }
     }
+<<<<<<< HEAD
     # Corrigido o caminho do template:
     return render(request, 'presencas/academicas/listar_presencas_academicas.html', context)
+=======
+    return render(request, 'presencas/listar_presencas_academicas.html', context)
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
 @login_required
 def listar_presencas_ritualisticas(request):
@@ -241,8 +249,12 @@ def listar_presencas_ritualisticas(request):
             'data_fim': data_fim
         }
     }
+<<<<<<< HEAD
     # Corrigido o caminho do template:
     return render(request, 'presencas/ritualisticas/listar_presencas_ritualisticas.html', context)
+=======
+    return render(request, 'presencas/listar_presencas_ritualisticas.html', context)
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
 @login_required
 def registrar_presenca_academica(request):
@@ -302,7 +314,11 @@ def registrar_presenca_academica(request):
         'atividades': atividades,
         'data_hoje': timezone.now().date()
     }
+<<<<<<< HEAD
     return render(request, 'presencas/academicas/registrar_presenca_academica.html', context)
+=======
+    return render(request, 'presencas/registrar_presenca_academica.html', context)
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
 @login_required
 def registrar_presenca_ritualistica(request):
@@ -364,6 +380,7 @@ def registrar_presenca_ritualistica(request):
     }
     return render(request, 'presencas/registrar_presenca_ritualistica.html', context)
 
+<<<<<<< HEAD
 @login_required
 def editar_presenca_academica(request, pk):
     Presenca = get_model_academica()
@@ -375,8 +392,14 @@ def editar_presenca_academica(request, pk):
         messages.success(request, 'Presença acadêmica atualizada com sucesso.')
         return redirect('presencas:listar_presencas_academicas')
     return render(request, 'presencas/editar_presenca_academica.html', {'presenca': presenca})
+=======
+# As demais views (editar, excluir, detalhar, relatorio, etc.) devem ser duplicadas/adaptadas para cada tipo de presença,
+# seguindo o mesmo padrão acima, usando o modelo correto e os templates correspondentes.
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
+# Exemplo para ObservacaoPresenca:
 @login_required
+<<<<<<< HEAD
 def excluir_presenca_academica(request, pk):
     Presenca = get_model_academica()
     presenca = get_object_or_404(Presenca, pk=pk)
@@ -422,10 +445,13 @@ def detalhar_presenca_ritualistica(request, pk):
 
 # Exemplo para ObservacaoPresenca:
 @login_required
+=======
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 def listar_observacoes_presenca(request):
     ObservacaoPresenca = get_model_observacao()
     observacoes = ObservacaoPresenca.objects.select_related('aluno', 'turma', 'atividade_academica', 'atividade_ritualistica')
     return render(request, 'presencas/listar_observacoes_presenca.html', {'observacoes': observacoes})
+<<<<<<< HEAD
 
 @login_required
 def exportar_presencas_academicas(request):
@@ -446,6 +472,8 @@ def importar_presencas_academicas(request):
 def importar_presencas_ritualisticas(request):
     # Exemplo simples: renderiza um template de importação
     return render(request, 'presencas/ritualisticas/importar_presencas_ritualisticas.html')
+=======
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
 
 ## Arquivos urls.py:
@@ -472,8 +500,11 @@ urlpatterns = [
     path("academicas/editar/<int:pk>/", views.editar_presenca_academica, name="editar_presenca_academica"),
     path("academicas/excluir/<int:pk>/", views.excluir_presenca_academica, name="excluir_presenca_academica"),
     path("academicas/detalhar/<int:pk>/", views.detalhar_presenca_academica, name="detalhar_presenca_academica"),
+<<<<<<< HEAD
     path("academicas/exportar/", views.exportar_presencas_academicas, name="exportar_presencas_academicas"),
     path("academicas/importar/", views.importar_presencas_academicas, name="importar_presencas_academicas"),
+=======
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
     # Presenças ritualísticas
     path("ritualisticas/", views.listar_presencas_ritualisticas, name="listar_presencas_ritualisticas"),
@@ -481,6 +512,7 @@ urlpatterns = [
     path("ritualisticas/editar/<int:pk>/", views.editar_presenca_ritualistica, name="editar_presenca_ritualistica"),
     path("ritualisticas/excluir/<int:pk>/", views.excluir_presenca_ritualistica, name="excluir_presenca_ritualistica"),
     path("ritualisticas/detalhar/<int:pk>/", views.detalhar_presenca_ritualistica, name="detalhar_presenca_ritualistica"),
+<<<<<<< HEAD
     path("ritualisticas/exportar/", views.exportar_presencas_ritualisticas, name="exportar_presencas_ritualisticas"),
     path("ritualisticas/importar/", views.importar_presencas_ritualisticas, name="importar_presencas_ritualisticas"),
 
@@ -517,6 +549,11 @@ urlpatterns = [
 
     # Limites do calendário - AJAX
     path('registrar-presenca/limites-calendario/', registro_presenca_views.obter_limites_calendario_ajax, name='registrar_presenca_limites_calendario_ajax'),
+=======
+
+    # Observações de presença
+    path("observacoes/", views.listar_observacoes_presenca, name="listar_observacoes_presenca"),
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 ]
 
 
@@ -676,7 +713,11 @@ class ObservacaoPresenca(models.Model):
 ## Arquivos de Views Modulares:
 
 
+<<<<<<< HEAD
 ### Arquivo: presencas\views_ext\__init__.py
+=======
+### Arquivo: presencas\views\__init__.py
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
 python
 from .listagem import listar_presencas
@@ -693,6 +734,7 @@ __all__ = [
 
 
 
+<<<<<<< HEAD
 ### Arquivo: presencas\views_ext\academicas.py
 
 python
@@ -746,6 +788,9 @@ def listar_presencas_academicas(request):
 
 
 ### Arquivo: presencas\views_ext\atividade.py
+=======
+### Arquivo: presencas\views\atividade.py
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
 python
 from django.shortcuts import render, redirect, get_object_or_404
@@ -850,7 +895,11 @@ def editar_presenca(request, presenca_id):
 
 
 
+<<<<<<< HEAD
 ### Arquivo: presencas\views_ext\listagem.py
+=======
+### Arquivo: presencas\views\listagem.py
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
 python
 from django.shortcuts import render
@@ -934,7 +983,11 @@ def listar_presencas(request):
 
 
 
+<<<<<<< HEAD
 ### Arquivo: presencas\views_ext\multiplas.py
+=======
+### Arquivo: presencas\views\multiplas.py
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 
 python
 from django.shortcuts import render, redirect
@@ -1567,6 +1620,7 @@ html
 
 
 
+<<<<<<< HEAD
 ### Arquivo: presencas\templates\presencas\academicas\exportar_presencas_academicas.html
 
 html
@@ -1584,6 +1638,8 @@ html
 
 
 
+=======
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 ### Arquivo: presencas\templates\presencas\academicas\filtro_presencas_academica.html
 
 html
@@ -2482,4 +2538,511 @@ html
                                         <label class="btn btn-outline-success
 
 
+<<<<<<< HEAD
+=======
+
+### Arquivo: presencas\templates\presencas\academicas\historico_presencas_academica.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Histórico de Presenças - {{ aluno.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Histórico de Presenças</h1>
+        <div>
+            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary me-2">
+                <i class="fas fa-user"></i> Perfil do Aluno
+            </a>
+            <a href="{% url 'presencas:exportar_historico' aluno.cpf %}" class="btn btn-success">
+                <i class="fas fa-file-csv"></i> Exportar CSV
+            </a>
+        </div>
+    </div>
+    
+    <!-- Informações do aluno -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Informações do Aluno</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                {% if aluno.foto %}
+                <img src="{{ aluno.foto.url }}" alt="{{ aluno.nome }}" 
+                     class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
+                {% else %}
+                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+                     style="width: 60px; height: 60px; color: white; font-size: 1.5rem;">
+                    {{ aluno.nome|first|upper }}
+                </div>
+                {% endif %}
+                <div>
+                    <h5 class="mb-1">{{ aluno.nome }}</h5>
+                    <p class="mb-0">{{ aluno.email }}</p>
+                    <p class="mb-0">CPF: {{ aluno.cpf }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="atividade" class="form-label">Atividade</label>
+                    <select class="form-select" id="atividade" name="atividade">
+                        <option value="">Todas as atividades</option>
+                        {% for atividade in atividades %}
+                        <option value="{{ atividade.id }}" {% if filtros.atividade == atividade.id|stringformat:"s" %}selected{% endif %}>
+                            {{ atividade.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio }}">
+                </div>
+                
+                <div class="col-md-4">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ filtros.data_fim }}">
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <a href="{% url 'presencas:historico_presencas' aluno.cpf %}" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Limpar Filtros
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Estatísticas</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Total de Presenças</h5>
+                            <p class="card-text display-4">{{ total_presencas }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Total de Faltas</h5>
+                            <p class="card-text display-4">{{ total_faltas }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Percentual de Presença</h5>
+                            <p class="card-text display-4">{{ percentual_presenca|floatformat:1 }}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de presenças -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Registros de Presença</h5>
+        </div>
+        <div class="card-body">
+            {% if presencas %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Data</th>
+                            <th>Atividade</th>
+                            <th>Turma</th>
+                            <th>Status</th>
+                            <th>Justificativa</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for presenca in presencas %}
+                        <tr>
+                            <td>{{ presenca.data|date:"d/m/Y" }}</td>
+                            <td>{{ presenca.atividade.nome }}</td>
+                            <td>{{ presenca.atividade.turma.nome }}</td>
+                            <td>
+                                {% if presenca.presente %}
+                                <span class="badge bg-success">Presente</span>
+                                {% else %}
+                                <span class="badge bg-danger">Ausente</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ presenca.justificativa|default:"-"|truncatechars:50 }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{% url 'presencas:detalhar_presenca' presenca.id %}" class="btn btn-sm btn-info" title="Ver detalhes da presença">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'presencas:editar_presenca' presenca.id %}" class="btn btn-sm btn-warning" title="Editar presença">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Não há registros de presença para este aluno com os filtros selecionados.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: presencas\templates\presencas\academicas\importar_presencas_academica.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Importar Presenças{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Importar Presenças</h1>
+    
+    <div class="card">
+        <div class="card-body">
+            <p class="mb-3">Faça upload de um arquivo CSV contendo os dados de presenças.</p>
+            
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="csv_file" class="form-label">Arquivo CSV</label>
+                    <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
+                    <div class="form-text">O arquivo deve ter cabeçalhos: Aluno (CPF), Turma, Data, Presente, Justificativa</div>
+                </div>
+                
+                <div class="d-flex">
+                    <button type="submit" class="btn btn-primary me-2">Importar</button>
+                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="mt-3">
+        <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-link">Voltar para a lista de presenças</a>
+    </div>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: presencas\templates\presencas\academicas\listar_observacoes_presenca_academica.html
+
+html
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Detalhes da Presença</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Informações do Registro</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Aluno:</strong> {{ presenca.aluno.nome }}</p>
+                    <p><strong>Turma:</strong> {{ presenca.turma.nome }}</p>
+                    <p><strong>Data:</strong> {{ presenca.data|date:"d/m/Y" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Status:</strong> {% if presenca.presente %}Presente{% else %}Ausente{% endif %}</p>
+                    <p><strong>Registrado por:</strong> {{ presenca.registrado_por.username }}</p>
+                    <p><strong>Data de Registro:</strong> {{ presenca.data_registro|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+
+            {% if presenca.justificativa %}
+            <div class="mt-3">
+                <h6>Justificativa:</h6>
+                <div class="p-3 bg-light rounded">
+                    {{ presenca.justificativa }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Voltar para a lista
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+### Arquivo: presencas\templates\presencas\academicas\listar_presencas_academica.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Lista de Presenças{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Padronizar cabeçalho com botões -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Lista de Presenças</h1>
+        <div>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'presencas:registrar_presenca' %}" class="btn btn-primary me-2">
+                <i class="fas fa-plus"></i> Registrar Presença
+            </a>
+            <a href="{% url 'presencas:exportar_presencas' %}" class="btn btn-success me-2">
+                <i class="fas fa-file-export"></i> Exportar CSV
+            </a>
+            <a href="{% url 'presencas:importar_presencas' %}" class="btn btn-info">
+                <i class="fas fa-file-import"></i> Importar CSV
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filtros avançados -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="aluno" class="form-label">Aluno</label>
+                    <select name="aluno" id="aluno" class="form-select">
+                        <option value="">Todos os alunos</option>
+                        {% for aluno in alunos %}
+                        <option value="{{ aluno.cpf }}" {% if filtros.aluno == aluno.cpf %}selected{% endif %}>
+                            {{ aluno.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="turma" class="form-label">Turma</label>
+                    <select name="turma" id="turma" class="form-select">
+                        <option value="">Todas as turmas</option>
+                        {% for turma in turmas %}
+                        <option value="{{ turma.id }}" {% if filtros.turma == turma.id|stringformat:"s" %}selected{% endif %}>
+                            {{ turma.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio }}">
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ filtros.data_fim }}">
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="presente" class="form-label">Status</label>
+                    <select name="presente" id="presente" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="true" {% if filtros.presente == 'true' %}selected{% endif %}>Presente</option>
+                        <option value="false" {% if filtros.presente == 'false' %}selected{% endif %}>Ausente</option>
+                    </select>
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Limpar Filtros
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Tabela de presenças -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Atividade</th>
+                            <th>Turma</th>
+                            <th>Data</th>
+                            <th>Status</th>
+                            <th>Justificativa</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for presenca in presencas %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if presenca.aluno.foto %}
+                                    <img src="{{ presenca.aluno.foto.url }}" alt="{{ presenca.aluno.nome }}" 
+                                         class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                         style="width: 40px; height: 40px; color: white;">
+                                        {{ presenca.aluno.nome|first|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div>{{ presenca.aluno.nome }}</div>
+                                        <small class="text-muted">{{ presenca.aluno.cpf }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ presenca.atividade.nome }}</td>
+                            <td>{{ presenca.atividade.turma.nome }}</td>
+                            <td>{{ presenca.data|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if presenca.presente %}
+                                <span class="badge bg-success">Presente</span>
+                                {% else %}
+                                <span class="badge bg-danger">Ausente</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ presenca.justificativa|truncatechars:30|default:"-" }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{% url 'presencas:detalhar_presenca' presenca.id %}" class="btn btn-sm btn-info" title="Ver detalhes da presença">
+                                        <i class="fas fa-eye"></i> Detalhes
+                                    </a>
+                                    <a href="{% url 'presencas:editar_presenca' presenca.id %}" class="btn btn-sm btn-warning" title="Editar presença">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    <a href="{% url 'presencas:excluir_presenca' presenca.id %}" class="btn btn-sm btn-danger" title="Excluir presença">
+                                        <i class="fas fa-trash"></i> Excluir
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-3">
+                                <p class="mb-0">Nenhum registro de presença encontrado com os filtros selecionados.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div>
+                <p class="mb-0">Exibindo {{ presencas|length }} de {{ page_obj.paginator.count }} registros</p>
+            </div>
+            
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginação">
+                <ul class="pagination mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Anterior">
+                            <span aria-hidden="true">«</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-hidden="true">«</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">{{ i }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Próxima">
+                            <span aria-hidden="true">»</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-hidden="true">»</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar Select2 para melhorar a experiência de seleção
+        if (typeof $.fn.select2 === 'function') {
+            $('#aluno').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Selecione um aluno',
+                allowClear: true
+            });
+            
+            $('#turma').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Selecione uma turma',
+                allowClear: true
+            });
+        }
+    });
+</script>
+{% endblock %}
+
+
+
+>>>>>>> 2e3afdbc2b4c3a832f96c6d937659e877ab92547
 '''
