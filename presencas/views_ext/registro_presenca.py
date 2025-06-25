@@ -1,17 +1,20 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models import Q
 from datetime import date
+from calendar import monthrange
 from presencas.forms import DadosBasicosPresencaForm, TotaisAtividadesPresencaForm, AlunosPresencaForm
 from importlib import import_module
 from cursos.models import Curso
 from turmas.models import Turma
 from atividades.models import AtividadeAcademica
 from presencas.models import TotalAtividadeMes, ObservacaoPresenca
-from calendar import monthrange
 from alunos.models import Aluno
+from presencas.utils import get_atividade_model
 import logging
 logger = logging.getLogger(__name__)
 
@@ -58,12 +61,22 @@ def registrar_presenca_totais_atividades(request):
     atividades = []
     if turma and curso and ano and mes:
         totais_atividades = request.session.get('presenca_totais_atividades', {})
-        atividades_ids = [int(key.replace('qtd_ativ_', '')) for key in totais_atividades.keys() if int(totais_atividades[key]) > 0]
-        atividades = AtividadeAcademica.objects.filter(
-            id__in=atividades_ids,
-            turmas__id=turma.id,
-            # ...outros filtros se houver...
-        )
+        if totais_atividades:
+            atividades_ids = [int(key.replace('qtd_ativ_', '')) for key in totais_atividades.keys() if int(totais_atividades[key]) > 0]
+            atividades = AtividadeAcademica.objects.filter(
+                id__in=atividades_ids,
+                turmas__id=turma.id,
+            )
+        else:
+            primeiro_dia = date(int(ano), int(mes), 1)
+            ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
+            atividades = AtividadeAcademica.objects.filter(
+                turmas__id=turma.id,
+                curso=curso
+            ).filter(
+                Q(data_inicio__lte=ultimo_dia) &
+                (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
+            ).distinct()
 
     totais_registrados = []
     if turma and ano and mes:
@@ -71,13 +84,17 @@ def registrar_presenca_totais_atividades(request):
             turma=turma, ano=ano, mes=mes
         ).select_related('atividade')
 
+    # Após montar a lista atividades:
+    logger.debug(f"IDs das atividades passadas para o formulário: {[a.id for a in atividades]}")
+    # Salva os IDs das atividades exibidas na sessão
+    request.session['presenca_atividades_ids'] = [a.id for a in atividades]
+
     if request.method == 'POST':
         form = TotaisAtividadesPresencaForm(request.POST, atividades=atividades)
         if form.is_valid():
             request.session['presenca_totais_atividades'] = {
                 key: value for key, value in form.cleaned_data.items() if key.startswith('qtd_ativ_')
             }
-            # Redireciona para a etapa de designação dos dias
             return redirect('presencas:registrar_presenca_dias_atividades')
     else:
         form = TotaisAtividadesPresencaForm(atividades=atividades)
@@ -94,32 +111,46 @@ def registrar_presenca_totais_atividades(request):
 
 @login_required
 @require_POST
+@csrf_exempt
 def registrar_presenca_totais_atividades_ajax(request):
+    Turma = get_turma_model()
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
-    Turma = get_turma_model()
     turma = Turma.objects.get(id=turma_id) if turma_id else None
 
-    curso = turma.curso if turma else None
-
     atividades = []
-    if turma and curso and ano and mes:
-        totais_atividades = request.session.get('presenca_totais_atividades', {})
-        atividades_ids = [int(key.replace('qtd_ativ_', '')) for key in totais_atividades.keys() if int(totais_atividades[key]) > 0]
-        atividades = AtividadeAcademica.objects.filter(
-            id__in=atividades_ids,
-            turmas__id=turma.id,
-            # ...outros filtros se houver...
-        )
+    if turma and ano and mes:
+        atividades_ids = request.session.get('presenca_atividades_ids', [])
+        if atividades_ids:
+            atividades = get_atividade_model().objects.filter(
+                id__in=atividades_ids,
+                turmas__id=turma.id
+            )
+        else:
+            # Fallback para o filtro padrão
+            from datetime import date
+            primeiro_dia = date(int(ano), int(mes), 1)
+            ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
+            atividades = get_atividade_model().objects.filter(
+                turmas__id=turma.id
+            ).filter(
+                Q(data_inicio__lte=ultimo_dia) &
+                (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
+            ).distinct()
+
+    logger.debug(f"[AJAX] IDs das atividades passadas para o formulário: {[a.id for a in atividades]}")
 
     form = TotaisAtividadesPresencaForm(request.POST, atividades=atividades)
     if form.is_valid():
         request.session['presenca_totais_atividades'] = {
             key: value for key, value in form.cleaned_data.items() if key.startswith('qtd_ativ_')
         }
-        # Redireciona para a etapa de designação dos dias (AJAX)
-        return JsonResponse({'success': True, 'redirect_url': '/presencas/registrar-presenca/dias-atividades/'})
+        request.session.modified = True
+        return JsonResponse({
+            'success': True,
+            'redirect_url': '/presencas/registrar-presenca/dias-atividades/'
+        })
     else:
         return JsonResponse({'success': False, 'errors': form.errors})
 
@@ -148,17 +179,22 @@ def registrar_presenca_dias_atividades(request):
             atividades_ids = [
                 int(key.replace('qtd_ativ_', ''))
                 for key, value in totais_atividades.items()
+                if value not in [None, '', '0', 0]  # Mostra só as atividades informadas
+            ]
+            logger.debug(f"Totais atividades na sessão: {totais_atividades}")
+            atividades_ids = [
+                int(key.replace('qtd_ativ_', ''))
+                for key, value in totais_atividades.items()
                 if int(value) > 0
             ]
+            logger.debug(f"IDs filtrados: {atividades_ids}")
             if atividades_ids:
                 atividades = AtividadeAcademica.objects.filter(
                     id__in=atividades_ids,
                     turmas__id=turma.id,
-                    data_inicio__year=ano,
-                    data_inicio__month=mes
                 )
             else:
-                atividades = []
+                atividades = []  # Não mostra nenhuma se não houver seleção
 
         qtd_dias = monthrange(int(ano), int(mes))[1]
         dias_do_mes = list(range(1, qtd_dias + 1))

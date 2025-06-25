@@ -1,17 +1,36 @@
 from django.contrib import admin
-from .models import Presenca
+from presencas.models import ObservacaoPresenca
 
-class PresencaAdmin(admin.ModelAdmin):
-    # Atualizando list_display para incluir o campo turma
-    list_display = ('aluno', 'turma', 'data', 'presente', 'registrado_por')
-    
-    # Atualizando list_filter para incluir o campo turma
-    list_filter = ('presente', 'turma', 'data')
-    search_fields = ('aluno__nome', 'aluno__cpf', 'turma__nome')
+@admin.register(ObservacaoPresenca)
+class ObservacaoPresencaAdmin(admin.ModelAdmin):
+    list_display = (
+        'aluno',
+        'turma',
+        'data',
+        'atividade_academica',
+        'atividade_ritualistica',
+        'registrado_por'
+    )
+    list_filter = (
+        'turma',
+        'data',
+        'atividade_academica',
+        'atividade_ritualistica'
+    )
+    search_fields = (
+        'aluno__nome',
+        'aluno__cpf',
+        'turma__nome'
+    )
     date_hierarchy = 'data'
-    
-    def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        return queryset.select_related('aluno', 'turma', 'atividade')
-
-admin.site.register(Presenca, PresencaAdmin)
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('aluno', 'turma', 'data', 'registrado_por')
+        }),
+        ('Atividades', {
+            'fields': ('atividade_academica', 'atividade_ritualistica')
+        }),
+        ('Observação', {
+            'fields': ('texto',)
+        }),
+    )

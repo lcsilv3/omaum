@@ -108,10 +108,12 @@ class AtividadeAcademicaForm(forms.ModelForm):
             ),
             'tipo_atividade': forms.Select(attrs={'class': 'form-select'}),
             'data_inicio': forms.DateInput(
-                attrs={'class': 'form-control', 'type': 'date'}
+                attrs={'class': 'form-control', 'type': 'date'},
+                format='%Y-%m-%d'  # <-- Adicione isso
             ),
             'data_fim': forms.DateInput(
-                attrs={'class': 'form-control', 'type': 'date'}
+                attrs={'class': 'form-control', 'type': 'date'},
+                format='%Y-%m-%d'  # <-- Adicione isso
             ),
             'hora_inicio': forms.TimeInput(
                 attrs={'class': 'form-control', 'type': 'time'}
@@ -154,6 +156,8 @@ class AtividadeAcademicaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         """Inicializa o formulário filtrando as turmas pelo curso."""
         super().__init__(*args, **kwargs)
+        self.fields['data_inicio'].input_formats = ['%Y-%m-%d', '%d/%m/%Y']
+        self.fields['data_fim'].input_formats = ['%Y-%m-%d', '%d/%m/%Y']
         models = get_models()
         Turma = models['Turma']
         curso_id = self.initial.get('curso') or self.data.get('curso')

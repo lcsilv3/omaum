@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                window.location.href = data.redirect_url;
+                window.location.href = data.redirect_url; // Redireciona após salvar via AJAX
             } else if (data.errors) {
                 let errorDiv = document.getElementById('form-errors');
                 errorDiv.innerHTML = '';

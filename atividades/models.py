@@ -145,10 +145,8 @@ class AtividadeRitualistica(AtividadeBase):
     Modelo para atividades ritualísticas.
     """
     STATUS_CHOICES = [
-        ('PENDENTE', 'Pendente'),
-        ('CONFIRMADA', 'Confirmada'),
-        ('REALIZADA', 'Realizada'),
-        ('CANCELADA', 'Cancelada'),
+        ('ATIVA', 'Ativa'),
+        ('CANCELADA', 'Inativa'),
     ]
 
     nome = models.CharField(max_length=100)
@@ -161,7 +159,7 @@ class AtividadeRitualistica(AtividadeBase):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='PENDENTE'
+        default='ATIVA'
     )
     convocacao = models.BooleanField(default=False, verbose_name="Convocação")
 

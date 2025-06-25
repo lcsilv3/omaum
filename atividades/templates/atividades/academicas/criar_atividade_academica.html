@@ -16,140 +16,158 @@
                 {% csrf_token %}
                 <!-- Seção 1: Informações Básicas -->
                 <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+                         data-bs-toggle="collapse" data-bs-target="#secao-basica" style="cursor:pointer;">
                         <h5 class="mb-0">Informações Básicas</h5>
+                        <span class="collapse-arrow">
+                            <i class="bi bi-chevron-down"></i>
+                        </span>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="id_nome" class="form-label">
-                                Nome da Atividade <span class="text-danger">*</span>
-                            </label>
-                            {{ form.nome }}
-                            {% for error in form.nome.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="mb-3">
-                            <label for="id_descricao" class="form-label">Descrição</label>
-                            {{ form.descricao }}
-                            {% for error in form.descricao.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_tipo_atividade" class="form-label">
-                                    Tipo de Atividade <span class="text-danger">*</span>
+                    <div id="secao-basica" class="collapse show">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="id_nome" class="form-label">
+                                    Nome da Atividade <span class="text-danger">*</span>
                                 </label>
-                                {{ form.tipo_atividade }}
-                                {% for error in form.tipo_atividade.errors %}
+                                {{ form.nome }}
+                                {% for error in form.nome.errors %}
                                     <div class="text-danger">{{ error }}</div>
                                 {% endfor %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_status" class="form-label">
-                                    Status <span class="text-danger">*</span>
-                                </label>
-                                {{ form.status }}
-                                {% for error in form.status.errors %}
+                            <div class="mb-3">
+                                <label for="id_descricao" class="form-label">Descrição</label>
+                                {{ form.descricao }}
+                                {% for error in form.descricao.errors %}
                                     <div class="text-danger">{{ error }}</div>
                                 {% endfor %}
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_tipo_atividade" class="form-label">
+                                        Tipo de Atividade <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.tipo_atividade }}
+                                    {% for error in form.tipo_atividade.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_status" class="form-label">
+                                        Status <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.status }}
+                                    {% for error in form.status.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <!-- Seção 2: Datas e Horários -->
                 <div class="card mb-4">
-                    <div class="card-header bg-secondary text-white">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center"
+                         data-bs-toggle="collapse" data-bs-target="#secao-datas" style="cursor:pointer;">
                         <h5 class="mb-0">Datas e Horários</h5>
+                        <span class="collapse-arrow">
+                            <i class="bi bi-chevron-down"></i>
+                        </span>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_data_inicio" class="form-label">
-                                    Data de Início <span class="text-danger">*</span>
-                                </label>
-                                {{ form.data_inicio }}
-                                {% for error in form.data_inicio.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
+                    <div id="secao-datas" class="collapse">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_data_inicio" class="form-label">
+                                        Data de Início <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.data_inicio }}
+                                    {% for error in form.data_inicio.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_data_fim" class="form-label">Data de Término</label>
+                                    {{ form.data_fim }}
+                                    {% for error in form.data_fim.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                    <small class="form-text text-muted">Opcional. Se não informada, será considerada a mesma data de início.</small>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_data_fim" class="form-label">Data de Término</label>
-                                {{ form.data_fim }}
-                                {% for error in form.data_fim.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                                <small class="form-text text-muted">Opcional. Se não informada, será considerada a mesma data de início.</small>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_hora_inicio" class="form-label">
-                                    Hora de Início <span class="text-danger">*</span>
-                                </label>
-                                {{ form.hora_inicio }}
-                                {% for error in form.hora_inicio.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_hora_fim" class="form-label">Hora de Término</label>
-                                {{ form.hora_fim }}
-                                {% for error in form.hora_fim.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                                <small class="form-text text-muted">Opcional. Se não informada, será considerada 1 hora após o início.</small>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_hora_inicio" class="form-label">
+                                        Hora de Início <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.hora_inicio }}
+                                    {% for error in form.hora_inicio.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_hora_fim" class="form-label">Hora de Término</label>
+                                    {{ form.hora_fim }}
+                                    {% for error in form.hora_fim.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                    <small class="form-text text-muted">Opcional. Se não informada, será considerada 1 hora após o início.</small>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <!-- Seção 3: Vínculos -->
                 <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center"
+                         data-bs-toggle="collapse" data-bs-target="#secao-vinculos" style="cursor:pointer;">
                         <h5 class="mb-0">Vínculos</h5>
+                        <span class="collapse-arrow">
+                            <i class="bi bi-chevron-down"></i>
+                        </span>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="id_local" class="form-label">Local</label>
-                            {{ form.local }}
-                            {% for error in form.local.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="mb-3">
-                            <label for="id_responsavel" class="form-label">Responsável</label>
-                            {{ form.responsavel }}
-                            {% for error in form.responsavel.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="mb-3 position-relative">
-                            <label for="id_curso" class="form-label">Curso</label>
-                            {{ form.curso }}
-                            {% for error in form.curso.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="mb-3">
-                            <label for="id_turmas" class="form-label">Turmas</label>
-                            <div class="d-flex align-items-center mb-2">
-                                <input type="checkbox" id="select-all-turmas" class="form-check-input me-2">
-                                <label for="select-all-turmas" class="form-check-label">Selecionar todas as turmas</label>
+                    <div id="secao-vinculos" class="collapse">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="id_local" class="form-label">Local</label>
+                                {{ form.local }}
+                                {% for error in form.local.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
                             </div>
-                            {{ form.turmas }}
-                            <div id="no-turmas-msg" class="text-muted mt-2"></div>
-                            {% for error in form.turmas.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                            <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
-                        </div>
-                        <div class="mb-3 form-check">
-                            {{ form.convocacao }}
-                            <label class="form-check-label" for="id_convocacao">Convocação</label>
-                            {% for error in form.convocacao.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
+                            <div class="mb-3">
+                                <label for="id_responsavel" class="form-label">Responsável</label>
+                                {{ form.responsavel }}
+                                {% for error in form.responsavel.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="mb-3 position-relative">
+                                <label for="id_curso" class="form-label">Curso</label>
+                                {{ form.curso }}
+                                {% for error in form.curso.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_turmas" class="form-label">Turmas</label>
+                                <div class="d-flex align-items-center mb-2">
+                                    <input type="checkbox" id="select-all-turmas" class="form-check-input me-2">
+                                    <label for="select-all-turmas" class="form-check-label">Selecionar todas as turmas</label>
+                                </div>
+                                {{ form.turmas }}
+                                <div id="no-turmas-msg" class="text-muted mt-2"></div>
+                                {% for error in form.turmas.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <small class="form-text text-muted">Selecione uma ou mais(CTRL) turmas para esta atividade.</small>
+                            </div>
+                            <div class="mb-3 form-check">
+                                {{ form.convocacao }}
+                                <label class="form-check-label" for="id_convocacao">Convocação</label>
+                                {% for error in form.convocacao.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -185,6 +203,29 @@
 <script src="{% static 'js/atividades_ajax.js' %}"></script>
 <script>
     window.initTurmasAjax();
+
+    // Collapse arrow toggle
+    document.querySelectorAll('.card-header[data-bs-toggle="collapse"]').forEach(function(header) {
+        var targetSelector = header.getAttribute('data-bs-target');
+        var target = document.querySelector(targetSelector);
+        var icon = header.querySelector('.collapse-arrow i');
+        // Estado inicial
+        if (target.classList.contains('show')) {
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-up');
+        }
+        header.addEventListener('click', function() {
+            setTimeout(function() {
+                if (target.classList.contains('show')) {
+                    icon.classList.remove('bi-chevron-down');
+                    icon.classList.add('bi-chevron-up');
+                } else {
+                    icon.classList.remove('bi-chevron-up');
+                    icon.classList.add('bi-chevron-down');
+                }
+            }, 350);
+        });
+    });
 
     function highlightRequiredFields(form) {
         // IDs dos campos obrigatórios

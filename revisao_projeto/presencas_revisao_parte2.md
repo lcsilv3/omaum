@@ -4,6 +4,239 @@
 ## Arquivos forms.py:
 
 
+### Arquivo: presencas\templates\presencas\academicas\formulario_presencas_multiplas_academica_passo1.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Registro de Presenças Múltiplas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Registro de Presenças Múltiplas - Passo 1</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Selecione a data, as turmas e as atividades para registrar presenças em massa.
+                    </div>
+                    
+                    <form method="post" id="form-passo1" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.data.id_for_label }}" class="form-label">{{ form.data.label }}</label>
+                            {{ form.data }}
+                            {% if form.data.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.data.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.data.help_text %}
+                            <div class="form-text">{{ form.data.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.turmas.id_for_label }}" class="form-label">{{ form.turmas.label }}</label>
+                            {{ form.turmas }}
+                            {% if form.turmas.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.turmas.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.turmas.help_text %}
+                            <div class="form-text">{{ form.turmas.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.atividades.id_for_label }}" class="form-label">{{ form.atividades.label }}</label>
+                            {{ form.atividades }}
+                            {% if form.atividades.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.atividades.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if form.atividades.help_text %}
+                            <div class="form-text">{{ form.atividades.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-arrow-right"></i> Próximo Passo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar Select2 para melhorar a experiência de seleção
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+        
+        // Atualizar atividades quando a data mudar
+        const dataInput = document.getElementById('id_data');
+        const atividadesSelect = document.getElementById('id_atividades');
+        
+        dataInput.addEventListener('change', function() {
+            const data = this.value;
+            
+            if (!data) return;
+            
+            // Fazer requisição AJAX para obter atividades da data
+            fetch(`/presencas/api/obter-atividades-por-data/?data=${data}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error(data.error);
+                        return;
+                    }
+                    
+                    // Limpar opções atuais
+                    atividadesSelect.innerHTML = '';
+                    
+                    // Adicionar novas opções
+                    data.atividades.forEach(atividade => {
+                        const option = document.createElement('option');
+                        option.value = atividade.id;
+                        option.textContent = atividade.titulo;
+                        atividadesSelect.appendChild(option);
+                    });
+                    
+                    // Atualizar Select2
+                    $(atividadesSelect).trigger('change');
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar atividades:', error);
+                });
+        });
+    });
+</script>
+{% endblock %}
+
+
+
+### Arquivo: presencas\templates\presencas\academicas\formulario_presencas_multiplas_academica_passo2.html
+
+html
+{% extends 'base.html' %}
+
+{% block title %}Registro de Presenças Múltiplas - Passo 2{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Registro de Presenças Múltiplas - Passo 2</h4>
+                <div>
+                    <span class="badge bg-light text-dark">Data: {{ data_formatada }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Marque a situação de presença para cada aluno nas atividades selecionadas.
+            </div>
+            
+            <div class="mb-3">
+                <h5>Turmas selecionadas:</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for turma in turmas %}
+                    <span class="badge bg-primary">{{ turma.nome }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <h5>Atividades selecionadas:</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for atividade in atividades %}
+                    <span class="badge bg-info">{{ atividade.titulo }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <form id="form-presencas-multiplas">
+                {% csrf_token %}
+                <input type="hidden" name="data" value="{{ data }}">
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 30%">Aluno</th>
+                                {% for atividade in atividades %}
+                                <th>{{ atividade.titulo }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aluno in alunos %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if aluno.foto %}
+                                        <img src="{{ aluno.foto.url }}" alt="{{ aluno.nome }}" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        {% else %}
+                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                             style="width: 40px; height: 40px; color: white;">
+                                            {{ aluno.nome|first|upper }}
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <div>{{ aluno.nome }}</div>
+                                            <small class="text-muted">{{ aluno.cpf }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                {% for atividade in atividades %}
+                                <td>
+                                    {% with key=aluno.cpf|add:'_'|add:atividade.id|stringformat:'s' %}
+                                    {% with presenca=presencas_dict|get_item:key %}
+                                    <div class="btn-group" role="group">
+                                        <input type="radio" class="btn-check" name="presenca_{{ aluno.cpf }}_{{ atividade.id }}" 
+                                               id="presente_{{ aluno.cpf }}_{{ atividade.id }}" value="PRESENTE"
+                                               {% if presenca and presenca.situacao == 'PRESENTE' %}checked{% elif not presenca %}checked{% endif %}>
+                                        <label class="btn btn-outline-success
+
+
+
 ### Arquivo: presencas\templates\presencas\academicas\historico_presencas_academica.html
 
 html
@@ -1842,6 +2075,7 @@ html
 <form id="form-presenca" method="post">
     {% csrf_token %}
     <div id="mensagem-ajax" class="alert d-none" role="alert"></div>
+    <div id="mensagem-erro-ajax" class="alert alert-danger d-none"></div>
     <div class="atividades-container">
         {% for atividade in atividades %}
         <div class="atividade-quadro" id="quadro-{{ atividade.id }}">
@@ -2091,263 +2325,6 @@ html
 </div>
 {% endblock %}
 
-
-
-
-### Arquivo: presencas\templates\presencas\ritualisticas\excluir_presenca_ritualistica.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Excluir Presença{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0">Confirmar Exclusão</h4>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Você está prestes a excluir o seguinte registro de presença:
-                    </div>
-                    
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <p><strong>Aluno:</strong> {{ presenca.aluno.nome }}</p>
-                            <p><strong>Atividade:</strong> {{ presenca.atividade.titulo }}</p>
-                            <p><strong>Data:</strong> {{ presenca.data|date:"d/m/Y" }}</p>
-                            <p><strong>Situação:</strong> 
-                                {% if presenca.situacao == 'PRESENTE' %}
-                                <span class="badge bg-success">Presente</span>
-                                {% elif presenca.situacao == 'AUSENTE' %}
-                                <span class="badge bg-danger">Ausente</span>
-                                {% elif presenca.situacao == 'JUSTIFICADO' %}
-                                <span class="badge bg-warning">Justificado</span>
-                                {% endif %}
-                            </p>
-                            {% if presenca.justificativa %}
-                            <p><strong>Justificativa:</strong> {{ presenca.justificativa }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <p class="text-danger">Esta ação não pode ser desfeita. Deseja continuar?</p>
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash"></i> Confirmar Exclusão
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-
-
-
-### Arquivo: presencas\templates\presencas\ritualisticas\exportar_presencas_ritualisticas.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Exportar Presenças Ritualísticas{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <h2>Exportação de Presenças Ritualísticas</h2>
-    <p>Funcionalidade de exportação de presenças ritualísticas. Implemente aqui a lógica de exportação (CSV, Excel, etc).</p>
-    <a href="{% url 'presencas:listar_presencas_ritualisticas' %}" class="btn btn-secondary mt-3">Voltar</a>
-</div>
-{% endblock %}
-
-
-
-### Arquivo: presencas\templates\presencas\ritualisticas\filtro_presencas_ritualistica.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Filtrar Presenças{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Filtrar Presenças</h1>
-        <div>
-            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar para Lista
-            </a>
-        </div>
-    </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Filtros de Pesquisa</h5>
-        </div>
-        <div class="card-body">
-            <form method="get" action="{% url 'presencas:listar_presencas' %}">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="aluno" class="form-label">Aluno</label>
-                        <select class="form-select" id="aluno" name="aluno">
-                            <option value="">Todos os alunos</option>
-                            {% for aluno in alunos %}
-                            <option value="{{ aluno.cpf }}">{{ aluno.nome }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="turma" class="form-label">Turma</label>
-                        <select class="form-select" id="turma" name="turma">
-                            <option value="">Todas as turmas</option>
-                            {% for turma in turmas %}
-                            <option value="{{ turma.id }}">{{ turma.nome }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="atividade" class="form-label">Atividade</label>
-                        <select class="form-select" id="atividade" name="atividade">
-                            <option value="">Todas as atividades</option>
-                            {% for atividade in atividades %}
-                            <option value="{{ atividade.id }}">{{ atividade.nome }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-3">
-                        <label for="data_inicio" class="form-label">Data Início</label>
-                        <input type="date" class="form-control" id="data_inicio" name="data_inicio">
-                    </div>
-                    
-                    <div class="col-md-3">
-                        <label for="data_fim" class="form-label">Data Fim</label>
-                        <input type="date" class="form-control" id="data_fim" name="data_fim">
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="status" class="form-label">Status</label>
-                        <select class="form-select" id="status" name="status">
-                            <option value="">Todos</option>
-                            <option value="presente">Presente</option>
-                            <option value="ausente">Ausente</option>
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="ordenar" class="form-label">Ordenar por</label>
-                        <select class="form-select" id="ordenar" name="ordenar">
-                            <option value="data">Data (mais recente primeiro)</option>
-                            <option value="data_asc">Data (mais antiga primeiro)</option>
-                            <option value="aluno">Nome do Aluno</option>
-                            <option value="atividade">Nome da Atividade</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="d-flex justify-content-between">
-                    <button type="reset" class="btn btn-secondary">
-                        <i class="fas fa-undo"></i> Limpar Filtros
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Pesquisar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar Select2 para melhorar a experiência de seleção
-        if (typeof $.fn.select2 === 'function') {
-            $('#aluno').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Selecione um aluno',
-                allowClear: true
-            });
-            
-            $('#turma').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Selecione uma turma',
-                allowClear: true
-            });
-            
-            $('#atividade').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Selecione uma atividade',
-                allowClear: true
-            });
-        }
-        
-        // Filtrar atividades por turma
-        const turmaSelect = document.getElementById('turma');
-        const atividadeSelect = document.getElementById('atividade');
-        
-        if (turmaSelect && atividadeSelect) {
-            turmaSelect.addEventListener('change', function() {
-                const turmaId = this.value;
-                
-                if (turmaId) {
-                    // Fazer requisição AJAX para buscar atividades da turma
-                    fetch(`/presencas/api/atividades-por-turma/${turmaId}/`)
-                        .then(response => response.json())
-                        .then(data => {
-                            // Limpar select de atividades
-                            atividadeSelect.innerHTML = '<option value="">Todas as atividades</option>';
-                            
-                            // Adicionar novas opções
-                            if (data.success && data.atividades && data.atividades.length > 0) {
-                                data.atividades.forEach(atividade => {
-                                    const option = document.createElement('option');
-                                    option.value = atividade.id;
-                                    option.textContent = `${atividade.nome} (${atividade.data})`;
-                                    atividadeSelect.appendChild(option);
-                                });
-                            }
-                            
-                            // Atualizar Select2 se estiver sendo usado
-                            if (typeof $.fn.select2 === 'function') {
-                                $(atividadeSelect).trigger('change');
-                            }
-                        })
-                        .catch(error => console.error('Erro ao buscar atividades:', error));
-                }
-            });
-        }
-    });
-</script>
-{% endblock %}
-{% endblock %}
 
 
 '''

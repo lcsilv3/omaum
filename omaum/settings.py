@@ -127,3 +127,30 @@ LOGIN_URL = '/entrar/'
 # Adicionar estas linhas para resolver o problema de redirecionamento
 LOGIN_REDIRECT_URL = '/'  # Redireciona para a página inicial após o login
 LOGOUT_REDIRECT_URL = '/'  # Redireciona para a página inicial após o logout
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Para garantir que seu app mostre DEBUG
+        'presencas': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}

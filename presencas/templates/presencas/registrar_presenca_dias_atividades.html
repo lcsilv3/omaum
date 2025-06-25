@@ -70,47 +70,54 @@
     <div id="mensagem-ajax" class="alert d-none" role="alert"></div>
     <div id="mensagem-erro-ajax" class="alert alert-danger d-none"></div>
     <div class="atividades-container">
-        {% for atividade in atividades %}
-        <div class="atividade-quadro" id="quadro-{{ atividade.id }}">
-            <strong>
-                {{ atividade.nome }} ({{ atividade.qtd_ativ_mes }})
-            </strong>
-            <div>
-                <small>Mês: {{ mes }}/{{ ano }}</small>
-            </div>
-            <div class="minicalendario">
-                {% for dia in dias_do_mes %}
-                <div class="dia-linha">
-                    <label>
-                        <input type="checkbox"
-                            class="dia-checkbox"
-                            name="presenca_{{ atividade.id }}"
-                            value="{{ dia }}"
-                            data-atividade="{{ atividade.id }}"
-                            data-dia="{{ dia }}"
-                            {% if dia in presencas|get_item:atividade.id %}checked{% endif %}>
-                        {{ dia }}
-                    </label>
-                    <input type="text"
-                        name="obs_{{ atividade.id }}_{{ dia }}"
-                        maxlength="200"
-                        class="form-control obs-dia"
-                        placeholder="Obs. deste dia"
-                        value="{% if presencas_obs and presencas_obs|get_item:atividade.id and presencas_obs|get_item:atividade.id|get_item:dia %}{{ presencas_obs|get_item:atividade.id|get_item:dia }}{% endif %}">
+        {% if atividades %}
+            {% for atividade in atividades %}
+                <div class="atividade-quadro" id="quadro-{{ atividade.id }}">
+                    <strong>
+                        {{ atividade.nome }} ({{ atividade.qtd_ativ_mes }})
+                    </strong>
+                    <div>
+                        <small>Mês: {{ mes }}/{{ ano }}</small>
+                    </div>
+                    <div class="minicalendario">
+                        {% for dia in dias_do_mes %}
+                        <div class="dia-linha">
+                            <label>
+                                <input type="checkbox"
+                                    class="dia-checkbox"
+                                    name="presenca_{{ atividade.id }}"
+                                    value="{{ dia }}"
+                                    data-atividade="{{ atividade.id }}"
+                                    data-dia="{{ dia }}"
+                                    {% if dia in presencas|get_item:atividade.id %}checked{% endif %}>
+                                {{ dia }}
+                            </label>
+                            <input type="text"
+                                name="obs_{{ atividade.id }}_{{ dia }}"
+                                maxlength="200"
+                                class="form-control obs-dia"
+                                placeholder="Obs. deste dia"
+                                value="{% if presencas_obs and presencas_obs|get_item:atividade.id and presencas_obs|get_item:atividade.id|get_item:dia %}{{ presencas_obs|get_item:atividade.id|get_item:dia }}{% endif %}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button"
+                        class="btn btn-success btn-confirmar"
+                        data-atividade="{{ atividade.id }}"
+                        data-qtd="{{ atividade.qtd_ativ_mes }}">
+                        Confirmar
+                    </button>
+                    <div class="matriz-confirmada" id="matriz-{{ atividade.id }}" style="display:none;">
+                        <!-- Lista dos dias e observações confirmadas aparecerá aqui -->
+                    </div>
                 </div>
-                {% endfor %}
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-warning">
+                Nenhuma atividade encontrada para o mês/turma selecionados.<br>
+                Volte e preencha os totais de atividades.
             </div>
-            <button type="button"
-                class="btn btn-success btn-confirmar"
-                data-atividade="{{ atividade.id }}"
-                data-qtd="{{ atividade.qtd_ativ_mes }}">
-                Confirmar
-            </button>
-            <div class="matriz-confirmada" id="matriz-{{ atividade.id }}" style="display:none;">
-                <!-- Lista dos dias e observações confirmadas aparecerá aqui -->
-            </div>
-        </div>
-        {% endfor %}
+        {% endif %}
     </div>
     <button type="submit" class="btn btn-primary">Salvar e avançar</button>
 </form>

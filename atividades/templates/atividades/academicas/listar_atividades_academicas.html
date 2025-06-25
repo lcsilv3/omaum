@@ -91,6 +91,7 @@
                     <th>Tipo</th>
                     <th>Status</th>
                     <th>Data Início</th>
+                    <th>Data Fim</th> <!-- Adicionado -->
                     <th>Convocação</th>
                     <th class="text-start">Ações</th>
                 </tr>
@@ -109,21 +110,26 @@
                     </td>
                     <td>{{ atividade.get_tipo_atividade_display }}</td>
                     <td>
-                        {% if atividade.status == 'CONFIRMADA' %}
-                            <span class="badge bg-success">Confirmada</span>
-                        {% elif atividade.status == 'PENDENTE' %}
-                            <span class="badge bg-warning text-dark">Pendente</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ atividade.get_status_display }}</span>
-                        {% endif %}
+                        {% if atividade.status == 'CANCELADA' %}
+                <span class="badge bg-danger">Cancelada</span>
+            {% else %}
+                <span class="badge bg-success">Ativa</span>
+            {% endif %}
                     </td>
                     <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
                     <td>
+                        {% if atividade.data_fim %}
+                {{ atividade.data_fim|date:"d/m/Y" }}
+            {% else %}
+                <span class="text-muted">-</span>
+            {% endif %}
+                    </td>
+                    <td>
                         {% if atividade.convocacao %}
-        <span class="badge bg-success">Sim</span>
-    {% else %}
-        <span class="badge bg-secondary">Não</span>
-    {% endif %}
+                <span class="badge bg-success">Sim</span>
+            {% else %}
+                <span class="badge bg-secondary">Não</span>
+            {% endif %}
                     </td>
                     <td class="text-start">
                         <div class="btn-group btn-group-sm" role="group">
@@ -144,7 +150,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center">Nenhuma atividade encontrada.</td>
+                    <td colspan="9" class="text-center">Nenhuma atividade encontrada.</td>
                 </tr>
                 {% endfor %}
             </tbody>

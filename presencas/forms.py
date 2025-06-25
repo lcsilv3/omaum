@@ -68,16 +68,7 @@ class TotaisAtividadesPresencaForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        faltantes = []
-        for atividade in getattr(self, 'atividades', []):
-            key = f'qtd_ativ_{atividade.id}'
-            if cleaned_data.get(key) in [None, '']:
-                faltantes.append(atividade.nome)
-        if faltantes:
-            raise forms.ValidationError(
-                f"As seguintes atividades não tiveram quantidade informada: {', '.join(faltantes)}. "
-                "As atividades não informadas não poderão sofrer alterações na seção seguinte."
-            )
+        # Não faz checagem manual de campos faltantes!
         return cleaned_data
 
 class AlunosPresencaForm(forms.Form):

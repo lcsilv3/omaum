@@ -447,6 +447,125 @@ def importar_presencas_ritualisticas(request):
     # Exemplo simples: renderiza um template de importação
     return render(request, 'presencas/ritualisticas/importar_presencas_ritualisticas.html')
 
+@login_required
+def registrar_presenca_totais_atividades(request):
+    turma_id = request.session.get('presenca_turma_id')
+    ano = request.session.get('presenca_ano')
+    mes = request.session.get('presenca_mes')
+    Turma = get_turma_model()
+    turma = Turma.objects.get(id=turma_id) if turma_id else None
+
+    curso = turma.curso if turma else None
+
+    atividades = []
+    if turma and ano and mes:
+        totais_atividades = request.session.get('presenca_totais_atividades', {})
+        if totais_atividades:
+            atividades_ids = [int(key.replace('qtd_ativ_', '')) for key in totais_atividades.keys() if int(totais_atividades[key]) > 0]
+            atividades = AtividadeAcademica.objects.filter(
+                id__in=atividades_ids,
+                turmas__id=turma.id,
+            )
+        else:
+            # Remova o filtro curso=curso se não for obrigatório
+            atividades = AtividadeAcademica.objects.filter(
+                turmas__id=turma.id,
+                data_inicio__year=ano,
+                data_inicio__month=mes
+            ).distinct()
+
+    totais_registrados = []
+    if turma and ano and mes:
+        totais_registrados = TotalAtividadeMes.objects.filter(
+            turma=turma, ano=ano, mes=mes
+        ).select_related('atividade')
+
+    if request.method == 'POST':
+        form = TotaisAtividadesPresencaForm(request.POST, atividades=atividades)
+        if form.is_valid():
+            request.session['presenca_totais_atividades'] = {
+                key: value for key, value in form.cleaned_data.items() if key.startswith('qtd_ativ_')
+            }
+            return redirect('presencas:registrar_presenca_dias_atividades')
+    else:
+        form = TotaisAtividadesPresencaForm(atividades=atividades)
+
+    return render(request, 'presencas/registrar_presenca_totais_atividades.html', {
+        'form': form,
+        'turma': turma,
+        'curso': curso,
+        'ano': ano,
+        'mes': mes,
+        'atividades': atividades,
+        'totais_registrados': totais_registrados,
+    })
+
+@login_required
+def registrar_presenca_dias_atividades(request):
+    from datetime import date
+    from calendar import monthrange
+    from atividades.models import AtividadeAcademica
+    from turmas.models import Turma
+    from presencas.models import ObservacaoPresenca
+
+    if request.method == 'GET':
+        turma_id = request.session.get('presenca_turma_id')
+        ano = request.session.get('presenca_ano')
+        mes = request.session.get('presenca_mes')
+        turma = Turma.objects.get(id=turma_id) if turma_id else None
+
+        atividades = []
+        if turma and ano and mes:
+            totais_atividades = request.session.get('presenca_totais_atividades', {})
+            if totais_atividades:
+                atividades_ids = [
+                    int(key.replace('qtd_ativ_', ''))
+                    for key, value in totais_atividades.items()
+                    if int(value) > 0
+                ]
+                atividades = AtividadeAcademica.objects.filter(
+                    id__in=atividades_ids,
+                    turmas__id=turma.id,
+                    data_inicio__year=ano,
+                    data_inicio__month=mes
+                )
+            else:
+                atividades = AtividadeAcademica.objects.filter(
+                    turmas__id=turma.id,
+                    data_inicio__year=ano,
+                    data_inicio__month=mes
+                ).distinct()
+
+        qtd_dias = monthrange(int(ano), int(mes))[1]
+        dias_do_mes = list(range(1, qtd_dias + 1))
+
+        presencas = {}
+        presencas_obs = {}
+        if turma and ano and mes and atividades:
+            observacoes = ObservacaoPresenca.objects.filter(
+                turma=turma,
+                data__year=ano,
+                data__month=mes,
+                atividade_academica__in=atividades
+            )
+            for obs in observacoes:
+                aid = obs.atividade_academica_id
+                dia = obs.data.day
+                presencas.setdefault(aid, []).append(dia)
+                presencas_obs.setdefault(aid, {})[dia] = obs.texto
+
+        context = {
+            'atividades': atividades,
+            'dias_do_mes': dias_do_mes,
+            'mes': mes,
+            'ano': ano,
+            'presencas': presencas,
+            'presencas_obs': presencas_obs,
+        }
+        return render(request, 'presencas/registrar_presenca_dias_atividades.html', context)
+
+    # ...código POST permanece igual...
+
 
 ## Arquivos urls.py:
 
@@ -1066,6 +1185,8 @@ from atividades.models import AtividadeAcademica
 from presencas.models import TotalAtividadeMes, ObservacaoPresenca
 from calendar import monthrange
 from alunos.models import Aluno
+import logging
+logger = logging.getLogger(__name__)
 
 def get_turma_model():
     turmas_module = import_module("turmas.models")
@@ -1109,12 +1230,20 @@ def registrar_presenca_totais_atividades(request):
 
     atividades = []
     if turma and curso and ano and mes:
-        atividades = AtividadeAcademica.objects.filter(
-            curso_id=curso.codigo_curso,
-            turmas__id=turma.id,
-            data_inicio__year=ano,
-            data_inicio__month=mes
-        )
+        totais_atividades = request.session.get('presenca_totais_atividades', {})
+        if totais_atividades:
+            atividades_ids = [int(key.replace('qtd_ativ_', '')) for key in totais_atividades.keys() if int(totais_atividades[key]) > 0]
+            atividades = AtividadeAcademica.objects.filter(
+                id__in=atividades_ids,
+                turmas__id=turma.id,
+            )
+        else:
+            atividades = AtividadeAcademica.objects.filter(
+                turmas__id=turma.id,
+                curso=curso,
+                data_inicio__year=ano,
+                data_inicio__month=mes
+            ).distinct()
 
     totais_registrados = []
     if turma and ano and mes:
@@ -1156,11 +1285,12 @@ def registrar_presenca_totais_atividades_ajax(request):
 
     atividades = []
     if turma and curso and ano and mes:
+        totais_atividades = request.session.get('presenca_totais_atividades', {})
+        atividades_ids = [int(key.replace('qtd_ativ_', '')) for key in totais_atividades.keys() if int(totais_atividades[key]) > 0]
         atividades = AtividadeAcademica.objects.filter(
-            curso_id=curso.codigo_curso,
+            id__in=atividades_ids,
             turmas__id=turma.id,
-            data_inicio__year=ano,
-            data_inicio__month=mes
+            # ...outros filtros se houver...
         )
 
     form = TotaisAtividadesPresencaForm(request.POST, atividades=atividades)
@@ -1194,11 +1324,26 @@ def registrar_presenca_dias_atividades(request):
 
         atividades = []
         if turma and ano and mes:
-            atividades = AtividadeAcademica.objects.filter(
-                turmas__id=turma.id,
-                data_inicio__year=ano,
-                data_inicio__month=mes
-            )
+            totais_atividades = request.session.get('presenca_totais_atividades', {})
+            atividades_ids = [
+                int(key.replace('qtd_ativ_', ''))
+                for key, value in totais_atividades.items()
+                if value not in [None, '', '0', 0]  # Mostra só as atividades informadas
+            ]
+            logger.debug(f"Totais atividades na sessão: {totais_atividades}")
+            atividades_ids = [
+                int(key.replace('qtd_ativ_', ''))
+                for key, value in totais_atividades.items()
+                if int(value) > 0
+            ]
+            logger.debug(f"IDs filtrados: {atividades_ids}")
+            if atividades_ids:
+                atividades = AtividadeAcademica.objects.filter(
+                    id__in=atividades_ids,
+                    turmas__id=turma.id,
+                )
+            else:
+                atividades = []  # Não mostra nenhuma se não houver seleção
 
         qtd_dias = monthrange(int(ano), int(mes))[1]
         dias_do_mes = list(range(1, qtd_dias + 1))
@@ -1206,7 +1351,7 @@ def registrar_presenca_dias_atividades(request):
         # Busca dias já selecionados para cada atividade
         presencas = {}
         presencas_obs = {}
-        if turma and ano and mes:
+        if turma and ano and mes and atividades:
             observacoes = ObservacaoPresenca.objects.filter(
                 turma=turma,
                 data__year=ano,
@@ -1405,7 +1550,8 @@ def registrar_presenca_dias_atividades_ajax(request):
                             texto=obs,
                             registrado_por=request.user.username
                         )
-                    except Exception:
+                    except Exception as e:
+                        logger.exception(f'Erro ao registrar observação para atividade {atividade_id}, dia {dia}: {e}')
                         continue
         return JsonResponse({'success': True, 'redirect_url': '/presencas/registrar-presenca/alunos/', 'message': 'Presenças salvas com sucesso!'})
     except Exception as e:
@@ -2247,239 +2393,6 @@ html
     });
 </script>
 {% endblock %}
-
-
-
-### Arquivo: presencas\templates\presencas\academicas\formulario_presencas_multiplas_academica_passo1.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Registro de Presenças Múltiplas{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">Registro de Presenças Múltiplas - Passo 1</h4>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Selecione a data, as turmas e as atividades para registrar presenças em massa.
-                    </div>
-                    
-                    <form method="post" id="form-passo1" novalidate>
-                        {% csrf_token %}
-                        
-                        {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            {% for error in form.non_field_errors %}
-                            <p>{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.data.id_for_label }}" class="form-label">{{ form.data.label }}</label>
-                            {{ form.data }}
-                            {% if form.data.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.data.errors %}
-                                {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                            {% if form.data.help_text %}
-                            <div class="form-text">{{ form.data.help_text }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.turmas.id_for_label }}" class="form-label">{{ form.turmas.label }}</label>
-                            {{ form.turmas }}
-                            {% if form.turmas.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.turmas.errors %}
-                                {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                            {% if form.turmas.help_text %}
-                            <div class="form-text">{{ form.turmas.help_text }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.atividades.id_for_label }}" class="form-label">{{ form.atividades.label }}</label>
-                            {{ form.atividades }}
-                            {% if form.atividades.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.atividades.errors %}
-                                {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                            {% if form.atividades.help_text %}
-                            <div class="form-text">{{ form.atividades.help_text }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Voltar
-                            </a>
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-arrow-right"></i> Próximo Passo
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar Select2 para melhorar a experiência de seleção
-        $('.select2').select2({
-            theme: 'bootstrap-5',
-            width: '100%'
-        });
-        
-        // Atualizar atividades quando a data mudar
-        const dataInput = document.getElementById('id_data');
-        const atividadesSelect = document.getElementById('id_atividades');
-        
-        dataInput.addEventListener('change', function() {
-            const data = this.value;
-            
-            if (!data) return;
-            
-            // Fazer requisição AJAX para obter atividades da data
-            fetch(`/presencas/api/obter-atividades-por-data/?data=${data}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        console.error(data.error);
-                        return;
-                    }
-                    
-                    // Limpar opções atuais
-                    atividadesSelect.innerHTML = '';
-                    
-                    // Adicionar novas opções
-                    data.atividades.forEach(atividade => {
-                        const option = document.createElement('option');
-                        option.value = atividade.id;
-                        option.textContent = atividade.titulo;
-                        atividadesSelect.appendChild(option);
-                    });
-                    
-                    // Atualizar Select2
-                    $(atividadesSelect).trigger('change');
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar atividades:', error);
-                });
-        });
-    });
-</script>
-{% endblock %}
-
-
-
-### Arquivo: presencas\templates\presencas\academicas\formulario_presencas_multiplas_academica_passo2.html
-
-html
-{% extends 'base.html' %}
-
-{% block title %}Registro de Presenças Múltiplas - Passo 2{% endblock %}
-
-{% block content %}
-<div class="container-fluid mt-4">
-    <div class="card">
-        <div class="card-header bg-success text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Registro de Presenças Múltiplas - Passo 2</h4>
-                <div>
-                    <span class="badge bg-light text-dark">Data: {{ data_formatada }}</span>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                Marque a situação de presença para cada aluno nas atividades selecionadas.
-            </div>
-            
-            <div class="mb-3">
-                <h5>Turmas selecionadas:</h5>
-                <div class="d-flex flex-wrap gap-2">
-                    {% for turma in turmas %}
-                    <span class="badge bg-primary">{{ turma.nome }}</span>
-                    {% endfor %}
-                </div>
-            </div>
-            
-            <div class="mb-3">
-                <h5>Atividades selecionadas:</h5>
-                <div class="d-flex flex-wrap gap-2">
-                    {% for atividade in atividades %}
-                    <span class="badge bg-info">{{ atividade.titulo }}</span>
-                    {% endfor %}
-                </div>
-            </div>
-            
-            <form id="form-presencas-multiplas">
-                {% csrf_token %}
-                <input type="hidden" name="data" value="{{ data }}">
-                
-                <div class="table-responsive">
-                    <table class="table table-striped table-bordered">
-                        <thead class="table-dark">
-                            <tr>
-                                <th style="width: 30%">Aluno</th>
-                                {% for atividade in atividades %}
-                                <th>{{ atividade.titulo }}</th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for aluno in alunos %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        {% if aluno.foto %}
-                                        <img src="{{ aluno.foto.url }}" alt="{{ aluno.nome }}" 
-                                             class="rounded-circle me-2" width="40" height="40">
-                                        {% else %}
-                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
-                                             style="width: 40px; height: 40px; color: white;">
-                                            {{ aluno.nome|first|upper }}
-                                        </div>
-                                        {% endif %}
-                                        <div>
-                                            <div>{{ aluno.nome }}</div>
-                                            <small class="text-muted">{{ aluno.cpf }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                
-                                {% for atividade in atividades %}
-                                <td>
-                                    {% with key=aluno.cpf|add:'_'|add:atividade.id|stringformat:'s' %}
-                                    {% with presenca=presencas_dict|get_item:key %}
-                                    <div class="btn-group" role="group">
-                                        <input type="radio" class="btn-check" name="presenca_{{ aluno.cpf }}_{{ atividade.id }}" 
-                                               id="presente_{{ aluno.cpf }}_{{ atividade.id }}" value="PRESENTE"
-                                               {% if presenca and presenca.situacao == 'PRESENTE' %}checked{% elif not presenca %}checked{% endif %}>
-                                        <label class="btn btn-outline-success
 
 
 '''
