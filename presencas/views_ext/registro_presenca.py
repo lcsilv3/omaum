@@ -156,11 +156,8 @@ def registrar_presenca_totais_atividades_ajax(request):
 
 @login_required
 def registrar_presenca_dias_atividades(request):
-    """
-    GET: Exibe o formulário para seleção dos dias e observações das atividades.
-    POST: Salva no banco os dias e observações selecionados para cada atividade.
-    """
-    from django.shortcuts import render, redirect
+    from types import SimpleNamespace
+    print('DEBUG: Entrou na view registrar_presenca_dias_atividades (views_ext), method:', request.method)
     from datetime import date
     from calendar import monthrange
     from atividades.models import AtividadeAcademica
@@ -173,29 +170,46 @@ def registrar_presenca_dias_atividades(request):
         mes = request.session.get('presenca_mes')
         turma = Turma.objects.get(id=turma_id) if turma_id else None
 
+        totais_atividades = request.session.get('presenca_totais_atividades', {})
         atividades = []
+        resumo_atividades = []
+        atividades_ids_totais = []
         if turma and ano and mes:
-            totais_atividades = request.session.get('presenca_totais_atividades', {})
-            atividades_ids = [
-                int(key.replace('qtd_ativ_', ''))
-                for key, value in totais_atividades.items()
-                if value not in [None, '', '0', 0]  # Mostra só as atividades informadas
-            ]
-            logger.debug(f"Totais atividades na sessão: {totais_atividades}")
-            atividades_ids = [
-                int(key.replace('qtd_ativ_', ''))
-                for key, value in totais_atividades.items()
-                if int(value) > 0
-            ]
-            logger.debug(f"IDs filtrados: {atividades_ids}")
-            if atividades_ids:
-                atividades = AtividadeAcademica.objects.filter(
-                    id__in=atividades_ids,
-                    turmas__id=turma.id,
-                )
-            else:
-                atividades = []  # Não mostra nenhuma se não houver seleção
-
+            # Filtro único: todas as atividades da turma para o mês/ano
+            primeiro_dia = date(int(ano), int(mes), 1)
+            ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
+            atividades_queryset = AtividadeAcademica.objects.filter(
+                turmas__id=turma.id
+            ).filter(
+                Q(data_inicio__lte=ultimo_dia) &
+                (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
+            ).distinct().order_by('nome')
+            atividades = list(atividades_queryset)
+            # Monta o resumo: nome e total (zero se não informado) como objeto
+            for atividade in atividades:
+                key = f'qtd_ativ_{atividade.id}'
+                try:
+                    qtd = int(totais_atividades.get(key, 0))
+                except Exception:
+                    qtd = 0
+                resumo_atividades.append(SimpleNamespace(
+                    id=atividade.id,
+                    nome=atividade.nome,
+                    qtd_ativ_mes=qtd
+                ))
+                if qtd > 0:
+                    atividades_ids_totais.append(atividade.id)
+            # Filtra atividades para exibir apenas as selecionadas na etapa de totais
+            atividades = [a for a in atividades if a.id in atividades_ids_totais]
+            # Preenche qtd_ativ_mes em cada atividade
+            for atividade in atividades:
+                key = f'qtd_ativ_{atividade.id}'
+                try:
+                    qtd = int(totais_atividades.get(key, 0))
+                except Exception:
+                    qtd = 0
+                atividade.qtd_ativ_mes = qtd
+        # Dias do mês
         qtd_dias = monthrange(int(ano), int(mes))[1]
         dias_do_mes = list(range(1, qtd_dias + 1))
 
@@ -207,7 +221,7 @@ def registrar_presenca_dias_atividades(request):
                 turma=turma,
                 data__year=ano,
                 data__month=mes,
-                atividade_academica__in=atividades
+                atividade_academica__in=[a.id for a in atividades]
             )
             for obs in observacoes:
                 aid = obs.atividade_academica_id
@@ -222,7 +236,15 @@ def registrar_presenca_dias_atividades(request):
             'ano': ano,
             'presencas': presencas,
             'presencas_obs': presencas_obs,
+            'resumo_atividades': resumo_atividades,
         }
+        print('DEBUG: GET - Antes do render (views_ext)')
+        print('DEBUG resumo_atividades:', resumo_atividades)
+        for idx, atv in enumerate(resumo_atividades):
+            print(f'  Atividade {idx}: id={getattr(atv, "id", None)}, nome={getattr(atv, "nome", None)}, qtd_ativ_mes={getattr(atv, "qtd_ativ_mes", None)}')
+        print('DEBUG context keys:', list(context.keys()))
+        print('DEBUG context resumo_atividades:', context.get('resumo_atividades'))
+
         return render(request, 'presencas/registrar_presenca_dias_atividades.html', context)
 
     # POST
