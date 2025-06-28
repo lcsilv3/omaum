@@ -2,26 +2,131 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2>Registrar Presença - Marque os Alunos Presentes</h2>
-    <form id="form-alunos-presenca" method="post" autocomplete="off">
-        {% csrf_token %}
-        <div class="mb-3">
-            {{ form.alunos_presentes }}
+    <div class="accordion" id="accordionPresencaAlunos">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingAlunosPresenca">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAlunosPresenca" aria-expanded="true" aria-controls="collapseAlunosPresenca">
+                    Marcação de Presença dos Alunos
+                </button>
+            </h2>
+            <div id="collapseAlunosPresenca" class="accordion-collapse collapse show" aria-labelledby="headingAlunosPresenca" data-bs-parent="#accordionPresencaAlunos">
+                <div class="accordion-body">
+                    <h2 id="titulo-pagina">Registrar Presença - Marque os Alunos Presentes/Ausentes</h2>
+                    <form id="form-alunos-presenca" method="post" autocomplete="off" aria-labelledby="titulo-pagina">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Alunos convocados para as atividades selecionadas:</label>
+                            {% if alunos %}
+                            <div class="row">
+                                {% for aluno in alunos %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card p-2 h-100">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <span class="fw-bold" id="aluno-label-{{ aluno.id }}">{{ aluno.nome }}</span>
+                                            <span class="badge bg-success" id="badge-presente-{{ aluno.id }}" aria-live="polite" style="font-size:1em;">Presente</span>
+                                            <span class="badge bg-danger d-none" id="badge-ausente-{{ aluno.id }}" aria-live="polite" style="font-size:1em;">Ausente</span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input toggle-presenca" type="checkbox" id="toggle-{{ aluno.id }}" name="aluno_{{ aluno.id }}_status" value="ausente"
+                                                    role="switch" aria-checked="false" aria-labelledby="aluno-label-{{ aluno.id }} label-ausente-{{ aluno.id }}">
+                                                <label class="form-check-label" for="toggle-{{ aluno.id }}" id="label-ausente-{{ aluno.id }}">Marcar como Ausente</label>
+                                            </div>
+                                            <div class="mt-2 justificativa-group d-none" id="justificativa-group-{{ aluno.id }}">
+                                                <label for="justificativa-{{ aluno.id }}" class="form-label">Justificativa da falta <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control justificativa-input" name="aluno_{{ aluno.id }}_justificativa" id="justificativa-{{ aluno.id }}" placeholder="Informe o motivo da ausência" aria-required="true" maxlength="255">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info mt-3" role="alert">
+                                Nenhum aluno disponível para marcação de presença nesta etapa.<br>
+                                Possíveis motivos:
+                                <ul>
+                                    <li>Não há alunos ativos na turma selecionada.</li>
+                                    <li>Nenhum aluno foi convocado nas etapas anteriores.</li>
+                                    <li>Houve um problema na seleção de turma ou atividades.</li>
+                                </ul>
+                                O que deseja fazer?
+                                <div class="mt-2">
+                                    <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-secondary">Voltar ao início</a>
+                                    <a href="javascript:history.back()" class="btn btn-outline-primary ms-2">Refazer escolhas</a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-primary" aria-label="Confirmar e avançar para confirmação de presença">Confirmar e Avançar</button>
+                    </form>
+                    <div id="form-errors" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                    <div id="ajax-error" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                </div>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Confirmar e Avançar</button>
-    </form>
-    <div id="form-errors" class="alert alert-danger mt-3 d-none"></div>
-    <div id="ajax-error" class="alert alert-danger mt-3 d-none"></div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.toggle-presenca').forEach(function(toggle) {
+        toggle.addEventListener('change', function() {
+            const alunoId = this.id.replace('toggle-', '');
+            const badgePresente = document.getElementById('badge-presente-' + alunoId);
+            const badgeAusente = document.getElementById('badge-ausente-' + alunoId);
+            const justificativaGroup = document.getElementById('justificativa-group-' + alunoId);
+            const justificativaInput = document.getElementById('justificativa-' + alunoId);
+            if (this.checked) {
+                badgePresente.classList.add('d-none');
+                badgeAusente.classList.remove('d-none');
+                justificativaGroup.classList.remove('d-none');
+                justificativaInput.required = true;
+                this.setAttribute('aria-checked', 'true');
+            } else {
+                badgePresente.classList.remove('d-none');
+                badgeAusente.classList.add('d-none');
+                justificativaGroup.classList.add('d-none');
+                justificativaInput.required = false;
+                justificativaInput.value = '';
+                this.setAttribute('aria-checked', 'false');
+            }
+        });
+    });
     const form = document.getElementById('form-alunos-presenca');
     form.addEventListener('submit', function(e) {
         e.preventDefault();
+        let valid = true;
+        let firstInvalid = null;
+        document.querySelectorAll('.toggle-presenca').forEach(function(toggle) {
+            const alunoId = toggle.id.replace('toggle-', '');
+            const justificativaInput = document.getElementById('justificativa-' + alunoId);
+            if (toggle.checked && justificativaInput.value.trim() === '') {
+                justificativaInput.classList.add('is-invalid');
+                valid = false;
+                if (!firstInvalid) firstInvalid = justificativaInput;
+            } else {
+                justificativaInput.classList.remove('is-invalid');
+            }
+        });
+        if (!valid) {
+            let errorDiv = document.getElementById('form-errors');
+            errorDiv.innerHTML = 'Preencha a justificativa para todos os alunos marcados como ausentes.';
+            errorDiv.classList.remove('d-none');
+            if (firstInvalid) firstInvalid.focus();
+            return;
+        } else {
+            document.getElementById('form-errors').classList.add('d-none');
+        }
         const formData = new FormData(form);
+        // Marca todos os não checados como presente
+        document.querySelectorAll('.toggle-presenca').forEach(function(toggle) {
+            if (!toggle.checked) {
+                formData.set(toggle.name, 'presente');
+            }
+        });
         fetch("{% url 'presencas:registrar_presenca_alunos_ajax' %}", {
             method: "POST",
             headers: {

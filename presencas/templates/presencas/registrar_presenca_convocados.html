@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 id="titulo-pagina">Selecionar Alunos Convocados</h2>
+    <form id="form-convocados" method="post" autocomplete="off" aria-labelledby="titulo-pagina">
+        {% csrf_token %}
+        {% for atividade in atividades %}
+            <div class="mb-4">
+                <h5>{{ atividade.nome }} {% if atividade.convocacao %}<span class="badge bg-warning text-dark">Convocação</span>{% endif %}</h5>
+                {% if atividade.convocacao %}
+                    <label class="form-label">Selecione os alunos convocados:</label>
+                    <div class="row">
+                        {% for aluno in alunos %}
+                        <div class="col-md-3 mb-2">
+                            <input type="checkbox" name="convocados_{{ atividade.id }}" value="{{ aluno.id }}" id="conv_{{ atividade.id }}_{{ aluno.id }}">
+                            <label for="conv_{{ atividade.id }}_{{ aluno.id }}">{{ aluno.nome }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <span class="text-muted">Todos os alunos participarão desta atividade.</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Confirmar Convocados e Avançar</button>
+    </form>
+    <div id="form-errors" class="alert alert-danger mt-3 d-none" role="alert"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-convocados');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        fetch("{% url 'presencas:registrar_presenca_convocados_ajax' %}", {
+            method: "POST",
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else if (data.errors) {
+                let errorDiv = document.getElementById('form-errors');
+                errorDiv.innerHTML = data.errors;
+                errorDiv.classList.remove('d-none');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

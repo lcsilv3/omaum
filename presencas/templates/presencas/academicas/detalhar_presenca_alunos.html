@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="accordion" id="accordionDetalharPresencaAlunos">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingDetalharAlunos">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetalharAlunos" aria-expanded="true" aria-controls="collapseDetalharAlunos">
+                    Detalhar Alunos
+                </button>
+            </h2>
+            <div id="collapseDetalharAlunos" class="accordion-collapse collapse show" aria-labelledby="headingDetalharAlunos" data-bs-parent="#accordionDetalharPresencaAlunos">
+                <div class="accordion-body">
+                    <ul>
+                        {% for aluno in presenca.alunos.all %}
+                            <li>{{ aluno.nome }}</li>
+                        {% empty %}
+                            <li>Nenhum aluno cadastrado.</li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{% url 'listar_presencas_academicas' %}" class="btn btn-primary">Finalizar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

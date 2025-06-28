@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="accordion" id="accordionDetalharPresenca">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingDetalharDadosBasicos">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetalharDadosBasicos" aria-expanded="true" aria-controls="collapseDetalharDadosBasicos">
+                    Detalhar Dados Básicos
+                </button>
+            </h2>
+            <div id="collapseDetalharDadosBasicos" class="accordion-collapse collapse show" aria-labelledby="headingDetalharDadosBasicos" data-bs-parent="#accordionDetalharPresenca">
+                <div class="accordion-body">
+                    <ul>
+                        <li>Campo 1: {{ presenca.campo1 }}</li>
+                        <li>Campo 2: {{ presenca.campo2 }}</li>
+                        <!-- Adicione os campos necessários -->
+                    </ul>
+                    <a href="{% url 'detalhar_presenca_totais_atividades' presenca.pk %}" class="btn btn-secondary">Próximo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

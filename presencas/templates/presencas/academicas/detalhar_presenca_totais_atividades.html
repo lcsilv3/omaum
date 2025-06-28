@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <div class="accordion" id="accordionDetalharPresencaTotais">
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingDetalharTotaisAtividades">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetalharTotaisAtividades" aria-expanded="true" aria-controls="collapseDetalharTotaisAtividades">
+          Detalhar Totais de Atividades
+        </button>
+      </h2>
+      <div id="collapseDetalharTotaisAtividades" class="accordion-collapse collapse show" aria-labelledby="headingDetalharTotaisAtividades" data-bs-parent="#accordionDetalharPresencaTotais">
+        <div class="accordion-body">
+          <!-- Breadcrumbs/Progresso -->
+          <nav aria-label="Progresso">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="{% url 'detalhar_presenca_dados_basicos' presenca.pk %}">Dados Básicos</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Totais de Atividades</li>
+              <li class="breadcrumb-item">Dias das Atividades</li>
+              <li class="breadcrumb-item">Alunos</li>
+            </ol>
+          </nav>
+          <!-- Conteúdo da etapa -->
+          <h2>Detalhar Totais de Atividades</h2>
+          {% if messages %}
+            <div>
+              {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+          <ul class="list-group mb-3">
+              <li class="list-group-item">Total de Atividades: {{ presenca.total_atividades }}</li>
+              <li class="list-group-item">Total de Horas: {{ presenca.total_horas }}</li>
+          </ul>
+          <nav aria-label="Navegação entre etapas">
+            <a href="{% url 'detalhar_presenca_dados_basicos' presenca.pk %}" class="btn btn-secondary me-2" aria-label="Voltar para Dados Básicos">Anterior</a>
+            <a href="{% url 'detalhar_presenca_dias_atividades' presenca.pk %}" class="btn btn-primary" aria-label="Avançar para Dias das Atividades">Próximo</a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

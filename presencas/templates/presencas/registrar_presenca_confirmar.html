@@ -2,26 +2,50 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2>Confirmar Registro de Presença</h2>
-    <div class="mb-3">
-        <strong>Turma:</strong> {{ turma }}<br>
-        <strong>Ano:</strong> {{ ano }}<br>
-        <strong>Mês:</strong> {{ mes }}<br>
-        <strong>Atividade:</strong> {{ atividade }}<br>
-        <strong>Alunos Presentes:</strong>
-        <ul>
-            {% for aluno in alunos_presentes %}
-                <li>{{ aluno }}</li>
-            {% empty %}
-                <li>Nenhum aluno selecionado.</li>
-            {% endfor %}
-        </ul>
+    <div class="accordion" id="accordionPresencaConfirmar">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingConfirmarPresenca">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfirmarPresenca" aria-expanded="true" aria-controls="collapseConfirmarPresenca">
+                    Confirmação Final do Registro de Presença
+                </button>
+            </h2>
+            <div id="collapseConfirmarPresenca" class="accordion-collapse collapse show" aria-labelledby="headingConfirmarPresenca" data-bs-parent="#accordionPresencaConfirmar">
+                <div class="accordion-body">
+                    <h2 id="titulo-pagina">Confirmar Registro de Presença</h2>
+                    <div class="mb-3">
+                        <strong>Turma:</strong> {{ turma }}<br>
+                        <strong>Ano:</strong> {{ ano }}<br>
+                        <strong>Mês:</strong> {{ mes }}<br>
+                        <strong>Atividade:</strong> {{ atividade }}<br>
+                        <strong>Alunos Presentes:</strong>
+                        <ul>
+                            {% for aluno in alunos_presentes %}
+                                <li>{{ aluno }}</li>
+                            {% empty %}
+                                <li>Nenhum aluno selecionado para confirmação de presença.<br>
+                                    Possíveis motivos:
+                                    <ul>
+                                        <li>Não houve marcação de presença para nenhum aluno nas etapas anteriores.</li>
+                                        <li>Filtros aplicados resultaram em lista vazia.</li>
+                                    </ul>
+                                    O que deseja fazer?
+                                    <div class="mt-2">
+                                        <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-secondary btn-sm">Voltar ao início</a>
+                                        <a href="javascript:history.back()" class="btn btn-outline-primary btn-sm ms-2">Refazer escolhas</a>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <form id="form-confirmar-presenca" method="post" aria-labelledby="titulo-pagina">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success" aria-label="Confirmar e salvar presença">Confirmar e Salvar</button>
+                    </form>
+                    <div id="form-errors" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                </div>
+            </div>
+        </div>
     </div>
-    <form id="form-confirmar-presenca" method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-success">Confirmar e Salvar</button>
-    </form>
-    <div id="form-errors" class="alert alert-danger mt-3 d-none"></div>
 </div>
 {% endblock %}
 

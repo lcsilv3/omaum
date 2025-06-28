@@ -31,10 +31,10 @@
                     <input type="text" name="q" class="form-control" placeholder="Buscar por nome..." value="{{ query }}">
                 </div>
                 <div class="col-md-4">
-                    <select name="codigo_curso" class="form-select">
+                    <select name="curso" class="form-select">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
-                            <option value="{{ curso.codigo_curso }}" {% if codigo_curso_selecionado == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
+                            <option value="{{ curso.codigo_curso }}" {% if curso_selecionado == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
                                 {{ curso.nome }}
                             </option>
                         {% endfor %}

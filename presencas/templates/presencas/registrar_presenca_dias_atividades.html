@@ -3,174 +3,241 @@
 {% load presenca_extras %}
 
 {% block content %}
-<h2 style="font-size:1.3em;">Designação dos Dias das Atividades</h2>
-
-{# Quadro resumo agora usa apenas as atividades filtradas #}
-<div class="resumo-totais-atividades mb-3" style="background:#eaf6ff;border:1.5px solid #90caf9;padding:14px 22px 10px 22px;border-radius:10px;font-size:1em;max-width:700px;display:flex;align-items:center;gap:18px;box-shadow:0 2px 8px #e3eaf3;">
-    <img src="{% static 'img/logo.png' %}" alt="Resumo" style="width:38px;height:38px;margin-right:10px;opacity:0.85;">
-    <div>
-        <strong style="font-size:1.08em;">Resumo dos Totais de Atividades deste mês:</strong>
-        <ul style="margin-bottom:0;margin-top:4px;padding-left:18px;">
-            {% if atividades and atividades|length > 0 %}
-                {% for atividade in atividades %}
-                    <li style="margin-bottom:2px;">
-                        <span style="font-weight:500;">{{ atividade.nome|default:'(Sem nome)' }}</span>:
-                        <span style="color:#1976d2;font-weight:600;">{{ atividade.qtd_ativ_mes|default:'0' }}</span> dia(s)
-                    </li>
-                {% endfor %}
-            {% else %}
-                <li>Nenhuma atividade cadastrada para o mês/turma.</li>
-            {% endif %}
-        </ul>
-    </div>
-</div>
-
-{# DEBUG: Mostra IDs e nomes das atividades filtradas #}
-<div class="alert alert-info" style="max-width:700px;">
-    <strong>DEBUG:</strong> Atividades filtradas para os quadros:<br>
-    {% if atividades %}
-        <ul style="margin-bottom:0;">
-        {% for atividade in atividades %}
-            <li>ID: {{ atividade.id }} | Nome: {{ atividade.nome }} | qtd_ativ_mes: {{ atividade.qtd_ativ_mes }}</li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        Nenhuma atividade filtrada.
-    {% endif %}
-</div>
-
-<style>
-    .atividades-container {
-        display: flex;
-        overflow-x: auto;
-        gap: 12px;
-        padding-bottom: 8px;
-    }
-    .atividade-quadro {
-        min-width: 220px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        padding: 10px 8px;
-        background: #fafafa;
-        flex-shrink: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        font-size: 0.93em;
-    }
-    .atividade-quadro strong {
-        font-size: 1em;
-    }
-    .minicalendario {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        margin-bottom: 6px;
-        justify-content: flex-start;
-        width: 100%;
-    }
-    .minicalendario .dia-linha {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 1px;
-    }
-    .minicalendario label {
-        width: 28px;
-        text-align: center;
-        cursor: pointer;
-        margin-bottom: 0;
-        font-size: 0.92em;
-    }
-    .minicalendario input[type="text"] {
-        flex: 1;
-        min-width: 0;
-        max-width: 110px;
-        font-size: 0.92em;
-        padding: 2px 4px;
-        height: 26px;
-    }
-    .matriz-confirmada {
-        margin-top: 8px;
-        border-top: 1px solid #ddd;
-        padding-top: 4px;
-        font-size: 0.92em;
-    }
-    .obs-curta {
-        display: inline;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 140px;
-        vertical-align: bottom;
-    }
-    .btn-confirmar {
-        font-size: 0.95em;
-        padding: 2px 10px;
-    }
-    .btn-primary, .btn-success {
-        font-size: 0.97em;
-        padding: 4px 14px;
-    }
-</style>
+<h2 id="titulo-pagina" style="font-size:1.3em;">Designação dos Dias das Atividades</h2>
 
 <form id="form-presenca" method="post">
     {% csrf_token %}
     <div id="mensagem-ajax" class="alert d-none" role="alert"></div>
     <div id="mensagem-erro-ajax" class="alert alert-danger d-none"></div>
-    <div class="atividades-container">
+    <div id="mensagem-validacao" class="alert alert-danger d-none" role="alert"></div>
+    <div class="accordion" id="accordionAtividades">
         {% if atividades %}
             {% for atividade in atividades %}
-                <div class="atividade-quadro" id="quadro-{{ atividade.id }}">
-                    <strong>
-                        {{ atividade.nome }} ({{ atividade.qtd_ativ_mes|default:'0' }})
-                    </strong>
-                    <div>
-                        <small>Mês: {{ mes }}/{{ ano }}</small>
-                    </div>
-                    <div class="minicalendario">
-                        {% for dia in dias_do_mes %}
-                        <div class="dia-linha">
-                            <label>
-                                <input type="checkbox"
-                                    class="dia-checkbox"
-                                    name="presenca_{{ atividade.id }}"
-                                    value="{{ dia }}"
-                                    data-atividade="{{ atividade.id }}"
-                                    data-dia="{{ dia }}"
-                                    {% if presencas and presencas|get_item:atividade.id and dia in presencas|get_item:atividade.id %}checked{% endif %}>
-                                {{ dia }}
-                            </label>
-                            <input type="text"
-                                name="obs_{{ atividade.id }}_{{ dia }}"
-                                maxlength="200"
-                                class="form-control obs-dia"
-                                placeholder="Obs. deste dia"
-                                value="{% if presencas_obs and presencas_obs|get_item:atividade.id and presencas_obs|get_item:atividade.id|get_item:dia %}{{ presencas_obs|get_item:atividade.id|get_item:dia }}{% endif %}">
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <button type="button"
-                        class="btn btn-success btn-confirmar"
-                        data-atividade="{{ atividade.id }}"
-                        data-qtd="{{ atividade.qtd_ativ_mes|default:'0' }}">
-                        Confirmar
+            <div class="accordion-item mb-2">
+                <h2 class="accordion-header" id="heading-{{ atividade.id }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ atividade.id }}" aria-expanded="false" aria-controls="collapse-{{ atividade.id }}">
+                        {{ atividade.nome }} <span class="ms-2 text-muted">({{ atividade.qtd_ativ_mes|default:'0' }} dias)</span>
                     </button>
-                    <div class="matriz-confirmada" id="matriz-{{ atividade.id }}" style="display:none;">
-                        <!-- Lista dos dias e observações confirmadas aparecerá aqui -->
+                </h2>
+                <div id="collapse-{{ atividade.id }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ atividade.id }}" data-bs-parent="#accordionAtividades">
+                    <div class="accordion-body p-0">
+                        <div class="atividade-bloco-table table-responsive p-3">
+                            <table class="table table-bordered table-sm mb-0" style="background:#f8f9fa;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:40%">Dias da atividade</th>
+                                        <th>Observações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="vertical-align:middle;">
+                                            <label for="dias-atividade-{{ atividade.id }}" class="form-label visually-hidden">Selecione os dias da atividade</label>
+                                            <input type="text" id="dias-atividade-{{ atividade.id }}" name="presenca_{{ atividade.id }}" class="form-control dias-datepicker" placeholder="Clique para escolher os dias" readonly data-atividade="{{ atividade.id }}" data-maxdias="{{ atividade.qtd_ativ_mes|default:'0' }}">
+                                            <div class="form-text">Selecione até {{ atividade.qtd_ativ_mes|default:'0' }} dia(s) no mês.</div>
+                                            <div class="msg-limite-dias" id="msg-limite-{{ atividade.id }}"></div>
+                                        </td>
+                                        <td>
+                                            <div id="obs-dias-{{ atividade.id }}" class="row g-2">
+                                                <!-- Campos de observação por dia selecionado serão inseridos via JS -->
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
+            </div>
             {% endfor %}
         {% else %}
-            <div class="alert alert-warning">
+            <div class="alert alert-warning mt-3" role="alert">
                 Nenhuma atividade encontrada para o mês/turma selecionados.<br>
-                Volte e preencha os totais de atividades.
+                Possíveis motivos:
+                <ul>
+                    <li>Não há atividades cadastradas para a turma selecionada.</li>
+                    <li>Os totais de atividades não foram preenchidos ou estão zerados.</li>
+                    <li>Houve um problema na seleção de turma ou atividades.</li>
+                </ul>
+                O que deseja fazer?
+                <div class="mt-2">
+                    <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-secondary">Voltar ao início</a>
+                    <a href="javascript:history.back()" class="btn btn-outline-primary ms-2">Refazer escolhas</a>
+                </div>
             </div>
         {% endif %}
     </div>
-    <button type="submit" class="btn btn-primary">Salvar e avançar</button>
+    <button type="submit" class="btn btn-primary mt-3">Salvar e avançar</button>
 </form>
 
-<script src="{% static 'js/presencas/registrar_presenca_dias_atividades.js' %}"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .accordion-button:focus { box-shadow: 0 0 0 0.2rem #90caf9; }
+    .datepicker-days .selected { background: #1976d2 !important; color: #fff !important; }
+    .obs-dia { font-size: 0.95em; margin-top: 6px; }
+    .flatpickr-calendar .flatpickr-ok {
+        display: inline-block;
+        margin: 8px 0 0 0;
+        padding: 4px 16px;
+        background: #1976d2;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1em;
+    }
+    .flatpickr-calendar .flatpickr-ok:active {
+        background: #125ea7;
+    }
+    .msg-limite-dias {
+        color: #d32f2f;
+        font-size: 0.98em;
+        margin-top: 4px;
+        display: none;
+    }
+    .atividade-bloco-table {
+        background: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(25, 118, 210, 0.07), 0 1.5px 4px rgba(0,0,0,0.04);
+        margin-bottom: 18px;
+        transition: box-shadow 0.2s;
+    }
+    .atividade-bloco-table:hover {
+        box-shadow: 0 4px 16px rgba(25, 118, 210, 0.13), 0 3px 8px rgba(0,0,0,0.08);
+    }
+    .table-sm th, .table-sm td {
+        padding: 0.45rem 0.7rem;
+        vertical-align: middle;
+    }
+    .accordion-item {
+        border: none;
+        background: transparent;
+    }
+    .accordion-header {
+        margin-bottom: 0;
+    }
+    .accordion-button {
+        border-radius: 10px 10px 0 0;
+        font-weight: 500;
+        font-size: 1.08em;
+        background: #e3f2fd;
+        color: #1976d2;
+        border: none;
+        box-shadow: none;
+        transition: background 0.2s, color 0.2s;
+    }
+    .accordion-button.collapsed {
+        background: #f8f9fa;
+        color: #333;
+    }
+    .accordion-button:not(.collapsed) {
+        color: #1976d2;
+        background: #e3f2fd;
+    }
+    .accordion-body {
+        border-radius: 0 0 10px 10px;
+        background: #f8f9fa;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Flatpickr setup (igual ao anterior)
+    document.querySelectorAll('.dias-datepicker').forEach(function(input) {
+        const atividadeId = input.dataset.atividade;
+        const maxDias = parseInt(input.dataset.maxdias) || 0;
+        const msgLimite = document.getElementById('msg-limite-' + atividadeId);
+        flatpickr(input, {
+            mode: 'multiple',
+            dateFormat: 'd',
+            minDate: new Date({{ ano }}, {{ mes }} - 1, 1),
+            maxDate: new Date({{ ano }}, {{ mes }} - 1, {{ dias_do_mes|length }}),
+            locale: 'pt',
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length > maxDias) {
+                    msgLimite.textContent = `Você só pode selecionar até ${maxDias} dia(s) para esta atividade. Caso deseje mais, volte e altere o total de dias na etapa anterior.`;
+                    msgLimite.style.display = 'block';
+                    // Remove o último selecionado
+                    selectedDates.pop();
+                    instance.setDate(selectedDates, true);
+                    return;
+                } else {
+                    msgLimite.style.display = 'none';
+                }
+                // Limpa e insere campos de observação para cada dia selecionado
+                const obsDiv = document.getElementById('obs-dias-' + atividadeId);
+                obsDiv.innerHTML = '';
+                selectedDates.forEach(function(date) {
+                    const dia = date.getDate();
+                    const obsInput = document.createElement('input');
+                    obsInput.type = 'text';
+                    obsInput.name = `obs_${atividadeId}_${dia}`;
+                    obsInput.className = 'form-control obs-dia col-md-4';
+                    obsInput.placeholder = `Obs. do dia ${dia}`;
+                    obsInput.maxLength = 200;
+                    obsDiv.appendChild(obsInput);
+                });
+            },
+            onReady: function(selectedDates, dateStr, instance) {
+                // Adiciona botão OK para fechar o calendário
+                if (!instance.calendarContainer.querySelector('.flatpickr-ok')) {
+                    const okBtn = document.createElement('button');
+                    okBtn.type = 'button';
+                    okBtn.textContent = 'OK';
+                    okBtn.className = 'flatpickr-ok';
+                    okBtn.onclick = function() {
+                        instance.close();
+                    };
+                    instance.calendarContainer.appendChild(okBtn);
+                }
+            },
+            onOpen: function(selectedDates, dateStr, instance) {
+                // Garante que o botão OK sempre aparece ao abrir
+                if (!instance.calendarContainer.querySelector('.flatpickr-ok')) {
+                    const okBtn = document.createElement('button');
+                    okBtn.type = 'button';
+                    okBtn.textContent = 'OK';
+                    okBtn.className = 'flatpickr-ok';
+                    okBtn.onclick = function() {
+                        instance.close();
+                    };
+                    instance.calendarContainer.appendChild(okBtn);
+                }
+            }
+        });
+    });
+
+    // Validação do formulário antes do envio
+    document.getElementById('form-presenca').addEventListener('submit', function(e) {
+        let valid = true;
+        let msg = '';
+        let atividades = document.querySelectorAll('.dias-datepicker');
+        if (atividades.length === 0) {
+            msg = 'Nenhuma atividade foi selecionada para este mês/turma. Volte e preencha os totais de atividades.';
+            valid = false;
+        } else {
+            atividades.forEach(function(input) {
+                const maxDias = parseInt(input.dataset.maxdias) || 0;
+                const selected = input._flatpickr ? input._flatpickr.selectedDates.length : 0;
+                if (selected !== maxDias) {
+                    valid = false;
+                    msg += `Selecione exatamente ${maxDias} dia(s) para a atividade "${input.closest('.accordion-item').querySelector('.accordion-button').textContent.trim()}".\n`;
+                }
+            });
+        }
+        if (!valid) {
+            e.preventDefault();
+            let msgDiv = document.getElementById('mensagem-validacao');
+            msgDiv.textContent = msg;
+            msgDiv.classList.remove('d-none');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return false;
+        } else {
+            document.getElementById('mensagem-validacao').classList.add('d-none');
+        }
+    });
+});
+</script>
 <script src="{% static 'js/presencas/limpar_form_dias_atividades.js' %}"></script>
 {% endblock %}

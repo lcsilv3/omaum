@@ -93,7 +93,7 @@
         <input type="text" name="q" class="form-control" placeholder="Buscar por nome ou descrição..." value="{{ query }}">
     </div>
     <div class="col-md-3">
-        <select name="codigo_curso" id="id_codigo_curso" class="form-select" aria-label="Selecionar curso">
+        <select name="curso" id="id_curso" class="form-select" aria-label="Selecionar curso">
             <option value="">Todos os cursos</option>
             {% for curso in cursos %}
                 <option value="{{ curso.codigo_curso }}" {% if codigo_curso_selecionado == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>

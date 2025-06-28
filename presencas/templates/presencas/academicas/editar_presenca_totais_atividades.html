@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="accordion" id="accordionEditarPresencaTotais">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingEditarTotaisAtividades">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEditarTotaisAtividades" aria-expanded="true" aria-controls="collapseEditarTotaisAtividades">
+                    Editar Totais de Atividades
+                </button>
+            </h2>
+            <div id="collapseEditarTotaisAtividades" class="accordion-collapse collapse show" aria-labelledby="headingEditarTotaisAtividades" data-bs-parent="#accordionEditarPresencaTotais">
+                <div class="accordion-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <a href="{% url 'editar_presenca_dados_basicos' presenca.pk %}" class="btn btn-secondary">Anterior</a>
+                        <button type="submit" class="btn btn-primary">Próximo</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

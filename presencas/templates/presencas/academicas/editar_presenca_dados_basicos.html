@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="accordion" id="accordionEditarPresenca">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingEditarDadosBasicos">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEditarDadosBasicos" aria-expanded="true" aria-controls="collapseEditarDadosBasicos">
+                    Editar Dados Básicos
+                </button>
+            </h2>
+            <div id="collapseEditarDadosBasicos" class="accordion-collapse collapse show" aria-labelledby="headingEditarDadosBasicos" data-bs-parent="#accordionEditarPresenca">
+                <div class="accordion-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary">Próximo</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

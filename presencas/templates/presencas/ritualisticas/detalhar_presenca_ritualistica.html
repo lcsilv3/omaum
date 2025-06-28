@@ -2,8 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Detalhes da Presença</h1>
-    
+    <h1 id="titulo-pagina">Detalhes da Presença Ritualística</h1>
     <div class="card mb-4">
         <div class="card-header">
             <h5 class="mb-0">Informações do Registro</h5>
@@ -17,22 +16,21 @@
                 </div>
                 <div class="col-md-6">
                     <p><strong>Status:</strong> {% if presenca.presente %}Presente{% else %}Ausente{% endif %}</p>
-                    <p><strong>Registrado por:</strong> {{ presenca.registrado_por.username }}</p>
+                    <p><strong>Registrado por:</strong> {{ presenca.registrado_por|default:'-' }}</p>
                     <p><strong>Data de Registro:</strong> {{ presenca.data_registro|date:"d/m/Y H:i" }}</p>
                 </div>
             </div>
-
             {% if presenca.justificativa %}
             <div class="mt-3">
                 <h6>Justificativa:</h6>
-                <div class="p-3 bg-light rounded">
+                <div class="p-3 bg-light rounded" aria-label="Justificativa da ausência">
                     {{ presenca.justificativa }}
                 </div>
             </div>
             {% endif %}
         </div>
-        <div class="card-footer">
-            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+        <div class="card-footer d-flex justify-content-end">
+            <a href="{% url 'presencas:listar_presencas_ritualisticas' %}" class="btn btn-secondary" aria-label="Voltar para a lista de presenças ritualísticas">
                 <i class="fas fa-list"></i> Voltar para a lista
             </a>
         </div>

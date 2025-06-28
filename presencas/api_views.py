@@ -4,34 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 import json
 import logging
-from importlib import import_module
+from atividades.models import AtividadeAcademica
+from alunos.models import Aluno
+from presencas.models import Presenca
+
 
 logger = logging.getLogger(__name__)
-
-def get_models():
-    """Obtém o modelo Presenca."""
-    presencas_module = import_module("presencas.models")
-    return getattr(presencas_module, "Presenca")
-
-def get_aluno_model():
-    """Obtém o modelo Aluno."""
-    alunos_module = import_module("alunos.models")
-    return getattr(alunos_module, "Aluno")
-
-def get_atividade_model():
-    """Obtém o modelo Atividade."""
-    atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "Atividade")
-
-def get_turma_model():
-    """Obtém o modelo Turma."""
-    turmas_module = import_module("turmas.models")
-    return getattr(turmas_module, "Turma")
-
-def get_matricula_model():
-    """Obtém o modelo Matricula."""
-    matriculas_module = import_module("matriculas.models")
-    return getattr(matriculas_module, "Matricula")
 
 @login_required
 @require_POST
@@ -50,14 +28,12 @@ def obter_alunos_por_turmas(request):
             return JsonResponse({'error': 'Nenhuma turma selecionada.'}, status=400)
         
         # Obter turmas
-        Turma = get_turma_model()
         turmas = Turma.objects.filter(id__in=turmas_ids)
         
         if not turmas.exists():
             return JsonResponse({'error': 'Nenhuma turma encontrada com os IDs fornecidos.'}, status=404)
         
         # Obter matrículas ativas nas turmas
-        Matricula = get_matricula_model()
         matriculas = Matricula.objects.filter(turma__in=turmas, status='A').select_related('aluno')
         
         # Obter alunos únicos
@@ -75,8 +51,7 @@ def obter_alunos_por_turmas(request):
                 alunos_ids.add(matricula.aluno.cpf)
         
         # Obter atividades
-        Atividade = get_atividade_model()
-        atividades = Atividade.objects.all()
+        atividades = AtividadeAcademica.objects.all()
         
         atividades_data = [
             {
@@ -93,7 +68,7 @@ def obter_alunos_por_turmas(request):
         })
     
     except Exception as e:
-        logger.error(f"Erro ao obter alunos por turmas: {str(e)}", exc_info=True)
+        logger.error("Erro ao obter alunos por turmas: %s", e, exc_info=True)
         return JsonResponse({'error': 'Ocorreu um erro inesperado ao buscar alunos. Tente novamente mais tarde.'}, status=500)
 
 @login_required
@@ -107,8 +82,7 @@ def obter_atividades_por_data(request):
             return JsonResponse({'error': 'Data não fornecida.'}, status=400)
         
         # Obter atividades para a data
-        Atividade = get_atividade_model()
-        atividades = Atividade.objects.filter(data_inicio__date=data)
+        atividades = AtividadeAcademica.objects.filter(data_inicio__date=data)
         
         atividades_data = [
             {
@@ -124,7 +98,7 @@ def obter_atividades_por_data(request):
         })
     
     except Exception as e:
-        logger.error(f"Erro ao obter atividades por data: {str(e)}", exc_info=True)
+        logger.error("Erro ao obter atividades por data: %s", e, exc_info=True)
         return JsonResponse({'error': f"Erro ao obter atividades: {str(e)}"}, status=500)
 
 @login_required
@@ -138,11 +112,6 @@ def salvar_presencas_multiplas(request):
         
         if not presencas_data:
             return JsonResponse({'error': 'Nenhuma presença para salvar.'}, status=400)
-        
-        # Obter modelos
-        Presenca = get_models()
-        Aluno = get_aluno_model()
-        Atividade = get_atividade_model()
         
         # Salvar presenças em uma transação
         with transaction.atomic():
@@ -162,8 +131,8 @@ def salvar_presencas_multiplas(request):
                 # Obter aluno e atividade
                 try:
                     aluno = Aluno.objects.get(cpf=aluno_id)
-                    atividade = Atividade.objects.get(id=atividade_id)
-                except (Aluno.DoesNotExist, Atividade.DoesNotExist):
+                    atividade = AtividadeAcademica.objects.get(id=atividade_id)
+                except (Aluno.DoesNotExist, AtividadeAcademica.DoesNotExist):
                     continue
                 
                 # Verificar se já existe presença para este aluno/atividade/data
@@ -185,5 +154,5 @@ def salvar_presencas_multiplas(request):
             })
     
     except Exception as e:
-        logger.error(f"Erro ao salvar presenças múltiplas: {str(e)}", exc_info=True)
+        logger.error("Erro ao salvar presenças múltiplas: %s", e, exc_info=True)
         return JsonResponse({'error': f"Erro ao salvar presenças: {str(e)}"}, status=500)

@@ -130,7 +130,7 @@
         </div>
         <div id="alunos-turma" class="collapse card-body">
             <ul class="mb-0">
-                {% for matricula in turma.matriculas.all %}
+                {% for matricula in matriculas %}
                     <li>{{ matricula.aluno.nome }}</li>
                 {% empty %}
                     <li>Nenhum aluno matriculado.</li>

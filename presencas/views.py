@@ -1,64 +1,38 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from importlib import import_module
-from django.utils import timezone
-from django.http import JsonResponse, HttpResponse
+"""
+Views do aplicativo Presenças.
+"""
+
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from calendar import monthrange
-from django.db.models import Q
-from datetime import date
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
 from types import SimpleNamespace
 
-logging.basicConfig(level=logging.DEBUG)
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+from atividades.models import PresencaAcademica, PresencaRitualistica, AtividadeAcademica, AtividadeRitualistica
+from presencas.models import ObservacaoPresenca, TotalAtividadeMes
+from alunos.models import Aluno
+from turmas.models import Turma
+from presencas.forms import TotaisAtividadesPresencaForm
 
 logger = logging.getLogger(__name__)
 
-def get_model_academica():
-    atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "PresencaAcademica")
-
-def get_model_ritualistica():
-    atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "PresencaRitualistica")
-
-def get_model_observacao():
-    atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "ObservacaoPresenca")
-
-def get_aluno_model():
-    alunos_module = import_module("alunos.models")
-    return getattr(alunos_module, "Aluno")
-
-def get_turma_model():
-    turmas_module = import_module("turmas.models")
-    return getattr(turmas_module, "Turma")
-
-def get_atividade_academica_model():
-    atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "AtividadeAcademica")
-
-def get_atividade_ritualistica_model():
-    atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "AtividadeRitualistica")
-
 @login_required
 def listar_presencas_academicas(request):
-    Presenca = get_model_academica()
-    Aluno = get_aluno_model()
-    Turma = get_turma_model()
-    Atividade = get_atividade_academica_model()
-
     aluno_id = request.GET.get('aluno', '')
     turma_id = request.GET.get('turma', '')
     atividade_id = request.GET.get('atividade', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
 
-    presencas = Presenca.objects.all().select_related('aluno', 'turma', 'atividade')
+    presencas = PresencaAcademica.objects.all().select_related('aluno', 'turma', 'atividade')
     if aluno_id:
         presencas = presencas.filter(aluno__cpf=aluno_id)
     if turma_id:
@@ -72,7 +46,7 @@ def listar_presencas_academicas(request):
 
     alunos = Aluno.objects.all()
     turmas = Turma.objects.all()
-    atividades = Atividade.objects.all()
+    atividades = AtividadeAcademica.objects.all()
 
     context = {
         'presencas': presencas,
@@ -92,18 +66,13 @@ def listar_presencas_academicas(request):
 
 @login_required
 def listar_presencas_ritualisticas(request):
-    Presenca = get_model_ritualistica()
-    Aluno = get_aluno_model()
-    Turma = get_turma_model()
-    Atividade = get_atividade_ritualistica_model()
-
     aluno_id = request.GET.get('aluno', '')
     turma_id = request.GET.get('turma', '')
     atividade_id = request.GET.get('atividade', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
 
-    presencas = Presenca.objects.all().select_related('aluno', 'turma', 'atividade')
+    presencas = PresencaRitualistica.objects.all().select_related('aluno', 'turma', 'atividade')
     if aluno_id:
         presencas = presencas.filter(aluno__cpf=aluno_id)
     if turma_id:
@@ -117,7 +86,7 @@ def listar_presencas_ritualisticas(request):
 
     alunos = Aluno.objects.all()
     turmas = Turma.objects.all()
-    atividades = Atividade.objects.all()
+    atividades = AtividadeRitualistica.objects.all()
 
     context = {
         'presencas': presencas,
@@ -132,16 +101,10 @@ def listar_presencas_ritualisticas(request):
             'data_fim': data_fim
         }
     }
-    # Corrigido o caminho do template:
     return render(request, 'presencas/ritualisticas/listar_presencas_ritualisticas.html', context)
 
 @login_required
 def registrar_presenca_academica(request):
-    Presenca = get_model_academica()
-    Aluno = get_aluno_model()
-    Turma = get_turma_model()
-    Atividade = get_atividade_academica_model()
-
     if request.method == 'POST':
         aluno_id = request.POST.get('aluno')
         turma_id = request.POST.get('turma')
@@ -149,44 +112,44 @@ def registrar_presenca_academica(request):
         data = request.POST.get('data')
         presente = request.POST.get('presente') == 'on'
         observacao = request.POST.get('observacao', '')
-
         try:
             aluno = Aluno.objects.get(cpf=aluno_id)
             turma = Turma.objects.get(id=turma_id)
-            atividade = Atividade.objects.get(id=atividade_id)
-            if Presenca.objects.filter(aluno=aluno, turma=turma, atividade=atividade, data=data).exists():
-                messages.warning(request, f'Já existe um registro de presença para {aluno.nome} na turma {turma.nome} na data {data}.')
-                return redirect('presencas:listar_presencas_academicas')
-            presenca = Presenca(
+            atividade = AtividadeAcademica.objects.get(id=atividade_id)
+        except (Aluno.DoesNotExist, Turma.DoesNotExist, AtividadeAcademica.DoesNotExist) as e:
+            messages.error(request, f'Erro ao localizar dados: {str(e)}')
+            return redirect('presencas:listar_presencas_academicas')
+        if PresencaAcademica.objects.filter(aluno=aluno, turma=turma, atividade=atividade, data=data).exists():
+            messages.warning(
+                request,
+                f'Já existe um registro de presença para {aluno.nome} na turma {turma.nome} na data {data}.'
+            )
+            return redirect('presencas:listar_presencas_academicas')
+        presenca = PresencaAcademica(
+            aluno=aluno,
+            turma=turma,
+            atividade=atividade,
+            data=data,
+            presente=presente,
+            registrado_por=request.user.username,
+            data_registro=timezone.now()
+        )
+        presenca.save()
+        if observacao:
+            ObservacaoPresenca.objects.create(
                 aluno=aluno,
                 turma=turma,
-                atividade=atividade,
                 data=data,
-                presente=presente,
+                atividade_academica=atividade,
+                texto=observacao,
                 registrado_por=request.user.username,
                 data_registro=timezone.now()
             )
-            presenca.save()
-            # Salvar observação, se houver
-            if observacao:
-                ObservacaoPresenca = get_model_observacao()
-                ObservacaoPresenca.objects.create(
-                    aluno=aluno,
-                    turma=turma,
-                    data=data,
-                    atividade_academica=atividade,
-                    texto=observacao,
-                    registrado_por=request.user.username,
-                    data_registro=timezone.now()
-                )
-            messages.success(request, f'Presença registrada com sucesso para {aluno.nome}.')
-            return redirect('presencas:listar_presencas_academicas')
-        except Exception as e:
-            messages.error(request, f'Erro ao registrar presença: {str(e)}')
-
+        messages.success(request, f'Presença registrada com sucesso para {aluno.nome}.')
+        return redirect('presencas:listar_presencas_academicas')
     alunos = Aluno.objects.all()
     turmas = Turma.objects.all()
-    atividades = Atividade.objects.all()
+    atividades = AtividadeAcademica.objects.all()
     context = {
         'alunos': alunos,
         'turmas': turmas,
@@ -197,11 +160,6 @@ def registrar_presenca_academica(request):
 
 @login_required
 def registrar_presenca_ritualistica(request):
-    Presenca = get_model_ritualistica()
-    Aluno = get_aluno_model()
-    Turma = get_turma_model()
-    Atividade = get_atividade_ritualistica_model()
-
     if request.method == 'POST':
         aluno_id = request.POST.get('aluno')
         turma_id = request.POST.get('turma')
@@ -209,44 +167,44 @@ def registrar_presenca_ritualistica(request):
         data = request.POST.get('data')
         presente = request.POST.get('presente') == 'on'
         observacao = request.POST.get('observacao', '')
-
         try:
             aluno = Aluno.objects.get(cpf=aluno_id)
             turma = Turma.objects.get(id=turma_id)
-            atividade = Atividade.objects.get(id=atividade_id)
-            if Presenca.objects.filter(aluno=aluno, turma=turma, atividade=atividade, data=data).exists():
-                messages.warning(request, f'Já existe um registro de presença para {aluno.nome} na turma {turma.nome} na data {data}.')
-                return redirect('presencas:listar_presencas_ritualisticas')
-            presenca = Presenca(
+            atividade = AtividadeRitualistica.objects.get(id=atividade_id)
+        except (Aluno.DoesNotExist, Turma.DoesNotExist, AtividadeRitualistica.DoesNotExist) as e:
+            messages.error(request, f'Erro ao localizar dados: {str(e)}')
+            return redirect('presencas:listar_presencas_ritualisticas')
+        if PresencaRitualistica.objects.filter(aluno=aluno, turma=turma, atividade=atividade, data=data).exists():
+            messages.warning(
+                request,
+                f'Já existe um registro de presença para {aluno.nome} na turma {turma.nome} na data {data}.'
+            )
+            return redirect('presencas:listar_presencas_ritualisticas')
+        presenca = PresencaRitualistica(
+            aluno=aluno,
+            turma=turma,
+            atividade=atividade,
+            data=data,
+            presente=presente,
+            registrado_por=request.user.username,
+            data_registro=timezone.now()
+        )
+        presenca.save()
+        if observacao:
+            ObservacaoPresenca.objects.create(
                 aluno=aluno,
                 turma=turma,
-                atividade=atividade,
                 data=data,
-                presente=presente,
+                atividade_ritualistica=atividade,
+                texto=observacao,
                 registrado_por=request.user.username,
                 data_registro=timezone.now()
             )
-            presenca.save()
-            # Salvar observação, se houver
-            if observacao:
-                ObservacaoPresenca = get_model_observacao()
-                ObservacaoPresenca.objects.create(
-                    aluno=aluno,
-                    turma=turma,
-                    data=data,
-                    atividade_ritualistica=atividade,
-                    texto=observacao,
-                    registrado_por=request.user.username,
-                    data_registro=timezone.now()
-                )
-            messages.success(request, f'Presença registrada com sucesso para {aluno.nome}.')
-            return redirect('presencas:listar_presencas_ritualisticas')
-        except Exception as e:
-            messages.error(request, f'Erro ao registrar presença: {str(e)}')
-
+        messages.success(request, f'Presença registrada com sucesso para {aluno.nome}.')
+        return redirect('presencas:listar_presencas_ritualisticas')
     alunos = Aluno.objects.all()
     turmas = Turma.objects.all()
-    atividades = Atividade.objects.all()
+    atividades = AtividadeRitualistica.objects.all()
     context = {
         'alunos': alunos,
         'turmas': turmas,
@@ -257,8 +215,7 @@ def registrar_presenca_ritualistica(request):
 
 @login_required
 def editar_presenca_academica(request, pk):
-    Presenca = get_model_academica()
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
     if request.method == 'POST':
         presenca.presente = request.POST.get('presente') == 'on'
         presenca.data = request.POST.get('data')
@@ -269,8 +226,7 @@ def editar_presenca_academica(request, pk):
 
 @login_required
 def excluir_presenca_academica(request, pk):
-    Presenca = get_model_academica()
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
     if request.method == 'POST':
         presenca.delete()
         messages.success(request, 'Presença acadêmica excluída com sucesso.')
@@ -279,14 +235,12 @@ def excluir_presenca_academica(request, pk):
 
 @login_required
 def detalhar_presenca_academica(request, pk):
-    Presenca = get_model_academica()
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
     return render(request, 'presencas/detalhar_presenca_academica.html', {'presenca': presenca})
 
 @login_required
 def editar_presenca_ritualistica(request, pk):
-    Presenca = get_model_ritualistica()
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(PresencaRitualistica, pk=pk)
     if request.method == 'POST':
         presenca.presente = request.POST.get('presente') == 'on'
         presenca.data = request.POST.get('data')
@@ -297,8 +251,7 @@ def editar_presenca_ritualistica(request, pk):
 
 @login_required
 def excluir_presenca_ritualistica(request, pk):
-    Presenca = get_model_ritualistica()
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(PresencaRitualistica, pk=pk)
     if request.method == 'POST':
         presenca.delete()
         messages.success(request, 'Presença ritualística excluída com sucesso.')
@@ -307,14 +260,11 @@ def excluir_presenca_ritualistica(request, pk):
 
 @login_required
 def detalhar_presenca_ritualistica(request, pk):
-    Presenca = get_model_ritualistica()
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(PresencaRitualistica, pk=pk)
     return render(request, 'presencas/detalhar_presenca_ritualistica.html', {'presenca': presenca})
 
-# Exemplo para ObservacaoPresenca:
 @login_required
 def listar_observacoes_presenca(request):
-    ObservacaoPresenca = get_model_observacao()
     observacoes = ObservacaoPresenca.objects.select_related('aluno', 'turma', 'atividade_academica', 'atividade_ritualistica')
     return render(request, 'presencas/listar_observacoes_presenca.html', {'observacoes': observacoes})
 
@@ -343,31 +293,23 @@ def registrar_presenca_totais_atividades(request):
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
-    Turma = get_turma_model()
     turma = Turma.objects.get(id=turma_id) if turma_id else None
-
     curso = turma.curso if turma else None
-
     atividades = []
     if turma and ano and mes:
-        # Calcule o primeiro e último dia do mês selecionado
-        from datetime import date
         primeiro_dia = date(int(ano), int(mes), 1)
         ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
-
         atividades = AtividadeAcademica.objects.filter(
             turmas__id=turma.id
         ).filter(
             Q(data_inicio__lte=ultimo_dia) &
             (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
         ).distinct()
-
     totais_registrados = []
     if turma and ano and mes:
         totais_registrados = TotalAtividadeMes.objects.filter(
             turma=turma, ano=ano, mes=mes
         ).select_related('atividade')
-
     if request.method == 'POST':
         form = TotaisAtividadesPresencaForm(request.POST, atividades=atividades)
         if form.is_valid():
@@ -377,7 +319,6 @@ def registrar_presenca_totais_atividades(request):
             return redirect('presencas:registrar_presenca_dias_atividades')
     else:
         form = TotaisAtividadesPresencaForm(atividades=atividades)
-
     return render(request, 'presencas/registrar_presenca_totais_atividades.html', {
         'form': form,
         'turma': turma,
@@ -390,28 +331,19 @@ def registrar_presenca_totais_atividades(request):
 
 @login_required
 def registrar_presenca_dias_atividades(request):
-    print('DEBUG: Entrou na view registrar_presenca_dias_atividades, method:', request.method)
     """
     GET: Exibe o formulário para seleção dos dias e observações das atividades.
     POST: Salva no banco os dias e observações selecionados para cada atividade.
     """
-    from datetime import date
-    from calendar import monthrange
-    from atividades.models import AtividadeAcademica
-    from turmas.models import Turma
-    from presencas.models import ObservacaoPresenca
-
     if request.method == 'GET':
         turma_id = request.session.get('presenca_turma_id')
         ano = request.session.get('presenca_ano')
         mes = request.session.get('presenca_mes')
         turma = Turma.objects.get(id=turma_id) if turma_id else None
-
         totais_atividades = request.session.get('presenca_totais_atividades', {})
         atividades = []
         resumo_atividades = []
         if turma and ano and mes:
-            # Filtro único: todas as atividades da turma para o mês/ano
             primeiro_dia = date(int(ano), int(mes), 1)
             ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
             atividades_queryset = AtividadeAcademica.objects.filter(
@@ -421,23 +353,19 @@ def registrar_presenca_dias_atividades(request):
                 (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
             ).distinct().order_by('nome')
             atividades = list(atividades_queryset)
-            # Monta o resumo: nome e total (zero se não informado) como objeto
             for atividade in atividades:
                 key = f'qtd_ativ_{atividade.id}'
                 try:
                     qtd = int(totais_atividades.get(key, 0))
-                except Exception:
+                except (ValueError, TypeError):
                     qtd = 0
                 resumo_atividades.append(SimpleNamespace(
                     id=atividade.id,
                     nome=atividade.nome,
                     qtd_ativ_mes=qtd
                 ))
-        # Dias do mês
         qtd_dias = monthrange(int(ano), int(mes))[1]
         dias_do_mes = list(range(1, qtd_dias + 1))
-
-        # Busca dias já selecionados para cada atividade
         presencas = {}
         presencas_obs = {}
         if turma and ano and mes and atividades:
@@ -445,14 +373,13 @@ def registrar_presenca_dias_atividades(request):
                 turma=turma,
                 data__year=ano,
                 data__month=mes,
-                atividade_academica__in=[a.id for a in resumo_atividades]
+                atividade_academica__in=[a.id for a in atividades]
             )
             for obs in observacoes:
                 aid = obs.atividade_academica_id
                 dia = obs.data.day
                 presencas.setdefault(aid, []).append(dia)
                 presencas_obs.setdefault(aid, {})[dia] = obs.texto
-
         context = {
             'atividades': atividades,
             'dias_do_mes': dias_do_mes,
@@ -462,21 +389,12 @@ def registrar_presenca_dias_atividades(request):
             'presencas_obs': presencas_obs,
             'resumo_atividades': resumo_atividades,
         }
-        print('DEBUG: GET - Antes do render')
-        print('DEBUG resumo_atividades:', resumo_atividades)
-        for idx, atv in enumerate(resumo_atividades):
-            print(f'  Atividade {idx}: id={getattr(atv, "id", None)}, nome={getattr(atv, "nome", None)}, qtd_ativ_mes={getattr(atv, "qtd_ativ_mes", None)}')
-        print('DEBUG context keys:', list(context.keys()))
-        print('DEBUG context resumo_atividades:', context.get('resumo_atividades'))
-
         return render(request, 'presencas/registrar_presenca_dias_atividades.html', context)
-
     # POST
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
     turma = Turma.objects.get(id=turma_id) if turma_id else None
-
     for key in request.POST:
         if key.startswith('presenca_'):
             atividade_id = key.replace('presenca_', '')
@@ -489,7 +407,7 @@ def registrar_presenca_dias_atividades(request):
                     continue
                 try:
                     data = date(int(ano), int(mes), int(dia))
-                except Exception:
+                except (ValueError, TypeError):
                     continue
                 ObservacaoPresenca.objects.create(
                     aluno=None,  # ou defina o aluno se necessário
@@ -497,32 +415,29 @@ def registrar_presenca_dias_atividades(request):
                     data=data,
                     atividade_academica=atividade,
                     texto=obs,
-                    registrado_por=request.user.username
+                    registrado_por=request.user.username,
+                    data_registro=timezone.now()
                 )
     return redirect('presencas:registrar_presenca_alunos')
 
 @login_required
 @require_POST
-@csrf_exempt  # Se necessário, dependendo do seu setup de CSRF
+@csrf_exempt
 def registrar_presenca_totais_atividades_ajax(request):
-    Turma = get_turma_model()
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
     turma = Turma.objects.get(id=turma_id) if turma_id else None
-
     atividades = []
     if turma and ano and mes:
-        from datetime import date
         primeiro_dia = date(int(ano), int(mes), 1)
         ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
-        atividades = get_atividade_academica_model().objects.filter(
+        atividades = AtividadeAcademica.objects.filter(
             turmas__id=turma.id
         ).filter(
             Q(data_inicio__lte=ultimo_dia) &
             (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
         ).distinct()
-
     form = TotaisAtividadesPresencaForm(request.POST, atividades=atividades)
     if form.is_valid():
         request.session['presenca_totais_atividades'] = {
@@ -532,19 +447,13 @@ def registrar_presenca_totais_atividades_ajax(request):
     else:
         return JsonResponse({'success': False, 'errors': form.errors})
 
-    return render(request, 'presencas/registrar_presenca_totais_atividades.html', {
-        'form': form,
-        'turma': turma,
-        'curso': curso,
-        'ano': ano,
-        'mes': mes,
-        'atividades': atividades,
-        'totais_registrados': totais_registrados,
-    })
-
 @login_required
 def registrar_presenca_dados_basicos(request):
-    # Limpa variáveis de sessão para evitar sobreposição de dados antigos
+    """
+    Primeira etapa do fluxo multi-etapas de registro de presenças acadêmicas.
+    Exibe formulário para seleção de turma, ano e mês.
+    Limpa variáveis de sessão para evitar sobreposição de dados antigos.
+    """
     for key in [
         'presenca_totais_atividades',
         'presenca_turma_id',
@@ -552,4 +461,38 @@ def registrar_presenca_dados_basicos(request):
         'presenca_mes'
     ]:
         request.session.pop(key, None)
-    # ...existing code...
+    turmas = Turma.objects.all()
+    anos = list(range(datetime.now().year - 5, datetime.now().year + 2))
+    meses = [
+        {'numero': i, 'nome': date(1900, i, 1).strftime('%B').capitalize()}
+        for i in range(1, 13)
+    ]
+    if request.method == 'POST':
+        turma_id = request.POST.get('turma')
+        ano = request.POST.get('ano')
+        mes = request.POST.get('mes')
+        if not turma_id or not ano or not mes:
+            messages.error(request, 'Todos os campos são obrigatórios.')
+            return render(request, 'presencas/registrar_presenca_dados_basicos.html', {
+                'turmas': turmas,
+                'anos': anos,
+                'meses': meses
+            })
+        request.session['presenca_turma_id'] = turma_id
+        request.session['presenca_ano'] = ano
+        request.session['presenca_mes'] = mes
+        return redirect('presencas:registrar_presenca_totais_atividades')
+    context = {
+        'turmas': turmas,
+        'anos': anos,
+        'meses': meses,
+        'breadcrumb': [
+            {'etapa': 'Dados Básicos', 'ativa': True},
+            {'etapa': 'Totais de Atividades', 'ativa': False},
+            {'etapa': 'Dias de Atividades', 'ativa': False},
+            {'etapa': 'Alunos', 'ativa': False},
+        ],
+        'titulo_pagina': 'Registrar Presença - Dados Básicos',
+        'descricao_pagina': 'Selecione a turma, ano e mês para iniciar o registro de presenças.',
+    }
+    return render(request, 'presencas/registrar_presenca_dados_basicos.html', context)

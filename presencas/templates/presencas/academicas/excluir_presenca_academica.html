@@ -1,33 +1,31 @@
 {% extends 'base.html' %}
 
-{% block title %}Excluir Presença{% endblock %}
+{% block title %}Excluir Presença Acadêmica{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-8 col-lg-6">
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0">Confirmar Exclusão</h4>
+                    <h4 class="mb-0" id="titulo-pagina">Confirmar Exclusão</h4>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-warning">
+                    <div class="alert alert-warning" role="alert">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         Você está prestes a excluir o seguinte registro de presença:
                     </div>
-                    
                     <div class="card mb-3">
                         <div class="card-body">
                             <p><strong>Aluno:</strong> {{ presenca.aluno.nome }}</p>
-                            <p><strong>Atividade:</strong> {{ presenca.atividade.titulo }}</p>
+                            <p><strong>Turma:</strong> {{ presenca.turma.nome }}</p>
+                            <p><strong>Atividade:</strong> {{ presenca.atividade.nome|default:presenca.atividade.titulo }}</p>
                             <p><strong>Data:</strong> {{ presenca.data|date:"d/m/Y" }}</p>
-                            <p><strong>Situação:</strong> 
-                                {% if presenca.situacao == 'PRESENTE' %}
+                            <p><strong>Status:</strong> 
+                                {% if presenca.presente %}
                                 <span class="badge bg-success">Presente</span>
-                                {% elif presenca.situacao == 'AUSENTE' %}
+                                {% else %}
                                 <span class="badge bg-danger">Ausente</span>
-                                {% elif presenca.situacao == 'JUSTIFICADO' %}
-                                <span class="badge bg-warning">Justificado</span>
                                 {% endif %}
                             </p>
                             {% if presenca.justificativa %}
@@ -35,16 +33,14 @@
                             {% endif %}
                         </div>
                     </div>
-                    
                     <p class="text-danger">Esta ação não pode ser desfeita. Deseja continuar?</p>
-                    
-                    <form method="post">
+                    <form method="post" aria-labelledby="titulo-pagina">
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
-                            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
+                            <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary" aria-label="Cancelar e voltar para lista de presenças acadêmicas">
                                 <i class="fas fa-times"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-danger">
+                            <button type="submit" class="btn btn-danger" aria-label="Confirmar exclusão da presença">
                                 <i class="fas fa-trash"></i> Confirmar Exclusão
                             </button>
                         </div>

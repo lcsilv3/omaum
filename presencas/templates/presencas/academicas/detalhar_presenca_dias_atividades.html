@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="accordion" id="accordionDetalharPresencaDias">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingDetalharDiasAtividades">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetalharDiasAtividades" aria-expanded="true" aria-controls="collapseDetalharDiasAtividades">
+                    Detalhar Dias das Atividades
+                </button>
+            </h2>
+            <div id="collapseDetalharDiasAtividades" class="accordion-collapse collapse show" aria-labelledby="headingDetalharDiasAtividades" data-bs-parent="#accordionDetalharPresencaDias">
+                <div class="accordion-body">
+                    <ul>
+                        {% for dia in presenca.dias_atividades.all %}
+                            <li>{{ dia }}</li>
+                        {% empty %}
+                            <li>Nenhum dia cadastrado.</li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{% url 'detalhar_presenca_alunos' presenca.pk %}" class="btn btn-secondary">Próximo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

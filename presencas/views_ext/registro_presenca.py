@@ -1,35 +1,40 @@
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+"""
+Views de registro de presença acadêmica (multi-etapas).
+"""
+
+import logging
+from datetime import date
+from calendar import monthrange
+from types import SimpleNamespace
+
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
-from datetime import date
-from calendar import monthrange
-from presencas.forms import DadosBasicosPresencaForm, TotaisAtividadesPresencaForm, AlunosPresencaForm
-from importlib import import_module
+from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+from presencas.forms import (
+    DadosBasicosPresencaForm,
+    TotaisAtividadesPresencaForm,
+    AlunosPresencaForm
+)
 from cursos.models import Curso
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+from atividades.models import AtividadeAcademica, PresencaAcademica
 from presencas.models import TotalAtividadeMes, ObservacaoPresenca
 from alunos.models import Aluno
-from presencas.utils import get_atividade_model
-import logging
-logger = logging.getLogger(__name__)
 
-def get_turma_model():
-    turmas_module = import_module("turmas.models")
-    return getattr(turmas_module, "Turma")
+logger = logging.getLogger(__name__)
 
 @login_required
 def registrar_presenca_dados_basicos(request):
+    """Exibe o formulário de dados básicos para registro de presença acadêmica."""
     hoje = date.today()
     ano_corrente = hoje.year
     mes_corrente = hoje.month
-
     form = DadosBasicosPresencaForm(initial={'ano': ano_corrente, 'mes': mes_corrente})
-
     return render(request, 'presencas/registrar_presenca_dados_basicos.html', {
         'form': form,
         'ano_corrente': ano_corrente,
@@ -39,6 +44,7 @@ def registrar_presenca_dados_basicos(request):
 @login_required
 @require_POST
 def registrar_presenca_dados_basicos_ajax(request):
+    """Recebe dados básicos via AJAX e armazena na sessão."""
     form = DadosBasicosPresencaForm(request.POST)
     if form.is_valid():
         request.session['presenca_turma_id'] = form.cleaned_data['turma'].id
@@ -50,14 +56,12 @@ def registrar_presenca_dados_basicos_ajax(request):
 
 @login_required
 def registrar_presenca_totais_atividades(request):
+    """Exibe e processa o formulário de totais de atividades."""
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
-    Turma = get_turma_model()
     turma = Turma.objects.get(id=turma_id) if turma_id else None
-
     curso = turma.curso if turma else None
-
     atividades = []
     if turma and curso and ano and mes:
         totais_atividades = request.session.get('presenca_totais_atividades', {})
@@ -77,18 +81,13 @@ def registrar_presenca_totais_atividades(request):
                 Q(data_inicio__lte=ultimo_dia) &
                 (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
             ).distinct()
-
     totais_registrados = []
     if turma and ano and mes:
         totais_registrados = TotalAtividadeMes.objects.filter(
             turma=turma, ano=ano, mes=mes
         ).select_related('atividade')
-
-    # Após montar a lista atividades:
-    logger.debug(f"IDs das atividades passadas para o formulário: {[a.id for a in atividades]}")
-    # Salva os IDs das atividades exibidas na sessão
+    logger.debug("IDs das atividades passadas para o formulário: %s", [a.id for a in atividades])
     request.session['presenca_atividades_ids'] = [a.id for a in atividades]
-
     if request.method == 'POST':
         form = TotaisAtividadesPresencaForm(request.POST, atividades=atividades)
         if form.is_valid():
@@ -98,7 +97,6 @@ def registrar_presenca_totais_atividades(request):
             return redirect('presencas:registrar_presenca_dias_atividades')
     else:
         form = TotaisAtividadesPresencaForm(atividades=atividades)
-
     return render(request, 'presencas/registrar_presenca_totais_atividades.html', {
         'form': form,
         'turma': turma,
@@ -113,7 +111,6 @@ def registrar_presenca_totais_atividades(request):
 @require_POST
 @csrf_exempt
 def registrar_presenca_totais_atividades_ajax(request):
-    Turma = get_turma_model()
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
@@ -123,23 +120,22 @@ def registrar_presenca_totais_atividades_ajax(request):
     if turma and ano and mes:
         atividades_ids = request.session.get('presenca_atividades_ids', [])
         if atividades_ids:
-            atividades = get_atividade_model().objects.filter(
+            atividades = AtividadeAcademica.objects.filter(
                 id__in=atividades_ids,
                 turmas__id=turma.id
             )
         else:
             # Fallback para o filtro padrão
-            from datetime import date
             primeiro_dia = date(int(ano), int(mes), 1)
             ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
-            atividades = get_atividade_model().objects.filter(
+            atividades = AtividadeAcademica.objects.filter(
                 turmas__id=turma.id
             ).filter(
                 Q(data_inicio__lte=ultimo_dia) &
                 (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
             ).distinct()
 
-    logger.debug(f"[AJAX] IDs das atividades passadas para o formulário: {[a.id for a in atividades]}")
+    logger.debug("[AJAX] IDs das atividades passadas para o formulário: %s", [a.id for a in atividades])
 
     form = TotaisAtividadesPresencaForm(request.POST, atividades=atividades)
     if form.is_valid():
@@ -156,14 +152,6 @@ def registrar_presenca_totais_atividades_ajax(request):
 
 @login_required
 def registrar_presenca_dias_atividades(request):
-    from types import SimpleNamespace
-    print('DEBUG: Entrou na view registrar_presenca_dias_atividades (views_ext), method:', request.method)
-    from datetime import date
-    from calendar import monthrange
-    from atividades.models import AtividadeAcademica
-    from turmas.models import Turma
-    from presencas.models import ObservacaoPresenca
-
     if request.method == 'GET':
         turma_id = request.session.get('presenca_turma_id')
         ano = request.session.get('presenca_ano')
@@ -179,7 +167,7 @@ def registrar_presenca_dias_atividades(request):
             primeiro_dia = date(int(ano), int(mes), 1)
             ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
             atividades_queryset = AtividadeAcademica.objects.filter(
-                turmas__id=turma.id
+                turmas__id=turma.id,
             ).filter(
                 Q(data_inicio__lte=ultimo_dia) &
                 (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
@@ -190,7 +178,7 @@ def registrar_presenca_dias_atividades(request):
                 key = f'qtd_ativ_{atividade.id}'
                 try:
                     qtd = int(totais_atividades.get(key, 0))
-                except Exception:
+                except (ValueError, TypeError):
                     qtd = 0
                 resumo_atividades.append(SimpleNamespace(
                     id=atividade.id,
@@ -206,7 +194,7 @@ def registrar_presenca_dias_atividades(request):
                 key = f'qtd_ativ_{atividade.id}'
                 try:
                     qtd = int(totais_atividades.get(key, 0))
-                except Exception:
+                except (ValueError, TypeError):
                     qtd = 0
                 atividade.qtd_ativ_mes = qtd
         # Dias do mês
@@ -238,13 +226,6 @@ def registrar_presenca_dias_atividades(request):
             'presencas_obs': presencas_obs,
             'resumo_atividades': resumo_atividades,
         }
-        print('DEBUG: GET - Antes do render (views_ext)')
-        print('DEBUG resumo_atividades:', resumo_atividades)
-        for idx, atv in enumerate(resumo_atividades):
-            print(f'  Atividade {idx}: id={getattr(atv, "id", None)}, nome={getattr(atv, "nome", None)}, qtd_ativ_mes={getattr(atv, "qtd_ativ_mes", None)}')
-        print('DEBUG context keys:', list(context.keys()))
-        print('DEBUG context resumo_atividades:', context.get('resumo_atividades'))
-
         return render(request, 'presencas/registrar_presenca_dias_atividades.html', context)
 
     # POST
@@ -265,7 +246,7 @@ def registrar_presenca_dias_atividades(request):
                     continue
                 try:
                     data = date(int(ano), int(mes), int(dia))
-                except Exception:
+                except (ValueError, TypeError):
                     continue
                 ObservacaoPresenca.objects.create(
                     aluno=None,  # ou defina o aluno se necessário
@@ -280,29 +261,52 @@ def registrar_presenca_dias_atividades(request):
 @login_required
 def registrar_presenca_alunos(request):
     turma_id = request.session.get('presenca_turma_id')
-    Turma = get_turma_model()
-    turma = Turma.objects.get(id=turma_id) if turma_id else None
-
-    form = AlunosPresencaForm(turma=turma)
-
+    if not turma_id:
+        messages.error(request, 'Selecione a turma antes de marcar presença nos alunos.')
+        return redirect('presencas:registrar_presenca_dados_basicos')
+    turma = Turma.objects.get(id=turma_id)
+    convocados_dict = request.session.get('presenca_convocados', {})
+    alunos = Aluno.objects.filter(matricula__turma=turma, situacao='ATIVO').distinct()
+    # Se houver convocação, filtra apenas os convocados
+    if convocados_dict:
+        alunos_ids = set()
+        for ids in convocados_dict.values():
+            alunos_ids.update(ids)
+        alunos = alunos.filter(id__in=alunos_ids)
+    # Loga caso não haja alunos
+    if not alunos.exists():
+        logger.warning(f"Nenhum aluno encontrado para a turma {turma} (ID: {turma.id}) ou filtro de convocados. Usuário: {request.user}")
+        messages.warning(request, "Nenhum aluno disponível para marcação de presença nesta etapa. Revise as etapas anteriores ou contate o suporte.")
+    form = AlunosPresencaForm(alunos=alunos)
     return render(request, 'presencas/registrar_presenca_alunos.html', {
         'form': form,
+        'alunos': alunos,
         'turma': turma,
     })
 
 @login_required
 @require_POST
+@csrf_exempt
 def registrar_presenca_alunos_ajax(request):
     turma_id = request.session.get('presenca_turma_id')
-    Turma = get_turma_model()
     turma = Turma.objects.get(id=turma_id) if turma_id else None
-
-    form = AlunosPresencaForm(request.POST, turma=turma)
-    if form.is_valid():
-        request.session['presenca_alunos_presentes'] = list(form.cleaned_data['alunos_presentes'].values_list('id', flat=True))
-        return JsonResponse({'success': True, 'redirect_url': '/presencas/registrar-presenca/confirmar/'})
-    else:
-        return JsonResponse({'success': False, 'errors': form.errors})
+    # Recupera lista de alunos convocados da sessão (por atividade, se necessário)
+    convocados_dict = request.session.get('presenca_convocados', {})
+    alunos = Aluno.objects.filter(matricula__turma=turma, situacao='ATIVO').distinct() if turma else []
+    # Se houver convocação, filtra apenas os convocados
+    if convocados_dict:
+        alunos_ids = set()
+        for ids in convocados_dict.values():
+            alunos_ids.update(ids)
+        alunos = alunos.filter(id__in=alunos_ids)
+    # Processa status de cada aluno
+    resultado = {}
+    for aluno in alunos:
+        status = request.POST.get(f'aluno_{aluno.id}_status', 'presente')
+        justificativa = request.POST.get(f'aluno_{aluno.id}_justificativa', '')
+        resultado[aluno.id] = {'status': status, 'justificativa': justificativa}
+    request.session['presenca_alunos_status'] = resultado
+    return JsonResponse({'success': True, 'redirect_url': '/presencas/registrar-presenca/confirmar/'})
 
 @login_required
 def turmas_por_curso_ajax(request):
@@ -321,36 +325,70 @@ def registrar_presenca_confirmar(request):
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
-    atividade_id = request.session.get('presenca_atividade_id')
-    alunos_presentes_ids = request.session.get('presenca_alunos_presentes', [])
-
-    Turma = get_turma_model()
     turma = Turma.objects.get(id=turma_id) if turma_id else None
-
-    Atividade = import_module("atividades.models").AtividadeAcademica
-    atividade = Atividade.objects.get(id=atividade_id) if atividade_id else None
-
-    alunos_presentes = Aluno.objects.filter(id__in=alunos_presentes_ids)
-
+    alunos_status = request.session.get('presenca_alunos_status', {})
+    alunos = Aluno.objects.filter(id__in=alunos_status.keys()) if alunos_status else []
+    alunos_info = []
+    for aluno in alunos:
+        status = alunos_status.get(str(aluno.id)) or alunos_status.get(aluno.id) or {}
+        alunos_info.append({
+            'aluno': aluno,
+            'status': status.get('status', 'presente'),
+            'justificativa': status.get('justificativa', ''),
+        })
     return render(request, 'presencas/registrar_presenca_confirmar.html', {
         'turma': turma,
         'ano': ano,
         'mes': mes,
-        'atividade': atividade,
-        'alunos_presentes': alunos_presentes,
+        'alunos_info': alunos_info,
     })
 
 @login_required
 @require_POST
 @transaction.atomic
 def registrar_presenca_confirmar_ajax(request):
-    # Exemplo de lógica mínima para não quebrar o fluxo
-    # Implemente aqui o salvamento definitivo das presenças, se necessário
-
-    # Limpa sessão (ajuste conforme sua lógica)
+    turma_id = request.session.get('presenca_turma_id')
+    ano = request.session.get('presenca_ano')
+    mes = request.session.get('presenca_mes')
+    turma = Turma.objects.get(id=turma_id) if turma_id else None
+    alunos_status = request.session.get('presenca_alunos_status', {})
+    atividades = AtividadeAcademica.objects.filter(turmas__id=turma.id) if turma else []
+    dias_atividades = request.session.get('presenca_totais_atividades', {})
+    for atividade in atividades:
+        # Para cada atividade, obter dias e alunos convocados
+        dias = []
+        key = f'qtd_ativ_{atividade.id}'
+        qtd = int(dias_atividades.get(key, 0))
+        if qtd > 0:
+            dias = range(1, qtd + 1)
+        # Filtra alunos convocados se necessário
+        convocados_dict = request.session.get('presenca_convocados', {})
+        if atividade.convocacao and str(atividade.id) in convocados_dict:
+            alunos_ids = convocados_dict[str(atividade.id)]
+        else:
+            alunos_ids = alunos_status.keys()
+        for aluno_id in alunos_ids:
+            status_info = alunos_status.get(str(aluno_id)) or alunos_status.get(aluno_id) or {}
+            presente = status_info.get('status', 'presente') == 'presente'
+            justificativa = status_info.get('justificativa', '')
+            for dia in dias:
+                data = date(int(ano), int(mes), dia)
+                PresencaAcademica.objects.create(
+                    aluno_id=aluno_id,
+                    turma=turma,
+                    atividade=atividade,
+                    data=data,
+                    presente=presente,
+                    registrado_por=request.user.username,
+                    data_registro=date.today(),
+                    justificativa=justificativa if not presente else ''
+                )
+    # Limpa sessão
     for key in [
         'presenca_turma_id', 'presenca_ano', 'presenca_mes',
-        'presenca_atividade_id', 'presenca_alunos_presentes', 'presenca_totais_atividades'
+        'presenca_atividade_id', 'presenca_alunos_presentes',
+        'presenca_totais_atividades', 'presenca_convocados',
+        'presenca_alunos_status'
     ]:
         if key in request.session:
             del request.session[key]
@@ -380,10 +418,6 @@ def obter_limites_calendario_ajax(request):
 @require_POST
 def registrar_presenca_dias_atividades_ajax(request):
     from datetime import date
-    from atividades.models import AtividadeAcademica
-    from turmas.models import Turma
-    from presencas.models import ObservacaoPresenca
-
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
@@ -423,9 +457,110 @@ def registrar_presenca_dias_atividades_ajax(request):
                             texto=obs,
                             registrado_por=request.user.username
                         )
-                    except Exception as e:
-                        logger.exception(f'Erro ao registrar observação para atividade {atividade_id}, dia {dia}: {e}')
+                    except (AtividadeAcademica.DoesNotExist, ValueError, TypeError) as e:
+                        logger.exception('Erro ao registrar observação para atividade %s, dia %s: %s', atividade_id, dia, e)
                         continue
         return JsonResponse({'success': True, 'redirect_url': '/presencas/registrar-presenca/alunos/', 'message': 'Presenças salvas com sucesso!'})
     except Exception as e:
+        logger.exception('Erro inesperado ao salvar presenças: %s', e)
         return JsonResponse({'success': False, 'message': f'Erro ao salvar: {str(e)}'})
+
+@login_required
+def editar_presenca_dados_basicos(request, pk):
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    if request.method == 'POST':
+        form = DadosBasicosPresencaForm(request.POST, instance=presenca)
+        if form.is_valid():
+            form.save()
+            return redirect('editar_presenca_totais_atividades', pk=pk)
+    else:
+        form = DadosBasicosPresencaForm(instance=presenca)
+    return render(request, 'presencas/academicas/editar_presenca_dados_basicos.html', {'form': form, 'presenca': presenca})
+
+@login_required
+def editar_presenca_totais_atividades(request, pk):
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    if request.method == 'POST':
+        form = TotaisAtividadesPresencaForm(request.POST, instance=presenca)
+        if form.is_valid():
+            form.save()
+            return redirect('editar_presenca_dias_atividades', pk=pk)
+    else:
+        form = TotaisAtividadesPresencaForm(instance=presenca)
+    return render(request, 'presencas/academicas/editar_presenca_totais_atividades.html', {'form': form, 'presenca': presenca})
+
+@login_required
+def editar_presenca_dias_atividades(request, pk):
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    if request.method == 'POST':
+        form = DiasAtividadesPresencaForm(request.POST, instance=presenca)
+        if form.is_valid():
+            form.save()
+            return redirect('editar_presenca_alunos', pk=pk)
+    else:
+        form = DiasAtividadesPresencaForm(instance=presenca)
+    return render(request, 'presencas/academicas/editar_presenca_dias_atividades.html', {'form': form, 'presenca': presenca})
+
+from django.contrib import messages
+
+@login_required
+def editar_presenca_alunos(request, pk):
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    if request.method == 'POST':
+        form = AlunosPresencaForm(request.POST, instance=presenca)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Presença acadêmica atualizada com sucesso.')
+            return redirect('listar_presencas_academicas')
+    else:
+        form = AlunosPresencaForm(instance=presenca)
+    return render(request, 'presencas/academicas/editar_presenca_alunos.html', {'form': form, 'presenca': presenca})
+
+@login_required
+def detalhar_presenca_dados_basicos(request, pk):
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    return render(request, 'presencas/academicas/detalhar_presenca_dados_basicos.html', {'presenca': presenca})
+
+@login_required
+def detalhar_presenca_totais_atividades(request, pk):
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    return render(request, 'presencas/academicas/detalhar_presenca_totais_atividades.html', {'presenca': presenca})
+
+@login_required
+def detalhar_presenca_dias_atividades(request, pk):
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    return render(request, 'presencas/academicas/detalhar_presenca_dias_atividades.html', {'presenca': presenca})
+
+@login_required
+def detalhar_presenca_alunos(request, pk):
+    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    return render(request, 'presencas/academicas/detalhar_presenca_alunos.html', {'presenca': presenca})
+
+@login_required
+@csrf_exempt
+def registrar_presenca_convocados(request):
+    turma_id = request.session.get('presenca_turma_id')
+    ano = request.session.get('presenca_ano')
+    mes = request.session.get('presenca_mes')
+    turma = Turma.objects.get(id=turma_id) if turma_id else None
+    atividades = AtividadeAcademica.objects.filter(turmas__id=turma.id) if turma else []
+    alunos = Aluno.objects.filter(matricula__turma=turma, situacao='ATIVO').distinct() if turma else []
+    return render(request, 'presencas/registrar_presenca_convocados.html', {
+        'atividades': atividades,
+        'alunos': alunos,
+    })
+
+@login_required
+@require_POST
+@csrf_exempt
+def registrar_presenca_convocados_ajax(request):
+    turma_id = request.session.get('presenca_turma_id')
+    turma = Turma.objects.get(id=turma_id) if turma_id else None
+    atividades = AtividadeAcademica.objects.filter(turmas__id=turma.id) if turma else []
+    convocados_dict = {}
+    for atividade in atividades:
+        if atividade.convocacao:
+            convocados = request.POST.getlist(f'convocados_{atividade.id}')
+            convocados_dict[str(atividade.id)] = [int(aid) for aid in convocados]
+    request.session['presenca_convocados'] = convocados_dict
+    return JsonResponse({'success': True, 'redirect_url': '/presencas/registrar-presenca/alunos/'})

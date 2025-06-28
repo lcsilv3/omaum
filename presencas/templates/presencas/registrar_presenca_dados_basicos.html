@@ -4,36 +4,46 @@
 {% load static %}
 {% block content %}
 <div class="container mt-4">
-    <h2>{% trans "Registrar Presença - Dados Básicos" %}</h2>
-    <form id="form-dados-basicos" method="post" autocomplete="off" action="{% url 'presencas:registrar_presenca_dados_basicos_ajax' %}">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="id_curso" class="form-label">{% trans "Curso" %}</label>
-            {{ form.curso }}
-        </div>
-        <div class="mb-3">
-            <label for="id_turma" class="form-label">{% trans "Turma" %}</label>
-            {{ form.turma }}
-            <span id="loading-turmas" class="ms-2 text-primary d-none">{% trans "Carregando turmas..." %}</span>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">{% trans "Selecione o Ano/Mês" %}</label>
-            <div id="calendario-mes-ano" class="d-flex align-items-center">
-                <button type="button" id="btn-prev" class="btn btn-outline-secondary btn-sm me-2" aria-label="{% trans 'Retroceder mês' %}">&lt;</button>
-                <span id="mes-ano-atual" style="min-width:120px; text-align:center;"></span>
-                <button type="button" id="btn-next" class="btn btn-outline-secondary btn-sm ms-2" aria-label="{% trans 'Avançar mês' %}">&gt;</button>
-                <span id="loading-calendario" class="ms-2 text-primary d-none">{% trans "Carregando calendário..." %}</span>
+    <div class="accordion" id="accordionPresenca">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingDadosBasicos">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDadosBasicos" aria-expanded="true" aria-controls="collapseDadosBasicos">
+                    {% trans "Dados Básicos da Presença" %}
+                </button>
+            </h2>
+            <div id="collapseDadosBasicos" class="accordion-collapse collapse show" aria-labelledby="headingDadosBasicos" data-bs-parent="#accordionPresenca">
+                <div class="accordion-body">
+                    <form id="form-dados-basicos" method="post" autocomplete="off" action="{% url 'presencas:registrar_presenca_dados_basicos_ajax' %}" aria-labelledby="titulo-pagina">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_curso" class="form-label">{% trans "Curso" %}</label>
+                            {{ form.curso }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_turma" class="form-label">{% trans "Turma" %}</label>
+                            {{ form.turma }}
+                            <span id="loading-turmas" class="ms-2 text-primary d-none" aria-live="polite">{% trans "Carregando turmas..." %}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{% trans "Selecione o Ano/Mês" %}</label>
+                            <div id="calendario-mes-ano" class="d-flex align-items-center">
+                                <button type="button" id="btn-prev" class="btn btn-outline-secondary btn-sm me-2" aria-label="{% trans 'Retroceder mês' %}">&lt;</button>
+                                <span id="mes-ano-atual" style="min-width:120px; text-align:center;"></span>
+                                <button type="button" id="btn-next" class="btn btn-outline-secondary btn-sm ms-2" aria-label="{% trans 'Avançar mês' %}">&gt;</button>
+                                <span id="loading-calendario" class="ms-2 text-primary d-none" aria-live="polite">{% trans "Carregando calendário..." %}</span>
+                            </div>
+                            <input type="hidden" id="id_ano" name="ano" value="{{ form.initial.ano|default:ano_corrente }}">
+                            <input type="hidden" id="id_mes" name="mes" value="{{ form.initial.mes|default:mes_corrente }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary" aria-label="Confirmar e avançar para totais de atividades">{% trans "Confirmar e Avançar" %}</button>
+                    </form>
+                    <div id="form-errors" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                    <div id="mensagem-erro-ajax" class="alert alert-danger d-none" role="alert"></div>
+                    <div id="mensagem-sucesso-ajax" class="alert alert-success d-none" role="status"></div>
+                </div>
             </div>
-            <input type="hidden" id="id_ano" name="ano" value="{{ form.initial.ano|default:ano_corrente }}">
-            <input type="hidden" id="id_mes" name="mes" value="{{ form.initial.mes|default:mes_corrente }}">
         </div>
-        <button type="submit" class="btn btn-primary">{% trans "Confirmar e Avançar" %}</button>
-    </form>
-    <div id="form-errors" class="alert alert-danger mt-3 d-none"></div>
-    <!-- Bloco para exibir mensagens de erro do AJAX -->
-    <div id="mensagem-erro-ajax" class="alert alert-danger d-none"></div>
-    <div id="mensagem-sucesso-ajax" class="alert alert-success d-none"></div>
-    <!-- Comentário: O bloco acima exibe erros de requisições AJAX, como falha ao carregar turmas ou calendário. -->
+    </div>
 </div>
 {% endblock %}
 

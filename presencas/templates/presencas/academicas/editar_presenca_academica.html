@@ -1,20 +1,20 @@
 {% extends 'base.html' %}
 
+{% block title %}Editar Presença Acadêmica{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <h1>Editar Presença</h1>
-    
+    <h1 id="titulo-pagina">Editar Presença Acadêmica</h1>
     <div class="card mb-4">
         <div class="card-body">
-            <form method="post">
+            <form method="post" aria-labelledby="titulo-pagina">
                 {% csrf_token %}
-                
                 {% for field in form %}
                 <div class="mb-3">
                     <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
                     {{ field }}
                     {% if field.errors %}
-                    <div class="text-danger">
+                    <div class="text-danger" role="alert">
                         {% for error in field.errors %}
                         <small>{{ error }}</small>
                         {% endfor %}
@@ -22,10 +22,9 @@
                     {% endif %}
                 </div>
                 {% endfor %}
-                
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">Cancelar</a>
+                <div class="mt-4 d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary" aria-label="Salvar alterações">Salvar Alterações</button>
+                    <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary" aria-label="Cancelar e voltar para lista de presenças acadêmicas">Cancelar</a>
                 </div>
             </form>
         </div>

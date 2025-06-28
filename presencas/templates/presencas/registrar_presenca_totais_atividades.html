@@ -2,68 +2,109 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2>Registrar Presença - Totais de Atividades</h2>
-    <p>Informe a quantidade de dias em que cada atividade ocorreu neste mês. Caso alguma atividade não tenha sido realizada, informe zero. As atividades não informadas não poderão sofrer alterações na seção seguinte.</p>
-    {% if totais_registrados %}
-        <div class="alert alert-info">
-            <strong>Totais já registrados neste mês:</strong>
-            <ul>
-                {% for total in totais_registrados %}
-                    <li>{{ total.atividade.nome }}: {{ total.qtd_ativ_mes }} dia(s)</li>
-                {% endfor %}
-            </ul>
+    <div class="accordion" id="accordionPresencaTotais">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingTotaisAtividades">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTotaisAtividades" aria-expanded="true" aria-controls="collapseTotaisAtividades">
+                    Totais de Atividades do Mês
+                </button>
+            </h2>
+            <div id="collapseTotaisAtividades" class="accordion-collapse collapse show" aria-labelledby="headingTotaisAtividades" data-bs-parent="#accordionPresencaTotais">
+                <div class="accordion-body">
+                    <h2 id="titulo-pagina">Registrar Presença - Totais de Atividades</h2>
+                    <p id="descricao-pagina">Informe a quantidade de dias em que cada atividade ocorreu neste mês. Caso alguma atividade não tenha sido realizada, informe zero. As atividades não informadas não poderão sofrer alterações na seção seguinte.</p>
+                    {% if totais_registrados %}
+                        <div class="alert alert-info" role="status" aria-live="polite">
+                            <strong>Totais já registrados neste mês:</strong>
+                            <ul>
+                                {% for total in totais_registrados %}
+                                    <li>{{ total.atividade.nome }}: {{ total.qtd_ativ_mes }} dia(s)</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    {% if curso and turma and ano and mes %}
+                    <nav aria-label="breadcrumb" class="mb-2">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">Curso: {{ curso.nome }}</li>
+                            <li class="breadcrumb-item">Turma: {{ turma.nome }}</li>
+                            <li class="breadcrumb-item">Ano: {{ ano }}</li>
+                            <li class="breadcrumb-item active" aria-current="page">Mês: {{ mes }}</li>
+                        </ol>
+                    </nav>
+                    <div class="alert alert-info d-flex justify-content-between align-items-center" role="status">
+                        <div>
+                            <strong>Seleção atual:</strong>
+                            Curso: {{ curso.nome }} |
+                            Turma: {{ turma.nome }} |
+                            Ano: {{ ano }} |
+                            Mês: {{ mes }}
+                        </div>
+                        <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-primary btn-sm" aria-label="Alterar seleção de curso, turma, ano e mês">
+                            <i class="fas fa-arrow-left"></i> Alterar seleção
+                        </a>
+                    </div>
+                    {% endif %}
+                    <div id="form-errors" class="alert alert-danger d-none" role="alert"></div>
+                    <div id="mensagem-erro-ajax" class="alert alert-danger d-none" role="alert"></div>
+                    <form id="form-totais-atividades" method="post" autocomplete="off" aria-labelledby="titulo-pagina" aria-describedby="descricao-pagina">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        {% if form.fields %}
+                        <div class="row">
+                            <div class="col-md-10 col-lg-8 offset-md-1 offset-lg-2">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered align-middle" aria-label="Tabela de atividades e quantidade de dias">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th scope="col">Atividade</th>
+                                                <th scope="col">Qtd. Dias</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for field in form %}
+                                                <tr>
+                                                    <td><label for="{{ field.id_for_label }}">{{ field.label }}</label></td>
+                                                    <td>
+                                                        {{ field }}
+                                                        {% if field.errors %}
+                                                            <div class="text-danger small">{{ field.errors|join:", " }}</div>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning mt-3" role="alert">
+                            Nenhuma atividade disponível para informar totais neste mês/turma.<br>
+                            Possíveis motivos:
+                            <ul>
+                                <li>Não há atividades cadastradas para a turma selecionada.</li>
+                                <li>O filtro de curso/turma/ano/mês não retornou atividades válidas.</li>
+                            </ul>
+                            O que deseja fazer?
+                            <div class="mt-2">
+                                <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-secondary">Voltar ao início</a>
+                                <a href="javascript:history.back()" class="btn btn-outline-primary ms-2">Refazer escolhas</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="submit" class="btn btn-primary" aria-label="Avançar para seleção dos dias das atividades">Avançar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-    {% endif %}
-    {% if curso and turma and ano and mes %}
-    <div class="alert alert-info d-flex justify-content-between align-items-center">
-        <div>
-            <strong>Seleção atual:</strong>
-            Curso: {{ curso.nome }} |
-            Turma: {{ turma.nome }} |
-            Ano: {{ ano }} |
-            Mês: {{ mes }}
-        </div>
-        <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-arrow-left"></i> Alterar seleção
-        </a>
     </div>
-    {% endif %}
-    <div id="form-errors" class="alert alert-danger d-none"></div>
-    <div id="mensagem-erro-ajax" class="alert alert-danger d-none"></div>
-    <form id="form-totais-atividades" method="post" autocomplete="off">
-        {% csrf_token %}
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                {{ form.non_field_errors }}
-            </div>
-        {% endif %}
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Atividade</th>
-                            <th>Qtd. Dias</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for field in form %}
-                            <tr>
-                                <td>{{ field.label }}</td>
-                                <td>
-                                    {{ field }}
-                                    {% if field.errors %}
-                                        <div class="text-danger small">{{ field.errors|join:", " }}</div>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <button type="submit" class="btn btn-primary">Confirmar e Avançar</button>
-    </form>
 </div>
 {% endblock %}
 
