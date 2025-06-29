@@ -19,6 +19,18 @@
                         com vencimento em <strong>{{ pagamento.data_vencimento|date:"d/m/Y" }}</strong>?
                     </p>
                     <p class="text-danger mb-0"><small>Esta ação não poderá ser desfeita.</small></p>
+                    {% if dependencias %}
+                        <hr>
+                        <h5>Dependências encontradas:</h5>
+                        <ul>
+                            {# Exemplo: {% if dependencias.recibos %}<li><strong>Recibos:</strong> {{ dependencias.recibos|length }}</li>{% endif %} #}
+                        </ul>
+                        {% if dependencias %}
+                            <div class="alert alert-warning mt-2">
+                                Não é possível excluir o pagamento pois existem registros vinculados. Remova as dependências antes de tentar novamente.
+                            </div>
+                        {% endif %}
+                    {% endif %}
                 </div>
                 <div class="card-footer d-flex justify-content-between">
                     <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-secondary">
@@ -26,7 +38,7 @@
                     </a>
                     <form method="post" style="display: inline;">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">
+                        <button type="submit" class="btn btn-danger" {% if dependencias %}disabled{% endif %}>
                             <i class="fas fa-trash"></i> Excluir Pagamento
                         </button>
                     </form>

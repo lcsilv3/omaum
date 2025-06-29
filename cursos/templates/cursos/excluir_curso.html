@@ -4,10 +4,79 @@
 <div class="container mt-4">
     <h1>Excluir Curso</h1>
     <p>Tem certeza que deseja excluir o curso "{{ curso.nome }}"?</p>
+
+    {% if dependencias %}
+      <div class="alert alert-warning mt-3">
+        <strong>Dependências encontradas:</strong>
+        <ul>
+          {% if dependencias.turmas and dependencias.turmas|length > 0 %}
+            <li><b>Turmas:</b> {{ dependencias.turmas|length }}
+              <ul>
+                {% for turma in dependencias.turmas|slice:":5" %}
+                  <li>{{ turma.nome }}</li>
+                {% endfor %}
+                {% if dependencias.turmas|length > 5 %}
+                  <li>... e mais {{ dependencias.turmas|length|add:"-5" }} turma(s)</li>
+                {% endif %}
+              </ul>
+            </li>
+          {% endif %}
+          {% if dependencias.atividades and dependencias.atividades|length > 0 %}
+            <li><b>Atividades:</b> {{ dependencias.atividades|length }}
+              <ul>
+                {% for atividade in dependencias.atividades|slice:":5" %}
+                  <li>{{ atividade }}</li>
+                {% endfor %}
+                {% if dependencias.atividades|length > 5 %}
+                  <li>... e mais {{ dependencias.atividades|length|add:"-5" }} atividade(s)</li>
+                {% endif %}
+              </ul>
+            </li>
+          {% endif %}
+          {% if dependencias.notas and dependencias.notas|length > 0 %}
+            <li><b>Notas:</b> {{ dependencias.notas|length }}
+              <ul>
+                {% for nota in dependencias.notas|slice:":5" %}
+                  <li>{{ nota }}</li>
+                {% endfor %}
+                {% if dependencias.notas|length > 5 %}
+                  <li>... e mais {{ dependencias.notas|length|add:"-5" }} nota(s)</li>
+                {% endif %}
+              </ul>
+            </li>
+          {% endif %}
+          {% if dependencias.matriculas and dependencias.matriculas|length > 0 %}
+            <li><b>Matrículas:</b> {{ dependencias.matriculas|length }}
+              <ul>
+                {% for matricula in dependencias.matriculas|slice:":5" %}
+                  <li>{{ matricula }}</li>
+                {% endfor %}
+                {% if dependencias.matriculas|length > 5 %}
+                  <li>... e mais {{ dependencias.matriculas|length|add:"-5" }} matrícula(s)</li>
+                {% endif %}
+              </ul>
+            </li>
+          {% endif %}
+          {% if dependencias.pagamentos and dependencias.pagamentos|length > 0 %}
+            <li><b>Pagamentos:</b> {{ dependencias.pagamentos|length }}
+              <ul>
+                {% for pagamento in dependencias.pagamentos|slice:":5" %}
+                  <li>{{ pagamento }}</li>
+                {% endfor %}
+                {% if dependencias.pagamentos|length > 5 %}
+                  <li>... e mais {{ dependencias.pagamentos|length|add:"-5" }} pagamento(s)</li>
+                {% endif %}
+              </ul>
+            </li>
+          {% endif %}
+        </ul>
+        <span class="text-danger">Remova ou transfira todas as dependências acima para poder excluir este curso.</span>
+      </div>
+    {% endif %}
     
     <form method="post">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Sim, excluir</button>
+        <button type="submit" class="btn btn-danger" {% if dependencias.turmas|length > 0 or dependencias.atividades|length > 0 or dependencias.notas|length > 0 or dependencias.matriculas|length > 0 or dependencias.pagamentos|length > 0 %}disabled{% endif %}>Sim, excluir</button>
         <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
         <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Cancelar</a>
     </form>

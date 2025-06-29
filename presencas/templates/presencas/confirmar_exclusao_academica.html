@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Excluir Presença Acadêmica{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Presença Acadêmica</h1>
+    <div class="alert alert-danger">
+        <p>Tem certeza que deseja excluir esta presença acadêmica?</p>
+        <p><strong>Aluno:</strong> {{ presenca.aluno }}</p>
+        <p><strong>Atividade:</strong> {{ presenca.atividade }}</p>
+        <p><strong>Data:</strong> {{ presenca.data }}</p>
+        {# Dependências futuras podem ser exibidas aqui #}
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+        <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

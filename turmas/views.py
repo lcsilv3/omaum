@@ -89,7 +89,7 @@ def listar_turmas(request):
             )
         
         if curso_id:
-            turmas = turmas.filter(curso__codigo_curso=curso_id)
+            turmas = turmas.filter(curso_id=curso_id)
         
         # Ordenar turmas por status, nome do curso e nome da turma
         turmas = turmas.order_by('status', 'curso__nome', 'nome')
@@ -157,7 +157,7 @@ def criar_turma(request):
     # Certifique-se de que os cursos estão sendo carregados
     try:
         Curso = get_curso_model()
-        cursos = Curso.objects.all().order_by('codigo_curso')
+        cursos = Curso.objects.all().order_by('nome')
     except (ImportError, AttributeError):
         cursos = []
     
@@ -244,14 +244,42 @@ def editar_turma(request, turma_id):
     )
 
 @login_required
-def excluir_turma(request, turma_id):
-    Turma = get_turma_model()
-    turma = get_object_or_404(Turma, id=turma_id)
+def excluir_turma(request, id):
+    Turma = get_models()
+    turma = get_object_or_404(Turma, id=id)
+    from matriculas.models import Matricula
+    from atividades.models import AtividadeAcademica
+    from presencas.models import Presenca
+    from notas.models import Nota
+    from pagamentos.models import Pagamento
+    matriculas = list(Matricula.objects.filter(turma=turma))
+    atividades = list(AtividadeAcademica.objects.filter(turmas=turma))
+    presencas = list(Presenca.objects.filter(turma=turma))
+    notas = list(Nota.objects.filter(turma=turma))
+    pagamentos = list(Pagamento.objects.filter(turma=turma))
+    dependencias = {
+        'matriculas': matriculas,
+        'atividades': atividades,
+        'presencas': presencas,
+        'notas': notas,
+        'pagamentos': pagamentos,
+    }
     if request.method == "POST":
-        turma.delete()
-        messages.success(request, "Turma excluída com sucesso!")
-        return redirect("turmas:listar_turmas")
-    return render(request, "turmas/excluir_turma.html", {"turma": turma})
+        if any(len(lst) > 0 for lst in dependencias.values()):
+            messages.error(
+                request,
+                "Não é possível excluir a turma pois existem registros vinculados (matrículas, atividades, presenças, notas, pagamentos, etc.). Remova as dependências antes de tentar novamente.",
+                extra_tags="safe"
+            )
+            return redirect("turmas:excluir_turma", id=turma.id)
+        try:
+            turma.delete()
+            messages.success(request, "Turma excluída com sucesso!")
+            return redirect("turmas:listar_turmas")
+        except Exception as e:
+            messages.error(request, f"Erro ao excluir turma: {str(e)}")
+            return redirect("turmas:detalhar_turma", id=turma.id)
+    return render(request, "turmas/excluir_turma.html", {"turma": turma, "dependencias": dependencias})
 
 @login_required
 def listar_alunos_turma(request, turma_id):
@@ -727,7 +755,7 @@ def importar_turmas(request):
                             curso = Curso.objects.get(nome=curso_nome)
                         except Curso.DoesNotExist:
                             try:
-                                curso = Curso.objects.get(codigo_curso=curso_nome)
+                                curso = Curso.objects.get(id=curso_nome)
                             except Curso.DoesNotExist:
                                 errors.append(f"Curso não encontrado: {curso_nome}")
                                 continue
@@ -965,10 +993,10 @@ from django.http import JsonResponse
 from .models import Turma
 
 def turmas_por_curso(request):
-    codigo_curso = request.GET.get("codigo_curso")
+    codigo_curso = request.GET.get("curso")
     turmas = []
     if codigo_curso:
-        turmas_qs = Turma.objects.filter(curso__codigo_curso=codigo_curso)
+        turmas_qs = Turma.objects.filter(curso_id=codigo_curso)
         turmas = [{"id": t.id, "nome": t.nome} for t in turmas_qs]
     return JsonResponse({"turmas": turmas})
     return JsonResponse({"turmas": turmas})

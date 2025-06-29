@@ -6,26 +6,52 @@
 <div class="container mt-4">
     <h1>Excluir Turma: {{ turma.nome }}</h1>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
     <div class="alert alert-danger">
         <p>Você tem certeza que deseja excluir esta turma?</p>
         <p><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
     </div>
 
-    <!-- Padronizar botões de confirmação -->
+    {% if dependencias %}
+      <div class="alert alert-warning">
+        <strong>Dependências encontradas:</strong>
+        <ul>
+          {% if dependencias.matriculas and dependencias.matriculas|length > 0 %}
+            <li><b>Matrículas:</b> {{ dependencias.matriculas|length }}
+              <ul>
+                {% for m in dependencias.matriculas|slice:":5" %}<li>{{ m }}</li>{% endfor %}
+                {% if dependencias.matriculas|length > 5 %}<li>... e mais {{ dependencias.matriculas|length|add:"-5" }} matrícula(s)</li>{% endif %}
+              </ul>
+            </li>
+          {% endif %}
+          {% if dependencias.atividades and dependencias.atividades|length > 0 %}
+            <li><b>Atividades:</b> {{ dependencias.atividades|length }}
+              <ul>
+                {% for a in dependencias.atividades|slice:":5" %}<li>{{ a }}</li>{% endfor %}
+                {% if dependencias.atividades|length > 5 %}<li>... e mais {{ dependencias.atividades|length|add:"-5" }} atividade(s)</li>{% endif %}
+              </ul>
+            </li>
+          {% endif %}
+          {% if dependencias.presencas and dependencias.presencas|length > 0 %}
+            <li><b>Presenças:</b> {{ dependencias.presencas|length }}</li>
+          {% endif %}
+          {% if dependencias.notas and dependencias.notas|length > 0 %}
+            <li><b>Notas:</b> {{ dependencias.notas|length }}</li>
+          {% endif %}
+          {% if dependencias.pagamentos and dependencias.pagamentos|length > 0 %}
+            <li><b>Pagamentos:</b> {{ dependencias.pagamentos|length }}</li>
+          {% endif %}
+        </ul>
+        <span class="text-danger">Remova todas as dependências acima para poder excluir esta turma.</span>
+      </div>
+    {% endif %}
+
     <form method="post">
         {% csrf_token %}
         <div class="d-flex justify-content-between">
             <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">
                 <i class="fas fa-times"></i> Cancelar
             </a>
-            <button type="submit" class="btn btn-danger">
+            <button type="submit" class="btn btn-danger" {% if dependencias and (dependencias.matriculas|length > 0 or dependencias.atividades|length > 0 or dependencias.presencas|length > 0 or dependencias.notas|length > 0 or dependencias.pagamentos|length > 0) %}disabled{% endif %}>
                 <i class="fas fa-trash"></i> Confirmar Exclusão
             </button>
         </div>

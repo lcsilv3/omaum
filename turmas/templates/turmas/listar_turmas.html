@@ -22,7 +22,7 @@
             </a>
         </div>
     </div>
-    
+
     <!-- Barra de busca e filtros -->
     <div class="card mb-4">
         <div class="card-header">
@@ -34,7 +34,7 @@
                     <select name="curso" class="form-select">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
-                            <option value="{{ curso.codigo_curso }}" {% if curso_selecionado == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
+                            <option value="{{ curso.id }}" {% if curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>
                                 {{ curso.nome }}
                             </option>
                         {% endfor %}
@@ -48,11 +48,6 @@
             </form>
         </div>
         <div class="card-body">
-            {% if error_message %}
-            <div class="alert alert-danger">
-                {{ error_message }}
-            </div>
-            {% endif %}
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>

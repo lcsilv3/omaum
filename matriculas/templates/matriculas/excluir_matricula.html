@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Matrícula{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Excluir Matrícula</h1>
+    <div class="alert alert-danger">
+        <p>Tem certeza que deseja excluir a matrícula do aluno <strong>{{ matricula.aluno.nome }}</strong> na turma <strong>{{ matricula.turma.nome }}</strong>?</p>
+        <p>Esta ação não pode ser desfeita.</p>
+        {% if dependencias %}
+            <hr>
+            <h5>Dependências encontradas:</h5>
+            <ul>
+                {# Exemplo: {% if dependencias.pagamentos %}<li><strong>Pagamentos:</strong> {{ dependencias.pagamentos|length }}</li>{% endif %} #}
+            </ul>
+            {% if dependencias %}
+                <div class="alert alert-warning mt-2">
+                    Não é possível excluir a matrícula pois existem registros vinculados. Remova as dependências antes de tentar novamente.
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="d-flex justify-content-between">
+            <a href="{{ return_url|default:'/matriculas/' }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-danger" {% if dependencias %}disabled{% endif %}>
+                <i class="fas fa-trash"></i> Confirmar Exclusão
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -9,7 +9,7 @@ try:
     if not cursos.exists():
         print("Nenhum curso encontrado.")
     for curso in cursos:
-        print(f'Curso: {curso.nome} (Código: {curso.codigo_curso})')
+        print(f'Curso: {curso.nome} (ID: {curso.id})')
         turmas = Turma.objects.filter(curso=curso)
         if not turmas.exists():
             print('  Nenhuma turma para este curso.')

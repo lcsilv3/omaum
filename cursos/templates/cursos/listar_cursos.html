@@ -49,13 +49,13 @@
                   <tbody>
                       {% for curso in cursos %}
                           <tr>
-                              <td>{{ curso.codigo_curso }}</td>
+                              <td>{{ curso.id }}</td>
                               <td>{{ curso.nome }}</td>
                               <td>{{ curso.duracao }}</td>
                               <td>
-                                  <a href="{% url 'cursos:detalhar_curso' curso.codigo_curso %}" class="btn btn-sm btn-info" title="Ver detalhes completos do curso">Detalhes</a>
-                                  <a href="{% url 'cursos:editar_curso' curso.codigo_curso %}" class="btn btn-sm btn-warning" title="Editar informações do curso">Editar</a>
-                                  <a href="{% url 'cursos:excluir_curso' curso.codigo_curso %}" class="btn btn-sm btn-danger" title="Excluir este curso">Excluir</a>
+                                  <a href="{% url 'cursos:detalhar_curso' curso.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos do curso">Detalhes</a>
+                                  <a href="{% url 'cursos:editar_curso' curso.id %}" class="btn btn-sm btn-warning" title="Editar informações do curso">Editar</a>
+                                  <a href="{% url 'cursos:excluir_curso' curso.id %}" class="btn btn-sm btn-danger" title="Excluir este curso">Excluir</a>
                               </td>
                           </tr>
                       {% empty %}

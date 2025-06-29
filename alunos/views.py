@@ -49,12 +49,12 @@ def listar_alunos(request):
             )
         # Filtro por curso (corrigido)
         codigo_curso = request.GET.get("codigo_curso", "")
-        if codigo_curso:
+        if curso_id:
             try:
                 Matricula = import_module("matriculas.models").Matricula
                 alunos_cpfs = (
                     Matricula.objects.filter(
-                        turma__curso__codigo_curso=codigo_curso
+                        turma__curso_id=curso_id
                     )
                     .values_list("aluno__cpf", flat=True)
                     .distinct()
@@ -262,10 +262,37 @@ def editar_aluno(request, cpf):
 
 @login_required
 def excluir_aluno(request, cpf):
-    """Exclui um aluno."""
+    """Exclui um aluno com verificação robusta de dependências."""
     Aluno = get_models()
     aluno = get_object_or_404(Aluno, cpf=cpf)
+
+    # Buscar dependências
+    from notas.models import Nota
+    from matriculas.models import Matricula
+    from presencas.models import Presenca
+    from pagamentos.models import Pagamento
+    from punicoes.models import Punicao
+    notas = list(Nota.objects.filter(aluno=aluno))
+    matriculas = list(Matricula.objects.filter(aluno=aluno))
+    presencas = list(Presenca.objects.filter(aluno=aluno))
+    pagamentos = list(Pagamento.objects.filter(aluno=aluno))
+    punicoes = list(Punicao.objects.filter(aluno=aluno))
+    dependencias = {
+        'notas': notas,
+        'matriculas': matriculas,
+        'presencas': presencas,
+        'pagamentos': pagamentos,
+        'punicoes': punicoes,
+    }
+
     if request.method == "POST":
+        if any(len(lst) > 0 for lst in dependencias.values()):
+            messages.error(
+                request,
+                "Não é possível excluir o aluno pois existem registros vinculados (notas, matrículas, presenças, pagamentos ou punições). Remova as dependências antes de tentar novamente.",
+                extra_tags="safe"
+            )
+            return redirect("alunos:excluir_aluno", cpf=aluno.cpf)
         try:
             aluno.delete()
             messages.success(request, "Aluno excluído com sucesso!")
@@ -273,7 +300,7 @@ def excluir_aluno(request, cpf):
         except Exception as e:
             messages.error(request, f"Erro ao excluir aluno: {str(e)}")
             return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
-    return render(request, "alunos/excluir_aluno.html", {"aluno": aluno})
+    return render(request, "alunos/excluir_aluno.html", {"aluno": aluno, "dependencias": dependencias})
 
 
 @login_required

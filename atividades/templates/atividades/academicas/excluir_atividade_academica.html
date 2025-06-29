@@ -13,10 +13,27 @@
                 {{ turma.nome }}{% if not forloop.last %}, {% endif %}
             {% endfor %}
         </p>
+        {% if dependencias %}
+            <hr>
+            <h5>Dependências encontradas:</h5>
+            <ul>
+                {% if dependencias.presencas %}
+                    <li><strong>Presenças:</strong> {{ dependencias.presencas|length }}</li>
+                {% endif %}
+                {% if dependencias.observacoes %}
+                    <li><strong>Observações de Presença:</strong> {{ dependencias.observacoes|length }}</li>
+                {% endif %}
+            </ul>
+            {% if dependencias.presencas or dependencias.observacoes %}
+                <div class="alert alert-warning mt-2">
+                    Não é possível excluir a atividade pois existem registros vinculados. Remova as dependências antes de tentar novamente.
+                </div>
+            {% endif %}
+        {% endif %}
     </div>
     <form method="post">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+        <button type="submit" class="btn btn-danger" {% if dependencias.presencas or dependencias.observacoes %}disabled{% endif %}>Confirmar Exclusão</button>
         <a href="{% url 'atividades:detalhar_atividade_academica' atividade.pk %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>

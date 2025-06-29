@@ -293,3 +293,27 @@ def importar_matriculas(request):
             messages.error(request, f"Erro ao importar matrículas: {str(e)}")
     
     return render(request, "matriculas/importar_matriculas.html")
+
+@login_required
+def excluir_matricula(request, id):
+    """Exclui uma matrícula com padrão de exclusão segura."""
+    Matricula = get_model("matriculas", "Matricula")
+    matricula = get_object_or_404(Matricula, id=id)
+
+    # Buscar dependências (exemplo: pagamentos, presenças, etc. - atualmente não há)
+    dependencias = {}
+    # Se no futuro houver dependências, adicionar aqui
+
+    if request.method == "POST":
+        if any(len(lst) > 0 for lst in dependencias.values()):
+            messages.error(
+                request,
+                "Não é possível excluir a matrícula pois existem registros vinculados. Remova as dependências antes de tentar novamente.",
+                extra_tags="safe"
+            )
+            return redirect("matriculas:excluir_matricula", id=matricula.id)
+        matricula.delete()
+        messages.success(request, "Matrícula excluída com sucesso!")
+        return redirect("matriculas:listar_matriculas")
+
+    return render(request, "matriculas/excluir_matricula.html", {"matricula": matricula, "dependencias": dependencias})

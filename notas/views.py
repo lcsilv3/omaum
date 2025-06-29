@@ -30,7 +30,7 @@ def listar_notas(request):
         notas = notas.filter(aluno__cpf=aluno_id)
     
     if curso_id:
-        notas = notas.filter(curso__codigo_curso=curso_id)
+        notas = notas.filter(curso_id=curso_id)
     
     # Ordenar por data mais recente
     notas = notas.order_by('-data')
@@ -105,15 +105,26 @@ def editar_nota(request, nota_id):
 
 @login_required
 def excluir_nota(request, nota_id):
-    """Exclui uma nota."""
+    """Exclui uma nota com padrão de exclusão segura."""
     nota = get_object_or_404(Nota, id=nota_id)
-    
+
+    # Buscar dependências (exemplo: pagamentos, presenças, etc. - atualmente não há)
+    dependencias = {}
+    # Se no futuro houver dependências, adicionar aqui
+
     if request.method == "POST":
+        if any(len(lst) > 0 for lst in dependencias.values()):
+            messages.error(
+                request,
+                "Não é possível excluir a nota pois existem registros vinculados. Remova as dependências antes de tentar novamente.",
+                extra_tags="safe"
+            )
+            return redirect("notas:excluir_nota", nota_id=nota.id)
         nota.delete()
         messages.success(request, "Nota excluída com sucesso!")
         return redirect("notas:listar_notas")
-    
-    return render(request, "notas/excluir_nota.html", {"nota": nota})
+
+    return render(request, "notas/excluir_nota.html", {"nota": nota, "dependencias": dependencias})
 
 @login_required
 def exportar_notas_csv(request):

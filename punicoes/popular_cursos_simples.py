@@ -41,9 +41,9 @@ for curso_data in cursos_basicos:
             codigo_curso=curso_data["codigo_curso"], defaults=curso_data
         )
         if created:
-            print(f"Curso criado: {curso.codigo_curso} - {curso.nome}")
+            print(f"Curso criado: {curso.id} - {curso.nome}")
         else:
-            print(f"Curso atualizado: {curso.codigo_curso} - {curso.nome}")
+            print(f"Curso atualizado: {curso.id} - {curso.nome}")
     except Exception as e:
         print(f"Erro ao criar curso {curso_data['codigo_curso']}: {e}")
 

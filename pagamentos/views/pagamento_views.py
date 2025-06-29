@@ -145,15 +145,25 @@ def editar_pagamento(request, pagamento_id):
 
 @login_required
 def excluir_pagamento(request, pagamento_id):
-    """Exclui um pagamento."""
+    """Exclui um pagamento com padrão de exclusão segura."""
     Pagamento = get_pagamento_model()
     try:
         pagamento = get_object_or_404(Pagamento, id=pagamento_id)
+        # Buscar dependências (exemplo: notas, recibos, etc. - atualmente não há)
+        dependencias = {}
+        # Se no futuro houver dependências, adicionar aqui
         if request.method == 'POST':
+            if any(len(lst) > 0 for lst in dependencias.values()):
+                messages.error(
+                    request,
+                    "Não é possível excluir o pagamento pois existem registros vinculados. Remova as dependências antes de tentar novamente.",
+                    extra_tags="safe"
+                )
+                return redirect('pagamentos:excluir_pagamento', pagamento_id=pagamento.id)
             pagamento.delete()
             messages.success(request, "Pagamento excluído com sucesso!")
             return redirect('pagamentos:listar_pagamentos')
-        return render(request, 'pagamentos/excluir_pagamento.html', {'pagamento': pagamento})
+        return render(request, 'pagamentos/excluir_pagamento.html', {'pagamento': pagamento, 'dependencias': dependencias})
     except Exception as e:
         logger.error("Erro ao excluir pagamento: %s", str(e))
         messages.error(request, f"Erro ao excluir pagamento: {str(e)}")

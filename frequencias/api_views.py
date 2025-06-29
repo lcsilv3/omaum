@@ -156,7 +156,7 @@ def obter_turmas_por_curso(request, curso_id):
         Turma = get_turma_model()
         
         # Obter turmas do curso
-        turmas = Turma.objects.filter(curso__codigo_curso=curso_id, status='A')
+        turmas = Turma.objects.filter(curso_id=curso_id, status='A')
         
         # Formatar dados para resposta
         turmas_data = []

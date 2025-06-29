@@ -133,7 +133,7 @@ def historico_frequencia(request, aluno_cpf):
         
         # Aplicar filtros
         if curso_id:
-            carencias = carencias.filter(frequencia_mensal__turma__curso__codigo_curso=curso_id)
+            carencias = carencias.filter(frequencia_mensal__turma__curso_id=curso_id)
         
         if turma_id:
             carencias = carencias.filter(frequencia_mensal__turma__id=turma_id)

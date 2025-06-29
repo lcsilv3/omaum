@@ -6,11 +6,23 @@
   
     <div class="alert alert-danger">
       <p>Tem certeza que deseja excluir a punição de <strong>{{ punicao.aluno.nome }}</strong> do tipo <strong>{{ punicao.tipo_punicao.nome }}</strong> aplicada em <strong>{{ punicao.data_aplicacao|date:"d/m/Y" }}</strong>?</p>
+      {% if dependencias %}
+        <hr>
+        <h5>Dependências encontradas:</h5>
+        <ul>
+            {# Exemplo: {% if dependencias.recursos %}<li><strong>Recursos:</strong> {{ dependencias.recursos|length }}</li>{% endif %} #}
+        </ul>
+        {% if dependencias %}
+            <div class="alert alert-warning mt-2">
+                Não é possível excluir a punição pois existem registros vinculados. Remova as dependências antes de tentar novamente.
+            </div>
+        {% endif %}
+      {% endif %}
     </div>
   
     <form method="post">
       {% csrf_token %}
-      <button type="submit" class="btn btn-danger">Sim, excluir</button>
+      <button type="submit" class="btn btn-danger" {% if dependencias %}disabled{% endif %}>Sim, excluir</button>
       <a href="{% url 'punicoes:listar_punicoes' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>

@@ -57,8 +57,8 @@ def dashboard(request):
             carencias = carencias.filter(frequencia_mensal__ano=ano, frequencia_mensal__mes=mes)
         
         if curso_id:
-            frequencias = frequencias.filter(turma__curso__codigo_curso=curso_id)
-            carencias = carencias.filter(frequencia_mensal__turma__curso__codigo_curso=curso_id)
+            frequencias = frequencias.filter(turma__curso_id=curso_id)
+            carencias = carencias.filter(frequencia_mensal__turma__curso_id=curso_id)
         
         if turma_id:
             frequencias = frequencias.filter(turma__id=turma_id)

@@ -61,7 +61,7 @@ def criar_cursos_teste():
         )
         cursos_criados.append(curso)
         status = "Criado" if created else "Atualizado"
-        print(f"  {status}: {curso.codigo_curso} - {curso.nome}")
+        print(f"  {status}: {curso.id} - {curso.nome}")
 
     return cursos_criados
 

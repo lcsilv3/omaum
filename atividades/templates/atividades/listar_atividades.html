@@ -96,7 +96,7 @@
         <select name="curso" id="id_curso" class="form-select" aria-label="Selecionar curso">
             <option value="">Todos os cursos</option>
             {% for curso in cursos %}
-                <option value="{{ curso.codigo_curso }}" {% if codigo_curso_selecionado == curso.codigo_curso|stringformat:"s" %}selected{% endif %}>
+                <option value="{{ curso.id }}" {% if codigo_curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>
                     {{ curso.nome }}
                 </option>
             {% endfor %}

@@ -29,7 +29,7 @@ def api_filtrar_atividades(request):
         # Se só turma foi selecionada, mostre apenas essa turma
         turmas = Turma.objects.filter(id=turma_id)
         # Opcional: filtrar cursos para mostrar só o do turma selecionada
-        cursos = Curso.objects.filter(codigo_curso=turmas.first().curso_id) if turmas.exists() else Curso.objects.none()
+        cursos = Curso.objects.filter(id=turmas.first().curso_id) if turmas.exists() else Curso.objects.none()
     else:
         turmas = Turma.objects.all().distinct()
 

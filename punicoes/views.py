@@ -115,16 +115,26 @@ def editar_punicao(request, id):
 @login_required
 def excluir_punicao(request, id):
     Punicao = get_model("punicoes", "Punicao")
-
     punicao = get_object_or_404(Punicao, id=id)
 
+    # Buscar dependências (exemplo: recursos, históricos, etc. - atualmente não há)
+    dependencias = {}
+    # Se no futuro houver dependências, adicionar aqui
+
     if request.method == "POST":
+        if any(len(lst) > 0 for lst in dependencias.values()):
+            messages.error(
+                request,
+                "Não é possível excluir a punição pois existem registros vinculados. Remova as dependências antes de tentar novamente.",
+                extra_tags="safe",
+            )
+            return redirect("punicoes:excluir_punicao", id=punicao.id)
         punicao.delete()
         messages.success(request, "Punição excluída com sucesso!")
         return redirect("punicoes:listar_punicoes")
 
     return render(
-        request, "punicoes/excluir_punicao.html", {"punicao": punicao}
+        request, "punicoes/excluir_punicao.html", {"punicao": punicao, "dependencias": dependencias}
     )
 
 

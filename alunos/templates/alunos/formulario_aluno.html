@@ -11,19 +11,10 @@
         </a>
     </div>
     
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-    
     <!-- Adicionar ID ao formulário para facilitar a seleção no JavaScript -->
     <form method="post" enctype="multipart/form-data" id="form-aluno" novalidate>
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
-        
         <!-- Adicionar logo após a abertura da tag <form> -->
         <div class="alert alert-info">
             <p><strong>Atenção:</strong> Preencha todos os campos obrigatórios e certifique-se de que a data de nascimento está preenchida.</p>

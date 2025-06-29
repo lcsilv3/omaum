@@ -13,7 +13,7 @@ def relatorio_atividades(request):
     atividades = AtividadeAcademica.objects.prefetch_related('turmas__curso').all()
     curso_id = request.GET.get("curso")
     if curso_id:
-        atividades = atividades.filter(turmas__curso__codigo_curso=curso_id)
+        atividades = atividades.filter(turmas__curso_id=curso_id)
     cursos_dict = {}
     for atividade in atividades:
         curso = atividade.curso

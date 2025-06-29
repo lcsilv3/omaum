@@ -38,13 +38,26 @@
                 </li>
             </ul>
             
+            {% if dependencias %}
+                <hr>
+                <h5>Dependências encontradas:</h5>
+                <ul>
+                    {# Exemplo: {% if dependencias.pagamentos %}<li><strong>Pagamentos:</strong> {{ dependencias.pagamentos|length }}</li>{% endif %} #}
+                </ul>
+                {% if dependencias %}
+                    <div class="alert alert-warning mt-2">
+                        Não é possível excluir a nota pois existem registros vinculados. Remova as dependências antes de tentar novamente.
+                    </div>
+                {% endif %}
+            {% endif %}
+            
             <form method="post">
                 {% csrf_token %}
                 <div class="d-flex justify-content-between">
                     <a href="{% url 'notas:detalhar_nota' nota.id %}" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Cancelar
                     </a>
-                    <button type="submit" class="btn btn-danger">
+                    <button type="submit" class="btn btn-danger" {% if dependencias %}disabled{% endif %}>
                         <i class="fas fa-trash"></i> Confirmar Exclusão
                     </button>
                 </div>

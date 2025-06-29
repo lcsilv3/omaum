@@ -64,14 +64,6 @@
         </div>
     </form>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-
     <!-- Tabela de pagamentos -->
     <div class="table-responsive">
         <table class="table align-middle table-hover">

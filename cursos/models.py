@@ -3,9 +3,12 @@ from django.core.validators import MinValueValidator
 
 
 class Curso(models.Model):
+    # Novo campo id será a chave primária automaticamente
     codigo_curso = models.IntegerField(
         "Código do Curso",
-        primary_key=True,
+        unique=True,  # Agora é apenas único, não mais PK
+        null=True,    # Permitir null temporariamente para migração
+        blank=True,
         validators=[MinValueValidator(1)],
         help_text="Digite um número inteiro positivo",
     )
@@ -19,4 +22,4 @@ class Curso(models.Model):
     class Meta:
         verbose_name = "Curso"
         verbose_name_plural = "Cursos"
-        ordering = ["codigo_curso"]
+        ordering = ["nome"]  # Ordenar por nome agora

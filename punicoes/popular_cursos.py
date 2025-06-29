@@ -212,11 +212,7 @@ def criar_cursos_aleatorios(quantidade=8):
                 descricao=descricao,
                 duracao=duracao,
             )
-            codigos_existentes.append(codigo_curso)
-            cursos_criados += 1
-            print(
-                f"Curso aleatório criado: {curso.codigo_curso} - {curso.nome} ({curso.duracao} meses)"
-            )
+            print(f"Curso aleatório criado: {curso.id} - {curso.nome} ({curso.duracao} meses)")
         except Exception as e:
             print(f"Erro ao criar curso aleatório: {e}")
 
