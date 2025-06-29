@@ -23,6 +23,11 @@
         </div>
     </div>
 
+    <!-- Mensagem de erro, se houver -->
+    {% if error_message %}
+        <div class="alert alert-danger">{{ error_message }}</div>
+    {% endif %}
+
     <!-- Barra de busca e filtros -->
     <div class="card mb-4">
         <div class="card-header">
@@ -61,7 +66,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for turma in turmas %}
+                        {% for turma in page_obj.object_list %}
                             <tr>
                                 <td>{{ turma.curso.nome }}</td>
                                 <td>{{ turma.nome }}</td>
@@ -71,7 +76,7 @@
                                         {{ turma.get_status_display }}
                                     </span>
                                 </td>
-                                <td>{{ turma.data_inicio|date:"d/m/Y"|default:"-" }}</td>
+                                <td>{{ turma.data_inicio_ativ|date:"d/m/Y"|default:"-" }}</td>
                                 <td>
                                     <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da turma">Detalhes</a>
                                     <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning" title="Editar informações da turma">Editar</a>
@@ -87,11 +92,18 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                <!-- Debug: Exibir IDs das turmas na página -->
+                <div class="text-muted small">
+                    <strong>Debug:</strong> IDs das turmas nesta página: 
+                    {% for turma in page_obj.object_list %}{{ turma.id }} {% empty %}nenhuma{% endfor %}<br>
+                    <strong>Debug:</strong> page_obj length: {{ page_obj.object_list|length }} | total_turmas: {{ total_turmas|default:'?' }}<br>
+                    <strong>Debug:</strong> object_list: {{ page_obj.object_list }}
+                </div>
             </div>
         </div>
         <div class="card-footer">
-            <p class="text-muted mb-0">Total: {{ total_turmas|default:"0" }} turma(s)</p>
-            {% if page_obj.has_other_pages %}
+            <p class="text-muted mb-0">Total: {{ total_turmas|default:"0" }} turma(s) | Página: {{ page_obj.number|default:'1' }} de {{ page_obj.paginator.num_pages|default:'1' }}</p>
+            {% if page_obj and page_obj.has_other_pages %}
                 <nav aria-label="Paginação">
                     <ul class="pagination justify-content-center mb-0">
                         {% if page_obj.has_previous %}

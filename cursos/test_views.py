@@ -21,7 +21,6 @@ class CursoViewTest(TestCase):
         self.client.login(username="testuser", password="testpassword")
         # Criar um curso para testes
         self.curso = Curso.objects.create(
-            codigo_curso=301,
             nome="Curso de Teste",
             descricao="Descrição do curso de teste",
             duracao=6,
@@ -33,7 +32,6 @@ class CursoViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "cursos/listar_cursos.html")
         self.assertContains(response, "Curso de Teste")
-        self.assertContains(response, "301")
 
     def test_criar_curso_view_get(self):
         """Teste da view de criação de curso (GET)"""
@@ -44,7 +42,7 @@ class CursoViewTest(TestCase):
     def test_detalhar_curso_view(self):
         """Teste da view de detalhes de curso"""
         response = self.client.get(
-            reverse("cursos:detalhar_curso", args=[self.curso.codigo_curso])
+            reverse("cursos:detalhar_curso", args=[self.curso.pk])
         )
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "cursos/detalhar_curso.html")

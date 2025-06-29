@@ -3,15 +3,18 @@
 {% block content %}
 <div class="container mt-4">
   <h1>Detalhes do Curso</h1>
-  
-  <div class="card">
-    <div class="card-header">
-      <h2>{{ curso.nome }}</h2>
+  <div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">
+        <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#dados-curso" role="button" aria-expanded="true" aria-controls="dados-curso">
+          <span class="chevron">&#9654;</span> Dados do Curso <small class="text-light">(clique para expandir/recolher)</small>
+        </a>
+      </h5>
     </div>
-    <div class="card-body">
+    <div id="dados-curso" class="card-body collapse show">
+      <h2>{{ curso.nome }}</h2>
       <p><strong>ID:</strong> {{ curso.id }}</p>
       <p><strong>Descrição:</strong> {{ curso.descricao }}</p>
-      <p><strong>Duração:</strong> {{ curso.duracao }} meses</p>
     </div>
     <div class="card-footer">
       <a href="javascript:history.back()" class="btn btn-secondary me-2">
@@ -29,5 +32,24 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
+            toggle.addEventListener('click', function() {
+                var chevron = this.querySelector('.chevron');
+                setTimeout(function() {
+                    if (toggle.classList.contains('collapsed')) {
+                        chevron.style.transform = 'rotate(0deg)';
+                    } else {
+                        chevron.style.transform = 'rotate(90deg)';
+                    }
+                }, 150);
+            });
+        });
+    });
+</script>
 {% endblock %}
 

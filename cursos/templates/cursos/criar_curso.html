@@ -6,13 +6,23 @@
     <form method="post">
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
-        {% for field in form %}
-            {% include 'includes/form_field.html' %}
-        {% endfor %}
-        <!-- Padronizar botões no formulário -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#dados-curso" role="button" aria-expanded="true" aria-controls="dados-curso">
+                        <span class="chevron">&#9654;</span> Dados do Curso <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="dados-curso" class="card-body collapse show">
+                {% for field in form %}
+                    {% include 'includes/form_field.html' %}
+                {% endfor %}
+            </div>
+        </div>
         <div class="mt-3">
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> {% if curso.codigo_curso %}Atualizar{% else %}Criar{% endif %} Curso
+                <i class="fas fa-save"></i> Criar Curso
             </button>
             <a href="javascript:history.back()" class="btn btn-secondary me-2">
                 <i class="fas fa-arrow-left"></i> Voltar
@@ -23,4 +33,23 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
+            toggle.addEventListener('click', function() {
+                var chevron = this.querySelector('.chevron');
+                setTimeout(function() {
+                    if (toggle.classList.contains('collapsed')) {
+                        chevron.style.transform = 'rotate(0deg)';
+                    } else {
+                        chevron.style.transform = 'rotate(90deg)';
+                    }
+                }, 150);
+            });
+        });
+    });
+</script>
 {% endblock %}

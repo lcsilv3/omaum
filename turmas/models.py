@@ -124,7 +124,10 @@ class Turma(models.Model):
     )
 
     def __str__(self):
-        return f"{self.nome} - {self.curso.nome}"
+        try:
+            return f"{self.nome} - {self.curso.nome}"
+        except Exception:
+            return f"{self.nome} - [Curso não encontrado]"
 
     class Meta:
         verbose_name = "Turma"

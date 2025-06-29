@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}SGI - Sistema de Gestão Integrada da OmAum{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-2">
+    <div class="jumbotron bg-light p-2 rounded" style="font-size:1.1rem;">
+        <h1 class="display-6" style="font-size:2rem;">Bem-vindo ao SGI - OmAum</h1>
+        <p class="lead" style="font-size:1.1rem;">Sistema de Gestão Integrada da OmAum - Gerenciamento completo de Alunos, Cursos, Turmas e Atividades.</p>
+        <hr class="my-2">
+        <p style="font-size:1rem;">Selecione um dos módulos abaixo para começar.</p>
+    </div>
+    {% if user.is_authenticated %}
+    <!-- INÍCIO: BLOCO COMPACTO DE MÓDULOS (padrão reversível) -->
+    <div class="row row-cols-xxl-6 row-cols-xl-5 row-cols-lg-4 row-cols-md-3 row-cols-sm-2 g-2 mt-2">
+        <!-- Cursos -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-book text-success"></i> Cursos</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Gerencie Cursos.</p>
+                    <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-success btn-sm w-100"><i class="fas fa-book-open"></i> Cursos</a>
+                </div>
+            </div>
+        </div>
+        <!-- Alunos -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-user-graduate text-primary"></i> Alunos</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Gerencie Alunos.</p>
+                    <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-primary btn-sm w-100"><i class="fas fa-users"></i> Alunos</a>
+                </div>
+            </div>
+        </div>
+        <!-- Turmas -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-users text-info"></i> Turmas</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Gerencie Turmas.</p>
+                    <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-info btn-sm w-100"><i class="fas fa-chalkboard-teacher"></i> Turmas</a>
+                </div>
+            </div>
+        </div>
+        <!-- Atividades -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-calendar-alt text-pink"></i> Atividades</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Gerencie Atividades.</p>
+                    <a href="/atividades/academicas/" class="btn btn-pink btn-sm w-100 mb-1"><i class="fas fa-school"></i> Acadêmicas</a>
+                    <a href="/atividades/ritualisticas/" class="btn btn-outline-pink btn-sm w-100"><i class="fas fa-pray"></i> Ritualísticas</a>
+                </div>
+            </div>
+        </div>
+        <!-- Presenças -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-clipboard-check text-secondary"></i> Presenças</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Controle de Presenças.</p>
+                    <a href="/presencas/academicas/" class="btn btn-secondary btn-sm w-100 mb-1"><i class="fas fa-clipboard-check"></i> Acadêmicas</a>
+                    <a href="/presencas/ritualisticas/" class="btn btn-outline-secondary btn-sm w-100"><i class="fas fa-clipboard-check"></i> Ritualísticas</a>
+                </div>
+            </div>
+        </div>
+        <!-- Frequências -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-check-square text-primary"></i> Frequências</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Registro de Frequências.</p>
+                    <a href="/frequencias/" class="btn btn-primary btn-sm w-100"><i class="fas fa-check-square"></i> Frequências</a>
+                </div>
+            </div>
+        </div>
+        <!-- Iniciações -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-graduation-cap text-success"></i> Iniciações</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Processos Iniciáticos.</p>
+                    <a href="/iniciacoes/" class="btn btn-success btn-sm w-100"><i class="fas fa-graduation-cap"></i> Iniciações</a>
+                </div>
+            </div>
+        </div>
+        <!-- Punições -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-gavel text-purple"></i> Punições</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Gerencie Punições.</p>
+                    <a href="/punicoes/" class="btn btn-purple btn-sm w-100"><i class="fas fa-gavel"></i> Punições</a>
+                </div>
+            </div>
+        </div>
+        <!-- Cargos -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-id-badge text-info"></i> Cargos</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Cargos Administrativos.</p>
+                    <a href="/cargos/" class="btn btn-info btn-sm w-100"><i class="fas fa-id-badge"></i> Cargos</a>
+                </div>
+            </div>
+        </div>
+        <!-- Notas -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-star text-warning"></i> Notas</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Notas dos Alunos.</p>
+                    <a href="/notas/" class="btn btn-warning btn-sm w-100"><i class="fas fa-star"></i> Notas</a>
+                </div>
+            </div>
+        </div>
+        <!-- Pagamentos -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-money-bill-wave text-success"></i> Pagamentos</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Pagamentos dos Alunos.</p>
+                    <a href="/pagamentos/" class="btn btn-success btn-sm w-100"><i class="fas fa-money-bill-wave"></i> Pagamentos</a>
+                </div>
+            </div>
+        </div>
+        <!-- Relatórios -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-chart-bar text-secondary"></i> Relatórios</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Relatórios e Análises.</p>
+                    <a href="/relatorios/" class="btn btn-secondary btn-sm w-100"><i class="fas fa-chart-bar"></i> Relatórios</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FIM: BLOCO COMPACTO DE MÓDULOS -->
+    {% endif %}
+</div>
+<style>
+    .btn-pink { background-color: #e83e8c !important; border-color: #e83e8c !important; color: white !important; }
+    .btn-outline-pink { color: #e83e8c !important; border-color: #e83e8c !important; }
+    .btn-outline-pink:hover { background-color: #e83e8c !important; color: white !important; }
+    .text-pink { color: #e83e8c !important; }
+    .btn-purple { background-color: #6f42c1 !important; border-color: #6f42c1 !important; color: white !important; }
+    .text-purple { color: #6f42c1 !important; }
+    .card { min-width: 0; }
+    .card-title, .card-text { margin-bottom: 0.3rem; }
+    .card-body { padding: 0.5rem !important; }
+    .card { font-size: 0.98rem; }
+    @media (max-width: 991px) {
+        .row-cols-xxl-6, .row-cols-xl-5 { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+{% endblock %}

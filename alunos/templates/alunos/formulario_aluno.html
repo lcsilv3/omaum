@@ -10,22 +10,24 @@
             <i class="fas fa-arrow-left"></i> Voltar para a lista
         </a>
     </div>
-    
-    <!-- Adicionar ID ao formulário para facilitar a seleção no JavaScript -->
     <form method="post" enctype="multipart/form-data" id="form-aluno" novalidate>
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
-        <!-- Adicionar logo após a abertura da tag <form> -->
         <div class="alert alert-info">
             <p><strong>Atenção:</strong> Preencha todos os campos obrigatórios e certifique-se de que a data de nascimento está preenchida.</p>
             <p>Os campos com formato específico (CPF, CEP, telefones) serão automaticamente ajustados ao salvar.</p>
         </div>
-        
+
+        <!-- Seção: Dados Pessoais (recolhível, aberta por padrão) -->
         <div class="card mb-4 border-primary">
             <div class="card-header bg-primary text-white">
-                <h5>Dados Pessoais</h5>
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#dados-pessoais" role="button" aria-expanded="true" aria-controls="dados-pessoais">
+                        <span class="chevron">&#9654;</span> Dados Pessoais <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
             </div>
-            <div class="card-body">
+            <div id="dados-pessoais" class="card-body collapse show">
                 <div class="row">
                     <div class="col-md-8">
                         <div class="row">
@@ -83,11 +85,16 @@
             </div>
         </div>
         
+        <!-- Seção: Dados Iniciáticos (recolhível, fechada por padrão) -->
         <div class="card mb-4 border-info">
             <div class="card-header bg-info text-white">
-                <h5>Dados Iniciáticos</h5>
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
+                        <span class="chevron">&#9654;</span> Dados Iniciáticos <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
             </div>
-            <div class="card-body">
+            <div id="dados-iniciaticos" class="card-body collapse">
                 <div class="row">
                     <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.numero_iniciatico %}
@@ -99,11 +106,16 @@
             </div>
         </div>
         
+        <!-- Seção: Nacionalidade e Naturalidade (recolhível, fechada por padrão) -->
         <div class="card mb-4 border-secondary">
             <div class="card-header bg-secondary text-white">
-                <h5>Nacionalidade e Naturalidade</h5>
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#nacionalidade" role="button" aria-expanded="false" aria-controls="nacionalidade">
+                        <span class="chevron">&#9654;</span> Nacionalidade e Naturalidade <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
             </div>
-            <div class="card-body">
+            <div id="nacionalidade" class="card-body collapse">
                 <div class="row">
                     <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.nacionalidade %}
@@ -115,11 +127,16 @@
             </div>
         </div>
         
+        <!-- Seção: Endereço (recolhível, fechada por padrão) -->
         <div class="card mb-4 border-success">
             <div class="card-header bg-success text-white">
-                <h5>Endereço</h5>
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#endereco" role="button" aria-expanded="false" aria-controls="endereco">
+                        <span class="chevron">&#9654;</span> Endereço <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
             </div>
-            <div class="card-body">
+            <div id="endereco" class="card-body collapse">
                 <div class="row">
                     <div class="col-md-8">
                         {% include 'includes/form_field.html' with field=form.rua %}
@@ -150,11 +167,16 @@
             </div>
         </div>
         
+        <!-- Seção: Contatos de Emergência (recolhível, fechada por padrão) -->
         <div class="card mb-4 border-warning">
             <div class="card-header bg-warning text-dark">
-                <h5>Contatos de Emergência</h5>
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#contatos" role="button" aria-expanded="false" aria-controls="contatos">
+                        <span class="chevron">&#9654;</span> Contatos de Emergência <small class="text-muted">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
             </div>
-            <div class="card-body">
+            <div id="contatos" class="card-body collapse">
                 <h6>Primeiro Contato</h6>
                 <div class="row">
                     <div class="col-md-4">
@@ -183,11 +205,16 @@
             </div>
         </div>
         
+        <!-- Seção: Informações Médicas (recolhível, fechada por padrão) -->
         <div class="card mb-4 border-danger">
             <div class="card-header bg-danger text-white">
-                <h5>Informações Médicas</h5>
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#medicas" role="button" aria-expanded="false" aria-controls="medicas">
+                        <span class="chevron">&#9654;</span> Informações Médicas <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
             </div>
-            <div class="card-body">
+            <div id="medicas" class="card-body collapse">
                 <div class="row">
                     <div class="col-md-3">
                         {% include 'includes/form_field.html' with field=form.tipo_sanguineo %}
@@ -227,6 +254,23 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    // Ícone de chevron rotaciona ao expandir/recolher
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
+            toggle.addEventListener('click', function() {
+                var chevron = this.querySelector('.chevron');
+                setTimeout(function() {
+                    if (toggle.classList.contains('collapsed')) {
+                        chevron.style.transform = 'rotate(0deg)';
+                    } else {
+                        chevron.style.transform = 'rotate(90deg)';
+                    }
+                }, 150);
+            });
+        });
+    });
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const fotoInput = document.getElementById('id_foto');

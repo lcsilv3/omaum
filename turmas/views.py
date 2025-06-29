@@ -70,7 +70,6 @@ def get_turma_form():
 def listar_turmas(request):
     """Lista todas as turmas cadastradas."""
     try:
-        # Alterar estas linhas para usar get_model_dynamically em vez de get_model
         Turma = get_model_dynamically("turmas", "Turma")
         Curso = get_model_dynamically("cursos", "Curso")
         
@@ -78,8 +77,11 @@ def listar_turmas(request):
         query = request.GET.get("q", "")
         curso_id = request.GET.get("curso", "")
         
-        # Filtrar turmas
-        turmas = Turma.objects.all().select_related('curso', 'instrutor')
+        # Filtrar turmas (sem select_related)
+        turmas = Turma.objects.all()
+
+        print("DEBUG - Turmas antes dos filtros:", Turma.objects.all().count())
+        print("DEBUG - Query params:", request.GET)
         
         if query:
             turmas = turmas.filter(
@@ -90,25 +92,41 @@ def listar_turmas(request):
         
         if curso_id:
             turmas = turmas.filter(curso_id=curso_id)
+
+        print("DEBUG - Turmas após filtros:", turmas.count())
         
         # Ordenar turmas por status, nome do curso e nome da turma
         turmas = turmas.order_by('status', 'curso__nome', 'nome')
         
+        # Forçar avaliação do queryset para evitar problemas de lazy evaluation
+        turmas_list = list(turmas)
+        print("DEBUG - Lista de turmas (forçada):", [t.id for t in turmas_list])
+        
         # Paginação
-        paginator = Paginator(turmas, 10)  # 10 turmas por página
+        paginator = Paginator(turmas_list, 10)  # 10 turmas por página
         page_number = request.GET.get("page")
-        page_obj = paginator.get_page(page_number)
+        try:
+            page_obj = paginator.get_page(page_number)
+        except Exception as e:
+            print("DEBUG - Erro no paginator:", e)
+            page_obj = paginator.get_page(1)
+
+        # Debug detalhado do conteúdo da página
+        ids_na_pagina = list(getattr(page_obj, 'object_list', []))
+        print("DEBUG - IDs das turmas na página:", [t.id for t in ids_na_pagina])
+        print("DEBUG - page_obj length:", len(ids_na_pagina), "| total_turmas:", len(turmas_list))
+        print("DEBUG - object_list:", ids_na_pagina)
         
         # Obter cursos para o filtro
         cursos = Curso.objects.all().order_by('nome')
         
         context = {
-            "turmas": page_obj,
+            "turmas": page_obj,  # O template deve iterar sobre page_obj.object_list
             "page_obj": page_obj,
             "query": query,
             "cursos": cursos,
             "curso_selecionado": curso_id,
-            "total_turmas": turmas.count(),
+            "total_turmas": len(turmas_list),
         }
         
         return render(request, "turmas/listar_turmas.html", context)
@@ -989,14 +1007,11 @@ def dashboard_turmas(request):
         return redirect("turmas:listar_turmas")
 
 
-from django.http import JsonResponse
-from .models import Turma
-
 def turmas_por_curso(request):
+    Turma = get_model_dynamically("turmas", "Turma")
     codigo_curso = request.GET.get("curso")
     turmas = []
     if codigo_curso:
         turmas_qs = Turma.objects.filter(curso_id=codigo_curso)
         turmas = [{"id": t.id, "nome": t.nome} for t in turmas_qs]
-    return JsonResponse({"turmas": turmas})
     return JsonResponse({"turmas": turmas})

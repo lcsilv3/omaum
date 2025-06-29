@@ -148,20 +148,16 @@ def exportar_cursos(request):
         writer = csv.writer(response)
         writer.writerow(
             [
-                "Código",
                 "Nome",
                 "Descrição",
-                "Duração (meses)",
             ]
         )
 
         for curso in cursos:
             writer.writerow(
                 [
-                    curso.codigo_curso,
                     curso.nome,
                     curso.descricao,
-                    curso.duracao,
                 ]
             )
 
@@ -188,34 +184,11 @@ def importar_cursos(request):
 
             for row in reader:
                 try:
-                    # Processar código do curso
-                    codigo_curso = None
-                    try:
-                        codigo_curso = int(row.get("Código", "").strip())
-                    except ValueError:
-                        errors.append(f"Código de curso inválido: {row.get('Código', '')}")
-                        continue
-
-                    # Verificar se já existe um curso com este código
-                    if Curso.objects.filter(codigo_curso=codigo_curso).exists():
-                        errors.append(f"Já existe um curso com o código {codigo_curso}")
-                        continue
-
-                    # Processar duração
-                    duracao = 6  # Valor padrão
-                    try:
-                        if row.get("Duração (meses)"):
-                            duracao = int(row.get("Duração (meses)"))
-                    except ValueError:
-                        errors.append(f"Duração inválida: {row.get('Duração (meses)', '')}")
-                        continue
-
-                    # Criar o curso
+                    nome = row.get("Nome", "").strip()
+                    descricao = row.get("Descrição", "").strip()
                     Curso.objects.create(
-                        codigo_curso=codigo_curso,
-                        nome=row.get("Nome", "").strip(),
-                        descricao=row.get("Descrição", "").strip(),
-                        duracao=duracao,
+                        nome=nome,
+                        descricao=descricao,
                     )
 
                     count += 1

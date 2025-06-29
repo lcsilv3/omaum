@@ -31,39 +31,34 @@ def get_forms():
 
 @login_required
 def pagina_inicial(request):
-    """Exibe a página inicial do sistema."""
+    """Exibe a página inicial do sistema (versão compacta). Para voltar ao layout antigo, altere para 'home.html'."""
     try:
         # Obter estatísticas para o dashboard
         Aluno = get_models()
         total_alunos = Aluno.objects.count() if Aluno else 0
         alunos_ativos = Aluno.objects.filter(situacao="ATIVO").count() if Aluno else 0
-        
-        # Tentar importar outros modelos para estatísticas
         try:
             Curso = import_module("cursos.models").Curso
             total_cursos = Curso.objects.count()
         except (ImportError, AttributeError):
             total_cursos = 0
-            
         try:
             Atividade = import_module("atividades.models").Atividade
             atividades_recentes = Atividade.objects.count()
         except (ImportError, AttributeError):
             atividades_recentes = 0
-        
-        # Preparar contexto para o template
         context = {
             "total_alunos": total_alunos,
             "alunos_ativos": alunos_ativos,
             "total_cursos": total_cursos,
             "atividades_recentes": atividades_recentes,
         }
-        
-        return render(request, "home.html", context)
+        # NOVO: renderizar home_compact.html
+        return render(request, "home_compact.html", context)
     except Exception as e:
         logger.error(f"Erro na página inicial: {str(e)}", exc_info=True)
         messages.error(request, f"Ocorreu um erro ao carregar a página inicial: {str(e)}")
-        return render(request, "home.html", {"error": str(e)})
+        return render(request, "home_compact.html", {"error": str(e)})
 
 def registro_usuario(request):
     """Exibe o formulário de registro de usuário."""

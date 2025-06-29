@@ -8,44 +8,43 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         cursos_dados = [
             {
-                "codigo_curso": 101,
                 "nome": "Introdução à Meditação",
-                "descricao": "Curso básico para iniciantes em meditação",
-                "duracao": 3,
+                "descricao": (
+                    "Curso básico para iniciantes em meditação"
+                ),
             },
             {
-                "codigo_curso": 102,
                 "nome": "Meditação Avançada",
-                "descricao": "Técnicas avançadas de meditação para praticantes experientes",
-                "duracao": 6,
+                "descricao": (
+                    "Técnicas avançadas de meditação para praticantes "
+                    "experientes"
+                ),
             },
             {
-                "codigo_curso": 103,
                 "nome": "Yoga para Iniciantes",
-                "descricao": "Fundamentos de yoga para quem está começando",
-                "duracao": 4,
+                "descricao": (
+                    "Fundamentos de yoga para quem está começando"
+                ),
             },
             {
-                "codigo_curso": 104,
                 "nome": "Filosofia Oriental",
-                "descricao": "Estudo dos princípios filosóficos orientais",
-                "duracao": 8,
+                "descricao": (
+                    "Estudo dos princípios filosóficos orientais"
+                ),
             },
             {
-                "codigo_curso": 105,
                 "nome": "Práticas de Mindfulness",
-                "descricao": "Técnicas de atenção plena para o dia a dia",
-                "duracao": 5,
+                "descricao": (
+                    "Técnicas de atenção plena para o dia a dia"
+                ),
             },
         ]
 
         for curso_dados in cursos_dados:
             curso, criado = Curso.objects.get_or_create(
-                codigo_curso=curso_dados["codigo_curso"],
+                nome=curso_dados["nome"],
                 defaults={
-                    "nome": curso_dados["nome"],
                     "descricao": curso_dados["descricao"],
-                    "duracao": curso_dados["duracao"],
                 },
             )
 

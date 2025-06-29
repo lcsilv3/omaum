@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Curso',
+            name='Relatorio',
             fields=[
                 (
                     'id',
@@ -22,13 +22,9 @@ class Migration(migrations.Migration):
                         verbose_name='ID',
                     ),
                 ),
-                ('nome', models.CharField(max_length=100)),
-                ('descricao', models.TextField(blank=True, verbose_name='Descrição')),
+                ('titulo', models.CharField(max_length=255)),
+                ('conteudo', models.TextField()),
+                ('data_criacao', models.DateTimeField(auto_now_add=True)),
             ],
-            options={
-                'verbose_name': 'Curso',
-                'verbose_name_plural': 'Cursos',
-                'ordering': ['nome'],
-            },
         ),
     ]

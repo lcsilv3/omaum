@@ -26,13 +26,14 @@ class CursoIntegrationTest(TestCase):
         response_criar = self.client.post(
             reverse("cursos:criar_curso"),
             {
-                "codigo_curso": 401,
                 "nome": "Curso de Integração",
                 "descricao": "Descrição do curso de integração",
-                "duracao": 8,
             },
         )
         self.assertEqual(
             response_criar.status_code, 302
         )  # Redirecionamento após sucesso
-        self.assertTrue(Curso.objects.filter(codigo_curso=401).exists())
+        # Corrigido para não ultrapassar 79 caracteres
+        self.assertTrue(
+            Curso.objects.filter(nome="Curso de Integração").exists()
+        )
