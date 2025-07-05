@@ -51,7 +51,7 @@
           <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary">
               <i class="fas fa-times"></i> Cancelar
           </a>
-          <button type="submit" class="btn btn-danger" {% if dependencias and (dependencias.matriculas|length > 0 or dependencias.notas|length > 0 or dependencias.presencas|length > 0 or dependencias.pagamentos|length > 0 or dependencias.punicoes|length > 0) %}disabled{% endif %}>
+          <button type="submit" class="btn btn-danger" {% if dependencias.matriculas|length > 0 or dependencias.notas|length > 0 or dependencias.presencas|length > 0 or dependencias.pagamentos|length > 0 or dependencias.punicoes|length > 0 %}disabled{% endif %}>
               <i class="fas fa-trash"></i> Confirmar Exclusão
           </button>
       </div>

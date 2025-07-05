@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from django.utils import timezone
 from pagamentos.models import Pagamento, TipoPagamento
-from alunos.models import Aluno
+from alunos.services import criar_aluno
 from turmas.models import Turma
 import datetime
 
@@ -19,11 +19,11 @@ class PagamentosViewsTestCase(TestCase):
         )
         
         # Criar um aluno para os testes
-        self.aluno = Aluno.objects.create(
+        self.aluno = criar_aluno(
             cpf="12345678900",
             nome="Aluno Teste",
             email="aluno@teste.com",
-            data_nascimento="1990-01-01"
+            data_nascimento=datetime.date(1990, 1, 1)
         )
         
         # Criar uma turma para os testes

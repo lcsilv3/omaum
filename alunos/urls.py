@@ -1,8 +1,11 @@
-from django.urls import path
-from . import views
-from .views import api_views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from . import views, api_views
 
 app_name = "alunos"
+
+router = DefaultRouter()
+router.register(r"", api_views.AlunoViewSet, basename="aluno")
 
 urlpatterns = [
     path("", views.listar_alunos, name="listar_alunos"),
@@ -10,7 +13,7 @@ urlpatterns = [
     path("<str:cpf>/detalhes/", views.detalhar_aluno, name="detalhar_aluno"),
     path("<str:cpf>/editar/", views.editar_aluno, name="editar_aluno"),
     path("<str:cpf>/excluir/", views.excluir_aluno, name="excluir_aluno"),
-    path("dashboard/", views.dashboard, name="dashboard"),
+    path("painel/", views.painel, name="painel"),
     path("exportar/", views.exportar_alunos, name="exportar_alunos"),
     path("importar/", views.importar_alunos, name="importar_alunos"),
     path("relatorio/", views.relatorio_alunos, name="relatorio_alunos"),
@@ -19,17 +22,6 @@ urlpatterns = [
         "<str:cpf>/confirmar-remocao-instrutoria/<str:nova_situacao>/",
         views.confirmar_remocao_instrutoria,
         name="confirmar_remocao_instrutoria",
-    ),
-    path(
-        "api/search-instrutores/",
-        api_views.search_instrutores,
-        name="search_instrutores",
-    ),
-    path("api/get-aluno/<str:cpf>/", views.get_aluno, name="get_aluno"),
-    path(
-        "api/detalhes/<str:cpf>/",
-        api_views.get_aluno_detalhes,
-        name="get_aluno_detalhes"
     ),
     path(
         "api/verificar-elegibilidade/<str:cpf>/",
@@ -41,4 +33,6 @@ urlpatterns = [
         views.diagnostico_instrutores,
         name="diagnostico_instrutores",
     ),
+    # Rotas da API
+    path("api/", include(router.urls)),
 ]

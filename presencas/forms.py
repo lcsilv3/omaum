@@ -1,49 +1,68 @@
 from django import forms
+from datetime import date
 import logging
 from cursos.models import Curso
 from turmas.models import Turma
 from alunos.models import Aluno
 from matriculas.models import Matricula
 from atividades.models import PresencaAcademica
+from django.utils import timezone
+from django_select2.forms import Select2Widget
+
 
 logger = logging.getLogger(__name__)
 
-class DadosBasicosPresencaForm(forms.Form):
+class RegistrarPresencaForm(forms.Form):
     """
-    Formulário para seleção de curso, turma, ano e mês para registro de presença.
+    Formulário para o primeiro passo do registro de presença,
+    com seleção de curso, turma, ano e mês.
     """
     curso = forms.ModelChoiceField(
-        queryset=Curso.objects.all(),
+        queryset=Curso.objects.filter(ativo=True),
         label="Curso",
-        required=True,
-        empty_label="Selecione..."
+        widget=Select2Widget(attrs={'data-placeholder': 'Selecione um curso'}),
+        required=True
     )
     turma = forms.ModelChoiceField(
-        queryset=Turma.objects.none(),
+        queryset=Turma.objects.none(),  # Populado via AJAX
         label="Turma",
-        required=True,
-        empty_label="Selecione..."
+        widget=Select2Widget(attrs={'data-placeholder': 'Selecione uma turma'}),
+        required=True
     )
-    ano = forms.IntegerField(label="Ano", required=True)
-    mes = forms.IntegerField(label="Mês", required=True, min_value=1, max_value=12)
+
+    ANO_CHOICES = [(ano, str(ano)) for ano in range(timezone.now().year, timezone.now().year - 5, -1)]
+    MES_CHOICES = [(i, date(2000, i, 1).strftime('%B').capitalize()) for i in range(1, 13)]
+
+    ano = forms.ChoiceField(
+        choices=ANO_CHOICES,
+        label="Ano",
+        required=True,
+        initial=timezone.now().year
+    )
+    mes = forms.ChoiceField(
+        choices=MES_CHOICES,
+        label="Mês",
+        required=True,
+        initial=timezone.now().month
+    )
 
     def __init__(self, *args, **kwargs):
-        """
-        Atualiza o queryset de turmas conforme o curso selecionado.
-        """
         super().__init__(*args, **kwargs)
         if 'curso' in self.data:
             try:
                 curso_id = int(self.data.get('curso'))
-                self.fields['turma'].queryset = Turma.objects.filter(curso_id=curso_id, status='A')
-            except (ValueError, TypeError) as e:
-                logger.warning("Erro ao filtrar turmas por curso: %s", e)
-                self.fields['turma'].queryset = Turma.objects.none()
+                self.fields['turma'].queryset = Turma.objects.filter(
+                    curso_id=curso_id,
+                    status='A'
+                ).order_by('nome')
+            except (ValueError, TypeError):
+                pass  # O queryset permanecerá como none()
         elif self.initial.get('curso'):
-            curso_id = self.initial.get('curso').id if hasattr(self.initial.get('curso'), 'id') else self.initial.get('curso')
-            self.fields['turma'].queryset = Turma.objects.filter(curso_id=curso_id, status='A')
-        else:
-            self.fields['turma'].queryset = Turma.objects.none()
+            curso_id = self.initial['curso'].pk
+            self.fields['turma'].queryset = Turma.objects.filter(
+                curso_id=curso_id,
+                status='A'
+            ).order_by('nome')
 
 class TotaisAtividadesPresencaForm(forms.Form):
     """

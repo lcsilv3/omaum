@@ -10,18 +10,17 @@ def test_installed_apps():
     required_apps = [
         'alunos',
         'atividades',
-        'cargos',
         'core',
         'cursos',
         'frequencias',
-        'iniciacoes',
         'matriculas',
         'notas',
         'pagamentos',
         'presencas',
-        'punicoes',
         'turmas',
     ]
     
     for app in required_apps:
-        assert app in settings.INSTALLED_APPS, f"A aplicação {app} não está instalada"
+        assert app in settings.INSTALLED_APPS, (
+            f"A aplicação {app} não está instalada"
+        )

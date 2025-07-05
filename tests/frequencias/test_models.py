@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 from frequencias.models import Frequencia, RegistroFrequencia
-from alunos.models import Aluno
+from alunos.services import criar_aluno
 from turmas.models import Turma
 from atividades.models import AtividadeAcademica
 import datetime
@@ -73,13 +73,13 @@ class RegistroFrequenciaModelTestCase(TestCase):
         )
         self.atividade.turmas.add(self.turma)
         
-        # Criar um aluno para os testes
-        self.aluno = Aluno.objects.create(
-            cpf="12345678900",
-            nome="Aluno Teste",
-            email="aluno@teste.com",
-            data_nascimento="1990-01-01"
-        )
+        # Criar um aluno para os testes usando o serviço
+        self.aluno = criar_aluno({
+            "cpf": "12345678900",
+            "nome": "Aluno Teste",
+            "email": "aluno@teste.com",
+            "data_nascimento": "1990-01-01"
+        })
         
         # Criar frequência para os testes
         self.frequencia = Frequencia.objects.create(

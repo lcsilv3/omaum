@@ -10,12 +10,19 @@ Exemplos:
 - path('<int:turma_id>/', views.detalhar_turma, name='detalhar_turma')
 - path('<int:turma_id>/cancelar-matricula/<str:aluno_cpf>/', views.cancelar_matricula, name='cancelar_matricula')
 """
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .api_views import TurmaViewSet
 from . import views
 
 app_name = "turmas"
 
+router = DefaultRouter()
+router.register(r'turmas', TurmaViewSet)
+
 urlpatterns = [
+    path('api/', include(router.urls)),
+
     # URLs existentes
     path("", views.listar_turmas, name="listar_turmas"),
     path("criar/", views.criar_turma, name="criar_turma"),

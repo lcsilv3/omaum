@@ -12,13 +12,13 @@ import csv
 import logging
 from io import TextIOWrapper
 
-from ..utils import get_aluno_model
+from alunos.utils import get_aluno_model
 
 logger = logging.getLogger(__name__)
 
 @login_required
-def dashboard(request):
-    """Exibe o dashboard de alunos com estatísticas."""
+def painel(request):
+    """Exibe o painel de alunos com estatísticas."""
     try:
         Aluno = get_aluno_model()
         total_alunos = Aluno.objects.count()
@@ -35,10 +35,10 @@ def dashboard(request):
             "total_outros": total_outros,
             "alunos_recentes": alunos_recentes,
         }
-        return render(request, "alunos/dashboard.html", context)
+        return render(request, "alunos/painel.html", context)
     except Exception as e:
-        messages.error(request, f"Erro ao carregar dashboard: {str(e)}")
-        logger.error(f"Erro ao carregar dashboard: {str(e)}")
+        messages.error(request, f"Erro ao carregar painel: {str(e)}")
+        logger.error(f"Erro ao carregar painel: {str(e)}")
         return redirect("alunos:listar_alunos")
 
 @login_required

@@ -1,7 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 from django.utils import timezone
-from alunos.models import Aluno
+from alunos import services as aluno_service  # Alterado
 from turmas.models import Turma
 from atividades.models import AtividadeAcademica, AtividadeRitualistica
 from django.contrib.auth.models import User
@@ -19,36 +19,50 @@ class UserFactory(DjangoModelFactory):
     password = factory.PostGenerationMethodCall('set_password', 'password')
     is_active = True
 
-class AlunoFactory(DjangoModelFactory):
-    """Factory para criar alunos."""
-    
+class AlunoFactory(factory.Factory):
+    """Factory para criar alunos usando a camada de serviço."""
+
     class Meta:
-        model = Aluno
-    
+        # Não estamos mais criando um modelo Aluno diretamente.
+        # A fábrica agora chama a camada de serviço.
+        pass
+
+    # Definição dos campos para o dicionário 'aluno_data'
     cpf = factory.Sequence(lambda n: f'{n:011d}')
     nome = factory.Faker('name')
     email = factory.Faker('email')
-    data_nascimento = factory.Faker('date_of_birth', minimum_age=18, maximum_age=70)
+    data_nascimento = factory.Faker(
+        'date_of_birth', minimum_age=18, maximum_age=70
+    )
     sexo = factory.Iterator(['M', 'F'])
     situacao = 'ativo'
-    
-    @factory.post_generation
-    def add_details(self, create, extracted, **kwargs):
-        if not create:
-            return
-        
-        # Adicionar detalhes aleatórios
-        self.nacionalidade = random.choice(['Brasileira', 'Portuguesa', 'Italiana', 'Espanhola'])
-        self.naturalidade = factory.Faker('city').generate({})
-        self.rua = factory.Faker('street_name').generate({})
-        self.numero_imovel = str(random.randint(1, 999))
-        self.bairro = factory.Faker('city_suffix').generate({})
-        self.cidade = factory.Faker('city').generate({})
-        self.estado = factory.Faker('state_abbr').generate({})
-        self.cep = f'{random.randint(10000, 99999)}-{random.randint(100, 999)}'
-        
-        # Salvar as alterações
-        self.save()
+    nacionalidade = factory.LazyFunction(
+        lambda: random.choice(
+            ['Brasileira', 'Portuguesa', 'Italiana', 'Espanhola']
+        )
+    )
+    naturalidade = factory.Faker('city')
+    rua = factory.Faker('street_name')
+    numero_imovel = factory.LazyFunction(lambda: str(random.randint(1, 999)))
+    bairro = factory.Faker('city_suffix')
+    cidade = factory.Faker('city')
+    estado = factory.Faker('state_abbr')
+    cep = factory.LazyFunction(
+        lambda: f'{random.randint(10000, 99999)}-{random.randint(100, 999)}'
+    )
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        """Chama o serviço criar_aluno para criar a instância do aluno.""" 
+        foto_url = kwargs.pop('foto_url', None)
+        aluno = aluno_service.criar_aluno(kwargs, foto_url=foto_url)
+        if not aluno:
+            # Lança uma exceção se o serviço falhar em criar o aluno
+            raise Exception(
+                f"O serviço criar_aluno falhou com os seguintes dados: {kwargs}"
+            )
+        return aluno
+
 
 class TurmaFactory(DjangoModelFactory):
     """Factory para criar turmas."""
@@ -73,20 +87,27 @@ class TurmaFactory(DjangoModelFactory):
         # Salvar as alterações
         self.save()
 
+
 class AtividadeAcademicaFactory(DjangoModelFactory):
     """Factory para criar atividades acadêmicas."""
-    
+
     class Meta:
         model = AtividadeAcademica
-    
+
     nome = factory.Sequence(lambda n: f'Atividade Acadêmica {n}')
     descricao = factory.Faker('paragraph')
-    data_inicio = factory.LazyFunction(lambda: timezone.now() + timedelta(days=random.randint(1, 30)))
+    data_inicio = factory.LazyFunction(
+        lambda: timezone.now() + timedelta(days=random.randint(1, 30))
+    )
     responsavel = factory.Faker('name')
     local = factory.Sequence(lambda n: f'Sala {n}')
-    tipo_atividade = factory.Iterator(['aula', 'palestra', 'workshop', 'seminario', 'outro'])
-    status = factory.Iterator(['agendada', 'em_andamento', 'concluida', 'cancelada'])
-    
+    tipo_atividade = factory.Iterator(
+        ['aula', 'palestra', 'workshop', 'seminario', 'outro']
+    )
+    status = factory.Iterator(
+        ['agendada', 'em_andamento', 'concluida', 'cancelada']
+    )
+
     @factory.post_generation
     def turmas(self, create, extracted, **kwargs):
         if not create:
@@ -114,6 +135,7 @@ class AtividadeAcademicaFactory(DjangoModelFactory):
         
         # Salvar as alterações
         self.save()
+
 
 class AtividadeRitualisticaFactory(DjangoModelFactory):
     """Factory para criar atividades ritualísticas."""

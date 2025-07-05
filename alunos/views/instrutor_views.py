@@ -7,8 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 import logging
 
-from ..utils import get_aluno_model, get_turma_model, get_atribuicao_cargo_model
-from ..services import remover_instrutor_de_turmas
+from alunos.utils import get_aluno_model, get_turma_model, get_atribuicao_cargo_model
+from alunos.services import remover_instrutor_de_turmas
 
 logger = logging.getLogger(__name__)
 

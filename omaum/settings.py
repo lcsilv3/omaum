@@ -25,19 +25,19 @@ INSTALLED_APPS = [
     'core',
     'alunos',
     'atividades',
-    'cargos',
     'cursos',
     'frequencias',
-    'iniciacoes',
     'matriculas',
     'notas',
     'pagamentos',
     'presencas',
-    'punicoes',
     'relatorios',
     'turmas',
     # Third party apps
+    'widget_tweaks',
+    'django_select2',
     'debug_toolbar',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [

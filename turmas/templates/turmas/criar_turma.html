@@ -142,6 +142,11 @@
                         {% include 'includes/form_field.html' with field=form.data_prim_aula %}
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_termino_atividades %}
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -209,6 +214,9 @@
         <div class="d-flex justify-content-between mb-5">
             <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">Criar Turma</button>
+            {% if turma %}
+            <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-success ms-2">Matricular Alunos</a>
+            {% endif %}
         </div>
     </form>
 </div>

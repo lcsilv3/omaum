@@ -1,5 +1,7 @@
 from django.contrib import admin
 from importlib import import_module
+from django.urls import path
+from .actions import desativar_turmas_action, get_desativar_turmas_impacto_view
 
 
 # Função para obter o modelo Turma dinamicamente
@@ -24,6 +26,7 @@ class TurmaAdmin(admin.ModelAdmin):
                 "perc_carencia",
                 "data_iniciacao",
                 "data_prim_aula",
+                "ativo",
             )
         }),
     )
@@ -34,11 +37,26 @@ class TurmaAdmin(admin.ModelAdmin):
         "data_termino_atividades",
         "vagas",
         "status",
+        "ativo",
     )
     list_display_links = ("nome",)
     search_fields = ("nome", "curso__nome")
-    list_filter = ("curso", "data_inicio_ativ")
+    list_filter = ("curso", "data_inicio_ativ", "ativo")
     ordering = ("-data_inicio_ativ",)
+    actions = [desativar_turmas_action]
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'desativar-impacto/',
+                self.admin_site.admin_view(
+                    get_desativar_turmas_impacto_view(self)
+                ),
+                name='desativar_turmas_impacto',
+            ),
+        ]
+        return custom_urls + urls
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

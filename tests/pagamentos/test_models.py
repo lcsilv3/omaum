@@ -1,5 +1,8 @@
 from django.test import TestCase
-from pagamentos.models import TipoPagamento
+from django.utils import timezone
+from pagamentos.models import Pagamento, TipoPagamento
+from alunos.services import criar_aluno
+from turmas.models import Turma
 import datetime
 
 
@@ -32,11 +35,11 @@ class PagamentoModelTestCase(TestCase):
     def setUp(self):
         """Configuração inicial para os testes."""
         # Criar um aluno para os testes
-        self.aluno = Aluno.objects.create(
+        self.aluno = criar_aluno(
             cpf="12345678900",
             nome="Aluno Teste",
             email="aluno@teste.com",
-            data_nascimento="1990-01-01"
+            data_nascimento=datetime.date(1990, 1, 1)
         )
         
         # Criar uma turma para os testes
@@ -98,4 +101,3 @@ class PagamentoModelTestCase(TestCase):
         
         self.assertEqual(self.pagamento.status, "cancelado")
         self.assertEqual(self.pagamento.observacao, "Cancelado a pedido do aluno")
-        self.assertEqual

@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from presencas.forms import (
-    DadosBasicosPresencaForm,
+    RegistrarPresencaForm,
     TotaisAtividadesPresencaForm,
     AlunosPresencaForm
 )
@@ -31,21 +31,16 @@ logger = logging.getLogger(__name__)
 @login_required
 def registrar_presenca_dados_basicos(request):
     """Exibe o formulário de dados básicos para registro de presença acadêmica."""
-    hoje = date.today()
-    ano_corrente = hoje.year
-    mes_corrente = hoje.month
-    form = DadosBasicosPresencaForm(initial={'ano': ano_corrente, 'mes': mes_corrente})
+    form = RegistrarPresencaForm()
     return render(request, 'presencas/registrar_presenca_dados_basicos.html', {
         'form': form,
-        'ano_corrente': ano_corrente,
-        'mes_corrente': mes_corrente,
     })
 
 @login_required
 @require_POST
 def registrar_presenca_dados_basicos_ajax(request):
     """Recebe dados básicos via AJAX e armazena na sessão."""
-    form = DadosBasicosPresencaForm(request.POST)
+    form = RegistrarPresencaForm(request.POST)
     if form.is_valid():
         request.session['presenca_turma_id'] = form.cleaned_data['turma'].id
         request.session['presenca_ano'] = form.cleaned_data['ano']

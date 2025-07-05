@@ -2,51 +2,156 @@
 {% extends 'base.html' %}
 {% load i18n %}
 {% load static %}
+{% load widget_tweaks %}
+
+{% block extra_css %}
+{{ form.media.css }}
+<style>
+  .select2-container .select2-selection--single {
+    height: calc(1.5em + .75rem + 2px);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <div class="accordion" id="accordionPresenca">
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="headingDadosBasicos">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDadosBasicos" aria-expanded="true" aria-controls="collapseDadosBasicos">
-                    {% trans "Dados Básicos da Presença" %}
-                </button>
-            </h2>
-            <div id="collapseDadosBasicos" class="accordion-collapse collapse show" aria-labelledby="headingDadosBasicos" data-bs-parent="#accordionPresenca">
-                <div class="accordion-body">
-                    <form id="form-dados-basicos" method="post" autocomplete="off" action="{% url 'presencas:registrar_presenca_dados_basicos_ajax' %}" aria-labelledby="titulo-pagina">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="id_curso" class="form-label">{% trans "Curso" %}</label>
-                            {{ form.curso }}
-                        </div>
-                        <div class="mb-3">
-                            <label for="id_turma" class="form-label">{% trans "Turma" %}</label>
-                            {{ form.turma }}
-                            <span id="loading-turmas" class="ms-2 text-primary d-none" aria-live="polite">{% trans "Carregando turmas..." %}</span>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">{% trans "Selecione o Ano/Mês" %}</label>
-                            <div id="calendario-mes-ano" class="d-flex align-items-center">
-                                <button type="button" id="btn-prev" class="btn btn-outline-secondary btn-sm me-2" aria-label="{% trans 'Retroceder mês' %}">&lt;</button>
-                                <span id="mes-ano-atual" style="min-width:120px; text-align:center;"></span>
-                                <button type="button" id="btn-next" class="btn btn-outline-secondary btn-sm ms-2" aria-label="{% trans 'Avançar mês' %}">&gt;</button>
-                                <span id="loading-calendario" class="ms-2 text-primary d-none" aria-live="polite">{% trans "Carregando calendário..." %}</span>
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">{% trans "Registrar Presença - Etapa 1 de 4" %}</h4>
+            <p class="card-subtitle text-muted">{% trans "Selecione o curso, a turma e o período." %}</p>
+        </div>
+        <div class="card-body">
+            <form id="form-dados-basicos" method="post" autocomplete="off" action="{% url 'presencas:registrar_presenca_dados_basicos_ajax' %}" novalidate>
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.curso.id_for_label }}" class="form-label">{{ form.curso.label }}</label>
+                        {% render_field form.curso class="form-control" %}
+                        {% if form.curso.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.curso.errors|first }}
                             </div>
-                            <input type="hidden" id="id_ano" name="ano" value="{{ form.initial.ano|default:ano_corrente }}">
-                            <input type="hidden" id="id_mes" name="mes" value="{{ form.initial.mes|default:mes_corrente }}">
-                        </div>
-                        <button type="submit" class="btn btn-primary" aria-label="Confirmar e avançar para totais de atividades">{% trans "Confirmar e Avançar" %}</button>
-                    </form>
-                    <div id="form-errors" class="alert alert-danger mt-3 d-none" role="alert"></div>
-                    <div id="mensagem-erro-ajax" class="alert alert-danger d-none" role="alert"></div>
-                    <div id="mensagem-sucesso-ajax" class="alert alert-success d-none" role="status"></div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.turma.id_for_label }}" class="form-label">{{ form.turma.label }}</label>
+                        {% render_field form.turma class="form-control" %}
+                        <span id="loading-turmas" class="ms-2 text-primary d-none" aria-live="polite">{% trans "Carregando turmas..." %}</span>
+                        {% if form.turma.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.turma.errors|first }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.ano.id_for_label }}" class="form-label">{{ form.ano.label }}</label>
+                        {% render_field form.ano class="form-select" %}
+                        {% if form.ano.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.ano.errors|first }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.mes.id_for_label }}" class="form-label">{{ form.mes.label }}</label>
+                        {% render_field form.mes class="form-select" %}
+                        {% if form.mes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.mes.errors|first }}
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" aria-label="Confirmar e avançar para totais de atividades">
+                        <i class="fas fa-arrow-right me-2"></i>{% trans "Avançar" %}
+                    </button>
+                </div>
+            </form>
+            <div id="form-errors" class="alert alert-danger mt-3 d-none" role="alert"></div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/presencas/registrar_presenca_dados_basicos.js' %}"></script>
+{{ form.media.js }}
+<script>
+$(function () {
+    // Inicializa Select2
+    $('#id_curso').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{% trans "Selecione um curso" %}',
+        allowClear: true
+    });
+    $('#id_turma').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{% trans "Selecione uma turma" %}',
+        allowClear: true
+    });
+
+    // Carrega turmas via AJAX
+    $('#id_curso').on('change', function () {
+        const cursoId = $(this).val();
+        const turmaSelect = $('#id_turma');
+        const loadingSpan = $('#loading-turmas');
+
+        turmaSelect.empty().append('<option value=""></option>').trigger('change');
+
+        if (cursoId) {
+            loadingSpan.removeClass('d-none');
+            $.ajax({
+                url: '{% url "turmas:turmas_por_curso_json" %}',
+                data: { 'curso_id': cursoId },
+                success: function (data) {
+                    turmaSelect.select2({
+                        theme: 'bootstrap-5',
+                        placeholder: '{% trans "Selecione uma turma" %}',
+                        allowClear: true,
+                        data: $.map(data, function(item) {
+                            return { id: item.id, text: item.nome };
+                        })
+                    });
+                    turmaSelect.val(null).trigger('change');
+                },
+                complete: function() {
+                    loadingSpan.addClass('d-none');
+                }
+            });
+        }
+    });
+
+    // Submissão do formulário via AJAX
+    $('#form-dados-basicos').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const errorDiv = $('#form-errors');
+
+        $.ajax({
+            type: 'POST',
+            url: form.attr('action'),
+            data: form.serialize(),
+            success: function(response) {
+                if (response.success) {
+                    window.location.href = response.redirect_url;
+                } else {
+                    let errorHtml = '<ul>';
+                    $.each(response.errors, function(field, errors) {
+                        errorHtml += '<li>' + field + ': ' + errors.join(', ') + '</li>';
+                    });
+                    errorHtml += '</ul>';
+                    errorDiv.html(errorHtml).removeClass('d-none');
+                }
+            },
+            error: function() {
+                errorDiv.text('{% trans "Ocorreu um erro de comunicação. Tente novamente." %}').removeClass('d-none');
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

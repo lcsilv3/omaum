@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="header-container mb-4 text-center">
+        
+        {# Linha 1: Nome da Organização #}
+        <h2 class="h4">{{ nome_organizacao }}</h2>
+
+        {# Linha 2: Nome do Sistema e Data de Emissão #}
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="flex-grow-1 text-center">
+                <span class="h5 mb-0">{{ nome_sistema }}</span>
+            </div>
+            <span class="text-muted" style="font-size: 0.8rem; white-space: nowrap;">Data de Emissão: {{ data_emissao }}</span>
+        </div>
+
+        {# Linha 3: Título do Relatório #}
+        <h1 class="mb-4 mt-2">{{ titulo }}</h1>
+    </div>
+
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'cursos:gerar_relatorio_pdf' %}" class="btn btn-primary" target="_blank">Gerar Relatório em PDF</a>
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for curso in cursos %}
+            <tr>
+                <td>{{ curso.id }}</td>
+                <td>{{ curso.nome }}</td>
+                <td>{{ curso.descricao|default:"" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center">Nenhum curso encontrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="mt-3">
+        <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+</div>
+{% endblock %}

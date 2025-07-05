@@ -10,8 +10,8 @@ from django.core.exceptions import ValidationError
 from importlib import import_module
 import logging
 
-from ..utils import get_aluno_model, get_aluno_form
-from ..services import remover_instrutor_de_turmas
+from alunos.utils import get_aluno_model, get_aluno_form
+from alunos.services import remover_instrutor_de_turmas
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +86,7 @@ def listar_alunos(request):
             "query": query,
             "cursos": cursos,
             "curso_selecionado": curso_id,
+            "total_alunos": alunos.count(),
         }
         return render(request, "alunos/listar_alunos.html", context)
     except Exception as e:
@@ -100,6 +101,7 @@ def listar_alunos(request):
                 "query": "",
                 "cursos": [],
                 "curso_selecionado": "",
+                "total_alunos": 0,
                 "error_message": f"Erro ao listar alunos: {str(e)}",
             },
         )

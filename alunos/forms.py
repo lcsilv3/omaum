@@ -1,358 +1,87 @@
 from django import forms
-from django.core.validators import RegexValidator
-from importlib import import_module
-
-
-def get_aluno_model():
-    alunos_module = import_module("alunos.models")
-    return getattr(alunos_module, "Aluno")
+from .models import Aluno, RegistroHistorico, Codigo
 
 
 class AlunoForm(forms.ModelForm):
-    """
-    Formulário para criação e edição de alunos.
-    """
-
-    # Validadores personalizados
-    cpf_validator = RegexValidator(
-        r"^\d{11}$", "O CPF deve conter exatamente 11 dígitos numéricos."
-    )
-    
-    celular_validator = RegexValidator(
-        r"^\d{10,11}$", "O número de celular deve ter entre 10 e 11 dígitos."
-    )
-    
-    cep_validator = RegexValidator(
-        r"^\d{8}$", "O CEP deve conter exatamente 8 dígitos numéricos."
-    )
-
-    # Campos com validação adicional
-    cpf = forms.CharField(
-        validators=[cpf_validator],
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "11"}
-        ),
-    )
-    
-    celular_primeiro_contato = forms.CharField(
-        validators=[celular_validator],
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "11"}
-        ),
-    )
-    
-    celular_segundo_contato = forms.CharField(
-        required=False,
-        validators=[celular_validator],
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "11"}
-        ),
-    )
-    
-    cep = forms.CharField(
-        validators=[cep_validator],
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Somente números", "maxlength": "8"}
-        ),
-    )
+    """Formulário para criação e edição de alunos."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Converter o formato da data para YYYY-MM-DD se estiver editando um aluno existente
-        if self.instance and self.instance.pk and self.instance.data_nascimento:
-            # Converter para o formato esperado pelo input type="date"
-            self.initial['data_nascimento'] = self.instance.data_nascimento.strftime('%Y-%m-%d')
+        # Formata a data para o input type="date"
+        instance_exists = (
+            self.instance
+            and self.instance.pk
+            and self.instance.data_nascimento
+        )
+        if instance_exists:
+            self.initial['data_nascimento'] = (
+                self.instance.data_nascimento.strftime('%Y-%m-%d')
+            )
+
+        # Adiciona classes CSS e placeholders
+        placeholders = {
+            'cpf': 'Somente números',
+            'cep': 'Somente números',
+            'celular_primeiro_contato': 'Somente números',
+            'celular_segundo_contato': 'Somente números',
+        }
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
+            if field_name in placeholders:
+                field.widget.attrs['placeholder'] = placeholders[field_name]
 
     class Meta:
-        model = get_aluno_model()
+        model = Aluno
+        fields = '__all__'
+        # Excluir campos que não devem ser editados pelo usuário no formulário público
+        exclude = ['ativo', 'created_at', 'updated_at']
+        widgets = {
+            'data_nascimento': forms.DateInput(
+                attrs={'type': 'date', 'class': 'form-control'}
+            ),
+            'hora_nascimento': forms.TimeInput(
+                attrs={'type': 'time', 'class': 'form-control'}
+            ),
+            'alergias': forms.Textarea(attrs={'rows': 3}),
+            'condicoes_medicas_gerais': forms.Textarea(attrs={'rows': 3}),
+            'numero_iniciatico': forms.TextInput(attrs={'class': 'form-control'}),
+            'nome_iniciatico': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+class RegistroHistoricoForm(forms.ModelForm):
+    """Formulário para adicionar e editar registros do histórico de um aluno."""
+
+    class Meta:
+        model = RegistroHistorico
         fields = [
-            "cpf",
-            "nome",
-            "data_nascimento",
-            "hora_nascimento",
-            "email",
-            "foto",
-            "sexo",
-            "situacao",
-            "numero_iniciatico",
-            "nome_iniciatico",
-            "nacionalidade",
-            "naturalidade",
-            "rua",
-            "numero_imovel",
-            "complemento",
-            "bairro",
-            "cidade",
-            "estado",
-            "cep",
-            "nome_primeiro_contato",
-            "celular_primeiro_contato",
-            "tipo_relacionamento_primeiro_contato",
-            "nome_segundo_contato",
-            "celular_segundo_contato",
-            "tipo_relacionamento_segundo_contato",
-            "tipo_sanguineo",
-            "fator_rh",
-            "alergias",
-            "condicoes_medicas_gerais",
-            "convenio_medico",
-            "hospital",
+            'codigo',
+            'data_os',
+            'ordem_servico',
+            'numero_iniciatico',
+            'nome_iniciatico',
+            'observacoes',
         ]
         widgets = {
-            "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "data_nascimento": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"},
-                format="%Y-%m-%d"
-            ),
-            "hora_nascimento": forms.TimeInput(
-                attrs={"class": "form-control", "type": "time"}
-            ),
-            "email": forms.EmailInput(attrs={"class": "form-control"}),
-            "foto": forms.ClearableFileInput(attrs={"class": "form-control"}),
-            "sexo": forms.Select(attrs={"class": "form-control"}),
-            "situacao": forms.Select(attrs={"class": "form-control"}),
-            "numero_iniciatico": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "nome_iniciatico": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "nacionalidade": forms.TextInput(
-                attrs={"class": "form-control", "value": "Brasileira"}
-            ),
-            "naturalidade": forms.TextInput(attrs={"class": "form-control"}),
-            "rua": forms.TextInput(attrs={"class": "form-control"}),
-            "numero_imovel": forms.TextInput(attrs={"class": "form-control"}),
-            "complemento": forms.TextInput(attrs={"class": "form-control"}),
-            "bairro": forms.TextInput(attrs={"class": "form-control"}),
-            "cidade": forms.TextInput(attrs={"class": "form-control"}),
-            "estado": forms.TextInput(attrs={"class": "form-control"}),
-            "nome_primeiro_contato": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "tipo_relacionamento_primeiro_contato": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "nome_segundo_contato": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "tipo_relacionamento_segundo_contato": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "tipo_sanguineo": forms.TextInput(attrs={"class": "form-control"}),
-            "fator_rh": forms.Select(attrs={"class": "form-control"}),
-            "alergias": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
-            "condicoes_medicas_gerais": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
-            "convenio_medico": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
-            "hospital": forms.TextInput(attrs={"class": "form-control"}),
-        }
-        labels = {
-            "cpf": "CPF",
-            "nome": "Nome Completo",
-            "data_nascimento": "Data de Nascimento",
-            "hora_nascimento": "Hora de Nascimento",
-            "email": "E-mail",
-            "foto": "Foto",
-            "sexo": "Sexo",
-            "situacao": "Situação",
-            "numero_iniciatico": "Número Iniciático",
-            "nome_iniciatico": "Nome Iniciático",
-            "nacionalidade": "Nacionalidade",
-            "naturalidade": "Naturalidade",
-            "rua": "Rua",
-            "numero_imovel": "Número",
-            "complemento": "Complemento",
-            "bairro": "Bairro",
-            "cidade": "Cidade",
-            "estado": "Estado",
-            "cep": "CEP",
-            "nome_primeiro_contato": "Nome do Primeiro Contato",
-            "celular_primeiro_contato": "Celular do Primeiro Contato",
-            "tipo_relacionamento_primeiro_contato": "Relacionamento",
-            "nome_segundo_contato": "Nome do Segundo Contato",
-            "celular_segundo_contato": "Celular do Segundo Contato",
-            "tipo_relacionamento_segundo_contato": "Relacionamento",
-            "tipo_sanguineo": "Tipo Sanguíneo",
-            "fator_rh": "Fator RH",
-            "alergias": "Alergias",
-            "condicoes_medicas_gerais": "Condições Médicas",
-            "convenio_medico": "Convênio Médico",
-            "hospital": "Hospital de Preferência",
-        }
-        help_texts = {
-            "cpf": "Digite apenas os 11 números do CPF, sem pontos ou traços.",
-            "data_nascimento": "Formato: DD/MM/AAAA",
-            "hora_nascimento": "Formato: HH:MM",
-            "situacao": "Selecione a situação atual do aluno.",
-            "numero_iniciatico": "Número único de identificação do iniciado.",
-            "cep": "Digite apenas os 8 números do CEP, sem hífen.",
-            "tipo_sanguineo": "Ex: A, B, AB, O",
-            "fator_rh": "Positivo (+) ou Negativo (-)",
-            "alergias": "Liste todas as alergias conhecidas. Deixe em branco se não houver.",
-            "condicoes_medicas_gerais": "Descreva condições médicas relevantes. Deixe em branco se não houver.",
-            "celular_primeiro_contato": "Digite apenas números (DDD + número).",
-            "celular_segundo_contato": "Digite apenas números (DDD + número).",
+            'codigo': forms.Select(attrs={'class': 'form-control django-select2'}),
+            'data_os': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'ordem_servico': forms.TextInput(attrs={'class': 'form-control'}),
+            'numero_iniciatico': forms.TextInput(attrs={'class': 'form-control'}),
+            'nome_iniciatico': forms.TextInput(attrs={'class': 'form-control'}),
+            'observacoes': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
         }
 
-    def clean_cpf(self):
-        """Validação personalizada para o campo CPF."""
-        cpf = self.cleaned_data.get("cpf")
-        if cpf:
-            # Remove caracteres não numéricos
-            cpf = "".join(filter(str.isdigit, cpf))
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['codigo'].queryset = Codigo.objects.order_by('tipo_codigo', 'nome')
 
-            # Verifica se tem 11 dígitos
-            if len(cpf) != 11:
-                raise forms.ValidationError(
-                    "O CPF deve conter exatamente 11 dígitos."
-                )
 
-        return cpf
-
-    def clean_cep(self):
-        """Validação personalizada para o campo CEP."""
-        cep = self.cleaned_data.get("cep")
-        if cep:
-            # Remove caracteres não numéricos
-            cep = "".join(filter(str.isdigit, cep))
-
-            # Verifica se tem 8 dígitos
-            if len(cep) != 8:
-                raise forms.ValidationError(
-                    "O CEP deve conter exatamente 8 dígitos."
-                )
-        return cep
-    
-    def clean_celular_primeiro_contato(self):
-        """Validação personalizada para o campo celular_primeiro_contato."""
-        celular = self.cleaned_data.get("celular_primeiro_contato")
-        if celular:
-            # Remove caracteres não numéricos
-            celular = "".join(filter(str.isdigit, celular))
-            
-            # Verifica se tem entre 10 e 11 dígitos
-            if len(celular) < 10 or len(celular) > 11:
-                raise forms.ValidationError(
-                    "O número de celular deve ter entre 10 e 11 dígitos."
-                )
-        return celular
-    
-    def clean_celular_segundo_contato(self):
-        """Validação personalizada para o campo celular_segundo_contato."""
-        celular = self.cleaned_data.get("celular_segundo_contato")
-        if celular:
-            # Remove caracteres não numéricos
-            celular = "".join(filter(str.isdigit, celular))
-            
-            # Verifica se tem entre 10 e 11 dígitos
-            if len(celular) < 10 or len(celular) > 11:
-                raise forms.ValidationError(
-                    "O número de celular deve ter entre 10 e 11 dígitos."
-                )
-        return celular
-
-    def clean_nome(self):
-        """Validação personalizada para o campo nome."""
-        nome = self.cleaned_data.get("nome")
-        if nome:
-            # Capitaliza a primeira letra de cada palavra
-            nome = " ".join(word.capitalize() for word in nome.split())
-        return nome
-
-    def clean_email(self):
-        """Validação personalizada para o campo email."""
-        email = self.cleaned_data.get("email")
-        if email:
-            email = email.lower()  # Converte para minúsculas
-
-            # Verifica se o email já existe (exceto para o próprio registro em
-            # caso de edição)
-            Aluno = get_aluno_model()
-            instance = getattr(self, "instance", None)
-            if instance and instance.pk:
-                if (
-                    Aluno.objects.filter(email=email)
-                    .exclude(pk=instance.pk)
-                    .exists()
-                ):
-                    raise forms.ValidationError(
-                        "Este e-mail já está em uso por outro aluno."
-                    )
-            else:
-                if Aluno.objects.filter(email=email).exists():
-                    raise forms.ValidationError("Este e-mail já está em uso.")
-        return email
-
-    def clean_situacao(self):
-        """Validação personalizada para o campo situacao."""
-        situacao = self.cleaned_data.get("situacao")
-        situacao_anterior = None
-
-        # Verificar se é uma edição e se a situação mudou
-        if self.instance and self.instance.pk:
-            situacao_anterior = self.instance.situacao
-
-            # Se a situação mudou de "ATIVO" para outra coisa, verificar se o
-            # aluno é instrutor em alguma turma
-            if situacao_anterior == "ATIVO" and situacao != "ATIVO":
-                from importlib import import_module
-
-                try:
-                    # Importar o modelo Turma dinamicamente
-                    turmas_module = import_module("turmas.models")
-                    Turma = getattr(turmas_module, "Turma")
-
-                    # Verificar se o aluno é instrutor em alguma turma ativa
-                    turmas_como_instrutor = Turma.objects.filter(
-                        instrutor=self.instance, status="A"
-                    ).count()
-
-                    turmas_como_instrutor_auxiliar = Turma.objects.filter(
-                        instrutor_auxiliar=self.instance, status="A"
-                    ).count()
-
-                    turmas_como_auxiliar_instrucao = Turma.objects.filter(
-                        auxiliar_instrucao=self.instance, status="A"
-                    ).count()
-
-                    total_turmas = (
-                        turmas_como_instrutor
-                        + turmas_como_instrutor_auxiliar
-                        + turmas_como_auxiliar_instrucao
-                    )
-
-                    if total_turmas > 0:
-                        # Não vamos lançar erro aqui, apenas registrar para
-                        # mostrar alerta na view
-                        self.aluno_e_instrutor = True
-                        self.total_turmas_como_instrutor = total_turmas
-                except (ImportError, AttributeError):
-                    pass
-
-        return situacao
-
-    def clean(self):
-        """Validação global do formulário."""
-        cleaned_data = super().clean()
-
-        # Verifica se pelo menos um contato de emergência foi fornecido
-        nome_primeiro_contato = cleaned_data.get("nome_primeiro_contato")
-        celular_primeiro_contato = cleaned_data.get("celular_primeiro_contato")
-
-        if not nome_primeiro_contato or not celular_primeiro_contato:
-            self.add_error(
-                "nome_primeiro_contato",
-                "É necessário fornecer pelo menos um contato de emergência.",
-            )
-            self.add_error(
-                "celular_primeiro_contato",
-                "É necessário fornecer pelo menos um contato de emergência.",
-            )
-
-        return cleaned_data
+# Usando inlineformset_factory para vincular o histórico diretamente ao aluno
+RegistroHistoricoFormSet = forms.inlineformset_factory(
+    Aluno,
+    RegistroHistorico,
+    form=RegistroHistoricoForm,
+    extra=1,  # Começa com um formulário extra
+    can_delete=True,  # Permite a exclusão de registros
+    edit_only=False,
+)

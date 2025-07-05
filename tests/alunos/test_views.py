@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from alunos.models import Aluno
 from django.contrib.auth.models import User
+from alunos.services import criar_aluno, buscar_aluno_por_cpf
 
 class AlunosViewsTestCase(TestCase):
     """Testes de integração para as views do módulo de alunos."""
@@ -14,20 +14,20 @@ class AlunosViewsTestCase(TestCase):
             password='testpassword'
         )
         
-        # Criar alguns alunos para testes
-        self.aluno1 = Aluno.objects.create(
-            cpf="12345678900",
-            nome="João da Silva",
-            email="joao@exemplo.com",
-            data_nascimento="1990-01-01"
-        )
+        # Criar alguns alunos para testes usando o serviço
+        self.aluno1 = criar_aluno({
+            "cpf": "12345678900",
+            "nome": "João da Silva",
+            "email": "joao@exemplo.com",
+            "data_nascimento": "1990-01-01"
+        })
         
-        self.aluno2 = Aluno.objects.create(
-            cpf="98765432100",
-            nome="Maria Souza",
-            email="maria@exemplo.com",
-            data_nascimento="1992-05-15"
-        )
+        self.aluno2 = criar_aluno({
+            "cpf": "98765432100",
+            "nome": "Maria Souza",
+            "email": "maria@exemplo.com",
+            "data_nascimento": "1992-05-15"
+        })
         
         # Cliente para fazer requisições
         self.client = Client()
@@ -131,7 +131,7 @@ class AlunosViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         
         # Verificar se o aluno foi atualizado no banco de dados
-        aluno_atualizado = Aluno.objects.get(cpf=self.aluno1.cpf)
+        aluno_atualizado = buscar_aluno_por_cpf(self.aluno1.cpf)
         self.assertEqual(aluno_atualizado.nome, 'João Silva Atualizado')
         self.assertEqual(aluno_atualizado.email, 'joao.atualizado@exemplo.com')
         
@@ -164,7 +164,7 @@ class AlunosViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         
         # Verificar se o aluno foi excluído do banco de dados
-        self.assertFalse(Aluno.objects.filter(cpf=self.aluno1.cpf).exists())
+        self.assertIsNone(buscar_aluno_por_cpf(self.aluno1.cpf))
         
         # Verificar se a mensagem de sucesso está na página
         self.assertContains(response, "Aluno excluído com sucesso")
@@ -194,8 +194,7 @@ class AlunosViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         
         # Verificar se o aluno foi criado no banco de dados
-        self.assertTrue(Aluno.objects.filter(cpf='11122233344').exists())
+        self.assertIsNotNone(buscar_aluno_por_cpf('11122233344'))
         
         # Verificar se a mensagem de sucesso está na página
         self.assertContains(response, "Aluno cadastrado com sucesso")
-        def test_editar_aluno_view(self):

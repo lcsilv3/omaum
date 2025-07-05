@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from importlib import import_module
+from django.utils.translation import gettext_lazy as _
 
 def get_aluno_model():
     alunos_module = import_module("alunos.models")
@@ -68,7 +69,8 @@ class AtividadeBase(models.Model):
         ('ritualistica', 'Ritualística'),
     )
     nome = models.CharField(max_length=255)
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='academica')  # <-- Adicione default aqui
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='academica')
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
     # ...outros campos comuns...
 
     class Meta:
@@ -111,6 +113,7 @@ class AtividadeAcademica(AtividadeBase):
         choices=STATUS_CHOICES,
         default='PENDENTE'
     )
+    ativo = models.BooleanField(default=True, verbose_name="Ativa")
     convocacao = models.BooleanField(default=False, verbose_name="Convocação")
 
     # Relacionamentos
@@ -145,11 +148,12 @@ class AtividadeRitualistica(AtividadeBase):
     Modelo para atividades ritualísticas.
     """
     STATUS_CHOICES = [
-        ('ATIVA', 'Ativa'),
-        ('CANCELADA', 'Inativa'),
+        ('PENDENTE', 'Pendente'),
+        ('CONFIRMADA', 'Confirmada'),
+        ('REALIZADA', 'Realizada'),
+        ('CANCELADA', 'Cancelada'),
     ]
 
-    nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
     data = models.DateField()
     hora_inicio = models.TimeField()
@@ -159,26 +163,27 @@ class AtividadeRitualistica(AtividadeBase):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='ATIVA'
+        default='PENDENTE'
     )
     convocacao = models.BooleanField(default=False, verbose_name="Convocação")
-
-    # Relacionamentos
+    turma = models.ForeignKey(
+        'turmas.Turma',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='atividades_ritualisticas'
+    )
     participantes = models.ManyToManyField(
         'alunos.Aluno',
         blank=True,
-        related_name='atividades_ritualisticas'
+        related_name='atividades_ritualisticas_participadas',
+        verbose_name=_("Participantes")
     )
-
-    # Metadados
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.nome
+    duracao_prevista = models.DurationField(blank=True, null=True)
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
 
     class Meta:
-        verbose_name = 'Atividade Ritualística'
-        verbose_name_plural = 'Atividades Ritualísticas'
+        verbose_name = "Atividade Ritualística"
+        verbose_name_plural = "Atividades Ritualísticas"
         ordering = ['-data', 'hora_inicio']
 

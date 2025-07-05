@@ -2,6 +2,8 @@ from django.db import models
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+import datetime
 
 
 class Aluno(models.Model):
@@ -68,7 +70,7 @@ class Aluno(models.Model):
         verbose_name=_("Situação"),
     )
 
-    # Dados iniciáticos - Tornando estes campos nullable
+    # Dados iniciáticos centralizados no Aluno
     numero_iniciatico = models.CharField(
         max_length=10,
         unique=True,
@@ -92,56 +94,36 @@ class Aluno(models.Model):
     )
 
     # Endereço
-    rua = models.CharField(max_length=100, verbose_name=_("Rua"))
-    numero_imovel = models.CharField(max_length=10, verbose_name=_("Número"))
-    complemento = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name=_("Complemento")
-    )
-    bairro = models.CharField(max_length=50, verbose_name=_("Bairro"))
-    cidade = models.CharField(max_length=50, verbose_name=_("Cidade"))
-    estado = models.CharField(max_length=2, verbose_name=_("Estado"))
-    cep = models.CharField(max_length=8, verbose_name=_("CEP"))
+    rua = models.CharField(max_length=150, verbose_name=_("Rua"), blank=True, null=True)
+    numero_imovel = models.CharField(max_length=10, verbose_name=_("Número"), blank=True, null=True)
+    complemento = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("Complemento"))
+    bairro = models.CharField(max_length=50, verbose_name=_("Bairro"), blank=True, null=True)
+    cidade = models.CharField(max_length=50, verbose_name=_("Cidade"), blank=True, null=True)
+    estado = models.CharField(max_length=2, verbose_name=_("Estado"), blank=True, null=True)
+    cep = models.CharField(max_length=8, verbose_name=_("CEP"), blank=True, null=True)
 
     # Contatos de emergência
-    nome_primeiro_contato = models.CharField(
-        max_length=100, verbose_name=_("Nome do Primeiro Contato")
-    )
-    celular_primeiro_contato = models.CharField(
-        max_length=11,
-        validators=[celular_validator],
-        verbose_name=_("Celular do Primeiro Contato"),
-    )
-    tipo_relacionamento_primeiro_contato = models.CharField(
-        max_length=50,
-        verbose_name=_("Tipo de Relacionamento do Primeiro Contato"),
-    )
+    nome_primeiro_contato = models.CharField(max_length=100, verbose_name=_("Nome do 1º Contato"), blank=True, null=True)
+    celular_primeiro_contato = models.CharField(max_length=11, validators=[celular_validator], verbose_name=_("Celular do 1º Contato"), blank=True, null=True)
+    tipo_relacionamento_primeiro_contato = models.CharField(max_length=50, verbose_name=_("Relacionamento com 1º Contato"), blank=True, null=True)
+    
+    nome_segundo_contato = models.CharField(max_length=100, blank=True, null=True, verbose_name=_("Nome do 2º Contato"))
+    celular_segundo_contato = models.CharField(max_length=11, blank=True, null=True, validators=[celular_validator], verbose_name=_("Celular do 2º Contato"))
+    tipo_relacionamento_segundo_contato = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("Relacionamento com 2º Contato"))
 
-    nome_segundo_contato = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name=_("Nome do Segundo Contato"),
-    )
-    celular_segundo_contato = models.CharField(
-        max_length=11,
-        blank=True,
-        null=True,
-        validators=[celular_validator],
-        verbose_name=_("Celular do Segundo Contato"),
-    )
-    tipo_relacionamento_segundo_contato = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name=_("Tipo de Relacionamento do Segundo Contato"),
-    )
+
+    # Informações Adicionais
+    estado_civil = models.CharField(max_length=20, blank=True, null=True, verbose_name=_("Estado Civil"))
+    profissao = models.CharField(max_length=100, blank=True, null=True, verbose_name=_("Profissão"))
+    ativo = models.BooleanField(default=True, verbose_name=_("Ativo"))
+
 
     # Informações médicas
     tipo_sanguineo = models.CharField(
-        max_length=3, verbose_name=_("Tipo Sanguíneo")
+        max_length=3, blank=True, null=True, verbose_name=_("Tipo Sanguíneo")
     )
     fator_rh = models.CharField(
-        max_length=1, choices=FATOR_RH_CHOICES, verbose_name=_("Fator RH")
+        max_length=1, choices=FATOR_RH_CHOICES, blank=True, null=True, verbose_name=_("Fator RH")
     )
     alergias = models.TextField(
         blank=True, null=True, verbose_name=_("Alergias")
@@ -203,16 +185,88 @@ class Aluno(models.Model):
             # Se tiver matrículas em cursos que não são "Pré-iniciático", pode ser instrutor
             return matriculas_nao_pre_iniciatico.exists()
         except (ImportError, AttributeError):
-            # Se houver erro na importação, retorna False por segurança
+            # Se o app matriculas ou o modelo Matricula não existir, retorna False
             return False
 
     def clean(self):
-        """Validação personalizada para o modelo."""
         super().clean()
-    def save(self, *args, **kwargs):
-        # Verificar se há alguma lógica aqui que possa estar impedindo o salvamento
-        super().save(*args, **kwargs)
+        if self.data_nascimento and self.data_nascimento > datetime.date.today():
+            raise ValidationError({
+                'data_nascimento': _('A data de nascimento não pode ser no futuro.')
+            })
+
+
+# --- INÍCIO DA SEÇÃO DE CÓDIGOS E HISTÓRICO ---
+
+
+class TipoCodigo(models.Model):
+    """Categoriza os códigos (ex: Cargo, Punição, Iniciação)."""
+
+    nome = models.CharField(max_length=50, unique=True, verbose_name=_("Nome"))
+    descricao = models.TextField(blank=True, null=True, verbose_name=_("Descrição"))
+
     class Meta:
-        verbose_name = _("Aluno")
-        verbose_name_plural = _("Alunos")
+        verbose_name = _("Tipo de Código")
+        verbose_name_plural = _("Tipos de Códigos")
         ordering = ["nome"]
+
+    def __str__(self):
+        return self.nome
+
+
+class Codigo(models.Model):
+    """Códigos específicos dentro de cada tipo (ex: Mestre, Aprendiz, Advertência)."""
+
+    tipo_codigo = models.ForeignKey(
+        TipoCodigo, on_delete=models.CASCADE, verbose_name=_("Tipo de Código")
+    )
+    nome = models.CharField(max_length=100, unique=True, verbose_name=_("Nome"))
+    descricao = models.TextField(blank=True, null=True, verbose_name=_("Descrição"))
+
+    class Meta:
+        verbose_name = _("Código")
+        verbose_name_plural = _("Códigos")
+        ordering = ["tipo_codigo__nome", "nome"]
+
+    def __str__(self):
+        return self.nome
+
+
+class RegistroHistorico(models.Model):
+    """
+    Registra um evento (baseado em um Código) para um Aluno,
+    associado a uma Ordem de Serviço.
+    """
+
+    aluno = models.ForeignKey(
+        Aluno,
+        on_delete=models.CASCADE,
+        related_name="historico",
+        verbose_name=_("Aluno"),
+    )
+    codigo = models.ForeignKey(
+        Codigo,
+        on_delete=models.PROTECT,
+        related_name="registros",
+        verbose_name=_("Código"),
+    )
+    ordem_servico = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("Ordem de Serviço"))
+    data_os = models.DateField(verbose_name=_("Data da Ordem de Serviço"))
+    numero_iniciatico = models.CharField(max_length=10, null=True, blank=True, verbose_name=_("Número Iniciático"))
+    nome_iniciatico = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Nome Iniciático"))
+    observacoes = models.TextField(blank=True, null=True, verbose_name=_("Observações"))
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name=_("Data do Registro")
+    )
+    ativo = models.BooleanField(default=True, verbose_name=_("Ativo"))
+
+    class Meta:
+        verbose_name = _("Registro Histórico")
+        verbose_name_plural = _("Registros Históricos")
+        ordering = ["-data_os", "-created_at"]
+        unique_together = [
+            ["aluno", "codigo", "ordem_servico"]
+        ]  # Evita duplicidade
+
+    def __str__(self):
+        return f"Registro de {self.aluno.nome} - {self.codigo.nome} em {self.data_os}"

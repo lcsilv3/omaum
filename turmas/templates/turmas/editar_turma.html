@@ -49,7 +49,10 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Editar Turma: {{ turma.nome }}</h1>
-        <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
+        <div>
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
+            <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-success ms-2">Matricular Alunos</a>
+        </div>
     </div>
     
     <form method="post">
@@ -138,6 +141,11 @@
                     </div>
                     <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.data_prim_aula %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_termino_atividades %}
                     </div>
                 </div>
             </div>

@@ -1,0 +1,59 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="desativar_turmas_action">
+        {% for obj in queryset %}
+            <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}">
+        {% endfor %}
+
+        <h2>{% trans "Análise de Impacto da Desativação" %}</h2>
+        <p>{% blocktrans %}Atenção: Você selecionou para desativar as seguintes turmas. Esta ação é irreversível e desativará também todas as matrículas e atividades associadas que estão atualmente ativas. Por favor, revise o impacto abaixo antes de confirmar.{% endblocktrans %}</p>
+
+        <div class="module">
+            <h3>{% trans "Turmas a serem desativadas" %} ({{ impacto.turmas.count }})</h3>
+            <ul>
+                {% for turma in impacto.turmas %}
+                    <li>{{ turma.nome }} (Curso: {{ turma.curso.nome }})</li>
+                {% empty %}
+                    <li>Nenhuma turma selecionada.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="module">
+            <h3>{% trans "Impacto em Matrículas" %} ({{ impacto.matriculas.count }})</h3>
+            {% if impacto.matriculas.exists %}
+                <ul>
+                    {% for matricula in impacto.matriculas %}
+                        <li>Aluno(a): {{ matricula.aluno.nome }} (Turma: {{ matricula.turma.nome }})</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>{% trans "Nenhuma matrícula ativa será afetada." %}</p>
+            {% endif %}
+        </div>
+
+        <div class="module">
+            <h3>{% trans "Impacto em Atividades" %} ({{ impacto.atividades|length }})</h3>
+            {% if impacto.atividades %}
+                <ul>
+                    {% for atividade in impacto.atividades %}
+                        <li>{{ atividade.nome }} (Turma: {{ atividade.turma.nome }} - Tipo: {{ atividade.get_tipo_display }})</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>{% trans "Nenhuma atividade ativa será afetada." %}</p>
+            {% endif %}
+        </div>
+
+        <div class="submit-row">
+            <input type="submit" value="{% trans 'Sim, tenho certeza' %}" class="default">
+            <a href="{% url 'admin:turmas_turma_changelist' %}" class="button cancel-link">{% trans 'Cancelar' %}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% for aluno in page_obj %}
+<tr>
+    <td>
+        <div class="d-flex align-items-center">
+            {% if aluno.foto %}
+                <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;">
+            {% else %}
+                <div class="rounded-circle me-3" style="width: 40px; height: 40px; background-color: #e9ecef; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-user text-muted"></i>
+                </div>
+            {% endif %}
+            <span>{{ aluno.nome }}</span>
+        </div>
+    </td>
+    <td>{{ aluno.cpf }}</td>
+    <td>{{ aluno.email }}</td>
+    <td class="text-center">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-info" title="Ver detalhes" data-bs-toggle="tooltip">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-warning" title="Editar aluno" data-bs-toggle="tooltip">
+                <i class="fas fa-edit"></i>
+            </a>
+            <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-danger" title="Excluir aluno" data-bs-toggle="tooltip">
+                <i class="fas fa-trash"></i>
+            </a>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="4" class="text-center">Nenhum aluno encontrado.</td>
+</tr>
+{% endfor %}

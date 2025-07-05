@@ -1,0 +1,53 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ media.css }}
+    <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+    {{ media.js }}
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-form{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="ids" value="{{ ids }}">
+        <input type="hidden" name="action" value="desativar_cursos_action">
+        <input type="hidden" name="select_across" value="0">
+
+        <h2>Análise de Impacto: Desativar Cursos</h2>
+
+        <p>Você está prestes a desativar os seguintes cursos. Esta ação também desativará as turmas associadas que estão atualmente ativas.</p>
+
+        <h3>Cursos a serem desativados:</h3>
+        <ul>
+            {% for curso in cursos %}
+                <li>{{ curso.nome }}</li>
+            {% endfor %}
+        </ul>
+
+        {% if turmas_afetadas %}
+            <h3>Turmas que serão desativadas:</h3>
+            <ul>
+                {% for turma in turmas_afetadas %}
+                    <li>{{ turma.nome }} (do curso {{ turma.curso.nome }})</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Nenhuma turma ativa será afetada.</p>
+        {% endif %}
+
+        <p><strong>Você tem certeza que deseja continuar?</strong></p>
+
+        <div class="submit-row">
+            <input type="submit" value="Sim, tenho certeza" class="default">
+            <a href="{% url 'admin:cursos_curso_changelist' %}" class="button cancel-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

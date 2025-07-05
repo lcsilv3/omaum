@@ -94,6 +94,62 @@
                     <p><strong>Nome Iniciático:</strong> {{ aluno.nome_iniciatico|default:"Não informado" }}</p>
                 </div>
             </div>
+
+            <hr>
+
+            <!-- Histórico de Registros -->
+            <h6 class="mt-4">Histórico de Registros (Cargos, Punições, etc.)</h6>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Código</th>
+                            <th>Data</th>
+                            <th>Observações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in historico_list %}
+                        <tr>
+                            <td>{{ registro.codigo.tipo.nome }}</td>
+                            <td>{{ registro.codigo.descricao }}</td>
+                            <td>{{ registro.data_registro|date:"d/m/Y" }}</td>
+                            <td>{{ registro.observacoes|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">Nenhum registro histórico encontrado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Formulário para Adicionar Novo Registro -->
+            <div class="mt-4">
+                <h6>Adicionar Novo Registro</h6>
+                <form method="post" action="{% url 'alunos:detalhar_aluno' aluno.cpf %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form_historico.codigo.label_tag }}
+                            {{ form_historico.codigo }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            {{ form_historico.data_registro.label_tag }}
+                            {{ form_historico.data_registro }}
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            {{ form_historico.observacoes.label_tag }}
+                            {{ form_historico.observacoes }}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Adicionar Registro
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
     <!-- Seção: Nacionalidade e Naturalidade (recolhível, fechada por padrão) -->

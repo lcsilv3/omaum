@@ -67,3 +67,12 @@ def verificar_elegibilidade_instrutor(aluno):
     
     # Se passou por todas as verificações, é elegível
     return True, "Elegível para ser instrutor"
+
+def get_registro_historico_model():
+    """Obtém o modelo RegistroHistorico dinamicamente."""
+    try:
+        models_module = import_module("alunos.models")
+        return getattr(models_module, "RegistroHistorico")
+    except (ImportError, AttributeError) as e:
+        logger.error(f"Erro ao obter modelo RegistroHistorico: {e}")
+        return None

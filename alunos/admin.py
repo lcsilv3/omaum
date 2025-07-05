@@ -5,57 +5,71 @@ This module contains the admin interface customizations for the Alunos app.
 """
 
 from django.contrib import admin
-from .models import Aluno  # Corrigido o erro de importação relativo
+from .models import (
+    Aluno,
+    TipoCodigo,
+    Codigo,
+    RegistroHistorico,
+)
+from .forms import AlunoForm
+
+
+class RegistroHistoricoInline(admin.TabularInline):
+    """
+    Permite editar o histórico diretamente na página do Aluno.
+    Usa um layout de tabela para uma visualização compacta.
+    """
+
+    model = RegistroHistorico
+    extra = 1  # Exibe um formulário extra para adicionar novo registro.
+    autocomplete_fields = ["codigo"]
+    
+    # Campos a serem exibidos no inline
+    fields = ("codigo", "data_os", "ordem_servico", "observacoes", "ativo")
+    
+    # Ordena os registros pela data mais recente
+    ordering = ("-data_os",)
+    
+    verbose_name = "Registro de Histórico"
+    verbose_name_plural = "Dados Iniciáticos e Histórico (Cargos, Punições, etc.)"
 
 
 @admin.register(Aluno)
 class AlunoAdmin(admin.ModelAdmin):
     """
-    A brief description of what this class does.
-
-    Add more details here if necessary.
+    Configuração do Admin para o modelo Aluno, com o histórico embutido.
     """
 
-    list_display = ["nome", "numero_iniciatico", "email", "cpf", "sexo"]
-    search_fields = ["nome", "numero_iniciatico", "email", "cpf"]
-    list_filter = ["sexo", "created_at"]
+    form = AlunoForm
+    inlines = [RegistroHistoricoInline]
+    list_display = ["nome", "email", "cpf", "situacao", "ativo"]
+    list_filter = ["ativo", "situacao", "sexo", "cidade", "estado"]
+    search_fields = ["nome", "email", "cpf"]
     readonly_fields = ["created_at", "updated_at"]
 
+    # Fieldsets corrigidos para refletir os campos atuais do modelo Aluno
     fieldsets = [
         (
-            "Dados Pessoais",
+            "Informações Pessoais",
             {
                 "fields": [
-                    "cpf",
                     "nome",
+                    "foto",
                     "data_nascimento",
                     "hora_nascimento",
-                    "email",
-                    "foto",
                     "sexo",
+                    "cpf",
+                    "email",
+                    "situacao",
+                    "ativo",
                 ]
             },
         ),
         (
-            "Dados Iniciáticos",
-            {"fields": ["numero_iniciatico", "nome_iniciatico"]},
-        ),
-        (
-            "Nacionalidade e Naturalidade",
-            {"fields": ["nacionalidade", "naturalidade"]},
-        ),
-        (
             "Endereço",
             {
-                "fields": [
-                    "rua",
-                    "numero_imovel",
-                    "complemento",
-                    "bairro",
-                    "cidade",
-                    "estado",
-                    "cep",
-                ]
+                "fields": ["rua", "numero_imovel", "complemento", "bairro", "cidade", "estado", "cep"],
+                "classes": ["collapse"],
             },
         ),
         (
@@ -68,7 +82,8 @@ class AlunoAdmin(admin.ModelAdmin):
                     "nome_segundo_contato",
                     "celular_segundo_contato",
                     "tipo_relacionamento_segundo_contato",
-                ]
+                ],
+                "classes": ["collapse"],
             },
         ),
         (
@@ -81,19 +96,63 @@ class AlunoAdmin(admin.ModelAdmin):
                     "condicoes_medicas_gerais",
                     "convenio_medico",
                     "hospital",
-                ]
+                ],
+                "classes": ["collapse"],
             },
         ),
         (
-            "Metadados",
-            {"fields": ["created_at", "updated_at"], "classes": ["collapse"]},
+            "Outras Informações",
+            {
+                "fields": ["nacionalidade", "naturalidade", "estado_civil", "profissao"],
+                "classes": ["collapse"],
+            },
+        ),
+        (
+            "Datas de Controle",
+            {
+                "fields": ["created_at", "updated_at"],
+                "classes": ["collapse"],
+            },
         ),
     ]
 
 
-class MyClass:
-    """
-    A brief description of what this class does.
+# --- INTERFACES ADMIN PARA CÓDIGOS E HISTÓRICO ---
 
-    Add more details here if necessary.
+
+@admin.register(TipoCodigo)
+class TipoCodigoAdmin(admin.ModelAdmin):
     """
+    Interface Admin para o modelo TipoCodigo.
+    """
+
+    list_display = ("nome", "descricao")
+    search_fields = ("nome",)
+
+
+@admin.register(Codigo)
+class CodigoAdmin(admin.ModelAdmin):
+    """
+    Interface Admin para o modelo Codigo.
+    """
+
+    list_display = ("nome", "get_tipo_nome", "descricao")
+    search_fields = ("nome", "descricao", "tipo_codigo__nome")
+    list_filter = ("tipo_codigo",)
+    autocomplete_fields = ('tipo_codigo',) # Melhora a seleção do tipo
+
+    @admin.display(description='Tipo', ordering='tipo_codigo__nome')
+    def get_tipo_nome(self, obj):
+        return obj.tipo_codigo.nome
+
+
+@admin.register(RegistroHistorico)
+class RegistroHistoricoAdmin(admin.ModelAdmin):
+    """
+    Interface Admin para o modelo RegistroHistorico.
+    """
+
+    list_display = ("aluno", "codigo", "data_os", "ordem_servico", "ativo")
+    search_fields = ("aluno__nome", "codigo__nome", "ordem_servico")
+    list_filter = ("codigo__tipo_codigo", "data_os", "ativo")
+    autocomplete_fields = ("aluno", "codigo")

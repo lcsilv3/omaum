@@ -2,6 +2,11 @@
 
 {% block title %}{% if aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
 
+{% block form_media_css %}
+    {{ form.media.css }}
+    {{ historico_formset.media.css }}
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -18,7 +23,7 @@
             <p>Os campos com formato específico (CPF, CEP, telefones) serão automaticamente ajustados ao salvar.</p>
         </div>
 
-        <!-- Seção: Dados Pessoais (recolhível, aberta por padrão) -->
+        <!-- Seção: Dados Pessoais -->
         <div class="card mb-4 border-primary">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
@@ -45,32 +50,15 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <!-- Moldura tracejada azul brilhante sem cabeçalho -->
                         <div class="border rounded p-3 mb-3 text-center" 
-                             style="border-style: dashed !important; 
-                                    border-color: #007bff !important; 
-                                    border-width: 2px !important;
-                                    width: 200px;  /* Largura fixa para o contêiner */
-                                    height: 200px; /* Altura fixa para o contêiner */
-                                    display: flex; 
-                                    align-items: center; 
-                                    justify-content: center;
-                                    overflow: hidden;
-                                    margin: 0 auto;">
+                             style="border-style: dashed !important; border-color: #007bff !important; border-width: 2px !important; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto;">
                             {% if aluno.foto %}
                                 <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                     style="max-width: 180px;
-                                            max-height: 180px;
-                                            width: auto;
-                                            height: auto;
-                                            object-fit: contain;
-                                            display: block;">
+                                     style="max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;">
                             {% else %}
                                 <div class="text-muted">Sem foto</div>
                             {% endif %}
                         </div>
-                        
-                        <!-- Campo de upload separado da moldura -->
                         <div class="form-group">
                             {{ form.foto }}
                             {% if form.foto.help_text %}
@@ -85,22 +73,56 @@
             </div>
         </div>
         
-        <!-- Seção: Dados Iniciáticos (recolhível, fechada por padrão) -->
+        <!-- Seção: Dados Iniciáticos -->
         <div class="card mb-4 border-info">
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0">
                     <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
-                        <span class="chevron">&#9654;</span> Dados Iniciáticos <small class="text-light">(clique para expandir/recolher)</small>
+                        <span class="chevron">▶</span> Dados Iniciáticos (Cargos, Punições, etc.) <small class="text-light">(clique para expandir/recolher)</small>
                     </a>
                 </h5>
             </div>
-            <div id="dados-iniciaticos" class="card-body collapse">
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.numero_iniciatico %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nome_iniciatico %}
+            <div id="dados-iniciaticos" class="card-body collapse show">
+                {{ historico_formset.management_form }}
+                <div id="historico-form-list">
+                    {% for form in historico_formset %}
+                        <div class="historico-form mb-3 p-3 border rounded">
+                            {{ form.id }}
+                            <div class="row align-items-end">
+                                <div class="col-md-4">{% include 'includes/form_field.html' with field=form.codigo %}</div>
+                                <div class="col-md-3">{% include 'includes/form_field.html' with field=form.ordem_servico %}</div>
+                                <div class="col-md-3">{% include 'includes/form_field.html' with field=form.data_os %}</div>
+                                <div class="col-md-2 d-flex align-items-center">
+                                    {% if form.instance.pk %}
+                                        <div class="form-check">
+                                            {{ form.DELETE }}
+                                            <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">Remover?</label>
+                                        </div>
+                                    {% else %}
+                                        <button type="button" class="btn btn-danger btn-sm remove-historico-form">Remover</button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">{% include 'includes/form_field.html' with field=form.observacoes %}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" id="add-historico-form" class="btn btn-outline-primary btn-sm mt-2">Adicionar Outro Registro</button>
+                <div id="empty-historico-form" style="display:none">
+                    <div class="historico-form mb-3 p-3 border rounded">
+                        <div class="row align-items-end">
+                            <div class="col-md-4">{% include 'includes/form_field.html' with field=historico_formset.empty_form.codigo %}</div>
+                            <div class="col-md-3">{% include 'includes/form_field.html' with field=historico_formset.empty_form.ordem_servico %}</div>
+                            <div class="col-md-3">{% include 'includes/form_field.html' with field=historico_formset.empty_form.data_os %}</div>
+                            <div class="col-md-2 d-flex align-items-center">
+                                <button type="button" class="btn btn-danger btn-sm remove-historico-form">Remover</button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">{% include 'includes/form_field.html' with field=historico_formset.empty_form.observacoes %}</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -253,126 +275,101 @@
 </div>
 {% endblock %}
 
+{% block form_media_js %}
+    {{ form.media.js }}
+    {{ historico_formset.media.js }}
+{% endblock %}
+
 {% block extra_js %}
 <script>
-    // Ícone de chevron rotaciona ao expandir/recolher
+    // Script para rotação do ícone de chevron
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
             toggle.addEventListener('click', function() {
                 var chevron = this.querySelector('.chevron');
-                setTimeout(function() {
-                    if (toggle.classList.contains('collapsed')) {
-                        chevron.style.transform = 'rotate(0deg)';
-                    } else {
-                        chevron.style.transform = 'rotate(90deg)';
-                    }
-                }, 150);
+                var isCollapsed = this.classList.contains('collapsed');
+                chevron.style.transform = isCollapsed ? 'rotate(90deg)' : 'rotate(0deg)';
             });
+            var chevron = toggle.querySelector('.chevron');
+            if (!toggle.classList.contains('collapsed')) {
+                chevron.style.transform = 'rotate(90deg)';
+            }
         });
     });
 </script>
 <script>
+    // Script para preview da imagem
     document.addEventListener('DOMContentLoaded', function() {
         const fotoInput = document.getElementById('id_foto');
         const fotoContainer = document.querySelector('.border.rounded.p-3.mb-3.text-center');
-        
         if (fotoInput && fotoContainer) {
             fotoInput.addEventListener('change', function() {
                 if (this.files && this.files[0]) {
-                    // Limpar o conteúdo atual do container
                     fotoContainer.innerHTML = '';
-                    
-                    // Limpar mensagens de erro relacionadas à foto
-                    const errorMessages = fotoInput.parentElement.querySelectorAll('.alert.alert-danger');
-                    errorMessages.forEach(function(errorMsg) {
-                        errorMsg.style.display = 'none';
-                    });
-                    
-                    // Criar a imagem de preview
                     const preview = document.createElement('img');
-                    preview.style.maxWidth = '180px';
-                    preview.style.maxHeight = '180px';
-                    preview.style.width = 'auto';
-                    preview.style.height = 'auto';
-                    preview.style.objectFit = 'contain';
-                    preview.style.display = 'block';
-                    
-                    // Configurar o leitor de arquivo
+                    preview.style.cssText = 'max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;';
                     const reader = new FileReader();
-                    reader.onload = function(e) {
-                        preview.src = e.target.result;
-                        preview.alt = 'Preview da foto';
-                    }
-                    
+                    reader.onload = function(e) { preview.src = e.target.result; }
                     reader.readAsDataURL(this.files[0]);
-                    
-                    // Adicionar a imagem ao container
                     fotoContainer.appendChild(preview);
-                    
-                    // Adicionar uma mensagem de sucesso temporária
-                    const successMsg = document.createElement('div');
-                    successMsg.className = 'alert alert-success mt-2';
-                    successMsg.textContent = 'Nova imagem selecionada com sucesso!';
-                    fotoInput.parentElement.appendChild(successMsg);
-                    
-                    // Remover a mensagem de sucesso após 3 segundos
-                    setTimeout(function() {
-                        successMsg.remove();
-                    }, 3000);
                 }
             });
-        }
-        
-        // Verificar se há mensagem "Atualmente:" e ajustar o layout
-        const currentImageText = document.querySelector('.form-group a');
-        if (currentImageText) {
-            const clearCheckbox = document.querySelector('input[name="foto-clear"]');
-            const clearLabel = document.querySelector('label[for="foto-clear_id"]');
-            
-            if (clearCheckbox && clearLabel) {
-                // Melhorar o layout da opção de limpar
-                const clearContainer = document.createElement('div');
-                clearContainer.className = 'form-check mt-2';
-                
-                clearCheckbox.className = 'form-check-input';
-                clearLabel.className = 'form-check-label';
-                
-                clearContainer.appendChild(clearCheckbox);
-                clearContainer.appendChild(clearLabel);
-                
-                // Substituir o texto "Atualmente:" por um layout mais limpo
-                const currentImageContainer = document.createElement('div');
-                currentImageContainer.className = 'mb-2';
-                currentImageContainer.innerHTML = '<strong>Imagem atual:</strong> ';
-                currentImageContainer.appendChild(currentImageText.cloneNode(true));
-                
-                // Substituir os elementos originais
-                const parentElement = clearCheckbox.parentElement;
-                parentElement.innerHTML = '';
-                parentElement.appendChild(currentImageContainer);
-                parentElement.appendChild(clearContainer);
-            }
         }
     });
 </script>
 <script>
+    // Script para remover máscaras antes do submit
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('form-aluno');
-        
         form.addEventListener('submit', function(e) {
-            // Remove masks before submission
-            const cpfField = document.getElementById('id_cpf');
-            const cepField = document.getElementById('id_cep');
-            const celular1Field = document.getElementById('id_celular_primeiro_contato');
-            const celular2Field = document.getElementById('id_celular_segundo_contato');
-            
-            if (cpfField) cpfField.value = cpfField.value.replace(/\D/g, '');
-            if (cepField) cepField.value = cepField.value.replace(/\D/g, '');
-            if (celular1Field) celular1Field.value = celular1Field.value.replace(/\D/g, '');
-            if (celular2Field) celular2Field.value = celular2Field.value.replace(/\D/g, '');
-            
-            // Continue with form submission
+            ['id_cpf', 'id_cep', 'id_celular_primeiro_contato', 'id_celular_segundo_contato'].forEach(id => {
+                const field = document.getElementById(id);
+                if (field) field.value = field.value.replace(/\D/g, '');
+            });
             return true;
+        });
+    });
+</script>
+<script>
+    // SCRIPT PARA GERENCIAR O FORMSET DE HISTÓRICO
+    document.addEventListener('DOMContentLoaded', function() {
+        const historicoFormList = document.getElementById('historico-form-list');
+        const addHistoricoBtn = document.getElementById('add-historico-form');
+        const emptyFormTemplate = document.getElementById('empty-historico-form').innerHTML;
+        const totalFormsInput = document.querySelector('input[name="historico-TOTAL_FORMS"]');
+        const prefix = 'historico';
+
+        addHistoricoBtn.addEventListener('click', function() {
+            let formNum = parseInt(totalFormsInput.value);
+            const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formNum);
+            const newFormElement = document.createElement('div');
+            newFormElement.innerHTML = newFormHtml;
+            
+            historicoFormList.append(newFormElement.firstElementChild);
+            
+            // Re-inicializa plugins JS se necessário (ex: Select2)
+            // $(newFormElement).find('.django-select2').djangoSelect2();
+
+            totalFormsInput.value = formNum + 1;
+        });
+
+        historicoFormList.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('remove-historico-form')) {
+                e.preventDefault();
+                const formRow = e.target.closest('.historico-form');
+                
+                const deleteInput = formRow.querySelector('input[name$="-DELETE"]');
+                if (deleteInput) {
+                    // Marca o formulário existente para exclusão
+                    deleteInput.checked = true;
+                    formRow.style.display = 'none';
+                } else {
+                    // Remove um formulário novo (que ainda não foi salvo)
+                    formRow.remove();
+                    // Atualiza o contador de formulários
+                    totalFormsInput.value = parseInt(totalFormsInput.value) - 1;
+                }
+            }
         });
     });
 </script>

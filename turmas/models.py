@@ -81,6 +81,8 @@ class Turma(models.Model):
         verbose_name="Status",
     )
 
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+
     # Instrutores
     instrutor = models.ForeignKey(
         "alunos.Aluno",

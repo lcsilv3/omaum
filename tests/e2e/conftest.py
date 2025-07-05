@@ -3,7 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.contrib.auth.models import User
-from alunos.models import Aluno
+from alunos import services as aluno_service
 from turmas.models import Turma
 from atividades.models import AtividadeAcademica, AtividadeRitualistica
 from django.utils import timezone
@@ -33,24 +33,26 @@ def live_server_with_data(live_server):
         email='test@example.com'
     )
     
-    # Criar alguns alunos
-    aluno1 = Aluno.objects.create(
-        cpf="12345678900",
-        nome="João da Silva",
-        email="joao@exemplo.com",
-        data_nascimento="1990-01-01",
-        sexo="M",
-        situacao="ativo"
-    )
+    # Criar alguns alunos usando o serviço
+    aluno_data1 = {
+        "cpf": "12345678900",
+        "nome": "João da Silva",
+        "email": "joao@exemplo.com",
+        "data_nascimento": "1990-01-01",
+        "sexo": "M",
+        "situacao": "ativo"
+    }
+    aluno1 = aluno_service.criar_aluno(aluno_data1)
     
-    aluno2 = Aluno.objects.create(
-        cpf="98765432100",
-        nome="Maria Souza",
-        email="maria@exemplo.com",
-        data_nascimento="1992-05-15",
-        sexo="F",
-        situacao="ativo"
-    )
+    aluno_data2 = {
+        "cpf": "98765432100",
+        "nome": "Maria Souza",
+        "email": "maria@exemplo.com",
+        "data_nascimento": "1992-05-15",
+        "sexo": "F",
+        "situacao": "ativo"
+    }
+    aluno2 = aluno_service.criar_aluno(aluno_data2)
     
     # Criar algumas turmas
     turma1 = Turma.objects.create(

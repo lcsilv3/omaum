@@ -85,7 +85,7 @@ class TurmaForm(forms.ModelForm):
         self.fields["data_iniciacao"].required = True
         self.fields["data_inicio_ativ"].required = True
         self.fields["data_prim_aula"].required = True
-        self.fields["data_termino_atividades"].required = True
+        self.fields["data_termino_atividades"].required = False  # Alterado para não ser obrigatório
 
         # Troca o texto do option vazio para "Selecione"
         for field_name, field in self.fields.items():
@@ -111,7 +111,7 @@ class TurmaForm(forms.ModelForm):
             self.add_error("vagas", "O número de vagas deve ser maior que zero.")
         
         # Validação extra para garantir que os campos obrigatórios não estejam vazios
-        for field in ["num_livro", "perc_carencia", "data_iniciacao", "data_inicio_ativ", "data_prim_aula", "data_termino_atividades"]:
+        for field in ["num_livro", "perc_carencia", "data_iniciacao", "data_inicio_ativ", "data_prim_aula"]:
             if not cleaned_data.get(field):
                 self.add_error(field, "Este campo é obrigatório.")
         

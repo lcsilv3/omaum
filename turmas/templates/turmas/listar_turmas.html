@@ -81,6 +81,9 @@
                                     <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da turma">Detalhes</a>
                                     <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning" title="Editar informações da turma">Editar</a>
                                     <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-sm btn-danger" title="Excluir esta turma">Excluir</a>
+                                    <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-sm btn-success" title="Matricular alunos nesta turma">
+                                        Matricular
+                                    </a>
                                 </td>
                             </tr>
                         {% empty %}

@@ -63,16 +63,13 @@
                     </div>
                 </div>
             </div>
-            <div class="text-center mt-2 mb-4">
-                <span class="badge bg-secondary">Role para ver mais módulos <i class="fas fa-arrow-down"></i></span>
-            </div>
         </div>
 
         <!-- Seção: Frequência e Presença -->
         <div class="mt-4 mb-3">
-            <h3 class="border-bottom pb-2">Frequência e Presença</h3>
+            <h3 class="border-bottom pb-2">Acompanhamento</h3>
             <div class="row">
-                <!-- Módulo de Atividades (mudando de vermelho para rosa) -->
+                <!-- Módulo de Atividades -->
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
                         <div class="card-body">
@@ -99,7 +96,6 @@
                                 <i class="fas fa-clipboard-check text-secondary"></i> Presenças
                             </h5>
                             <p class="card-text">Controle de presenças em atividades e aulas.</p>
-                            <!-- Corrigido: usar rotas válidas -->
                             <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary mb-2">
                                 <i class="fas fa-clipboard-check"></i> Presenças Acadêmicas
                             </a>
@@ -109,75 +105,20 @@
                         </div>
                     </div>
                 </div>
-                <!-- Módulo de Frequências -->
+                <!-- Módulo de Relatórios -->
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">
-                                <i class="fas fa-check-square text-primary"></i> Frequências
+                                <i class="fas fa-chart-bar text-warning"></i> Relatórios
                             </h5>
-                            <p class="card-text">Registro e consulta de frequências dos alunos.</p>
-                            <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-primary">
-                                <i class="fas fa-check-square"></i> Acessar Frequências
+                            <p class="card-text">Gere relatórios detalhados sobre alunos, presenças e histórico.</p>
+                            <a href="{% url 'relatorios:listar_relatorios' %}" class="btn btn-warning">
+                                <i class="fas fa-file-alt"></i> Acessar Relatórios
                             </a>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="text-center mt-2 mb-4">
-                <span class="badge bg-secondary">Continue rolando <i class="fas fa-arrow-down"></i></span>
-            </div>
-        </div>
-
-        <!-- Seção: Processos Iniciáticos -->
-        <div class="mt-4 mb-3">
-            <h3 class="border-bottom pb-2">Processos Iniciáticos</h3>
-            <div class="row">
-                <!-- Módulo de Iniciações -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-graduation-cap text-success"></i> Iniciações
-                            </h5>
-                            <p class="card-text">Gerenciamento de iniciações e processos iniciáticos.</p>
-                            <a href="{% url 'iniciacoes:listar_iniciacoes' %}" class="btn btn-success">
-                                <i class="fas fa-graduation-cap"></i> Acessar Iniciações
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <!-- Módulo de Punições (mudando de vermelho para roxo claro) -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-gavel text-purple"></i> Punições
-                            </h5>
-                            <p class="card-text">Registro e gerenciamento de punições disciplinares.</p>
-                            <a href="{% url 'punicoes:listar_punicoes' %}" class="btn btn-purple">
-                                <i class="fas fa-gavel"></i> Acessar Punições
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <!-- Módulo de Cargos Administrativos -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-id-badge text-info"></i> Cargos Administrativos
-                            </h5>
-                            <p class="card-text">Gerenciamento de cargos e funções administrativas.</p>
-                            <a href="{% url 'cargos:listar_cargos' %}" class="btn btn-info">
-                                <i class="fas fa-id-badge"></i> Acessar Cargos
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="text-center mt-2 mb-4">
-                <span class="badge bg-secondary">Mais módulos abaixo <i class="fas fa-arrow-down"></i></span>
             </div>
         </div>
 
@@ -204,9 +145,9 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">
-                                <i class="fas fa-money-bill-wave text-success"></i> Pagamentos
+                                <i class="fas fa-dollar-sign text-success"></i> Pagamentos
                             </h5>
-                            <p class="card-text">Gerenciamento de pagamentos dos alunos.</p>
+                            <p class="card-text">Controle de mensalidades e outras transações financeiras.</p>
                             <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-success">
                                 <i class="fas fa-money-bill-wave"></i> Acessar Pagamentos
                             </a>
@@ -214,34 +155,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Seção: Relatórios e Análises -->
-        <div class="mt-4 mb-3">
-            <h3 class="border-bottom pb-2">Relatórios e Análises</h3>
-            <div class="row">
-                <!-- Módulo de Relatórios -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-chart-bar text-secondary"></i> Relatórios
-                            </h5>
-                            <p class="card-text">Geração de relatórios e estatísticas do sistema.</p>
-                            <a href="{% url 'relatorios:listar_relatorios' %}" class="btn btn-secondary">
-                                <i class="fas fa-chart-bar"></i> Acessar Relatórios
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Botão para voltar ao topo -->
-        <div class="text-center my-4">
-            <a href="#" class="btn btn-outline-primary" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;">
-                <i class="fas fa-arrow-up"></i> Voltar ao topo
-            </a>
         </div>
     {% else %}
         <div class="col-12 text-center mt-4">

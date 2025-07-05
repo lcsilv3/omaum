@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Turmas</title>
+    <style>
+        @page {
+            size: a4 landscape;
+            margin: 1.5cm;
+        }
+        body {
+            font-family: "Helvetica", "Arial", sans-serif;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 10px;
+            color: #777;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .filter-info {
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Relatório de Turmas</h1>
+    </div>
+
+    <div class="filter-info">
+        <strong>Filtros Aplicados:</strong><br>
+        - Curso: {{ curso.nome|default:"Todos" }} <br>
+        - Status: {{ status|default:"Todos" }} <br>
+        - Período: de {{ data_inicio|default:"N/A" }} até {{ data_fim|default:"N/A" }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nome da Turma</th>
+                <th>Curso</th>
+                <th>Status</th>
+                <th>Data de Início</th>
+                <th>Data de Término</th>
+                <th>Vagas</th>
+                <th>Instrutor Principal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for turma in turmas %}
+            <tr>
+                <td>{{ turma.nome }}</td>
+                <td>{{ turma.curso.nome }}</td>
+                <td>{{ turma.get_status_display }}</td>
+                <td>{{ turma.data_inicio_ativ|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ turma.data_termino_atividades|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ turma.vagas }}</td>
+                <td>{{ turma.instrutor.nome|default:"Não definido" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center;">Nenhuma turma encontrada.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Relatório gerado em {{ data_geracao|date:"d/m/Y H:i" }}
+    </div>
+</body>
+</html>

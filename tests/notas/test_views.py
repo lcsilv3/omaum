@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from django.utils import timezone
 from notas.models import Avaliacao, Nota
-from alunos.models import Aluno
+from alunos.services import criar_aluno
 from turmas.models import Turma
 from atividades.models import AtividadeAcademica
 from matriculas.models import Matricula
@@ -38,20 +38,20 @@ class NotasViewsTestCase(TestCase):
         )
         self.atividade.turmas.add(self.turma)
         
-        # Criar alunos para os testes
-        self.aluno1 = Aluno.objects.create(
-            cpf="12345678900",
-            nome="Aluno Teste 1",
-            email="aluno1@teste.com",
-            data_nascimento="1990-01-01"
-        )
+        # Criar alunos para os testes usando o serviço
+        self.aluno1 = criar_aluno({
+            "cpf": "12345678900",
+            "nome": "Aluno Teste 1",
+            "email": "aluno1@teste.com",
+            "data_nascimento": "1990-01-01"
+        })
         
-        self.aluno2 = Aluno.objects.create(
-            cpf="98765432100",
-            nome="Aluno Teste 2",
-            email="aluno2@teste.com",
-            data_nascimento="1992-05-15"
-        )
+        self.aluno2 = criar_aluno({
+            "cpf": "98765432100",
+            "nome": "Aluno Teste 2",
+            "email": "aluno2@teste.com",
+            "data_nascimento": "1992-05-15"
+        })
         
         # Matricular alunos na turma
         Matricula.objects.create(

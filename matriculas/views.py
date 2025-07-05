@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from importlib import import_module
 from django.urls import reverse
+from turmas.services import matricular_aluno_em_turma
 
 
 def get_model(app_name, model_name):
@@ -317,3 +318,11 @@ def excluir_matricula(request, id):
         return redirect("matriculas:listar_matriculas")
 
     return render(request, "matriculas/excluir_matricula.html", {"matricula": matricula, "dependencias": dependencias})
+
+def realizar_matricula_view(request, aluno_id, turma_id):
+    try:
+        matricular_aluno_em_turma(aluno_id, turma_id)
+        messages.success(request, "Matrícula realizada com sucesso!")
+    except ValidationError as e:
+        messages.error(request, f"Erro na matrícula: {e.messages}")
+    return redirect('alguma_url')

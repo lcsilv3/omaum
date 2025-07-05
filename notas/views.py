@@ -6,6 +6,8 @@ from django.db.models import Q, Avg, Count, Max, Min
 from django.core.paginator import Paginator
 from .models import Nota
 from .forms import NotaForm
+from alunos.services import listar_alunos as listar_alunos_service, buscar_alunos_por_nome_ou_cpf
+from cursos.services import listar_cursos as listar_cursos_service
 import csv
 import datetime
 
@@ -41,11 +43,8 @@ def listar_notas(request):
     page_obj = paginator.get_page(page_number)
     
     # Obter alunos e cursos para os filtros
-    from alunos.models import Aluno
-    from cursos.models import Curso
-    
-    alunos = Aluno.objects.all().order_by('nome')
-    cursos = Curso.objects.all().order_by('nome')
+    alunos = listar_alunos_service()
+    cursos = listar_cursos_service()
     
     context = {
         "notas": page_obj,
@@ -284,21 +283,15 @@ def buscar_alunos(request):
     """API endpoint para buscar alunos."""
     query = request.GET.get("q", "")
     if len(query) < 2:
-        return JsonResponse([], safe=False)
-    
-    from alunos.models import Aluno
-    alunos = Aluno.objects.filter(
-        Q(nome__icontains=query) |
-        Q(cpf__icontains=query)
-    )[:10]
-    
-    results = []
-    for aluno in alunos:
-        results.append({
-            "id": aluno.cpf,
-            "text": f"{aluno.nome} (CPF: {aluno.cpf})"
-        })
-    
+        return JsonResponse({"results": []})
+
+    alunos = buscar_alunos_por_nome_ou_cpf(query)[:10]
+
+    results = [
+        {"id": aluno.cpf, "text": f"{aluno.nome} (CPF: {aluno.cpf})"}
+        for aluno in alunos
+    ]
+
     return JsonResponse({"results": results})
 
 @login_required

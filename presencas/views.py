@@ -18,7 +18,7 @@ from django.views.decorators.http import require_POST
 
 from atividades.models import PresencaAcademica, PresencaRitualistica, AtividadeAcademica, AtividadeRitualistica
 from presencas.models import ObservacaoPresenca, TotalAtividadeMes
-from alunos.models import Aluno
+from alunos.services import listar_alunos as listar_alunos_service, buscar_aluno_por_cpf as buscar_aluno_por_cpf_service
 from turmas.models import Turma
 from presencas.forms import TotaisAtividadesPresencaForm
 
@@ -44,7 +44,7 @@ def listar_presencas_academicas(request):
     if data_fim:
         presencas = presencas.filter(data__lte=data_fim)
 
-    alunos = Aluno.objects.all()
+    alunos = listar_alunos_service()
     turmas = Turma.objects.all()
     atividades = AtividadeAcademica.objects.all()
 
@@ -84,7 +84,7 @@ def listar_presencas_ritualisticas(request):
     if data_fim:
         presencas = presencas.filter(data__lte=data_fim)
 
-    alunos = Aluno.objects.all()
+    alunos = listar_alunos_service()
     turmas = Turma.objects.all()
     atividades = AtividadeRitualistica.objects.all()
 
@@ -113,10 +113,13 @@ def registrar_presenca_academica(request):
         presente = request.POST.get('presente') == 'on'
         observacao = request.POST.get('observacao', '')
         try:
-            aluno = Aluno.objects.get(cpf=aluno_id)
+            aluno = buscar_aluno_por_cpf_service(aluno_id)
             turma = Turma.objects.get(id=turma_id)
             atividade = AtividadeAcademica.objects.get(id=atividade_id)
-        except (Aluno.DoesNotExist, Turma.DoesNotExist, AtividadeAcademica.DoesNotExist) as e:
+            if not aluno:
+                messages.error(request, f'Aluno com CPF {aluno_id} não encontrado.')
+                return redirect('presencas:listar_presencas_academicas')
+        except (Turma.DoesNotExist, AtividadeAcademica.DoesNotExist) as e:
             messages.error(request, f'Erro ao localizar dados: {str(e)}')
             return redirect('presencas:listar_presencas_academicas')
         if PresencaAcademica.objects.filter(aluno=aluno, turma=turma, atividade=atividade, data=data).exists():
@@ -147,7 +150,7 @@ def registrar_presenca_academica(request):
             )
         messages.success(request, f'Presença registrada com sucesso para {aluno.nome}.')
         return redirect('presencas:listar_presencas_academicas')
-    alunos = Aluno.objects.all()
+    alunos = listar_alunos_service()
     turmas = Turma.objects.all()
     atividades = AtividadeAcademica.objects.all()
     context = {
@@ -168,10 +171,13 @@ def registrar_presenca_ritualistica(request):
         presente = request.POST.get('presente') == 'on'
         observacao = request.POST.get('observacao', '')
         try:
-            aluno = Aluno.objects.get(cpf=aluno_id)
+            aluno = buscar_aluno_por_cpf_service(aluno_id)
             turma = Turma.objects.get(id=turma_id)
             atividade = AtividadeRitualistica.objects.get(id=atividade_id)
-        except (Aluno.DoesNotExist, Turma.DoesNotExist, AtividadeRitualistica.DoesNotExist) as e:
+            if not aluno:
+                messages.error(request, f'Aluno com CPF {aluno_id} não encontrado.')
+                return redirect('presencas:listar_presencas_ritualisticas')
+        except (Turma.DoesNotExist, AtividadeRitualistica.DoesNotExist) as e:
             messages.error(request, f'Erro ao localizar dados: {str(e)}')
             return redirect('presencas:listar_presencas_ritualisticas')
         if PresencaRitualistica.objects.filter(aluno=aluno, turma=turma, atividade=atividade, data=data).exists():
@@ -202,7 +208,7 @@ def registrar_presenca_ritualistica(request):
             )
         messages.success(request, f'Presença registrada com sucesso para {aluno.nome}.')
         return redirect('presencas:listar_presencas_ritualisticas')
-    alunos = Aluno.objects.all()
+    alunos = listar_alunos_service()
     turmas = Turma.objects.all()
     atividades = AtividadeRitualistica.objects.all()
     context = {

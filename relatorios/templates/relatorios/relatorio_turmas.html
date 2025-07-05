@@ -1,0 +1,95 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Relatório de Turmas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Relatório de Turmas</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            Filtros
+        </div>
+        <div class="card-body">
+            <form method="get" action="{% url 'relatorios:relatorio_turmas' %}" class="form-inline">
+                <div class="form-row align-items-end">
+                    <div class="form-group col-md-3 mb-2">
+                        <label for="curso">Curso</label>
+                        <select name="curso" id="curso" class="form-control">
+                            <option value="">Todos</option>
+                            {% for curso in cursos %}
+                                <option value="{{ curso.id }}" {% if curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>{{ curso.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group col-md-2 mb-2">
+                        <label for="status">Status</label>
+                        <select name="status" id="status" class="form-control">
+                            <option value="">Todos</option>
+                            {% for key, value in status_choices %}
+                                <option value="{{ key }}" {% if status_selecionado == key %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group col-md-3 mb-2">
+                        <label for="data_inicio">Data de Início (a partir de)</label>
+                        <input type="date" name="data_inicio" id="data_inicio" value="{{ data_inicio|default:'' }}" class="form-control">
+                    </div>
+                    <div class="form-group col-md-3 mb-2">
+                        <label for="data_fim">Data de Término (até)</label>
+                        <input type="date" name="data_fim" id="data_fim" value="{{ data_fim|default:'' }}" class="form-control">
+                    </div>
+                    <div class="form-group col-md-1 mb-2">
+                        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if turmas %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <p><strong>Total de turmas encontradas:</strong> {{ turmas.count }}</p>
+            <a href="{% url 'relatorios:relatorio_turmas_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-success" target="_blank">
+                <i class="fas fa-file-pdf"></i> Exportar para PDF
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Nome da Turma</th>
+                        <th>Curso</th>
+                        <th>Status</th>
+                        <th>Data de Início</th>
+                        <th>Data de Término</th>
+                        <th>Vagas</th>
+                        <th>Instrutor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for turma in turmas %}
+                        <tr>
+                            <td><a href="{% url 'turmas:detalhar_turma' turma.id %}">{{ turma.nome }}</a></td>
+                            <td>{{ turma.curso.nome }}</td>
+                            <td>{{ turma.get_status_display }}</td>
+                            <td>{{ turma.data_inicio_ativ|date:"d/m/Y"|default:"-" }}</td>
+                            <td>{{ turma.data_termino_atividades|date:"d/m/Y"|default:"-" }}</td>
+                            <td>{{ turma.vagas }}</td>
+                            <td>{{ turma.instrutor.nome|default:"Não definido" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info mt-4">
+            Nenhuma turma encontrada com os filtros aplicados.
+        </div>
+    {% endif %}
+
+    <a href="{% url 'core:dashboard' %}" class="btn btn-secondary mt-3">Voltar ao Dashboard</a>
+</div>
+{% endblock %}

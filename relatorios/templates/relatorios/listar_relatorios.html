@@ -4,9 +4,6 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Relatórios do Sistema</h1>
-        <a href="{% url 'relatorios:criar_relatorio' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Novo Relatório
-        </a>
     </div>
     
     <div class="row mb-4">
@@ -40,60 +37,16 @@
 
         <div class="col-md-4 mb-4">
             <div class="card h-100">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">Relatório de Punições</h5>
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Relatório de Histórico</h5>
                 </div>
                 <div class="card-body">
-                    <p class="card-text">Visualize as punições registradas no sistema, com filtros por aluno, tipo de punição e período.</p>
+                    <p class="card-text">Consulte o histórico de cargos, punições e iniciações dos alunos, com filtros avançados.</p>
                 </div>
                 <div class="card-footer">
-                    <a href="{% url 'relatorios:relatorio_punicoes' %}" class="btn btn-danger">Acessar</a>
+                    <a href="{% url 'relatorios:relatorio_historico' %}" class="btn btn-info">Acessar</a>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Relatórios Personalizados</h5>
-        </div>
-        <div class="card-body">
-            {% if relatorios %}
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Título</th>
-                                <th>Data de Criação</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for relatorio in relatorios %}
-                                <tr>
-                                    <td>{{ relatorio.titulo }}</td>
-                                    <td>{{ relatorio.data_criacao|date:"d/m/Y H:i" }}</td>
-                                    <td>
-                                        <a href="{% url 'relatorios:detalhar_relatorio' relatorio.id %}" class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye"></i> Ver
-                                        </a>
-                                        <a href="{% url 'relatorios:editar_relatorio' relatorio.id %}" class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i> Editar
-                                        </a>
-                                        <a href="{% url 'relatorios:excluir_relatorio' relatorio.id %}" class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i> Excluir
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-info">
-                    <p class="mb-0">Nenhum relatório personalizado cadastrado. Clique em "Novo Relatório" para criar um.</p>
-                </div>
-            {% endif %}
         </div>
     </div>
 </div>

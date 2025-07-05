@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 from pagamentos.forms import PagamentoForm, RegistrarPagamentoForm
-from alunos.models import Aluno
+from alunos.services import criar_aluno
 from turmas.models import Turma
 from pagamentos.models import TipoPagamento
 import datetime
@@ -11,13 +11,13 @@ class PagamentoFormTestCase(TestCase):
     
     def setUp(self):
         """Configuração inicial para os testes."""
-        # Criar um aluno para os testes
-        self.aluno = Aluno.objects.create(
-            cpf="12345678900",
-            nome="Aluno Teste",
-            email="aluno@teste.com",
-            data_nascimento="1990-01-01"
-        )
+        # Criar um aluno para os testes usando o serviço
+        self.aluno = criar_aluno({
+            "cpf": "12345678900",
+            "nome": "Aluno Teste",
+            "email": "aluno@teste.com",
+            "data_nascimento": "1990-01-01"
+        })
         
         # Criar uma turma para os testes
         self.turma = Turma.objects.create(

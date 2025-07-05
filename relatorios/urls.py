@@ -13,6 +13,28 @@ urlpatterns = [
     path("alunos/pdf/", views.relatorio_alunos_pdf, name="relatorio_alunos_pdf"),
     path("presencas/", views.relatorio_presencas, name="relatorio_presencas"),
     path("presencas/pdf/", views.relatorio_presencas_pdf, name="relatorio_presencas_pdf"),
-    path("punicoes/", views.relatorio_punicoes, name="relatorio_punicoes"),
-    path("punicoes/pdf/", views.relatorio_punicoes_pdf, name="relatorio_punicoes_pdf"),
+    path("historico/", views.relatorio_historico, name="relatorio_historico"),
+    path(
+        "historico/pdf/",
+        views.relatorio_historico_pdf,
+        name="relatorio_historico_pdf",
+    ),
+    # Relatórios de Turmas
+    path("turmas/", views.relatorio_turmas, name="relatorio_turmas"),
+    path(
+        "turmas/pdf/",
+        views.relatorio_turmas_pdf,
+        name="relatorio_turmas_pdf",
+    ),
+    # Relatórios de Atividades
+    path(
+        "atividades/",
+        views.relatorio_atividades,
+        name="relatorio_atividades",
+    ),
+    path(
+        "atividades/pdf/",
+        views.relatorio_atividades_pdf,
+        name="relatorio_atividades_pdf",
+    ),
 ]

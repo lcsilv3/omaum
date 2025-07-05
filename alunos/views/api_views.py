@@ -7,7 +7,7 @@ from django.db.models import Q
 import logging
 import traceback
 from alunos.utils import get_aluno_model
-from ..services import verificar_elegibilidade_instrutor as verificar_elegibilidade_service
+from alunos.services import verificar_elegibilidade_instrutor as verificar_elegibilidade_service
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def search_alunos(request):
         results.append({
             'cpf': aluno.cpf,
             'nome': aluno.nome,
-            'numero_iniciatico': aluno.numero_iniciatico or 'N/A',
+            # 'numero_iniciatico': aluno.numero_iniciatico or 'N/A',  # Removido campo inexistente
             'email': aluno.email or 'N/A',
             'foto': aluno.foto.url if aluno.foto else None,
         })
@@ -53,8 +53,7 @@ def search_instrutores(request):
         if query and len(query) >= 2:
             alunos = alunos.filter(
                 Q(nome__icontains=query) |
-                Q(cpf__icontains=query) |
-                Q(numero_iniciatico__icontains=query)
+                Q(cpf__icontains=query)
             )
         
         # Limitar a 10 resultados
@@ -66,7 +65,7 @@ def search_instrutores(request):
             results.append({
                 "cpf": aluno.cpf,
                 "nome": aluno.nome,
-                "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                # "numero_iniciatico": aluno.numero_iniciatico or "N/A",  # Removido campo inexistente
                 "foto": aluno.foto.url if hasattr(aluno, "foto") and aluno.foto else None,
                 "situacao": aluno.get_situacao_display() if hasattr(aluno, "get_situacao_display") else "",
                 "situacao_codigo": aluno.situacao,
@@ -92,7 +91,7 @@ def get_aluno(request, cpf):
                 "aluno": {
                     "cpf": aluno.cpf,
                     "nome": aluno.nome,
-                    "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                    # "numero_iniciatico": aluno.numero_iniciatico or "N/A",  # Removido campo inexistente
                     "foto": (
                         aluno.foto.url
                         if hasattr(aluno, "foto") and aluno.foto

@@ -2,197 +2,193 @@
 
 {% block title %}Lista de Alunos{% endblock %}
 
-{% block extra_css %}
-<style>
-    .btn-group-responsive {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    
-    @media (max-width: 768px) {
-        .action-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-        
-        .btn-responsive {
-            width: 100%;
-            margin-bottom: 0.25rem;
-        }
-    }
-    
-    .table-responsive {
-        overflow-x: auto;
-    }
-    
-    .table th, .table td {
-        white-space: nowrap;
-    }
-    
-    .aluno-info {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    
-    .aluno-avatar {
-        flex-shrink: 0;
-    }
-    
-    .aluno-nome {
-        font-weight: 500;
-    }
-    
-    .dropdown-menu-actions {
-        min-width: 8rem;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid mt-4">
-    <!-- Cabeçalho com título e botões na mesma linha -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Lista de Alunos</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary">
+        <div class="d-flex gap-2">
+            <a href="{% url 'core:pagina_inicial' %}" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Voltar para o Menu Principal">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-primary">
+            <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-success" data-bs-toggle="tooltip" title="Adicionar novo aluno">
                 <i class="fas fa-plus"></i> Novo Aluno
             </a>
-            <a href="{% url 'alunos:exportar_alunos' %}" class="btn btn-success">
-                <i class="fas fa-file-export"></i> Exportar CSV
+            <a href="{% url 'alunos:relatorio_alunos' %}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Gerar relatórios de alunos">
+                <i class="fas fa-file-alt"></i> Relatórios
             </a>
-            <a href="{% url 'alunos:importar_alunos' %}" class="btn btn-info">
-                <i class="fas fa-file-import"></i> Importar CSV
+            <a href="{% url 'alunos:painel' %}" class="btn btn-primary" data-bs-toggle="tooltip" title="Acessar o painel de alunos">
+                <i class="fas fa-th-large"></i> Painel
             </a>
+            <a href="{% url 'alunos:importar_alunos' %}" class="btn btn-outline-info" data-bs-toggle="tooltip" title="Importar alunos via CSV">
+                <i class="fas fa-file-import"></i> Importar
+            </a>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-toggle="tooltip" title="Exportar dados de alunos">
+                    <i class="fas fa-file-export"></i> Exportar
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'alunos:exportar_alunos' %}?formato=csv">Exportar CSV</a></li>
+                    <li><a class="dropdown-item" href="{% url 'alunos:exportar_alunos' %}?formato=excel">Exportar Excel</a></li>
+                    <li><a class="dropdown-item" href="{% url 'alunos:exportar_alunos' %}?formato=pdf" target="_blank">Exportar PDF</a></li>
+                </ul>
+            </div>
         </div>
     </div>
-    
+
     <!-- Barra de busca e filtros -->
     <div class="card mb-4">
         <div class="card-header">
-            <form method="get" class="row g-3">
+            <form id="filtro-form" method="get" action="{% url 'alunos:listar_alunos' %}" class="row g-3 align-items-center">
                 <div class="col-md-6 col-lg-7">
                     <div class="input-group">
-                        <input type="text" name="q" class="form-control" placeholder="Buscar por nome, CPF ou email..." value="{{ query }}">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search"></i> Buscar
-                        </button>
+                        <input type="text" id="search-input" name="q" class="form-control" placeholder="Buscar por nome, CPF, email ou matrícula..." value="{{ query }}">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
                     </div>
                 </div>
                 <div class="col-md-4 col-lg-3">
-                    <select name="curso" class="form-select" aria-label="Filtrar por curso">
+                    <select id="curso-select" name="curso" class="form-select" aria-label="Filtrar por curso">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
-                            <option value="{{ curso.id }}" {% if curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>{{ curso.nome }}</option>
+                            <option value="{{ curso.id }}" {% if curso_selecionado == curso.id %}selected{% endif %}>{{ curso.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-2 col-lg-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-filter"></i> Filtrar
-                    </button>
+                    <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-eraser"></i> Limpar
+                    </a>
                 </div>
             </form>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
+            <div id="loading-spinner" class="text-center my-5" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+            </div>
+            <div class="table-responsive" id="tabela-container">
                 <table class="table table-hover">
                     <thead class="table-light">
                         <tr>
                             <th>Nome</th>
                             <th>CPF</th>
-                            <th>Nº Iniciático</th>
                             <th>Email</th>
                             <th class="text-center">Ações</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for aluno in alunos %}
-                            <tr>
-                                <td>
-                                    <div class="aluno-info">
-                                        {% if aluno.foto %}
-                                            <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                                 class="rounded-circle aluno-avatar" width="40" height="40" 
-                                                 style="object-fit: cover;">
-                                        {% else %}
-                                            <div class="rounded-circle bg-secondary aluno-avatar d-flex align-items-center justify-content-center" 
-                                                 style="width: 40px; height: 40px; color: white;">
-                                                {{ aluno.nome|first|upper }}
-                                            </div>
-                                        {% endif %}
-                                        <span class="aluno-nome">{{ aluno.nome }}</span>
-                                    </div>
-                                </td>
-                                <td>{{ aluno.cpf }}</td>
-                                <td>{{ aluno.numero_iniciatico|default:"N/A" }}</td>
-                                <td>{{ aluno.email }}</td>
-                                <td>
-                                    {% if aluno.cpf %}
-                                        <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info" title="Ver detalhes completos do aluno">Detalhes</a>
-                                        <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-sm btn-warning" title="Editar informações do aluno">Editar</a>
-                                        <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-sm btn-danger" title="Excluir este aluno">Excluir</a>
-                                    {% else %}
-                                        <span class="text-muted">CPF não disponível</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center">
-                                    <p class="my-3">Nenhum aluno cadastrado.</p>
-                                </td>
-                            </tr>
-                        {% endfor %}
+                    <tbody id="tabela-alunos-body">
+                        {% include 'alunos/_tabela_alunos_parcial.html' with alunos=page_obj total_alunos=total_alunos %}
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-end fw-bold">Total de alunos cadastrados: {{ total_alunos }}</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
         <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-center">
-            <p class="text-muted mb-md-0">Total: {{ total_alunos|default:"0" }} aluno(s)</p>
-            {% if page_obj.has_other_pages %}
-                <nav aria-label="Paginação">
-                    <ul class="pagination justify-content-center mb-0">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Anterior</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Anterior</span>
-                            </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                            {% else %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}&q={{ query }}&curso={{ curso_selecionado }}">{{ num }}</a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Próxima</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Próxima</span>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
+            <div id="paginacao-container">
+                {% include 'alunos/_paginacao_parcial.html' %}
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('filtro-form');
+        const searchInput = document.getElementById('search-input');
+        const cursoSelect = document.getElementById('curso-select');
+        const tableBody = document.getElementById('tabela-alunos-body');
+        const paginacaoContainer = document.getElementById('paginacao-container');
+        const totalAlunosSpan = document.getElementById('total-alunos');
+        const spinner = document.getElementById('loading-spinner');
+        const tableContainer = document.getElementById('tabela-container');
+        
+        let debounceTimeout;
+
+        function fetchAlunos(page = 1) {
+            spinner.style.display = 'block';
+            // Esconde apenas o corpo da tabela para manter o cabeçalho visível
+            tableBody.style.display = 'none'; 
+
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+            params.set('page', page);
+
+            // Garante que a URL base para a requisição AJAX esteja correta
+            const url = `{% url 'alunos:listar_alunos' %}?${params.toString()}`;
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                // Atualiza o conteúdo dinamicamente
+                tableBody.innerHTML = data.tabela_html;
+                paginacaoContainer.innerHTML = data.paginacao_html;
+                totalAlunosSpan.textContent = data.total_alunos;
+            })
+            .catch(error => {
+                console.error('Erro ao buscar alunos:', error);
+                tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Erro ao carregar os dados. Tente novamente mais tarde.</td></tr>`;
+                totalAlunosSpan.textContent = '0';
+            })
+            .finally(() => {
+                // Garante que o spinner seja escondido e a tabela reexibida
+                spinner.style.display = 'none';
+                tableBody.style.display = ''; // Reexibe o corpo da tabela
+            });
+        }
+
+        // --- OUVINTES DE EVENTOS ---
+
+        // Event listener para a busca com debounce
+        searchInput.addEventListener('keyup', function() {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => fetchAlunos(1), 300); 
+        });
+
+        // Event listener para o filtro de curso
+        cursoSelect.addEventListener('change', () => fetchAlunos(1));
+
+        // Prevenir o envio tradicional do formulário (que recarregaria a página)
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetchAlunos(1);
+        });
+
+        // Delegação de evento para os links da paginação
+        paginacaoContainer.addEventListener('click', function(e) {
+            // Garante que o clique foi em um link de paginação
+            if (e.target.tagName === 'A' && e.target.classList.contains('page-link')) {
+                e.preventDefault(); // Previne a navegação padrão
+                const url = new URL(e.target.href);
+                const page = url.searchParams.get('page');
+                if (page) {
+                    fetchAlunos(page);
+                }
+            }
+        });
+
+        // Tooltips do Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
 {% endblock %}

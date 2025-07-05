@@ -11,7 +11,7 @@
     
     {% for field in form %}
       <div class="form-group">
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="text-danger" title="Campo obrigatório">*</span>{% endif %}</label>
         {{ field }}
         {% if field.help_text %}
           <small class="form-text text-muted">{{ field.help_text }}</small>
