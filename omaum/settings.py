@@ -1,3 +1,14 @@
+"""
+Configurações do projeto OMAUM.
+Este arquivo contém as configurações principais do Django, incluindo:
+- Configurações de segurança
+- Aplicativos instalados
+- Configurações de middleware
+- Configurações de banco de dados
+- Configurações de internacionalização
+- Configurações de arquivos estáticos e mídia
+"""
+
 # Importações e configurações existentes
 import os
 from pathlib import Path
@@ -11,7 +22,7 @@ SECRET_KEY = 'django-insecure-your-secret-key-here'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'testserver']
 
 # Application definition
 INSTALLED_APPS = [
@@ -57,7 +68,10 @@ ROOT_URLCONF = 'omaum.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'omaum', 'templates')],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'omaum', 'templates'),
+            os.path.join(BASE_DIR, 'matriculas', 'templates')
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -65,12 +79,17 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'omaum.context_processors.pagamentos_context',
+                # Novo context processor
             ],
         },
     },
 ]  # Este colchete estava na linha errada
 
-WSGI_APPLICATION = 'omaum.wsgi.application'  # Esta linha deve começar sem o colchete
+# Correção de linha longa em WSGI_APPLICATION
+WSGI_APPLICATION = (
+    'omaum.wsgi.application'  # Esta linha deve começar sem o colchete
+)
 
 # Database
 DATABASES = {
@@ -83,16 +102,28 @@ DATABASES = {
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'UserAttributeSimilarityValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'MinimumLengthValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'CommonPasswordValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'NumericPasswordValidator'
+        ),
     },
 ]
 
@@ -131,26 +162,50 @@ LOGOUT_REDIRECT_URL = '/'  # Redireciona para a página inicial após o logout
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
+    'formatters': {
+        'verbose': {
+            'format': (
+                '{levelname} {asctime} {module} {message}'
+            ),
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
         },
     },
-    'root': {
-        'handlers': ['console'],
-        'level': 'DEBUG',
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/django.log',
+            'formatter': 'verbose',
+        },
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        # Para garantir que seu app mostre DEBUG
-        'presencas': {
-            'handlers': ['console'],
+            'handlers': ['file'],
             'level': 'DEBUG',
-            'propagate': False,
+            'propagate': True,
+        },
+        'alunos.services': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
         },
     },
+}
+
+# Remover Debug Toolbar temporariamente
+if 'debug_toolbar' in INSTALLED_APPS:
+    INSTALLED_APPS.remove('debug_toolbar')
+
+if 'debug_toolbar.middleware.DebugToolbarMiddleware' in MIDDLEWARE:
+    MIDDLEWARE.remove('debug_toolbar.middleware.DebugToolbarMiddleware')
+
+# Configuração para evitar interferência do Debug Toolbar em requisições AJAX
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': (
+        lambda request: False if request.is_ajax() else True
+    ),
 }

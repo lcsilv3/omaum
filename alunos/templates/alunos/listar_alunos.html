@@ -3,94 +3,48 @@
 {% block title %}Lista de Alunos{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Lista de Alunos</h1>
-        <div class="d-flex gap-2">
-            <a href="{% url 'core:pagina_inicial' %}" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Voltar para o Menu Principal">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-            <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-success" data-bs-toggle="tooltip" title="Adicionar novo aluno">
-                <i class="fas fa-plus"></i> Novo Aluno
-            </a>
-            <a href="{% url 'alunos:relatorio_alunos' %}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Gerar relatórios de alunos">
-                <i class="fas fa-file-alt"></i> Relatórios
-            </a>
-            <a href="{% url 'alunos:painel' %}" class="btn btn-primary" data-bs-toggle="tooltip" title="Acessar o painel de alunos">
-                <i class="fas fa-th-large"></i> Painel
-            </a>
-            <a href="{% url 'alunos:importar_alunos' %}" class="btn btn-outline-info" data-bs-toggle="tooltip" title="Importar alunos via CSV">
-                <i class="fas fa-file-import"></i> Importar
-            </a>
-            <div class="btn-group">
-                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-toggle="tooltip" title="Exportar dados de alunos">
-                    <i class="fas fa-file-export"></i> Exportar
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{% url 'alunos:exportar_alunos' %}?formato=csv">Exportar CSV</a></li>
-                    <li><a class="dropdown-item" href="{% url 'alunos:exportar_alunos' %}?formato=excel">Exportar Excel</a></li>
-                    <li><a class="dropdown-item" href="{% url 'alunos:exportar_alunos' %}?formato=pdf" target="_blank">Exportar PDF</a></li>
-                </ul>
-            </div>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Lista de Alunos</h1>
+        <div class="btn-group">
+            <a href="{% url 'core:pagina_inicial' %}" class="btn btn-secondary">Voltar</a>
+            <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-success">Novo Aluno</a>
+            <a href="{% url 'alunos:relatorio_alunos' %}" class="btn btn-primary">Relatórios</a>
         </div>
     </div>
 
-    <!-- Barra de busca e filtros -->
-    <div class="card mb-4">
+    <div class="card">
         <div class="card-header">
-            <form id="filtro-form" method="get" action="{% url 'alunos:listar_alunos' %}" class="row g-3 align-items-center">
-                <div class="col-md-6 col-lg-7">
-                    <div class="input-group">
-                        <input type="text" id="search-input" name="q" class="form-control" placeholder="Buscar por nome, CPF, email ou matrícula..." value="{{ query }}">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    </div>
+            <form id="filtro-form" method="get" action="/alunos/search/" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-6">
+                    <input type="text" id="search-aluno" name="q" class="form-control" placeholder="Buscar por nome, CPF, email...">
                 </div>
-                <div class="col-md-4 col-lg-3">
-                    <select id="curso-select" name="curso" class="form-select" aria-label="Filtrar por curso">
+                <div class="col-md-4">
+                    <select id="curso-select" name="curso" class="form-select">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
                             <option value="{{ curso.id }}" {% if curso_selecionado == curso.id %}selected{% endif %}>{{ curso.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2 col-lg-2">
-                    <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-outline-secondary w-100">
-                        <i class="fas fa-eraser"></i> Limpar
-                    </a>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
                 </div>
             </form>
         </div>
         <div class="card-body">
-            <div id="loading-spinner" class="text-center my-5" style="display: none;">
+            <div id="loading-spinner" class="text-center my-3" style="display: none;">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Carregando...</span>
                 </div>
             </div>
-            <div class="table-responsive" id="tabela-container">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nome</th>
-                            <th>CPF</th>
-                            <th>Email</th>
-                            <th class="text-center">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabela-alunos-body">
-                        {% include 'alunos/_tabela_alunos_parcial.html' with alunos=page_obj total_alunos=total_alunos %}
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="4" class="text-end fw-bold">Total de alunos cadastrados: {{ total_alunos }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
+            <div id="tabela-container">
+                {% include 'alunos/_tabela_alunos_parcial.html' with alunos=page_obj total_alunos=total_alunos %}
             </div>
         </div>
-        <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-center">
-            <div id="paginacao-container">
-                {% include 'alunos/_paginacao_parcial.html' %}
-            </div>
+        <div class="card-footer">
+            {% include 'alunos/_paginacao_parcial.html' %}
         </div>
     </div>
 </div>
@@ -100,95 +54,90 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('filtro-form');
-        const searchInput = document.getElementById('search-input');
-        const cursoSelect = document.getElementById('curso-select');
-        const tableBody = document.getElementById('tabela-alunos-body');
-        const paginacaoContainer = document.getElementById('paginacao-container');
-        const totalAlunosSpan = document.getElementById('total-alunos');
+        const tabelaContainer = document.getElementById('tabela-container');
         const spinner = document.getElementById('loading-spinner');
-        const tableContainer = document.getElementById('tabela-container');
-        
-        let debounceTimeout;
 
-        function fetchAlunos(page = 1) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetchAlunos();
+        });
+
+        function fetchAlunos() {
             spinner.style.display = 'block';
-            // Esconde apenas o corpo da tabela para manter o cabeçalho visível
-            tableBody.style.display = 'none'; 
+            tabelaContainer.style.display = 'none';
 
             const formData = new FormData(form);
             const params = new URLSearchParams(formData);
-            params.set('page', page);
 
-            // Garante que a URL base para a requisição AJAX esteja correta
-            const url = `{% url 'alunos:listar_alunos' %}?${params.toString()}`;
-
-            fetch(url, {
+            fetch(`/alunos/search/?${params.toString()}`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`Erro na requisição: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
+                if (data.tabela_html && data.paginacao_html) {
+                    tabelaContainer.innerHTML = data.tabela_html;
+                    document.querySelector('.card-footer').innerHTML = data.paginacao_html;
+                } else {
+                    tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados. Resposta inválida do servidor.</p>';
                 }
-                // Atualiza o conteúdo dinamicamente
-                tableBody.innerHTML = data.tabela_html;
-                paginacaoContainer.innerHTML = data.paginacao_html;
-                totalAlunosSpan.textContent = data.total_alunos;
             })
             .catch(error => {
                 console.error('Erro ao buscar alunos:', error);
-                tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Erro ao carregar os dados. Tente novamente mais tarde.</td></tr>`;
-                totalAlunosSpan.textContent = '0';
+                tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados. Verifique sua conexão ou tente novamente mais tarde.</p>';
             })
             .finally(() => {
-                // Garante que o spinner seja escondido e a tabela reexibida
                 spinner.style.display = 'none';
-                tableBody.style.display = ''; // Reexibe o corpo da tabela
+                tabelaContainer.style.display = 'block';
             });
         }
 
-        // --- OUVINTES DE EVENTOS ---
+        // Adiciona evento de clique para links de paginação
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('page-link')) {
+                e.preventDefault();
+                const url = e.target.getAttribute('href');
 
-        // Event listener para a busca com debounce
-        searchInput.addEventListener('keyup', function() {
-            clearTimeout(debounceTimeout);
-            debounceTimeout = setTimeout(() => fetchAlunos(1), 300); 
-        });
+                if (url) {
+                    spinner.style.display = 'block';
+                    tabelaContainer.style.display = 'none';
 
-        // Event listener para o filtro de curso
-        cursoSelect.addEventListener('change', () => fetchAlunos(1));
-
-        // Prevenir o envio tradicional do formulário (que recarregaria a página)
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            fetchAlunos(1);
-        });
-
-        // Delegação de evento para os links da paginação
-        paginacaoContainer.addEventListener('click', function(e) {
-            // Garante que o clique foi em um link de paginação
-            if (e.target.tagName === 'A' && e.target.classList.contains('page-link')) {
-                e.preventDefault(); // Previne a navegação padrão
-                const url = new URL(e.target.href);
-                const page = url.searchParams.get('page');
-                if (page) {
-                    fetchAlunos(page);
+                    fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erro na requisição');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.tabela_html && data.paginacao_html) {
+                            tabelaContainer.innerHTML = data.tabela_html;
+                            document.querySelector('.card-footer').innerHTML = data.paginacao_html;
+                        } else {
+                            tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados.</p>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao buscar alunos:', error);
+                        tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados.</p>';
+                    })
+                    .finally(() => {
+                        spinner.style.display = 'none';
+                        tabelaContainer.style.display = 'block';
+                    });
                 }
             }
         });
-
-        // Tooltips do Bootstrap
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
     });
 </script>
 {% endblock %}

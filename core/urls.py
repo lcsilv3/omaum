@@ -1,14 +1,26 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from django.contrib.auth import views as auth_views
 from . import views
+from .api_views import ConfiguracaoSistemaViewSet, LogAtividadeViewSet
 
 app_name = "core"
 
+# API Router
+router = DefaultRouter()
+router.register(r'api/configuracoes', ConfiguracaoSistemaViewSet)
+router.register(r'api/logs', LogAtividadeViewSet)
+
 urlpatterns = [
-    path("", views.pagina_inicial, name="pagina_inicial"),
+    # API URLs
+    path('', include(router.urls)),
+    
+    # Template URLs
+    path("inicio/", views.pagina_inicial, name="pagina_inicial"),
     
     # Adicione estas URLs se quiser manter as funcionalidades no template
-    path('perfil/', views.perfil, name='perfil'),  # Você precisará criar esta view
+    path('perfil/', views.perfil, name='perfil'),
+    # Você precisará criar esta view
     path('alterar-senha/', auth_views.PasswordChangeView.as_view(
         template_name='core/alterar_senha.html',
         success_url='/core/senha-alterada/'

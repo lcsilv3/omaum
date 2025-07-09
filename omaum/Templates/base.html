@@ -126,7 +126,7 @@
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="notificacoesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-bell"></i>
-                                    {% if pagamentos_atrasados_count > 0 %}
+                                    {% if pagamentos_atrasados_count|default:0 > 0 %}
                                         <span class="badge bg-danger">{{ pagamentos_atrasados_count }}</span>
                                     {% endif %}
                                 </a>

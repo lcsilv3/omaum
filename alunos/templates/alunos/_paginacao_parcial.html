@@ -1,37 +1,39 @@
-{% if page_obj.has_other_pages %}
-    <nav aria-label="Paginação">
-        <ul class="pagination justify-content-center mb-0">
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Anterior</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Anterior</span>
-                </li>
-            {% endif %}
+{% if alunos and alunos.paginator %}
+<nav aria-label="Paginação">
+    <ul class="pagination justify-content-center">
+        {% if alunos.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ alunos.previous_page_number }}" aria-label="Anterior">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+        </li>
+        {% endif %}
 
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ num }}</span>
-                    </li>
-                {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}&q={{ query }}&curso={{ curso_selecionado }}">{{ num }}</a>
-                    </li>
-                {% endif %}
-            {% endfor %}
+        {% for num in alunos.paginator.page_range %}
+        {% if alunos.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% else %}
+        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
 
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Próxima</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Próxima</span>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
+        {% if alunos.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ alunos.next_page_number }}" aria-label="Próximo">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&raquo;</span>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% else %}
+<p class="text-danger">Erro: A variável 'alunos' ou 'paginator' não foi passada para o template.</p>
 {% endif %}

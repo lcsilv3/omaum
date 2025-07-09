@@ -18,7 +18,31 @@
       "direitos",
       "reservados",
       "sair",
-      "fechar"
+      "fechar",
+      "viewsets",
+      "frequencias",
+      "presencas",
+      "relatorios",
+      "omaum",
+      "levelname",
+      "atribuicao",
+      "atribuicoes",
+      "elegivel",
+      "historico",
+      "iniciatico",
+      "instrucao",
+      "situacao",
+      "EXCLUIDO",
+      "SITUACAO",
+      "sanguineo",
+      "condicoes",
+      "profissao",
+      "imovel",
+      "servico",
+      "observacoes",
+      "Codigo",
+      "codigo",
+      "Historico"
     ],
     "ignorePaths": [
       "node_modules/**",
@@ -34,4 +58,3 @@
     ],
     "allowCompoundWords": true
   }
-  

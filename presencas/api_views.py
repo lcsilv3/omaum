@@ -1,3 +1,13 @@
+"""
+API Views para o aplicativo presencas.
+Views REST organizadas e seguindo padrões do projeto.
+"""
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.decorators import login_required
@@ -6,10 +16,105 @@ import json
 import logging
 from atividades.models import AtividadeAcademica
 from alunos.models import Aluno
-from presencas.models import Presenca
 
+from .models import Presenca, TotalAtividadeMes, ObservacaoPresenca
+from .serializers import PresencaSerializer, TotalAtividadeMesSerializer, ObservacaoPresencaSerializer
+from .services import (
+    listar_presencas,
+    buscar_presencas_por_filtros,
+    registrar_presenca,
+    registrar_presencas_multiplas,
+    atualizar_presenca,
+    excluir_presenca,
+    obter_presencas_por_aluno,
+    obter_presencas_por_turma,
+    calcular_frequencia_aluno,
+    criar_observacao_presenca,
+    registrar_total_atividade_mes
+)
+from .repositories import PresencaRepository, TotalAtividadeMesRepository, ObservacaoPresencaRepository
 
 logger = logging.getLogger(__name__)
+
+
+class PresencaViewSet(ModelViewSet):
+    """ViewSet para gerenciar presenças via API REST."""
+    
+    queryset = Presenca.objects.select_related("aluno", "turma", "atividade").all()
+    serializer_class = PresencaSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Customiza o queryset com filtros opcionais."""
+        queryset = self.queryset
+        
+        # Filtros via query parameters
+        aluno_cpf = self.request.query_params.get('aluno_cpf')
+        turma_id = self.request.query_params.get('turma_id')
+        atividade_id = self.request.query_params.get('atividade_id')
+        data_inicio = self.request.query_params.get('data_inicio')
+        data_fim = self.request.query_params.get('data_fim')
+        presente = self.request.query_params.get('presente')
+        
+        if aluno_cpf:
+            queryset = queryset.filter(aluno__cpf=aluno_cpf)
+        
+        if turma_id:
+            queryset = queryset.filter(turma_id=turma_id)
+        
+        if atividade_id:
+            queryset = queryset.filter(atividade_id=atividade_id)
+        
+        if data_inicio:
+            queryset = queryset.filter(data__gte=data_inicio)
+        
+        if data_fim:
+            queryset = queryset.filter(data__lte=data_fim)
+        
+        if presente is not None:
+            queryset = queryset.filter(presente=presente.lower() == 'true')
+        
+        return queryset.order_by('-data')
+    
+    @action(detail=False, methods=["get"], url_path="listar_presencas")
+    def listar_presencas_action(self, request):
+        """Lista todas as presenças."""
+        try:
+            tipo_presenca = request.query_params.get('tipo', 'todas')
+            presencas = listar_presencas(tipo_presenca)
+            
+            # Paginação
+            page = self.paginate_queryset(presencas)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            
+            serializer = self.get_serializer(presencas, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {"error": f"Erro ao listar presenças: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class TotalAtividadeMesViewSet(ModelViewSet):
+    """ViewSet para gerenciar totais de atividade por mês."""
+    
+    queryset = TotalAtividadeMes.objects.select_related("atividade", "turma").all()
+    serializer_class = TotalAtividadeMesSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class ObservacaoPresencaViewSet(ModelViewSet):
+    """ViewSet para gerenciar observações de presença."""
+    
+    queryset = ObservacaoPresenca.objects.select_related("aluno", "turma").all()
+    serializer_class = ObservacaoPresencaSerializer
+    permission_classes = [IsAuthenticated]
+
+
+# Mantendo as funções existentes para compatibilidade
 
 @login_required
 @require_POST
