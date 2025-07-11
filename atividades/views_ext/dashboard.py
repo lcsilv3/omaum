@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
 from importlib import import_module
 
-from ..models import AtividadeAcademica
+from ..models import Atividade
 
 @login_required
 def dashboard_atividades(request):
@@ -22,7 +22,7 @@ def dashboard_atividades(request):
     curso_id = request.GET.get("curso")
     turma_id = request.GET.get("turma")
 
-    atividades = AtividadeAcademica.objects.all()
+    atividades = Atividade.objects.all()
 
     if curso_id:
         atividades = atividades.filter(turma__curso_id=curso_id)

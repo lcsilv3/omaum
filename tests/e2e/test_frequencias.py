@@ -7,7 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from alunos.models import Aluno
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+from atividades.models import Atividade
 from frequencias.models import Frequencia, RegistroFrequencia
 from matriculas.models import Matricula
 import time
@@ -47,7 +47,7 @@ class FrequenciasE2ETestCase(StaticLiveServerTestCase):
         )
         
         # Criar uma atividade para os testes
-        self.atividade = AtividadeAcademica.objects.create(
+        self.atividade = Atividade.objects.create(
             nome="Atividade de Teste",
             descricao="Descrição da atividade",
             data_inicio=timezone.now(),

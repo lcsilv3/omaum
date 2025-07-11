@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from alunos.models import Aluno
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+from atividades.models import Atividade
 from frequencias.models import Frequencia, RegistroFrequencia
 from notas.models import Avaliacao, Nota
 from pagamentos.models import Pagamento, TipoPagamento
@@ -68,13 +68,14 @@ class PerformanceTestCase(TestCase):
         # Criar atividades
         self.atividades = []
         for i in range(20):
-            atividade = AtividadeAcademica.objects.create(
+            atividade = Atividade.objects.create(
                 nome=f"Atividade de Teste {i+1}",
                 descricao=f"Descrição da atividade {i+1}",
-                data_inicio=timezone.now() + datetime.timedelta(days=i),
+                data_inicio=timezone.now().date() + datetime.timedelta(days=i),
+                hora_inicio=timezone.now().time(),
                 responsavel="Professor Teste",
-                tipo_atividade=random.choice(["aula", "palestra", "workshop", "seminario", "outro"]),
-                status=random.choice(["agendada", "em_andamento", "concluida", "cancelada"])
+                tipo_atividade=random.choice(["AULA", "PALESTRA", "WORKSHOP", "SEMINARIO", "OUTRO"]),
+                status=random.choice(["PENDENTE", "CONFIRMADA", "REALIZADA", "CANCELADA"])
             )
             # Associar a atividade a turmas aleatórias
             for turma in random.sample(self.turmas, random.randint(1, 3)):

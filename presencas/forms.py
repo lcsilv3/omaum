@@ -5,7 +5,7 @@ from cursos.models import Curso
 from turmas.models import Turma
 from alunos.models import Aluno
 from matriculas.models import Matricula
-from atividades.models import PresencaAcademica
+# from atividades.models import PresencaAcademica  # Removido - modelo não existe mais
 from django.utils import timezone
 from django_select2.forms import Select2Widget
 
@@ -112,13 +112,13 @@ class AlunosPresencaForm(forms.Form):
                     widget=forms.TextInput(attrs={'placeholder': 'Justificativa da falta', 'class': 'form-control', 'aria-label': f'Justificativa {aluno.nome}'})
                 )
 
-class PresencaAcademicaForm(forms.ModelForm):
-    """
-    Formulário para criação/edição de PresencaAcademica.
-    """
-    class Meta:
-        model = PresencaAcademica
-        fields = [
-            'aluno', 'turma', 'atividade', 'data', 'presente',
-            'registrado_por', 'data_registro'
-        ]
+# class PresencaAcademicaForm(forms.ModelForm):
+#     """
+#     Formulário para criação/edição de PresencaAcademica.
+#     """
+#     class Meta:
+#         model = PresencaAcademica
+#         fields = [
+#             'aluno', 'turma', 'atividade', 'data', 'presente',
+#             'registrado_por', 'data_registro'
+#         ]

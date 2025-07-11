@@ -7,15 +7,13 @@ class ObservacaoPresencaAdmin(admin.ModelAdmin):
         'aluno',
         'turma',
         'data',
-        'atividade_academica',
-        'atividade_ritualistica',
+        'atividade',
         'registrado_por'
     )
     list_filter = (
         'turma',
         'data',
-        'atividade_academica',
-        'atividade_ritualistica'
+        'atividade'
     )
     search_fields = (
         'aluno__nome',
@@ -27,8 +25,8 @@ class ObservacaoPresencaAdmin(admin.ModelAdmin):
         ('Informações Básicas', {
             'fields': ('aluno', 'turma', 'data', 'registrado_por')
         }),
-        ('Atividades', {
-            'fields': ('atividade_academica', 'atividade_ritualistica')
+        ('Atividade', {
+            'fields': ('atividade',)
         }),
         ('Observação', {
             'fields': ('texto',)

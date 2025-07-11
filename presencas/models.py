@@ -13,27 +13,41 @@ class Presenca(models.Model):
     aluno = models.ForeignKey(
         'alunos.Aluno',
         on_delete=models.CASCADE,
-        verbose_name="Aluno"
+        verbose_name="Aluno",
+        related_name="presencas_detalhadas"
     )
     atividade = models.ForeignKey(
-        'atividades.AtividadeAcademica',
+        'atividades.Atividade',
         on_delete=models.CASCADE,
         verbose_name="Atividade",
         null=True,
-        blank=True
+        blank=True,
+        related_name="presencas_detalhadas"
     )
     turma = models.ForeignKey(
         'turmas.Turma',
         on_delete=models.CASCADE,
         verbose_name="Turma",
         null=True,
-        blank=True
+        blank=True,
+        related_name="presencas_detalhadas"
     )
     data = models.DateField(verbose_name="Data")
     presente = models.BooleanField(default=True, verbose_name="Presente")
-    justificativa = models.TextField(blank=True, null=True, verbose_name="Justificativa")
-    registrado_por = models.CharField(max_length=100, default="Sistema", verbose_name="Registrado por")
-    data_registro = models.DateTimeField(default=timezone.now, verbose_name="Data de registro")
+    justificativa = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Justificativa"
+    )
+    registrado_por = models.CharField(
+        max_length=100,
+        default="Sistema",
+        verbose_name="Registrado por"
+    )
+    data_registro = models.DateTimeField(
+        default=timezone.now,
+        verbose_name="Data de registro"
+    )
 
     class Meta:
         verbose_name = "Presença"
@@ -63,7 +77,11 @@ class TotalAtividadeMes(models.Model):
     """
     Modelo para totalização de atividades por mês em uma turma.
     """
-    atividade = models.ForeignKey('atividades.AtividadeAcademica', on_delete=models.CASCADE)
+    atividade = models.ForeignKey(
+        'atividades.Atividade',
+        on_delete=models.CASCADE,
+        related_name="totais_atividade_mes"
+    )
     turma = models.ForeignKey('turmas.Turma', on_delete=models.CASCADE)
     ano = models.IntegerField()
     mes = models.IntegerField()
@@ -97,23 +115,23 @@ class ObservacaoPresenca(models.Model):
         related_name="observacoes_presenca_presencas"
     )
     data = models.DateField(verbose_name="Data")
-    atividade_academica = models.ForeignKey(
-        'atividades.AtividadeAcademica',
+    atividade = models.ForeignKey(
+        'atividades.Atividade',
         on_delete=models.CASCADE,
         null=True, blank=True,
-        verbose_name="Atividade Acadêmica",
-        related_name="observacoes_presenca_presencas"
-    )
-    atividade_ritualistica = models.ForeignKey(
-        'atividades.AtividadeRitualistica',
-        on_delete=models.CASCADE,
-        null=True, blank=True,
-        verbose_name="Atividade Ritualística",
-        related_name="observacoes_presenca_presencas"
+        verbose_name="Atividade",
+        related_name="observacoes_presenca"
     )
     texto = models.TextField(verbose_name="Observação", blank=True, null=True)
-    registrado_por = models.CharField(max_length=100, default="Sistema", verbose_name="Registrado por")
-    data_registro = models.DateTimeField(default=timezone.now, verbose_name="Data de registro")
+    registrado_por = models.CharField(
+        max_length=100, 
+        default="Sistema", 
+        verbose_name="Registrado por"
+    )
+    data_registro = models.DateTimeField(
+        default=timezone.now, 
+        verbose_name="Data de registro"
+    )
 
     class Meta:
         verbose_name = "Observação de Presença"
@@ -121,4 +139,6 @@ class ObservacaoPresenca(models.Model):
         ordering = ["-data"]
 
     def __str__(self):
-        return f"{self.data} - {self.atividade_academica or self.atividade_ritualistica} - {self.texto[:30]}"
+        atividade_str = str(self.atividade) if self.atividade else "Sem atividade"
+        texto_trunc = self.texto[:30] if self.texto else "Sem observação"
+        return f"{self.data} - {atividade_str} - {texto_trunc}"

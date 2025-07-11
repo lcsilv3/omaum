@@ -21,4 +21,4 @@ class NotaAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.select_related("aluno", "disciplina")
+        return qs.select_related("aluno", "curso", "turma")

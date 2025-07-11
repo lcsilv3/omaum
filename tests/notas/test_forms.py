@@ -4,7 +4,7 @@ from notas.forms import AvaliacaoForm, NotaFormSet
 from notas.models import Avaliacao
 from alunos.services import criar_aluno
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+from atividades.models import Atividade
 from matriculas.models import Matricula
 
 class AvaliacaoFormTestCase(TestCase):
@@ -21,7 +21,7 @@ class AvaliacaoFormTestCase(TestCase):
         )
         
         # Criar uma atividade para os testes
-        self.atividade = AtividadeAcademica.objects.create(
+        self.atividade = Atividade.objects.create(
             nome="Atividade de Teste",
             descricao="Descrição da atividade",
             data_inicio=timezone.now(),
@@ -115,7 +115,7 @@ class NotaFormSetTestCase(TestCase):
         )
         
         # Criar uma atividade para os testes
-        self.atividade = AtividadeAcademica.objects.create(
+        self.atividade = Atividade.objects.create(
             nome="Atividade de Teste",
             descricao="Descrição da atividade",
             data_inicio=timezone.now(),

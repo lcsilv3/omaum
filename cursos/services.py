@@ -1,10 +1,36 @@
 from django.db import transaction
+from importlib import import_module
 from .models import Curso
-from turmas.models import Turma
-from atividades.models import AtividadeAcademica
-from notas.models import Nota
-from matriculas.models import Matricula
-from pagamentos.models import Pagamento
+
+
+def get_turma_model():
+    """Obtém o modelo Turma."""
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
+
+
+def get_atividade_model():
+    """Obtém o modelo Atividade."""
+    atividades_module = import_module("atividades.models")
+    return getattr(atividades_module, "Atividade")
+
+
+def get_nota_model():
+    """Obtém o modelo Nota."""
+    notas_module = import_module("notas.models")
+    return getattr(notas_module, "Nota")
+
+
+def get_matricula_model():
+    """Obtém o modelo Matricula."""
+    matriculas_module = import_module("matriculas.models")
+    return getattr(matriculas_module, "Matricula")
+
+
+def get_pagamento_model():
+    """Obtém o modelo Pagamento."""
+    pagamentos_module = import_module("pagamentos.models")
+    return getattr(pagamentos_module, "Pagamento")
 
 # --- Funções de Leitura (Read) ---
 
@@ -74,13 +100,25 @@ def verificar_dependencias_curso(curso):
     """
     Verifica e retorna um dicionário com todas as dependências de um curso.
     """
+    # Obter modelos dinamicamente
+    Turma = get_turma_model()
+    Atividade = get_atividade_model()
+    Nota = get_nota_model()
+    Matricula = get_matricula_model()
+    Pagamento = get_pagamento_model()
+    
     # Alunos matriculados em turmas deste curso
-    alunos_ids = Matricula.objects.filter(turma__curso=curso).values_list('aluno_id', flat=True)
+    alunos_ids = Matricula.objects.filter(
+        turma__curso=curso
+    ).values_list('aluno_id', flat=True)
+    
     dependencias = {
         'turmas': list(Turma.objects.filter(curso=curso)),
-        'atividades_academicas': list(AtividadeAcademica.objects.filter(curso=curso)),
+        'atividades': list(Atividade.objects.filter(curso=curso)),
         'notas': list(Nota.objects.filter(curso=curso)),
         'matriculas': list(Matricula.objects.filter(turma__curso=curso)),
-        'pagamentos': list(Pagamento.objects.filter(aluno_id__in=alunos_ids)),
+        'pagamentos': list(Pagamento.objects.filter(
+            aluno_id__in=alunos_ids
+        )),
     }
     return {key: value for key, value in dependencias.items() if value}

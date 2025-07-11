@@ -16,7 +16,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from atividades.models import PresencaAcademica, PresencaRitualistica, AtividadeAcademica, AtividadeRitualistica
+from atividades.models import Atividade
 from presencas.models import ObservacaoPresenca, TotalAtividadeMes
 from alunos.services import listar_alunos as listar_alunos_service, buscar_aluno_por_cpf as buscar_aluno_por_cpf_service
 from turmas.models import Turma

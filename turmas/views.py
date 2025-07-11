@@ -9,7 +9,7 @@ Padrão de Nomenclatura:
 """
 
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import csv
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -42,9 +42,9 @@ def get_matricula_model():
     """Obtém o modelo Matricula dinamicamente."""
     return get_model_dynamically("matriculas", "Matricula")
 
-def get_atividade_academica_model():
-    """Obtém o modelo AtividadeAcademica dinamicamente."""
-    return get_model_dynamically("atividades", "AtividadeAcademica")
+def get_atividade_model():
+    """Obtém o modelo Atividade dinamicamente."""
+    return get_model_dynamically("atividades", "Atividade")
 
 def get_frequencia_model():
     """Obtém o modelo Frequencia dinamicamente."""
@@ -265,13 +265,25 @@ def editar_turma(request, turma_id):
 def excluir_turma(request, id):
     Turma = get_models()
     turma = get_object_or_404(Turma, id=id)
-    from matriculas.models import Matricula
-    from atividades.models import AtividadeAcademica
-    from presencas.models import Presenca
-    from notas.models import Nota
-    from pagamentos.models import Pagamento
+    
+    # Obter modelos dinamicamente para evitar importações circulares
+    matriculas_module = importlib.import_module("matriculas.models")
+    Matricula = getattr(matriculas_module, "Matricula")
+    
+    atividades_module = importlib.import_module("atividades.models")
+    Atividade = getattr(atividades_module, "Atividade")
+    
+    presencas_module = importlib.import_module("presencas.models")
+    Presenca = getattr(presencas_module, "Presenca")
+    
+    notas_module = importlib.import_module("notas.models")
+    Nota = getattr(notas_module, "Nota")
+    
+    pagamentos_module = importlib.import_module("pagamentos.models")
+    Pagamento = getattr(pagamentos_module, "Pagamento")
+    
     matriculas = list(Matricula.objects.filter(turma=turma))
-    atividades = list(AtividadeAcademica.objects.filter(turmas=turma))
+    atividades = list(Atividade.objects.filter(turmas=turma))
     presencas = list(Presenca.objects.filter(turma=turma))
     notas = list(Nota.objects.filter(turma=turma))
     pagamentos = list(Pagamento.objects.filter(turma=turma))
@@ -523,8 +535,8 @@ def listar_atividades_turma(request, turma_id):
     turma = get_object_or_404(Turma, id=turma_id)
     
     try:
-        AtividadeAcademica = get_atividade_academica_model()
-        atividades = AtividadeAcademica.objects.filter(turma=turma).order_by('-data_inicio')
+        Atividade = get_atividade_model()
+        atividades = Atividade.objects.filter(turmas=turma).order_by('-data_inicio')
     except (ImportError, AttributeError):
         atividades = []
     
@@ -545,22 +557,22 @@ def adicionar_atividade_turma(request, turma_id):
     turma = get_object_or_404(Turma, id=turma_id)
     
     try:
-        # Importar o formulário AtividadeAcademicaForm dinamicamente
+        # Importar o formulário AtividadeForm dinamicamente
         from importlib import import_module
         forms_module = import_module("atividades.forms")
-        AtividadeAcademicaForm = getattr(forms_module, "AtividadeAcademicaForm")
+        AtividadeForm = getattr(forms_module, "AtividadeForm")
         
         if request.method == "POST":
-            form = AtividadeAcademicaForm(request.POST)
+            form = AtividadeForm(request.POST)
             if form.is_valid():
                 atividade = form.save(commit=False)
-                atividade.turma = turma
+                atividade.turmas.add(turma)
                 atividade.save()
                 messages.success(request, "Atividade adicionada com sucesso!")
                 return redirect("turmas:listar_atividades_turma", turma_id=turma_id)
         else:
             # Pré-selecionar a turma no formulário
-            form = AtividadeAcademicaForm(initial={"turma": turma})
+            form = AtividadeForm(initial={"turmas": [turma]})
         
         return render(
             request,
@@ -588,8 +600,10 @@ def registrar_frequencia_turma(request, turma_id):
         alunos = [matricula.aluno for matricula in matriculas]
         
         # Obter atividades da turma
-        AtividadeAcademica = get_atividade_academica_model()
-        atividades = AtividadeAcademica.objects.filter(turma=turma).order_by('-data_inicio')
+        Atividade = get_atividade_model()
+        atividades = Atividade.objects.filter(
+            turmas=turma
+        ).order_by('-data_inicio')
         
         if request.method == "POST":
             atividade_id = request.POST.get("atividade")
@@ -597,7 +611,7 @@ def registrar_frequencia_turma(request, turma_id):
                 messages.error(request, "Selecione uma atividade para registrar a frequência.")
                 return redirect("turmas:registrar_frequencia_turma", turma_id=turma_id)
             
-            atividade = get_object_or_404(AtividadeAcademica, id=atividade_id)
+            atividade = get_object_or_404(Atividade, id=atividade_id)
             presentes = request.POST.getlist("presentes")
             
             # Obter modelo de Frequencia
@@ -652,8 +666,10 @@ def relatorio_frequencia_turma(request, turma_id):
         Frequencia = get_frequencia_model()
         
         # Obter datas das atividades da turma
-        AtividadeAcademica = get_atividade_academica_model()
-        atividades = AtividadeAcademica.objects.filter(turma=turma).order_by('data_inicio')
+        Atividade = get_atividade_model()
+        atividades = Atividade.objects.filter(
+            turmas=turma
+        ).order_by('data_inicio')
         datas_atividades = [atividade.data_inicio.date() for atividade in atividades]
         
         # Preparar dados para o relatório

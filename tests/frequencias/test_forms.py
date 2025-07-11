@@ -3,7 +3,7 @@ from django.utils import timezone
 from frequencias.forms import FrequenciaForm, RegistroFrequenciaFormSet
 from alunos.services import criar_aluno
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+from atividades.models import Atividade
 from matriculas.models import Matricula
 
 class FrequenciaFormTestCase(TestCase):
@@ -20,7 +20,7 @@ class FrequenciaFormTestCase(TestCase):
         )
         
         # Criar uma atividade para os testes
-        self.atividade = AtividadeAcademica.objects.create(
+        self.atividade = Atividade.objects.create(
             nome="Atividade de Teste",
             descricao="Descrição da atividade",
             data_inicio=timezone.now(),

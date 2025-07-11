@@ -1,6 +1,6 @@
 # ...código existente...
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+from atividades.models import Atividade
 from alunos.models import Aluno
 from presencas.models import Presenca
 

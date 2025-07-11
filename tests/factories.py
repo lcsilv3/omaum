@@ -3,7 +3,7 @@ from factory.django import DjangoModelFactory
 from django.utils import timezone
 from alunos import services as aluno_service  # Alterado
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica, AtividadeRitualistica
+from atividades.models import Atividade
 from django.contrib.auth.models import User
 import random
 from datetime import timedelta
@@ -88,24 +88,27 @@ class TurmaFactory(DjangoModelFactory):
         self.save()
 
 
-class AtividadeAcademicaFactory(DjangoModelFactory):
-    """Factory para criar atividades acadêmicas."""
+class AtividadeFactory(DjangoModelFactory):
+    """Factory para criar atividades."""
 
     class Meta:
-        model = AtividadeAcademica
+        model = Atividade
 
-    nome = factory.Sequence(lambda n: f'Atividade Acadêmica {n}')
+    nome = factory.Sequence(lambda n: f'Atividade {n}')
     descricao = factory.Faker('paragraph')
     data_inicio = factory.LazyFunction(
-        lambda: timezone.now() + timedelta(days=random.randint(1, 30))
+        lambda: timezone.now().date() + timedelta(days=random.randint(1, 30))
+    )
+    hora_inicio = factory.LazyFunction(
+        lambda: timezone.now().time()
     )
     responsavel = factory.Faker('name')
     local = factory.Sequence(lambda n: f'Sala {n}')
     tipo_atividade = factory.Iterator(
-        ['aula', 'palestra', 'workshop', 'seminario', 'outro']
+        ['AULA', 'PALESTRA', 'WORKSHOP', 'SEMINARIO', 'OUTRO']
     )
     status = factory.Iterator(
-        ['agendada', 'em_andamento', 'concluida', 'cancelada']
+        ['PENDENTE', 'CONFIRMADA', 'REALIZADA', 'CANCELADA']
     )
 
     @factory.post_generation
@@ -135,48 +138,3 @@ class AtividadeAcademicaFactory(DjangoModelFactory):
         
         # Salvar as alterações
         self.save()
-
-
-class AtividadeRitualisticaFactory(DjangoModelFactory):
-    """Factory para criar atividades ritualísticas."""
-    
-    class Meta:
-        model = AtividadeRitualistica
-    
-    nome = factory.Sequence(lambda n: f'Ritual {n}')
-    descricao = factory.Faker('paragraph')
-    data = factory.LazyFunction(lambda: timezone.now().date() + timedelta(days=random.randint(1, 30)))
-    hora_inicio = factory.LazyFunction(lambda: f'{random.randint(18, 20)}:00')
-    hora_fim = factory.LazyFunction(lambda: f'{random.randint(21, 23)}:00')
-    local = factory.Iterator(['Templo Principal', 'Sala de Rituais', 'Salão Nobre'])
-    
-    @factory.post_generation
-    def turma(self, create, extracted, **kwargs):
-        if not create:
-            return
-        
-        if extracted:
-            # Usar a turma especificada
-            self.turma = extracted
-        else:
-            # Criar uma nova turma
-            self.turma = TurmaFactory.create()
-        
-        # Salvar as alterações
-        self.save()
-    
-    @factory.post_generation
-    def participantes(self, create, extracted, **kwargs):
-        if not create:
-            return
-        
-        if extracted:
-            # Adicionar participantes específicos
-            for aluno in extracted:
-                self.participantes.add(aluno)
-        else:
-            # Adicionar participantes aleatórios
-            alunos_count = random.randint(5, 15)
-            alunos = AlunoFactory.create_batch(alunos_count)
-            for aluno in alunos:
-                self.participantes.add(aluno)

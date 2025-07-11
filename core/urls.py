@@ -12,11 +12,14 @@ router.register(r'api/configuracoes', ConfiguracaoSistemaViewSet)
 router.register(r'api/logs', LogAtividadeViewSet)
 
 urlpatterns = [
+    # Página inicial
+    path('', views.pagina_inicial, name='pagina_inicial'),
+    
     # API URLs
-    path('', include(router.urls)),
+    path('api/', include(router.urls)),
     
     # Template URLs
-    path("inicio/", views.pagina_inicial, name="pagina_inicial"),
+    path("inicio/", views.pagina_inicial, name="pagina_inicial_alt"),
     
     # Adicione estas URLs se quiser manter as funcionalidades no template
     path('perfil/', views.perfil, name='perfil'),

@@ -5,7 +5,7 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.contrib.auth.models import User
 from alunos import services as aluno_service
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica, AtividadeRitualistica
+from atividades.models import Atividade
 from django.utils import timezone
 
 @pytest.fixture(scope='session')
@@ -70,7 +70,7 @@ def live_server_with_data(live_server):
     )
     
     # Criar algumas atividades
-    atividade1 = AtividadeAcademica.objects.create(
+    atividade1 = Atividade.objects.create(
         nome="Aula de Filosofia",
         descricao="Introdução à Filosofia",
         data_inicio=timezone.now(),
@@ -80,14 +80,13 @@ def live_server_with_data(live_server):
     )
     atividade1.turmas.add(turma1)
     
-    atividade2 = AtividadeRitualistica.objects.create(
+    atividade2 = Atividade.objects.create(
         nome="Ritual de Iniciação",
         descricao="Ritual para novos membros",
-        data=timezone.now().date(),
-        hora_inicio="19:00",
-        hora_fim="21:00",
-        local="Templo Principal",
-        turma=turma1
+        data_inicio=timezone.now().date(),
+        data_fim=timezone.now().date(),
+        responsavel="Teste",
+        local="Templo Principal"
     )
     
     return live_server

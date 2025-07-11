@@ -25,8 +25,7 @@ def get_models():
         alunos_module = import_module("alunos.models")
 
         return {
-            'AtividadeAcademica': getattr(atividades_module, "AtividadeAcademica"),
-            'AtividadeRitualistica': getattr(atividades_module, "AtividadeRitualistica"),
+            'Atividade': getattr(atividades_module, "Atividade"),
             'Curso': getattr(cursos_module, "Curso"),
             'Turma': getattr(turmas_module, "Turma"),
             'Aluno': getattr(alunos_module, "Aluno"),
@@ -36,8 +35,8 @@ def get_models():
         raise
 
 
-class AtividadeAcademicaFiltroForm(forms.Form):
-    """Filtro de atividades acadêmicas."""
+class AtividadeFiltroForm(forms.Form):
+    """Filtro de atividades."""
 
     q = forms.CharField(
         required=False,
@@ -80,22 +79,22 @@ class AtividadeAcademicaFiltroForm(forms.Form):
                     )
         except Exception as e:
             logger.error(
-                "Erro ao inicializar AtividadeAcademicaFiltroForm: %s", e
+                "Erro ao inicializar AtividadeFiltroForm: %s", e
             )
             self.fields['curso'].queryset = []
             self.fields['turma'].queryset = []
 
 
-def get_atividade_academica_model():
-    """Retorna o modelo AtividadeAcademica."""
-    return get_models()['AtividadeAcademica']
+def get_atividade_model():
+    """Retorna o modelo Atividade."""
+    return get_models()['Atividade']
 
 
-class AtividadeAcademicaForm(forms.ModelForm):
-    """Formulário para criação e edição de atividades acadêmicas."""
+class AtividadeForm(forms.ModelForm):
+    """Formulário para criação e edição de atividades."""
 
     class Meta:
-        model = get_atividade_academica_model()
+        model = get_atividade_model()
         fields = [
             'nome', 'descricao', 'tipo_atividade', 'data_inicio', 'data_fim',
             'hora_inicio', 'hora_fim', 'local', 'responsavel', 'status',
@@ -109,11 +108,11 @@ class AtividadeAcademicaForm(forms.ModelForm):
             'tipo_atividade': forms.Select(attrs={'class': 'form-select'}),
             'data_inicio': forms.DateInput(
                 attrs={'class': 'form-control', 'type': 'date'},
-                format='%Y-%m-%d'  # <-- Adicione isso
+                format='%Y-%m-%d'
             ),
             'data_fim': forms.DateInput(
                 attrs={'class': 'form-control', 'type': 'date'},
-                format='%Y-%m-%d'  # <-- Adicione isso
+                format='%Y-%m-%d'
             ),
             'hora_inicio': forms.TimeInput(
                 attrs={'class': 'form-control', 'type': 'time'}
@@ -168,78 +167,6 @@ class AtividadeAcademicaForm(forms.ModelForm):
         else:
             self.fields['turmas'].queryset = Turma.objects.none()
         self.fields['curso'].empty_label = "Selecione um curso"
-
-
-def get_atividade_ritualistica_model():
-    """Retorna o modelo AtividadeRitualistica."""
-    return get_models()['AtividadeRitualistica']
-
-
-class AtividadeRitualisticaForm(forms.ModelForm):
-    """Formulário para criação e edição de atividades ritualísticas."""
-
-    class Meta:
-        model = get_atividade_ritualistica_model()
-        fields = [
-            'nome', 'descricao', 'data', 'hora_inicio', 'hora_fim',
-            'local', 'responsavel', 'status', 'participantes', 'convocacao'
-        ]
-        widgets = {
-            'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'descricao': forms.Textarea(
-                attrs={'class': 'form-control', 'rows': 3}
-            ),
-            'data': forms.DateInput(
-                attrs={'class': 'form-control', 'type': 'date'}
-            ),
-            'hora_inicio': forms.TimeInput(
-                attrs={'class': 'form-control', 'type': 'time'}
-            ),
-            'hora_fim': forms.TimeInput(
-                attrs={'class': 'form-control', 'type': 'time'}
-            ),
-            'local': forms.TextInput(attrs={'class': 'form-control'}),
-            'responsavel': forms.TextInput(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
-            'participantes': forms.SelectMultiple(
-                attrs={'class': 'form-control'}
-            ),
-            'convocacao': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
-        labels = {
-            'nome': 'Nome da Atividade',
-            'descricao': 'Descrição',
-            'data': 'Data',
-            'hora_inicio': 'Hora de Início',
-            'hora_fim': 'Hora de Término',
-            'local': 'Local',
-            'responsavel': 'Responsável',
-            'status': 'Status',
-            'participantes': 'Participantes',
-            'convocacao': 'Convocação',
-        }
-        help_texts = {
-            'hora_fim': (
-                'Opcional. Se não informada, será considerada 1 hora após o início.'
-            ),
-            'participantes': (
-                'Selecione um ou mais participantes para esta atividade.'
-            ),
-        }
-
-    def clean(self):
-        """Valida o formulário de atividade ritualística."""
-        cleaned_data = super().clean()
-        hora_inicio = cleaned_data.get('hora_inicio')
-        hora_fim = cleaned_data.get('hora_fim')
-
-        if hora_inicio and hora_fim and hora_fim < hora_inicio:
-            self.add_error(
-                'hora_fim',
-                'A hora de término não pode ser anterior à hora de início.'
-            )
-
-        return cleaned_data
 
 
 def get_curso_queryset():

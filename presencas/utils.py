@@ -2,7 +2,7 @@ from datetime import date
 from presencas.models import Presenca
 from alunos.models import Aluno
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+from atividades.models import Atividade
 from matriculas.models import Matricula
 
 

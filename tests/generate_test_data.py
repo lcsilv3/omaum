@@ -9,7 +9,7 @@ django.setup()
 
 from tests.factories import (
     UserFactory, AlunoFactory, TurmaFactory,
-    AtividadeAcademicaFactory, AtividadeRitualisticaFactory
+    AtividadeFactory
 )
 from django.utils import timezone
 from matriculas.models import Matricula
@@ -54,7 +54,7 @@ def generate_test_data():
         # Selecionar turmas aleatórias
         turmas_selecionadas = random.sample(turmas, random.randint(1, 3))
         
-        AtividadeAcademicaFactory(turmas=turmas_selecionadas)
+        AtividadeFactory()
     
     # Criar atividades ritualísticas
     print("Criando atividades ritualísticas...")
@@ -71,15 +71,14 @@ def generate_test_data():
                     min(len(alunos_matriculados), random.randint(3, len(alunos_matriculados)))
                 )
                 
-                AtividadeRitualisticaFactory(turma=turma, participantes=participantes)
+                AtividadeFactory(turma=turma)
     
     print("Dados de teste gerados com sucesso!")
     print(f"- {len(users) + 1} usuários (incluindo admin)")
     print(f"- {len(alunos)} alunos")
     print(f"- {len(turmas)} turmas")
     print(f"- {Matricula.objects.count()} matrículas")
-    print(f"- {AtividadeAcademicaFactory._meta.model.objects.count()} atividades acadêmicas")
-    print(f"- {AtividadeRitualisticaFactory._meta.model.objects.count()} atividades ritualísticas")
+    print(f"- {AtividadeFactory._meta.model.objects.count()} atividades")
 
 if __name__ == "__main__":
-    generate_test_data()        alunos_matriculados = [m.aluno for m in Matricula.objects.filter(turma
+    generate_test_data()

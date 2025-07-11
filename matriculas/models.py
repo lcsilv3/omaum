@@ -1,7 +1,19 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 from django.utils.translation import gettext as _
+from importlib import import_module
+
+
+def get_aluno_model():
+    """Obtém o modelo Aluno."""
+    alunos_module = import_module("alunos.models")
+    return getattr(alunos_module, "Aluno")
+
+
+def get_turma_model():
+    """Obtém o modelo Turma."""
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
 
 
 class Matricula(models.Model):
@@ -41,7 +53,8 @@ class Matricula(models.Model):
             raise ValidationError(
                 {
                     "turma": _(
-                        "Não é possível matricular em uma turma inativa ou concluída."
+                        "Não é possível matricular em uma turma "
+                        "inativa ou concluída."
                     )
                 }
             )

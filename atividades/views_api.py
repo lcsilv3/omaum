@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from .models import AtividadeAcademica
+from .models import Atividade
 from cursos.models import Curso
 from turmas.models import Turma
 from django.db.models import Q
@@ -10,7 +10,7 @@ def api_filtrar_atividades(request):
     curso_id = request.GET.get('curso', '')
     turma_id = request.GET.get('turma', '')
 
-    atividades = AtividadeAcademica.objects.all()
+    atividades = Atividade.objects.all()
     if q:
         atividades = atividades.filter(Q(nome__icontains=q) | Q(descricao__icontains=q))
     if curso_id:

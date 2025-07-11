@@ -1,6 +1,6 @@
 from cursos.models import Curso
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+from atividades.models import Atividade
 
 print("Iniciando listagem de cursos, turmas e atividades...\n")
 
@@ -17,13 +17,15 @@ try:
             for turma in turmas:
                 print(f'  Turma: {turma.nome} (ID: {turma.id})')
                 try:
-                    atividades = AtividadeAcademica.objects.filter(turmas=turma)
+                    atividades = Atividade.objects.filter(turmas=turma)
                     if atividades.exists():
                         for atividade in atividades:
-                            print(f'    Atividade: {atividade.nome} (ID: {atividade.id})')
+                            print(f'    Atividade: {atividade.nome} '
+                                  f'(ID: {atividade.id})')
                     else:
                         print('    Nenhuma atividade para esta turma.')
                 except Exception as e:
-                    print(f'    Erro ao buscar atividades para a turma {turma.nome}: {e}')
+                    print(f'    Erro ao buscar atividades para a turma '
+                          f'{turma.nome}: {e}')
 except Exception as e:
     print(f'Erro geral ao buscar cursos/turmas/atividades: {e}')

@@ -1,8 +1,21 @@
 from django.db import models
 from django.utils import timezone
-from alunos.models import Aluno
-from cursos.models import Curso
-from turmas.models import Turma
+from importlib import import_module
+
+def get_aluno_model():
+    """Obtém o modelo Aluno."""
+    alunos_module = import_module("alunos.models")
+    return getattr(alunos_module, "Aluno")
+
+def get_curso_model():
+    """Obtém o modelo Curso."""
+    cursos_module = import_module("cursos.models")
+    return getattr(cursos_module, "Curso")
+
+def get_turma_model():
+    """Obtém o modelo Turma."""
+    turmas_module = import_module("turmas.models")
+    return getattr(turmas_module, "Turma")
 
 class Nota(models.Model):
     TIPO_AVALIACAO_CHOICES = [
@@ -15,10 +28,25 @@ class Nota(models.Model):
         ('outro', 'Outro'),
     ]
     
-    aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name='notas')
-    curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name='notas')
-    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, related_name='notas')
-    tipo_avaliacao = models.CharField(max_length=20, choices=TIPO_AVALIACAO_CHOICES)
+    aluno = models.ForeignKey(
+        'alunos.Aluno',
+        on_delete=models.CASCADE,
+        related_name='notas'
+    )
+    curso = models.ForeignKey(
+        'cursos.Curso',
+        on_delete=models.CASCADE,
+        related_name='notas'
+    )
+    turma = models.ForeignKey(
+        'turmas.Turma',
+        on_delete=models.CASCADE,
+        related_name='notas'
+    )
+    tipo_avaliacao = models.CharField(
+        max_length=20,
+        choices=TIPO_AVALIACAO_CHOICES
+    )
     valor = models.DecimalField(max_digits=5, decimal_places=2)
     peso = models.DecimalField(max_digits=3, decimal_places=1, default=1.0)
     data = models.DateField()
@@ -32,11 +60,14 @@ class Nota(models.Model):
         verbose_name = 'Nota'
         verbose_name_plural = 'Notas'
         ordering = ['-data', 'aluno__nome']
-        # Garantir que não haja notas duplicadas para o mesmo aluno/curso/turma/tipo
+        # Garantir que não haja notas duplicadas para o mesmo
+        # aluno/curso/turma/tipo
         unique_together = ['aluno', 'curso', 'turma', 'tipo_avaliacao', 'data']
     
     def __str__(self):
-        return f"Nota de {self.aluno} em {self.curso} ({self.get_tipo_avaliacao_display()}): {self.valor}"
+        tipo_display = self.get_tipo_avaliacao_display()
+        return f"Nota de {self.aluno} em {self.curso} " \
+               f"({tipo_display}): {self.valor}"
     
     @property
     def valor_ponderado(self):

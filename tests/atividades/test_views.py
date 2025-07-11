@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
-from atividades.models import AtividadeAcademica, AtividadeRitualistica
+from atividades.models import Atividade
 from turmas.models import Turma
 from django.utils import timezone
 
@@ -24,7 +24,7 @@ class AtividadesAcademicasViewsTestCase(TestCase):
         )
         
         # Criar algumas atividades para testes
-        self.atividade = AtividadeAcademica.objects.create(
+        self.atividade = Atividade.objects.create(
             nome="Aula de Filosofia",
             descricao="Introdução à Filosofia",
             data_inicio=timezone.now(),
@@ -113,7 +113,7 @@ class AtividadesAcademicasViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         
         # Verificar se a atividade foi criada no banco de dados
-        self.assertTrue(AtividadeAcademica.objects.filter(nome='Nova Aula de História').exists())
+        self.assertTrue(Atividade.objects.filter(nome='Nova Aula de História').exists())
         
         # Verificar se a mensagem de sucesso está na página
         self.assertContains(response, "Atividade acadêmica criada com sucesso")
@@ -137,14 +137,13 @@ class AtividadesRitualisticasViewsTestCase(TestCase):
         )
         
         # Criar algumas atividades para testes
-        self.atividade = AtividadeRitualistica.objects.create(
+        self.atividade = Atividade.objects.create(
             nome="Ritual de Iniciação",
             descricao="Ritual para novos membros",
-            data=timezone.now().date(),
-            hora_inicio="19:00",
-            hora_fim="21:00",
-            local="Templo Principal",
-            turma=self.turma
+            data_inicio=timezone.now().date(),
+            data_fim=timezone.now().date(),
+            responsavel="Teste",
+            local="Templo Principal"
         )
         
         # Cliente para fazer requisições

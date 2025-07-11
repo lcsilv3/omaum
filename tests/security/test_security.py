@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from alunos.models import Aluno
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+from atividades.models import Atividade
 from frequencias.models import Frequencia
 from notas.models import Avaliacao
 from pagamentos.models import Pagamento, TipoPagamento
@@ -58,10 +58,11 @@ class SecurityTestCase(TestCase):
             status="A"
         )
         
-        self.atividade = AtividadeAcademica.objects.create(
+        self.atividade = Atividade.objects.create(
             nome="Atividade de Teste",
             descricao="Descrição da atividade",
-            data_inicio=timezone.now(),
+            data_inicio=timezone.now().date(),
+            hora_inicio=timezone.now().time(),
             responsavel="Professor Teste",
             tipo_atividade="aula",
             status="agendada"
@@ -225,4 +226,3 @@ class SecurityTestCase(TestCase):
         # Verificar se o script foi escapado
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, xss_script)
-        self.assertContains(response, '<script>alert("XSS")</script>')            reverse('atividades:listar_atividades'),

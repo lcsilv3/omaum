@@ -1,11 +1,11 @@
 import pytest
-from atividades.forms import AtividadeAcademicaForm, AtividadeRitualisticaForm
+from atividades.forms import AtividadeForm
 from turmas.models import Turma
 from django.utils import timezone
 
 @pytest.mark.django_db
-class TestAtividadeAcademicaForm:
-    """Testes para o formulário de AtividadeAcademica."""
+class TestAtividadeForm:
+    """Testes para o formulário de Atividade."""
     
     def test_form_valido(self):
         """Testa se o formulário é válido com dados corretos."""
@@ -23,7 +23,7 @@ class TestAtividadeAcademicaForm:
             'turmas': [turma.id],
         }
         
-        form = AtividadeAcademicaForm(data=form_data)
+        form = AtividadeForm(data=form_data)
         assert form.is_valid(), f"Formulário inválido: {form.errors}"
     
     def test_form_invalido_campos_obrigatorios(self):
@@ -32,7 +32,7 @@ class TestAtividadeAcademicaForm:
             'descricao': 'Introdução à Filosofia',
         }
         
-        form = AtividadeAcademicaForm(data=form_data)
+        form = AtividadeForm(data=form_data)
         assert not form.is_valid()
         assert 'nome' in form.errors
         assert 'data_inicio' in form.errors
@@ -47,13 +47,13 @@ class TestAtividadeAcademicaForm:
             'status': 'agendada',
         }
         
-        form = AtividadeAcademicaForm(data=form_data)
+        form = AtividadeForm(data=form_data)
         assert not form.is_valid()
         assert 'data_fim' in form.errors
 
 @pytest.mark.django_db
-class TestAtividadeRitualisticaForm:
-    """Testes para o formulário de AtividadeRitualistica."""
+class TestAtividadeForm:
+    """Testes para o formulário de Atividade."""
     
     def test_form_valido(self):
         """Testa se o formulário é válido com dados corretos."""
@@ -69,7 +69,7 @@ class TestAtividadeRitualisticaForm:
             'turma': turma.id,
         }
         
-        form = AtividadeRitualisticaForm(data=form_data)
+        form = AtividadeForm(data=form_data)
         assert form.is_valid(), f"Formulário inválido: {form.errors}"
     
     def test_form_invalido_campos_obrigatorios(self):
@@ -78,7 +78,7 @@ class TestAtividadeRitualisticaForm:
             'descricao': 'Ritual para novos membros',
         }
         
-        form = AtividadeRitualisticaForm(data=form_data)
+        form = AtividadeForm(data=form_data)
         assert not form.is_valid()
         assert 'nome' in form.errors
         assert 'data' in form.errors
@@ -99,7 +99,7 @@ class TestAtividadeRitualisticaForm:
             'turma': turma.id,
         }
         
-        form = AtividadeRitualisticaForm(data=form_data)
+        form = AtividadeForm(data=form_data)
         assert not form.is_valid()
         assert 'hora_fim' in form.errors or '__all__' in form.errors
             'data_fim': (timezone.

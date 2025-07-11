@@ -5,7 +5,7 @@ from io import TextIOWrapper
 import csv
 import datetime
 
-from atividades.models import AtividadeAcademica, AtividadeRitualistica
+from atividades.models import Atividade
 from turmas.models import Turma
 from alunos.models import Aluno
 
@@ -43,7 +43,7 @@ def parse_time(time_str):
 
 @login_required
 def importar_atividades_academicas(request):
-    """Importa atividades acadêmicas a partir de um arquivo CSV."""
+    """Importa atividades a partir de um arquivo CSV."""
     if request.method == "POST" and request.FILES.get("csv_file"):
         csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
         reader = csv.DictReader(csv_file)
@@ -51,7 +51,7 @@ def importar_atividades_academicas(request):
         errors = []
         for row in reader:
             try:
-                atividade = AtividadeAcademica(
+                atividade = Atividade(
                     nome=row.get("Nome", "").strip(),
                     descricao=row.get("Descricao", "").strip(),
                     tipo_atividade=row.get("Tipo", "AULA").strip().upper(),
@@ -89,7 +89,7 @@ def importar_atividades_academicas(request):
 
 @login_required
 def importar_atividades_ritualisticas(request):
-    """Importa atividades ritualísticas a partir de um arquivo CSV."""
+    """Importa atividades a partir de um arquivo CSV (mantido para compatibilidade)."""
     if request.method == "POST" and request.FILES.get("csv_file"):
         csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
         reader = csv.DictReader(csv_file)
@@ -97,10 +97,11 @@ def importar_atividades_ritualisticas(request):
         errors = []
         for row in reader:
             try:
-                atividade = AtividadeRitualistica(
+                atividade = Atividade(
                     nome=row.get("Nome", "").strip(),
                     descricao=row.get("Descricao", "").strip(),
-                    data=parse_date(row.get("Data", "")),
+                    data_inicio=parse_date(row.get("Data", "")),
+                    data_fim=parse_date(row.get("Data", "")),  # Usar a mesma data para inicio e fim
                     hora_inicio=parse_time(row.get("Hora_Inicio", "")),
                     hora_fim=parse_time(row.get("Hora_Fim", "")),
                     local=row.get("Local", "").strip(),
@@ -109,16 +110,6 @@ def importar_atividades_ritualisticas(request):
                 )
                 atividade.full_clean()
                 atividade.save()
-                # Participantes (opcional)
-                participantes_str = row.get("Participantes", "").strip()
-                if participantes_str:
-                    cpfs = [p.strip() for p in participantes_str.split(",")]
-                    for cpf in cpfs:
-                        try:
-                            aluno = Aluno.objects.get(cpf=cpf)
-                            atividade.participantes.add(aluno)
-                        except Aluno.DoesNotExist:
-                            errors.append(f"Aluno com CPF {cpf} não encontrado para '{atividade.nome}'")
                 count += 1
             except Exception as e:
                 errors.append(f"Erro na linha {count+1}: {str(e)}")
@@ -128,5 +119,5 @@ def importar_atividades_ritualisticas(request):
                 messages.error(request, error)
         else:
             messages.success(request, f"{count} atividades importadas com sucesso!")
-        return redirect("atividades:listar_atividades_ritualisticas")
-    return render(request, "atividades/importar_atividades_ritualisticas.html")
+        return redirect("atividades:listar_atividades")
+    return render(request, "atividades/importar_atividades.html")

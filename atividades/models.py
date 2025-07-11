@@ -1,19 +1,21 @@
 from django.db import models
 from django.utils import timezone
 from importlib import import_module
-from django.utils.translation import gettext_lazy as _
+
 
 def get_aluno_model():
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
+
 def get_turma_model():
     turmas_module = import_module("turmas.models")
     return getattr(turmas_module, "Turma")
 
-class PresencaBase(models.Model):
+
+class Presenca(models.Model):
     """
-    Modelo abstrato para presenças (campos comuns).
+    Modelo para presenças em atividades.
     """
     aluno = models.ForeignKey(
         'alunos.Aluno',
@@ -25,60 +27,36 @@ class PresencaBase(models.Model):
         on_delete=models.CASCADE,
         verbose_name="Turma"
     )
+    atividade = models.ForeignKey(
+        'Atividade',
+        on_delete=models.CASCADE,
+        verbose_name="Atividade"
+    )
     data = models.DateField(verbose_name="Data")
     presente = models.BooleanField(default=True, verbose_name="Presente")
-    registrado_por = models.CharField(max_length=100, default="Sistema", verbose_name="Registrado por")
-    data_registro = models.DateTimeField(default=timezone.now, verbose_name="Data de registro")
+    registrado_por = models.CharField(
+        max_length=100,
+        default="Sistema",
+        verbose_name="Registrado por"
+    )
+    data_registro = models.DateTimeField(
+        default=timezone.now,
+        verbose_name="Data de registro"
+    )
 
     class Meta:
-        abstract = True
+        verbose_name = "Presença"
+        verbose_name_plural = "Presenças"
         ordering = ["-data", "aluno__nome"]
-
-class PresencaAcademica(PresencaBase):
-    """
-    Presença em atividades acadêmicas.
-    """
-    atividade = models.ForeignKey(
-        'AtividadeAcademica',
-        on_delete=models.CASCADE,
-        verbose_name="Atividade Acadêmica"
-    )
-
-    class Meta(PresencaBase.Meta):
-        verbose_name = "Presença Acadêmica"
-        verbose_name_plural = "Presenças Acadêmicas"
         unique_together = ["aluno", "turma", "atividade", "data"]
 
-class PresencaRitualistica(PresencaBase):
-    """
-    Presença em atividades ritualísticas.
-    """
-    atividade = models.ForeignKey(
-        'AtividadeRitualistica',
-        on_delete=models.CASCADE,
-        verbose_name="Atividade Ritualística"
-    )
+    def __str__(self):
+        return f"{self.aluno} - {self.atividade} - {self.data}"
 
-    class Meta(PresencaBase.Meta):
-        verbose_name = "Presença Ritualística"
-        verbose_name_plural = "Presenças Ritualísticas"
-        unique_together = ["aluno", "turma", "atividade", "data"]
-class AtividadeBase(models.Model):
-    TIPO_CHOICES = (
-        ('academica', 'Acadêmica'),
-        ('ritualistica', 'Ritualística'),
-    )
-    nome = models.CharField(max_length=255)
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='academica')
-    ativo = models.BooleanField(default=True, verbose_name="Ativo")
-    # ...outros campos comuns...
 
-    class Meta:
-        abstract = True
-
-class AtividadeAcademica(AtividadeBase):
+class Atividade(models.Model):
     """
-    Modelo para atividades acadêmicas como aulas, palestras, workshops, etc.
+    Modelo para atividades como aulas, palestras, workshops, etc.
     """
     TIPO_CHOICES = [
         ('AULA', 'Aula'),
@@ -138,52 +116,7 @@ class AtividadeAcademica(AtividadeBase):
         return self.nome
 
     class Meta:
-        verbose_name = 'Atividade Acadêmica'
-        verbose_name_plural = 'Atividades Acadêmicas'
+        verbose_name = 'Atividade'
+        verbose_name_plural = 'Atividades'
         ordering = ['-data_inicio', 'hora_inicio']
-
-
-class AtividadeRitualistica(AtividadeBase):
-    """
-    Modelo para atividades ritualísticas.
-    """
-    STATUS_CHOICES = [
-        ('PENDENTE', 'Pendente'),
-        ('CONFIRMADA', 'Confirmada'),
-        ('REALIZADA', 'Realizada'),
-        ('CANCELADA', 'Cancelada'),
-    ]
-
-    descricao = models.TextField(blank=True, null=True)
-    data = models.DateField()
-    hora_inicio = models.TimeField()
-    hora_fim = models.TimeField(blank=True, null=True)
-    local = models.CharField(max_length=100, blank=True, null=True)
-    responsavel = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='PENDENTE'
-    )
-    convocacao = models.BooleanField(default=False, verbose_name="Convocação")
-    turma = models.ForeignKey(
-        'turmas.Turma',
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='atividades_ritualisticas'
-    )
-    participantes = models.ManyToManyField(
-        'alunos.Aluno',
-        blank=True,
-        related_name='atividades_ritualisticas_participadas',
-        verbose_name=_("Participantes")
-    )
-    duracao_prevista = models.DurationField(blank=True, null=True)
-    ativo = models.BooleanField(default=True, verbose_name="Ativo")
-
-    class Meta:
-        verbose_name = "Atividade Ritualística"
-        verbose_name_plural = "Atividades Ritualísticas"
-        ordering = ['-data', 'hora_inicio']
 

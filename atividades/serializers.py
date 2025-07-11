@@ -5,7 +5,7 @@ Este módulo contém os serializers para a API REST das atividades.
 
 from rest_framework import serializers
 from importlib import import_module
-from .models import AtividadeAcademica, AtividadeRitualistica
+from .models import Atividade, Presenca
 
 
 def get_model_dynamically(app_name, model_name):
@@ -33,8 +33,8 @@ class TurmaSerializer(serializers.ModelSerializer):
         fields = ['id', 'nome', 'curso']
 
 
-class AtividadeAcademicaSerializer(serializers.ModelSerializer):
-    """Serializer para o modelo AtividadeAcademica."""
+class AtividadeSerializer(serializers.ModelSerializer):
+    """Serializer para o modelo Atividade."""
     
     curso = CursoSerializer(read_only=True)
     turmas = TurmaSerializer(many=True, read_only=True)
@@ -46,7 +46,7 @@ class AtividadeAcademicaSerializer(serializers.ModelSerializer):
     )
     
     class Meta:
-        model = AtividadeAcademica
+        model = Atividade
         fields = [
             'id', 'nome', 'descricao', 'tipo_atividade', 'data_inicio',
             'data_fim', 'hora_inicio', 'hora_fim', 'local', 'responsavel',
@@ -56,9 +56,9 @@ class AtividadeAcademicaSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
     
     def create(self, validated_data):
-        """Cria uma nova atividade acadêmica."""
+        """Cria uma nova atividade."""
         turmas_ids = validated_data.pop('turmas_ids', [])
-        atividade = AtividadeAcademica.objects.create(**validated_data)
+        atividade = Atividade.objects.create(**validated_data)
         
         if turmas_ids:
             Turma = get_model_dynamically('turmas', 'Turma')
@@ -68,7 +68,7 @@ class AtividadeAcademicaSerializer(serializers.ModelSerializer):
         return atividade
     
     def update(self, instance, validated_data):
-        """Atualiza uma atividade acadêmica."""
+        """Atualiza uma atividade."""
         turmas_ids = validated_data.pop('turmas_ids', None)
         
         for attr, value in validated_data.items():
@@ -83,64 +83,15 @@ class AtividadeAcademicaSerializer(serializers.ModelSerializer):
         return instance
 
 
-class AtividadeRitualisticaSerializer(serializers.ModelSerializer):
-    """Serializer para o modelo AtividadeRitualistica."""
-    
-    turma = TurmaSerializer(read_only=True)
-    participantes = serializers.StringRelatedField(many=True, read_only=True)
-    turma_id = serializers.IntegerField(write_only=True, required=False)
-    participantes_ids = serializers.ListField(
-        child=serializers.CharField(),
-        write_only=True,
-        required=False
-    )
-    
-    class Meta:
-        model = AtividadeRitualistica
-        fields = [
-            'id', 'nome', 'descricao', 'data', 'hora_inicio', 'hora_fim',
-            'local', 'responsavel', 'status', 'convocacao', 'ativo',
-            'turma', 'participantes', 'turma_id', 'participantes_ids',
-            'duracao_prevista'
-        ]
-    
-    def create(self, validated_data):
-        """Cria uma nova atividade ritualística."""
-        participantes_ids = validated_data.pop('participantes_ids', [])
-        atividade = AtividadeRitualistica.objects.create(**validated_data)
-        
-        if participantes_ids:
-            Aluno = get_model_dynamically('alunos', 'Aluno')
-            participantes = Aluno.objects.filter(cpf__in=participantes_ids)
-            atividade.participantes.set(participantes)
-        
-        return atividade
-    
-    def update(self, instance, validated_data):
-        """Atualiza uma atividade ritualística."""
-        participantes_ids = validated_data.pop('participantes_ids', None)
-        
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        
-        if participantes_ids is not None:
-            Aluno = get_model_dynamically('alunos', 'Aluno')
-            participantes = Aluno.objects.filter(cpf__in=participantes_ids)
-            instance.participantes.set(participantes)
-        
-        return instance
-
-
-class PresencaAcademicaSerializer(serializers.ModelSerializer):
-    """Serializer para o modelo PresencaAcademica."""
+class PresencaSerializer(serializers.ModelSerializer):
+    """Serializer para o modelo Presenca."""
     
     aluno = serializers.StringRelatedField(read_only=True)
     atividade = serializers.StringRelatedField(read_only=True)
     turma = serializers.StringRelatedField(read_only=True)
     
     class Meta:
-        model = get_model_dynamically('atividades', 'PresencaAcademica')
+        model = Presenca
         fields = [
             'id', 'aluno', 'atividade', 'turma', 'data', 'presente',
             'registrado_por', 'data_registro'
@@ -148,17 +99,25 @@ class PresencaAcademicaSerializer(serializers.ModelSerializer):
         read_only_fields = ['data_registro']
 
 
-class PresencaRitualisticaSerializer(serializers.ModelSerializer):
-    """Serializer para o modelo PresencaRitualistica."""
-    
-    aluno = serializers.StringRelatedField(read_only=True)
-    atividade = serializers.StringRelatedField(read_only=True)
-    turma = serializers.StringRelatedField(read_only=True)
+# Serializers para criação/atualização com IDs
+class AtividadeCreateSerializer(serializers.ModelSerializer):
+    """Serializer para criação de atividade."""
     
     class Meta:
-        model = get_model_dynamically('atividades', 'PresencaRitualistica')
+        model = Atividade
         fields = [
-            'id', 'aluno', 'atividade', 'turma', 'data', 'presente',
-            'registrado_por', 'data_registro'
+            'nome', 'descricao', 'tipo_atividade', 'data_inicio',
+            'data_fim', 'hora_inicio', 'hora_fim', 'local', 'responsavel',
+            'status', 'ativo', 'convocacao', 'curso'
         ]
-        read_only_fields = ['data_registro']
+
+
+class PresencaCreateSerializer(serializers.ModelSerializer):
+    """Serializer para criação de presença."""
+    
+    class Meta:
+        model = Presenca
+        fields = [
+            'aluno', 'atividade', 'turma', 'data', 'presente',
+            'registrado_por'
+        ]

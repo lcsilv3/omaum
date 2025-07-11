@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'relatorios',
     'turmas',
     # Third party apps
+    'rest_framework',
     'widget_tweaks',
     'django_select2',
     'debug_toolbar',

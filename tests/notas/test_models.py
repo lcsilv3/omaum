@@ -3,7 +3,7 @@ from django.utils import timezone
 from notas.models import Avaliacao, Nota
 from alunos.services import criar_aluno
 from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+from atividades.models import Atividade
 
 class AvaliacaoModelTestCase(TestCase):
     """Testes unitários para o modelo Avaliacao."""
@@ -19,7 +19,7 @@ class AvaliacaoModelTestCase(TestCase):
         )
         
         # Criar uma atividade para os testes
-        self.atividade = AtividadeAcademica.objects.create(
+        self.atividade = Atividade.objects.create(
             nome="Atividade de Teste",
             descricao="Descrição da atividade",
             data_inicio=timezone.now(),
@@ -66,7 +66,7 @@ class NotaModelTestCase(TestCase):
         )
         
         # Criar uma atividade para os testes
-        self.atividade = AtividadeAcademica.objects.create(
+        self.atividade = Atividade.objects.create(
             nome="Atividade de Teste",
             descricao="Descrição da atividade",
             data_inicio=timezone.now(),

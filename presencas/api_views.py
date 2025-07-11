@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 import json
 import logging
-from atividades.models import AtividadeAcademica
+from atividades.models import Atividade
 from alunos.models import Aluno
 
 from .models import Presenca, TotalAtividadeMes, ObservacaoPresenca
