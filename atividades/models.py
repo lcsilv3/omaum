@@ -120,3 +120,7 @@ class Atividade(models.Model):
         verbose_name_plural = 'Atividades'
         ordering = ['-data_inicio', 'hora_inicio']
 
+
+# Alias para compatibilidade após refatoramento
+AtividadeAcademica = Atividade
+

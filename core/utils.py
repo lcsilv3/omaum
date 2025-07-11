@@ -125,7 +125,7 @@ def garantir_configuracao_sistema():
         config, created = ConfiguracaoSistema.objects.get_or_create(
             id=1,
             defaults={
-                "nome_sistema": "OMAUM",
+                "nome_sistema": "Sistema de Gestão de Iniciados da OmAum",
                 "versao": "1.0.0",
                 "data_atualizacao": timezone.now(),
                 "manutencao_ativa": False,

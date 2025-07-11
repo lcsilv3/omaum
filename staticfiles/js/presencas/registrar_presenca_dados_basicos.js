@@ -63,4 +63,51 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+
+    // Ano/Mês
+    const mesAnoAtual = document.getElementById('mes-ano-atual');
+    const inputAno = document.getElementById('id_ano');
+    const inputMes = document.getElementById('id_mes');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+
+    function atualizarMesAno() {
+        const ano = parseInt(inputAno.value);
+        const mes = parseInt(inputMes.value);
+        const nomesMeses = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        mesAnoAtual.textContent = `${nomesMeses[mes - 1]} / ${ano}`;
+    }
+
+    if (mesAnoAtual && inputAno && inputMes) {
+        atualizarMesAno();
+
+        btnPrev.addEventListener('click', function () {
+            let ano = parseInt(inputAno.value);
+            let mes = parseInt(inputMes.value);
+            mes--;
+            if (mes < 1) {
+                mes = 12;
+                ano--;
+            }
+            inputAno.value = ano;
+            inputMes.value = mes;
+            atualizarMesAno();
+        });
+
+        btnNext.addEventListener('click', function () {
+            let ano = parseInt(inputAno.value);
+            let mes = parseInt(inputMes.value);
+            mes++;
+            if (mes > 12) {
+                mes = 1;
+                ano++;
+            }
+            inputAno.value = ano;
+            inputMes.value = mes;
+            atualizarMesAno();
+        });
+    }
 });

@@ -102,7 +102,7 @@ def criar_atividade_academica(request):
                     request,
                     "Atividade acadêmica criada com sucesso!"
                 )
-                return redirect("atividades:listar_atividades_academicas")
+                return redirect("atividades:listar_atividades")
             else:
                 messages.error(request, "Por favor, corrija os erros abaixo.")
         else:
@@ -121,7 +121,7 @@ def criar_atividade_academica(request):
             request,
             f"Ocorreu um erro ao criar a atividade: {str(e)}"
         )
-        return redirect("atividades:listar_atividades_academicas")
+        return redirect("atividades:listar_atividades")
 
 @login_required
 def editar_atividade_academica(request, id):
@@ -138,7 +138,7 @@ def editar_atividade_academica(request, id):
                     request,
                     "Atividade acadêmica atualizada com sucesso!"
                 )
-                return redirect("atividades:listar_atividades_academicas")
+                return redirect("atividades:listar_atividades")
             else:
                 messages.error(request, "Por favor, corrija os erros abaixo.")
         else:
@@ -157,7 +157,7 @@ def editar_atividade_academica(request, id):
             request,
             f"Ocorreu um erro ao editar a atividade: {str(e)}"
         )
-        return redirect("atividades:listar_atividades_academicas")
+        return redirect("atividades:listar_atividades")
 
 @login_required
 def detalhar_atividade_academica(request, id):
@@ -182,7 +182,7 @@ def detalhar_atividade_academica(request, id):
             request,
             f"Ocorreu um erro ao exibir os detalhes da atividade: {str(e)}"
         )
-        return redirect("atividades:listar_atividades_academicas")
+        return redirect("atividades:listar_atividades")
 
 @login_required
 def excluir_atividade_academica(request, id):
@@ -214,7 +214,7 @@ def excluir_atividade_academica(request, id):
                 request,
                 "Atividade acadêmica excluída com sucesso!"
             )
-            return redirect("atividades:listar_atividades_academicas")
+            return redirect("atividades:listar_atividades")
         return render(
             request,
             "atividades/academicas/excluir_atividade_academica.html",
@@ -229,7 +229,7 @@ def excluir_atividade_academica(request, id):
             request,
             f"Ocorreu um erro ao excluir a atividade: {str(e)}"
         )
-        return redirect("atividades:listar_atividades_academicas")
+        return redirect("atividades:listar_atividades")
 
 @login_required
 def confirmar_exclusao_academica(request, pk):
@@ -238,7 +238,7 @@ def confirmar_exclusao_academica(request, pk):
         atividade = get_object_or_404(AtividadeAcademica, pk=pk)
         return_url = request.GET.get(
             "return_url",
-            reverse("atividades:listar_atividades_academicas")
+            reverse("atividades:listar_atividades")
         )
         if request.method == "POST":
             try:
@@ -273,7 +273,7 @@ def confirmar_exclusao_academica(request, pk):
             request,
             f"Ocorreu um erro ao processar a solicitação: {str(e)}"
         )
-        return redirect("atividades:listar_atividades_academicas")
+        return redirect("atividades:listar_atividades")
 
 @login_required
 def copiar_atividade_academica(request, id):
@@ -289,7 +289,7 @@ def copiar_atividade_academica(request, id):
                 nova_atividade.save()
                 form.save_m2m()
                 messages.success(request, "Atividade copiada com sucesso!")
-                return redirect("atividades:listar_atividades_academicas")
+                return redirect("atividades:listar_atividades")
         else:
             # Pré-preenche o formulário com os dados da atividade original
             form = AtividadeAcademicaForm(instance=atividade_original)
@@ -313,7 +313,7 @@ def copiar_atividade_academica(request, id):
             request,
             f"Ocorreu um erro ao copiar a atividade: {str(e)}"
         )
-        return redirect("atividades:listar_atividades_academicas")
+        return redirect("atividades:listar_atividades")
     except ObjectDoesNotExist as e:
         logger.error(
             "Objeto não encontrado ao copiar atividade acadêmmica %s: %s",
@@ -325,7 +325,7 @@ def copiar_atividade_academica(request, id):
             request,
             f"Atividade acadêmica não encontrada: {str(e)}"
         )
-        return redirect("atividades:listar_atividades_academicas")
+        return redirect("atividades:listar_atividades")
 
 @login_required
 def alunos_por_turma(request, turma_id):

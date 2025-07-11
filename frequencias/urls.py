@@ -35,6 +35,7 @@ urlpatterns = [
     # Views principais seguindo o padrão do contrato
     path('', listar_frequencias, name='listar_frequencias'),
     path('criar/', criar_frequencia_mensal, name='criar_frequencia'),
+    path('criar-mensal/', criar_frequencia_mensal, name='criar_frequencia_mensal'),
     path('<int:frequencia_id>/editar/', editar_frequencia_mensal,
          name='editar_frequencia'),
     path('<int:frequencia_id>/excluir/', excluir_frequencia_mensal,

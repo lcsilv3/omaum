@@ -88,11 +88,8 @@
                                     Frequência e Presença
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="frequenciaDropdown">
-                                    <li><a class="dropdown-item" href="{% url 'atividades:listar_atividades_academicas' %}">Atividades Acadêmicas</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'atividades:listar_atividades_ritualisticas' %}">Atividades Ritualísticas</a></li>
-                                    <!-- Corrigido: usar uma view existente de presenças -->
-                                    <li><a class="dropdown-item" href="{% url 'presencas:listar_presencas_academicas' %}">Presenças Acadêmicas</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'presencas:listar_presencas_ritualisticas' %}">Presenças Ritualísticas</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'atividades:listar_atividades' %}">Atividades</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'presencas:listar_presencas_academicas' %}">Presenças</a></li>
                                     <li><a class="dropdown-item" href="{% url 'frequencias:listar_frequencias' %}">Frequências</a></li>
                                 </ul>
                             </li>

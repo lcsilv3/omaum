@@ -251,3 +251,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Dados para o gráfico mensal
         const meses = [{% for dado in dados_mensais %}'{{ dado.nome_mes }}',{% endfor %}];
+        // Template incompleto - adicionando fechamento básico
+    });
+</script>
+{% endblock %}

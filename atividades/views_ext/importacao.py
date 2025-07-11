@@ -84,7 +84,7 @@ def importar_atividades_academicas(request):
                 messages.error(request, error)
         else:
             messages.success(request, f"{count} atividades importadas com sucesso!")
-        return redirect("atividades:listar_atividades_academicas")
+        return redirect("atividades:listar_atividades")
     return render(request, "atividades/importar_atividades_academicas.html")
 
 @login_required

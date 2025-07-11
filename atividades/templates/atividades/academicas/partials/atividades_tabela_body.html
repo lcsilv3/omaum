@@ -26,9 +26,9 @@
                 {{ atividade.data_inicio|date:"d/m/Y" }}
             </td>
             <td>
-                <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-info btn-sm">Detalhes</a>
-                <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-warning btn-sm">Editar</a>
-                <a href="{% url 'atividades:excluir_atividade_academica' atividade.id %}" class="btn btn-danger btn-sm">Excluir</a>
+                <a href="{% url 'atividades:detalhar_atividade' atividade.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                <a href="{% url 'atividades:editar_atividade' atividade.id %}" class="btn btn-warning btn-sm">Editar</a>
+                <a href="{% url 'atividades:excluir_atividade' atividade.id %}" class="btn btn-danger btn-sm">Excluir</a>
             </td>
         </tr>
     {% endfor %}

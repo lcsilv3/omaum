@@ -202,25 +202,16 @@ def listar_alunos(query=None, curso_id=None):
     if curso_id:
         queryset = queryset.filter(matricula__turma__curso_id=curso_id).distinct()
 
-    paginator = Paginator(queryset, 10)  # 10 resultados por página
-    page_number = 1  # Página padrão
-    try:
-        page_number = int(query.get('page', 1))  # Obtém o número da página da query
-    except ValueError:
-        logger.warning("Número de página inválido, usando a página 1.")
-
-    page_obj = paginator.get_page(page_number)
-
     logger.debug(
-        "Query recebida: %s, Curso ID: %s, Resultados encontrados: %d, Página atual: %d, Total de páginas: %d",
+        "Query recebida: %s, Curso ID: %s, Resultados encontrados: %d",
         query,
         curso_id,
         queryset.count(),
-        page_number,
-        paginator.num_pages,
     )
 
-    return page_obj
+    # Retorna apenas o queryset, não o objeto paginado
+    # A paginação será feita na view
+    return queryset
 
 def buscar_aluno_por_cpf(cpf):
     """

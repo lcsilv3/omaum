@@ -23,24 +23,24 @@ from .views_ext.academicas import (
     api_get_turmas_por_curso,
     ajax_atividades_filtradas,
 )
-from .views_ext.ritualisticas import (
-    listar_atividades_ritualisticas,
-    criar_atividade_ritualistica,
-    editar_atividade_ritualistica,
-    detalhar_atividade_ritualistica,
-    excluir_atividade_ritualistica,
-)
+# Atividades ritualísticas foram removidas no refatoramento
 
 app_name = "atividades"
 
 urlpatterns = [
-    # Atividades (Acadêmicas - principal)
+    # Atividades (principal)
     path("", listar_atividades_academicas, name="listar_atividades"),
+    path("listar/", listar_atividades_academicas, name="listar_atividades_academicas"),
     path("criar/", criar_atividade_academica, name="criar_atividade"),
+    path("criar/", criar_atividade_academica, name="criar_atividade_academica"),
     path("<int:id>/editar/", editar_atividade_academica, name="editar_atividade"),
+    path("<int:id>/editar/", editar_atividade_academica, name="editar_atividade_academica"),
     path("<int:id>/detalhes/", detalhar_atividade_academica, name="detalhar_atividade"),
+    path("<int:id>/detalhes/", detalhar_atividade_academica, name="detalhar_atividade_academica"),
     path("<int:id>/excluir/", excluir_atividade_academica, name="excluir_atividade"),
+    path("<int:id>/excluir/", excluir_atividade_academica, name="excluir_atividade_academica"),
     path("<int:id>/copiar/", copiar_atividade_academica, name="copiar_atividade"),
+    path("<int:id>/copiar/", copiar_atividade_academica, name="copiar_atividade_academica"),
 
     # AJAX: turmas por curso (listagem)
     path("ajax/turmas-por-curso/", api_get_turmas_por_curso, name="ajax_turmas_por_curso"),

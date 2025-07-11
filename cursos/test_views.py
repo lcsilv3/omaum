@@ -23,7 +23,6 @@ class CursoViewTest(TestCase):
         self.curso = Curso.objects.create(
             nome="Curso de Teste",
             descricao="Descrição do curso de teste",
-            duracao=6,
         )
 
     def test_listar_cursos_view(self):

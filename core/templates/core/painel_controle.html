@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel de Controle{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Painel de Controle</h1>
+                <div>
+                    <a href="{% url 'core:configuracoes' %}" class="btn btn-primary">
+                        <i class="fas fa-cog"></i> Configurações
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        <h5>Erro no Sistema</h5>
+        <p>{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Estatísticas Rápidas -->
+        <div class="col-md-3 mb-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title">Total de Alunos</h6>
+                            <h4 class="mb-0">{{ total_alunos|default:0 }}</h4>
+                        </div>
+                        <div>
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title">Total de Cursos</h6>
+                            <h4 class="mb-0">{{ total_cursos|default:0 }}</h4>
+                        </div>
+                        <div>
+                            <i class="fas fa-book fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title">Total de Turmas</h6>
+                            <h4 class="mb-0">{{ total_turmas|default:0 }}</h4>
+                        </div>
+                        <div>
+                            <i class="fas fa-chalkboard fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title">Atividades Ativas</h6>
+                            <h4 class="mb-0">{{ atividades_ativas|default:0 }}</h4>
+                        </div>
+                        <div>
+                            <i class="fas fa-calendar fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Ações Rápidas -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Ações Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'alunos:listar_alunos' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users text-primary"></i> Gerenciar Alunos
+                        </a>
+                        <a href="{% url 'cursos:listar_cursos' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-book text-success"></i> Gerenciar Cursos
+                        </a>
+                        <a href="{% url 'turmas:listar_turmas' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-chalkboard text-info"></i> Gerenciar Turmas
+                        </a>
+                        <a href="{% url 'atividades:listar_atividades' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-calendar text-warning"></i> Gerenciar Atividades
+                        </a>
+                        <a href="{% url 'presencas:listar_presencas' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-clipboard-check text-secondary"></i> Controle de Presenças
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Atividades Recentes -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Atividade do Sistema</h5>
+                </div>
+                <div class="card-body">
+                    {% if logs_recentes %}
+                    <div class="list-group list-group-flush">
+                        {% for log in logs_recentes %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ log.acao }}</h6>
+                                <small>{{ log.data_criacao|timesince }} atrás</small>
+                            </div>
+                            <p class="mb-1">{{ log.detalhes|default:"Sem detalhes" }}</p>
+                            <small>Por: {{ log.usuario|default:"Sistema" }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Nenhuma atividade recente registrada.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

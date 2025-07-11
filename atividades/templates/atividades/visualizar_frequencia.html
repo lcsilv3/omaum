@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 {% block title %}Frequência - {{ atividade.nome }}{% endblock %}
 
 {% block content %}
@@ -7,7 +8,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Frequência: {{ atividade.nome }}</h1>
         <div>
-            <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-secondary me-2">Voltar</a>
+            <a href="{% url 'atividades:detalhar_atividade' atividade.id %}" class="btn btn-secondary me-2">Voltar</a>
             <a href="{% url 'atividades:registrar_frequencia_atividade' atividade.id %}" class="btn btn-primary">Registrar Nova Frequência</a>
         </div>
     </div>

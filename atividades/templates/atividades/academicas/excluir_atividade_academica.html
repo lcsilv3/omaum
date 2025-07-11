@@ -34,7 +34,7 @@
     <form method="post">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger" {% if dependencias.presencas or dependencias.observacoes %}disabled{% endif %}>Confirmar Exclusão</button>
-        <a href="{% url 'atividades:detalhar_atividade_academica' atividade.pk %}" class="btn btn-secondary">Cancelar</a>
+        <a href="{% url 'atividades:detalhar_atividade' atividade.pk %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}

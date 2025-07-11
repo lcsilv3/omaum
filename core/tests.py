@@ -6,19 +6,18 @@ from django.contrib.sessions.middleware import SessionMiddleware
 import importlib
 import time  # Importar o módulo time para adicionar atraso
 
-from .models import ConfiguracaoSistema, LogAtividade
-from .views import (
+from core.models import ConfiguracaoSistema, LogAtividade
+from core.views import (
     pagina_inicial,
-    entrar,
     painel_controle,
     atualizar_configuracao,
 )
-from .utils import (
+from core.utils import (
     registrar_log,
     adicionar_mensagem,
     garantir_configuracao_sistema,
 )
-from .middleware import manutencao_middleware
+from core.middleware import manutencao_middleware
 
 
 class ConfiguracaoSistemaTests(TestCase):
@@ -181,7 +180,7 @@ class ViewsTests(TestCase):
         """Testa a página inicial"""
         response = self.client.get(reverse("core:pagina_inicial"))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "omaum/omaum/templates/home.html")
+        self.assertTemplateUsed(response, "home_compact.html")
 
     def test_entrar_get(self):
         """Testa a página de login (GET)"""
@@ -216,9 +215,9 @@ class ViewsTests(TestCase):
         # Primeiro faz login
         self.client.login(username="testuser", password="testpassword")
 
-        # Depois faz logout
-        response = self.client.get(reverse("core:sair"))
-        self.assertRedirects(response, reverse("core:pagina_inicial"))
+        # Depois faz logout (POST é necessário para LogoutView)
+        response = self.client.post(reverse("core:sair"))
+        self.assertRedirects(response, "/")
 
         # Verifica se o usuário está deslogado
         response = self.client.get(reverse("core:painel_controle"))

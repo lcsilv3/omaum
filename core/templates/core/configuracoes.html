@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações do Sistema{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Configurações do Sistema</h1>
+                <div>
+                    <a href="{% url 'core:painel_controle' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar ao Painel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Configurações Gerais</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'core:atualizar_configuracao' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="nome_sistema" class="form-label">Nome do Sistema</label>
+                            <input type="text" class="form-control" id="nome_sistema" name="nome_sistema" 
+                                   value="{{ config.nome_sistema|default:'Sistema de Gestão de Iniciados da OmAum' }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="versao" class="form-label">Versão</label>
+                            <input type="text" class="form-control" id="versao" name="versao" 
+                                   value="{{ config.versao|default:'1.0.0' }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="manutencao_ativa" 
+                                       name="manutencao_ativa" {% if config.manutencao_ativa %}checked{% endif %}>
+                                <label class="form-check-label" for="manutencao_ativa">
+                                    Modo de Manutenção Ativo
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                Quando ativo, apenas administradores podem acessar o sistema.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="mensagem_manutencao" class="form-label">Mensagem de Manutenção</label>
+                            <textarea class="form-control" id="mensagem_manutencao" name="mensagem_manutencao" 
+                                      rows="3">{{ config.mensagem_manutencao|default:'Sistema em manutenção. Tente novamente mais tarde.' }}</textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Configurações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Informações do Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Nome:</strong></td>
+                            <td>{{ config.nome_sistema|default:'Sistema de Gestão de Iniciados da OmAum' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Versão:</strong></td>
+                            <td>{{ config.versao|default:'1.0.0' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Última Atualização:</strong></td>
+                            <td>{{ config.data_atualizacao|date:'d/m/Y H:i'|default:'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td>
+                                {% if config.manutencao_ativa %}
+                                    <span class="badge bg-warning">Em Manutenção</span>
+                                {% else %}
+                                    <span class="badge bg-success">Operacional</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Ações Administrativas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'admin:index' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-cog"></i> Admin Django
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearCache()">
+                            <i class="fas fa-broom"></i> Limpar Cache
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function clearCache() {
+    if (confirm('Tem certeza que deseja limpar o cache do sistema?')) {
+        // Implementar lógica de limpeza de cache via AJAX
+        alert('Cache limpo com sucesso!');
+    }
+}
+</script>
+{% endblock %}

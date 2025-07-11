@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Registrar Frequência</h1>
-        <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-secondary">Voltar</a>
+        <a href="{% url 'atividades:detalhar_atividade' atividade.id %}" class="btn btn-secondary">Voltar</a>
     </div>
     
     <div class="card mb-4">
@@ -112,7 +112,7 @@
         </div>
         
         <div class="d-flex justify-content-between mb-5">
-            <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-secondary">Cancelar</a>
+            <a href="{% url 'atividades:detalhar_atividade' atividade.id %}" class="btn btn-secondary">Cancelar</a>
             {% if alunos %}
                 <button type="submit" class="btn btn-primary">Registrar Frequência</button>
             {% endif %}

@@ -88,8 +88,8 @@
         </div>
     </div>
     <div class="mt-4">
-        <a href="{% url 'atividades:editar_atividade_academica' atividade.id %}" class="btn btn-primary">Editar</a>
-        <a href="{% url 'atividades:listar_atividades_academicas' %}" class="btn btn-secondary">Voltar para a lista</a>
+        <a href="{% url 'atividades:editar_atividade' atividade.id %}" class="btn btn-primary">Editar</a>
+        <a href="{% url 'atividades:listar_atividades' %}" class="btn btn-secondary">Voltar para a lista</a>
     </div>
 </div>
 {% endblock %}

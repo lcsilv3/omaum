@@ -76,6 +76,7 @@ class PresencaAcademicaTestCase(TestCase):
             "turma": self.turma.id,
             "data": timezone.now().date(),
             "presente": False,
+            "justificativa": "Teste de justificativa para ausência",
         }
         response = self.client.post(url, data)
         self.assertRedirects(response, reverse("presencas:listar_presencas"))
@@ -104,7 +105,7 @@ class PresencaAcademicaTestCase(TestCase):
 
     def test_permissoes_required(self):
         # Criar um usuário sem permissões
-        user_sem_permissao = User.objects.create_user(
+        User.objects.create_user(
             username="sempermissao", password="12345"
         )
         self.client.login(username="sempermissao", password="12345")

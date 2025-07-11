@@ -50,8 +50,7 @@
                 <div class="card-body p-2">
                     <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-calendar-alt text-pink"></i> Atividades</h6>
                     <p class="card-text" style="font-size:0.95rem;">Gerencie Atividades.</p>
-                    <a href="/atividades/academicas/" class="btn btn-pink btn-sm w-100 mb-1"><i class="fas fa-school"></i> Acadêmicas</a>
-                    <a href="/atividades/ritualisticas/" class="btn btn-outline-pink btn-sm w-100"><i class="fas fa-pray"></i> Ritualísticas</a>
+                    <a href="{% url 'atividades:listar_atividades' %}" class="btn btn-pink btn-sm w-100"><i class="fas fa-calendar-alt"></i> Atividades</a>
                 </div>
             </div>
         </div>
@@ -61,8 +60,7 @@
                 <div class="card-body p-2">
                     <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-clipboard-check text-secondary"></i> Presenças</h6>
                     <p class="card-text" style="font-size:0.95rem;">Controle de Presenças.</p>
-                    <a href="/presencas/academicas/" class="btn btn-secondary btn-sm w-100 mb-1"><i class="fas fa-clipboard-check"></i> Acadêmicas</a>
-                    <a href="/presencas/ritualisticas/" class="btn btn-outline-secondary btn-sm w-100"><i class="fas fa-clipboard-check"></i> Ritualísticas</a>
+                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary btn-sm w-100"><i class="fas fa-clipboard-check"></i> Presenças</a>
                 </div>
             </div>
         </div>
@@ -72,7 +70,7 @@
                 <div class="card-body p-2">
                     <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-check-square text-primary"></i> Frequências</h6>
                     <p class="card-text" style="font-size:0.95rem;">Registro de Frequências.</p>
-                    <a href="/frequencias/" class="btn btn-primary btn-sm w-100"><i class="fas fa-check-square"></i> Frequências</a>
+                    <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-primary btn-sm w-100"><i class="fas fa-check-square"></i> Frequências</a>
                 </div>
             </div>
         </div>
@@ -82,7 +80,7 @@
                 <div class="card-body p-2">
                     <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-star text-warning"></i> Notas</h6>
                     <p class="card-text" style="font-size:0.95rem;">Notas dos Alunos.</p>
-                    <a href="/notas/" class="btn btn-warning btn-sm w-100"><i class="fas fa-star"></i> Notas</a>
+                    <a href="{% url 'notas:listar_notas' %}" class="btn btn-warning btn-sm w-100"><i class="fas fa-star"></i> Notas</a>
                 </div>
             </div>
         </div>
@@ -92,7 +90,7 @@
                 <div class="card-body p-2">
                     <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-money-bill-wave text-success"></i> Pagamentos</h6>
                     <p class="card-text" style="font-size:0.95rem;">Pagamentos dos Alunos.</p>
-                    <a href="/pagamentos/" class="btn btn-success btn-sm w-100"><i class="fas fa-money-bill-wave"></i> Pagamentos</a>
+                    <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-success btn-sm w-100"><i class="fas fa-money-bill-wave"></i> Pagamentos</a>
                 </div>
             </div>
         </div>
@@ -102,7 +100,7 @@
                 <div class="card-body p-2">
                     <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-chart-bar text-secondary"></i> Relatórios</h6>
                     <p class="card-text" style="font-size:0.95rem;">Relatórios e Análises.</p>
-                    <a href="/relatorios/" class="btn btn-secondary btn-sm w-100"><i class="fas fa-chart-bar"></i> Relatórios</a>
+                    <a href="{% url 'relatorios:listar_relatorios' %}" class="btn btn-secondary btn-sm w-100"><i class="fas fa-chart-bar"></i> Relatórios</a>
                 </div>
             </div>
         </div>

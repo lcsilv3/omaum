@@ -14,6 +14,7 @@ router.register(r'api/logs', LogAtividadeViewSet)
 urlpatterns = [
     # Página inicial
     path('', views.pagina_inicial, name='pagina_inicial'),
+    path('home/', views.pagina_inicial, name='home'),
     
     # API URLs
     path('api/', include(router.urls)),
@@ -34,8 +35,10 @@ urlpatterns = [
     
     # Se você estiver usando as views de autenticação do Django
     path('sair/', auth_views.LogoutView.as_view(next_page='/'), name='sair'),
+    path('entrar/', auth_views.LoginView.as_view(template_name='core/login.html'), name='entrar'),
     
     path("painel-controle/", views.painel_controle, name="painel_controle"),
+    path("configuracoes/", views.configuracoes, name="configuracoes"),
     path(
         "atualizar-configuracao/",
         views.atualizar_configuracao,

@@ -142,3 +142,8 @@ class ObservacaoPresenca(models.Model):
         atividade_str = str(self.atividade) if self.atividade else "Sem atividade"
         texto_trunc = self.texto[:30] if self.texto else "Sem observação"
         return f"{self.data} - {atividade_str} - {texto_trunc}"
+
+
+# Aliases para compatibilidade após refatoramento
+PresencaAcademica = Presenca
+PresencaRitualistica = Presenca

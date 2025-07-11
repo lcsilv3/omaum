@@ -29,7 +29,6 @@ def get_forms():
     except (ImportError, AttributeError):
         return None
 
-@login_required
 def pagina_inicial(request):
     """Exibe a página inicial do sistema (versão compacta). Para voltar ao layout antigo, altere para 'home.html'."""
     try:
@@ -75,6 +74,11 @@ def registro_usuario(request):
 @login_required
 def painel_controle(request):
     """Exibe o painel de controle do sistema."""
+    # Verificar se o usuário tem permissão (é staff)
+    if not request.user.is_staff:
+        messages.error(request, "Você não tem permissão para acessar o painel de controle.")
+        return redirect('core:pagina_inicial')
+    
     try:
         # Obter estatísticas para o painel de controle
         Aluno = get_models()
@@ -121,6 +125,11 @@ def configuracoes(request):
 @login_required
 def atualizar_configuracao(request):
     """Atualiza as configurações do sistema."""
+    # Verificar se o usuário tem permissão (é staff)
+    if not request.user.is_staff:
+        messages.error(request, "Você não tem permissão para acessar as configurações.")
+        return redirect('core:pagina_inicial')
+    
     if request.method == 'POST':
         # Processar as configurações enviadas
         try:
@@ -138,13 +147,13 @@ def atualizar_configuracao(request):
                 pass
             
             messages.success(request, "Configurações atualizadas com sucesso!")
-            return redirect('core:configuracoes')
+            return redirect('core:painel_controle')
         except Exception as e:
             logger.error(f"Erro ao atualizar configurações: {str(e)}", exc_info=True)
             messages.error(request, f"Erro ao atualizar configurações: {str(e)}")
     
-    # Se não for POST ou se houver erro, redirecionar para a página de configurações
-    return redirect('core:configuracoes')
+    # Para GET, mostrar o formulário de atualização
+    return render(request, 'core/atualizar_configuracao.html')
 
 def csrf_check(request):
     """
