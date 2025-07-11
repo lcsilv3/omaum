@@ -35,7 +35,7 @@ urlpatterns = [
     
     # Se você estiver usando as views de autenticação do Django
     path('sair/', auth_views.LogoutView.as_view(next_page='/'), name='sair'),
-    path('entrar/', auth_views.LoginView.as_view(template_name='core/login.html'), name='entrar'),
+    path('entrar/', views.CustomLoginView.as_view(), name='entrar'),
     
     path("painel-controle/", views.painel_controle, name="painel_controle"),
     path("configuracoes/", views.configuracoes, name="configuracoes"),

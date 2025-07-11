@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User, Permission
 from django.urls import reverse
 from django.utils import timezone
+from datetime import date
 from .models import Relatorio
 from alunos.models import Aluno
 from turmas.models import Turma
@@ -27,7 +28,6 @@ class RelatorioTestCase(TestCase):
         # Criar objetos relacionados para os relatórios
         self.curso = Curso.objects.create(
             nome="Curso Teste",
-            codigo_curso="CUR001",
             descricao="Curso de teste"
         )
 
@@ -40,7 +40,8 @@ class RelatorioTestCase(TestCase):
         self.aluno = Aluno.objects.create(
             nome="Aluno Teste",
             cpf="12345678901",
-            email="aluno@teste.com"
+            email="aluno@teste.com",
+            data_nascimento=date(1990, 1, 1)
         )
 
         # Criar um relatório de teste

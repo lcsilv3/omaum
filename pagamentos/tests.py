@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
+from datetime import date
 from .models import Pagamento
 from alunos.models import Aluno
 from turmas.models import Turma
@@ -21,7 +22,6 @@ class PagamentoTestCase(TestCase):
         # Criar objetos relacionados
         self.curso = Curso.objects.create(
             nome="Curso Teste",
-            codigo_curso="CUR001",
             descricao="Curso de teste"
         )
 
@@ -34,15 +34,15 @@ class PagamentoTestCase(TestCase):
         self.aluno = Aluno.objects.create(
             nome="Aluno Teste",
             cpf="12345678901",
-            email="aluno@teste.com"
+            email="aluno@teste.com",
+            data_nascimento=date(1990, 1, 1)
         )
 
         # Criar um pagamento de teste
         self.pagamento = Pagamento.objects.create(
             aluno=self.aluno,
-            turma=self.turma,
             valor=Decimal('100.00'),
-            data_pagamento=timezone.now().date(),
+            data_vencimento=timezone.now().date(),
             status="PENDENTE"
         )
 
@@ -55,9 +55,8 @@ class PagamentoTestCase(TestCase):
         """Testar a criação de um novo pagamento"""
         data = {
             "aluno": self.aluno.id,
-            "turma": self.turma.id,
             "valor": Decimal('150.00'),
-            "data_pagamento": timezone.now().date(),
+            "data_vencimento": timezone.now().date(),
             "status": "PENDENTE"
         }
         response = self.client.post(reverse("pagamentos:criar_pagamento"), data)
@@ -83,7 +82,7 @@ class PagamentoTestCase(TestCase):
 
     def test_str_pagamento(self):
         """Testar a representação string do pagamento"""
-        expected_str = f"{self.aluno.nome} - {self.turma.nome}: R$ {self.pagamento.valor}"
+        expected_str = f"Pagamento de {self.aluno.nome} - R$ {self.pagamento.valor} ({self.pagamento.get_status_display()})"
         self.assertEqual(str(self.pagamento), expected_str)
 
     def test_pagamento_status(self):
@@ -107,8 +106,6 @@ class PagamentoTestCase(TestCase):
     def test_relacionamentos(self):
         """Testar os relacionamentos do pagamento"""
         self.assertEqual(self.pagamento.aluno, self.aluno)
-        self.assertEqual(self.pagamento.turma, self.turma)
-        self.assertEqual(self.pagamento.turma.curso, self.curso)
 
     def test_pagamento_validacao(self):
         """Testar validação do pagamento"""
@@ -116,8 +113,7 @@ class PagamentoTestCase(TestCase):
         with self.assertRaises(Exception):
             Pagamento.objects.create(
                 aluno=self.aluno,
-                turma=self.turma,
                 valor=Decimal('-50.00'),  # Valor negativo
-                data_pagamento=timezone.now().date(),
+                data_vencimento=timezone.now().date(),
                 status="PENDENTE"
             )

@@ -2,11 +2,11 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
+from datetime import date
 from .models import Nota
 from alunos.models import Aluno
 from turmas.models import Turma
 from cursos.models import Curso
-from atividades.models import Atividade
 from decimal import Decimal
 
 
@@ -22,7 +22,6 @@ class NotaTestCase(TestCase):
         # Criar objetos relacionados
         self.curso = Curso.objects.create(
             nome="Curso Teste",
-            codigo_curso="CUR001",
             descricao="Curso de teste"
         )
 
@@ -35,24 +34,18 @@ class NotaTestCase(TestCase):
         self.aluno = Aluno.objects.create(
             nome="Aluno Teste",
             cpf="12345678901",
-            email="aluno@teste.com"
-        )
-
-        self.atividade = Atividade.objects.create(
-            nome="Atividade Teste",
-            tipo_atividade="AULA",
-            data_inicio=timezone.now().date(),
-            hora_inicio="09:00",
-            status="CONFIRMADA"
+            email="aluno@teste.com",
+            data_nascimento=date(1990, 1, 1)
         )
 
         # Criar uma nota de teste
         self.nota = Nota.objects.create(
             aluno=self.aluno,
+            curso=self.curso,
             turma=self.turma,
-            atividade=self.atividade,
+            tipo_avaliacao="prova",
             valor=Decimal('8.5'),
-            data_avaliacao=timezone.now().date()
+            data=timezone.now().date()
         )
 
     def test_listar_notas(self):
@@ -64,10 +57,11 @@ class NotaTestCase(TestCase):
         """Testar a criação de uma nova nota"""
         data = {
             "aluno": self.aluno.id,
+            "curso": self.curso.id,
             "turma": self.turma.id,
-            "atividade": self.atividade.id,
+            "tipo_avaliacao": "trabalho",
             "valor": Decimal('9.0'),
-            "data_avaliacao": timezone.now().date()
+            "data": timezone.now().date()
         }
         response = self.client.post(reverse("notas:criar_nota"), data)
         self.assertEqual(response.status_code, 302)  # Redirecionamento após sucesso
@@ -92,7 +86,7 @@ class NotaTestCase(TestCase):
 
     def test_str_nota(self):
         """Testar a representação string da nota"""
-        expected_str = f"{self.aluno.nome} - {self.atividade.nome}: {self.nota.valor}"
+        expected_str = f"Nota de {self.aluno.nome} em {self.curso.nome} (Prova): {self.nota.valor}"
         self.assertEqual(str(self.nota), expected_str)
 
     def test_nota_valor(self):
@@ -108,7 +102,7 @@ class NotaTestCase(TestCase):
         """Testar os relacionamentos da nota"""
         self.assertEqual(self.nota.aluno, self.aluno)
         self.assertEqual(self.nota.turma, self.turma)
-        self.assertEqual(self.nota.atividade, self.atividade)
+        self.assertEqual(self.nota.curso, self.curso)
 
     def test_nota_validacao(self):
         """Testar validação da nota"""
@@ -116,8 +110,9 @@ class NotaTestCase(TestCase):
         with self.assertRaises(Exception):
             Nota.objects.create(
                 aluno=self.aluno,
+                curso=self.curso,
                 turma=self.turma,
-                atividade=self.atividade,
+                tipo_avaliacao="exame",
                 valor=Decimal('11.0'),  # Valor inválido
-                data_avaliacao=timezone.now().date()
+                data=timezone.now().date()
             )

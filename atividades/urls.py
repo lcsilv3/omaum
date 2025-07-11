@@ -81,6 +81,6 @@ urlpatterns = [
     path(
         "importar/",
         importacao.importar_atividades_academicas,
-        name="importar_atividades"
+        name="importar_atividades_academicas"
     ),
 ]

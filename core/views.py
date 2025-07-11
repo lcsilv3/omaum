@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -130,21 +131,19 @@ def atualizar_configuracao(request):
         messages.error(request, "Você não tem permissão para acessar as configurações.")
         return redirect('core:pagina_inicial')
     
+    # Obter configuração atual
+    from .utils import garantir_configuracao_sistema
+    config = garantir_configuracao_sistema()
+    
     if request.method == 'POST':
         # Processar as configurações enviadas
         try:
-            # Obter os dados do formulário
-            configuracoes = request.POST.dict()
-            
-            # Remover o token CSRF
-            if 'csrfmiddlewaretoken' in configuracoes:
-                del configuracoes['csrfmiddlewaretoken']
-            
-            # Salvar as configurações (exemplo simplificado)
-            for chave, valor in configuracoes.items():
-                # Aqui você implementaria a lógica para salvar cada configuração
-                # Por exemplo, usando um modelo de Configuração ou similar
-                pass
+            # Atualizar os campos da configuração
+            config.nome_sistema = request.POST.get('nome_sistema', config.nome_sistema)
+            config.versao = request.POST.get('versao', config.versao)
+            config.manutencao_ativa = 'manutencao_ativa' in request.POST
+            config.mensagem_manutencao = request.POST.get('mensagem_manutencao', config.mensagem_manutencao)
+            config.save()
             
             messages.success(request, "Configurações atualizadas com sucesso!")
             return redirect('core:painel_controle')
@@ -153,7 +152,7 @@ def atualizar_configuracao(request):
             messages.error(request, f"Erro ao atualizar configurações: {str(e)}")
     
     # Para GET, mostrar o formulário de atualização
-    return render(request, 'core/atualizar_configuracao.html')
+    return render(request, 'core/atualizar_configuracao.html', {'config': config})
 
 def csrf_check(request):
     """
@@ -265,5 +264,35 @@ def busca_global(request):
         except Exception as e:
             logger.error(f"Erro na busca global: {str(e)}", exc_info=True)
             return JsonResponse({"error": str(e)}, status=500)
+
+
+class CustomLoginView(LoginView):
+    """View customizada para login com sistema de logs."""
     
-    return JsonResponse(resultados, safe=False)
+    template_name = 'core/login.html'
+    
+    def form_valid(self, form):
+        """Processa o login válido e registra no log."""
+        response = super().form_valid(form)
+        
+        # Registrar no log após o login ser bem-sucedido
+        try:
+            from .utils import registrar_log
+            registrar_log(self.request, "Login realizado com sucesso", "INFO")
+        except Exception as e:
+            logger.error(f"Erro ao registrar log de login: {str(e)}")
+        
+        return response
+    
+    def form_invalid(self, form):
+        """Processa o login inválido e registra no log."""
+        response = super().form_invalid(form)
+        
+        # Registrar tentativa de login inválido
+        try:
+            from .utils import registrar_log
+            registrar_log(self.request, "Tentativa de login inválida", "AVISO")
+        except Exception as e:
+            logger.error(f"Erro ao registrar log de login inválido: {str(e)}")
+        
+        return response

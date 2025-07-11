@@ -2,11 +2,6 @@ from django.test import TestCase
 from alunos.models import Aluno
 from datetime import date, time
 from django.core.exceptions import ValidationError
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 
 
 class AlunoTest(TestCase):
@@ -91,8 +86,12 @@ class AlunoValidationTest(TestCase):
 
 
 class SeleniumTestCase(TestCase):
-    def setUp(self):
-        """Configurar o driver do Selenium com webdriver-manager"""
+    """Classe base para testes Selenium com configuração robusta."""
+    
+    @classmethod
+    def setUpClass(cls):
+        """Configurar o driver do Selenium com webdriver-manager - uma vez por classe."""
+        super().setUpClass()
         try:
             from selenium import webdriver
             from selenium.webdriver.chrome.service import Service
@@ -103,14 +102,39 @@ class SeleniumTestCase(TestCase):
             chrome_options.add_argument("--headless")  # Executar sem interface gráfica
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--disable-plugins")
+            chrome_options.add_argument("--disable-images")
+            chrome_options.add_argument("--disable-javascript")
             
             service = Service(ChromeDriverManager().install())
-            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            cls.driver = webdriver.Chrome(service=service, options=chrome_options)
+            cls.driver.implicitly_wait(10)  # Aguardar até 10 segundos por elementos
         except Exception as e:
-            # Se falhar, pular os testes Selenium
-            self.skipTest(f"Selenium não disponível: {str(e)}")
-
+            # Se falhar, definir driver como None
+            cls.driver = None
+            cls.skip_message = f"Selenium não disponível: {str(e)}"
+    
+    @classmethod
+    def tearDownClass(cls):
+        """Fechar o driver do Selenium - uma vez por classe."""
+        if hasattr(cls, 'driver') and cls.driver:
+            cls.driver.quit()
+        super().tearDownClass()
+    
+    def setUp(self):
+        """Verificar se o driver está disponível antes de cada teste."""
+        if not hasattr(self.__class__, 'driver') or self.__class__.driver is None:
+            self.skipTest(getattr(self.__class__, 'skip_message', "Selenium não configurado"))
+    
     def tearDown(self):
-        """Fechar o driver do Selenium"""
-        if hasattr(self, 'driver'):
-            self.driver.quit()
+        """Limpeza após cada teste."""
+        if hasattr(self.__class__, 'driver') and self.__class__.driver:
+            # Limpar cookies e voltar para página inicial
+            self.__class__.driver.delete_all_cookies()
+            try:
+                self.__class__.driver.get("about:blank")
+            except Exception:
+                pass  # Ignorar erros ao navegar para about:blank

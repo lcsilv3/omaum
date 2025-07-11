@@ -202,3 +202,27 @@ class FiltroAtividadesForm(forms.Form):
             attrs={"class": "form-control", "placeholder": "Buscar por nome ou descrição..."}
         )
     )
+
+
+class AtividadeAcademicaForm(forms.ModelForm):
+    """Formulário para atividades acadêmicas."""
+    
+    class Meta:
+        model = None  # Será definido dinamicamente
+        fields = ['nome', 'descricao', 'tipo_atividade', 'data_inicio', 'hora_inicio', 'local']
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'tipo_atividade': forms.Select(attrs={'class': 'form-select'}),
+            'data_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'hora_inicio': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'local': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        try:
+            models_dict = get_models()
+            self._meta.model = models_dict['Atividade']
+        except (ImportError, AttributeError):
+            pass

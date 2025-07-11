@@ -26,10 +26,32 @@ class PresencaAcademicaTestCase(TestCase):
         self.user.user_permissions.set(permissions)
 
         # Criar objetos necessários para os testes
-        self.aluno = Aluno.objects.create(
-            nome="Aluno Teste", cpf="12345678901"
+        from datetime import date
+        from importlib import import_module
+        
+        # Criar curso primeiro
+        cursos_module = import_module("cursos.models")
+        Curso = getattr(cursos_module, "Curso")
+        self.curso = Curso.objects.create(
+            nome="Curso Teste",
+            descricao="Curso para testes",
+            ativo=True
         )
-        self.turma = Turma.objects.create(nome="Turma Teste")
+        
+        self.aluno = Aluno.objects.create(
+            nome="Aluno Teste", 
+            cpf="12345678901",
+            email="aluno@teste.com",
+            data_nascimento=date(1990, 1, 1)
+        )
+        
+        self.turma = Turma.objects.create(
+            nome="Turma Teste",
+            curso=self.curso,
+            vagas=20,
+            data_inicio_ativ=date(2024, 1, 15),
+            ativo=True
+        )
         self.presenca = PresencaAcademica.objects.create(
             aluno=self.aluno,
             turma=self.turma,
@@ -41,7 +63,7 @@ class PresencaAcademicaTestCase(TestCase):
         self.client.login(username="testuser", password="12345")
         response = self.client.get(reverse("presencas:listar_presencas"))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "presencas/listar_presencas.html")
+        self.assertTemplateUsed(response, "presencas/academicas/listar_presencas_academicas.html")
         self.assertContains(response, self.aluno.nome)
 
     def test_registrar_presenca_view(self):

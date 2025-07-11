@@ -14,6 +14,7 @@ urlpatterns = [
     # URLs tradicionais seguindo o padrão do contrato
     path('', views_tradicionais.listar_matriculas, name='listar_matriculas'),
     path('criar/', views_tradicionais.criar_matricula, name='criar_matricula'),
+    path('realizar/', views_tradicionais.criar_matricula, name='realizar_matricula'),
     path('<int:matricula_id>/', views_tradicionais.detalhar_matricula,
          name='detalhar_matricula'),
     path('<int:matricula_id>/editar/', views_tradicionais.editar_matricula,

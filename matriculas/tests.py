@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
+from datetime import date
 from .models import Matricula
 from alunos.models import Aluno
 from turmas.models import Turma
@@ -20,7 +21,6 @@ class MatriculaTestCase(TestCase):
         # Criar objetos relacionados
         self.curso = Curso.objects.create(
             nome="Curso Teste",
-            codigo_curso="CUR001",
             descricao="Curso de teste"
         )
 
@@ -33,7 +33,8 @@ class MatriculaTestCase(TestCase):
         self.aluno = Aluno.objects.create(
             nome="Aluno Teste",
             cpf="12345678901",
-            email="aluno@teste.com"
+            email="aluno@teste.com",
+            data_nascimento=date(1990, 1, 1)
         )
 
         # Criar uma matrícula de teste
@@ -55,11 +56,12 @@ class MatriculaTestCase(TestCase):
         novo_aluno = Aluno.objects.create(
             nome="Novo Aluno",
             cpf="98765432100",
-            email="novo@aluno.com"
+            email="novo@aluno.com",
+            data_nascimento=date(1990, 1, 1)
         )
         
         data = {
-            "aluno": novo_aluno.id,
+            "aluno": novo_aluno.cpf,
             "turma": self.turma.id,
             "data_matricula": timezone.now().date(),
             "status": "A"  # Usar 'A' conforme o modelo
