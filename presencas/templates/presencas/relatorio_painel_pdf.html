@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Relatório do Painel de Estatísticas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #007bff;
+            margin: 0;
+        }
+        
+        .header p {
+            color: #666;
+            margin: 5px 0;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .metric-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-excelente { background-color: #d4edda; color: #155724; }
+        .status-bom { background-color: #d1ecf1; color: #0c5460; }
+        .status-regular { background-color: #fff3cd; color: #856404; }
+        .status-atencao { background-color: #f8d7da; color: #721c24; }
+        .status-critico { background-color: #f5c6cb; color: #721c24; }
+        
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        
+        .filters-info {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .filters-info h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .filter-item {
+            margin: 5px 0;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PAINEL de Estatísticas</h1>
+        <p>Sistema de Presenças - OMAUM</p>
+        <p>Relatório gerado em: {{ dados.relatorio.data_geracao|date:"d/m/Y H:i:s" }}</p>
+    </div>
+
+    <!-- Filtros Aplicados -->
+    <div class="section">
+        <div class="section-title">Filtros Aplicados</div>
+        <div class="filters-info">
+            <div class="filter-item">
+                <strong>Período:</strong> 
+                {% if dados.relatorio.filtros_aplicados.periodo_inicio %}
+                    {{ dados.relatorio.filtros_aplicados.periodo_inicio|date:"d/m/Y" }}
+                {% else %}
+                    Não especificado
+                {% endif %}
+                até 
+                {% if dados.relatorio.filtros_aplicados.periodo_fim %}
+                    {{ dados.relatorio.filtros_aplicados.periodo_fim|date:"d/m/Y" }}
+                {% else %}
+                    Não especificado
+                {% endif %}
+            </div>
+            {% if dados.relatorio.filtros_aplicados.turma_id %}
+            <div class="filter-item">
+                <strong>Turma:</strong> ID {{ dados.relatorio.filtros_aplicados.turma_id }}
+            </div>
+            {% endif %}
+            {% if dados.relatorio.filtros_aplicados.atividade_id %}
+            <div class="filter-item">
+                <strong>Atividade:</strong> ID {{ dados.relatorio.filtros_aplicados.atividade_id }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Métricas Principais -->
+    <div class="section">
+        <div class="section-title">Métricas Principais</div>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value">{{ dados.relatorio.metricas_principais.total_alunos }}</div>
+                <div class="metric-label">Total de Alunos</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ dados.relatorio.metricas_principais.total_turmas }}</div>
+                <div class="metric-label">Total de Turmas</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ dados.relatorio.metricas_principais.total_atividades }}</div>
+                <div class="metric-label">Total de Atividades</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ dados.relatorio.metricas_principais.percentual_presenca }}%</div>
+                <div class="metric-label">Percentual de Presenças</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ dados.relatorio.metricas_principais.total_convocacoes }}</div>
+                <div class="metric-label">Total de Convocações</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ dados.relatorio.metricas_principais.total_carencias }}</div>
+                <div class="metric-label">Total de Carências</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas Gerais -->
+    <div class="section">
+        <div class="section-title">Estatísticas Gerais</div>
+        <div class="table-container">
+            <table>
+                <tr>
+                    <th>Métrica</th>
+                    <th>Valor</th>
+                    <th>Descrição</th>
+                </tr>
+                <tr>
+                    <td>Total de Convocações</td>
+                    <td>{{ dados.relatorio.tabela_consolidada.estatisticas_gerais.total_convocacoes }}</td>
+                    <td>Soma de todas as convocações no período</td>
+                </tr>
+                <tr>
+                    <td>Total de Presenças</td>
+                    <td>{{ dados.relatorio.tabela_consolidada.estatisticas_gerais.total_presencas }}</td>
+                    <td>Soma de todas as presenças no período</td>
+                </tr>
+                <tr>
+                    <td>Percentual Médio</td>
+                    <td>{{ dados.relatorio.tabela_consolidada.estatisticas_gerais.percentual_medio }}%</td>
+                    <td>Percentual médio de presença de todos os alunos</td>
+                </tr>
+                <tr>
+                    <td>Total de Carências</td>
+                    <td>{{ dados.relatorio.tabela_consolidada.estatisticas_gerais.total_carencias }}</td>
+                    <td>Soma de todas as carências identificadas</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tabela Consolidada dos Alunos -->
+    <div class="section">
+        <div class="section-title">Dados Consolidados por Aluno</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>CPF</th>
+                        <th>Turma</th>
+                        <th>Convocações</th>
+                        <th>Presenças</th>
+                        <th>Faltas</th>
+                        <th>Percentual</th>
+                        <th>Carências</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for linha in dados.relatorio.tabela_consolidada.linhas %}
+                    <tr>
+                        <td>{{ linha.aluno.nome }}</td>
+                        <td>{{ linha.aluno.cpf }}</td>
+                        <td>{% if linha.turma %}{{ linha.turma.nome }}{% else %}-{% endif %}</td>
+                        <td>{{ linha.totais.convocacoes }}</td>
+                        <td>{{ linha.totais.presencas }}</td>
+                        <td>{{ linha.totais.faltas }}</td>
+                        <td>{{ linha.percentual_geral|floatformat:2 }}%</td>
+                        <td>{{ linha.totais.carencias }}</td>
+                        <td>
+                            <span class="status-badge status-{{ linha.status }}">
+                                {{ linha.status|title }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Resumo por Status -->
+    <div class="section">
+        <div class="section-title">Distribuição por Status</div>
+        <div class="table-container">
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Quantidade</th>
+                    <th>Percentual</th>
+                </tr>
+                {% with total_alunos=dados.relatorio.tabela_consolidada.total_alunos %}
+                {% with excelente=0 bom=0 regular=0 atencao=0 critico=0 %}
+                    {% for linha in dados.relatorio.tabela_consolidada.linhas %}
+                        {% if linha.status == 'excelente' %}
+                            {% with excelente=excelente|add:1 %}{% endwith %}
+                        {% elif linha.status == 'bom' %}
+                            {% with bom=bom|add:1 %}{% endwith %}
+                        {% elif linha.status == 'regular' %}
+                            {% with regular=regular|add:1 %}{% endwith %}
+                        {% elif linha.status == 'atencao' %}
+                            {% with atencao=atencao|add:1 %}{% endwith %}
+                        {% elif linha.status == 'critico' %}
+                            {% with critico=critico|add:1 %}{% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                    <tr>
+                        <td><span class="status-badge status-excelente">Excelente</span></td>
+                        <td>{{ excelente }}</td>
+                        <td>{% if total_alunos > 0 %}{{ excelente|mul:100|div:total_alunos|floatformat:1 }}%{% else %}0%{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-bom">Bom</span></td>
+                        <td>{{ bom }}</td>
+                        <td>{% if total_alunos > 0 %}{{ bom|mul:100|div:total_alunos|floatformat:1 }}%{% else %}0%{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-regular">Regular</span></td>
+                        <td>{{ regular }}</td>
+                        <td>{% if total_alunos > 0 %}{{ regular|mul:100|div:total_alunos|floatformat:1 }}%{% else %}0%{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-atencao">Atenção</span></td>
+                        <td>{{ atencao }}</td>
+                        <td>{% if total_alunos > 0 %}{{ atencao|mul:100|div:total_alunos|floatformat:1 }}%{% else %}0%{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-critico">Crítico</span></td>
+                        <td>{{ critico }}</td>
+                        <td>{% if total_alunos > 0 %}{{ critico|mul:100|div:total_alunos|floatformat:1 }}%{% else %}0%{% endif %}</td>
+                    </tr>
+                {% endwith %}
+                {% endwith %}
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>{{ dados.metadados.sistema }} - {{ dados.metadados.modulo }}</strong></p>
+        <p>Versão {{ dados.metadados.versao }} | Gerado automaticamente pelo sistema</p>
+    </div>
+</body>
+</html>

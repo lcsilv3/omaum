@@ -1,0 +1,723 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}PAINEL de Estatísticas - Sistema de Presenças{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
+<style>
+.metrics-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px 0 rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.metrics-card.success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.metrics-card.warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.metrics-card.danger {
+    background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%);
+}
+
+.metrics-card.info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.chart-container {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    position: relative;
+    min-height: 400px;
+}
+
+.chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #333;
+    text-align: center;
+}
+
+.filters-panel {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.1);
+}
+
+.btn-filter {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+}
+
+.btn-filter:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px 0 rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.loading-spinner {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+.loading-spinner.show {
+    display: block;
+}
+
+.export-buttons {
+    text-align: right;
+    margin-bottom: 1rem;
+}
+
+.btn-export {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    margin-left: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-export:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px 0 rgba(17, 153, 142, 0.4);
+    color: white;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-top: 0.5rem;
+}
+
+.chart-canvas {
+    max-height: 350px;
+}
+
+@media (max-width: 768px) {
+    .metrics-card {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+    }
+    
+    .chart-container {
+        padding: 1rem;
+    }
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-excelente { background-color: #d4edda; color: #155724; }
+.status-bom { background-color: #d1ecf1; color: #0c5460; }
+.status-regular { background-color: #fff3cd; color: #856404; }
+.status-atencao { background-color: #f8d7da; color: #721c24; }
+.status-critico { background-color: #f5c6cb; color: #721c24; }
+
+.auto-refresh {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho do Painel -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 text-center mb-0">
+                <i class="fas fa-chart-line text-primary"></i>
+                PAINEL de Estatísticas
+            </h1>
+            <p class="text-center text-muted">Visualização consolidada das presenças e performance</p>
+        </div>
+    </div>
+
+    <!-- Controle de Atualização Automática -->
+    <div class="auto-refresh">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+            <label class="form-check-label" for="autoRefresh">
+                <small>Auto-atualizar</small>
+            </label>
+        </div>
+        <div id="refreshTimer" class="text-center">
+            <small class="text-muted">Próxima: <span id="countdown">5:00</span></small>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-panel">
+        <form id="filtrosForm" method="get">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="periodo_inicio" class="form-label">Período Início</label>
+                    <input type="date" class="form-control" id="periodo_inicio" name="periodo_inicio" 
+                           value="{{ filtros_ativos.periodo_inicio|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="periodo_fim" class="form-label">Período Fim</label>
+                    <input type="date" class="form-control" id="periodo_fim" name="periodo_fim" 
+                           value="{{ filtros_ativos.periodo_fim|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="turma_id" class="form-label">Turma</label>
+                    <select class="form-select" id="turma_id" name="turma_id">
+                        <option value="">Todas as turmas</option>
+                        {% for turma in filtros_disponiveis.turmas %}
+                            <option value="{{ turma.id }}" 
+                                    {% if filtros_ativos.turma_id == turma.id %}selected{% endif %}>
+                                {{ turma.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="atividade_id" class="form-label">Atividade</label>
+                    <select class="form-select" id="atividade_id" name="atividade_id">
+                        <option value="">Todas as atividades</option>
+                        {% for atividade in filtros_disponiveis.atividades %}
+                            <option value="{{ atividade.id }}" 
+                                    {% if filtros_ativos.atividade_id == atividade.id %}selected{% endif %}>
+                                {{ atividade.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn btn-filter">
+                        <i class="fas fa-filter"></i> Aplicar Filtros
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="limparFiltros()">
+                        <i class="fas fa-times"></i> Limpar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Botões de Exportação -->
+    <div class="export-buttons">
+        <button class="btn btn-export" onclick="exportarRelatorio('csv')">
+            <i class="fas fa-file-csv"></i> CSV
+        </button>
+        <button class="btn btn-export" onclick="exportarRelatorio('json')">
+            <i class="fas fa-file-code"></i> JSON
+        </button>
+        <button class="btn btn-export" onclick="exportarRelatorio('pdf')">
+            <i class="fas fa-file-pdf"></i> PDF
+        </button>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+        <p class="mt-2">Atualizando dados...</p>
+    </div>
+
+    <!-- Métricas Principais -->
+    <div class="row" id="metricas-principais">
+        <div class="col-lg-3 col-md-6">
+            <div class="metrics-card success">
+                <div class="metric-value" id="total-alunos">{{ metricas_principais.total_alunos }}</div>
+                <div class="metric-label">
+                    <i class="fas fa-users"></i> Total de Alunos
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="metrics-card info">
+                <div class="metric-value" id="percentual-presenca">{{ metricas_principais.percentual_presenca }}%</div>
+                <div class="metric-label">
+                    <i class="fas fa-check-circle"></i> Percentual de Presenças
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="metrics-card warning">
+                <div class="metric-value" id="total-carencias">{{ metricas_principais.total_carencias }}</div>
+                <div class="metric-label">
+                    <i class="fas fa-exclamation-triangle"></i> Total de Carências
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="metrics-card danger">
+                <div class="metric-value" id="media-carencias">{{ metricas_principais.media_carencias }}</div>
+                <div class="metric-label">
+                    <i class="fas fa-calculator"></i> Média de Carências
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <!-- Distribuição de Presenças -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h3 class="chart-title">Distribuição de Performance</h3>
+                <canvas id="chartDistribuicao" class="chart-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Evolução Temporal -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h3 class="chart-title">Evolução Temporal</h3>
+                <canvas id="chartEvolucao" class="chart-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Ranking de Alunos -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h3 class="chart-title">Top 10 Alunos</h3>
+                <canvas id="chartRanking" class="chart-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Carências por Turma/Aluno -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h3 class="chart-title">Carências {% if filtros_ativos.turma_id %}por Aluno{% else %}por Turma{% endif %}</h3>
+                <canvas id="chartCarencias" class="chart-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Performance por Atividades -->
+        <div class="col-12">
+            <div class="chart-container">
+                <h3 class="chart-title">Performance por Atividades</h3>
+                <canvas id="chartPerformance" class="chart-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+// Variáveis globais
+let charts = {};
+let autoRefreshEnabled = true;
+let refreshInterval;
+let countdownInterval;
+let timeLeft = 300; // 5 minutos
+
+// Dados dos gráficos (do backend)
+const dadosGraficos = JSON.parse('{{ dados_graficos|escapejs }}');
+const configuracoesPanel = JSON.parse('{{ configuracoes_painel|escapejs }}');
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    setupAutoRefresh();
+    setupEventListeners();
+});
+
+function initializeCharts() {
+    // Gráfico de Distribuição (Donut)
+    const ctxDistribuicao = document.getElementById('chartDistribuicao').getContext('2d');
+    charts.distribuicao = new Chart(ctxDistribuicao, {
+        type: 'doughnut',
+        data: {
+            labels: dadosGraficos.distribuicao_presencas.labels,
+            datasets: [{
+                data: dadosGraficos.distribuicao_presencas.dados,
+                backgroundColor: dadosGraficos.distribuicao_presencas.cores,
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: configuracoesPanel.mostrar_animacoes
+            }
+        }
+    });
+
+    // Gráfico de Evolução Temporal (Linha)
+    const ctxEvolucao = document.getElementById('chartEvolucao').getContext('2d');
+    charts.evolucao = new Chart(ctxEvolucao, {
+        type: 'line',
+        data: {
+            labels: dadosGraficos.evolucao_temporal.labels,
+            datasets: dadosGraficos.evolucao_temporal.datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: configuracoesPanel.mostrar_animacoes ? 1000 : 0
+            }
+        }
+    });
+
+    // Gráfico de Ranking (Barras Horizontais)
+    const ctxRanking = document.getElementById('chartRanking').getContext('2d');
+    charts.ranking = new Chart(ctxRanking, {
+        type: 'bar',
+        data: {
+            labels: dadosGraficos.ranking_alunos.labels,
+            datasets: [{
+                label: 'Percentual de Presença',
+                data: dadosGraficos.ranking_alunos.dados,
+                backgroundColor: dadosGraficos.ranking_alunos.cores,
+                borderWidth: 1,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: configuracoesPanel.mostrar_animacoes ? 1000 : 0
+            }
+        }
+    });
+
+    // Gráfico de Carências (Barras)
+    const ctxCarencias = document.getElementById('chartCarencias').getContext('2d');
+    charts.carencias = new Chart(ctxCarencias, {
+        type: 'bar',
+        data: {
+            labels: dadosGraficos.carencias_por_turma.labels,
+            datasets: [{
+                label: 'Carências',
+                data: dadosGraficos.carencias_por_turma.dados,
+                backgroundColor: dadosGraficos.carencias_por_turma.cor,
+                borderWidth: 1,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            animation: {
+                duration: configuracoesPanel.mostrar_animacoes ? 1000 : 0
+            }
+        }
+    });
+
+    // Gráfico de Performance por Atividades (Radar)
+    const ctxPerformance = document.getElementById('chartPerformance').getContext('2d');
+    charts.performance = new Chart(ctxPerformance, {
+        type: 'radar',
+        data: {
+            labels: dadosGraficos.performance_atividades.labels,
+            datasets: [{
+                label: 'Percentual de Presença',
+                data: dadosGraficos.performance_atividades.dados,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgb(54, 162, 235)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgb(54, 162, 235)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(54, 162, 235)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: configuracoesPanel.mostrar_animacoes ? 1000 : 0
+            }
+        }
+    });
+}
+
+function setupAutoRefresh() {
+    const autoRefreshCheckbox = document.getElementById('autoRefresh');
+    
+    autoRefreshCheckbox.addEventListener('change', function() {
+        autoRefreshEnabled = this.checked;
+        
+        if (autoRefreshEnabled) {
+            startAutoRefresh();
+        } else {
+            stopAutoRefresh();
+        }
+    });
+    
+    if (autoRefreshEnabled) {
+        startAutoRefresh();
+    }
+}
+
+function startAutoRefresh() {
+    timeLeft = 300; // Reset para 5 minutos
+    
+    refreshInterval = setInterval(function() {
+        atualizarDados();
+        timeLeft = 300; // Reset após atualização
+    }, configuracoesPanel.intervalo_atualizacao);
+    
+    // Countdown
+    countdownInterval = setInterval(function() {
+        timeLeft--;
+        updateCountdown();
+        
+        if (timeLeft <= 0) {
+            timeLeft = 300;
+        }
+    }, 1000);
+}
+
+function stopAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+    document.getElementById('countdown').textContent = '--:--';
+}
+
+function updateCountdown() {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    const display = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    document.getElementById('countdown').textContent = display;
+}
+
+function setupEventListeners() {
+    // Formulário de filtros
+    document.getElementById('filtrosForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        atualizarDados();
+    });
+}
+
+function atualizarDados() {
+    mostrarLoading();
+    
+    const formData = new FormData(document.getElementById('filtrosForm'));
+    const params = new URLSearchParams(formData);
+    
+    // Atualizar métricas
+    fetch(`{% url 'presencas:painel_dados_ajax' %}?tipo=metricas&${params}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                atualizarMetricas(data.dados);
+            }
+        })
+        .catch(error => console.error('Erro ao atualizar métricas:', error));
+    
+    // Atualizar gráficos
+    const tiposGraficos = ['distribuicao', 'evolucao', 'ranking', 'carencias', 'performance'];
+    
+    tiposGraficos.forEach(tipo => {
+        fetch(`{% url 'presencas:painel_dados_ajax' %}?tipo=${tipo}&${params}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    atualizarGrafico(tipo, data.dados);
+                }
+            })
+            .catch(error => console.error(`Erro ao atualizar gráfico ${tipo}:`, error));
+    });
+    
+    setTimeout(() => {
+        esconderLoading();
+    }, 1000);
+}
+
+function atualizarMetricas(metricas) {
+    document.getElementById('total-alunos').textContent = metricas.total_alunos;
+    document.getElementById('percentual-presenca').textContent = metricas.percentual_presenca + '%';
+    document.getElementById('total-carencias').textContent = metricas.total_carencias;
+    document.getElementById('media-carencias').textContent = metricas.media_carencias;
+}
+
+function atualizarGrafico(tipo, dados) {
+    const chart = charts[tipo];
+    if (!chart) return;
+    
+    // Atualizar dados baseado no tipo de gráfico
+    if (tipo === 'distribuicao') {
+        chart.data.labels = dados.labels;
+        chart.data.datasets[0].data = dados.dados;
+        chart.data.datasets[0].backgroundColor = dados.cores;
+    } else if (tipo === 'evolucao') {
+        chart.data.labels = dados.labels;
+        chart.data.datasets = dados.datasets;
+    } else if (tipo === 'ranking') {
+        chart.data.labels = dados.labels;
+        chart.data.datasets[0].data = dados.dados;
+        chart.data.datasets[0].backgroundColor = dados.cores;
+    } else if (tipo === 'carencias') {
+        chart.data.labels = dados.labels;
+        chart.data.datasets[0].data = dados.dados;
+    } else if (tipo === 'performance') {
+        chart.data.labels = dados.labels;
+        chart.data.datasets[0].data = dados.dados;
+    }
+    
+    chart.update();
+}
+
+function mostrarLoading() {
+    document.getElementById('loadingSpinner').classList.add('show');
+}
+
+function esconderLoading() {
+    document.getElementById('loadingSpinner').classList.remove('show');
+}
+
+function limparFiltros() {
+    document.getElementById('filtrosForm').reset();
+    atualizarDados();
+}
+
+function exportarRelatorio(formato) {
+    const formData = new FormData(document.getElementById('filtrosForm'));
+    const params = new URLSearchParams(formData);
+    params.append('formato', formato);
+    
+    const url = `{% url 'presencas:exportar_relatorio_painel' %}?${params}`;
+    window.open(url, '_blank');
+}
+
+// Redimensionar gráficos quando a janela for redimensionada
+window.addEventListener('resize', function() {
+    Object.values(charts).forEach(chart => {
+        chart.resize();
+    });
+});
+</script>
+{% endblock %}

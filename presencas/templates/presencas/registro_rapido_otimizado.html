@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Registro Rápido de Presenças{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="{% static 'presencas/css/registro_rapido.css' %}" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<div class="presenca-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-check-circle"></i> Registro Rápido de Presenças</h1>
+        <button type="button" class="btn btn-outline-info btn-sm" onclick="toggleKeyboardShortcuts()">
+            <i class="fas fa-keyboard"></i> Atalhos
+        </button>
+    </div>
+    
+    <!-- Formulário Principal -->
+    <div class="form-card">
+        <h3><i class="fas fa-cog"></i> Configurações</h3>
+        <form id="configForm">
+            <div class="quick-filters">
+                <div class="form-group">
+                    <label for="turma"><strong>Turma *</strong></label>
+                    <select id="turma" name="turma" class="form-control" required>
+                        <option value="">Selecione uma turma</option>
+                        {% for turma in turmas %}
+                        <option value="{{ turma.id }}">{{ turma.nome }} - {{ turma.curso.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="atividade"><strong>Atividade *</strong></label>
+                    <select id="atividade" name="atividade" class="form-control" required>
+                        <option value="">Selecione uma atividade</option>
+                        {% for atividade in atividades %}
+                        <option value="{{ atividade.id }}">{{ atividade.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="data"><strong>Data *</strong></label>
+                    <input type="date" id="data" name="data" class="form-control" 
+                           value="{{ data_hoje|date:'Y-m-d' }}" required>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button type="button" class="btn btn-primary" onclick="carregarAlunosTurma()">
+                    <i class="fas fa-users"></i> Carregar Alunos da Turma
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Busca Rápida -->
+    <div class="form-card" id="buscaSection" style="display: none;">
+        <h3><i class="fas fa-search"></i> Busca Rápida de Aluno</h3>
+        <div class="search-container">
+            <input type="text" id="buscaAluno" class="search-input" 
+                   placeholder="Digite nome ou CPF do aluno (mín. 2 caracteres)...">
+        </div>
+        <div id="resultadosBusca"></div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="stats-bar" id="statsBar" style="display: none;">
+        <div class="stat-item">
+            <span class="stat-number" id="totalAlunos">0</span>
+            <span class="stat-label">Total</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number" id="totalPresentes">0</span>
+            <span class="stat-label">Presentes</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number" id="totalAusentes">0</span>
+            <span class="stat-label">Ausentes</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number" id="totalPendentes">0</span>
+            <span class="stat-label">Pendentes</span>
+        </div>
+    </div>
+    
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Carregando alunos...</p>
+    </div>
+    
+    <!-- Lista de Alunos -->
+    <div id="alunosContainer" style="display: none;">
+        <div class="form-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3><i class="fas fa-users"></i> Alunos da Turma</h3>
+                <div>
+                    <button type="button" class="btn btn-success btn-sm" onclick="marcarTodosPresente()">
+                        <i class="fas fa-check-circle"></i> Todos Presentes
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="marcarTodosAusente()">
+                        <i class="fas fa-times-circle"></i> Todos Ausentes
+                    </button>
+                </div>
+            </div>
+            
+            <div class="alunos-grid" id="alunosGrid">
+                <!-- Alunos serão carregados aqui via AJAX -->
+            </div>
+            
+            <div class="action-buttons">
+                <button type="button" class="btn btn-success" onclick="salvarPresencas()">
+                    <i class="fas fa-save"></i> Salvar Presenças
+                </button>
+                <button type="button" class="btn btn-warning" onclick="limparSelecoes()">
+                    <i class="fas fa-eraser"></i> Limpar Seleções
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Atalhos do Teclado -->
+<div class="keyboard-shortcuts" id="keyboardShortcuts">
+    <strong>Atalhos do Teclado:</strong><br>
+    <kbd>Ctrl</kbd> + <kbd>A</kbd> - Todos Presentes<br>
+    <kbd>Ctrl</kbd> + <kbd>D</kbd> - Todos Ausentes<br>
+    <kbd>Ctrl</kbd> + <kbd>S</kbd> - Salvar<br>
+    <kbd>Ctrl</kbd> + <kbd>L</kbd> - Limpar<br>
+    <kbd>Esc</kbd> - Fechar Atalhos
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'presencas/js/registro_rapido.js' %}"></script>
+<script>
+// Script de inicialização - funcionalidade principal está em registro_rapido.js
+$(document).ready(function() {
+    // Inicializar Select2
+    $('#turma, #atividade').select2({
+        theme: 'default',
+        width: '100%'
+    });
+});
+</script>
+{% endblock %}

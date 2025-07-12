@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Filtros Avançados - Consolidado{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-filter"></i> Filtros Avançados
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="filtros-form">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="curso_id" class="form-label">Curso</label>
+                                <select name="curso_id" id="curso_id" class="form-select">
+                                    <option value="">Todos os cursos</option>
+                                    {% for curso in cursos %}
+                                    <option value="{{ curso.id }}">{{ curso.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="turma_id" class="form-label">Turma</label>
+                                <select name="turma_id" id="turma_id" class="form-select">
+                                    <option value="">Todas as turmas</option>
+                                    {% for turma in turmas %}
+                                    <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="atividade_id" class="form-label">Atividade</label>
+                                <select name="atividade_id" id="atividade_id" class="form-select">
+                                    <option value="">Todas as atividades</option>
+                                    {% for atividade in atividades %}
+                                    <option value="{{ atividade.id }}">{{ atividade.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="aluno_nome" class="form-label">Nome do Aluno</label>
+                                <input type="text" name="aluno_nome" id="aluno_nome" class="form-control" 
+                                       placeholder="Digite o nome do aluno">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="periodo_inicio" class="form-label">Período Início</label>
+                                <input type="date" name="periodo_inicio" id="periodo_inicio" class="form-control">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="periodo_fim" class="form-label">Período Fim</label>
+                                <input type="date" name="periodo_fim" id="periodo_fim" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="ordenar_por" class="form-label">Ordenar por</label>
+                                <select name="ordenar_por" id="ordenar_por" class="form-select">
+                                    <option value="aluno__nome">Nome do Aluno</option>
+                                    <option value="turma__nome">Nome da Turma</option>
+                                    <option value="atividade__nome">Nome da Atividade</option>
+                                    <option value="periodo">Período</option>
+                                    <option value="percentual_presenca">Percentual de Presença</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="ordem" class="form-label">Ordem</label>
+                                <select name="ordem" id="ordem" class="form-select">
+                                    <option value="asc">Crescente</option>
+                                    <option value="desc">Decrescente</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-secondary" onclick="limparFiltros()">
+                                        <i class="fas fa-times"></i> Limpar Filtros
+                                    </button>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-primary me-2" onclick="voltarConsolidado()">
+                                            <i class="fas fa-arrow-left"></i> Voltar
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i> Aplicar Filtros
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filtros dinâmicos
+document.addEventListener('DOMContentLoaded', function() {
+    // Curso -> Turma
+    const cursoSelect = document.getElementById('curso_id');
+    const turmaSelect = document.getElementById('turma_id');
+    
+    if (cursoSelect && turmaSelect) {
+        cursoSelect.addEventListener('change', function() {
+            const cursoId = this.value;
+            
+            if (cursoId) {
+                // Aqui você pode implementar AJAX para carregar turmas
+                // Por enquanto, vamos usar uma abordagem simples
+                fetch(`/presencas/consolidado/?acao=carregar_filtros&tipo=turmas&curso_id=${cursoId}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        turmaSelect.innerHTML = '<option value="">Todas as turmas</option>';
+                        data.turmas.forEach(turma => {
+                            turmaSelect.innerHTML += `<option value="${turma.id}">${turma.nome}</option>`;
+                        });
+                    }
+                })
+                .catch(error => console.error('Erro ao carregar turmas:', error));
+            } else {
+                turmaSelect.innerHTML = '<option value="">Todas as turmas</option>';
+            }
+        });
+    }
+    
+    // Turma -> Atividade
+    const atividadeSelect = document.getElementById('atividade_id');
+    
+    if (turmaSelect && atividadeSelect) {
+        turmaSelect.addEventListener('change', function() {
+            const turmaId = this.value;
+            
+            if (turmaId) {
+                fetch(`/presencas/consolidado/?acao=carregar_filtros&tipo=atividades&turma_id=${turmaId}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        atividadeSelect.innerHTML = '<option value="">Todas as atividades</option>';
+                        data.atividades.forEach(atividade => {
+                            atividadeSelect.innerHTML += `<option value="${atividade.id}">${atividade.nome}</option>`;
+                        });
+                    }
+                })
+                .catch(error => console.error('Erro ao carregar atividades:', error));
+            } else {
+                atividadeSelect.innerHTML = '<option value="">Todas as atividades</option>';
+            }
+        });
+    }
+});
+
+// Função para limpar filtros
+function limparFiltros() {
+    document.getElementById('filtros-form').reset();
+}
+
+// Função para voltar ao consolidado
+function voltarConsolidado() {
+    window.location.href = '{% url "presencas:consolidado" %}';
+}
+
+// Validação de formulário
+document.getElementById('filtros-form').addEventListener('submit', function(e) {
+    const periodoInicio = document.getElementById('periodo_inicio').value;
+    const periodoFim = document.getElementById('periodo_fim').value;
+    
+    if (periodoInicio && periodoFim && periodoInicio > periodoFim) {
+        e.preventDefault();
+        alert('A data de início deve ser anterior à data de fim.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

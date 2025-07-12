@@ -1,0 +1,24 @@
+{% load consolidado_tags %}
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-atividades">
+    {% if page_obj.has_previous %}
+    <a href="?{% url_replace request 'pagina_atividade' page_obj.previous_page_number %}" 
+       class="btn btn-outline-primary">
+        <i class="fas fa-chevron-left"></i> Anterior
+    </a>
+    {% endif %}
+    
+    <span class="page-info">
+        Atividades {{ page_obj.start_index }} - {{ page_obj.end_index }} 
+        de {{ page_obj.paginator.count }}
+    </span>
+    
+    {% if page_obj.has_next %}
+    <a href="?{% url_replace request 'pagina_atividade' page_obj.next_page_number %}" 
+       class="btn btn-outline-primary">
+        Próxima <i class="fas fa-chevron-right"></i>
+    </a>
+    {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,712 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load consolidado_tags %}
+
+{% block title %}Consolidado de Presenças{% endblock %}
+
+{% block extra_css %}
+<style>
+    .consolidado-container {
+        overflow-x: auto;
+        width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    
+    .consolidado-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+    
+    .consolidado-table th,
+    .consolidado-table td {
+        border: 1px solid #ddd;
+        padding: 6px;
+        text-align: center;
+        white-space: nowrap;
+    }
+    
+    .consolidado-table th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .consolidado-table .aluno-nome {
+        position: sticky;
+        left: 0;
+        background-color: #f8f9fa;
+        font-weight: bold;
+        min-width: 200px;
+        text-align: left;
+        padding-left: 10px;
+        z-index: 5;
+    }
+    
+    .consolidado-table .turma-nome {
+        position: sticky;
+        left: 200px;
+        background-color: #f8f9fa;
+        min-width: 150px;
+        text-align: left;
+        padding-left: 10px;
+        z-index: 5;
+    }
+    
+    .atividade-header {
+        background-color: #e9ecef;
+        font-weight: bold;
+        writing-mode: vertical-lr;
+        text-orientation: mixed;
+        height: 120px;
+        min-width: 80px;
+    }
+    
+    .atividade-subheader {
+        background-color: #f8f9fa;
+        font-weight: bold;
+        font-size: 10px;
+        min-width: 40px;
+    }
+    
+    .totais-header {
+        background-color: #d1ecf1;
+        font-weight: bold;
+        color: #0c5460;
+    }
+    
+    .celula-editavel {
+        background-color: #fff;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .celula-editavel:hover {
+        background-color: #f0f8ff;
+    }
+    
+    .celula-editavel input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        text-align: center;
+        font-size: 12px;
+        padding: 2px;
+    }
+    
+    .percentual-cell {
+        font-weight: bold;
+        color: #28a745;
+    }
+    
+    .percentual-baixo {
+        background-color: #ffe6e6;
+        color: #d32f2f;
+    }
+    
+    .percentual-medio {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .percentual-alto {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .pagination-atividades {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin: 20px 0;
+    }
+    
+    .pagination-atividades .page-info {
+        font-weight: bold;
+        color: #666;
+    }
+    
+    .filtros-container {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    
+    .filtros-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: end;
+    }
+    
+    .filtro-grupo {
+        display: flex;
+        flex-direction: column;
+        min-width: 150px;
+    }
+    
+    .estatisticas-container {
+        background-color: #e9ecef;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    
+    .estatisticas-row {
+        display: flex;
+        justify-content: space-around;
+        text-align: center;
+    }
+    
+    .estatistica-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .estatistica-numero {
+        font-size: 24px;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .estatistica-label {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .btn-toolbar {
+        margin-bottom: 20px;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 9999;
+    }
+    
+    .loading-spinner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 18px;
+    }
+    
+    @media (max-width: 768px) {
+        .consolidado-table {
+            font-size: 10px;
+        }
+        
+        .consolidado-table th,
+        .consolidado-table td {
+            padding: 4px;
+        }
+        
+        .filtros-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filtro-grupo {
+            min-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3">Consolidado de Presenças</h1>
+                <div class="btn-toolbar" role="toolbar">
+                    <div class="btn-group me-2" role="group">
+                        <button type="button" class="btn btn-outline-primary" onclick="toggleFiltros()">
+                            <i class="fas fa-filter"></i> Filtros
+                        </button>
+                        <button type="button" class="btn btn-outline-success" onclick="exportarExcel()">
+                            <i class="fas fa-file-excel"></i> Exportar
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="atualizarDados()">
+                            <i class="fas fa-sync-alt"></i> Atualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="filtros-container" id="filtros-container" style="display: none;">
+                <form method="GET" id="filtros-form">
+                    <div class="filtros-row">
+                        <div class="filtro-grupo">
+                            <label for="curso_id">Curso</label>
+                            <select name="curso_id" id="curso_id" class="form-select">
+                                <option value="">Todos os cursos</option>
+                                {% for curso in cursos %}
+                                <option value="{{ curso.id }}" {% if filtros.curso_id == curso.id|stringformat:'s' %}selected{% endif %}>
+                                    {{ curso.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="filtro-grupo">
+                            <label for="turma_id">Turma</label>
+                            <select name="turma_id" id="turma_id" class="form-select">
+                                <option value="">Todas as turmas</option>
+                                {% for turma in turmas %}
+                                <option value="{{ turma.id }}" {% if filtros.turma_id == turma.id|stringformat:'s' %}selected{% endif %}>
+                                    {{ turma.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="filtro-grupo">
+                            <label for="atividade_id">Atividade</label>
+                            <select name="atividade_id" id="atividade_id" class="form-select">
+                                <option value="">Todas as atividades</option>
+                                {% for atividade in atividades %}
+                                <option value="{{ atividade.id }}" {% if filtros.atividade_id == atividade.id|stringformat:'s' %}selected{% endif %}>
+                                    {{ atividade.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="filtro-grupo">
+                            <label for="periodo_inicio">Período Início</label>
+                            <input type="date" name="periodo_inicio" id="periodo_inicio" class="form-control" 
+                                   value="{{ filtros.periodo_inicio|date:'Y-m-d' }}">
+                        </div>
+                        
+                        <div class="filtro-grupo">
+                            <label for="periodo_fim">Período Fim</label>
+                            <input type="date" name="periodo_fim" id="periodo_fim" class="form-control" 
+                                   value="{{ filtros.periodo_fim|date:'Y-m-d' }}">
+                        </div>
+                        
+                        <div class="filtro-grupo">
+                            <label for="aluno_nome">Nome do Aluno</label>
+                            <input type="text" name="aluno_nome" id="aluno_nome" class="form-control" 
+                                   value="{{ filtros.aluno_nome }}" placeholder="Digite o nome">
+                        </div>
+                        
+                        <div class="filtro-grupo">
+                            <label>&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limparFiltros()">
+                                    <i class="fas fa-times"></i> Limpar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Estatísticas -->
+            <div class="estatisticas-container">
+                <div class="estatisticas-row">
+                    <div class="estatistica-item">
+                        <div class="estatistica-numero">{{ estatisticas.total_registros }}</div>
+                        <div class="estatistica-label">Total de Registros</div>
+                    </div>
+                    <div class="estatistica-item">
+                        <div class="estatistica-numero">{{ estatisticas.alunos_unicos }}</div>
+                        <div class="estatistica-label">Alunos Únicos</div>
+                    </div>
+                    <div class="estatistica-item">
+                        <div class="estatistica-numero">{{ estatisticas.atividades_unicas }}</div>
+                        <div class="estatistica-label">Atividades Únicas</div>
+                    </div>
+                    <div class="estatistica-item">
+                        <div class="estatistica-numero">{{ estatisticas.total_convocacoes }}</div>
+                        <div class="estatistica-label">Total Convocações</div>
+                    </div>
+                    <div class="estatistica-item">
+                        <div class="estatistica-numero">{{ estatisticas.total_presencas }}</div>
+                        <div class="estatistica-label">Total Presenças</div>
+                    </div>
+                    <div class="estatistica-item">
+                        <div class="estatistica-numero">{{ estatisticas.media_percentual|floatformat:1 }}%</div>
+                        <div class="estatistica-label">Média Percentual</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Paginação de Atividades -->
+            {% if atividades_paginadas.has_other_pages %}
+            <div class="pagination-atividades">
+                {% if atividades_paginadas.has_previous %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'pagina_atividade' %}{{ key }}={{ value }}&{% endif %}{% endfor %}pagina_atividade={{ atividades_paginadas.previous_page_number }}" 
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </a>
+                {% endif %}
+                
+                <span class="page-info">
+                    Atividades {{ atividades_paginadas.start_index }} - {{ atividades_paginadas.end_index }} 
+                    de {{ atividades_paginadas.paginator.count }}
+                </span>
+                
+                {% if atividades_paginadas.has_next %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'pagina_atividade' %}{{ key }}={{ value }}&{% endif %}{% endfor %}pagina_atividade={{ atividades_paginadas.next_page_number }}" 
+                   class="btn btn-outline-primary">
+                    Próxima <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Tabela Consolidada -->
+            <div class="consolidado-container">
+                <table class="consolidado-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="aluno-nome">Aluno</th>
+                            <th rowspan="2" class="turma-nome">Turma</th>
+                            
+                            {% for atividade in atividades_paginadas %}
+                            <th colspan="6" class="atividade-header">
+                                {{ atividade.nome }}
+                            </th>
+                            {% endfor %}
+                            
+                            <th colspan="5" class="totais-header">Totais</th>
+                        </tr>
+                        <tr>
+                            {% for atividade in atividades_paginadas %}
+                            <th class="atividade-subheader">C</th>
+                            <th class="atividade-subheader">P</th>
+                            <th class="atividade-subheader">F</th>
+                            <th class="atividade-subheader">V1</th>
+                            <th class="atividade-subheader">V2</th>
+                            <th class="atividade-subheader">%</th>
+                            {% endfor %}
+                            
+                            <th class="totais-header">Conv.</th>
+                            <th class="totais-header">Pres.</th>
+                            <th class="totais-header">Faltas</th>
+                            <th class="totais-header">Vol.</th>
+                            <th class="totais-header">% Médio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aluno_id, dados_aluno in dados_consolidados.items %}
+                        <tr data-aluno-id="{{ aluno_id }}">
+                            <td class="aluno-nome">{{ dados_aluno.aluno.nome }}</td>
+                            <td class="turma-nome">{{ dados_aluno.turma.nome }}</td>
+                            
+                            {% for atividade in atividades_paginadas %}
+                            {% with dados_atividade=dados_aluno.atividades|get_item:atividade.id %}
+                            {% if dados_atividade %}
+                            <td class="celula-editavel" data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" data-campo="convocacoes">
+                                <input type="number" value="{{ dados_atividade.C }}" min="0" max="999" 
+                                       onchange="salvarCelula(this)" onblur="salvarCelula(this)">
+                            </td>
+                            <td class="celula-editavel" data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" data-campo="presencas">
+                                <input type="number" value="{{ dados_atividade.P }}" min="0" max="999" 
+                                       onchange="salvarCelula(this)" onblur="salvarCelula(this)">
+                            </td>
+                            <td class="celula-editavel" data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" data-campo="faltas">
+                                <input type="number" value="{{ dados_atividade.F }}" min="0" max="999" 
+                                       onchange="salvarCelula(this)" onblur="salvarCelula(this)">
+                            </td>
+                            <td class="celula-editavel" data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" data-campo="voluntario_extra">
+                                <input type="number" value="{{ dados_atividade.V1 }}" min="0" max="999" 
+                                       onchange="salvarCelula(this)" onblur="salvarCelula(this)">
+                            </td>
+                            <td class="celula-editavel" data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" data-campo="voluntario_simples">
+                                <input type="number" value="{{ dados_atividade.V2 }}" min="0" max="999" 
+                                       onchange="salvarCelula(this)" onblur="salvarCelula(this)">
+                            </td>
+                            <td class="percentual-cell {% if dados_atividade.percentual < 50 %}percentual-baixo{% elif dados_atividade.percentual < 75 %}percentual-medio{% else %}percentual-alto{% endif %}">
+                                {{ dados_atividade.percentual|floatformat:1 }}%
+                            </td>
+                            {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            {% endif %}
+                            {% endwith %}
+                            {% endfor %}
+                            
+                            <!-- Totais -->
+                            <td class="totais-header">{{ dados_aluno.totais.convocacoes }}</td>
+                            <td class="totais-header">{{ dados_aluno.totais.presencas }}</td>
+                            <td class="totais-header">{{ dados_aluno.totais.faltas }}</td>
+                            <td class="totais-header">{{ dados_aluno.totais.voluntarios }}</td>
+                            <td class="totais-header {% if dados_aluno.totais.percentual_medio < 50 %}percentual-baixo{% elif dados_aluno.totais.percentual_medio < 75 %}percentual-medio{% else %}percentual-alto{% endif %}">
+                                {{ dados_aluno.totais.percentual_medio|floatformat:1 }}%
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="100%" class="text-center">
+                                <div class="alert alert-info">
+                                    Nenhum registro encontrado com os filtros selecionados.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginação de Atividades (repetida) -->
+            {% if atividades_paginadas.has_other_pages %}
+            <div class="pagination-atividades">
+                {% if atividades_paginadas.has_previous %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'pagina_atividade' %}{{ key }}={{ value }}&{% endif %}{% endfor %}pagina_atividade={{ atividades_paginadas.previous_page_number }}" 
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </a>
+                {% endif %}
+                
+                <span class="page-info">
+                    Atividades {{ atividades_paginadas.start_index }} - {{ atividades_paginadas.end_index }} 
+                    de {{ atividades_paginadas.paginator.count }}
+                </span>
+                
+                {% if atividades_paginadas.has_next %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'pagina_atividade' %}{{ key }}={{ value }}&{% endif %}{% endfor %}pagina_atividade={{ atividades_paginadas.next_page_number }}" 
+                   class="btn btn-outline-primary">
+                    Próxima <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        Processando...
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Configuração CSRF
+const csrfToken = $('[name=csrfmiddlewaretoken]').val() || '{{ csrf_token }}';
+
+// Função para toggle dos filtros
+function toggleFiltros() {
+    const container = document.getElementById('filtros-container');
+    container.style.display = container.style.display === 'none' ? 'block' : 'none';
+}
+
+// Função para limpar filtros
+function limparFiltros() {
+    document.getElementById('filtros-form').reset();
+    window.location.href = '{% url "presencas:consolidado" %}';
+}
+
+// Função para salvar célula
+function salvarCelula(input) {
+    const cell = input.closest('.celula-editavel');
+    const presencaId = cell.getAttribute('data-presenca-id');
+    const campo = cell.getAttribute('data-campo');
+    const valor = input.value;
+    
+    // Validar valor
+    if (valor === '' || isNaN(valor) || valor < 0) {
+        alert('Por favor, insira um valor válido.');
+        input.focus();
+        return;
+    }
+    
+    // Mostrar loading
+    showLoading();
+    
+    // Fazer requisição AJAX
+    fetch('{% url "presencas:consolidado" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: new URLSearchParams({
+            'acao': 'salvar_celula',
+            'presenca_id': presencaId,
+            'campo': campo,
+            'valor': valor
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Atualizar percentual se necessário
+            if (data.nova_presenca && data.nova_presenca.percentual) {
+                const row = input.closest('tr');
+                const percentualCell = row.querySelector('.percentual-cell');
+                if (percentualCell) {
+                    percentualCell.textContent = data.nova_presenca.percentual + '%';
+                    updatePercentualClass(percentualCell, data.nova_presenca.percentual);
+                }
+            }
+            
+            // Feedback visual
+            cell.style.backgroundColor = '#d4edda';
+            setTimeout(() => {
+                cell.style.backgroundColor = '';
+            }, 2000);
+            
+        } else {
+            alert('Erro ao salvar: ' + data.error);
+            input.focus();
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro de conexão ao salvar dados.');
+    })
+    .finally(() => {
+        hideLoading();
+    });
+}
+
+// Função para atualizar classe do percentual
+function updatePercentualClass(cell, percentual) {
+    cell.classList.remove('percentual-baixo', 'percentual-medio', 'percentual-alto');
+    
+    if (percentual < 50) {
+        cell.classList.add('percentual-baixo');
+    } else if (percentual < 75) {
+        cell.classList.add('percentual-medio');
+    } else {
+        cell.classList.add('percentual-alto');
+    }
+}
+
+// Função para exportar Excel
+function exportarExcel() {
+    showLoading();
+    
+    // Construir URL com filtros atuais
+    const params = new URLSearchParams(window.location.search);
+    const exportUrl = '{% url "presencas:exportar_consolidado" %}?' + params.toString();
+    
+    // Abrir em nova janela
+    window.open(exportUrl, '_blank');
+    
+    hideLoading();
+}
+
+// Função para atualizar dados
+function atualizarDados() {
+    showLoading();
+    window.location.reload();
+}
+
+// Função para mostrar loading
+function showLoading() {
+    document.getElementById('loading-overlay').style.display = 'block';
+}
+
+// Função para esconder loading
+function hideLoading() {
+    document.getElementById('loading-overlay').style.display = 'none';
+}
+
+// Filtros dinâmicos
+document.addEventListener('DOMContentLoaded', function() {
+    // Curso -> Turma
+    const cursoSelect = document.getElementById('curso_id');
+    const turmaSelect = document.getElementById('turma_id');
+    
+    if (cursoSelect && turmaSelect) {
+        cursoSelect.addEventListener('change', function() {
+            const cursoId = this.value;
+            
+            if (cursoId) {
+                fetch(`{% url "presencas:consolidado" %}?acao=carregar_filtros&tipo=turmas&curso_id=${cursoId}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        turmaSelect.innerHTML = '<option value="">Todas as turmas</option>';
+                        data.turmas.forEach(turma => {
+                            turmaSelect.innerHTML += `<option value="${turma.id}">${turma.nome}</option>`;
+                        });
+                    }
+                })
+                .catch(error => console.error('Erro ao carregar turmas:', error));
+            } else {
+                turmaSelect.innerHTML = '<option value="">Todas as turmas</option>';
+            }
+        });
+    }
+    
+    // Turma -> Atividade
+    const atividadeSelect = document.getElementById('atividade_id');
+    
+    if (turmaSelect && atividadeSelect) {
+        turmaSelect.addEventListener('change', function() {
+            const turmaId = this.value;
+            
+            if (turmaId) {
+                fetch(`{% url "presencas:consolidado" %}?acao=carregar_filtros&tipo=atividades&turma_id=${turmaId}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        atividadeSelect.innerHTML = '<option value="">Todas as atividades</option>';
+                        data.atividades.forEach(atividade => {
+                            atividadeSelect.innerHTML += `<option value="${atividade.id}">${atividade.nome}</option>`;
+                        });
+                    }
+                })
+                .catch(error => console.error('Erro ao carregar atividades:', error));
+            } else {
+                atividadeSelect.innerHTML = '<option value="">Todas as atividades</option>';
+            }
+        });
+    }
+});
+
+// Validação de formulário
+document.getElementById('filtros-form').addEventListener('submit', function(e) {
+    const periodoInicio = document.getElementById('periodo_inicio').value;
+    const periodoFim = document.getElementById('periodo_fim').value;
+    
+    if (periodoInicio && periodoFim && periodoInicio > periodoFim) {
+        e.preventDefault();
+        alert('A data de início deve ser anterior à data de fim.');
+        return false;
+    }
+    
+    showLoading();
+});
+</script>
+{% endblock %}

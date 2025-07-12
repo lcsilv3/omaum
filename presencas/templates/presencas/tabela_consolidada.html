@@ -1,0 +1,1728 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load consolidado_tags %}
+
+{% block title %}Tabela Consolidada de Presenças - Excel Style{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<style>
+    :root {
+        --primary-blue: #366092;
+        --success-green: #28a745;
+        --warning-yellow: #ffc107;
+        --danger-red: #dc3545;
+        --light-gray: #f8f9fa;
+        --border-gray: #dee2e6;
+        --hover-blue: #f0f8ff;
+        --grid-cell-size: 50px;
+        --fixed-column-width: 200px;
+        --turma-column-width: 150px;
+    }
+
+    /* ========== LAYOUT PRINCIPAL ========== */
+    .tabela-consolidada-wrapper {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin: 20px 0;
+    }
+
+    .filtros-header {
+        background: var(--light-gray);
+        border-bottom: 2px solid var(--border-gray);
+        padding: 20px;
+    }
+
+    .filtros-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        align-items: end;
+    }
+
+    .filtro-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filtro-group label {
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+
+    .filtro-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    /* ========== NAVEGAÇÃO DE ATIVIDADES ========== */
+    .atividades-navegacao {
+        background: #e9ecef;
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-gray);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .atividades-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .atividades-controles {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .navegacao-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 12px;
+        border: 1px solid var(--primary-blue);
+        background: white;
+        color: var(--primary-blue);
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .navegacao-btn:hover {
+        background: var(--primary-blue);
+        color: white;
+        text-decoration: none;
+    }
+
+    .navegacao-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* ========== TABELA EXCEL-LIKE ========== */
+    .tabela-container {
+        position: relative;
+        overflow: auto;
+        max-height: 80vh;
+        border: 1px solid var(--border-gray);
+    }
+
+    .tabela-excel {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 12px;
+        background: white;
+    }
+
+    /* ========== CABEÇALHOS ========== */
+    .tabela-excel thead th {
+        background: var(--primary-blue);
+        color: white;
+        border: 1px solid #1e3a5f;
+        padding: 8px;
+        text-align: center;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        white-space: nowrap;
+        font-size: 11px;
+    }
+
+    .header-aluno,
+    .header-turma {
+        position: sticky;
+        left: 0;
+        z-index: 25;
+        background: var(--primary-blue) !important;
+        border-right: 2px solid #1e3a5f;
+    }
+
+    .header-aluno {
+        width: var(--fixed-column-width);
+        left: 0;
+    }
+
+    .header-turma {
+        width: var(--turma-column-width);
+        left: var(--fixed-column-width);
+    }
+
+    .header-atividade {
+        writing-mode: vertical-lr;
+        text-orientation: mixed;
+        height: 120px;
+        min-width: 60px;
+        max-width: 60px;
+        background: #5a6c7d !important;
+        position: relative;
+    }
+
+    .header-atividade .atividade-nome {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        text-align: center;
+        font-size: 10px;
+        line-height: 1.2;
+    }
+
+    .header-subatividade {
+        background: #6c757d !important;
+        font-size: 10px;
+        padding: 4px;
+        min-width: 35px;
+        max-width: 35px;
+        font-weight: bold;
+    }
+
+    .header-totais {
+        background: #17a2b8 !important;
+        color: white;
+        font-weight: bold;
+        border-left: 2px solid #138496;
+    }
+
+    /* ========== CÉLULAS DA TABELA ========== */
+    .tabela-excel tbody td {
+        border: 1px solid var(--border-gray);
+        padding: 4px;
+        text-align: center;
+        vertical-align: middle;
+        background: white;
+        position: relative;
+        min-width: 35px;
+        max-width: 35px;
+        height: 32px;
+    }
+
+    .coluna-aluno,
+    .coluna-turma {
+        position: sticky;
+        background: #f8f9fa !important;
+        z-index: 15;
+        border-right: 2px solid var(--border-gray);
+        font-weight: 500;
+    }
+
+    .coluna-aluno {
+        left: 0;
+        width: var(--fixed-column-width);
+        min-width: var(--fixed-column-width);
+        max-width: var(--fixed-column-width);
+        text-align: left;
+        padding-left: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .coluna-turma {
+        left: var(--fixed-column-width);
+        width: var(--turma-column-width);
+        min-width: var(--turma-column-width);
+        max-width: var(--turma-column-width);
+        text-align: left;
+        padding-left: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .coluna-totais {
+        background: #e7f3f5 !important;
+        border-left: 2px solid #17a2b8;
+        font-weight: 600;
+        color: #0c5460;
+    }
+
+    /* ========== CÉLULAS EDITÁVEIS ========== */
+    .celula-editavel {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .celula-editavel:hover {
+        background: var(--hover-blue) !important;
+        border-color: var(--primary-blue);
+        box-shadow: inset 0 0 0 1px var(--primary-blue);
+    }
+
+    .celula-editavel input {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        text-align: center;
+        font-size: 12px;
+        padding: 0;
+        outline: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    .celula-editavel.editing {
+        background: #fff3cd !important;
+        border-color: #ffc107;
+        box-shadow: inset 0 0 0 2px #ffc107;
+    }
+
+    .celula-editavel.saved {
+        background: #d4edda !important;
+        border-color: var(--success-green);
+    }
+
+    .celula-editavel.error {
+        background: #f8d7da !important;
+        border-color: var(--danger-red);
+    }
+
+    /* ========== CÉLULAS DE PERCENTUAL ========== */
+    .percentual-cell {
+        font-weight: bold;
+        font-size: 11px;
+    }
+
+    .percentual-alto {
+        background: #d4edda !important;
+        color: #155724;
+    }
+
+    .percentual-medio {
+        background: #fff3cd !important;
+        color: #856404;
+    }
+
+    .percentual-baixo {
+        background: #f8d7da !important;
+        color: #721c24;
+    }
+
+    /* ========== ESTATÍSTICAS FOOTER ========== */
+    .estatisticas-footer {
+        background: var(--light-gray);
+        padding: 15px 20px;
+        border-top: 1px solid var(--border-gray);
+    }
+
+    .estatisticas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+        text-align: center;
+    }
+
+    .estatistica-item {
+        padding: 10px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid var(--border-gray);
+    }
+
+    .estatistica-numero {
+        font-size: 22px;
+        font-weight: bold;
+        color: var(--primary-blue);
+        margin-bottom: 5px;
+    }
+
+    .estatistica-label {
+        font-size: 12px;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    /* ========== TOOLTIPS ========== */
+    .tooltip-nome {
+        position: relative;
+        cursor: help;
+    }
+
+    .tooltip-nome:hover::after {
+        content: attr(data-nome-completo);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .tooltip-nome:hover::before {
+        content: '';
+        position: absolute;
+        bottom: 94%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: #333;
+        z-index: 1000;
+    }
+
+    /* ========== LOADING E FEEDBACK ========== */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .loading-content {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .loading-spinner {
+        font-size: 24px;
+        color: var(--primary-blue);
+        margin-bottom: 15px;
+    }
+
+    .feedback-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 6px;
+        color: white;
+        font-weight: 500;
+        z-index: 1050;
+        display: none;
+        animation: slideInRight 0.3s ease;
+    }
+
+    .feedback-message.success {
+        background: var(--success-green);
+    }
+
+    .feedback-message.error {
+        background: var(--danger-red);
+    }
+
+    .feedback-message.warning {
+        background: var(--warning-yellow);
+        color: #333;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* ========== MODAIS ========== */
+    .modal-xl {
+        max-width: 90%;
+    }
+
+    .modal-body {
+        padding: 0;
+    }
+
+    .modal-tabela-container {
+        max-height: 70vh;
+        overflow: auto;
+    }
+
+    /* ========== RESPONSIVIDADE ========== */
+    @media (max-width: 768px) {
+        .tabela-excel {
+            font-size: 10px;
+        }
+
+        .tabela-excel thead th,
+        .tabela-excel tbody td {
+            padding: 3px;
+            min-width: 30px;
+            max-width: 30px;
+        }
+
+        .coluna-aluno {
+            width: 150px;
+            min-width: 150px;
+            max-width: 150px;
+        }
+
+        .coluna-turma {
+            width: 120px;
+            min-width: 120px;
+            max-width: 120px;
+            left: 150px;
+        }
+
+        .filtros-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .atividades-navegacao {
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+        }
+
+        .atividades-controles {
+            justify-content: center;
+        }
+
+        .estatisticas-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .tabela-consolidada-wrapper {
+            margin: 10px 0;
+        }
+
+        .filtros-header {
+            padding: 15px;
+        }
+
+        .coluna-aluno {
+            width: 120px;
+            min-width: 120px;
+            max-width: 120px;
+        }
+
+        .coluna-turma {
+            width: 100px;
+            min-width: 100px;
+            max-width: 100px;
+            left: 120px;
+        }
+
+        .estatisticas-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ========== PRINT STYLES ========== */
+    @media print {
+        .filtros-header,
+        .atividades-navegacao,
+        .btn,
+        .loading-overlay,
+        .feedback-message {
+            display: none !important;
+        }
+
+        .tabela-container {
+            max-height: none;
+            overflow: visible;
+        }
+
+        .tabela-excel {
+            font-size: 10px;
+        }
+
+        .coluna-aluno,
+        .coluna-turma {
+            position: static;
+        }
+    }
+
+    /* ========== ACESSIBILIDADE ========== */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .celula-editavel:focus-within {
+        outline: 2px solid #4285f4;
+        outline-offset: -2px;
+    }
+
+    /* ========== CUSTOM SCROLLBAR ========== */
+    .tabela-container::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+
+    .tabela-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 6px;
+    }
+
+    .tabela-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 6px;
+    }
+
+    .tabela-container::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+    .tabela-container::-webkit-scrollbar-corner {
+        background: #f1f1f1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header da Página -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-table"></i>
+            Tabela Consolidada de Presenças
+        </h1>
+        <div class="d-flex gap-2" role="toolbar" aria-label="Ações da tabela">
+            <button type="button" class="btn btn-outline-primary" 
+                    onclick="toggleFiltros()" 
+                    aria-expanded="false" 
+                    aria-controls="filtros-section">
+                <i class="fas fa-filter"></i> Filtros
+            </button>
+            <button type="button" class="btn btn-outline-success" 
+                    onclick="exportarExcel()" 
+                    title="Exportar dados para Excel">
+                <i class="fas fa-file-excel"></i> Exportar
+            </button>
+            <button type="button" class="btn btn-outline-info" 
+                    onclick="salvarTudo()" 
+                    title="Salvar todas as alterações">
+                <i class="fas fa-save"></i> Salvar Tudo
+            </button>
+            <button type="button" class="btn btn-outline-secondary" 
+                    onclick="atualizarTabela()" 
+                    title="Atualizar dados da tabela">
+                <i class="fas fa-sync-alt"></i> Atualizar
+            </button>
+        </div>
+    </div>
+
+    <!-- Wrapper Principal -->
+    <div class="tabela-consolidada-wrapper">
+        
+        <!-- Seção de Filtros -->
+        <div class="filtros-header" id="filtros-section" style="display: none;" role="region" aria-label="Filtros de busca">
+            <form method="GET" id="filtros-form" class="needs-validation" novalidate>
+                <div class="filtros-grid">
+                    <div class="filtro-group">
+                        <label for="curso_id">Curso</label>
+                        <select name="curso_id" id="curso_id" class="form-select" 
+                                aria-describedby="curso-help">
+                            <option value="">Todos os cursos</option>
+                            {% for curso in cursos %}
+                            <option value="{{ curso.id }}" 
+                                    {% if filtros.curso_id == curso.id|stringformat:'s' %}selected{% endif %}>
+                                {{ curso.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div id="curso-help" class="form-text">Selecione um curso para filtrar</div>
+                    </div>
+                    
+                    <div class="filtro-group">
+                        <label for="turma_id">Turma</label>
+                        <select name="turma_id" id="turma_id" class="form-select"
+                                aria-describedby="turma-help">
+                            <option value="">Todas as turmas</option>
+                            {% for turma in turmas %}
+                            <option value="{{ turma.id }}" 
+                                    {% if filtros.turma_id == turma.id|stringformat:'s' %}selected{% endif %}>
+                                {{ turma.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div id="turma-help" class="form-text">Selecione uma turma específica</div>
+                    </div>
+                    
+                    <div class="filtro-group">
+                        <label for="atividade_id">Atividade</label>
+                        <select name="atividade_id" id="atividade_id" class="form-select"
+                                aria-describedby="atividade-help">
+                            <option value="">Todas as atividades</option>
+                            {% for atividade in atividades %}
+                            <option value="{{ atividade.id }}" 
+                                    {% if filtros.atividade_id == atividade.id|stringformat:'s' %}selected{% endif %}>
+                                {{ atividade.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div id="atividade-help" class="form-text">Filtrar por atividade específica</div>
+                    </div>
+                    
+                    <div class="filtro-group">
+                        <label for="periodo_inicio">Período Início</label>
+                        <input type="date" name="periodo_inicio" id="periodo_inicio" 
+                               class="form-control" 
+                               value="{{ filtros.periodo_inicio|date:'Y-m-d' }}"
+                               aria-describedby="periodo-inicio-help">
+                        <div id="periodo-inicio-help" class="form-text">Data inicial do período</div>
+                    </div>
+                    
+                    <div class="filtro-group">
+                        <label for="periodo_fim">Período Fim</label>
+                        <input type="date" name="periodo_fim" id="periodo_fim" 
+                               class="form-control" 
+                               value="{{ filtros.periodo_fim|date:'Y-m-d' }}"
+                               aria-describedby="periodo-fim-help">
+                        <div id="periodo-fim-help" class="form-text">Data final do período</div>
+                    </div>
+                    
+                    <div class="filtro-group">
+                        <label for="aluno_nome">Nome do Aluno</label>
+                        <input type="text" name="aluno_nome" id="aluno_nome" 
+                               class="form-control" 
+                               value="{{ filtros.aluno_nome }}" 
+                               placeholder="Digite o nome ou parte do nome"
+                               aria-describedby="aluno-nome-help">
+                        <div id="aluno-nome-help" class="form-text">Buscar por nome do aluno</div>
+                    </div>
+                    
+                    <div class="filtro-group">
+                        <label for="ordenar_por">Ordenar Por</label>
+                        <select name="ordenar_por" id="ordenar_por" class="form-select">
+                            <option value="aluno__nome" {% if filtros.ordenar_por == 'aluno__nome' %}selected{% endif %}>
+                                Nome do Aluno
+                            </option>
+                            <option value="turma__nome" {% if filtros.ordenar_por == 'turma__nome' %}selected{% endif %}>
+                                Nome da Turma
+                            </option>
+                            <option value="percentual_presenca" {% if filtros.ordenar_por == 'percentual_presenca' %}selected{% endif %}>
+                                Percentual de Presença
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <div class="filtro-group">
+                        <label for="ordem">Ordem</label>
+                        <select name="ordem" id="ordem" class="form-select">
+                            <option value="asc" {% if filtros.ordem == 'asc' %}selected{% endif %}>Crescente</option>
+                            <option value="desc" {% if filtros.ordem == 'desc' %}selected{% endif %}>Decrescente</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="filtro-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Aplicar Filtros
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="limparFiltros()">
+                        <i class="fas fa-times"></i> Limpar
+                    </button>
+                    <button type="button" class="btn btn-outline-dark" onclick="salvarFiltrosPadrao()">
+                        <i class="fas fa-bookmark"></i> Salvar como Padrão
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Navegação de Atividades -->
+        {% if atividades_paginadas.has_other_pages %}
+        <div class="atividades-navegacao" role="navigation" aria-label="Navegação de atividades">
+            <div class="atividades-info">
+                <span class="badge bg-info">
+                    <i class="fas fa-info-circle"></i>
+                    Exibindo atividades {{ atividades_paginadas.start_index }} - {{ atividades_paginadas.end_index }} 
+                    de {{ atividades_paginadas.paginator.count }}
+                </span>
+                <span class="text-muted">
+                    (Página {{ atividades_paginadas.number }} de {{ atividades_paginadas.paginator.num_pages }})
+                </span>
+            </div>
+            
+            <div class="atividades-controles">
+                {% if atividades_paginadas.has_previous %}
+                <a href="?{% url_replace request 'pagina_atividade' atividades_paginadas.previous_page_number %}" 
+                   class="navegacao-btn" title="Atividades anteriores">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </a>
+                {% endif %}
+                
+                <span class="badge bg-primary">
+                    {{ atividades_paginadas.number }} / {{ atividades_paginadas.paginator.num_pages }}
+                </span>
+                
+                {% if atividades_paginadas.has_next %}
+                <a href="?{% url_replace request 'pagina_atividade' atividades_paginadas.next_page_number %}" 
+                   class="navegacao-btn" title="Próximas atividades">
+                    Próxima <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tabela Principal Excel-Like -->
+        <div class="tabela-container" role="region" aria-label="Tabela de presenças consolidadas">
+            <table class="tabela-excel" 
+                   role="table" 
+                   aria-label="Dados consolidados de presenças por aluno e atividade">
+                <thead>
+                    <tr role="row">
+                        <th rowspan="2" class="header-aluno" scope="col" 
+                            aria-label="Nome do aluno">
+                            <i class="fas fa-user"></i> Aluno
+                        </th>
+                        <th rowspan="2" class="header-turma" scope="col" 
+                            aria-label="Nome da turma">
+                            <i class="fas fa-users"></i> Turma
+                        </th>
+                        
+                        {% for atividade in atividades_paginadas %}
+                        <th colspan="6" class="header-atividade" scope="colgroup" 
+                            aria-label="Atividade {{ atividade.nome }}">
+                            <div class="atividade-nome" 
+                                 title="{{ atividade.nome }} - {{ atividade.descricao|default:'Sem descrição' }}">
+                                {{ atividade.nome|truncatechars:15 }}
+                            </div>
+                        </th>
+                        {% endfor %}
+                        
+                        <th colspan="5" class="header-totais" scope="colgroup" 
+                            aria-label="Totais consolidados">
+                            <i class="fas fa-calculator"></i> Totais
+                        </th>
+                    </tr>
+                    <tr role="row">
+                        {% for atividade in atividades_paginadas %}
+                        <th class="header-subatividade" scope="col" title="Convocações">C</th>
+                        <th class="header-subatividade" scope="col" title="Presenças">P</th>
+                        <th class="header-subatividade" scope="col" title="Faltas">F</th>
+                        <th class="header-subatividade" scope="col" title="Voluntário Extra">V1</th>
+                        <th class="header-subatividade" scope="col" title="Voluntário Simples">V2</th>
+                        <th class="header-subatividade" scope="col" title="Percentual">%</th>
+                        {% endfor %}
+                        
+                        <th class="header-totais" scope="col" title="Total de Convocações">Conv.</th>
+                        <th class="header-totais" scope="col" title="Total de Presenças">Pres.</th>
+                        <th class="header-totais" scope="col" title="Total de Faltas">Faltas</th>
+                        <th class="header-totais" scope="col" title="Total de Voluntários">Vol.</th>
+                        <th class="header-totais" scope="col" title="Percentual Médio">% Médio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aluno_id, dados_aluno in dados_consolidados.items %}
+                    <tr role="row" data-aluno-id="{{ aluno_id }}" 
+                        aria-label="Dados de {{ dados_aluno.aluno.nome }}">
+                        
+                        <!-- Coluna Aluno (Fixa) -->
+                        <td class="coluna-aluno tooltip-nome" 
+                            data-nome-completo="{{ dados_aluno.aluno.nome }}"
+                            title="{{ dados_aluno.aluno.nome }}">
+                            <span class="sr-only">Aluno: </span>
+                            {{ dados_aluno.aluno.nome|truncatechars:25 }}
+                        </td>
+                        
+                        <!-- Coluna Turma (Fixa) -->
+                        <td class="coluna-turma" title="{{ dados_aluno.turma.nome }}">
+                            <span class="sr-only">Turma: </span>
+                            {{ dados_aluno.turma.nome|truncatechars:20 }}
+                        </td>
+                        
+                        <!-- Colunas de Atividades (Scrolláveis) -->
+                        {% for atividade in atividades_paginadas %}
+                        {% with dados_atividade=dados_aluno.atividades|get_item:atividade.id %}
+                        {% if dados_atividade %}
+                            <!-- Convocações -->
+                            <td class="celula-editavel" 
+                                data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" 
+                                data-campo="convocacoes"
+                                data-aluno="{{ dados_aluno.aluno.nome }}"
+                                data-atividade="{{ atividade.nome }}"
+                                title="Convocações para {{ atividade.nome }}: {{ dados_atividade.C }}"
+                                tabindex="0"
+                                role="gridcell"
+                                aria-label="Convocações: {{ dados_atividade.C }}">
+                                <input type="number" 
+                                       value="{{ dados_atividade.C }}" 
+                                       min="0" max="999" 
+                                       data-original="{{ dados_atividade.C }}"
+                                       onchange="marcarAlterado(this)"
+                                       onblur="salvarCelulaSeAlterada(this)"
+                                       aria-label="Editar convocações">
+                            </td>
+                            
+                            <!-- Presenças -->
+                            <td class="celula-editavel" 
+                                data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" 
+                                data-campo="presencas"
+                                data-aluno="{{ dados_aluno.aluno.nome }}"
+                                data-atividade="{{ atividade.nome }}"
+                                title="Presenças para {{ atividade.nome }}: {{ dados_atividade.P }}"
+                                tabindex="0"
+                                role="gridcell"
+                                aria-label="Presenças: {{ dados_atividade.P }}">
+                                <input type="number" 
+                                       value="{{ dados_atividade.P }}" 
+                                       min="0" max="999" 
+                                       data-original="{{ dados_atividade.P }}"
+                                       onchange="marcarAlterado(this)"
+                                       onblur="salvarCelulaSeAlterada(this)"
+                                       aria-label="Editar presenças">
+                            </td>
+                            
+                            <!-- Faltas -->
+                            <td class="celula-editavel" 
+                                data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" 
+                                data-campo="faltas"
+                                data-aluno="{{ dados_aluno.aluno.nome }}"
+                                data-atividade="{{ atividade.nome }}"
+                                title="Faltas para {{ atividade.nome }}: {{ dados_atividade.F }}"
+                                tabindex="0"
+                                role="gridcell"
+                                aria-label="Faltas: {{ dados_atividade.F }}">
+                                <input type="number" 
+                                       value="{{ dados_atividade.F }}" 
+                                       min="0" max="999" 
+                                       data-original="{{ dados_atividade.F }}"
+                                       onchange="marcarAlterado(this)"
+                                       onblur="salvarCelulaSeAlterada(this)"
+                                       aria-label="Editar faltas">
+                            </td>
+                            
+                            <!-- Voluntário Extra -->
+                            <td class="celula-editavel" 
+                                data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" 
+                                data-campo="voluntario_extra"
+                                data-aluno="{{ dados_aluno.aluno.nome }}"
+                                data-atividade="{{ atividade.nome }}"
+                                title="Voluntário Extra para {{ atividade.nome }}: {{ dados_atividade.V1 }}"
+                                tabindex="0"
+                                role="gridcell"
+                                aria-label="Voluntário Extra: {{ dados_atividade.V1 }}">
+                                <input type="number" 
+                                       value="{{ dados_atividade.V1 }}" 
+                                       min="0" max="999" 
+                                       data-original="{{ dados_atividade.V1 }}"
+                                       onchange="marcarAlterado(this)"
+                                       onblur="salvarCelulaSeAlterada(this)"
+                                       aria-label="Editar voluntário extra">
+                            </td>
+                            
+                            <!-- Voluntário Simples -->
+                            <td class="celula-editavel" 
+                                data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" 
+                                data-campo="voluntario_simples"
+                                data-aluno="{{ dados_aluno.aluno.nome }}"
+                                data-atividade="{{ atividade.nome }}"
+                                title="Voluntário Simples para {{ atividade.nome }}: {{ dados_atividade.V2 }}"
+                                tabindex="0"
+                                role="gridcell"
+                                aria-label="Voluntário Simples: {{ dados_atividade.V2 }}">
+                                <input type="number" 
+                                       value="{{ dados_atividade.V2 }}" 
+                                       min="0" max="999" 
+                                       data-original="{{ dados_atividade.V2 }}"
+                                       onchange="marcarAlterado(this)"
+                                       onblur="salvarCelulaSeAlterada(this)"
+                                       aria-label="Editar voluntário simples">
+                            </td>
+                            
+                            <!-- Percentual (Calculado) -->
+                            <td class="percentual-cell {% get_percentual_class dados_atividade.percentual %}"
+                                title="Percentual de presença: {{ dados_atividade.percentual|floatformat:1 }}%"
+                                data-percentual="{{ dados_atividade.percentual }}"
+                                role="gridcell"
+                                aria-label="Percentual: {{ dados_atividade.percentual|floatformat:1 }}%">
+                                {{ dados_atividade.percentual|floatformat:1 }}%
+                            </td>
+                        {% else %}
+                            <!-- Células vazias para atividade sem dados -->
+                            <td aria-label="Sem dados">-</td>
+                            <td aria-label="Sem dados">-</td>
+                            <td aria-label="Sem dados">-</td>
+                            <td aria-label="Sem dados">-</td>
+                            <td aria-label="Sem dados">-</td>
+                            <td aria-label="Sem dados">-</td>
+                        {% endif %}
+                        {% endwith %}
+                        {% endfor %}
+                        
+                        <!-- Colunas de Totais (Fixas à direita) -->
+                        <td class="coluna-totais" 
+                            title="Total de convocações: {{ dados_aluno.totais.convocacoes }}"
+                            role="gridcell"
+                            aria-label="Total convocações: {{ dados_aluno.totais.convocacoes }}">
+                            {{ dados_aluno.totais.convocacoes }}
+                        </td>
+                        <td class="coluna-totais" 
+                            title="Total de presenças: {{ dados_aluno.totais.presencas }}"
+                            role="gridcell"
+                            aria-label="Total presenças: {{ dados_aluno.totais.presencas }}">
+                            {{ dados_aluno.totais.presencas }}
+                        </td>
+                        <td class="coluna-totais" 
+                            title="Total de faltas: {{ dados_aluno.totais.faltas }}"
+                            role="gridcell"
+                            aria-label="Total faltas: {{ dados_aluno.totais.faltas }}">
+                            {{ dados_aluno.totais.faltas }}
+                        </td>
+                        <td class="coluna-totais" 
+                            title="Total de voluntários: {{ dados_aluno.totais.voluntarios }}"
+                            role="gridcell"
+                            aria-label="Total voluntários: {{ dados_aluno.totais.voluntarios }}">
+                            {{ dados_aluno.totais.voluntarios }}
+                        </td>
+                        <td class="coluna-totais percentual-cell {% get_percentual_class dados_aluno.totais.percentual_medio %}"
+                            title="Percentual médio: {{ dados_aluno.totais.percentual_medio|floatformat:1 }}%"
+                            role="gridcell"
+                            aria-label="Percentual médio: {{ dados_aluno.totais.percentual_medio|floatformat:1 }}%">
+                            {{ dados_aluno.totais.percentual_medio|floatformat:1 }}%
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="100%" class="text-center py-4">
+                            <div class="alert alert-info mb-0" role="alert">
+                                <i class="fas fa-info-circle"></i>
+                                Nenhum registro encontrado com os filtros selecionados.
+                                <br>
+                                <small class="text-muted">
+                                    Tente ajustar os filtros ou verificar se existem dados cadastrados.
+                                </small>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Estatísticas Footer -->
+        <div class="estatisticas-footer" role="region" aria-label="Estatísticas gerais">
+            <div class="estatisticas-grid">
+                <div class="estatistica-item">
+                    <div class="estatistica-numero" aria-label="Total de registros">
+                        {{ estatisticas.total_registros|default:0 }}
+                    </div>
+                    <div class="estatistica-label">Total de Registros</div>
+                </div>
+                <div class="estatistica-item">
+                    <div class="estatistica-numero" aria-label="Alunos únicos">
+                        {{ estatisticas.alunos_unicos|default:0 }}
+                    </div>
+                    <div class="estatistica-label">Alunos Únicos</div>
+                </div>
+                <div class="estatistica-item">
+                    <div class="estatistica-numero" aria-label="Atividades únicas">
+                        {{ estatisticas.atividades_unicas|default:0 }}
+                    </div>
+                    <div class="estatistica-label">Atividades Únicas</div>
+                </div>
+                <div class="estatistica-item">
+                    <div class="estatistica-numero" aria-label="Total de convocações">
+                        {{ estatisticas.total_convocacoes|default:0 }}
+                    </div>
+                    <div class="estatistica-label">Total Convocações</div>
+                </div>
+                <div class="estatistica-item">
+                    <div class="estatistica-numero" aria-label="Total de presenças">
+                        {{ estatisticas.total_presencas|default:0 }}
+                    </div>
+                    <div class="estatistica-label">Total Presenças</div>
+                </div>
+                <div class="estatistica-item">
+                    <div class="estatistica-numero" aria-label="Média percentual">
+                        {{ estatisticas.media_percentual|default:0|floatformat:1 }}%
+                    </div>
+                    <div class="estatistica-label">Média Percentual</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loading-overlay" role="dialog" aria-modal="true" aria-label="Carregando">
+    <div class="loading-content">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <div>Processando operação...</div>
+        <small class="text-muted">Por favor, aguarde</small>
+    </div>
+</div>
+
+<!-- Feedback Messages -->
+<div class="feedback-message" id="feedback-message" role="alert" aria-live="polite"></div>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Confirmar Ação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                <!-- Conteúdo dinâmico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmModalAction">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<script>
+// ========== CONFIGURAÇÃO GLOBAL ==========
+const TabelaConsolidada = {
+    config: {
+        csrfToken: '{{ csrf_token }}',
+        urlConsolidado: '{% url "presencas:consolidado" %}',
+        urlExportar: '{% url "presencas:exportar_consolidado" %}',
+        salvarAutomatico: {{ configuracao.salvar_automatico|yesno:"true,false" }},
+        confirmarAntesSalvar: {{ configuracao.confirmar_antes_salvar|yesno:"true,false" }}
+    },
+    
+    alteracoesPendentes: new Set(),
+    timeoutSalvamento: null,
+    
+    // ========== INICIALIZAÇÃO ==========
+    init() {
+        this.initEventListeners();
+        this.initFiltrosDinamicos();
+        this.initSelect2();
+        this.initTooltips();
+        this.initKeyboardNavigation();
+        
+        console.log('Tabela Consolidada inicializada');
+    },
+    
+    // ========== EVENT LISTENERS ==========
+    initEventListeners() {
+        // Validação do formulário de filtros
+        document.getElementById('filtros-form').addEventListener('submit', (e) => {
+            if (!this.validarFiltros()) {
+                e.preventDefault();
+            } else {
+                this.showLoading();
+            }
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 's':
+                        e.preventDefault();
+                        this.salvarTudo();
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        this.toggleFiltros();
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        this.exportarExcel();
+                        break;
+                }
+            }
+        });
+        
+        // Auto-save quando há alterações pendentes
+        if (this.config.salvarAutomatico) {
+            setInterval(() => {
+                if (this.alteracoesPendentes.size > 0) {
+                    this.salvarAlteracoesPendentes();
+                }
+            }, 5000); // Salvar a cada 5 segundos
+        }
+    },
+    
+    // ========== FILTROS DINÂMICOS ==========
+    initFiltrosDinamicos() {
+        const cursoSelect = document.getElementById('curso_id');
+        const turmaSelect = document.getElementById('turma_id');
+        const atividadeSelect = document.getElementById('atividade_id');
+        
+        if (cursoSelect && turmaSelect) {
+            cursoSelect.addEventListener('change', async () => {
+                const cursoId = cursoSelect.value;
+                await this.carregarTurmas(cursoId);
+            });
+        }
+        
+        if (turmaSelect && atividadeSelect) {
+            turmaSelect.addEventListener('change', async () => {
+                const turmaId = turmaSelect.value;
+                await this.carregarAtividades(turmaId);
+            });
+        }
+    },
+    
+    async carregarTurmas(cursoId) {
+        try {
+            const turmaSelect = document.getElementById('turma_id');
+            
+            if (!cursoId) {
+                turmaSelect.innerHTML = '<option value="">Todas as turmas</option>';
+                return;
+            }
+            
+            const response = await fetch(`${this.config.urlConsolidado}?acao=carregar_filtros&tipo=turmas&curso_id=${cursoId}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                turmaSelect.innerHTML = '<option value="">Todas as turmas</option>';
+                data.turmas.forEach(turma => {
+                    turmaSelect.innerHTML += `<option value="${turma.id}">${turma.nome}</option>`;
+                });
+                
+                // Reinicializar Select2
+                $(turmaSelect).select2('destroy').select2();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar turmas:', error);
+            this.showFeedback('Erro ao carregar turmas', 'error');
+        }
+    },
+    
+    async carregarAtividades(turmaId) {
+        try {
+            const atividadeSelect = document.getElementById('atividade_id');
+            
+            if (!turmaId) {
+                atividadeSelect.innerHTML = '<option value="">Todas as atividades</option>';
+                return;
+            }
+            
+            const response = await fetch(`${this.config.urlConsolidado}?acao=carregar_filtros&tipo=atividades&turma_id=${turmaId}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                atividadeSelect.innerHTML = '<option value="">Todas as atividades</option>';
+                data.atividades.forEach(atividade => {
+                    atividadeSelect.innerHTML += `<option value="${atividade.id}">${atividade.nome}</option>`;
+                });
+                
+                // Reinicializar Select2
+                $(atividadeSelect).select2('destroy').select2();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar atividades:', error);
+            this.showFeedback('Erro ao carregar atividades', 'error');
+        }
+    },
+    
+    // ========== INICIALIZAÇÕES DE PLUGINS ==========
+    initSelect2() {
+        $('.form-select').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: function() {
+                return $(this).data('placeholder') || 'Selecione...';
+            },
+            allowClear: true
+        });
+    },
+    
+    initTooltips() {
+        // Inicializar tooltips do Bootstrap
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    },
+    
+    initKeyboardNavigation() {
+        // Navegação por teclado na tabela
+        document.addEventListener('keydown', (e) => {
+            const activeElement = document.activeElement;
+            
+            if (activeElement && activeElement.closest('.celula-editavel')) {
+                const cell = activeElement.closest('.celula-editavel');
+                
+                switch (e.key) {
+                    case 'Tab':
+                        // Deixar comportamento padrão do Tab
+                        break;
+                    case 'Enter':
+                        e.preventDefault();
+                        this.navegarCelula(cell, 'down');
+                        break;
+                    case 'Escape':
+                        e.preventDefault();
+                        this.cancelarEdicaoCelula(cell);
+                        break;
+                }
+            }
+        });
+    },
+    
+    // ========== NAVEGAÇÃO DE CÉLULAS ==========
+    navegarCelula(celula, direcao) {
+        const input = celula.querySelector('input');
+        if (input) input.blur(); // Salvar valor atual
+        
+        const todasCelulas = Array.from(document.querySelectorAll('.celula-editavel'));
+        const indiceAtual = todasCelulas.indexOf(celula);
+        
+        let proximoIndice;
+        switch (direcao) {
+            case 'up':
+                proximoIndice = indiceAtual - 6; // 6 colunas por atividade
+                break;
+            case 'down':
+                proximoIndice = indiceAtual + 6;
+                break;
+            case 'left':
+                proximoIndice = indiceAtual - 1;
+                break;
+            case 'right':
+                proximoIndice = indiceAtual + 1;
+                break;
+        }
+        
+        if (proximoIndice >= 0 && proximoIndice < todasCelulas.length) {
+            const proximaCelula = todasCelulas[proximoIndice];
+            const proximoInput = proximaCelula.querySelector('input');
+            if (proximoInput) {
+                proximoInput.focus();
+                proximoInput.select();
+            }
+        }
+    },
+    
+    // ========== VALIDAÇÕES ==========
+    validarFiltros() {
+        const periodoInicio = document.getElementById('periodo_inicio').value;
+        const periodoFim = document.getElementById('periodo_fim').value;
+        
+        if (periodoInicio && periodoFim && periodoInicio > periodoFim) {
+            this.showFeedback('A data de início deve ser anterior à data de fim', 'error');
+            return false;
+        }
+        
+        return true;
+    },
+    
+    validarValorCelula(valor, campo) {
+        const valorInt = parseInt(valor);
+        
+        if (isNaN(valorInt) || valorInt < 0 || valorInt > 999) {
+            return false;
+        }
+        
+        // Validações específicas por campo se necessário
+        switch (campo) {
+            case 'presencas':
+            case 'faltas':
+                // Não pode ser maior que convocações
+                return true; // Implementar validação cruzada se necessário
+            default:
+                return true;
+        }
+    },
+    
+    // ========== MANIPULAÇÃO DE CÉLULAS ==========
+    marcarAlterado(input) {
+        const valorOriginal = input.getAttribute('data-original');
+        const valorAtual = input.value;
+        const celula = input.closest('.celula-editavel');
+        const presencaId = celula.getAttribute('data-presenca-id');
+        
+        if (valorOriginal !== valorAtual) {
+            celula.classList.add('editing');
+            this.alteracoesPendentes.add(presencaId);
+        } else {
+            celula.classList.remove('editing');
+            this.alteracoesPendentes.delete(presencaId);
+        }
+        
+        this.atualizarIndicadorAlteracoes();
+    },
+    
+    async salvarCelulaSeAlterada(input) {
+        const valorOriginal = input.getAttribute('data-original');
+        const valorAtual = input.value;
+        
+        if (valorOriginal !== valorAtual) {
+            await this.salvarCelula(input);
+        }
+    },
+    
+    async salvarCelula(input) {
+        const celula = input.closest('.celula-editavel');
+        const presencaId = celula.getAttribute('data-presenca-id');
+        const campo = celula.getAttribute('data-campo');
+        const valor = input.value;
+        const aluno = celula.getAttribute('data-aluno');
+        const atividade = celula.getAttribute('data-atividade');
+        
+        // Validar valor
+        if (!this.validarValorCelula(valor, campo)) {
+            this.showFeedback('Valor inválido. Deve ser um número entre 0 e 999.', 'error');
+            input.focus();
+            input.select();
+            return false;
+        }
+        
+        try {
+            celula.classList.add('editing');
+            
+            const response = await fetch(this.config.urlConsolidado, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': this.config.csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    acao: 'salvar_celula',
+                    presenca_id: presencaId,
+                    campo: campo,
+                    valor: valor
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Atualizar valor original
+                input.setAttribute('data-original', valor);
+                
+                // Feedback visual de sucesso
+                celula.classList.remove('editing');
+                celula.classList.add('saved');
+                
+                // Atualizar percentual se fornecido
+                if (data.nova_presenca && data.nova_presenca.percentual) {
+                    this.atualizarPercentualLinha(celula.closest('tr'), data.nova_presenca);
+                }
+                
+                // Remover da lista de alterações pendentes
+                this.alteracoesPendentes.delete(presencaId);
+                this.atualizarIndicadorAlteracoes();
+                
+                // Remover feedback visual após 2 segundos
+                setTimeout(() => {
+                    celula.classList.remove('saved');
+                }, 2000);
+                
+                this.showFeedback(`${campo} atualizado para ${aluno} - ${atividade}`, 'success');
+                
+                return true;
+                
+            } else {
+                throw new Error(data.error || 'Erro desconhecido');
+            }
+            
+        } catch (error) {
+            console.error('Erro ao salvar célula:', error);
+            
+            celula.classList.remove('editing');
+            celula.classList.add('error');
+            
+            setTimeout(() => {
+                celula.classList.remove('error');
+            }, 3000);
+            
+            this.showFeedback(`Erro ao salvar: ${error.message}`, 'error');
+            input.focus();
+            input.select();
+            
+            return false;
+        }
+    },
+    
+    atualizarPercentualLinha(linha, novosValores) {
+        // Atualizar célula de percentual da atividade específica
+        const percentualCell = linha.querySelector(`[data-presenca-id="${novosValores.id}"]`)
+                                   ?.closest('tr')
+                                   ?.querySelector('.percentual-cell[data-percentual]');
+        
+        if (percentualCell && novosValores.percentual !== undefined) {
+            percentualCell.textContent = parseFloat(novosValores.percentual).toFixed(1) + '%';
+            percentualCell.setAttribute('data-percentual', novosValores.percentual);
+            
+            // Atualizar classe de cor
+            this.atualizarClassePercentual(percentualCell, novosValores.percentual);
+        }
+        
+        // TODO: Atualizar totais da linha se necessário
+    },
+    
+    atualizarClassePercentual(elemento, percentual) {
+        elemento.classList.remove('percentual-baixo', 'percentual-medio', 'percentual-alto');
+        
+        const valor = parseFloat(percentual);
+        if (valor < 50) {
+            elemento.classList.add('percentual-baixo');
+        } else if (valor < 75) {
+            elemento.classList.add('percentual-medio');
+        } else {
+            elemento.classList.add('percentual-alto');
+        }
+    },
+    
+    cancelarEdicaoCelula(celula) {
+        const input = celula.querySelector('input');
+        const valorOriginal = input.getAttribute('data-original');
+        
+        input.value = valorOriginal;
+        celula.classList.remove('editing');
+        
+        const presencaId = celula.getAttribute('data-presenca-id');
+        this.alteracoesPendentes.delete(presencaId);
+        this.atualizarIndicadorAlteracoes();
+    },
+    
+    // ========== SALVAR TUDO ==========
+    async salvarTudo() {
+        if (this.alteracoesPendentes.size === 0) {
+            this.showFeedback('Não há alterações para salvar', 'warning');
+            return;
+        }
+        
+        if (this.config.confirmarAntesSalvar) {
+            const confirmar = await this.confirmarAcao(
+                'Salvar Alterações',
+                `Deseja salvar todas as ${this.alteracoesPendentes.size} alterações pendentes?`
+            );
+            
+            if (!confirmar) return;
+        }
+        
+        await this.salvarAlteracoesPendentes();
+    },
+    
+    async salvarAlteracoesPendentes() {
+        const alteracoesArray = Array.from(this.alteracoesPendentes);
+        
+        if (alteracoesArray.length === 0) return;
+        
+        this.showLoading();
+        
+        try {
+            const promises = alteracoesArray.map(presencaId => {
+                const celula = document.querySelector(`[data-presenca-id="${presencaId}"]`);
+                const input = celula?.querySelector('input');
+                
+                if (input) {
+                    return this.salvarCelula(input);
+                }
+                return Promise.resolve(false);
+            });
+            
+            const resultados = await Promise.all(promises);
+            const sucessos = resultados.filter(Boolean).length;
+            
+            if (sucessos > 0) {
+                this.showFeedback(`${sucessos} alterações salvas com sucesso`, 'success');
+            }
+            
+            if (sucessos < alteracoesArray.length) {
+                this.showFeedback(`${alteracoesArray.length - sucessos} alterações falharam`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('Erro ao salvar alterações:', error);
+            this.showFeedback('Erro ao salvar alterações', 'error');
+        } finally {
+            this.hideLoading();
+        }
+    },
+    
+    atualizarIndicadorAlteracoes() {
+        const botaoSalvar = document.querySelector('[onclick="salvarTudo()"]');
+        const contador = this.alteracoesPendentes.size;
+        
+        if (botaoSalvar) {
+            if (contador > 0) {
+                botaoSalvar.innerHTML = `<i class="fas fa-save"></i> Salvar Tudo (${contador})`;
+                botaoSalvar.classList.remove('btn-outline-info');
+                botaoSalvar.classList.add('btn-warning');
+            } else {
+                botaoSalvar.innerHTML = '<i class="fas fa-save"></i> Salvar Tudo';
+                botaoSalvar.classList.remove('btn-warning');
+                botaoSalvar.classList.add('btn-outline-info');
+            }
+        }
+    },
+    
+    // ========== UTILITÁRIOS DE UI ==========
+    showLoading() {
+        document.getElementById('loading-overlay').style.display = 'flex';
+    },
+    
+    hideLoading() {
+        document.getElementById('loading-overlay').style.display = 'none';
+    },
+    
+    showFeedback(message, type = 'info') {
+        const feedback = document.getElementById('feedback-message');
+        feedback.textContent = message;
+        feedback.className = `feedback-message ${type}`;
+        feedback.style.display = 'block';
+        
+        setTimeout(() => {
+            feedback.style.display = 'none';
+        }, 5000);
+    },
+    
+    async confirmarAcao(titulo, mensagem) {
+        return new Promise((resolve) => {
+            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            
+            document.getElementById('confirmModalLabel').textContent = titulo;
+            document.getElementById('confirmModalBody').textContent = mensagem;
+            
+            const confirmarBtn = document.getElementById('confirmModalAction');
+            confirmarBtn.onclick = () => {
+                modal.hide();
+                resolve(true);
+            };
+            
+            document.querySelector('#confirmModal .btn-secondary').onclick = () => {
+                modal.hide();
+                resolve(false);
+            };
+            
+            modal.show();
+        });
+    }
+};
+
+// ========== FUNÇÕES GLOBAIS PARA TEMPLATE ==========
+function toggleFiltros() {
+    const container = document.getElementById('filtros-section');
+    const isVisible = container.style.display !== 'none';
+    container.style.display = isVisible ? 'none' : 'block';
+    
+    // Atualizar aria-expanded
+    const botao = document.querySelector('[onclick="toggleFiltros()"]');
+    if (botao) {
+        botao.setAttribute('aria-expanded', !isVisible);
+    }
+}
+
+function limparFiltros() {
+    document.getElementById('filtros-form').reset();
+    $('.form-select').val(null).trigger('change');
+    window.location.href = TabelaConsolidada.config.urlConsolidado;
+}
+
+function salvarFiltrosPadrao() {
+    // Implementar salvamento de filtros padrão no localStorage
+    const formData = new FormData(document.getElementById('filtros-form'));
+    const filtros = Object.fromEntries(formData.entries());
+    
+    localStorage.setItem('filtros_padrao_consolidado', JSON.stringify(filtros));
+    TabelaConsolidada.showFeedback('Filtros salvos como padrão', 'success');
+}
+
+function exportarExcel() {
+    TabelaConsolidada.showLoading();
+    
+    const params = new URLSearchParams(window.location.search);
+    const exportUrl = TabelaConsolidada.config.urlExportar + '?' + params.toString();
+    
+    // Criar link temporário para download
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.download = '';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setTimeout(() => {
+        TabelaConsolidada.hideLoading();
+        TabelaConsolidada.showFeedback('Exportação iniciada', 'success');
+    }, 1000);
+}
+
+function atualizarTabela() {
+    TabelaConsolidada.showLoading();
+    window.location.reload();
+}
+
+function salvarTudo() {
+    TabelaConsolidada.salvarTudo();
+}
+
+function marcarAlterado(input) {
+    TabelaConsolidada.marcarAlterado(input);
+}
+
+function salvarCelulaSeAlterada(input) {
+    TabelaConsolidada.salvarCelulaSeAlterada(input);
+}
+
+// ========== INICIALIZAÇÃO ==========
+document.addEventListener('DOMContentLoaded', function() {
+    TabelaConsolidada.init();
+    
+    // Carregar filtros padrão se existirem
+    const filtrosPadrao = localStorage.getItem('filtros_padrao_consolidado');
+    if (filtrosPadrao && window.location.search === '') {
+        const filtros = JSON.parse(filtrosPadrao);
+        
+        // Aplicar filtros padrão
+        Object.entries(filtros).forEach(([campo, valor]) => {
+            const elemento = document.getElementById(campo);
+            if (elemento && valor) {
+                elemento.value = valor;
+            }
+        });
+    }
+});
+
+// ========== TRATAMENTO DE ERROS GLOBAIS ==========
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Erro não tratado:', event.reason);
+    TabelaConsolidada.showFeedback('Ocorreu um erro inesperado', 'error');
+    TabelaConsolidada.hideLoading();
+});
+</script>
+{% endblock %}

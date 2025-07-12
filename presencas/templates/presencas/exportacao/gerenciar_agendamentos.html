@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gerenciar Agendamentos de Relatórios{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    .agendamento-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .status-badge {
+        font-size: 0.8em;
+        padding: 4px 8px;
+        border-radius: 12px;
+    }
+    
+    .status-ativo {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-inativo {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-clock me-2"></i> Agendamentos de Relatórios</h1>
+                <div>
+                    <a href="{% url 'presencas:exportacao_avancada' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar para Exportação
+                    </a>
+                    <button type="button" class="btn btn-primary" id="btn-novo-agendamento">
+                        <i class="fas fa-plus"></i> Novo Agendamento
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if mensagem %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                {{ mensagem }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if agendamentos %}
+    <div class="row">
+        {% for agendamento in agendamentos %}
+        <div class="col-lg-6 col-xl-4">
+            <div class="agendamento-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="mb-0">{{ agendamento.nome }}</h5>
+                    <span class="status-badge {% if agendamento.ativo %}status-ativo{% else %}status-inativo{% endif %}">
+                        {% if agendamento.ativo %}
+                            <i class="fas fa-check-circle"></i> Ativo
+                        {% else %}
+                            <i class="fas fa-pause-circle"></i> Inativo
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block">
+                        <i class="fas fa-file-alt me-1"></i>
+                        {{ agendamento.get_template_display }} - {{ agendamento.get_formato_display }}
+                    </small>
+                    
+                    <small class="text-muted d-block">
+                        <i class="fas fa-calendar me-1"></i>
+                        {{ agendamento.get_frequencia_display }}
+                    </small>
+                    
+                    {% if agendamento.proxima_execucao %}
+                    <small class="text-muted d-block">
+                        <i class="fas fa-clock me-1"></i>
+                        Próxima: {{ agendamento.proxima_execucao|date:"d/m/Y H:i" }}
+                    </small>
+                    {% endif %}
+                    
+                    {% if agendamento.ultima_execucao %}
+                    <small class="text-muted d-block">
+                        <i class="fas fa-history me-1"></i>
+                        Última: {{ agendamento.ultima_execucao|date:"d/m/Y H:i" }}
+                    </small>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary" 
+                                onclick="editarAgendamento({{ agendamento.id }})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        
+                        {% if agendamento.ativo %}
+                        <button type="button" class="btn btn-outline-warning" 
+                                onclick="pausarAgendamento({{ agendamento.id }})">
+                            <i class="fas fa-pause"></i> Pausar
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-outline-success" 
+                                onclick="ativarAgendamento({{ agendamento.id }})">
+                            <i class="fas fa-play"></i> Ativar
+                        </button>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="button" class="btn btn-outline-danger btn-sm" 
+                            onclick="excluirAgendamento({{ agendamento.id }})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <h3>Nenhum agendamento configurado</h3>
+                <p class="mb-4">
+                    Você ainda não possui nenhum relatório agendado.<br>
+                    Crie seu primeiro agendamento para receber relatórios automaticamente.
+                </p>
+                <button type="button" class="btn btn-primary btn-lg" id="btn-primeiro-agendamento">
+                    <i class="fas fa-plus me-2"></i>Criar Primeiro Agendamento
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Agendamento -->
+<div class="modal fade" id="modal-agendamento" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-clock me-2"></i>
+                    <span id="modal-title">Novo Agendamento</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Funcionalidade em Desenvolvimento</strong><br>
+                    O sistema de agendamento de relatórios automáticos será implementado em uma versão futura. 
+                    Por enquanto, você pode gerar relatórios manualmente através da 
+                    <a href="{% url 'presencas:exportacao_avancada' %}">página de exportação</a>.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-check text-success me-2"></i>Funcionalidades Disponíveis:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-file-excel text-success me-2"></i>Exportação Excel</li>
+                            <li><i class="fas fa-file-csv text-success me-2"></i>Exportação CSV</li>
+                            <li><i class="fas fa-filter text-success me-2"></i>Filtros Avançados</li>
+                            <li><i class="fas fa-chart-bar text-success me-2"></i>Múltiplos Templates</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-clock text-warning me-2"></i>Em Desenvolvimento:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-calendar text-warning me-2"></i>Agendamento Automático</li>
+                            <li><i class="fas fa-envelope text-warning me-2"></i>Envio por Email</li>
+                            <li><i class="fas fa-file-pdf text-warning me-2"></i>Exportação PDF</li>
+                            <li><i class="fas fa-chart-pie text-warning me-2"></i>Gráficos Avançados</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <a href="{% url 'presencas:exportacao_avancada' %}" class="btn btn-primary">
+                    <i class="fas fa-file-export me-2"></i>Ir para Exportação
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Variáveis globais
+let modalAgendamento = null;
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    modalAgendamento = new bootstrap.Modal(document.getElementById('modal-agendamento'));
+    
+    // Event listeners
+    document.getElementById('btn-novo-agendamento').addEventListener('click', novoAgendamento);
+    
+    const btnPrimeiro = document.getElementById('btn-primeiro-agendamento');
+    if (btnPrimeiro) {
+        btnPrimeiro.addEventListener('click', novoAgendamento);
+    }
+});
+
+function novoAgendamento() {
+    document.getElementById('modal-title').textContent = 'Novo Agendamento';
+    modalAgendamento.show();
+}
+
+function editarAgendamento(id) {
+    document.getElementById('modal-title').textContent = 'Editar Agendamento';
+    modalAgendamento.show();
+}
+
+function pausarAgendamento(id) {
+    if (confirm('Deseja pausar este agendamento?')) {
+        // Implementar quando funcionalidade estiver pronta
+        console.log('Pausar agendamento:', id);
+    }
+}
+
+function ativarAgendamento(id) {
+    if (confirm('Deseja ativar este agendamento?')) {
+        // Implementar quando funcionalidade estiver pronta
+        console.log('Ativar agendamento:', id);
+    }
+}
+
+function excluirAgendamento(id) {
+    if (confirm('Deseja excluir permanentemente este agendamento?')) {
+        // Implementar quando funcionalidade estiver pronta
+        console.log('Excluir agendamento:', id);
+    }
+}
+</script>
+{% endblock %}

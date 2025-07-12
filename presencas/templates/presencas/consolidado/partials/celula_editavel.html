@@ -1,0 +1,11 @@
+{% if pode_editar %}
+<td class="celula-editavel" data-presenca-id="{{ presenca_id }}" data-campo="{{ campo }}">
+    <input type="number" value="{{ valor }}" min="0" max="999" 
+           class="form-control form-control-sm"
+           onchange="salvarCelula(this)" 
+           onblur="salvarCelula(this)"
+           style="width: 60px; text-align: center;">
+</td>
+{% else %}
+<td class="celula-readonly">{{ valor }}</td>
+{% endif %}

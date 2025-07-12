@@ -1,0 +1,720 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Exportação Avançada de Relatórios{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    .export-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: #f8f9fa;
+    }
+    
+    .format-option {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .format-option:hover {
+        background-color: #e9ecef;
+        border-color: #007bff;
+    }
+    
+    .format-option input[type="radio"] {
+        margin-right: 10px;
+    }
+    
+    .format-icon {
+        font-size: 24px;
+        margin-right: 15px;
+        width: 40px;
+        text-align: center;
+    }
+    
+    .template-card {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .template-card:hover {
+        border-color: #007bff;
+        background-color: #f0f8ff;
+    }
+    
+    .template-card.selected {
+        border-color: #007bff;
+        background-color: #e7f3ff;
+    }
+    
+    .advanced-options {
+        display: none;
+        margin-top: 20px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background: white;
+    }
+    
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        margin: 20px 0;
+    }
+    
+    .progress-container {
+        display: none;
+        margin: 20px 0;
+    }
+    
+    .alert-container {
+        margin: 20px 0;
+    }
+    
+    .form-section {
+        margin-bottom: 30px;
+    }
+    
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-file-export me-2"></i> Exportação Avançada de Relatórios</h1>
+                <div>
+                    <a href="{% url 'presencas:consolidado' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                    <a href="#" id="btn-agendamentos" class="btn btn-outline-primary">
+                        <i class="fas fa-clock"></i> Agendamentos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alertas -->
+    <div class="alert-container">
+        <div id="alert-success" class="alert alert-success alert-dismissible fade" role="alert" style="display: none;">
+            <i class="fas fa-check-circle me-2"></i>
+            <span id="success-message"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div id="alert-error" class="alert alert-danger alert-dismissible fade" role="alert" style="display: none;">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span id="error-message"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+    
+    <!-- Formulário de Exportação -->
+    <form id="form-exportacao" method="post" action="{% url 'presencas:processar_exportacao' %}">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Coluna Principal -->
+            <div class="col-lg-8">
+                <!-- Seção 1: Formato de Exportação -->
+                <div class="export-card">
+                    <div class="section-title">
+                        <i class="fas fa-file-alt me-2"></i> 1. Formato de Exportação
+                    </div>
+                    
+                    <div class="row">
+                        {% for formato in formatos %}
+                        <div class="col-md-6 mb-3">
+                            <label class="format-option">
+                                <input type="radio" name="formato" value="{{ formato.valor }}" 
+                                       {% if forloop.first %}checked{% endif %}
+                                       onchange="updateFormatOptions()">
+                                <div class="format-icon">
+                                    {% if 'excel' in formato.valor %}
+                                        <i class="fas fa-file-excel text-success"></i>
+                                    {% elif 'csv' in formato.valor %}
+                                        <i class="fas fa-file-csv text-info"></i>
+                                    {% elif 'pdf' in formato.valor %}
+                                        <i class="fas fa-file-pdf text-danger"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <strong>{{ formato.nome }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {% if 'basico' in formato.valor %}
+                                            Formatação simples e rápida
+                                        {% elif 'avancado' in formato.valor %}
+                                            Formatação profissional com estilos
+                                        {% elif 'graficos' in formato.valor %}
+                                            Inclui gráficos e visualizações
+                                        {% elif 'csv' in formato.valor %}
+                                            Compatível com Excel e planilhas
+                                        {% elif 'simples' in formato.valor %}
+                                            Layout básico para impressão
+                                        {% elif 'completo' in formato.valor %}
+                                            Layout completo com gráficos
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Seção 2: Template de Relatório -->
+                <div class="export-card">
+                    <div class="section-title">
+                        <i class="fas fa-layer-group me-2"></i> 2. Template de Relatório
+                    </div>
+                    
+                    <div class="row">
+                        {% for template in templates %}
+                        <div class="col-md-6 mb-3">
+                            <div class="template-card" data-template="{{ template.valor }}">
+                                <input type="radio" name="template" value="{{ template.valor }}" 
+                                       {% if forloop.first %}checked{% endif %}
+                                       style="display: none;">
+                                <h6><i class="fas fa-chart-line me-2"></i>{{ template.nome }}</h6>
+                                <small class="text-muted">
+                                    {% if template.valor == 'consolidado_geral' %}
+                                        Visão geral completa de todas as presenças
+                                    {% elif template.valor == 'por_turma' %}
+                                        Relatório detalhado agrupado por turma
+                                    {% elif template.valor == 'por_curso' %}
+                                        Análise consolidada por curso
+                                    {% elif template.valor == 'estatisticas_executivas' %}
+                                        Métricas e indicadores para gestão
+                                    {% elif template.valor == 'carencia_presencas' %}
+                                        Alunos com baixa frequência
+                                    {% elif template.valor == 'comparativo_temporal' %}
+                                        Análise de tendências temporais
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Seção 3: Filtros de Dados -->
+                <div class="export-card">
+                    <div class="section-title">
+                        <i class="fas fa-filter me-2"></i> 3. Filtros de Dados
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Período -->
+                        <div class="col-md-6 mb-3">
+                            <label for="periodo" class="form-label">Período</label>
+                            <select name="periodo" id="periodo" class="form-select" onchange="togglePeriodoPersonalizado()">
+                                {% for periodo in periodos %}
+                                <option value="{{ periodo.valor }}">{{ periodo.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Turma -->
+                        <div class="col-md-6 mb-3">
+                            <label for="turma_id" class="form-label">Turma (Opcional)</label>
+                            <select name="turma_id" id="turma_id" class="form-select">
+                                <option value="">Todas as Turmas</option>
+                                {% for turma in turmas %}
+                                <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Período Personalizado -->
+                        <div class="col-12" id="periodo-personalizado" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="data_inicio" class="form-label">Data Início</label>
+                                    <input type="date" name="data_inicio" id="data_inicio" class="form-control">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="data_fim" class="form-label">Data Fim</label>
+                                    <input type="date" name="data_fim" id="data_fim" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Curso -->
+                        <div class="col-md-6 mb-3">
+                            <label for="curso" class="form-label">Curso (Opcional)</label>
+                            <select name="curso" id="curso" class="form-select">
+                                <option value="">Todos os Cursos</option>
+                                {% for curso in cursos %}
+                                <option value="{{ curso }}">{{ curso }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Título Personalizado -->
+                        <div class="col-md-6 mb-3">
+                            <label for="titulo_personalizado" class="form-label">Título Personalizado</label>
+                            <input type="text" name="titulo_personalizado" id="titulo_personalizado" 
+                                   class="form-control" placeholder="Deixe vazio para usar padrão">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Coluna Lateral -->
+            <div class="col-lg-4">
+                <!-- Opções Avançadas -->
+                <div class="export-card">
+                    <div class="section-title">
+                        <i class="fas fa-cogs me-2"></i> 4. Opções Avançadas
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input type="checkbox" name="incluir_graficos" id="incluir_graficos" 
+                               class="form-check-input" checked>
+                        <label for="incluir_graficos" class="form-check-label">
+                            <i class="fas fa-chart-bar me-2"></i>Incluir Gráficos
+                            <br><small class="text-muted">Gráficos e visualizações nos relatórios</small>
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input type="checkbox" name="incluir_estatisticas" id="incluir_estatisticas" 
+                               class="form-check-input" checked>
+                        <label for="incluir_estatisticas" class="form-check-label">
+                            <i class="fas fa-calculator me-2"></i>Incluir Estatísticas
+                            <br><small class="text-muted">Cálculos e métricas detalhadas</small>
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3" id="option-formatacao">
+                        <input type="checkbox" name="formatacao_profissional" id="formatacao_profissional" 
+                               class="form-check-input" checked>
+                        <label for="formatacao_profissional" class="form-check-label">
+                            <i class="fas fa-paint-brush me-2"></i>Formatação Profissional
+                            <br><small class="text-muted">Estilos e cores avançadas</small>
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3" id="option-multiplas-abas">
+                        <input type="checkbox" name="multiplas_abas" id="multiplas_abas" 
+                               class="form-check-input" checked>
+                        <label for="multiplas_abas" class="form-check-label">
+                            <i class="fas fa-layer-group me-2"></i>Múltiplas Abas
+                            <br><small class="text-muted">Organizar dados em planilhas separadas</small>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Envio por Email -->
+                <div class="export-card">
+                    <div class="section-title">
+                        <i class="fas fa-envelope me-2"></i> 5. Envio por Email (Opcional)
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email_envio" class="form-label">Email de Destino</label>
+                        <input type="email" name="email_envio" id="email_envio" 
+                               class="form-control" placeholder="exemplo@email.com">
+                        <small class="text-muted">Deixe vazio para download direto</small>
+                    </div>
+                </div>
+                
+                <!-- Botões de Ação -->
+                <div class="export-card">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="btn-gerar">
+                            <i class="fas fa-download me-2"></i>Gerar Relatório
+                        </button>
+                        
+                        <button type="button" class="btn btn-outline-success" id="btn-agendar">
+                            <i class="fas fa-clock me-2"></i>Agendar Relatório
+                        </button>
+                        
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                            <i class="fas fa-undo me-2"></i>Limpar Formulário
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Preview -->
+                <div class="export-card">
+                    <div class="section-title">
+                        <i class="fas fa-eye me-2"></i> Preview
+                    </div>
+                    
+                    <div id="preview-container">
+                        <p class="text-muted">Selecione as opções para ver um preview do relatório.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    
+    <!-- Loading -->
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Gerando relatório...</span>
+        </div>
+        <p class="mt-2">Processando relatório, aguarde...</p>
+    </div>
+    
+    <!-- Progress -->
+    <div class="progress-container">
+        <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                 role="progressbar" style="width: 0%"></div>
+        </div>
+        <small class="text-muted mt-2 d-block">Estimativa: <span id="tempo-estimado">calculando...</span></small>
+    </div>
+</div>
+
+<!-- Modal de Agendamento -->
+<div class="modal fade" id="modal-agendamento" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-clock me-2"></i>Agendar Relatório Automático
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-agendamento">
+                    <!-- Conteúdo do formulário de agendamento será carregado via AJAX -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-salvar-agendamento">
+                    <i class="fas fa-save me-2"></i>Salvar Agendamento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Variáveis globais
+let modalAgendamento = null;
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    initializeExportacao();
+    setupEventListeners();
+    updatePreview();
+});
+
+function initializeExportacao() {
+    // Inicializar modal
+    modalAgendamento = new bootstrap.Modal(document.getElementById('modal-agendamento'));
+    
+    // Configurar templates
+    setupTemplateCards();
+    
+    // Atualizar opções de formato
+    updateFormatOptions();
+}
+
+function setupEventListeners() {
+    // Formulário de exportação
+    document.getElementById('form-exportacao').addEventListener('submit', handleExportacao);
+    
+    // Botão de agendamento
+    document.getElementById('btn-agendar').addEventListener('click', showAgendamentoModal);
+    
+    // Templates
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('click', function() {
+            selectTemplate(this.dataset.template);
+        });
+    });
+    
+    // Campos que afetam o preview
+    ['formato', 'template', 'periodo', 'turma_id'].forEach(fieldName => {
+        const elements = document.querySelectorAll(`[name="${fieldName}"]`);
+        elements.forEach(element => {
+            element.addEventListener('change', updatePreview);
+        });
+    });
+}
+
+function setupTemplateCards() {
+    // Marcar primeiro template como selecionado
+    document.querySelector('.template-card').classList.add('selected');
+}
+
+function selectTemplate(templateValue) {
+    // Remover seleção anterior
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Selecionar novo template
+    const selectedCard = document.querySelector(`[data-template="${templateValue}"]`);
+    selectedCard.classList.add('selected');
+    
+    // Atualizar radio button
+    document.querySelector(`[name="template"][value="${templateValue}"]`).checked = true;
+    
+    // Atualizar preview
+    updatePreview();
+}
+
+function togglePeriodoPersonalizado() {
+    const periodo = document.getElementById('periodo').value;
+    const container = document.getElementById('periodo-personalizado');
+    
+    if (periodo === 'personalizado') {
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+    
+    updatePreview();
+}
+
+function updateFormatOptions() {
+    const formato = document.querySelector('[name="formato"]:checked').value;
+    
+    // Mostrar/ocultar opções baseadas no formato
+    const optionFormatacao = document.getElementById('option-formatacao');
+    const optionAbas = document.getElementById('option-multiplas-abas');
+    
+    if (formato.includes('excel')) {
+        optionFormatacao.style.display = 'block';
+        optionAbas.style.display = 'block';
+    } else {
+        optionFormatacao.style.display = 'none';
+        optionAbas.style.display = 'none';
+    }
+    
+    updatePreview();
+}
+
+function updatePreview() {
+    const formato = document.querySelector('[name="formato"]:checked').value;
+    const template = document.querySelector('[name="template"]:checked').value;
+    const periodo = document.getElementById('periodo').value;
+    const turma = document.getElementById('turma_id').value;
+    
+    const formatoNome = document.querySelector(`[value="${formato}"]`).parentElement.textContent.trim();
+    const templateNome = document.querySelector(`[data-template="${template}"] h6`).textContent.trim();
+    
+    const preview = `
+        <div class="preview-item">
+            <strong>Formato:</strong> ${formatoNome}
+        </div>
+        <div class="preview-item">
+            <strong>Template:</strong> ${templateNome}
+        </div>
+        <div class="preview-item">
+            <strong>Período:</strong> ${document.querySelector(`[value="${periodo}"]`).textContent}
+        </div>
+        ${turma ? `<div class="preview-item"><strong>Turma:</strong> ${document.querySelector(`[value="${turma}"]`).textContent}</div>` : ''}
+        <hr>
+        <small class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Este relatório será gerado com as configurações selecionadas.
+        </small>
+    `;
+    
+    document.getElementById('preview-container').innerHTML = preview;
+}
+
+function handleExportacao(event) {
+    event.preventDefault();
+    
+    // Validar formulário
+    if (!validateForm()) {
+        return;
+    }
+    
+    // Mostrar loading
+    showLoading();
+    
+    // Enviar formulário via AJAX
+    const formData = new FormData(event.target);
+    
+    fetch(event.target.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => {
+        if (response.headers.get('content-type').includes('application/json')) {
+            return response.json();
+        } else {
+            // É um arquivo para download
+            return response.blob().then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Extrair nome do arquivo do header
+                const disposition = response.headers.get('content-disposition');
+                let filename = 'relatorio.xlsx';
+                if (disposition) {
+                    const matches = /filename="([^"]*)"/.exec(disposition);
+                    if (matches) filename = matches[1];
+                }
+                
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showSuccess('Relatório gerado com sucesso!');
+            });
+        }
+    })
+    .then(data => {
+        if (data && data.erro) {
+            showError(data.erro);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showError('Erro ao gerar relatório. Tente novamente.');
+    })
+    .finally(() => {
+        hideLoading();
+    });
+}
+
+function validateForm() {
+    const periodo = document.getElementById('periodo').value;
+    
+    if (periodo === 'personalizado') {
+        const dataInicio = document.getElementById('data_inicio').value;
+        const dataFim = document.getElementById('data_fim').value;
+        
+        if (!dataInicio || !dataFim) {
+            showError('Data início e fim são obrigatórias para período personalizado.');
+            return false;
+        }
+        
+        if (new Date(dataInicio) > new Date(dataFim)) {
+            showError('Data início deve ser anterior à data fim.');
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+function showLoading() {
+    document.querySelector('.loading-spinner').style.display = 'block';
+    document.getElementById('btn-gerar').disabled = true;
+    
+    // Simular progresso
+    let progress = 0;
+    const progressBar = document.querySelector('.progress-bar');
+    const progressContainer = document.querySelector('.progress-container');
+    
+    progressContainer.style.display = 'block';
+    
+    const interval = setInterval(() => {
+        progress += Math.random() * 20;
+        if (progress > 90) progress = 90;
+        
+        progressBar.style.width = progress + '%';
+    }, 500);
+    
+    // Armazenar para limpar depois
+    window.progressInterval = interval;
+}
+
+function hideLoading() {
+    document.querySelector('.loading-spinner').style.display = 'none';
+    document.querySelector('.progress-container').style.display = 'none';
+    document.getElementById('btn-gerar').disabled = false;
+    
+    if (window.progressInterval) {
+        clearInterval(window.progressInterval);
+    }
+}
+
+function showSuccess(message) {
+    const alert = document.getElementById('alert-success');
+    document.getElementById('success-message').textContent = message;
+    alert.style.display = 'block';
+    alert.classList.add('show');
+    
+    setTimeout(() => {
+        alert.classList.remove('show');
+        setTimeout(() => alert.style.display = 'none', 150);
+    }, 5000);
+}
+
+function showError(message) {
+    const alert = document.getElementById('alert-error');
+    document.getElementById('error-message').textContent = message;
+    alert.style.display = 'block';
+    alert.classList.add('show');
+    
+    setTimeout(() => {
+        alert.classList.remove('show');
+        setTimeout(() => alert.style.display = 'none', 150);
+    }, 8000);
+}
+
+function showAgendamentoModal() {
+    // Carregar formulário de agendamento via AJAX
+    fetch('{% url "presencas:agendamento_form" %}')
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('form-agendamento').innerHTML = html;
+        modalAgendamento.show();
+    })
+    .catch(error => {
+        console.error('Erro ao carregar formulário:', error);
+        showError('Erro ao carregar formulário de agendamento.');
+    });
+}
+
+function resetForm() {
+    document.getElementById('form-exportacao').reset();
+    
+    // Resetar templates
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    document.querySelector('.template-card').classList.add('selected');
+    
+    // Atualizar preview
+    updatePreview();
+    updateFormatOptions();
+}
+</script>
+{% endblock %}

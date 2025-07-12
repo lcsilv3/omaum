@@ -9,6 +9,9 @@ from django.utils import timezone
 from importlib import import_module
 from datetime import date, datetime
 
+# Importar nova calculadora de estatísticas
+from .services.calculadora_estatisticas import CalculadoraEstatisticas
+
 logger = logging.getLogger(__name__)
 
 def get_aluno_model():

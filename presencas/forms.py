@@ -5,7 +5,7 @@ from cursos.models import Curso
 from turmas.models import Turma
 from alunos.models import Aluno
 from matriculas.models import Matricula
-# from atividades.models import PresencaAcademica  # Removido - modelo não existe mais
+from atividades.models import AtividadeAcademica
 from django.utils import timezone
 from django_select2.forms import Select2Widget
 
@@ -122,3 +122,198 @@ class AlunosPresencaForm(forms.Form):
 #             'aluno', 'turma', 'atividade', 'data', 'presente',
 #             'registrado_por', 'data_registro'
 #         ]
+
+
+class FiltroConsolidadoForm(forms.Form):
+    """
+    Formulário para filtros do consolidado de presenças.
+    """
+    
+    curso = forms.ModelChoiceField(
+        queryset=Curso.objects.filter(ativo=True),
+        label="Curso",
+        widget=Select2Widget(attrs={'data-placeholder': 'Todos os cursos'}),
+        required=False
+    )
+    
+    turma = forms.ModelChoiceField(
+        queryset=Turma.objects.filter(status='A'),
+        label="Turma",
+        widget=Select2Widget(attrs={'data-placeholder': 'Todas as turmas'}),
+        required=False
+    )
+    
+    atividade = forms.ModelChoiceField(
+        queryset=AtividadeAcademica.objects.filter(ativo=True),
+        label="Atividade",
+        widget=Select2Widget(attrs={'data-placeholder': 'Todas as atividades'}),
+        required=False
+    )
+    
+    periodo_inicio = forms.DateField(
+        label="Período Início",
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control'
+        }),
+        required=False
+    )
+    
+    periodo_fim = forms.DateField(
+        label="Período Fim",
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control'
+        }),
+        required=False
+    )
+    
+    aluno_nome = forms.CharField(
+        label="Nome do Aluno",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Digite o nome do aluno'
+        }),
+        required=False
+    )
+    
+    ORDENACAO_CHOICES = [
+        ('aluno__nome', 'Nome do Aluno'),
+        ('turma__nome', 'Nome da Turma'),
+        ('atividade__nome', 'Nome da Atividade'),
+        ('periodo', 'Período'),
+        ('percentual_presenca', 'Percentual de Presença'),
+    ]
+    
+    ordenar_por = forms.ChoiceField(
+        choices=ORDENACAO_CHOICES,
+        label="Ordenar por",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        initial='aluno__nome',
+        required=False
+    )
+    
+    ORDEM_CHOICES = [
+        ('asc', 'Crescente'),
+        ('desc', 'Decrescente'),
+    ]
+    
+    ordem = forms.ChoiceField(
+        choices=ORDEM_CHOICES,
+        label="Ordem",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        initial='asc',
+        required=False
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Atualizar queryset de turmas baseado no curso
+        if 'curso' in self.data:
+            try:
+                curso_id = int(self.data.get('curso'))
+                self.fields['turma'].queryset = Turma.objects.filter(
+                    curso_id=curso_id,
+                    status='A'
+                ).order_by('nome')
+            except (ValueError, TypeError):
+                pass
+        
+        # Atualizar queryset de atividades baseado na turma
+        if 'turma' in self.data:
+            try:
+                turma_id = int(self.data.get('turma'))
+                self.fields['atividade'].queryset = AtividadeAcademica.objects.filter(
+                    presencas_detalhadas_expandidas__turma_id=turma_id
+                ).distinct().order_by('nome')
+            except (ValueError, TypeError):
+                pass
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Validar período
+        periodo_inicio = cleaned_data.get('periodo_inicio')
+        periodo_fim = cleaned_data.get('periodo_fim')
+        
+        if periodo_inicio and periodo_fim:
+            if periodo_inicio > periodo_fim:
+                raise forms.ValidationError(
+                    "A data de início deve ser anterior à data de fim."
+                )
+        
+        return cleaned_data
+
+
+class EditarPresencaDetalhadaForm(forms.Form):
+    """
+    Formulário para edição inline de presença detalhada.
+    """
+    
+    presenca_id = forms.IntegerField(widget=forms.HiddenInput())
+    
+    convocacoes = forms.IntegerField(
+        label="Convocações (C)",
+        min_value=0,
+        max_value=999,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-sm',
+            'style': 'width: 60px;'
+        })
+    )
+    
+    presencas = forms.IntegerField(
+        label="Presenças (P)",
+        min_value=0,
+        max_value=999,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-sm',
+            'style': 'width: 60px;'
+        })
+    )
+    
+    faltas = forms.IntegerField(
+        label="Faltas (F)",
+        min_value=0,
+        max_value=999,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-sm',
+            'style': 'width: 60px;'
+        })
+    )
+    
+    voluntario_extra = forms.IntegerField(
+        label="Voluntário Extra (V1)",
+        min_value=0,
+        max_value=999,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-sm',
+            'style': 'width: 60px;'
+        })
+    )
+    
+    voluntario_simples = forms.IntegerField(
+        label="Voluntário Simples (V2)",
+        min_value=0,
+        max_value=999,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-sm',
+            'style': 'width: 60px;'
+        })
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        convocacoes = cleaned_data.get('convocacoes', 0)
+        presencas = cleaned_data.get('presencas', 0)
+        faltas = cleaned_data.get('faltas', 0)
+        
+        # Validar: P + F deve ser <= C
+        if presencas + faltas > convocacoes:
+            raise forms.ValidationError(
+                "A soma de presenças e faltas não pode ser maior que convocações."
+            )
+        
+        return cleaned_data
