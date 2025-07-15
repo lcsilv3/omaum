@@ -1,4 +1,3 @@
-import pytest
 from alunos.forms import AlunoForm
 from datetime import date
 

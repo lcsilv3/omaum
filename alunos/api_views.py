@@ -18,7 +18,7 @@ def get_aluno_model():
 
 
 @login_required
-@permission_required('alunos.view_aluno', raise_exception=True)
+@permission_required("alunos.view_aluno", raise_exception=True)
 def verificar_elegibilidade_endpoint(request, cpf):
     """API endpoint para verificar se um aluno pode ser instrutor."""
     try:
@@ -38,7 +38,7 @@ def verificar_elegibilidade_endpoint(request, cpf):
             )
 
         # Verificar se o aluno pode ser instrutor
-        if hasattr(aluno, 'pode_ser_instrutor'):
+        if hasattr(aluno, "pode_ser_instrutor"):
             pode_ser_instrutor = aluno.pode_ser_instrutor
 
             if not pode_ser_instrutor:
@@ -46,7 +46,7 @@ def verificar_elegibilidade_endpoint(request, cpf):
                     {
                         "elegivel": False,
                         "motivo": "O aluno não atende aos requisitos para ser "
-                                  "instrutor.",
+                        "instrutor.",
                     }
                 )
         else:
@@ -59,12 +59,10 @@ def verificar_elegibilidade_endpoint(request, cpf):
         return JsonResponse({"elegivel": True})
     except Exception as e:
         logger.error(
-            f"Erro ao verificar elegibilidade do aluno {cpf}: {str(e)}",
-            exc_info=True
+            f"Erro ao verificar elegibilidade do aluno {cpf}: {str(e)}", exc_info=True
         )
         return JsonResponse(
-            {"elegivel": False, "motivo": f"Erro na verificação: {str(e)}"},
-            status=500
+            {"elegivel": False, "motivo": f"Erro na verificação: {str(e)}"}, status=500
         )
 
 
@@ -72,5 +70,6 @@ class AlunoViewSet(viewsets.ModelViewSet):
     """
     API endpoint que permite que os alunos sejam visualizados ou editados.
     """
-    queryset = Aluno.objects.all().order_by('nome')
+
+    queryset = Aluno.objects.all().order_by("nome")
     serializer_class = AlunoSerializer

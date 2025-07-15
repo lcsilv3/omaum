@@ -6,17 +6,14 @@ Cobre endpoints AJAX, serialização/deserialização, validação e error handl
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from presencas.models import (
-    Presenca, PresencaDetalhada, ConfiguracaoPresenca,
-    TotalAtividadeMes, ObservacaoPresenca
+    Presenca, PresencaDetalhada
 )
-from presencas.api_views import PresencaViewSet
 from presencas.serializers import (
     PresencaSerializer, TotalAtividadeMesSerializer, 
     ObservacaoPresencaSerializer
@@ -227,7 +224,7 @@ class PresencaViewSetTest(PresencaAPIBaseTest):
             email='maria@example.com'
         )
         
-        presenca2 = Presenca.objects.create(
+        Presenca.objects.create(
             aluno=aluno2,
             turma=self.turma,
             data=date(2024, 1, 20),
@@ -697,7 +694,7 @@ class APISecurityTest(PresencaAPIBaseTest):
             
             # Dependendo da configuração, pode retornar 403 ou passar
             self.assertIn(response.status_code, [200, 403, 404])
-        except:
+        except Exception:
             self.skipTest("Endpoint AJAX não encontrado")
     
     def test_rate_limiting(self):

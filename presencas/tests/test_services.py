@@ -5,14 +5,13 @@ Cobre services.py e CalculadoraEstatisticas.
 
 from django.test import TestCase
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 from decimal import Decimal
-from datetime import date, datetime, timedelta
-from unittest.mock import patch, Mock
+from datetime import date, timedelta
+from unittest.mock import patch
 
 from presencas.models import (
     Presenca, PresencaDetalhada, ConfiguracaoPresenca, 
-    TotalAtividadeMes, ObservacaoPresenca
+    TotalAtividadeMes
 )
 from presencas.services import (
     listar_presencas, buscar_presencas_por_filtros, registrar_presenca,
@@ -278,7 +277,7 @@ class PresencaServicesTest(TestCase):
     def test_obter_presencas_por_aluno(self):
         """Testa obtenção de presenças por aluno."""
         # Criar presenças
-        presenca1 = Presenca.objects.create(
+        Presenca.objects.create(
             aluno=self.aluno,
             turma=self.turma,
             data=date(2024, 1, 15),
@@ -666,7 +665,7 @@ class CalculadoraEstatisticasExtendedTest(TestCase):
     def test_error_handling_dados_corrompidos(self):
         """Testa tratamento de erros com dados corrompidos."""
         # Testar com dados inconsistentes
-        presenca = PresencaDetalhada.objects.create(
+        PresencaDetalhada.objects.create(
             aluno=self.aluno,
             turma=self.turma,
             atividade=self.atividade,
@@ -687,7 +686,7 @@ class CalculadoraEstatisticasExtendedTest(TestCase):
     @patch('presencas.services.calculadora_estatisticas.logger')
     def test_logging_operacoes(self, mock_logger):
         """Testa logging das operações."""
-        presenca = PresencaDetalhada.objects.create(
+        PresencaDetalhada.objects.create(
             aluno=self.aluno,
             turma=self.turma,
             atividade=self.atividade,

@@ -8,7 +8,6 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from importlib import import_module
 
-from ..models import Pagamento
 
 logger = logging.getLogger(__name__)
 

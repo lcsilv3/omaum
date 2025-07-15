@@ -1,5 +1,4 @@
 import os
-import filecmp
 import hashlib
 from collections import defaultdict
 
@@ -62,7 +61,7 @@ if __name__ == "__main__":
         ("home.html", r"omaum\Templates\home.html"),
         ("settings.py", "omaum\\settings.py"),
         ("urls.py", "omaum\\urls.py"),
-        ("views.py", "core\views.py),
+        ("views.py", "core\\views.py"),
         # Adicione outros arquivos críticos conforme necessário
     ]
 

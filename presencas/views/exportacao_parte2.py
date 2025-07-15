@@ -5,13 +5,30 @@ Implementa CSV, PDF e agendamento.
 
 import csv
 import tempfile
-from io import StringIO
-from django.core.management.base import BaseCommand
+import os
+import io
+from typing import Dict, Any, List
+from datetime import datetime
+from django.http import HttpResponse
+from django.conf import settings
+from django.utils import timezone
+from django.core.mail import EmailMessage
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import TemplateView
 from celery import shared_task
-from django.template.loader import render_to_string
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table as RLTable, TableStyle, Spacer
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.barcharts import VerticalBarChart
+from reportlab.graphics.charts.piecharts import Pie
+import logging
 
 # Importações da parte 1
 from .exportacao import ProcessarExportacaoView, ExcelAvancadoExporter
+
+logger = logging.getLogger(__name__)
 
 
 class CSVExporter:
@@ -31,7 +48,7 @@ class CSVExporter:
         writer = csv.writer(response, delimiter=';')  # Usar ; para Excel brasileiro
         
         # Cabeçalho com informações
-        writer.writerow([f"Relatório gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}"])
+        writer.writerow([f"Relatório gerado em: {timezone.now().strftime('%d/%m/%Y %H:%M')}"])
         writer.writerow([])
         
         # Filtros aplicados
@@ -122,7 +139,7 @@ class CSVExporter:
         writer = csv.writer(response, delimiter=';')
         
         # Cabeçalho
-        writer.writerow([f"Relatório por Turma - {datetime.now().strftime('%d/%m/%Y %H:%M')}"])
+        writer.writerow([f"Relatório por Turma - {timezone.now().strftime('%d/%m/%Y %H:%M')}"])
         writer.writerow([])
         
         # Dados por turma

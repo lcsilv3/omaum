@@ -5,12 +5,10 @@ Contém a lógica de negócios complexa.
 import logging
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.utils import timezone
 from importlib import import_module
 from datetime import date, datetime
 
 # Importar nova calculadora de estatísticas
-from .services.calculadora_estatisticas import CalculadoraEstatisticas
 
 logger = logging.getLogger(__name__)
 

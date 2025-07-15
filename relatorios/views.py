@@ -2,7 +2,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Relatorio
 from .forms import RelatorioForm
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from importlib import import_module
 from django.utils import timezone
 from django.http import HttpResponse
@@ -275,7 +274,6 @@ def relatorio_alunos_pdf(request):
         # Importar biblioteca para geração de PDF
         from django.template.loader import get_template
         from xhtml2pdf import pisa
-        from io import BytesIO
         
         # Obter os mesmos parâmetros de filtro que na view relatorio_alunos
         nome = request.GET.get('nome', '')
@@ -328,7 +326,6 @@ def relatorio_presencas_pdf(request):
         # Importar biblioteca para geração de PDF
         from django.template.loader import get_template
         from xhtml2pdf import pisa
-        from io import BytesIO
         
         # Obter os mesmos parâmetros de filtro que na view relatorio_presencas
         aluno_id = request.GET.get('aluno', '')
@@ -384,7 +381,6 @@ def relatorio_historico_pdf(request):
     """Gera um relatório de histórico em PDF."""
     from django.template.loader import get_template
     from xhtml2pdf import pisa
-    from io import BytesIO
 
     RegistroHistorico = get_registro_historico_model()
     Aluno = get_aluno_model()
@@ -488,7 +484,6 @@ def relatorio_turmas_pdf(request):
     """Gera um relatório de turmas em PDF."""
     from django.template.loader import get_template
     from xhtml2pdf import pisa
-    from io import BytesIO
 
     Turma = get_turma_model()
     Curso = get_curso_model()
@@ -596,7 +591,6 @@ def relatorio_atividades_pdf(request):
     """Gera um relatório de atividades acadêmicas em PDF."""
     from django.template.loader import get_template
     from xhtml2pdf import pisa
-    from io import BytesIO
 
     AtividadeAcademica = get_atividade_academica_model()
     Turma = get_turma_model()

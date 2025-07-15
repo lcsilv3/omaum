@@ -3,24 +3,16 @@ Views do aplicativo Presenças.
 """
 
 import logging
-from datetime import datetime, date
-from calendar import monthrange
-from types import SimpleNamespace
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
-from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
 
 from atividades.models import Atividade
-from presencas.models import ObservacaoPresenca, TotalAtividadeMes, PresencaAcademica
+from presencas.models import ObservacaoPresenca, PresencaAcademica
 from alunos.services import listar_alunos as listar_alunos_service, buscar_aluno_por_cpf as buscar_aluno_por_cpf_service
 from turmas.models import Turma
-from presencas.forms import TotaisAtividadesPresencaForm
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +137,7 @@ def editar_presenca_academica(request, pk):
     if request.method == 'POST':
         # Lógica de edição
         presente = request.POST.get('presente') == 'on'
-        observacao = request.POST.get('observacao', '')
+        request.POST.get('observacao', '')
         
         presenca.presente = presente
         presenca.save()

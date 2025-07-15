@@ -1,9 +1,8 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from atividades.models import AtividadeAcademica, AtividadeRitualistica
+from atividades.models import AtividadeAcademica
 from turmas.models import Turma
 from cursos.models import Curso
-from alunos.models import Aluno
 from datetime import date, timedelta
 from django.utils import timezone
 
@@ -104,3 +103,5 @@ class AtividadeAcademicaViewTest(TestCase):
     
     def test_excluir_atividade(self):
         response = self.client.get(reverse('atividades:academica_excluir',
+                                         kwargs={'id': self.atividade.id}))
+        self.assertEqual(response.status_code, 200)

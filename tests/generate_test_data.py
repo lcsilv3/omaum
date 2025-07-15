@@ -11,7 +11,6 @@ from tests.factories import (
     UserFactory, AlunoFactory, TurmaFactory,
     AtividadeFactory
 )
-from django.utils import timezone
 from matriculas.models import Matricula
 
 def generate_test_data():
@@ -20,7 +19,7 @@ def generate_test_data():
     
     # Criar usuários
     print("Criando usuários...")
-    admin = UserFactory(username='admin', is_staff=True, is_superuser=True)
+    UserFactory(username='admin', is_staff=True, is_superuser=True)
     users = UserFactory.create_batch(5)
     
     # Criar alunos
@@ -52,7 +51,7 @@ def generate_test_data():
     print("Criando atividades acadêmicas...")
     for _ in range(30):
         # Selecionar turmas aleatórias
-        turmas_selecionadas = random.sample(turmas, random.randint(1, 3))
+        random.sample(turmas, random.randint(1, 3))
         
         AtividadeFactory()
     
@@ -66,7 +65,7 @@ def generate_test_data():
             # Criar entre 1 e 3 atividades ritualísticas para esta turma
             for _ in range(random.randint(1, 3)):
                 # Selecionar participantes aleatórios entre os alunos matriculados
-                participantes = random.sample(
+                random.sample(
                     alunos_matriculados, 
                     min(len(alunos_matriculados), random.randint(3, len(alunos_matriculados)))
                 )

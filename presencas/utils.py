@@ -1,9 +1,3 @@
-from datetime import date
-from presencas.models import Presenca
-from alunos.models import Aluno
-from turmas.models import Turma
-from atividades.models import Atividade
-from matriculas.models import Matricula
 
 
 def gerar_meses_anos(data_inicio, data_fim):

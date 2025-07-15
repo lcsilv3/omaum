@@ -4,8 +4,6 @@ Cobre validação, clean methods e fields dinâmicos.
 """
 
 from django.test import TestCase
-from django.core.exceptions import ValidationError
-from django.forms import formset_factory
 from datetime import date, datetime
 from unittest.mock import patch, Mock
 
@@ -15,7 +13,7 @@ from presencas.forms import (
     ExportacaoForm, RegistroRapidoForm
 )
 from presencas.models import (
-    Presenca, PresencaDetalhada, TotalAtividadeMes
+    Presenca
 )
 from alunos.models import Aluno
 from turmas.models import Turma

@@ -2,7 +2,6 @@
 Formulários para o aplicativo de pagamentos.
 """
 from django import forms
-from django.core.validators import MinValueValidator
 from django.utils import timezone
 from importlib import import_module
 

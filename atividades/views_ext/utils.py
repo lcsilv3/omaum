@@ -1,5 +1,4 @@
 import logging
-from django.shortcuts import get_object_or_404
 from importlib import import_module
 
 # Set up logger
@@ -73,7 +72,6 @@ def get_aluno_model():
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
 
-from importlib import import_module
 
 def get_cursos():
     Curso = import_module("cursos.models").Curso

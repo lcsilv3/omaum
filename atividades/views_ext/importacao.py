@@ -7,7 +7,6 @@ import datetime
 
 from atividades.models import Atividade
 from turmas.models import Turma
-from alunos.models import Aluno
 
 def parse_date(date_str):
     """Converte uma string de data para um objeto date."""

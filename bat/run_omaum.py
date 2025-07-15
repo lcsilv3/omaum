@@ -18,9 +18,7 @@ def run_command(command):
 
 
 def activate_venv():
-    venv_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "venv"
-    )
+    venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "venv")
     if sys.platform == "win32":
         activate_script = os.path.join(venv_path, "Scripts", "activate.bat")
         if os.path.exists(activate_script):

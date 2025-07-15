@@ -34,7 +34,7 @@ def listar_pagamentos(request):
         status = request.GET.get('status', '')
         data_inicio = request.GET.get('data_inicio', '')
         data_fim = request.GET.get('data_fim', '')
-        exportar = request.GET.get('exportar', '')  # 'csv', 'excel', 'pdf'
+        request.GET.get('exportar', '')  # 'csv', 'excel', 'pdf'
 
         # Filtrar pagamentos
         pagamentos = Pagamento.objects.all()
@@ -91,9 +91,8 @@ def listar_pagamentos(request):
 @login_required
 def criar_pagamento(request):
     """Cria um novo pagamento."""
-    PagamentoModel = get_pagamento_model()
+    get_pagamento_model()
     Aluno = get_aluno_model()
-    from cursos.models import Curso
 
     cursos = Curso.objects.all().order_by('nome')
 

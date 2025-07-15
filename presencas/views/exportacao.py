@@ -3,28 +3,17 @@ Views para exportação avançada de dados de presenças.
 Implementa múltiplos formatos, formatação profissional e agendamento.
 """
 
-import os
 import io
-import csv
 import logging
-import tempfile
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
-from io import StringIO
+from typing import Dict, List, Any
 
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib import messages
-from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import TemplateView
-from django.core.mail import EmailMessage
-from django.conf import settings
 from django.utils import timezone
-from django.db.models import Q, Sum, Avg, Count
-from django.core.management.base import BaseCommand
-from django.template.loader import render_to_string
+from django.db.models import Sum
 
 # Verificar se as bibliotecas estão disponíveis
 try:
@@ -64,7 +53,7 @@ except ImportError:
         return func
 
 from ..models import (
-    PresencaDetalhada, Aluno, Turma
+    PresencaDetalhada, Turma
 )
 from .consolidado import ConsolidadoPresencasView
 
@@ -1048,7 +1037,7 @@ class ExcelAvancadoExporter:
                 try:
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
-                except:
+                except (ValueError, TypeError):
                     pass
             
             adjusted_width = min(max_length + 2, 30)

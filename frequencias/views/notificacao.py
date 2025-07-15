@@ -45,7 +45,7 @@ def criar_notificacao(request, carencia_id):
             for arquivo in request.FILES.getlist('anexos'):
                 Anexo = get_model_dynamically("notificacoes", "Anexo")
                 
-                anexo = Anexo.objects.create(
+                Anexo.objects.create(
                     notificacao=notificacao,
                     nome=arquivo.name,
                     arquivo=arquivo,
@@ -199,7 +199,7 @@ def enviar_notificacao(request, notificacao_id):
             notificacao.save()
             
             # Enviar cópia para o usuário se solicitado
-            enviar_copia = request.POST.get('enviar_copia')
+            request.POST.get('enviar_copia')
             
             # Lógica para enviar a notificação (e-mail, SMS, etc.)
             try:
@@ -288,7 +288,7 @@ def responder_aluno(request, notificacao_id):
             for arquivo in request.FILES.getlist('anexos'):
                 Anexo = get_model_dynamically("notificacoes", "Anexo")
                 
-                anexo = Anexo.objects.create(
+                Anexo.objects.create(
                     notificacao=nova_notificacao,
                     nome=arquivo.name,
                     arquivo=arquivo,

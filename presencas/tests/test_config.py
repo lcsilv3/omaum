@@ -3,7 +3,6 @@ Configurações específicas para testes do aplicativo presencas.
 """
 
 from django.test import TestCase, override_settings
-from django.conf import settings
 import tempfile
 import os
 
@@ -69,7 +68,6 @@ class BaseTestCase(TestCase):
         super().tearDown()
         
         # Limpar arquivos temporários se necessário
-        import tempfile
         import shutil
         
         # Limpar diretórios de mídia temporários
@@ -141,7 +139,6 @@ class PerformanceTestCase(BaseTestCase):
     
     def assert_query_count(self, expected_count):
         """Context manager para verificar número de queries."""
-        from django.test import TestCase
         return self.assertNumQueries(expected_count)
     
     def assert_max_queries(self, max_count):
@@ -356,7 +353,6 @@ class TempDirectory:
 def create_test_file(content, filename='test.txt'):
     """Cria arquivo temporário para testes."""
     import tempfile
-    import os
     
     temp_dir = tempfile.mkdtemp()
     file_path = os.path.join(temp_dir, filename)

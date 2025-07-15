@@ -10,7 +10,6 @@ from turmas.models import Turma
 from atividades.models import Atividade
 from notas.models import Avaliacao, Nota
 from matriculas.models import Matricula
-import time
 
 class NotasE2ETestCase(StaticLiveServerTestCase):
     """Testes E2E para o módulo de notas."""
@@ -147,4 +146,4 @@ class NotasE2ETestCase(StaticLiveServerTestCase):
         self.assertEqual(nota1.valor, 8.5)
         self.assertEqual(nota1.observacao, 'Bom desempenho')
         self.assertEqual(nota2.valor, 7.0)
-        self.assertEqual(nota2.observacao, 'Desempenho regular')        self.selenium.find_element(By.ID,
+        self.assertEqual(nota2.observacao, 'Desempenho regular')

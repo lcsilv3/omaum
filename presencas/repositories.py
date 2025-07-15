@@ -2,9 +2,8 @@
 Repositórios para o aplicativo presencas.
 Camada de acesso a dados.
 """
-from django.db.models import Q, Count, Avg, Sum
-from django.utils import timezone
-from datetime import datetime, date, timedelta
+from django.db.models import Q, Count
+from datetime import date, timedelta
 from .models import Presenca, TotalAtividadeMes, ObservacaoPresenca
 
 

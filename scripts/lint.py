@@ -2,8 +2,6 @@
 """
 Script para executar linters e formatadores no código do projeto OMAUM.
 """
-import os
-import sys
 import subprocess
 from pathlib import Path
 

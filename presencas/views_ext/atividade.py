@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 from importlib import import_module
 
 def get_model_dynamically(app_name, model_name):
@@ -17,7 +18,7 @@ def get_form_dynamically(app_name, form_name):
 def registrar_presencas_atividade(request):
     """Registra presenças para uma atividade específica."""
     AtividadeAcademica = get_model_dynamically("atividades", "AtividadeAcademica")
-    Aluno = get_model_dynamically("alunos", "Aluno")
+    get_model_dynamically("alunos", "Aluno")
     Presenca = get_model_dynamically("presencas", "Presenca")
     
     if request.method == 'POST':

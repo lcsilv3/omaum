@@ -7,13 +7,12 @@ from datetime import date, datetime, timedelta
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.db.models import Count, Q
 import json
 
 from alunos.services import criar_aluno
 from turmas.models import Turma
 from atividades.models import Atividade
-from presencas.models import PresencaAcademica, TotalAtividadeMes, ObservacaoPresenca
+from presencas.models import PresencaAcademica
 
 
 class UserStoryTestCase(TestCase):
@@ -503,7 +502,7 @@ class RegrasNegocioUserStoryTest(UserStoryTestCase):
         }
         
         url = reverse('presencas:registro_rapido')
-        response = self.client.post(url, presenca_data)
+        self.client.post(url, presenca_data)
         
         # Deve atualizar a presença existente
         presenca_inicial.refresh_from_db()
@@ -644,7 +643,7 @@ class PerformanceUserStoryTest(UserStoryTestCase):
         })
         
         end_time = datetime.now()
-        tempo_carregamento = (end_time - start_time).total_seconds()
+        (end_time - start_time).total_seconds()
         
         self.assertEqual(response.status_code, 200)
         # Em teste real, verificaríamos se tempo < 3 segundos

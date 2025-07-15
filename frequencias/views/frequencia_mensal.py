@@ -6,7 +6,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q
 import logging
 import json
 
@@ -14,8 +13,7 @@ import json
 from frequencias.utils import (
     get_models,
     get_forms,
-    get_turma_model,
-    get_model_dynamically
+    get_turma_model
 )
 
 logger = logging.getLogger(__name__)

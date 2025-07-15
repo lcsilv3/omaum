@@ -1,10 +1,7 @@
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 from alunos.models import Aluno
 from cursos.models import Curso
 from datetime import date, time
-import os
-from django.core.files.base import ContentFile
 
 class Command(BaseCommand):
     help = 'Popula o banco de dados com alunos para testes'
@@ -287,4 +284,27 @@ class Command(BaseCommand):
                 'celular_primeiro_contato': '85987654321',
                 'tipo_relacionamento_primeiro_contato': 'Esposa',
                 'nome_segundo_contato': 'Felipe Martins',
-                'celular_segundo_contato': '85976
+                'celular_segundo_contato': '85976543210',
+                'tipo_relacionamento_segundo_contato': 'Filho',
+            }
+        ]
+        
+        # Criar alunos no banco de dados
+        for aluno_data in alunos_dados:
+            try:
+                # Verificar se o aluno já existe
+                if not Aluno.objects.filter(cpf=aluno_data['cpf']).exists():
+                    aluno = Aluno.objects.create(**aluno_data)
+                    self.stdout.write(
+                        self.style.SUCCESS(f'Aluno {aluno.nome} criado com sucesso!')
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(f'Aluno com CPF {aluno_data["cpf"]} já existe.')
+                    )
+            except Exception as e:
+                self.stdout.write(
+                    self.style.ERROR(f'Erro ao criar aluno {aluno_data["nome"]}: {str(e)}')
+                )
+        
+        self.stdout.write(self.style.SUCCESS('Comando executado com sucesso!'))

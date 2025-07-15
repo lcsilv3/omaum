@@ -8,10 +8,10 @@ from decimal import Decimal
 # Configurar locale para formatação de moeda
 try:
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-except:
+except locale.Error:
     try:
         locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
-    except:
+    except locale.Error:
         pass  # Fallback para o locale padrão
 
 def format_currency(value):
@@ -22,7 +22,7 @@ def format_currency(value):
         return "R$ 0,00"
     try:
         return locale.currency(float(value), grouping=True)
-    except:
+    except (ValueError, TypeError):
         value = Decimal(str(value))
         return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 

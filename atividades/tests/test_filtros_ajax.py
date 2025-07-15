@@ -13,7 +13,7 @@ class FiltrosAjaxTest(TestCase):
         from cursos.models import Curso
         from turmas.models import Turma
         curso = Curso.objects.create(nome="Curso Teste")
-        turma = Turma.objects.create(nome="Turma 1", curso=curso)
+        Turma.objects.create(nome="Turma 1", curso=curso)
         url = reverse("atividades:ajax_turmas_por_curso")
         response = self.client.get(url, {"curso_id": curso.id}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(response.status_code, 200)

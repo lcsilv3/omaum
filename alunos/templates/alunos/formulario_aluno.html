@@ -1,10 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}{% if aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
+{% block title %}{% if aluno and aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
 
 {% block form_media_css %}
     {{ form.media.css }}
-    {{ historico_formset.media.css }}
+    {% if historico_formset %}
+        {{ historico_formset.media.css|default_if_none:'' }}
+    {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -18,6 +20,16 @@
     <form method="post" enctype="multipart/form-data" id="form-aluno" novalidate>
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
+        
+        <!-- DEBUG: Management form do formset de histórico SEMPRE no início do form -->
+        <!-- MANAGEMENT_FORM_START -->
+        {% if historico_formset %}
+            <!-- DEBUG: Mostrando management form -->
+            {{ historico_formset.management_form }}
+            <!-- DEBUG: Total de formulários: {{ historico_formset.total_form_count }} -->
+        {% endif %}
+        <!-- MANAGEMENT_FORM_END -->
+        
         <div class="alert alert-info">
             <p><strong>Atenção:</strong> Preencha todos os campos obrigatórios e certifique-se de que a data de nascimento está preenchida.</p>
             <p>Os campos com formato específico (CPF, CEP, telefones) serão automaticamente ajustados ao salvar.</p>
@@ -77,58 +89,95 @@
         <div class="card mb-4 border-info">
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0">
-                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
-                        <span class="chevron">▶</span> Dados Iniciáticos (Cargos, Punições, etc.) <small class="text-light">(clique para expandir/recolher)</small>
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="true" aria-controls="dados-iniciaticos">
+                        <span class="chevron" style="transform: rotate(90deg)">▶</span> Dados Iniciáticos (Cargos, Punições, etc.) <small class="text-light">(clique para expandir/recolher)</small>
                     </a>
                 </h5>
             </div>
             <div id="dados-iniciaticos" class="card-body collapse show">
-                {{ historico_formset.management_form }}
+                <!-- DEBUG: Seção de Dados Iniciáticos -->
+                <!-- HISTORICO_SECTION_START -->
+                
                 <div id="historico-form-list">
-                    {% for form in historico_formset %}
-                        <div class="historico-form mb-3 p-3 border rounded">
-                            {{ form.id }}
-                            <div class="row align-items-end">
-                                <div class="col-md-4">{% include 'includes/form_field.html' with field=form.codigo %}</div>
-                                <div class="col-md-3">{% include 'includes/form_field.html' with field=form.ordem_servico %}</div>
-                                <div class="col-md-3">{% include 'includes/form_field.html' with field=form.data_os %}</div>
-                                <div class="col-md-2 d-flex align-items-center">
-                                    {% if form.instance.pk %}
-                                        <div class="form-check">
-                                            {{ form.DELETE }}
-                                            <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">Remover?</label>
-                                        </div>
-                                    {% else %}
-                                        <button type="button" class="btn btn-danger btn-sm remove-historico-form">Remover</button>
-                                    {% endif %}
+                    {% if historico_formset %}
+                        {% for form in historico_formset %}
+                            <div class="historico-form mb-3 p-3 border rounded" data-form-index="{{ forloop.counter0 }}">
+                                {{ form.id|default_if_none:'' }}
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {{ form.non_field_errors|default_if_none:'' }}
+                                    </div>
+                                {% endif %}
+                                <div class="row align-items-end">
+                                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.codigo %}</div>
+                                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.ordem_servico %}</div>
+                                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.data_os %}</div>
+                                    <div class="col-md-2 d-flex align-items-center">
+                                        {% if form.instance.pk %}
+                                            <div class="form-check">
+                                                {{ form.DELETE|default_if_none:'' }}
+                                                <label class="form-check-label" for="{{ form.DELETE.id_for_label|default_if_none:'' }}">Remover?</label>
+                                            </div>
+                                        {% else %}
+                                            <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
+                                                <i class="fas fa-trash"></i> Remover
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">{% include 'includes/form_field.html' with field=form.observacoes %}</div>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="col-md-12">{% include 'includes/form_field.html' with field=form.observacoes %}</div>
-                            </div>
-                        </div>
-                    {% endfor %}
+                        {% endfor %}
+                    {% endif %}
                 </div>
-                <button type="button" id="add-historico-form" class="btn btn-outline-primary btn-sm mt-2">Adicionar Outro Registro</button>
+                <button type="button" id="add-historico-form" class="btn btn-outline-primary btn-sm mt-2" data-debug-management-form="true">
+                    <i class="fas fa-plus"></i> Adicionar Outro Registro
+                </button>
+                
+                <!-- Template para novos formulários -->
                 <div id="empty-historico-form" style="display:none">
                     <div class="historico-form mb-3 p-3 border rounded">
                         <div class="row align-items-end">
-                            <div class="col-md-4">{% include 'includes/form_field.html' with field=historico_formset.empty_form.codigo %}</div>
-                            <div class="col-md-3">{% include 'includes/form_field.html' with field=historico_formset.empty_form.ordem_servico %}</div>
-                            <div class="col-md-3">{% include 'includes/form_field.html' with field=historico_formset.empty_form.data_os %}</div>
-                            <div class="col-md-2 d-flex align-items-center">
-                                <button type="button" class="btn btn-danger btn-sm remove-historico-form">Remover</button>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-codigo" class="form-label">Código</label>
+                                    <input type="text" name="historico-__prefix__-codigo" id="id_historico-__prefix__-codigo" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-ordem_servico" class="form-label">Ordem de Serviço</label>
+                                    <input type="text" name="historico-__prefix__-ordem_servico" id="id_historico-__prefix__-ordem_servico" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-data_os" class="form-label">Data OS</label>
+                                    <input type="date" name="historico-__prefix__-data_os" id="id_historico-__prefix__-data_os" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-center">
+                                <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
+                                    <i class="fas fa-trash"></i> Remover
+                                </button>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-12">{% include 'includes/form_field.html' with field=historico_formset.empty_form.observacoes %}</div>
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-observacoes" class="form-label">Observações</label>
+                                    <textarea name="historico-__prefix__-observacoes" id="id_historico-__prefix__-observacoes" class="form-control"></textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Seção: Nacionalidade e Naturalidade (recolhível, fechada por padrão) -->
+        <!-- Seção: Nacionalidade e Naturalidade -->
         <div class="card mb-4 border-secondary">
             <div class="card-header bg-secondary text-white">
                 <h5 class="mb-0">
@@ -149,7 +198,7 @@
             </div>
         </div>
         
-        <!-- Seção: Endereço (recolhível, fechada por padrão) -->
+        <!-- Seção: Endereço -->
         <div class="card mb-4 border-success">
             <div class="card-header bg-success text-white">
                 <h5 class="mb-0">
@@ -189,7 +238,7 @@
             </div>
         </div>
         
-        <!-- Seção: Contatos de Emergência (recolhível, fechada por padrão) -->
+        <!-- Seção: Contatos de Emergência -->
         <div class="card mb-4 border-warning">
             <div class="card-header bg-warning text-dark">
                 <h5 class="mb-0">
@@ -227,7 +276,7 @@
             </div>
         </div>
         
-        <!-- Seção: Informações Médicas (recolhível, fechada por padrão) -->
+        <!-- Seção: Informações Médicas -->
         <div class="card mb-4 border-danger">
             <div class="card-header bg-danger text-white">
                 <h5 class="mb-0">
@@ -277,100 +326,124 @@
 
 {% block form_media_js %}
     {{ form.media.js }}
-    {{ historico_formset.media.js }}
+    {% if historico_formset %}
+        {{ historico_formset.media.js|default_if_none:'' }}
+    {% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Script para rotação do ícone de chevron
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
-            toggle.addEventListener('click', function() {
-                var chevron = this.querySelector('.chevron');
-                var isCollapsed = this.classList.contains('collapsed');
-                chevron.style.transform = isCollapsed ? 'rotate(90deg)' : 'rotate(0deg)';
-            });
-            var chevron = toggle.querySelector('.chevron');
-            if (!toggle.classList.contains('collapsed')) {
-                chevron.style.transform = 'rotate(90deg)';
-            }
-        });
+// SCRIPT PARA GERENCIAR O FORMSET DE HISTÓRICO DINÂMICO
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DEBUG FORMSET HISTÓRICO ===');
+    
+    // Elementos essenciais
+    const historicoFormList = document.getElementById('historico-form-list');
+    const addHistoricoBtn = document.getElementById('add-historico-form');
+    const emptyFormTemplate = document.getElementById('empty-historico-form');
+    const totalFormsInput = document.querySelector('input[name="historico-TOTAL_FORMS"]');
+    const maxFormsInput = document.querySelector('input[name="historico-MAX_NUM_FORMS"]');
+
+    // DEBUG: Verificar se elementos foram encontrados
+    console.log('Elementos encontrados:');
+    console.log('- historicoFormList:', !!historicoFormList);
+    console.log('- addHistoricoBtn:', !!addHistoricoBtn);
+    console.log('- emptyFormTemplate:', !!emptyFormTemplate);
+    console.log('- totalFormsInput:', !!totalFormsInput);
+    console.log('- totalFormsInput valor:', totalFormsInput ? totalFormsInput.value : 'NULO');
+
+    // Validação de elementos críticos
+    if (!addHistoricoBtn || !historicoFormList || !emptyFormTemplate || !totalFormsInput) {
+        console.error('ERRO: Elementos críticos não encontrados!');
+        return;
+    }
+
+    // Configurações iniciais
+    let formCount = parseInt(totalFormsInput.value) || 0;
+    const maxForms = maxFormsInput ? parseInt(maxFormsInput.value) : 20;
+
+    console.log('Configurações:', { formCount, maxForms });
+    console.log('=== FIM DEBUG INICIAL ===');
+
+    // Função para adicionar novo formulário
+    function addNewForm() {
+        if (formCount >= maxForms) {
+            alert(`Número máximo de formulários atingido (${maxForms}).`);
+            return;
+        }
+
+        const templateContent = emptyFormTemplate.innerHTML;
+        const newFormHtml = templateContent.replace(/__prefix__/g, formCount);
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newFormHtml;
+        const newFormElement = tempDiv.firstElementChild;
+
+        if (newFormElement) {
+            newFormElement.setAttribute('data-form-index', formCount);
+            historicoFormList.appendChild(newFormElement);
+            formCount++;
+            totalFormsInput.value = formCount;
+            console.log('Novo formulário adicionado. Total:', formCount);
+        }
+    }
+
+    // Função para remover formulário
+    function removeForm(formElement) {
+        if (confirm('Deseja realmente remover este registro de histórico?')) {
+            formElement.remove();
+            formCount--;
+            totalFormsInput.value = formCount;
+            console.log('Formulário removido. Total:', formCount);
+        }
+    }
+
+    // Event listener para adicionar formulário
+    addHistoricoBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        addNewForm();
     });
-</script>
-<script>
-    // Script para preview da imagem
-    document.addEventListener('DOMContentLoaded', function() {
-        const fotoInput = document.getElementById('id_foto');
-        const fotoContainer = document.querySelector('.border.rounded.p-3.mb-3.text-center');
-        if (fotoInput && fotoContainer) {
-            fotoInput.addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    fotoContainer.innerHTML = '';
-                    const preview = document.createElement('img');
-                    preview.style.cssText = 'max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;';
-                    const reader = new FileReader();
-                    reader.onload = function(e) { preview.src = e.target.result; }
-                    reader.readAsDataURL(this.files[0]);
-                    fotoContainer.appendChild(preview);
-                }
-            });
+
+    // Event listener para remover formulário (delegação de eventos)
+    historicoFormList.addEventListener('click', function(e) {
+        const removeBtn = e.target.closest('.remove-historico-form');
+        if (removeBtn) {
+            e.preventDefault();
+            const formElement = removeBtn.closest('.historico-form');
+            if (formElement) removeForm(formElement);
         }
     });
-</script>
-<script>
-    // Script para remover máscaras antes do submit
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('form-aluno');
+});
+
+// Script para preview da imagem
+document.addEventListener('DOMContentLoaded', function() {
+    const fotoInput = document.getElementById('id_foto');
+    const fotoContainer = document.querySelector('.border.rounded.p-3.mb-3.text-center');
+    if (fotoInput && fotoContainer) {
+        fotoInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                fotoContainer.innerHTML = '';
+                const preview = document.createElement('img');
+                preview.style.cssText = 'max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;';
+                const reader = new FileReader();
+                reader.onload = function(e) { preview.src = e.target.result; }
+                reader.readAsDataURL(this.files[0]);
+                fotoContainer.appendChild(preview);
+            }
+        });
+    }
+});
+
+// Script para remover máscaras antes do submit
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-aluno');
+    if (form) {
         form.addEventListener('submit', function(e) {
             ['id_cpf', 'id_cep', 'id_celular_primeiro_contato', 'id_celular_segundo_contato'].forEach(id => {
                 const field = document.getElementById(id);
                 if (field) field.value = field.value.replace(/\D/g, '');
             });
-            return true;
         });
-    });
-</script>
-<script>
-    // SCRIPT PARA GERENCIAR O FORMSET DE HISTÓRICO
-    document.addEventListener('DOMContentLoaded', function() {
-        const historicoFormList = document.getElementById('historico-form-list');
-        const addHistoricoBtn = document.getElementById('add-historico-form');
-        const emptyFormTemplate = document.getElementById('empty-historico-form').innerHTML;
-        const totalFormsInput = document.querySelector('input[name="historico-TOTAL_FORMS"]');
-        const prefix = 'historico';
-
-        addHistoricoBtn.addEventListener('click', function() {
-            let formNum = parseInt(totalFormsInput.value);
-            const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formNum);
-            const newFormElement = document.createElement('div');
-            newFormElement.innerHTML = newFormHtml;
-            
-            historicoFormList.append(newFormElement.firstElementChild);
-            
-            // Re-inicializa plugins JS se necessário (ex: Select2)
-            // $(newFormElement).find('.django-select2').djangoSelect2();
-
-            totalFormsInput.value = formNum + 1;
-        });
-
-        historicoFormList.addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('remove-historico-form')) {
-                e.preventDefault();
-                const formRow = e.target.closest('.historico-form');
-                
-                const deleteInput = formRow.querySelector('input[name$="-DELETE"]');
-                if (deleteInput) {
-                    // Marca o formulário existente para exclusão
-                    deleteInput.checked = true;
-                    formRow.style.display = 'none';
-                } else {
-                    // Remove um formulário novo (que ainda não foi salvo)
-                    formRow.remove();
-                    // Atualiza o contador de formulários
-                    totalFormsInput.value = parseInt(totalFormsInput.value) - 1;
-                }
-            }
-        });
-    });
+    }
+});
 </script>
 {% endblock %}

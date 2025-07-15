@@ -1,0 +1,695 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
+
+{% block form_media_css %}
+    {{ form.media.css }}
+    {% if historico_formset %}
+        {{ historico_formset.media.css|default_if_none:'' }}
+    {% endif %}
+{% endblock %}
+
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% if aluno and aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno</h1>
+        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para a lista
+        </a>
+    </div>
+    <form method="post" enctype="multipart/form-data" id="form-aluno" novalidate>
+        {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
+        <!-- DEBUG: Marcador para identificar início do management form -->
+        <!-- MANAGEMENT_FORM_START -->
+        {# Management form do formset de histórico SEMPRE no início do form #}
+        {% if historico_formset %}
+            {{ historico_formset.management_form }}
+        {% endif %}
+        <!-- MANAGEMENT_FORM_END -->
+        
+        <div class="alert alert-info">
+            <p><strong>Atenção:</strong> Preencha todos os campos obrigatórios e certifique-se de que a data de nascimento está preenchida.</p>
+            <p>Os campos com formato específico (CPF, CEP, telefones) serão automaticamente ajustados ao salvar.</p>
+        </div>
+
+        <!-- Seção: Dados Pessoais -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#dados-pessoais" role="button" aria-expanded="true" aria-controls="dados-pessoais">
+                        <span class="chevron">&#9654;</span> Dados Pessoais <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="dados-pessoais" class="card-body collapse show">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {% include 'includes/form_field.html' with field=form.cpf %}
+                                {% include 'includes/form_field.html' with field=form.nome %}
+                                {% include 'includes/form_field.html' with field=form.data_nascimento %}
+                                {% include 'includes/form_field.html' with field=form.hora_nascimento %}
+                            </div>
+                            <div class="col-md-6">
+                                {% include 'includes/form_field.html' with field=form.email %}
+                                {% include 'includes/form_field.html' with field=form.sexo %}
+                                {% include 'includes/form_field.html' with field=form.situacao %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 mb-3 text-center" 
+                             style="border-style: dashed !important; border-color: #007bff !important; border-width: 2px !important; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto;">
+                            {% if aluno.foto %}
+                                <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
+                                     style="max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;">
+                            {% else %}
+                                <div class="text-muted">Sem foto</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.foto }}
+                            {% if form.foto.help_text %}
+                                <small class="form-text text-muted">{{ form.foto.help_text }}</small>
+                            {% endif %}
+                            {% for error in form.foto.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção: Dados Iniciáticos -->
+        <div class="card mb-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="true" aria-controls="dados-iniciaticos">
+                        <span class="chevron" style="transform: rotate(90deg)">▶</span> Dados Iniciáticos (Cargos, Punições, etc.) <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="dados-iniciaticos" class="card-body collapse show">
+                <!-- DEBUG: Seção de Dados Iniciáticos -->
+                <!-- HISTORICO_SECTION_START -->
+                
+                <!-- Debug do Formset -->
+                {% if debug %}
+                    <div class="alert alert-warning">
+                        <small>
+                            <strong>Debug:</strong> 
+                            {% if historico_formset and historico_formset != '' %}
+                                Total Forms: {{ historico_formset.total_form_count|default_if_none:0 }} | 
+                                Initial Forms: {{ historico_formset.initial_form_count|default_if_none:0 }} | 
+                                Extra Forms: {{ historico_formset.extra_forms|length|default_if_none:0 }}
+                            {% endif %}
+                        </small>
+                    </div>
+                {% endif %}
+                <!-- Non-form errors -->
+                {% if historico_formset and historico_formset != '' and historico_formset.non_form_errors %}
+                    <div class="alert alert-danger">
+                        {{ historico_formset.non_form_errors|default_if_none:'' }}
+                    </div>
+                {% endif %}
+                <div id="historico-form-list">
+                    {% if historico_formset and historico_formset != '' %}
+                        {% if historico_formset.total_form_count|default_if_none:0 > 0 %}
+                            {% for form in historico_formset %}
+                                <div class="historico-form mb-3 p-3 border rounded" data-form-index="{{ forloop.counter0 }}">
+                                    {{ form.id|default_if_none:'' }}
+                                    {% if form.non_field_errors %}
+                                        <div class="alert alert-danger">
+                                            {{ form.non_field_errors|default_if_none:'' }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="row align-items-end">
+                                        <div class="col-md-4">{% include 'includes/form_field.html' with field=form.codigo %}</div>
+                                        <div class="col-md-3">{% include 'includes/form_field.html' with field=form.ordem_servico %}</div>
+                                        <div class="col-md-3">{% include 'includes/form_field.html' with field=form.data_os %}</div>
+                                        <div class="col-md-2 d-flex align-items-center">
+                                            {% if form.instance.pk %}
+                                                <div class="form-check">
+                                                    {{ form.DELETE|default_if_none:'' }}
+                                                    <label class="form-check-label" for="{{ form.DELETE.id_for_label|default_if_none:'' }}">Remover?</label>
+                                                </div>
+                                            {% else %}
+                                                <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
+                                                    <i class="fas fa-trash"></i> Remover
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">{% include 'includes/form_field.html' with field=form.observacoes %}</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div id="no-historico-message" class="alert alert-info text-center">Nenhum registro de histórico encontrado.</div>
+                        {% endif %}
+                    {% else %}
+                        <div id="no-historico-message" class="alert alert-info text-center">Nenhum registro de histórico encontrado.</div>
+                    {% endif %}
+                </div>
+                <button type="button" id="add-historico-form" class="btn btn-outline-primary btn-sm mt-2">
+                    <i class="fas fa-plus"></i> Adicionar Outro Registro
+                </button>
+                <!-- Template para novos formulários -->
+                <div id="empty-historico-form" style="display:none">
+                    <div class="historico-form mb-3 p-3 border rounded">
+                        <div class="row align-items-end">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-codigo" class="form-label">Código</label>
+                                    <input type="text" name="historico-__prefix__-codigo" id="id_historico-__prefix__-codigo" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-ordem_servico" class="form-label">Ordem de Serviço</label>
+                                    <input type="text" name="historico-__prefix__-ordem_servico" id="id_historico-__prefix__-ordem_servico" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-data_os" class="form-label">Data OS</label>
+                                    <input type="date" name="historico-__prefix__-data_os" id="id_historico-__prefix__-data_os" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-numero_iniciatico" class="form-label">Número Iniciático</label>
+                                    <input type="text" name="historico-__prefix__-numero_iniciatico" id="id_historico-__prefix__-numero_iniciatico" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-nome_iniciatico" class="form-label">Nome Iniciático</label>
+                                    <input type="text" name="historico-__prefix__-nome_iniciatico" id="id_historico-__prefix__-nome_iniciatico" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-center">
+                                <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
+                                    <i class="fas fa-trash"></i> Remover
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-observacoes" class="form-label">Observações</label>
+                                    <textarea name="historico-__prefix__-observacoes" id="id_historico-__prefix__-observacoes" class="form-control"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção: Nacionalidade e Naturalidade (recolhível, fechada por padrão) -->
+        <div class="card mb-4 border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#nacionalidade" role="button" aria-expanded="false" aria-controls="nacionalidade">
+                        <span class="chevron">&#9654;</span> Nacionalidade e Naturalidade <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="nacionalidade" class="card-body collapse">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.nacionalidade %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.naturalidade %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção: Endereço (recolhível, fechada por padrão) -->
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#endereco" role="button" aria-expanded="false" aria-controls="endereco">
+                        <span class="chevron">&#9654;</span> Endereço <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="endereco" class="card-body collapse">
+                <div class="row">
+                    <div class="col-md-8">
+                        {% include 'includes/form_field.html' with field=form.rua %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.numero_imovel %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.complemento %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.bairro %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.cep %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        {% include 'includes/form_field.html' with field=form.cidade %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.estado %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção: Contatos de Emergência (recolhível, fechada por padrão) -->
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#contatos" role="button" aria-expanded="false" aria-controls="contatos">
+                        <span class="chevron">&#9654;</span> Contatos de Emergência <small class="text-muted">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="contatos" class="card-body collapse">
+                <h6>Primeiro Contato</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.nome_primeiro_contato %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.celular_primeiro_contato %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.tipo_relacionamento_primeiro_contato %}
+                    </div>
+                </div>
+                
+                <h6 class="mt-3">Segundo Contato</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.nome_segundo_contato %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.celular_segundo_contato %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.tipo_relacionamento_segundo_contato %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção: Informações Médicas (recolhível, fechada por padrão) -->
+        <div class="card mb-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#medicas" role="button" aria-expanded="false" aria-controls="medicas">
+                        <span class="chevron">&#9654;</span> Informações Médicas <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="medicas" class="card-body collapse">
+                <div class="row">
+                    <div class="col-md-3">
+                        {% include 'includes/form_field.html' with field=form.tipo_sanguineo %}
+                    </div>
+                    <div class="col-md-3">
+                        {% include 'includes/form_field.html' with field=form.fator_rh %}
+                    </div>
+                    <div class="col-md-3">
+                        {% include 'includes/form_field.html' with field=form.convenio_medico %}
+                    </div>
+                    <div class="col-md-3">
+                        {% include 'includes/form_field.html' with field=form.hospital %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.alergias %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.condicoes_medicas_gerais %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mb-5">
+            <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary" id="btn-salvar">
+                <i class="fas fa-save"></i> {% if aluno and aluno.cpf %}Atualizar{% else %}Cadastrar{% endif %} Aluno
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block form_media_js %}
+    {{ form.media.js }}
+    {% if historico_formset %}
+        {{ historico_formset.media.js|default_if_none:'' }}
+    {% endif %}
+{% endblock %}
+    // Script para preview da imagem
+    document.addEventListener('DOMContentLoaded', function() {
+        const fotoInput = document.getElementById('id_foto');
+        const fotoContainer = document.querySelector('.border.rounded.p-3.mb-3.text-center');
+        if (fotoInput && fotoContainer) {
+            fotoInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    fotoContainer.innerHTML = '';
+                    const preview = document.createElement('img');
+                    preview.style.cssText = 'max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;';
+                    const reader = new FileReader();
+                    reader.onload = function(e) { preview.src = e.target.result; }
+                    reader.readAsDataURL(this.files[0]);
+                    fotoContainer.appendChild(preview);
+                }
+            });
+        }
+    });
+</script>
+<script>
+    // Script para remover máscaras antes do submit
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('form-aluno');
+        form.addEventListener('submit', function(e) {
+            ['id_cpf', 'id_cep', 'id_celular_primeiro_contato', 'id_celular_segundo_contato'].forEach(id => {
+                const field = document.getElementById(id);
+                if (field) field.value = field.value.replace(/\D/g, '');
+            });
+            return true;
+        });
+    });
+</script>
+<script>
+    // SCRIPT PARA GERENCIAR O FORMSET DE HISTÓRICO DINÂMICO - VERSÃO COM ANIMAÇÕES E FEEDBACK VISUAL
+    document.addEventListener('DOMContentLoaded', function() {
+        // DEBUG: Log inicial para identificar problemas
+        console.log('=== DEBUG FORMSET HISTÓRICO ===');
+        
+        // Elementos essenciais
+        const historicoFormList = document.getElementById('historico-form-list');
+        const addHistoricoBtn = document.getElementById('add-historico-form');
+        const emptyFormTemplate = document.getElementById('empty-historico-form');
+        const totalFormsInput = document.querySelector('input[name="historico-TOTAL_FORMS"]');
+        const maxFormsInput = document.querySelector('input[name="historico-MAX_NUM_FORMS"]');
+        const minFormsInput = document.querySelector('input[name="historico-MIN_NUM_FORMS"]');
+        const noHistoricoMessage = document.getElementById('no-historico-message');
+
+        // DEBUG: Verificar se elementos foram encontrados
+        console.log('Elementos encontrados:');
+        console.log('- historicoFormList:', !!historicoFormList);
+        console.log('- addHistoricoBtn:', !!addHistoricoBtn);
+        console.log('- emptyFormTemplate:', !!emptyFormTemplate);
+        console.log('- totalFormsInput:', !!totalFormsInput);
+        console.log('- totalFormsInput valor:', totalFormsInput ? totalFormsInput.value : 'NULO');
+        
+        // DEBUG: Buscar TODOS os campos de management form
+        const allManagementInputs = document.querySelectorAll('input[name^="historico-"][name*="FORMS"]');
+        console.log('Campos de management form encontrados:', allManagementInputs.length);
+        allManagementInputs.forEach((input, index) => {
+            console.log(`  ${index + 1}. ${input.name} = ${input.value} (visível: ${input.offsetParent !== null})`);
+        });
+
+        // DEBUG: Verificar posição do management form no DOM
+        if (totalFormsInput) {
+            const formElement = totalFormsInput.closest('form');
+            const managementFormParent = totalFormsInput.parentElement;
+            console.log('Management form está dentro do <form>:', !!formElement);
+            console.log('Parent do management form:', managementFormParent ? managementFormParent.tagName : 'NULO');
+        }
+
+        // Validação de elementos críticos
+        if (!addHistoricoBtn || !historicoFormList || !emptyFormTemplate || !totalFormsInput) {
+            console.error('ERRO: Elementos críticos não encontrados!');
+            console.error('Faltando:', {
+                addHistoricoBtn: !addHistoricoBtn,
+                historicoFormList: !historicoFormList,
+                emptyFormTemplate: !emptyFormTemplate,
+                totalFormsInput: !totalFormsInput
+            });
+            return;
+        }
+
+        // Configurações iniciais
+        let formCount = parseInt(totalFormsInput.value) || 0;
+        const maxForms = maxFormsInput ? parseInt(maxFormsInput.value) : 20;
+        const minForms = minFormsInput ? parseInt(minFormsInput.value) : 0;
+
+        console.log('Configurações:', { formCount, maxForms, minForms });
+        console.log('=== FIM DEBUG INICIAL ===');
+
+        // Função para mostrar notificação
+        function showNotification(message, type = 'success') {
+            let notif = document.getElementById('formset-notification');
+            if (!notif) {
+                notif = document.createElement('div');
+                notif.id = 'formset-notification';
+                notif.style.position = 'fixed';
+                notif.style.top = '20px';
+                notif.style.right = '20px';
+                notif.style.zIndex = '9999';
+                notif.style.minWidth = '220px';
+                document.body.appendChild(notif);
+            }
+            notif.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button></div>`;
+            setTimeout(() => { notif.innerHTML = ''; }, 2500);
+        }
+
+        // Função para animação de entrada
+        function animateIn(element) {
+            element.style.opacity = 0;
+            element.style.transform = 'scale(0.95)';
+            element.style.transition = 'opacity 0.3s, transform 0.3s';
+            setTimeout(() => {
+                element.style.opacity = 1;
+                element.style.transform = 'scale(1)';
+            }, 10);
+        }
+
+        // Função para animação de saída
+        function animateOut(element, callback) {
+            element.style.opacity = 1;
+            element.style.transform = 'scale(1)';
+            element.style.transition = 'opacity 0.3s, transform 0.3s';
+            element.style.opacity = 0;
+            element.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                if (callback) callback();
+            }, 300);
+        }
+
+        // Função para adicionar novo formulário
+        function addNewForm() {
+            if (formCount >= maxForms) {
+                addHistoricoBtn.disabled = true;
+                addHistoricoBtn.classList.add('disabled');
+                showNotification(`Número máximo de formulários atingido (${maxForms}).`, 'danger');
+                return;
+            }
+            if (noHistoricoMessage) noHistoricoMessage.style.display = 'none';
+            const templateContent = emptyFormTemplate.innerHTML;
+            const newFormHtml = templateContent.replace(/__prefix__/g, formCount);
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newFormHtml;
+            const newFormElement = tempDiv.firstElementChild;
+            if (newFormElement) {
+                newFormElement.setAttribute('data-form-index', formCount);
+                newFormElement.setAttribute('tabindex', '0');
+                newFormElement.setAttribute('role', 'group');
+                newFormElement.setAttribute('aria-label', 'Formulário de histórico');
+                newFormElement.querySelectorAll('select, input, textarea').forEach(control => {
+                    if (!control.classList.contains('form-control')) control.classList.add('form-control');
+                    control.setAttribute('aria-label', control.name || 'Campo do formulário');
+                });
+                // Garantir que o botão de remover seja acessível
+                const removeBtn = newFormElement.querySelector('.remove-historico-form');
+                if (removeBtn) {
+                    removeBtn.setAttribute('tabindex', '0');
+                    removeBtn.setAttribute('aria-label', 'Remover registro de histórico');
+                    removeBtn.setAttribute('role', 'button');
+                    removeBtn.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            removeBtn.click();
+                        }
+                    });
+                }
+                historicoFormList.appendChild(newFormElement);
+                animateIn(newFormElement);
+                formCount++;
+                totalFormsInput.value = formCount;
+                const firstField = newFormElement.querySelector('select, input, textarea');
+                if (firstField) setTimeout(() => firstField.focus(), 100);
+                if (formCount >= maxForms) {
+                    addHistoricoBtn.disabled = true;
+                    addHistoricoBtn.classList.add('disabled');
+                }
+                showNotification('Formulário de histórico adicionado com sucesso!', 'success');
+            }
+        }
+
+        // Função para mostrar modal de confirmação (acessível)
+        function showConfirmModal(message, onConfirm) {
+            let modal = document.getElementById('confirm-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'confirm-modal';
+                modal.setAttribute('role', 'dialog');
+                modal.setAttribute('aria-modal', 'true');
+                modal.setAttribute('aria-labelledby', 'confirm-modal-title');
+                modal.innerHTML = `
+                    <div class="modal fade" tabindex="-1" style="display:block; background:rgba(0,0,0,0.3); position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:9999;">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="confirm-modal-title">Confirmação</h5>
+                                </div>
+                                <div class="modal-body">
+                                    <p>${message}</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" id="cancel-remove" aria-label="Cancelar remoção">Cancelar</button>
+                                    <button type="button" class="btn btn-danger" id="confirm-remove" aria-label="Confirmar remoção">Remover</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            modal.style.display = 'block';
+            // Foco no botão cancelar para navegação por teclado
+            setTimeout(() => {
+                const cancelBtn = modal.querySelector('#cancel-remove');
+                if (cancelBtn) cancelBtn.focus();
+            }, 50);
+            modal.querySelector('#cancel-remove').onclick = function() {
+                modal.style.display = 'none';
+            };
+            modal.querySelector('#confirm-remove').onclick = function() {
+                modal.style.display = 'none';
+                if (onConfirm) onConfirm();
+            };
+            // Fechar modal com ESC
+            modal.onkeydown = function(e) {
+                if (e.key === 'Escape') {
+                    modal.style.display = 'none';
+                }
+            };
+        }
+
+        // Função para remover formulário com confirmação
+        function removeForm(formElement) {
+            showConfirmModal('Deseja realmente remover este registro de histórico?', function() {
+                const deleteInput = formElement.querySelector('input[name$="-DELETE"]');
+                if (deleteInput) {
+                    deleteInput.checked = true;
+                    animateOut(formElement, () => { formElement.style.display = 'none'; showNotification('Formulário marcado para remoção.', 'warning'); });
+                } else {
+                    if (formCount <= minForms) {
+                        showNotification(`Número mínimo de formulários atingido (${minForms}).`, 'danger');
+                        return;
+                    }
+                    animateOut(formElement, () => {
+                        formElement.remove();
+                        formCount--;
+                        totalFormsInput.value = formCount;
+                        reindexForms();
+                        if (formCount === 0 && noHistoricoMessage) noHistoricoMessage.style.display = 'block';
+                        if (formCount < maxForms) {
+                            addHistoricoBtn.disabled = false;
+                            addHistoricoBtn.classList.remove('disabled');
+                        }
+                        showNotification('Formulário removido com sucesso!', 'success');
+                    });
+                }
+            });
+        }
+
+        // Função para reindexar formulários após remoção
+        function reindexForms() {
+            historicoFormList.querySelectorAll('.historico-form:not([style*="display: none"])').forEach((form, index) => {
+                form.setAttribute('data-form-index', index);
+                form.querySelectorAll('input, select, textarea').forEach(field => {
+                    if (field.name && field.name.includes('historico-')) field.name = field.name.replace(/historico-\d+/, `historico-${index}`);
+                    if (field.id && field.id.includes('historico-')) field.id = field.id.replace(/id_historico-\d+/, `id_historico-${index}`);
+                });
+                form.querySelectorAll('label').forEach(label => {
+                    const forAttr = label.getAttribute('for');
+                    if (forAttr && forAttr.includes('historico-')) label.setAttribute('for', forAttr.replace(/id_historico-\d+/, `id_historico-${index}`));
+                });
+            });
+        }
+
+        // Event listener para adicionar formulário
+        addHistoricoBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            addNewForm();
+        });
+
+        // Event listener para remover formulário (delegação de eventos)
+        historicoFormList.addEventListener('click', function(e) {
+            const removeBtn = e.target.closest('.remove-historico-form');
+            if (removeBtn) {
+                e.preventDefault();
+                const formElement = removeBtn.closest('.historico-form');
+                if (formElement) removeForm(formElement);
+            }
+        });
+
+        // --- PREPARAÇÃO PARA INTEGRAÇÃO AJAX E EXPORTAÇÃO/IMPORTAÇÃO ---
+        // Função stub para salvar formset via AJAX
+        function saveFormsetAjax() {
+            // Exemplo: enviar dados via fetch ou XMLHttpRequest
+            // fetch('/sua-url/', { method: 'POST', body: new FormData(document.getElementById('form-aluno')) })
+            //   .then(resp => resp.json()).then(data => { ... });
+            showNotification('Função AJAX de salvar formset chamada (stub).', 'info');
+        }
+
+        // Função stub para exportar dados do formset
+        function exportFormset() {
+            // Exemplo: coletar dados e gerar arquivo JSON/CSV
+            showNotification('Exportação de dados do formset chamada (stub).', 'info');
+        }
+
+        // Função stub para importar dados para o formset
+        function importFormset(data) {
+            // Exemplo: receber dados e popular formulários
+            showNotification('Importação de dados do formset chamada (stub).', 'info');
+        }
+
+        // Exemplo de atalhos para exportar/importar (pode ser adaptado para botões reais)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'e') { // Ctrl+E para exportar
+                e.preventDefault();
+                exportFormset();
+            }
+            if (e.ctrlKey && e.key === 'i') { // Ctrl+I para importar
+                e.preventDefault();
+                importFormset();
+            }
+        });
+        // --- FIM DA PREPARAÇÃO ---
+    });
+</script>
+
+<!-- Script duplicado removido. O gerenciamento do formset dinâmico é feito pelo script anterior, que é mais robusto e cobre todos os casos. -->

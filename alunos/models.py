@@ -1,11 +1,119 @@
 """Modelos do aplicativo Alunos."""
 
 import datetime
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-from django.core.exceptions import ValidationError
+
+
+class Pais(models.Model):
+    """Modelo para países."""
+
+    codigo = models.CharField(
+        max_length=3,
+        unique=True,
+        help_text="Código ISO do país (ex: BRA, ARG, USA)",
+        verbose_name=_("Código ISO"),
+    )
+    nome = models.CharField(max_length=100, unique=True, verbose_name=_("Nome do País"))
+    nacionalidade = models.CharField(
+        max_length=100,
+        help_text="Gentílico (ex: brasileiro, argentino, americano)",
+        verbose_name=_("Nacionalidade"),
+    )
+    ativo = models.BooleanField(default=True, verbose_name=_("Ativo"))
+
+    class Meta:
+        verbose_name = _("País")
+        verbose_name_plural = _("Países")
+        ordering = ["nome"]
+        indexes = [
+            models.Index(fields=["nome"]),
+            models.Index(fields=["nacionalidade"]),
+            models.Index(fields=["ativo"]),
+        ]
+
+    def __str__(self):
+        return self.nome
+
+
+class Estado(models.Model):
+    """Modelo para estados brasileiros."""
+
+    REGIAO_CHOICES = [
+        ("Norte", "Norte"),
+        ("Nordeste", "Nordeste"),
+        ("Centro-Oeste", "Centro-Oeste"),
+        ("Sudeste", "Sudeste"),
+        ("Sul", "Sul"),
+    ]
+
+    codigo = models.CharField(
+        max_length=2,
+        unique=True,
+        help_text="Sigla do estado (ex: SP, RJ, MG)",
+        verbose_name=_("Sigla"),
+    )
+    nome = models.CharField(
+        max_length=100, unique=True, verbose_name=_("Nome do Estado")
+    )
+    regiao = models.CharField(
+        max_length=20, choices=REGIAO_CHOICES, verbose_name=_("Região")
+    )
+
+    class Meta:
+        verbose_name = _("Estado")
+        verbose_name_plural = _("Estados")
+        ordering = ["nome"]
+        indexes = [
+            models.Index(fields=["nome"]),
+            models.Index(fields=["codigo"]),
+            models.Index(fields=["regiao"]),
+        ]
+
+    def __str__(self):
+        return f"{self.nome} ({self.codigo})"
+
+
+class Cidade(models.Model):
+    """Modelo para cidades brasileiras."""
+
+    nome = models.CharField(max_length=100, verbose_name=_("Nome da Cidade"))
+    estado = models.ForeignKey(
+        Estado,
+        on_delete=models.CASCADE,
+        related_name="cidades",
+        verbose_name=_("Estado"),
+    )
+    codigo_ibge = models.CharField(
+        max_length=7,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Código IBGE da cidade",
+        verbose_name=_("Código IBGE"),
+    )
+
+    class Meta:
+        verbose_name = _("Cidade")
+        verbose_name_plural = _("Cidades")
+        ordering = ["nome"]
+        unique_together = ["nome", "estado"]
+        indexes = [
+            models.Index(fields=["nome"]),
+            models.Index(fields=["estado"]),
+            models.Index(fields=["codigo_ibge"]),
+        ]
+
+    def __str__(self):
+        return f"{self.nome} - {self.estado.codigo}"
+
+    @property
+    def nome_completo(self):
+        """Retorna nome completo da cidade com estado."""
+        return f"{self.nome}, {self.estado.nome}"
 
 
 class Aluno(models.Model):
@@ -39,6 +147,7 @@ class Aluno(models.Model):
         regex=r"^\d{10,11}$", message=_("Número de celular inválido")
     )
 
+    # Campos básicos
     cpf = models.CharField(
         max_length=11,
         primary_key=True,
@@ -66,6 +175,8 @@ class Aluno(models.Model):
         default="ATIVO",
         verbose_name=_("Situação"),
     )
+
+    # Campos iniciáticos
     numero_iniciatico = models.CharField(
         max_length=10,
         unique=True,
@@ -79,15 +190,46 @@ class Aluno(models.Model):
         blank=True,
         verbose_name=_("Nome Iniciático"),
     )
+
+    # Campos de nacionalidade e naturalidade - NOVOS CAMPOS
+    pais_nacionalidade = models.ForeignKey(
+        Pais,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nacionais",
+        verbose_name=_("País de Nacionalidade"),
+        help_text="País que define a nacionalidade do aluno",
+    )
+    cidade_naturalidade = models.ForeignKey(
+        Cidade,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="naturais",
+        verbose_name=_("Cidade de Naturalidade"),
+        help_text="Cidade onde o aluno nasceu",
+    )
+
+    # Campos de nacionalidade e naturalidade antigos - MANTIDOS PARA COMPATIBILIDADE
     nacionalidade = models.CharField(
-        max_length=50, default="Brasileira", verbose_name=_("Nacionalidade")
+        max_length=50,
+        default="Brasileira",
+        verbose_name=_("Nacionalidade (Texto)"),
+        help_text="Campo de texto livre - será substituído pelo campo País de Nacionalidade",
+        blank=True,
+        null=True,
     )
     naturalidade = models.CharField(
-        max_length=50, verbose_name=_("Naturalidade")
+        max_length=50,
+        verbose_name=_("Naturalidade (Texto)"),
+        help_text="Campo de texto livre - será substituído pelo campo Cidade de Naturalidade",
+        blank=True,
+        null=True,
     )
-    rua = models.CharField(
-        max_length=150, verbose_name=_("Rua"), blank=True, null=True
-    )
+
+    # Endereço
+    rua = models.CharField(max_length=150, verbose_name=_("Rua"), blank=True, null=True)
     numero_imovel = models.CharField(
         max_length=10, verbose_name=_("Número"), blank=True, null=True
     )
@@ -103,9 +245,9 @@ class Aluno(models.Model):
     estado = models.CharField(
         max_length=2, verbose_name=_("Estado"), blank=True, null=True
     )
-    cep = models.CharField(
-        max_length=8, verbose_name=_("CEP"), blank=True, null=True
-    )
+    cep = models.CharField(max_length=8, verbose_name=_("CEP"), blank=True, null=True)
+
+    # Contatos
     nome_primeiro_contato = models.CharField(
         max_length=100,
         verbose_name=_("Nome do 1º Contato"),
@@ -144,6 +286,8 @@ class Aluno(models.Model):
         null=True,
         verbose_name=_("Relacionamento com 2º Contato"),
     )
+
+    # Outros dados pessoais
     estado_civil = models.CharField(
         max_length=20, blank=True, null=True, verbose_name=_("Estado Civil")
     )
@@ -151,6 +295,8 @@ class Aluno(models.Model):
         max_length=100, blank=True, null=True, verbose_name=_("Profissão")
     )
     ativo = models.BooleanField(default=True, verbose_name=_("Ativo"))
+
+    # Dados médicos
     tipo_sanguineo = models.CharField(
         max_length=3, blank=True, null=True, verbose_name=_("Tipo Sanguíneo")
     )
@@ -161,9 +307,7 @@ class Aluno(models.Model):
         null=True,
         verbose_name=_("Fator RH"),
     )
-    alergias = models.TextField(
-        blank=True, null=True, verbose_name=_("Alergias")
-    )
+    alergias = models.TextField(blank=True, null=True, verbose_name=_("Alergias"))
     condicoes_medicas_gerais = models.TextField(
         blank=True, null=True, verbose_name=_("Condições Médicas Gerais")
     )
@@ -179,12 +323,24 @@ class Aluno(models.Model):
         null=True,
         verbose_name=_("Hospital de Preferência"),
     )
-    created_at = models.DateTimeField(
-        default=timezone.now, verbose_name=_("Criado em")
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True, verbose_name=_("Atualizado em")
-    )
+
+    # Metadados
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=_("Criado em"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Atualizado em"))
+
+    class Meta:
+        verbose_name = _("Aluno")
+        verbose_name_plural = _("Alunos")
+        ordering = ["nome"]
+        indexes = [
+            models.Index(fields=["email"]),
+            models.Index(fields=["numero_iniciatico"]),
+            models.Index(fields=["situacao"]),
+            models.Index(fields=["ativo"]),
+            models.Index(fields=["pais_nacionalidade"]),
+            models.Index(fields=["cidade_naturalidade"]),
+            models.Index(fields=["nome"]),
+        ]
 
     def __str__(self):
         return str(self.nome)
@@ -196,31 +352,63 @@ class Aluno(models.Model):
 
     @property
     def pode_ser_instrutor(self):
-        """Verifica se o aluno pode ser instrutor."""
-        from importlib import import_module  # Importação movida para o topo
-
+        """Verifica se o aluno pode ser instrutor usando lógica básica."""
         if not self.esta_ativo:
             return False
 
-        try:
-            matriculas_module = import_module("matriculas.models")
-            matricula_model = getattr(matriculas_module, "Matricula")
-            matriculas_nao_pre_iniciatico = matricula_model.objects.filter(
-                aluno=self
-            ).exclude(turma__curso__nome__icontains="Pré-iniciático")
-            return matriculas_nao_pre_iniciatico.exists()
-        except (ImportError, AttributeError):
-            return False
+        # Verificação básica: aluno com número iniciático pode ser instrutor
+        return bool(self.numero_iniciatico)
+
+    @property
+    def nacionalidade_display(self):
+        """Retorna a nacionalidade para exibição, priorizando o novo campo."""
+        if self.pais_nacionalidade:
+            return self.pais_nacionalidade.nacionalidade
+        return self.nacionalidade or "Não informada"
+
+    @property
+    def naturalidade_display(self):
+        """Retorna a naturalidade para exibição, priorizando o novo campo."""
+        if self.cidade_naturalidade:
+            return self.cidade_naturalidade.nome_completo
+        return self.naturalidade or "Não informada"
 
     def clean(self):
         """Validações adicionais para o modelo Aluno."""
         super().clean()
+
+        # Validação de data de nascimento
         if self.data_nascimento and self.data_nascimento > datetime.date.today():
-            raise ValidationError({
-                "data_nascimento": _(
-                    "A data de nascimento não pode ser no futuro."
+            raise ValidationError(
+                {"data_nascimento": _("A data de nascimento não pode ser no futuro.")}
+            )
+
+        # Validação de consistência entre campos novos e antigos
+        if self.pais_nacionalidade and self.nacionalidade:
+            # Se ambos estão preenchidos, verificar se são consistentes
+            if (
+                self.nacionalidade.lower()
+                != self.pais_nacionalidade.nacionalidade.lower()
+            ):
+                raise ValidationError(
+                    {
+                        "nacionalidade": _(
+                            "A nacionalidade em texto deve ser consistente com o país selecionado."
+                        )
+                    }
                 )
-            })
+
+    def save(self, *args, **kwargs):
+        """Override do save para manter sincronização entre campos novos e antigos."""
+        # Sincronizar nacionalidade
+        if self.pais_nacionalidade and not self.nacionalidade:
+            self.nacionalidade = self.pais_nacionalidade.nacionalidade
+
+        # Sincronizar naturalidade
+        if self.cidade_naturalidade and not self.naturalidade:
+            self.naturalidade = self.cidade_naturalidade.nome_completo
+
+        super().save(*args, **kwargs)
 
 
 class TipoCodigo(models.Model):
@@ -281,9 +469,7 @@ class RegistroHistorico(models.Model):
     nome_iniciatico = models.CharField(
         max_length=100, null=True, blank=True, verbose_name=_("Nome Iniciático")
     )
-    observacoes = models.TextField(
-        blank=True, null=True, verbose_name=_("Observações")
-    )
+    observacoes = models.TextField(blank=True, null=True, verbose_name=_("Observações"))
     created_at = models.DateTimeField(
         auto_now_add=True, verbose_name=_("Data do Registro")
     )
@@ -293,9 +479,7 @@ class RegistroHistorico(models.Model):
         verbose_name = _("Registro Histórico")
         verbose_name_plural = _("Registros Históricos")
         ordering = ["-data_os", "-created_at"]
-        unique_together = [
-            ["aluno", "codigo", "ordem_servico"]
-        ]
+        unique_together = [["aluno", "codigo", "ordem_servico"]]
 
     def __str__(self):
         return f"Registro de {self.aluno} - {self.codigo} em {self.data_os}"

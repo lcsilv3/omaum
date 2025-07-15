@@ -140,7 +140,6 @@ class RateLimitMiddleware(MiddlewareMixin):
         """
         if request.path.startswith('/presencas/api/'):
             from django.core.cache import cache
-            from datetime import datetime, timedelta
             
             # Identificar cliente
             if request.user.is_authenticated:

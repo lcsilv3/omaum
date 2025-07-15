@@ -2,7 +2,7 @@ import logging
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from .utils import get_model_class
 

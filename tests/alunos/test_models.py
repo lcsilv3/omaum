@@ -1,6 +1,5 @@
 import pytest
 from alunos.services import criar_aluno
-from django.db import IntegrityError
 
 @pytest.mark.django_db
 class TestAlunoModel:

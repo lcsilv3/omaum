@@ -3,7 +3,6 @@ Testes para o modelo PresencaDetalhada.
 """
 from django.test import TestCase
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 from decimal import Decimal
 from datetime import date
 
@@ -229,7 +228,7 @@ class PresencaDetalhadaTest(TestCase):
         self.assertEqual(presenca_original.aluno, self.aluno)
         
         # Verificar que aliases ainda funcionam
-        from presencas.models import PresencaAcademica, PresencaRitualistica
+        from presencas.models import PresencaAcademica
         
         presenca_academica = PresencaAcademica.objects.create(
             aluno=self.aluno,

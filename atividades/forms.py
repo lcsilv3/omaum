@@ -208,7 +208,8 @@ class AtividadeAcademicaForm(forms.ModelForm):
     """Formulário para atividades acadêmicas."""
     
     class Meta:
-        model = None  # Será definido dinamicamente
+        from atividades.models import Atividade
+        model = Atividade
         fields = ['nome', 'descricao', 'tipo_atividade', 'data_inicio', 'hora_inicio', 'local']
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
@@ -218,11 +219,3 @@ class AtividadeAcademicaForm(forms.ModelForm):
             'hora_inicio': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'local': forms.TextInput(attrs={'class': 'form-control'}),
         }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        try:
-            models_dict = get_models()
-            self._meta.model = models_dict['Atividade']
-        except (ImportError, AttributeError):
-            pass

@@ -1,6 +1,7 @@
 """
 Views relacionadas ao CRUD básico de alunos.
 """
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -13,7 +14,12 @@ import logging
 from alunos.utils import get_aluno_model, get_aluno_form
 from alunos.services import remover_instrutor_de_turmas
 
+from django import forms
+from alunos.models import Aluno, RegistroHistorico
+from alunos.forms import RegistroHistoricoForm
+
 logger = logging.getLogger(__name__)
+
 
 @login_required
 def listar_alunos(request):
@@ -23,7 +29,7 @@ def listar_alunos(request):
         # Obter parâmetros de busca e filtro
         query = request.GET.get("q", "")
         curso_id = request.GET.get("curso", "")
-        
+
         # Filtrar alunos
         alunos = Aluno.objects.all()
         if query:
@@ -33,7 +39,7 @@ def listar_alunos(request):
                 | Q(email__icontains=query)
                 | Q(numero_iniciatico__icontains=query)
             )
-        
+
         # Adicionar filtro por curso
         if curso_id:
             try:
@@ -41,9 +47,7 @@ def listar_alunos(request):
                 Matricula = import_module("matriculas.models").Matricula
                 # Filtrar alunos matriculados no curso especificado
                 alunos_ids = (
-                    Matricula.objects.filter(
-                        turma__curso__codigo_curso=curso_id
-                    )
+                    Matricula.objects.filter(turma__curso__codigo_curso=curso_id)
                     .values_list("aluno__cpf", flat=True)
                     .distinct()
                 )
@@ -51,7 +55,7 @@ def listar_alunos(request):
             except (ImportError, AttributeError) as e:
                 # Log do erro, mas continuar sem o filtro de curso
                 logger.error(f"Erro ao filtrar por curso: {e}")
-        
+
         # Para cada aluno, buscar os cursos em que está matriculado
         alunos_com_cursos = []
         for aluno in alunos:
@@ -64,22 +68,22 @@ def listar_alunos(request):
                 cursos = [m.turma.curso.nome for m in matriculas]
                 # Adicionar informação de cursos ao aluno
                 aluno.cursos = cursos
-            except:
+            except Exception:
                 aluno.cursos = []
             alunos_com_cursos.append(aluno)
-        
+
         # Paginação
         paginator = Paginator(alunos_com_cursos, 10)  # 10 alunos por página
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
-        
+
         # Obter cursos para o filtro
         try:
             Curso = import_module("cursos.models").Curso
             cursos = Curso.objects.all()
-        except:
+        except Exception:
             cursos = []
-        
+
         context = {
             "alunos": page_obj,
             "page_obj": page_obj,
@@ -106,44 +110,85 @@ def listar_alunos(request):
             },
         )
 
+
 @login_required
 def criar_aluno(request):
     """Cria um novo aluno."""
+    import sys
+    print("[DEBUG] View criar_aluno chamada", file=sys.stderr)
     AlunoForm = get_aluno_form()
+    CustomFormSet = forms.inlineformset_factory(
+        Aluno,
+        RegistroHistorico,
+        form=RegistroHistoricoForm,
+        extra=1,
+        can_delete=True,
+        min_num=0,
+        max_num=20,
+        validate_min=False,
+        validate_max=True,
+    )
     if request.method == "POST":
         form = AlunoForm(request.POST, request.FILES)
-        if form.is_valid():
+        historico_formset = CustomFormSet(request.POST, prefix="historico")
+        if form.is_valid() and historico_formset.is_valid():
             try:
                 aluno = form.save()
+                historico_formset.instance = aluno
+                historico_formset.save()
                 messages.success(request, "Aluno cadastrado com sucesso!")
                 return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
             except ValidationError as e:
                 for field, errors in e.message_dict.items():
                     for error in errors:
                         form.add_error(field, error)
+                messages.error(request, "Por favor, corrija os erros abaixo.")
             except Exception as e:
                 messages.error(request, f"Erro ao cadastrar aluno: {str(e)}")
+            # Renderiza o formulário novamente após exceção
+            return render(
+                request,
+                "alunos/formulario_aluno.html",
+                {"form": form, "aluno": None, "historico_formset": historico_formset},
+            )
         else:
             messages.error(request, "Por favor, corrija os erros abaixo.")
+        # Renderiza o formulário novamente após erro de validação
+        return render(
+            request,
+            "alunos/formulario_aluno.html",
+            {"form": form, "aluno": None, "historico_formset": historico_formset},
+        )
     else:
-        form = AlunoForm()
-    return render(
-        request, "alunos/formulario_aluno.html", {"form": form, "aluno": None}
-    )
+        try:
+            form = AlunoForm()
+            historico_formset = CustomFormSet(queryset=RegistroHistorico.objects.none(), prefix="historico")
+            # Garante que o management_form SEMPRE seja gerado
+            _ = historico_formset.management_form
+            return render(
+                request,
+                "alunos/formulario_aluno.html",
+                {"form": form, "aluno": None, "historico_formset": historico_formset},
+            )
+        except Exception as e:
+            from django.http import HttpResponse
+            return HttpResponse(f"<h1>Erro ao renderizar o template:</h1><pre>{str(e)}</pre>", status=500)
+
 
 @login_required
 def detalhar_aluno(request, cpf):
     """Exibe os detalhes de um aluno."""
     Aluno = get_aluno_model()
     aluno = get_object_or_404(Aluno, cpf=cpf)
-    
+
     # Buscar turmas onde o aluno é instrutor
     turmas_como_instrutor = []
     turmas_como_instrutor_auxiliar = []
     turmas_como_auxiliar_instrucao = []
-    
+
     if aluno.esta_ativo:
         from importlib import import_module
+
         try:
             # Importar o modelo Turma dinamicamente
             turmas_module = import_module("turmas.models")
@@ -160,7 +205,7 @@ def detalhar_aluno(request, cpf):
             ).select_related("curso")
         except (ImportError, AttributeError):
             pass
-    
+
     # Buscar matrículas do aluno
     matriculas = []
     try:
@@ -168,10 +213,12 @@ def detalhar_aluno(request, cpf):
         matriculas_module = import_module("matriculas.models")
         Matricula = getattr(matriculas_module, "Matricula")
         # Buscar matrículas do aluno
-        matriculas = Matricula.objects.filter(aluno=aluno).select_related("turma__curso")
+        matriculas = Matricula.objects.filter(aluno=aluno).select_related(
+            "turma__curso"
+        )
     except (ImportError, AttributeError):
         pass
-    
+
     # Buscar atividades acadêmicas do aluno
     atividades_academicas = []
     try:
@@ -179,10 +226,14 @@ def detalhar_aluno(request, cpf):
         frequencias_module = import_module("frequencias.models")
         Frequencia = getattr(frequencias_module, "Frequencia")
         # Buscar frequências do aluno
-        atividades_academicas = Frequencia.objects.filter(aluno=aluno).select_related("atividade").order_by("-data")
+        atividades_academicas = (
+            Frequencia.objects.filter(aluno=aluno)
+            .select_related("atividade")
+            .order_by("-data")
+        )
     except (ImportError, AttributeError):
         pass
-    
+
     # Buscar atividades ritualísticas do aluno
     atividades_ritualisticas = []
     try:
@@ -190,10 +241,12 @@ def detalhar_aluno(request, cpf):
         atividades_module = import_module("atividades.models")
         AtividadeRitualistica = getattr(atividades_module, "AtividadeRitualistica")
         # Buscar atividades ritualísticas do aluno
-        atividades_ritualisticas = AtividadeRitualistica.objects.filter(participantes=aluno).order_by("-data")
+        atividades_ritualisticas = AtividadeRitualistica.objects.filter(
+            participantes=aluno
+        ).order_by("-data")
     except (ImportError, AttributeError):
         pass
-    
+
     return render(
         request,
         "alunos/detalhar_aluno.html",
@@ -208,6 +261,7 @@ def detalhar_aluno(request, cpf):
         },
     )
 
+
 @login_required
 def editar_aluno(request, cpf):
     """Edita um aluno existente."""
@@ -215,7 +269,7 @@ def editar_aluno(request, cpf):
     AlunoForm = get_aluno_form()
     aluno = get_object_or_404(Aluno, cpf=cpf)
     situacao_anterior = aluno.situacao
-    
+
     if request.method == "POST":
         form = AlunoForm(request.POST, request.FILES, instance=aluno)
         # Verificar se o formulário é válido
@@ -230,10 +284,7 @@ def editar_aluno(request, cpf):
                     and hasattr(form, "aluno_e_instrutor")
                 ):
                     # Verificar se o usuário confirmou a remoção da instrutoria
-                    if (
-                        request.POST.get("confirmar_remocao_instrutoria")
-                        != "1"
-                    ):
+                    if request.POST.get("confirmar_remocao_instrutoria") != "1":
                         # Redirecionar para a página de confirmação
                         return redirect(
                             "alunos:confirmar_remocao_instrutoria",
@@ -244,7 +295,7 @@ def editar_aluno(request, cpf):
                     resultado = remover_instrutor_de_turmas(aluno, nova_situacao)
                     if not resultado["sucesso"]:
                         messages.error(request, resultado["mensagem"])
-                
+
                 # Salvar o aluno
                 form.save()
                 messages.success(request, "Aluno atualizado com sucesso!")
@@ -259,17 +310,36 @@ def editar_aluno(request, cpf):
             messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
         form = AlunoForm(instance=aluno)
-    
-    return render(
-        request, "alunos/formulario_aluno.html", {"form": form, "aluno": aluno}
+
+    # Garante que historico_formset está sempre presente
+    CustomFormSet = forms.inlineformset_factory(
+        Aluno,
+        RegistroHistorico,
+        form=RegistroHistoricoForm,
+        extra=1,
+        can_delete=True,
+        min_num=0,
+        max_num=20,
+        validate_min=False,
+        validate_max=True,
     )
+    historico_formset = CustomFormSet(instance=aluno, prefix="historico")
+    # Garante que o management_form SEMPRE será renderizado
+    if historico_formset.total_form_count() == 0:
+        historico_formset.extra_forms = [historico_formset.empty_form]
+    return render(
+        request,
+        "alunos/formulario_aluno.html",
+        {"form": form, "aluno": aluno, "historico_formset": historico_formset},
+    )
+
 
 @login_required
 def excluir_aluno(request, cpf):
     """Exclui um aluno."""
     Aluno = get_aluno_model()
     aluno = get_object_or_404(Aluno, cpf=cpf)
-    
+
     if request.method == "POST":
         try:
             aluno.delete()
@@ -278,5 +348,5 @@ def excluir_aluno(request, cpf):
         except Exception as e:
             messages.error(request, f"Erro ao excluir aluno: {str(e)}")
             return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
-    
+
     return render(request, "alunos/excluir_aluno.html", {"aluno": aluno})

@@ -5,55 +5,77 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
 
+
 Sistema de gestão acadêmica completo desenvolvido em Django, especializado no controle de presenças e frequência de alunos em atividades acadêmicas e ritualísticas.
 
-## ✨ Principais Funcionalidades
 
-### 📊 Sistema de Presenças Avançado
-- **Registro Multi-etapas**: Processo guiado para registros mensais complexos
-- **Registro Rápido**: Interface otimizada para registros pontuais
-- **Cálculos Automáticos**: Percentuais, carências e estatísticas em tempo real
-- **Configurações Flexíveis**: Limites personalizáveis por turma/atividade
+## Aviso Importante
+
+Para rodar o monitoramento automático de formatação Python:
+
+**Abra o menu de tarefas (Ctrl+Shift+B ou F1 > "Executar Tarefa") e selecione "Monitoramento automático Ruff".**
+
+O script ficará rodando em segundo plano, monitorando alterações nos arquivos Python do seu projeto.
 
 ### 📈 Relatórios e Análises
 - **Painel de Estatísticas**: Dashboard interativo com gráficos em tempo real
 - **Exportação Avançada**: Excel profissional, PDF completo, CSV estruturado
 - **Agendamento Automático**: Relatórios periódicos enviados por email
+
 - **Relatórios Consolidados**: Visão geral por período, turma ou curso
+
 
 ### 🔗 API REST Completa
 - **Endpoints Documentados**: Swagger/ReDoc integrado
+
 - **Autenticação Segura**: Token-based authentication
+
 - **Rate Limiting**: Controle de acesso e performance
 - **Versionamento**: APIs versionadas para compatibilidade
 
+
 ### 👥 Gestão Acadêmica
+
 - **Alunos**: Cadastro completo com validações
 - **Turmas**: Gestão de períodos letivos e matriculas
 - **Atividades**: Controle de atividades acadêmicas e ritualísticas
+
 - **Cursos**: Estrutura hierárquica de cursos oferecidos
+
 
 ## 🚀 Quick Start
 
+
 ```bash
+
 # 1. Clonar o repositório
 git clone https://github.com/lcsilv3/omaum.git
 cd omaum
 
 # 2. Configurar ambiente virtual
+
 python -m venv venv
+
 source venv/bin/activate  # Linux/Mac
+
 # ou
+
 venv\Scripts\activate     # Windows
 
 # 3. Instalar dependências
+
 pip install -r requirements.txt
 
+
 # 4. Configurar banco de dados
+
 python manage.py migrate
 
+
 # 5. Criar superusuário
+
 python manage.py createsuperuser
+
 
 # 6. Executar servidor
 python manage.py runserver
@@ -67,46 +89,82 @@ Acesse: **http://localhost:8000**
 - **Django 4.2+**: Framework web robusto
 - **Django REST Framework**: API REST moderna
 - **PostgreSQL**: Banco de dados principal (produção)
+
 - **SQLite**: Desenvolvimento local
+
+## Aviso Importante
+
+Para rodar o monitoramento automático de formatação Python:
+
+
+**Abra o menu de tarefas (Ctrl+Shift+B ou F1 > "Executar Tarefa") e selecione "Monitoramento automático Ruff".**
+
+
+
+O script ficará rodando em segundo plano, monitorando alterações nos arquivos Python do seu projeto.
+
+
+
 - **Celery**: Processamento assíncrono (futuro)
 
-### Frontend
+
+
 - **Bootstrap 5**: Framework CSS responsivo
+
 - **jQuery**: Interações dinâmicas
+
 - **Chart.js**: Gráficos interativos
 - **Select2**: Componentes avançados
 
+
 ### Infraestrutura
+
 - **Docker**: Containerização
 - **Nginx**: Proxy reverso
 - **Gunicorn**: Servidor WSGI
+
 - **GitHub Actions**: CI/CD
+
 
 ## 📁 Estrutura do Projeto
 
+
 ```
+
 omaum/
 ├── 📁 docs/                    # Documentação completa
 │   ├── ARQUITETURA_PRESENCAS.md
+
 │   ├── MANUAL_USUARIO.md
+
 │   ├── GUIA_INSTALACAO.md
 │   ├── API_DOCUMENTATION.md
 │   └── GUIA_DESENVOLVEDOR.md
 ├── 📁 presencas/              # ⭐ Sistema de Presenças (principal)
 │   ├── models.py              # Modelos de dados
+
 │   ├── views/                 # Views organizadas por função
+
 │   ├── api/                   # API REST endpoints
+
 │   ├── services/              # Lógica de negócio
+
 │   └── templates/             # Templates HTML
 ├── 📁 alunos/                 # Gestão de estudantes
 ├── 📁 turmas/                 # Gestão de turmas
+
 ├── 📁 atividades/             # Controle de atividades
+
 ├── 📁 cursos/                 # Administração de cursos
 ├── 📁 core/                   # Utilitários comuns
+
 └── 📁 static/                 # Arquivos estáticos
+
 ```
 
+
 ### Módulos Principais
+
 
 - **🎯 presencas**: Sistema completo de controle de frequência ⭐
 - **👥 alunos**: Gerenciamento de estudantes e perfis
@@ -120,20 +178,28 @@ omaum/
 ### Documentação Disponível
 
 - **📋 [Manual do Usuário](docs/MANUAL_USUARIO.md)**: Guia completo para professores e coordenadores
+
 - **🏗️ [Arquitetura do Sistema](docs/ARQUITETURA_PRESENCAS.md)**: Visão técnica detalhada
+
 - **⚙️ [Guia de Instalação](docs/GUIA_INSTALACAO.md)**: Instruções completas de setup
 - **🔌 [Documentação da API](docs/API_DOCUMENTATION.md)**: Endpoints REST documentados
 - **👨‍💻 [Guia do Desenvolvedor](docs/GUIA_DESENVOLVEDOR.md)**: Padrões e convenções
 - **📝 [Changelog](docs/CHANGELOG.md)**: Histórico de versões e mudanças
 
+
+
 ## 🧪 Desenvolvimento
+
+
 
 ### Executar Testes
 
+
+
 ```bash
+
 # Todos os testes
 python manage.py test
-
 # Testes específicos do módulo de presenças
 python manage.py test presencas
 

@@ -7,19 +7,16 @@ import csv
 import io
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib import messages
 from django.views import View
 from django.views.generic import TemplateView
 from django.utils import timezone
 from django.db.models import Sum, Count
 
 from ..models import PresencaDetalhada
-from alunos.models import Aluno
 from turmas.models import Turma
 from .consolidado import ConsolidadoPresencasView
 
@@ -459,7 +456,7 @@ class ProcessarExportacaoView(LoginRequiredMixin, View):
                 try:
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
-                except:
+                except Exception:
                     pass
             adjusted_width = min(max_length + 2, 30)
             ws.column_dimensions[column_letter].width = adjusted_width
@@ -484,7 +481,12 @@ class ProcessarExportacaoView(LoginRequiredMixin, View):
         # Estatísticas
         stats = dados['estatisticas']
         ws[f'A{start_row}'] = "ESTATÍSTICAS GERAIS"
-        ws[f'A{start_row}'].font = Font(bold=True)
+        # Aplicar estilo apenas se disponível
+        try:
+            from openpyxl.styles import Font
+            ws[f'A{start_row}'].font = Font(bold=True)
+        except ImportError:
+            pass
         
         start_row += 1
         stats_data = [
@@ -506,8 +508,13 @@ class ProcessarExportacaoView(LoginRequiredMixin, View):
         headers = ['Aluno', 'Turma', 'Atividade', 'Data', 'Convocações', 'Presenças', 'Faltas', 'Percentual']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=start_row, column=col, value=header)
-            cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+            # Aplicar estilos apenas se disponível
+            try:
+                from openpyxl.styles import Font, PatternFill
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+            except ImportError:
+                pass
         
         start_row += 1
         
@@ -534,7 +541,12 @@ class ProcessarExportacaoView(LoginRequiredMixin, View):
             
             # Título da turma
             ws[f'A{start_row}'] = f"TURMA: {turma.nome}"
-            ws[f'A{start_row}'].font = Font(bold=True, size=12)
+            # Aplicar estilo apenas se disponível
+            try:
+                from openpyxl.styles import Font
+                ws[f'A{start_row}'].font = Font(bold=True, size=12)
+            except ImportError:
+                pass
             start_row += 1
             
             # Estatísticas da turma
@@ -556,7 +568,12 @@ class ProcessarExportacaoView(LoginRequiredMixin, View):
             headers = ['Aluno', 'Atividade', 'Data', 'Presenças', 'Faltas', 'Percentual']
             for col, header in enumerate(headers, 1):
                 cell = ws.cell(row=start_row, column=col, value=header)
-                cell.font = Font(bold=True)
+                # Aplicar estilo apenas se disponível
+                try:
+                    from openpyxl.styles import Font
+                    cell.font = Font(bold=True)
+                except ImportError:
+                    pass
             
             start_row += 1
             
@@ -580,7 +597,12 @@ class ProcessarExportacaoView(LoginRequiredMixin, View):
         stats = dados['estatisticas_executivas']['resumo_geral']
         
         ws[f'A{start_row}'] = "ESTATÍSTICAS EXECUTIVAS"
-        ws[f'A{start_row}'].font = Font(bold=True, size=12)
+        # Aplicar estilo apenas se disponível
+        try:
+            from openpyxl.styles import Font
+            ws[f'A{start_row}'].font = Font(bold=True, size=12)
+        except ImportError:
+            pass
         start_row += 2
         
         stats_data = [

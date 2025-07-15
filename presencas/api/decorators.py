@@ -5,10 +5,7 @@ Decoradores para API do sistema de presenças.
 import json
 import logging
 from functools import wraps
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
 from .utils import api_response, log_api_request, validate_required_fields
 
 logger = logging.getLogger(__name__)
@@ -194,7 +191,6 @@ def api_throttle(rate_limit=100):
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
             from django.core.cache import cache
-            from datetime import datetime, timedelta
             
             # Identificar cliente
             if request.user.is_authenticated:

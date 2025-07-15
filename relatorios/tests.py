@@ -127,7 +127,7 @@ class RelatorioTestCase(TestCase):
     def test_relatorio_sem_permissao(self):
         """Testar acesso aos relatórios sem permissão"""
         # Criar usuário sem permissões
-        user_sem_permissao = User.objects.create_user(
+        User.objects.create_user(
             username="sempermissao", password="testpass123"
         )
         self.client.login(username="sempermissao", password="testpass123")

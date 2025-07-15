@@ -3,7 +3,6 @@ Funções para exportação de dados em diferentes formatos.
 """
 import io
 import csv
-from datetime import datetime
 import logging
 from django.http import HttpResponse
 import xlsxwriter

@@ -3,9 +3,6 @@ from django.urls import reverse, resolve
 from cursos.views import (
     listar_cursos,
     criar_curso,
-    detalhar_curso,
-    editar_curso,
-    excluir_curso,
 )
 
 

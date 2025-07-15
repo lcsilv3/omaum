@@ -2,15 +2,11 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.db.models import Q
-from django.core.paginator import Paginator
 from importlib import import_module
-from django.core.exceptions import ValidationError
-from django.utils import timezone
 import logging
 from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import get_object_or_404
 
 logger = logging.getLogger(__name__)
 

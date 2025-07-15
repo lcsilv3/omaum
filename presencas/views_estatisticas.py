@@ -3,13 +3,12 @@ Views para estatísticas de presença usando o CalculadoraEstatisticas.
 """
 
 import logging
-from datetime import datetime, date
+from datetime import datetime
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.utils import timezone
 
 from .services.calculadora_estatisticas import CalculadoraEstatisticas
@@ -292,7 +291,7 @@ def dashboard_presencas(request):
         
         if turma_id:
             # Estatísticas da turma específica
-            turma = get_object_or_404(Turma, id=turma_id)
+            get_object_or_404(Turma, id=turma_id)
             estatisticas_gerais = CalculadoraEstatisticas.calcular_estatisticas_turma(
                 turma_id=turma_id
             )

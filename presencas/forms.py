@@ -3,8 +3,6 @@ from datetime import date
 import logging
 from cursos.models import Curso
 from turmas.models import Turma
-from alunos.models import Aluno
-from matriculas.models import Matricula
 from atividades.models import AtividadeAcademica
 from django.utils import timezone
 from django_select2.forms import Select2Widget

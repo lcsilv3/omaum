@@ -185,7 +185,7 @@ class RegistroRapidoTestCase(TestCase):
     def test_validar_presenca_ajax(self):
         """Testa validação de presença existente."""
         # Criar uma presença
-        presenca = PresencaAcademica.objects.create(
+        PresencaAcademica.objects.create(
             aluno=self.aluno1,
             turma=self.turma,
             atividade=self.atividade,

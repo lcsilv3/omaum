@@ -7,435 +7,434 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Aluno',
+            name="Aluno",
             fields=[
                 (
-                    'cpf',
+                    "cpf",
                     models.CharField(
                         max_length=11,
                         primary_key=True,
                         serialize=False,
                         validators=[
                             django.core.validators.RegexValidator(
-                                message='CPF deve conter 11 dígitos numéricos',
-                                regex='^\\d{11}$',
+                                message="CPF deve conter 11 dígitos numéricos",
+                                regex="^\\d{11}$",
                             )
                         ],
-                        verbose_name='CPF',
+                        verbose_name="CPF",
                     ),
                 ),
                 (
-                    'nome',
-                    models.CharField(max_length=100, verbose_name='Nome Completo'),
+                    "nome",
+                    models.CharField(max_length=100, verbose_name="Nome Completo"),
                 ),
                 (
-                    'data_nascimento',
-                    models.DateField(verbose_name='Data de Nascimento'),
+                    "data_nascimento",
+                    models.DateField(verbose_name="Data de Nascimento"),
                 ),
                 (
-                    'hora_nascimento',
+                    "hora_nascimento",
                     models.TimeField(
-                        blank=True, null=True, verbose_name='Hora de Nascimento'
+                        blank=True, null=True, verbose_name="Hora de Nascimento"
                     ),
                 ),
                 (
-                    'email',
+                    "email",
                     models.EmailField(
-                        max_length=254, unique=True, verbose_name='E-mail'
+                        max_length=254, unique=True, verbose_name="E-mail"
                     ),
                 ),
                 (
-                    'foto',
+                    "foto",
                     models.ImageField(
                         blank=True,
                         null=True,
-                        upload_to='alunos/fotos/',
-                        verbose_name='Foto',
+                        upload_to="alunos/fotos/",
+                        verbose_name="Foto",
                     ),
                 ),
                 (
-                    'sexo',
+                    "sexo",
                     models.CharField(
-                        choices=[('M', 'Masculino'), ('F', 'Feminino'), ('O', 'Outro')],
-                        default='M',
+                        choices=[("M", "Masculino"), ("F", "Feminino"), ("O", "Outro")],
+                        default="M",
                         max_length=1,
-                        verbose_name='Sexo',
+                        verbose_name="Sexo",
                     ),
                 ),
                 (
-                    'situacao',
+                    "situacao",
                     models.CharField(
                         choices=[
-                            ('ATIVO', 'Ativo'),
-                            ('AFASTADO', 'Afastado'),
-                            ('ESPECIAIS', 'Especiais'),
-                            ('EXCLUIDO', 'Excluído'),
-                            ('FALECIDO', 'Falecido'),
-                            ('LOI', 'LOI'),
+                            ("ATIVO", "Ativo"),
+                            ("AFASTADO", "Afastado"),
+                            ("ESPECIAIS", "Especiais"),
+                            ("EXCLUIDO", "Excluído"),
+                            ("FALECIDO", "Falecido"),
+                            ("LOI", "LOI"),
                         ],
-                        default='ATIVO',
+                        default="ATIVO",
                         max_length=10,
-                        verbose_name='Situação',
+                        verbose_name="Situação",
                     ),
                 ),
                 (
-                    'numero_iniciatico',
+                    "numero_iniciatico",
                     models.CharField(
                         blank=True,
                         max_length=10,
                         null=True,
                         unique=True,
-                        verbose_name='Número Iniciático',
+                        verbose_name="Número Iniciático",
                     ),
                 ),
                 (
-                    'nome_iniciatico',
+                    "nome_iniciatico",
                     models.CharField(
                         blank=True,
                         max_length=100,
                         null=True,
-                        verbose_name='Nome Iniciático',
+                        verbose_name="Nome Iniciático",
                     ),
                 ),
                 (
-                    'nacionalidade',
+                    "nacionalidade",
                     models.CharField(
-                        default='Brasileira',
+                        default="Brasileira",
                         max_length=50,
-                        verbose_name='Nacionalidade',
+                        verbose_name="Nacionalidade",
                     ),
                 ),
                 (
-                    'naturalidade',
-                    models.CharField(max_length=50, verbose_name='Naturalidade'),
+                    "naturalidade",
+                    models.CharField(max_length=50, verbose_name="Naturalidade"),
                 ),
                 (
-                    'rua',
+                    "rua",
                     models.CharField(
-                        blank=True, max_length=150, null=True, verbose_name='Rua'
+                        blank=True, max_length=150, null=True, verbose_name="Rua"
                     ),
                 ),
                 (
-                    'numero_imovel',
+                    "numero_imovel",
                     models.CharField(
-                        blank=True, max_length=10, null=True, verbose_name='Número'
+                        blank=True, max_length=10, null=True, verbose_name="Número"
                     ),
                 ),
                 (
-                    'complemento',
+                    "complemento",
                     models.CharField(
-                        blank=True, max_length=50, null=True, verbose_name='Complemento'
+                        blank=True, max_length=50, null=True, verbose_name="Complemento"
                     ),
                 ),
                 (
-                    'bairro',
+                    "bairro",
                     models.CharField(
-                        blank=True, max_length=50, null=True, verbose_name='Bairro'
+                        blank=True, max_length=50, null=True, verbose_name="Bairro"
                     ),
                 ),
                 (
-                    'cidade',
+                    "cidade",
                     models.CharField(
-                        blank=True, max_length=50, null=True, verbose_name='Cidade'
+                        blank=True, max_length=50, null=True, verbose_name="Cidade"
                     ),
                 ),
                 (
-                    'estado',
+                    "estado",
                     models.CharField(
-                        blank=True, max_length=2, null=True, verbose_name='Estado'
+                        blank=True, max_length=2, null=True, verbose_name="Estado"
                     ),
                 ),
                 (
-                    'cep',
+                    "cep",
                     models.CharField(
-                        blank=True, max_length=8, null=True, verbose_name='CEP'
+                        blank=True, max_length=8, null=True, verbose_name="CEP"
                     ),
                 ),
                 (
-                    'nome_primeiro_contato',
+                    "nome_primeiro_contato",
                     models.CharField(
                         blank=True,
                         max_length=100,
                         null=True,
-                        verbose_name='Nome do 1º Contato',
+                        verbose_name="Nome do 1º Contato",
                     ),
                 ),
                 (
-                    'celular_primeiro_contato',
+                    "celular_primeiro_contato",
                     models.CharField(
                         blank=True,
                         max_length=11,
                         null=True,
                         validators=[
                             django.core.validators.RegexValidator(
-                                message='Número de celular inválido',
-                                regex='^\\d{10,11}$',
+                                message="Número de celular inválido",
+                                regex="^\\d{10,11}$",
                             )
                         ],
-                        verbose_name='Celular do 1º Contato',
+                        verbose_name="Celular do 1º Contato",
                     ),
                 ),
                 (
-                    'tipo_relacionamento_primeiro_contato',
+                    "tipo_relacionamento_primeiro_contato",
                     models.CharField(
                         blank=True,
                         max_length=50,
                         null=True,
-                        verbose_name='Relacionamento com 1º Contato',
+                        verbose_name="Relacionamento com 1º Contato",
                     ),
                 ),
                 (
-                    'nome_segundo_contato',
+                    "nome_segundo_contato",
                     models.CharField(
                         blank=True,
                         max_length=100,
                         null=True,
-                        verbose_name='Nome do 2º Contato',
+                        verbose_name="Nome do 2º Contato",
                     ),
                 ),
                 (
-                    'celular_segundo_contato',
+                    "celular_segundo_contato",
                     models.CharField(
                         blank=True,
                         max_length=11,
                         null=True,
                         validators=[
                             django.core.validators.RegexValidator(
-                                message='Número de celular inválido',
-                                regex='^\\d{10,11}$',
+                                message="Número de celular inválido",
+                                regex="^\\d{10,11}$",
                             )
                         ],
-                        verbose_name='Celular do 2º Contato',
+                        verbose_name="Celular do 2º Contato",
                     ),
                 ),
                 (
-                    'tipo_relacionamento_segundo_contato',
+                    "tipo_relacionamento_segundo_contato",
                     models.CharField(
                         blank=True,
                         max_length=50,
                         null=True,
-                        verbose_name='Relacionamento com 2º Contato',
+                        verbose_name="Relacionamento com 2º Contato",
                     ),
                 ),
                 (
-                    'estado_civil',
+                    "estado_civil",
                     models.CharField(
                         blank=True,
                         max_length=20,
                         null=True,
-                        verbose_name='Estado Civil',
+                        verbose_name="Estado Civil",
                     ),
                 ),
                 (
-                    'profissao',
+                    "profissao",
                     models.CharField(
-                        blank=True, max_length=100, null=True, verbose_name='Profissão'
+                        blank=True, max_length=100, null=True, verbose_name="Profissão"
                     ),
                 ),
-                ('ativo', models.BooleanField(default=True, verbose_name='Ativo')),
+                ("ativo", models.BooleanField(default=True, verbose_name="Ativo")),
                 (
-                    'tipo_sanguineo',
+                    "tipo_sanguineo",
                     models.CharField(
                         blank=True,
                         max_length=3,
                         null=True,
-                        verbose_name='Tipo Sanguíneo',
+                        verbose_name="Tipo Sanguíneo",
                     ),
                 ),
                 (
-                    'fator_rh',
+                    "fator_rh",
                     models.CharField(
                         blank=True,
-                        choices=[('+', 'Positivo'), ('-', 'Negativo')],
+                        choices=[("+", "Positivo"), ("-", "Negativo")],
                         max_length=1,
                         null=True,
-                        verbose_name='Fator RH',
+                        verbose_name="Fator RH",
                     ),
                 ),
                 (
-                    'alergias',
-                    models.TextField(blank=True, null=True, verbose_name='Alergias'),
+                    "alergias",
+                    models.TextField(blank=True, null=True, verbose_name="Alergias"),
                 ),
                 (
-                    'condicoes_medicas_gerais',
+                    "condicoes_medicas_gerais",
                     models.TextField(
-                        blank=True, null=True, verbose_name='Condições Médicas Gerais'
+                        blank=True, null=True, verbose_name="Condições Médicas Gerais"
                     ),
                 ),
                 (
-                    'convenio_medico',
+                    "convenio_medico",
                     models.CharField(
                         blank=True,
                         max_length=100,
                         null=True,
-                        verbose_name='Convênio Médico',
+                        verbose_name="Convênio Médico",
                     ),
                 ),
                 (
-                    'hospital',
+                    "hospital",
                     models.CharField(
                         blank=True,
                         max_length=100,
                         null=True,
-                        verbose_name='Hospital de Preferência',
+                        verbose_name="Hospital de Preferência",
                     ),
                 ),
                 (
-                    'created_at',
+                    "created_at",
                     models.DateTimeField(
-                        default=django.utils.timezone.now, verbose_name='Criado em'
+                        default=django.utils.timezone.now, verbose_name="Criado em"
                     ),
                 ),
                 (
-                    'updated_at',
-                    models.DateTimeField(auto_now=True, verbose_name='Atualizado em'),
+                    "updated_at",
+                    models.DateTimeField(auto_now=True, verbose_name="Atualizado em"),
                 ),
             ],
         ),
         migrations.CreateModel(
-            name='TipoCodigo',
+            name="TipoCodigo",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
                 (
-                    'nome',
-                    models.CharField(max_length=50, unique=True, verbose_name='Nome'),
+                    "nome",
+                    models.CharField(max_length=50, unique=True, verbose_name="Nome"),
                 ),
                 (
-                    'descricao',
-                    models.TextField(blank=True, null=True, verbose_name='Descrição'),
+                    "descricao",
+                    models.TextField(blank=True, null=True, verbose_name="Descrição"),
                 ),
             ],
             options={
-                'verbose_name': 'Tipo de Código',
-                'verbose_name_plural': 'Tipos de Códigos',
-                'ordering': ['nome'],
+                "verbose_name": "Tipo de Código",
+                "verbose_name_plural": "Tipos de Códigos",
+                "ordering": ["nome"],
             },
         ),
         migrations.CreateModel(
-            name='Codigo',
+            name="Codigo",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
                 (
-                    'nome',
-                    models.CharField(max_length=100, unique=True, verbose_name='Nome'),
+                    "nome",
+                    models.CharField(max_length=100, unique=True, verbose_name="Nome"),
                 ),
                 (
-                    'descricao',
-                    models.TextField(blank=True, null=True, verbose_name='Descrição'),
+                    "descricao",
+                    models.TextField(blank=True, null=True, verbose_name="Descrição"),
                 ),
                 (
-                    'tipo_codigo',
+                    "tipo_codigo",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to='alunos.tipocodigo',
-                        verbose_name='Tipo de Código',
+                        to="alunos.tipocodigo",
+                        verbose_name="Tipo de Código",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Código',
-                'verbose_name_plural': 'Códigos',
-                'ordering': ['tipo_codigo__nome', 'nome'],
+                "verbose_name": "Código",
+                "verbose_name_plural": "Códigos",
+                "ordering": ["tipo_codigo__nome", "nome"],
             },
         ),
         migrations.CreateModel(
-            name='RegistroHistorico',
+            name="RegistroHistorico",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
                 (
-                    'ordem_servico',
+                    "ordem_servico",
                     models.CharField(
                         blank=True,
                         max_length=50,
                         null=True,
-                        verbose_name='Ordem de Serviço',
+                        verbose_name="Ordem de Serviço",
                     ),
                 ),
-                ('data_os', models.DateField(verbose_name='Data da Ordem de Serviço')),
+                ("data_os", models.DateField(verbose_name="Data da Ordem de Serviço")),
                 (
-                    'numero_iniciatico',
+                    "numero_iniciatico",
                     models.CharField(
                         blank=True,
                         max_length=10,
                         null=True,
-                        verbose_name='Número Iniciático',
+                        verbose_name="Número Iniciático",
                     ),
                 ),
                 (
-                    'nome_iniciatico',
+                    "nome_iniciatico",
                     models.CharField(
                         blank=True,
                         max_length=100,
                         null=True,
-                        verbose_name='Nome Iniciático',
+                        verbose_name="Nome Iniciático",
                     ),
                 ),
                 (
-                    'observacoes',
-                    models.TextField(blank=True, null=True, verbose_name='Observações'),
+                    "observacoes",
+                    models.TextField(blank=True, null=True, verbose_name="Observações"),
                 ),
                 (
-                    'created_at',
+                    "created_at",
                     models.DateTimeField(
-                        auto_now_add=True, verbose_name='Data do Registro'
+                        auto_now_add=True, verbose_name="Data do Registro"
                     ),
                 ),
-                ('ativo', models.BooleanField(default=True, verbose_name='Ativo')),
+                ("ativo", models.BooleanField(default=True, verbose_name="Ativo")),
                 (
-                    'aluno',
+                    "aluno",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='historico',
-                        to='alunos.aluno',
-                        verbose_name='Aluno',
+                        related_name="historico",
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
                     ),
                 ),
                 (
-                    'codigo',
+                    "codigo",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name='registros',
-                        to='alunos.codigo',
-                        verbose_name='Código',
+                        related_name="registros",
+                        to="alunos.codigo",
+                        verbose_name="Código",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Registro Histórico',
-                'verbose_name_plural': 'Registros Históricos',
-                'ordering': ['-data_os', '-created_at'],
-                'unique_together': {('aluno', 'codigo', 'ordem_servico')},
+                "verbose_name": "Registro Histórico",
+                "verbose_name_plural": "Registros Históricos",
+                "ordering": ["-data_os", "-created_at"],
+                "unique_together": {("aluno", "codigo", "ordem_servico")},
             },
         ),
     ]

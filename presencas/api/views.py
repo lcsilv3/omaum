@@ -6,27 +6,22 @@ Endpoints AJAX para interface interativa Excel-like.
 import json
 import logging
 from datetime import datetime, date
-from decimal import Decimal
-from calendar import monthrange
 
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q, Count, Sum, Avg
 from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
-from django.core.paginator import Paginator
 
-from rest_framework.decorators import api_view, throttle_scope
+from rest_framework.decorators import api_view
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.response import Response
 from rest_framework import status
 
-from ..models import PresencaDetalhada, ConfiguracaoPresenca, Presenca
+from ..models import PresencaDetalhada, ConfiguracaoPresenca
 from ..serializers import PresencaSerializer
 from atividades.models import Atividade
 from turmas.models import Turma
@@ -334,17 +329,17 @@ class ValidarDadosView(APIResponseMixin, View):
             
             # Validar se objetos existem
             try:
-                aluno = Aluno.objects.get(id=data['aluno_id'])
+                Aluno.objects.get(id=data['aluno_id'])
             except Aluno.DoesNotExist:
                 erros.append("Aluno não encontrado")
             
             try:
-                turma = Turma.objects.get(id=data['turma_id'])
+                Turma.objects.get(id=data['turma_id'])
             except Turma.DoesNotExist:
                 erros.append("Turma não encontrada")
             
             try:
-                atividade = Atividade.objects.get(id=data['atividade_id'])
+                Atividade.objects.get(id=data['atividade_id'])
             except Atividade.DoesNotExist:
                 erros.append("Atividade não encontrada")
             

@@ -187,14 +187,14 @@ class FluxoCompletoTestCase(TestCase):
         
         if self.Matricula and self.Aluno and self.Turma:
             # Matricular múltiplos alunos
-            matricula1 = self.Matricula.objects.create(
+            self.Matricula.objects.create(
                 aluno=aluno1,
                 turma=turma,
                 data_matricula=date.today(),
                 ativa=True
             )
             
-            matricula2 = self.Matricula.objects.create(
+            self.Matricula.objects.create(
                 aluno=aluno2,
                 turma=turma,
                 data_matricula=date.today(),

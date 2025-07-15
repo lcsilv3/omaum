@@ -1,3 +1,23 @@
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from django.shortcuts import redirect
+from django.contrib import messages
+from importlib import import_module
+import logging
+import csv
+
+logger = logging.getLogger(__name__)
+
+def get_models():
+    """Obtém os modelos dinamicamente."""
+    try:
+        pagamentos_module = import_module("pagamentos.models")
+        AtividadeAcademica = getattr(pagamentos_module, "AtividadeAcademica", None)
+        AtividadeRitualistica = getattr(pagamentos_module, "AtividadeRitualistica", None)
+        return AtividadeAcademica, AtividadeRitualistica
+    except ImportError:
+        return None, None
+
 @login_required
 def exportar_atividades(request, formato):
     """Exporta as atividades para um arquivo no formato especificado."""

@@ -8,13 +8,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ValidationError
-from django.shortcuts import get_object_or_404
 
 from .models import Matricula
 from .serializers import MatriculaSerializer
 from .services import (
     listar_matriculas,
-    buscar_matriculas_por_filtros,
     obter_matricula_por_id,
     criar_matricula,
     atualizar_matricula,

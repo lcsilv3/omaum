@@ -3,22 +3,19 @@ View para o painel de estatísticas do sistema de presenças.
 Integra com CalculadoraEstatisticas para exibir gráficos e métricas visuais.
 """
 
-import json
 import logging
 from datetime import datetime, date, timedelta
-from decimal import Decimal
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.http import JsonResponse, HttpResponse
-from django.db.models import Q, Count, Sum, Avg
+from django.db.models import Count, Sum
 from django.utils import timezone
-from django.core.exceptions import ValidationError
 from django.contrib import messages
 
 from ..services.calculadora_estatisticas import CalculadoraEstatisticas
-from ..models import PresencaDetalhada, ConfiguracaoPresenca
+from ..models import PresencaDetalhada
 
 # Importação dinâmica de modelos
 from importlib import import_module
@@ -394,7 +391,7 @@ class PainelEstatisticasView(LoginRequiredMixin, TemplateView):
     def _dados_grafico_carencias_turma(self, filtros: Dict[str, Any]) -> Dict[str, Any]:
         """Prepara dados para gráfico de carências por turma (barras)."""
         try:
-            Turma = get_turma_model()
+            get_turma_model()
             
             # Filtrar presenças
             presencas_qs = PresencaDetalhada.objects.all()
@@ -460,7 +457,7 @@ class PainelEstatisticasView(LoginRequiredMixin, TemplateView):
     def _dados_grafico_performance_atividades(self, filtros: Dict[str, Any]) -> Dict[str, Any]:
         """Prepara dados para gráfico de performance por atividades (radar)."""
         try:
-            Atividade = get_atividade_model()
+            get_atividade_model()
             
             # Filtrar presenças
             presencas_qs = PresencaDetalhada.objects.all()

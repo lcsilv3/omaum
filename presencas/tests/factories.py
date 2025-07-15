@@ -5,7 +5,7 @@ Facilita a criação de objetos para testes com dados realistas.
 
 import factory
 from factory.django import DjangoModelFactory
-from factory import SubFactory, LazyAttribute, Sequence, Faker
+from factory import SubFactory, Sequence, Faker
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 import random
@@ -291,7 +291,7 @@ class TurmaComAlunosFactory(TurmaFactory):
         quantidade = extracted or random.randint(15, 30)
         
         for _ in range(quantidade):
-            aluno = AlunoFactory()
+            AlunoFactory()
             # Aqui seria criada a matrícula, dependendo do modelo
             # Matricula.objects.create(aluno=aluno, turma=self)
 

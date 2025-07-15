@@ -750,7 +750,7 @@ class AgendamentoRelatorio(models.Model):
     def calcular_proxima_execucao(self):
         """Calcula a próxima data de execução baseada na frequência."""
         
-        from datetime import datetime, timedelta
+        from datetime import timedelta
         from django.utils import timezone
         
         agora = timezone.now()

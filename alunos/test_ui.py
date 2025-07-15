@@ -1,47 +1,38 @@
 from django.test import LiveServerTestCase
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from alunos.models import Aluno
-from datetime import date, time
+from datetime import date
 
 
 class AlunoUITest(LiveServerTestCase):
     def setUp(self):
-        service = Service("chromedriver.exe")
-        self.browser = webdriver.Chrome(service=service)
+        from django.contrib.auth.models import User
 
-        # Create a test student
-        self.aluno = Aluno.objects.create(
+        User.objects.create_superuser(
+            username="admin", password="admin123", email="admin@example.com"
+        )
+        Aluno.objects.create(
             cpf="12345678901",
             nome="Maria Test",
-            data_nascimento=date(1995, 5, 15),
-            hora_nascimento=time(14, 30),
+            data_nascimento=date(2000, 1, 1),
             email="maria@test.com",
             sexo="F",
-            nacionalidade="Brasileira",
-            naturalidade="São Paulo",
-            rua="Rua Test",
-            numero_imovel="123",
-            cidade="São Paulo",
-            estado="SP",
-            bairro="Centro",
-            cep="01234567",
-            nome_primeiro_contato="João Test",
-            celular_primeiro_contato="11999999999",
-            tipo_relacionamento_primeiro_contato="Pai",
-            nome_segundo_contato="Ana Test",
-            celular_segundo_contato="11988888888",
-            tipo_relacionamento_segundo_contato="Mãe",
-            tipo_sanguineo="A",
-            fator_rh="+",
+            situacao="ATIVO",
         )
+        self.browser = webdriver.Chrome()
 
     def tearDown(self):
-        self.browser.quit()
+        pass
 
     def test_listar_alunos(self):
-        # Access the student listing page
+        # Realizar login antes de acessar a página de alunos
+        self.browser.get(f"{self.live_server_url}/admin/login/")
+        self.browser.find_element(By.NAME, "username").send_keys("admin")
+        self.browser.find_element(By.NAME, "password").send_keys("admin123")
+        self.browser.find_element(By.XPATH, "//input[@type='submit']").click()
+
+        # Abrir a página de listagem de alunos
         self.browser.get(f"{self.live_server_url}/alunos/")
 
         # Check page title
@@ -53,6 +44,6 @@ class AlunoUITest(LiveServerTestCase):
 
         # Check if test student is listed
         student_element = self.browser.find_element(
-            By.CLASS_NAME, "aluno-nome"
+            By.XPATH, "//span[text()='Maria Test']"
         )
         self.assertEqual(student_element.text, "Maria Test")

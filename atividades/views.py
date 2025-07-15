@@ -8,7 +8,7 @@ from .utils import get_models, get_cursos
 def relatorio_atividades(request):
     models = get_models()
     AtividadeAcademica = models['AtividadeAcademica']
-    Curso = models['Curso']
+    models['Curso']
 
     atividades = AtividadeAcademica.objects.prefetch_related('turmas__curso').all()
     curso_id = request.GET.get("curso")
@@ -77,7 +77,15 @@ def listar_atividades_academicas(request):
 
 
 def ajax_atividades_filtradas(request):
-    # ... lógica de filtro ...
-    # Sugestão: use get_models() e get_cursos() se necessário
-    return render(request, "atividades/partials/atividades_tabela_body.html", {"atividades": atividades})
+    """Filtra atividades via AJAX."""
+    # Obter modelos
+    models = get_models()
+    AtividadeAcademica = models['AtividadeAcademica']
+    
+    # Aplicar filtros básicos
+    atividades = AtividadeAcademica.objects.prefetch_related('turmas__curso').all()
+    
+    # Aplicar filtros específicos se necessário
+    # TODO: Implementar lógica de filtros baseada nos parâmetros da requisição
+    
     return render(request, "atividades/partials/atividades_tabela_body.html", {"atividades": atividades})

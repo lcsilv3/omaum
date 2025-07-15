@@ -9,7 +9,6 @@ from .forms import NotaForm
 from alunos.services import listar_alunos as listar_alunos_service, buscar_alunos_por_nome_ou_cpf
 from cursos.services import listar_cursos as listar_cursos_service
 import csv
-import datetime
 
 @login_required
 def listar_notas(request):

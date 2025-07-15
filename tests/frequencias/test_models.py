@@ -4,7 +4,6 @@ from frequencias.models import Frequencia, RegistroFrequencia
 from alunos.services import criar_aluno
 from turmas.models import Turma
 from atividades.models import Atividade
-import datetime
 
 class FrequenciaModelTestCase(TestCase):
     """Testes unitários para o modelo Frequencia."""

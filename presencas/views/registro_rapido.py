@@ -3,21 +3,18 @@ Views otimizadas para registro rápido de presenças.
 """
 
 import logging
-from datetime import datetime, date
-from django.contrib import messages
+from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Prefetch
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
-from django.core.paginator import Paginator
 from django.db import transaction
 
 from atividades.models import Atividade
 from presencas.models import PresencaAcademica, ObservacaoPresenca
-from alunos.services import listar_alunos as listar_alunos_service, buscar_aluno_por_cpf as buscar_aluno_por_cpf_service
 from turmas.models import Turma
 from alunos.models import Aluno
 
@@ -259,7 +256,7 @@ class RegistroRapidoView:
             else:
                 return JsonResponse({'existe': False})
                 
-        except (Aluno.DoesNotExist, ValueError) as e:
+        except (Aluno.DoesNotExist, ValueError):
             return JsonResponse({'error': 'Dados inválidos'}, status=400)
         except Exception as e:
             logger.error(f"Erro na validação: {str(e)}")

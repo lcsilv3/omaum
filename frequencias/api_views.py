@@ -2,13 +2,35 @@
 API views para o app Frequencias - REST padronizado
 """
 import importlib
+import logging
+from datetime import datetime
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
-from django.utils import timezone
-from django.http import Http404
+from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
+
+logger = logging.getLogger(__name__)
+
+
+def get_turma_model():
+    """Obtém o modelo Turma dinamicamente."""
+    try:
+        return importlib.import_module("turmas.models").Turma
+    except ImportError:
+        return None
+
+
+def get_models():
+    """Obtém os modelos de frequência dinamicamente."""
+    try:
+        frequencias_models = importlib.import_module("frequencias.models")
+        return frequencias_models.FrequenciaMensal, frequencias_models.Configuracao
+    except ImportError:
+        return None, None
 
 
 class FrequenciaViewSet(viewsets.ModelViewSet):
@@ -211,28 +233,12 @@ class FrequenciaViewSet(viewsets.ModelViewSet):
             relatorio = service.gerar_relatorio_frequencia(request.query_params.dict())
             return Response(relatorio, status=status.HTTP_200_OK)
         except Exception as e:
+            logger.error(f"Erro ao obter dados da frequência: {str(e)}", exc_info=True)
             return Response(
                 {'error': f'Erro ao gerar relatório: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-                'turma': {
-                    'id': frequencia.turma.id,
-                    'nome': frequencia.turma.nome
-                },
-                'mes': frequencia.mes,
-                'mes_nome': frequencia.get_mes_display(),
-                'ano': frequencia.ano,
-                'percentual_minimo': frequencia.percentual_minimo
-            },
-            'carencias': carencias_data
-        })
-    
-    except Exception as e:
-        logger.error(f"Erro ao obter dados da frequência: {str(e)}", exc_info=True)
-        return JsonResponse({
-            'success': False,
-            'message': f'Erro ao obter dados da frequência: {str(e)}'
-        }, status=400)
+
 
 @login_required
 def obter_dados_painel_frequencias(request):

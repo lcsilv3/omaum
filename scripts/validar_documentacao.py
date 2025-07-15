@@ -4,7 +4,6 @@ Script para validar a documentação do Sistema OMAUM.
 Verifica se todos os documentos estão presentes e bem formatados.
 """
 
-import os
 import sys
 from pathlib import Path
 

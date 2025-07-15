@@ -5,19 +5,25 @@ Replica a funcionalidade das planilhas Excel com lógica de negócios otimizada.
 
 import logging
 from decimal import Decimal
-from datetime import datetime, date
-from typing import Dict, List, Optional, Tuple, Any
-from django.db import models
-from django.db.models import Sum, Count, Avg, Q, F, Case, When, IntegerField
+from datetime import date
+from typing import Dict, List, Optional, Any
+from django.db.models import Sum, Count
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from ..models import PresencaDetalhada, ConfiguracaoPresenca, Presenca
+from ..models import PresencaDetalhada, ConfiguracaoPresenca
 
 logger = logging.getLogger(__name__)
 
 
 class CalculadoraEstatisticas:
+    @staticmethod
+    def calcular_totais_consolidado(presencas):
+        """Exemplo de implementação: retorna um dicionário vazio se não houver presenças."""
+        if not presencas:
+            return {}
+        # Adapte conforme a lógica real
+        return {"total": len(presencas)}
     """
     Calculadora de estatísticas de presença que replica funcionalidade Excel.
     

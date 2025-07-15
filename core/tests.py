@@ -1,20 +1,10 @@
 from django.test import TestCase, Client, RequestFactory
 from django.urls import reverse
 from django.contrib.auth.models import User, AnonymousUser
-from django.contrib.messages.storage.fallback import FallbackStorage
-from django.contrib.sessions.middleware import SessionMiddleware
-import importlib
-import time  # Importar o módulo time para adicionar atraso
 
 from core.models import ConfiguracaoSistema, LogAtividade
-from core.views import (
-    pagina_inicial,
-    painel_controle,
-    atualizar_configuracao,
-)
 from core.utils import (
     registrar_log,
-    adicionar_mensagem,
     garantir_configuracao_sistema,
 )
 from core.middleware import manutencao_middleware
@@ -72,7 +62,7 @@ class LogAtividadeTests(TestCase):
 
         # Criar o primeiro log com uma data específica
         data_antiga = timezone.now() - datetime.timedelta(minutes=5)
-        log1 = LogAtividade.objects.create(
+        LogAtividade.objects.create(
             usuario="user1",
             acao="acao1",
             data=data_antiga,  # Definir uma data mais antiga
@@ -141,9 +131,7 @@ class UtilsTests(TestCase):
 
         # Deve haver exatamente uma configuração
         self.assertEqual(ConfiguracaoSistema.objects.count(), 1)
-        self.assertEqual(
-            config.nome_sistema, "Sistema de Gestão de Iniciados da OmAum"
-        )
+        self.assertEqual(config.nome_sistema, "Sistema de Gestão de Iniciados da OmAum")
 
         # Chamar novamente não deve criar outra configuração
         config2 = garantir_configuracao_sistema()

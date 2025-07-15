@@ -51,11 +51,12 @@ class TestAtividadeForm:
         assert not form.is_valid()
         assert 'data_fim' in form.errors
 
+
 @pytest.mark.django_db
-class TestAtividadeForm:
-    """Testes para o formulário de Atividade."""
+class TestAtividadeFormValidation:
+    """Testes para o formulário de Atividade - Validação."""
     
-    def test_form_valido(self):
+    def test_form_valido_validation(self):
         """Testa se o formulário é válido com dados corretos."""
         turma = Turma.objects.create(nome="Turma A", codigo="TA-001")
         
@@ -102,4 +103,3 @@ class TestAtividadeForm:
         form = AtividadeForm(data=form_data)
         assert not form.is_valid()
         assert 'hora_fim' in form.errors or '__all__' in form.errors
-            'data_fim': (timezone.

@@ -7,7 +7,6 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from importlib import import_module
 import logging
-import json
 
 logger = logging.getLogger(__name__)
 

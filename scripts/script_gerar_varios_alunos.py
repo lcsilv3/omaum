@@ -21,7 +21,6 @@ import random
 import requests
 from datetime import date, time, timedelta
 from django.core.files import File
-from io import BytesIO
 
 # Listas de nomes, sobrenomes e cidades para gerar dados variados
 nomes = [

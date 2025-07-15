@@ -1,18 +1,13 @@
 from django.test import TestCase, Client
-from django.urls import reverse
 from django.contrib.auth.models import User
 from django.utils import timezone
 from alunos.models import Aluno
 from turmas.models import Turma
 from atividades.models import Atividade
 from frequencias.models import Frequencia, RegistroFrequencia
-from notas.models import Avaliacao, Nota
-from pagamentos.models import Pagamento, TipoPagamento
 from matriculas.models import Matricula
-import time
 import datetime
 import random
-import string
 
 class PerformanceTestCase(TestCase):
     """Testes de desempenho para os módulos adicionais."""
@@ -104,4 +99,4 @@ class PerformanceTestCase(TestCase):
                     aluno=aluno,
                     presente=random.choice([True, False]),
                     justificativa="" if random.random() > 0.2 else "Justificativa de teste"
-                )                    presente
+                )

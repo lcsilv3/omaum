@@ -225,7 +225,7 @@ def exportar_pagamentos_pdf(request):
     
     # Renderizar o HTML
     template = get_template('pagamentos/pdf/pagamentos_pdf.html')
-    html = template.render({
+    template.render({
         'pagamentos': pagamentos,
         'filtros': filtros,
         'total_pago': total_pago,

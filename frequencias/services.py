@@ -4,11 +4,8 @@ Contém a lógica de negócios complexa.
 """
 import logging
 from django.core.exceptions import ValidationError
-from django.db import transaction
-from django.utils import timezone
+from django.db import transaction, models
 from importlib import import_module
-from datetime import date, datetime
-import calendar
 
 logger = logging.getLogger(__name__)
 
@@ -366,7 +363,7 @@ def gerar_relatorio_frequencias(filtros=None):
         dict: Dados do relatório
     """
     try:
-        modelos = get_frequencia_models()
+        get_frequencia_models()
         
         if filtros:
             frequencias = buscar_frequencias_por_filtros(filtros)

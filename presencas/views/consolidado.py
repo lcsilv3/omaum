@@ -4,29 +4,20 @@ Implementa funcionalidade estilo Excel para visualização e edição de presen�
 """
 
 import logging
-from datetime import datetime, date
-from decimal import Decimal
+from datetime import datetime
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q, F, Count, Sum, Case, When, IntegerField
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.utils import timezone
-from django.views.generic import View, ListView, FormView
-from django.views.generic.detail import SingleObjectMixin
+from django.views.generic import View
 from django.db import transaction
-from django.utils.dateformat import format as date_format
-from django.utils.translation import gettext_lazy as _
-from django.conf import settings
 
-from ..models import PresencaDetalhada, ConfiguracaoPresenca
-from .. import services
+from ..models import PresencaDetalhada
+from presencas.services import CalculadoraEstatisticas
 from cursos.models import Curso
 from turmas.models import Turma
-from alunos.models import Aluno
 from atividades.models import AtividadeAcademica
 
 try:
@@ -419,8 +410,8 @@ class ConsolidadoPresencasView(LoginRequiredMixin, View):
         """Salva alterações de uma linha completa."""
         try:
             with transaction.atomic():
-                aluno_id = request.POST.get('aluno_id')
-                dados_linha = request.POST.get('dados_linha')
+                request.POST.get('aluno_id')
+                request.POST.get('dados_linha')
 
                 # Processar dados da linha
                 # ... implementar lógica de salvamento em lote

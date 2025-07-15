@@ -23,13 +23,13 @@ class RegistroHistoricoInline(admin.TabularInline):
     model = RegistroHistorico
     extra = 1  # Exibe um formulário extra para adicionar novo registro.
     autocomplete_fields = ["codigo"]
-    
+
     # Campos a serem exibidos no inline
     fields = ("codigo", "data_os", "ordem_servico", "observacoes", "ativo")
-    
+
     # Ordena os registros pela data mais recente
     ordering = ("-data_os",)
-    
+
     verbose_name = "Registro de Histórico"
     verbose_name_plural = "Dados Iniciáticos e Histórico (Cargos, Punições, etc.)"
 
@@ -68,7 +68,15 @@ class AlunoAdmin(admin.ModelAdmin):
         (
             "Endereço",
             {
-                "fields": ["rua", "numero_imovel", "complemento", "bairro", "cidade", "estado", "cep"],
+                "fields": [
+                    "rua",
+                    "numero_imovel",
+                    "complemento",
+                    "bairro",
+                    "cidade",
+                    "estado",
+                    "cep",
+                ],
                 "classes": ["collapse"],
             },
         ),
@@ -103,7 +111,12 @@ class AlunoAdmin(admin.ModelAdmin):
         (
             "Outras Informações",
             {
-                "fields": ["nacionalidade", "naturalidade", "estado_civil", "profissao"],
+                "fields": [
+                    "nacionalidade",
+                    "naturalidade",
+                    "estado_civil",
+                    "profissao",
+                ],
                 "classes": ["collapse"],
             },
         ),
@@ -139,9 +152,9 @@ class CodigoAdmin(admin.ModelAdmin):
     list_display = ("nome", "get_tipo_nome", "descricao")
     search_fields = ("nome", "descricao", "tipo_codigo__nome")
     list_filter = ("tipo_codigo",)
-    autocomplete_fields = ('tipo_codigo',) # Melhora a seleção do tipo
+    autocomplete_fields = ("tipo_codigo",)  # Melhora a seleção do tipo
 
-    @admin.display(description='Tipo', ordering='tipo_codigo__nome')
+    @admin.display(description="Tipo", ordering="tipo_codigo__nome")
     def get_tipo_nome(self, obj):
         return obj.tipo_codigo.nome
 

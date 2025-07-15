@@ -9,7 +9,67 @@
         <h1 class="display-6" style="font-size:2rem;">Bem-vindo ao SGI - OmAum</h1>
         <p class="lead" style="font-size:1.1rem;">Sistema de Gestão Integrada da OmAum - Gerenciamento completo de Alunos, Cursos, Turmas e Atividades.</p>
         <hr class="my-2">
-        <p style="font-size:1rem;">Selecione um dos módulos abaixo para começar.</p>
+        {% if user.is_authenticated %}
+            <p style="font-size:1rem;">Selecione um dos módulos abaixo para começar.</p>
+        {% else %}
+            <p style="font-size:1rem;">
+                <i class="fas fa-sign-in-alt text-primary"></i> 
+                Faça login para acessar os módulos do sistema.
+            </p>
+            
+            <!-- Formulário de Login Incorporado -->
+            <div class="row justify-content-center mt-3">
+                <div class="col-md-6 col-lg-5">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-lock"></i> Acesso Rápido</h6>
+                        </div>
+                        <div class="card-body py-3">
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show py-2" role="alert">
+                                        <small>{{ message }}</small>
+                                        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            
+                            <form method="post" action="{% url 'login' %}" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                
+                                <div class="mb-2">
+                                    <label for="id_username_home" class="form-label small">Nome de usuário</label>
+                                    <input type="text" name="username" id="id_username_home" class="form-control form-control-sm" required>
+                                    <div class="invalid-feedback">
+                                        Por favor, informe seu nome de usuário.
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="id_password_home" class="form-label small">Senha</label>
+                                    <input type="password" name="password" id="id_password_home" class="form-control form-control-sm" required>
+                                    <div class="invalid-feedback">
+                                        Por favor, informe sua senha.
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-sign-in-alt"></i> Entrar
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <div class="text-center mt-2">
+                                <small class="text-muted">
+                                    Ou <a href="{% url 'login' %}" class="text-decoration-none">acesse a página de login completa</a>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
     {% if user.is_authenticated %}
     <!-- INÍCIO: BLOCO COMPACTO DE MÓDULOS (padrão reversível) -->
@@ -123,4 +183,25 @@
         .row-cols-xxl-6, .row-cols-xl-5 { grid-template-columns: repeat(2, 1fr); }
     }
 </style>
+
+{% if not user.is_authenticated %}
+<script>
+// Validação do formulário de login da home
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+{% endif %}
 {% endblock %}

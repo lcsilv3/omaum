@@ -9,7 +9,6 @@ Responsável: Equipe OMAUM
 
 import os
 import chardet
-import shutil
 
 
 def collect_files_by_app(project_root):
@@ -22,9 +21,7 @@ def collect_files_by_app(project_root):
         # Identificar o app/funcionalidade com base no caminho
         relative_path = os.path.relpath(root, project_root)
         app_name = (
-            relative_path.split(os.path.sep)[0]
-            if relative_path != "."
-            else "core"
+            relative_path.split(os.path.sep)[0] if relative_path != "." else "core"
         )
         # Inicializar a estrutura para o app se ainda não existir
         if app_name not in apps_files:
@@ -39,9 +36,7 @@ def collect_files_by_app(project_root):
             if file in ["forms.py", "views.py", "urls.py", "models.py"]:
                 apps_files[app_name][file].append(os.path.join(root, file))
             elif file.endswith(".html"):
-                apps_files[app_name]["templates"].append(
-                    os.path.join(root, file)
-                )
+                apps_files[app_name]["templates"].append(os.path.join(root, file))
     return apps_files
 
 
@@ -80,8 +75,7 @@ def collect_root_files(project_root, output_dir):
         root_files = [
             f
             for f in os.listdir(project_root)
-            if os.path.isfile(os.path.join(project_root, f))
-            and not f.startswith(".")
+            if os.path.isfile(os.path.join(project_root, f)) and not f.startswith(".")
         ]
 
         for file in root_files:
@@ -138,9 +132,7 @@ def check_template_dirs(project_root, output_dir):
                 settings_files.append(os.path.join(root, "settings.py"))
 
         if settings_files:
-            output_file.write(
-                "## Configurações de Templates no settings.py\n\n"
-            )
+            output_file.write("## Configurações de Templates no settings.py\n\n")
             for settings_file in settings_files:
                 write_file_contents(output_file, settings_file)
 
@@ -151,9 +143,7 @@ def check_template_dirs(project_root, output_dir):
             if "templates" in dirs:
                 template_dir = os.path.join(root, "templates")
                 template_dirs.append(template_dir)
-                output_file.write(
-                    f"- {os.path.relpath(template_dir, project_root)}\n"
-                )
+                output_file.write(f"- {os.path.relpath(template_dir, project_root)}\n")
 
                 # Listar arquivos de template neste diretório
                 output_file.write("  Arquivos:\n")
@@ -181,9 +171,7 @@ def check_template_dirs(project_root, output_dir):
                 "O arquivo listar_alunos.html não foi encontrado no projeto.\n"
             )
 
-    print(
-        f"Verificação de diretórios de templates foi escrita em {output_filename}"
-    )
+    print(f"Verificação de diretórios de templates foi escrita em {output_filename}")
 
 
 def main():
@@ -207,7 +195,7 @@ def main():
                 if not file_paths:
                     continue
                 if file_type == "templates":
-                    output_file.write(f"\n## Arquivos de Template:\n")
+                    output_file.write("\n## Arquivos de Template:\n")
                 else:
                     output_file.write(f"\n## Arquivos {file_type}:\n")
                 for filepath in sorted(file_paths):

@@ -1,10 +1,11 @@
 """
 Views relacionadas a relatórios e exportação de dados.
 """
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Avg, F
+from django.db.models import Avg
 from django.db.models.functions import ExtractYear
 from django.utils import timezone
 from django.http import HttpResponse
@@ -15,6 +16,7 @@ from io import TextIOWrapper
 from alunos.utils import get_aluno_model
 
 logger = logging.getLogger(__name__)
+
 
 @login_required
 def painel(request):
@@ -40,6 +42,7 @@ def painel(request):
         messages.error(request, f"Erro ao carregar painel: {str(e)}")
         logger.error(f"Erro ao carregar painel: {str(e)}")
         return redirect("alunos:listar_alunos")
+
 
 @login_required
 def exportar_alunos(request):
@@ -77,15 +80,14 @@ def exportar_alunos(request):
         logger.error(f"Erro ao exportar alunos: {str(e)}")
         return redirect("alunos:listar_alunos")
 
+
 @login_required
 def importar_alunos(request):
     """Importa alunos de um arquivo CSV."""
     if request.method == "POST" and request.FILES.get("csv_file"):
         try:
             Aluno = get_aluno_model()
-            csv_file = TextIOWrapper(
-                request.FILES["csv_file"].file, encoding="utf-8"
-            )
+            csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
             reader = csv.DictReader(csv_file)
             count = 0
             errors = []
@@ -96,21 +98,15 @@ def importar_alunos(request):
                         cpf=row.get("CPF", "").strip(),
                         nome=row.get("Nome", "").strip(),
                         email=row.get("Email", "").strip(),
-                        data_nascimento=row.get(
-                            "Data de Nascimento", ""
-                        ).strip(),
+                        data_nascimento=row.get("Data de Nascimento", "").strip(),
                         sexo=row.get("Sexo", "M")[
                             0
                         ].upper(),  # Pega a primeira letra e converte para maiúscula
-                        numero_iniciatico=row.get(
-                            "Número Iniciático", ""
-                        ).strip(),
+                        numero_iniciatico=row.get("Número Iniciático", "").strip(),
                         nome_iniciatico=row.get(
                             "Nome Iniciático", row.get("Nome", "")
                         ).strip(),
-                        nacionalidade=row.get(
-                            "Nacionalidade", "Brasileira"
-                        ).strip(),
+                        nacionalidade=row.get("Nacionalidade", "Brasileira").strip(),
                         naturalidade=row.get("Naturalidade", "").strip(),
                         rua=row.get("Rua", "").strip(),
                         numero_imovel=row.get("Número", "").strip(),
@@ -133,7 +129,7 @@ def importar_alunos(request):
                     )
                     count += 1
                 except Exception as e:
-                    errors.append(f"Erro na linha {count+1}: {str(e)}")
+                    errors.append(f"Erro na linha {count + 1}: {str(e)}")
             if errors:
                 messages.warning(
                     request,
@@ -142,18 +138,15 @@ def importar_alunos(request):
                 for error in errors[:5]:  # Mostrar apenas os 5 primeiros erros
                     messages.error(request, error)
                 if len(errors) > 5:
-                    messages.error(
-                        request, f"... e mais {len(errors) - 5} erros."
-                    )
+                    messages.error(request, f"... e mais {len(errors) - 5} erros.")
             else:
-                messages.success(
-                    request, f"{count} alunos importados com sucesso!"
-                )
+                messages.success(request, f"{count} alunos importados com sucesso!")
             return redirect("alunos:listar_alunos")
         except Exception as e:
             messages.error(request, f"Erro ao importar alunos: {str(e)}")
             logger.error(f"Erro ao importar alunos: {str(e)}")
     return render(request, "alunos/importar_alunos.html")
+
 
 @login_required
 def relatorio_alunos(request):
@@ -164,7 +157,7 @@ def relatorio_alunos(request):
         total_masculino = Aluno.objects.filter(sexo="M").count()
         total_feminino = Aluno.objects.filter(sexo="F").count()
         total_outros = Aluno.objects.filter(sexo="O").count()
-        
+
         # Calcular idade média
         current_year = timezone.now().year
         idade_media = (
@@ -173,7 +166,7 @@ def relatorio_alunos(request):
             ).aggregate(Avg("idade"))["idade__avg"]
             or 0
         )
-        
+
         context = {
             "total_alunos": total_alunos,
             "total_masculino": total_masculino,

@@ -7,7 +7,7 @@ Script para remover turmas órfãs (sem curso válido) e todos os registros rela
 """
 from core.utils import get_model_dynamically
 from django.db import transaction
-from django.db.models.fields.related import ForeignKey, ManyToManyField
+from django.db.models.fields.related import ManyToManyField
 
 Turma = get_model_dynamically("turmas", "Turma")
 

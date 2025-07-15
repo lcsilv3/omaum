@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Avg, Count, Case, When, IntegerField
 from django.http import HttpResponse
+from django.core.paginator import Paginator
 from importlib import import_module
 import logging
 import csv
@@ -17,8 +17,21 @@ def get_models():
     Carencia = getattr(frequencias_module, "Carencia")
     return FrequenciaMensal, Carencia
 
+def get_turma_model():
+    """Obtém o modelo Turma dinamicamente."""
+    try:
+        turmas_module = import_module("turmas.models")
+        return getattr(turmas_module, "Turma")
+    except ImportError:
+        return None
+
 def get_model_dynamically(app_name, model_name):
     """Obtém um modelo dinamicamente para evitar importações circulares."""
+    try:
+        app_module = import_module(f"{app_name}.models")
+        return getattr(app_module, model_name)
+    except ImportError:
+        return None
     module = import_module(f"{app_name}.models")
     return getattr(module, model_name)
 
@@ -42,7 +55,6 @@ def relatorio_frequencias(request):
         
         # Frequências por mês
         from django.db.models import Count
-        from django.db.models.functions import TruncMonth
         
         # Agrupar por mês e ano
         frequencias_por_mes = FrequenciaMensal.objects.values('mes', 'ano').annotate(

@@ -6,18 +6,12 @@ Cobre views principais, autenticação, permissões e context data.
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group, Permission
-from django.utils import timezone
+from django.contrib.auth.models import Permission
 from datetime import date, timedelta
 import json
 
 from presencas.models import (
-    Presenca, PresencaDetalhada, ConfiguracaoPresenca,
-    TotalAtividadeMes, ObservacaoPresenca
-)
-from presencas.views import (
-    listar_presencas_academicas, registrar_presenca_step1,
-    registrar_presenca_step2, atualizar_totais_atividades
+    Presenca, PresencaDetalhada
 )
 from alunos.models import Aluno
 from turmas.models import Turma
@@ -111,7 +105,7 @@ class ListarPresencasViewTest(PresencaViewsBaseTest):
         self.login_user()
         
         # Criar presenças
-        presenca1 = Presenca.objects.create(
+        Presenca.objects.create(
             aluno=self.aluno,
             turma=self.turma,
             data=date(2024, 1, 15),
@@ -323,7 +317,7 @@ class ConsolidadoPresencasViewTest(PresencaViewsBaseTest):
             url = reverse('presencas:consolidado_presencas')
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
-        except:
+        except Exception:
             # Se a URL não existir, pular teste
             self.skipTest("URL consolidado_presencas não encontrada")
     
@@ -352,7 +346,7 @@ class ConsolidadoPresencasViewTest(PresencaViewsBaseTest):
             
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, self.aluno.nome)
-        except:
+        except Exception:
             self.skipTest("URL consolidado_presencas não encontrada")
 
 
@@ -367,7 +361,7 @@ class PainelEstatisticasViewTest(PresencaViewsBaseTest):
             url = reverse('presencas:painel_estatisticas')
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
-        except:
+        except Exception:
             self.skipTest("URL painel_estatisticas não encontrada")
     
     def test_painel_context_data(self):
@@ -394,7 +388,7 @@ class PainelEstatisticasViewTest(PresencaViewsBaseTest):
             for key in context_keys:
                 if key in response.context:
                     self.assertIsNotNone(response.context[key])
-        except:
+        except Exception:
             self.skipTest("URL painel_estatisticas não encontrada")
 
 
@@ -409,7 +403,7 @@ class RegistroRapidoViewTest(PresencaViewsBaseTest):
             url = reverse('presencas:registro_rapido')
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
-        except:
+        except Exception:
             self.skipTest("URL registro_rapido não encontrada")
     
     def test_registro_rapido_post(self):
@@ -430,7 +424,7 @@ class RegistroRapidoViewTest(PresencaViewsBaseTest):
             
             # Verificar resposta (pode ser redirect ou JSON)
             self.assertIn(response.status_code, [200, 302])
-        except:
+        except Exception:
             self.skipTest("URL registro_rapido não encontrada")
 
 
@@ -466,7 +460,7 @@ class ExportacaoViewTest(PresencaViewsBaseTest):
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                 )
                 self.assertIn('attachment', response['Content-Disposition'])
-        except:
+        except Exception:
             self.skipTest("URL exportar_excel não encontrada")
     
     def test_exportacao_csv(self):
@@ -491,7 +485,7 @@ class ExportacaoViewTest(PresencaViewsBaseTest):
             if response.status_code == 200:
                 self.assertEqual(response['Content-Type'], 'text/csv')
                 self.assertIn('attachment', response['Content-Disposition'])
-        except:
+        except Exception:
             self.skipTest("URL exportar_csv não encontrada")
 
 
@@ -564,7 +558,7 @@ class AjaxViewsTest(PresencaViewsBaseTest):
             
             data = json.loads(response.content)
             self.assertIn('turmas', data)
-        except:
+        except Exception:
             self.skipTest("URL ajax_turmas_por_curso não encontrada")
     
     def test_ajax_calcular_estatisticas(self):
@@ -594,7 +588,7 @@ class AjaxViewsTest(PresencaViewsBaseTest):
             
             data = json.loads(response.content)
             self.assertIn('success', data)
-        except:
+        except Exception:
             self.skipTest("URL ajax_calcular_estatisticas não encontrada")
 
 
@@ -667,5 +661,5 @@ class ResponsiveViewsTest(PresencaViewsBaseTest):
             response = self.client.get(url, {'format': 'json'})
             if response.status_code == 200:
                 self.assertEqual(response['Content-Type'], 'application/json')
-        except:
+        except Exception:
             pass  # Formato JSON pode não ser suportado

@@ -3,13 +3,12 @@ Testes para API endpoints do sistema de presenças.
 """
 
 import json
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.utils import timezone
 
 from ..models import PresencaDetalhada, ConfiguracaoPresenca
 from atividades.models import Atividade

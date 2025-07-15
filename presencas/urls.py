@@ -1,12 +1,10 @@
 from django.urls import path, include
-from .views_ext.listagem import listar_presencas
-from .views_ext.atividade import registrar_presencas_atividade, editar_presenca
 from .views_ext.multiplas import (
     registrar_presencas_multiplas,
     formulario_presencas_multiplas,
 )
 from . import views
-from .views import listar_presencas_academicas
+from .views_ext.academicas import listar_presencas_academicas
 from .views_ext.registro_presenca import (
     registrar_presenca_dados_basicos,
     registrar_presenca_dados_basicos_ajax,
@@ -60,7 +58,7 @@ urlpatterns = [
     # Presenças (principal)
     path("", listar_presencas_academicas, name="listar_presencas"),
     path(
-        "listar/", views.listar_presencas_academicas, name="listar_presencas_academicas"
+        "listar/", listar_presencas_academicas, name="listar_presencas_academicas"
     ),
     path("registrar/", views.registrar_presenca_academica, name="registrar_presenca"),
     path(

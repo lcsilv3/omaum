@@ -118,7 +118,7 @@ class NotaModelTestCase(TestCase):
         """Testa a validação do valor da nota."""
         # Nota com valor negativo
         with self.assertRaises(Exception):
-            nota_invalida = Nota.objects.create(
+            Nota.objects.create(
                 avaliacao=self.avaliacao,
                 aluno=self.aluno,
                 valor=-1.0,
@@ -127,7 +127,7 @@ class NotaModelTestCase(TestCase):
         
         # Nota com valor acima de 10
         with self.assertRaises(Exception):
-            nota_invalida = Nota.objects.create(
+            Nota.objects.create(
                 avaliacao=self.avaliacao,
                 aluno=self.aluno,
                 valor=11.0,

@@ -9,7 +9,7 @@ Responsável: Equipe OMAUM
 
 import os
 import chardet
-import shutil
+
 
 def collect_files_by_app(project_root):
     # Dicionário para armazenar arquivos por app/funcionalidade
@@ -21,9 +21,7 @@ def collect_files_by_app(project_root):
         # Identificar o app/funcionalidade com base no caminho
         relative_path = os.path.relpath(root, project_root)
         app_name = (
-            relative_path.split(os.path.sep)[0]
-            if relative_path != "."
-            else "core"
+            relative_path.split(os.path.sep)[0] if relative_path != "." else "core"
         )
         # Inicializar a estrutura para o app se ainda não existir
         if app_name not in apps_files:
@@ -43,10 +41,9 @@ def collect_files_by_app(project_root):
             elif "views" in root and file.endswith(".py"):
                 apps_files[app_name]["views_modulares"].append(os.path.join(root, file))
             elif file.endswith(".html"):
-                apps_files[app_name]["templates"].append(
-                    os.path.join(root, file)
-                )
+                apps_files[app_name]["templates"].append(os.path.join(root, file))
     return apps_files
+
 
 def write_file_contents(output_file, filepath):
     # Detectar codificação do arquivo
@@ -72,6 +69,7 @@ def write_file_contents(output_file, filepath):
         output_file.write(f"\n\n### Arquivo: {filepath}\n\n")
         output_file.write(f"\nErro ao ler o arquivo: {str(e)}\n\n")
 
+
 def write_to_file_with_size_limit(content, base_filename, max_chars=100000):
     """
     Escreve o conteúdo em um ou mais arquivos, dividindo-o se necessário para
@@ -84,7 +82,6 @@ def write_to_file_with_size_limit(content, base_filename, max_chars=100000):
         return [base_filename]
 
     # Dividir o conteúdo em partes
-    parts = []
     part_num = 1
 
     # Obter o diretório e o nome do arquivo base
@@ -104,9 +101,14 @@ def write_to_file_with_size_limit(content, base_filename, max_chars=100000):
         block_content = "\n\n### Arquivo:" + block
 
         # Se adicionar este bloco ultrapassar o limite, salvar o conteúdo atual e começar um novo arquivo
-        if len(current_content + block_content) > max_chars and current_content != header:
+        if (
+            len(current_content + block_content) > max_chars
+            and current_content != header
+        ):
             # Criar nome do arquivo para esta parte
-            part_filename = os.path.join(dir_name, f"{name_parts[0]}_parte{part_num}{name_parts[1]}")
+            part_filename = os.path.join(
+                dir_name, f"{name_parts[0]}_parte{part_num}{name_parts[1]}"
+            )
 
             # Adicionar a linha de separação no início e no final do arquivo
             final_content = "'''\n" + current_content + "\n'''"
@@ -126,7 +128,9 @@ def write_to_file_with_size_limit(content, base_filename, max_chars=100000):
 
     # Escrever a última parte
     if current_content:
-        part_filename = os.path.join(dir_name, f"{name_parts[0]}_parte{part_num}{name_parts[1]}")
+        part_filename = os.path.join(
+            dir_name, f"{name_parts[0]}_parte{part_num}{name_parts[1]}"
+        )
         # Adicionar a linha de separação no início e no final do arquivo
         final_content = "'''\n" + current_content + "\n'''"
         with open(part_filename, "w", encoding="utf-8") as f:
@@ -134,6 +138,7 @@ def write_to_file_with_size_limit(content, base_filename, max_chars=100000):
         files_created.append(part_filename)
 
     return files_created
+
 
 def collect_root_files(project_root, output_dir):
     """Coleta arquivos da raiz do projeto Django."""
@@ -151,6 +156,7 @@ def collect_root_files(project_root, output_dir):
 
     # Usar StringIO para capturar o conteúdo
     from io import StringIO
+
     temp_output = StringIO()
     temp_output.write(content)
 
@@ -177,9 +183,12 @@ def collect_root_files(project_root, output_dir):
     if len(files_created) == 1:
         print(f"Arquivos da raiz do projeto foram escritos em {output_filename}")
     else:
-        print(f"Arquivos da raiz do projeto foram divididos em {len(files_created)} partes devido ao tamanho")
+        print(
+            f"Arquivos da raiz do projeto foram divididos em {len(files_created)} partes devido ao tamanho"
+        )
         for file in files_created:
             print(f"  - {file}")
+
 
 def generate_project_structure(project_root, output_dir):
     """Gera um arquivo com a estrutura completa do projeto."""
@@ -206,9 +215,12 @@ def generate_project_structure(project_root, output_dir):
     if len(files_created) == 1:
         print(f"Estrutura do projeto foi escrita em {output_filename}")
     else:
-        print(f"Estrutura do projeto foi dividida em {len(files_created)} partes devido ao tamanho")
+        print(
+            f"Estrutura do projeto foi dividida em {len(files_created)} partes devido ao tamanho"
+        )
         for file in files_created:
             print(f"  - {file}")
+
 
 def check_template_dirs(project_root, output_dir):
     """Verifica e documenta as configurações de diretórios de templates."""
@@ -218,6 +230,7 @@ def check_template_dirs(project_root, output_dir):
 
     # Usar StringIO para capturar o conteúdo
     from io import StringIO
+
     temp_output = StringIO()
     temp_output.write(content)
 
@@ -260,7 +273,9 @@ def check_template_dirs(project_root, output_dir):
                 )
 
     if not found:
-        temp_output.write("O arquivo listar_alunos.html não foi encontrado no projeto.\n")
+        temp_output.write(
+            "O arquivo listar_alunos.html não foi encontrado no projeto.\n"
+        )
 
     # Obter o conteúdo completo
     full_content = temp_output.getvalue()
@@ -270,11 +285,16 @@ def check_template_dirs(project_root, output_dir):
     files_created = write_to_file_with_size_limit(full_content, output_filename)
 
     if len(files_created) == 1:
-        print(f"Verificação de diretórios de templates foi escrita em {output_filename}")
+        print(
+            f"Verificação de diretórios de templates foi escrita em {output_filename}"
+        )
     else:
-        print(f"Verificação de diretórios de templates foi dividida em {len(files_created)} partes devido ao tamanho")
+        print(
+            f"Verificação de diretórios de templates foi dividida em {len(files_created)} partes devido ao tamanho"
+        )
         for file in files_created:
             print(f"  - {file}")
+
 
 def main():
     project_root = input("Digite o diretório raiz do seu projeto Django: ")
@@ -293,6 +313,7 @@ def main():
 
         # Usar StringIO para capturar o conteúdo
         from io import StringIO
+
         temp_output = StringIO()
 
         # Escrever o cabeçalho
@@ -302,9 +323,9 @@ def main():
             if not file_paths:
                 continue
             if file_type == "templates":
-                temp_output.write(f"\n## Arquivos de Template:\n")
+                temp_output.write("\n## Arquivos de Template:\n")
             elif file_type == "views_modulares":
-                temp_output.write(f"\n## Arquivos de Views Modulares:\n")
+                temp_output.write("\n## Arquivos de Views Modulares:\n")
             else:
                 temp_output.write(f"\n## Arquivos {file_type}:\n")
             for filepath in sorted(file_paths):
@@ -321,9 +342,13 @@ def main():
         files_created = write_to_file_with_size_limit(full_content, output_filename)
 
         if len(files_created) == 1:
-            print(f"Conteúdo da funcionalidade '{app_name}' foi escrito em {output_filename}")
+            print(
+                f"Conteúdo da funcionalidade '{app_name}' foi escrito em {output_filename}"
+            )
         else:
-            print(f"Conteúdo da funcionalidade '{app_name}' foi dividido em {len(files_created)} partes devido ao tamanho")
+            print(
+                f"Conteúdo da funcionalidade '{app_name}' foi dividido em {len(files_created)} partes devido ao tamanho"
+            )
             for file in files_created:
                 print(f"  - {file}")
 
@@ -337,6 +362,7 @@ def main():
     check_template_dirs(project_root, output_dir)
 
     print(f"Revisão completa! Arquivos gerados no diretório '{output_dir}'")
+
 
 if __name__ == "__main__":
     main()

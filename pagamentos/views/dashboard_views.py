@@ -4,11 +4,9 @@ Views relacionadas ao dashboard financeiro.
 import datetime
 import json
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count
 from django.shortcuts import render
 from django.utils import timezone
-from django.core.paginator import Paginator
-from django.contrib import messages
 
 # Importação dinâmica para evitar referências circulares
 def get_pagamento_model():
@@ -178,7 +176,6 @@ def painel_financeiro(request):
     total_pago = sum([p.valor_pago if p.valor_pago is not None else p.valor for p in pagamentos_pagos])
     total_pendente = pagamentos_pendentes.aggregate(Sum('valor'))['valor__sum'] or 0
     total_atrasado = pagamentos_atrasados.aggregate(Sum('valor'))['valor__sum'] or 0
-    pagamentos_por_mes = []
     meses = []
     valores_pagos = []
     valores_pendentes = []

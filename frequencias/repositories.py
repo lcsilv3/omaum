@@ -3,8 +3,7 @@ Repositórios para o aplicativo frequencias.
 Camada de acesso a dados.
 """
 from django.db.models import Q, Count, Avg, Sum, Max, Min
-from django.utils import timezone
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
 from .models import FrequenciaMensal, Carencia
 
 

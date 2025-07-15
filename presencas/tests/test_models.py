@@ -5,9 +5,8 @@ Cobre models: Presenca, PresencaDetalhada, ConfiguracaoPresenca, TotalAtividadeM
 
 from django.test import TestCase
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 from decimal import Decimal
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from presencas.models import (
     Presenca, PresencaDetalhada, ConfiguracaoPresenca, 

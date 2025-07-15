@@ -1,5 +1,4 @@
 import os
-import re
 
 
 def check_config_files(root_dir):

@@ -9,19 +9,12 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import connection, transaction
 from django.core.management import call_command
-from django.conf import settings
-import json
-import tempfile
-import os
 
 from alunos.services import criar_aluno
 from turmas.models import Turma
 from atividades.models import Atividade
 from presencas.models import (
-    PresencaAcademica, 
-    TotalAtividadeMes, 
-    ObservacaoPresenca,
-    Presenca  # Modelo legado se existir
+    PresencaAcademica  # Modelo legado se existir
 )
 
 
@@ -425,7 +418,7 @@ class RegressaoFuncionalidadeTest(TestCase):
         # Deve mostrar apenas primeiros 3 dias
         context = response.context
         if 'presencas' in context:
-            presencas_filtradas = context['presencas']
+            context['presencas']
             # Verificar se filtro funcionou (implementação específica)
     
     def test_exportacao_excel_mantida(self):
@@ -479,7 +472,7 @@ class CompatibilidadeURLsTest(TestCase):
                 response = self.client.get(url)
                 # URL deve existir (200, 302, ou 404 se não implementada)
                 self.assertIn(response.status_code, [200, 302, 404])
-            except Exception as e:
+            except Exception:
                 # Se URL não existe, deve falhar graciosamente
                 pass
     
@@ -490,14 +483,14 @@ class CompatibilidadeURLsTest(TestCase):
             url = reverse('presencas:index')
             response = self.client.get(url)
             self.assertIn(response.status_code, [200, 302])
-        except:
+        except Exception:
             pass
         
         try:
             url = reverse('presencas:registro_rapido')
             response = self.client.get(url)
             self.assertIn(response.status_code, [200, 302])
-        except:
+        except Exception:
             pass
     
     def test_parametros_urls_compatveis(self):
@@ -516,7 +509,7 @@ class CompatibilidadeURLsTest(TestCase):
                 response = self.client.get(url, params)
                 # Deve aceitar parâmetros sem erro 500
                 self.assertNotEqual(response.status_code, 500)
-            except:
+            except Exception:
                 pass
 
 

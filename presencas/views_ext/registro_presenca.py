@@ -18,10 +18,9 @@ from django.views.decorators.http import require_POST
 from presencas.forms import (
     RegistrarPresencaForm,
     TotaisAtividadesPresencaForm,
-    AlunosPresencaForm
+    AlunosPresencaForm,
 )
 from django.apps import apps
-from cursos.models import Curso
 from turmas.models import Turma
 from presencas.models import TotalAtividadeMes, ObservacaoPresenca
 from alunos.models import Aluno
@@ -481,12 +480,12 @@ def editar_presenca_dados_basicos(request, pk):
     from presencas.models import Presenca
     presenca = get_object_or_404(Presenca, pk=pk)
     if request.method == 'POST':
-        form = DadosBasicosPresencaForm(request.POST, instance=presenca)
+        form = RegistrarPresencaForm(request.POST, instance=presenca)
         if form.is_valid():
             form.save()
             return redirect('editar_presenca_totais_atividades', pk=pk)
     else:
-        form = DadosBasicosPresencaForm(instance=presenca)
+        form = RegistrarPresencaForm(instance=presenca)
     return render(request, 'presencas/academicas/editar_presenca_dados_basicos.html', {'form': form, 'presenca': presenca})
 
 @login_required
@@ -507,15 +506,17 @@ def editar_presenca_dias_atividades(request, pk):
     from presencas.models import Presenca
     presenca = get_object_or_404(Presenca, pk=pk)
     if request.method == 'POST':
-        form = DiasAtividadesPresencaForm(request.POST, instance=presenca)
+        form = TotaisAtividadesPresencaForm(request.POST, instance=presenca)
         if form.is_valid():
             form.save()
             return redirect('editar_presenca_alunos', pk=pk)
     else:
-        form = DiasAtividadesPresencaForm(instance=presenca)
+        form = TotaisAtividadesPresencaForm(instance=presenca)
     return render(request, 'presencas/academicas/editar_presenca_dias_atividades.html', {'form': form, 'presenca': presenca})
 
+
 from django.contrib import messages
+
 
 @login_required
 def editar_presenca_alunos(request, pk):
@@ -559,8 +560,8 @@ def detalhar_presenca_alunos(request, pk):
 @csrf_exempt
 def registrar_presenca_convocados(request):
     turma_id = request.session.get('presenca_turma_id')
-    ano = request.session.get('presenca_ano')
-    mes = request.session.get('presenca_mes')
+    request.session.get('presenca_ano')
+    request.session.get('presenca_mes')
     turma = Turma.objects.get(id=turma_id) if turma_id else None
     Atividade = get_model_class("Atividade")
     atividades = Atividade.objects.filter(turmas__id=turma.id) if turma else []

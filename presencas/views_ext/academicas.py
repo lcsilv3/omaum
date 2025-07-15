@@ -1,6 +1,8 @@
 # ...código existente...
+from django.shortcuts import render
+from cursos.models import Curso
 from turmas.models import Turma
-from atividades.models import Atividade
+from atividades.models import Atividade, AtividadeAcademica
 from alunos.models import Aluno
 from presencas.models import Presenca
 

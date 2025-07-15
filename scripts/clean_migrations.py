@@ -57,7 +57,7 @@ def delete_migrations():
             # Make sure __init__.py exists
             init_file = os.path.join(migrations_dir, "__init__.py")
             if not os.path.exists(init_file):
-                with open(init_file, "w") as f:
+                with open(init_file, "w"):
                     pass  # Create an empty file
                 print(f"  Created: {init_file}")
 
@@ -97,7 +97,7 @@ def main():
     print(f"Deleted {migration_count} migration files")
 
     # Delete database
-    db_deleted = delete_database()
+    delete_database()
 
     print("\nCleanup complete!")
     print("Next steps:")

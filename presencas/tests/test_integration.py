@@ -4,7 +4,7 @@ Testa fluxos completos end-to-end e interações entre componentes.
 """
 
 import json
-from datetime import date, datetime
+from datetime import date
 from django.test import TestCase, TransactionTestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -15,10 +15,7 @@ from alunos.services import criar_aluno
 from turmas.models import Turma
 from atividades.models import Atividade
 from presencas.models import (
-    PresencaAcademica, 
-    TotalAtividadeMes, 
-    ObservacaoPresenca,
-    Presenca
+    PresencaAcademica
 )
 
 
@@ -514,7 +511,7 @@ class TransacionalTest(TransactionTestCase):
     def test_integridade_transacional_registro_multiplo(self):
         """Testa integridade transacional em registro múltiplo."""
         # Configurar dados
-        user = User.objects.create_user('test', 'test@test.com', 'pass')
+        User.objects.create_user('test', 'test@test.com', 'pass')
         turma = Turma.objects.create(codigo_turma="TX001", nome="Test")
         
         # Simular erro durante transação

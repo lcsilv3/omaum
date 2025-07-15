@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 from importlib import import_module
 
 def get_aluno_model():

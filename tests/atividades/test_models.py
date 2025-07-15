@@ -2,7 +2,6 @@ import pytest
 from django.utils import timezone
 from atividades.models import Atividade
 from turmas.models import Turma
-from django.core.exceptions import ValidationError
 
 @pytest.mark.django_db
 class TestAtividadeModel:
@@ -34,10 +33,10 @@ class TestAtividadeModel:
     
     def test_atividade_com_turmas(self):
         """Testa a associação de turmas a uma atividade."""
-        turma1 = Turma.objects.create(nome="Turma A", codigo="TA-001")
-        turma2 = Turma.objects.create(nome="Turma B", codigo="TB-001")
+        Turma.objects.create(nome="Turma A", codigo="TA-001")
+        Turma.objects.create(nome="Turma B", codigo="TB-001")
         
-        atividade = Atividade.objects.create(
+        Atividade.objects.create(
             nome="Aula de Filosofia",
             data_inicio=timezone.now(),
             tipo_atividade="aula",

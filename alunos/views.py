@@ -8,13 +8,15 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 
-from .forms import AlunoForm, RegistroHistoricoFormSet
-from .models import Aluno, Curso
+from .forms import AlunoForm, RegistroHistoricoFormSet, RegistroHistoricoForm
+from .models import Aluno, RegistroHistorico
+from django import forms
 from .services import listar_alunos, buscar_aluno_por_cpf
 
 logger = logging.getLogger(__name__)
+
 
 @login_required
 def listar_alunos_view(request):
@@ -30,7 +32,10 @@ def listar_alunos_view(request):
         paginator = Paginator(alunos_list, 10)
         page_obj = paginator.get_page(page_number)
 
-        cursos_para_filtro = Curso.objects.all().order_by("nome")
+        from .utils import get_curso_model
+
+        Curso = get_curso_model()
+        cursos_para_filtro = Curso.objects.all().order_by("nome") if Curso else []
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             alunos_data = [
@@ -43,15 +48,19 @@ def listar_alunos_view(request):
                     "cursos": [
                         matricula.turma.curso.nome
                         for matricula in aluno.matriculas.select_related("turma__curso")
-                    ] if aluno.matriculas.exists() else ["Sem curso associado"]
+                    ]
+                    if aluno.matriculas.exists()
+                    else ["Sem curso associado"],
                 }
                 for aluno in page_obj
             ]
-            return JsonResponse({
-                "alunos": alunos_data,
-                "page": page_obj.number,
-                "num_pages": paginator.num_pages
-            })
+            return JsonResponse(
+                {
+                    "alunos": alunos_data,
+                    "page": page_obj.number,
+                    "num_pages": paginator.num_pages,
+                }
+            )
 
         return render(
             request,
@@ -81,6 +90,7 @@ def listar_alunos_view(request):
             },
         )
 
+
 @login_required
 @permission_required("alunos.add_aluno", raise_exception=True)
 def criar_aluno(request):
@@ -90,6 +100,9 @@ def criar_aluno(request):
     if request.method == "POST":
         form = AlunoForm(request.POST, request.FILES)
         historico_formset = RegistroHistoricoFormSet(request.POST, prefix="historico")
+        # Garante pelo menos 1 formulário extra
+        if historico_formset.total_form_count() == 0:
+            historico_formset.extra_forms.append(historico_formset.empty_form)
 
         if form.is_valid() and historico_formset.is_valid():
             try:
@@ -106,16 +119,30 @@ def criar_aluno(request):
             except Exception as exc:
                 logger.error("Erro ao criar aluno: %s", exc)
                 messages.error(request, f"Ocorreu um erro ao salvar o aluno: {exc}")
+        # Se não for válido, sempre garante pelo menos 1 extra
+        if historico_formset.total_form_count() == 0:
+            historico_formset.extra_forms.append(historico_formset.empty_form)
     else:
         form = AlunoForm()
         historico_formset = RegistroHistoricoFormSet(prefix="historico")
+        # Garante pelo menos 1 formulário extra
+        if historico_formset.total_form_count() == 0:
+            historico_formset.extra_forms.append(historico_formset.empty_form)
 
     context = {
         "form": form,
         "historico_formset": historico_formset,
-        "aluno": None
+        "aluno": None,
+        "debug": True,  # Habilitar debug temporariamente
     }
+    
+    # DEBUG: Verificar se o management form está sendo duplicado
+    mgmt_form_html = str(historico_formset.management_form)
+    mgmt_count = mgmt_form_html.count('name="historico-TOTAL_FORMS"')
+    print(f"[DEBUG] View criar_aluno: Management forms no formset: {mgmt_count}")
+    
     return render(request, "alunos/formulario_aluno.html", context)
+
 
 @login_required
 def detalhar_aluno(request, cpf):
@@ -133,41 +160,167 @@ def detalhar_aluno(request, cpf):
     }
     return render(request, "alunos/detalhar_aluno.html", context)
 
+
 @login_required
 @permission_required("alunos.change_aluno", raise_exception=True)
 def editar_aluno(request, cpf):
     """
     Edita um aluno existente e seu histórico de registros.
     """
-    aluno = get_object_or_404(Aluno, cpf=cpf)
 
-    if request.method == "POST":
-        form = AlunoForm(request.POST, request.FILES, instance=aluno)
-        historico_formset = RegistroHistoricoFormSet(
-            request.POST, instance=aluno, prefix="historico"
+    def build_context(form=None, historico_formset=None, aluno=None):
+        CustomFormSet = forms.inlineformset_factory(
+            Aluno,
+            RegistroHistorico,
+            form=RegistroHistoricoForm,
+            extra=1,
+            can_delete=True,
+            min_num=0,
+            max_num=20,
+            validate_min=False,
+            validate_max=True,
+        )
+        if form is None:
+            form = AlunoForm()
+        # Nunca permite historico_formset ser None ou string vazia
+        if historico_formset is None or historico_formset == "":
+            historico_formset = CustomFormSet(prefix="historico")
+        try:
+            _ = historico_formset.management_form
+        except Exception:
+            historico_formset = CustomFormSet(prefix="historico")
+        # Garante pelo menos um formulário extra
+        if historico_formset.total_form_count() == 0:
+            historico_formset.extra_forms.append(historico_formset.empty_form)
+        return {
+            "form": form,
+            "historico_formset": historico_formset,
+            "aluno": aluno,
+            "debug": True,
+        }
+
+    aluno = buscar_aluno_por_cpf(cpf)
+    form = None
+    historico_formset = None
+    try:
+        if aluno:
+            if request.method == "POST":
+                form = AlunoForm(request.POST, request.FILES, instance=aluno)
+                historico_formset = RegistroHistoricoFormSet(
+                    request.POST, instance=aluno, prefix="historico"
+                )
+                if (
+                    historico_formset is None
+                    or historico_formset.total_form_count() == 0
+                ):
+                    CustomFormSet = forms.inlineformset_factory(
+                        Aluno,
+                        RegistroHistorico,
+                        form=RegistroHistoricoForm,
+                        extra=1,
+                        can_delete=True,
+                        min_num=0,
+                        max_num=20,
+                        validate_min=False,
+                        validate_max=True,
+                    )
+                    historico_formset = CustomFormSet(
+                        request.POST, instance=aluno, prefix="historico"
+                    )
+                # Garante pelo menos um formulário extra
+                if historico_formset.total_form_count() == 0:
+                    historico_formset.extra_forms.append(historico_formset.empty_form)
+                if form.is_valid() and historico_formset.is_valid():
+                    try:
+                        with transaction.atomic():
+                            form.save()
+                            historico_formset.save()
+                        messages.success(request, "Aluno atualizado com sucesso!")
+                        return redirect("alunos:listar_alunos")
+                    except Exception as exc:
+                        logger.error("Erro ao editar aluno %s: %s", cpf, exc)
+                        messages.error(
+                            request, f"Ocorreu um erro ao atualizar o aluno: {exc}"
+                        )
+                # Sempre retorna contexto robusto
+                return render(
+                    request,
+                    "alunos/formulario_aluno.html",
+                    build_context(form, historico_formset, aluno),
+                )
+            else:
+                form = AlunoForm(instance=aluno)
+                CustomFormSet = forms.inlineformset_factory(
+                    Aluno,
+                    RegistroHistorico,
+                    form=RegistroHistoricoForm,
+                    extra=1,
+                    can_delete=True,
+                    min_num=0,
+                    max_num=20,
+                    validate_min=False,
+                    validate_max=True,
+                )
+                historico_formset = CustomFormSet(instance=aluno, prefix="historico")
+                # Garante pelo menos um formulário extra
+                if historico_formset.total_form_count() == 0:
+                    historico_formset.extra_forms.append(historico_formset.empty_form)
+                return render(
+                    request,
+                    "alunos/formulario_aluno.html",
+                    build_context(form, historico_formset, aluno),
+                )
+        else:
+            messages.error(request, "Aluno não encontrado.")
+            form = AlunoForm()
+            CustomFormSet = forms.inlineformset_factory(
+                Aluno,
+                RegistroHistorico,
+                form=RegistroHistoricoForm,
+                extra=1,
+                can_delete=True,
+                min_num=0,
+                max_num=20,
+                validate_min=False,
+                validate_max=True,
+            )
+            historico_formset = CustomFormSet(prefix="historico")
+            # Garante pelo menos um formulário extra
+            if historico_formset.total_form_count() == 0:
+                historico_formset.extra_forms.append(historico_formset.empty_form)
+            return render(
+                request,
+                "alunos/formulario_aluno.html",
+                build_context(form, historico_formset, None),
+            )
+    except Exception as exc:
+        logger.error(f"Erro ao inicializar formset de histórico: {exc}")
+        if not form:
+            form = AlunoForm()
+        if not historico_formset:
+            CustomFormSet = forms.inlineformset_factory(
+                Aluno,
+                RegistroHistorico,
+                form=RegistroHistoricoForm,
+                extra=1,
+                can_delete=True,
+                min_num=0,
+                max_num=20,
+                validate_min=False,
+                validate_max=True,
+            )
+            historico_formset = CustomFormSet(prefix="historico")
+        # Garante pelo menos um formulário extra
+        if historico_formset.total_form_count() == 0:
+            historico_formset.extra_forms.append(historico_formset.empty_form)
+        messages.error(request, f"Erro ao carregar formulário de histórico: {exc}")
+        # Sempre retorna contexto robusto
+        return render(
+            request,
+            "alunos/formulario_aluno.html",
+            build_context(form, historico_formset, aluno),
         )
 
-        if form.is_valid() and historico_formset.is_valid():
-            try:
-                with transaction.atomic():
-                    form.save()
-                    historico_formset.save()
-
-                messages.success(request, "Aluno atualizado com sucesso!")
-                return redirect("alunos:listar_alunos")
-            except Exception as exc:
-                logger.error("Erro ao editar aluno %s: %s", cpf, exc)
-                messages.error(request, f"Ocorreu um erro ao atualizar o aluno: {exc}")
-    else:
-        form = AlunoForm(instance=aluno)
-        historico_formset = RegistroHistoricoFormSet(instance=aluno, prefix="historico")
-
-    context = {
-        "form": form,
-        "historico_formset": historico_formset,
-        "aluno": aluno
-    }
-    return render(request, "alunos/formulario_aluno.html", context)
 
 @login_required
 @permission_required("alunos.delete_aluno", raise_exception=True)
@@ -192,6 +345,7 @@ def excluir_aluno(request, cpf):
     }
     return render(request, "alunos/excluir_aluno.html", context)
 
+
 @login_required
 def search_alunos(request):
     """
@@ -205,7 +359,7 @@ def search_alunos(request):
     logger.debug(
         "Requisição recebida para busca dinâmica. Query: %s, Curso ID: %s",
         query,
-        curso_id
+        curso_id,
     )
 
     try:
@@ -213,7 +367,7 @@ def search_alunos(request):
         logger.debug(
             "Query executada: %s, Resultados encontrados: %d",
             query,
-            alunos_queryset.count()
+            alunos_queryset.count(),
         )
 
         paginator = Paginator(alunos_queryset, 10)
@@ -232,7 +386,6 @@ def search_alunos(request):
                 }
                 for aluno in alunos
             ]
-
             return JsonResponse(
                 {
                     "success": True,
@@ -241,27 +394,16 @@ def search_alunos(request):
                     "num_pages": alunos.paginator.num_pages,
                 }
             )
-        
-        # Para requisições normais, renderiza o template de listagem
-        else:
-            cursos_para_filtro = Curso.objects.all().order_by("nome")
-            context = {
-                "alunos": alunos,
-                "page_obj": alunos,
-                "cursos": cursos_para_filtro,
-                "query": query,
-                "curso_selecionado": curso_id,
-                "total_alunos": alunos_queryset.count(),
-            }
-            return render(request, "alunos/listar_alunos.html", context)
-            
+        # Renderização padrão
+        context = {"alunos": alunos}
+        return render(request, "alunos/listar_alunos.html", context)
     except ValueError as exc:
         logger.error("Erro de valor: %s", exc)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse({"success": False, "error": str(exc)}, status=400)
         else:
             messages.error(request, f"Erro na busca: {str(exc)}")
-            return redirect('alunos:listar_alunos')
+            return redirect("alunos:listar_alunos")
     except Exception as exc:
         logger.error("Erro inesperado na busca de alunos: %s", exc)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -270,7 +412,7 @@ def search_alunos(request):
             )
         else:
             messages.error(request, "Erro interno do servidor.")
-            return redirect('alunos:listar_alunos')
+            return redirect("alunos:listar_alunos")
 
 
 # Alias para manter compatibilidade com URLs

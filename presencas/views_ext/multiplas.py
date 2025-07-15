@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -9,6 +9,7 @@ def get_model_dynamically(app_name, model_name):
     """Obtém um modelo dinamicamente para evitar importações circulares."""
     module = import_module(f"{app_name}.models")
     return getattr(module, model_name)
+
 
 @login_required
 def registrar_presencas_multiplas(request):

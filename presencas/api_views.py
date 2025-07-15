@@ -7,32 +7,22 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 import json
 import logging
-from atividades.models import Atividade
 from alunos.models import Aluno
+from turmas.models import Turma
+from matriculas.models import Matricula
+from atividades.models import AtividadeAcademica
 
 from .models import Presenca, TotalAtividadeMes, ObservacaoPresenca
 from .serializers import PresencaSerializer, TotalAtividadeMesSerializer, ObservacaoPresencaSerializer
 from .services import (
-    listar_presencas,
-    buscar_presencas_por_filtros,
-    registrar_presenca,
-    registrar_presencas_multiplas,
-    atualizar_presenca,
-    excluir_presenca,
-    obter_presencas_por_aluno,
-    obter_presencas_por_turma,
-    calcular_frequencia_aluno,
-    criar_observacao_presenca,
-    registrar_total_atividade_mes
+    listar_presencas
 )
-from .repositories import PresencaRepository, TotalAtividadeMesRepository, ObservacaoPresencaRepository
 
 logger = logging.getLogger(__name__)
 

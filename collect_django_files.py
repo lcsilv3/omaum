@@ -64,7 +64,7 @@ def main():
 
         for file_type, file_paths in relevant_files.items():
             if file_type == "templates":
-                output_file.write(f"\n## Arquivos de Template:\n")
+                output_file.write("\n## Arquivos de Template:\n")
             else:
                 output_file.write(f"\n## Arquivos {file_type}:\n")
 

@@ -5,13 +5,12 @@ Views para gerenciamento de carências.
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 import logging
 
 # Importar funções utilitárias do módulo utils
 from ..utils import (
     get_models,
-    get_forms,
-    get_turma_model,
     get_model_dynamically
 )
 

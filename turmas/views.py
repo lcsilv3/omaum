@@ -9,12 +9,10 @@ Padrão de Nomenclatura:
 """
 
 from django.db.models import Q
-from django.http import HttpResponse, JsonResponse
-import csv
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
 from importlib import import_module
@@ -24,7 +22,6 @@ from core.utils import get_model_dynamically
 
 def get_model(app_name, model_name):
     """Obtém um modelo dinamicamente para evitar importações circulares."""
-    from importlib import import_module
     module = import_module(f"{app_name}.models")
     return getattr(module, model_name)
 
@@ -52,7 +49,6 @@ def get_frequencia_model():
 
 def get_turma_form():
     """Obtém o formulário TurmaForm dinamicamente."""
-    from importlib import import_module
     try:
         forms_module = import_module("turmas.forms")
         return getattr(forms_module, "TurmaForm")
@@ -107,8 +103,11 @@ def listar_turmas(request):
         page_number = request.GET.get("page")
         try:
             page_obj = paginator.get_page(page_number)
-        except Exception as e:
-            print("DEBUG - Erro no paginator:", e)
+        except (ValueError, TypeError) as e:
+            # Tratar erros específicos de paginação (página inválida, tipo incorreto)
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning("Erro na paginação de turmas - página solicitada: %s, erro: %s", page_number, e)
             page_obj = paginator.get_page(1)
 
         # Debug detalhado do conteúdo da página
@@ -130,8 +129,12 @@ def listar_turmas(request):
         }
         
         return render(request, "turmas/listar_turmas.html", context)
-    except Exception as e:
-        # Em vez de mostrar a mensagem de erro, apenas retornamos uma lista vazia
+    except (ImportError, AttributeError) as e:
+        # Tratar erros específicos de importação de modelos
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Erro ao importar modelos necessários na listagem de turmas: %s", e)
+        messages.error(request, "Erro interno no sistema. Contate o administrador.")
         return render(
             request,
             "turmas/listar_turmas.html",
@@ -141,7 +144,25 @@ def listar_turmas(request):
                 "query": "",
                 "cursos": [],
                 "curso_selecionado": "",
-                "error_message": f"Erro ao listar turmas: {str(e)}",
+                "error_message": "Erro ao carregar dados. Tente novamente mais tarde.",
+            },
+        )
+    except Exception as e:
+        # Tratamento para erros não previstos - log detalhado mas mensagem genérica para usuário
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Erro inesperado na listagem de turmas: %s: %s", type(e).__name__, e, exc_info=True)
+        messages.error(request, "Erro interno no sistema. Contate o administrador.")
+        return render(
+            request,
+            "turmas/listar_turmas.html",
+            {
+                "turmas": [],
+                "page_obj": None,
+                "query": "",
+                "cursos": [],
+                "curso_selecionado": "",
+                "error_message": "Erro interno. Tente novamente mais tarde.",
             },
         )
 
@@ -262,24 +283,24 @@ def editar_turma(request, turma_id):
     )
 
 @login_required
-def excluir_turma(request, id):
-    Turma = get_models()
-    turma = get_object_or_404(Turma, id=id)
+def excluir_turma(request, turma_id):
+    Turma = get_turma_model()
+    turma = get_object_or_404(Turma, id=turma_id)
     
     # Obter modelos dinamicamente para evitar importações circulares
-    matriculas_module = importlib.import_module("matriculas.models")
+    matriculas_module = import_module("matriculas.models")
     Matricula = getattr(matriculas_module, "Matricula")
     
-    atividades_module = importlib.import_module("atividades.models")
+    atividades_module = import_module("atividades.models")
     Atividade = getattr(atividades_module, "Atividade")
     
-    presencas_module = importlib.import_module("presencas.models")
+    presencas_module = import_module("presencas.models")
     Presenca = getattr(presencas_module, "Presenca")
     
-    notas_module = importlib.import_module("notas.models")
+    notas_module = import_module("notas.models")
     Nota = getattr(notas_module, "Nota")
     
-    pagamentos_module = importlib.import_module("pagamentos.models")
+    pagamentos_module = import_module("pagamentos.models")
     Pagamento = getattr(pagamentos_module, "Pagamento")
     
     matriculas = list(Matricula.objects.filter(turma=turma))

@@ -1,7 +1,7 @@
 import logging
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from ..views_ext.utils import get_cursos, get_turmas, get_atividades_academicas
+from ..views_ext.utils import get_cursos, get_atividades_academicas
 
 logger = logging.getLogger(__name__)
 

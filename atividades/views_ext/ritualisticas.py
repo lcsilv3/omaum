@@ -4,7 +4,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
-from importlib import import_module
 
 from .utils import get_form_class, get_model_class
 
@@ -83,7 +82,7 @@ def criar_atividade_ritualistica(request):
         if request.method == "POST":
             form = AtividadeRitualisticaForm(request.POST)
             if form.is_valid():
-                atividade = form.save()
+                form.save()
                 messages.success(
                     request, 
                     "Atividade ritualística criada com sucesso!"

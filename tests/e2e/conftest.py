@@ -1,7 +1,6 @@
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.contrib.auth.models import User
 from alunos import services as aluno_service
 from turmas.models import Turma
@@ -27,7 +26,7 @@ def browser():
 def live_server_with_data(live_server):
     """Configura o servidor de teste com dados iniciais."""
     # Criar um usuário para autenticação
-    user = User.objects.create_user(
+    User.objects.create_user(
         username='testuser',
         password='testpassword',
         email='test@example.com'
@@ -42,7 +41,7 @@ def live_server_with_data(live_server):
         "sexo": "M",
         "situacao": "ativo"
     }
-    aluno1 = aluno_service.criar_aluno(aluno_data1)
+    aluno_service.criar_aluno(aluno_data1)
     
     aluno_data2 = {
         "cpf": "98765432100",
@@ -52,7 +51,7 @@ def live_server_with_data(live_server):
         "sexo": "F",
         "situacao": "ativo"
     }
-    aluno2 = aluno_service.criar_aluno(aluno_data2)
+    aluno_service.criar_aluno(aluno_data2)
     
     # Criar algumas turmas
     turma1 = Turma.objects.create(
@@ -62,7 +61,7 @@ def live_server_with_data(live_server):
         status="A"
     )
     
-    turma2 = Turma.objects.create(
+    Turma.objects.create(
         nome="Turma de História 2023",
         codigo="HIS-2023",
         data_inicio=timezone.now().date(),
@@ -80,7 +79,7 @@ def live_server_with_data(live_server):
     )
     atividade1.turmas.add(turma1)
     
-    atividade2 = Atividade.objects.create(
+    Atividade.objects.create(
         nome="Ritual de Iniciação",
         descricao="Ritual para novos membros",
         data_inicio=timezone.now().date(),

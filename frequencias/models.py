@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 from importlib import import_module
 from decimal import Decimal
 
@@ -17,6 +16,13 @@ def get_presenca_model():
     """Obtém o modelo Presenca."""
     presencas_module = import_module("presencas.models")
     return getattr(presencas_module, "Presenca")
+
+
+def get_model_dynamically(app_name, model_name):
+    """Obtém um modelo dinamicamente."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
 
 class FrequenciaMensal(models.Model):
     """Modelo para controle de frequência mensal de uma turma."""
@@ -99,7 +105,7 @@ class FrequenciaMensal(models.Model):
         # Obter modelos
         Matricula = get_model_dynamically("matriculas", "Matricula")
         Presenca = get_model_dynamically("presencas", "Presenca")
-        Aluno = get_model_dynamically("alunos", "Aluno")
+        get_model_dynamically("alunos", "Aluno")
         Carencia = get_model_dynamically("frequencias", "Carencia")
         
         # Obter matrículas ativas na turma
