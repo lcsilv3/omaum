@@ -324,6 +324,30 @@ class Aluno(models.Model):
         verbose_name=_("Hospital de Preferência"),
     )
 
+    # Dados iniciáticos simplificados
+    grau_atual = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name=_("Grau Atual")
+    )
+    situacao_iniciatica = models.CharField(
+        max_length=20,
+        default="CANDIDATO",
+        choices=[
+            ("CANDIDATO", "Candidato"),
+            ("INICIADO", "Iniciado"),
+            ("SUSPENSO", "Suspenso"),
+            ("INATIVO", "Inativo"),
+        ],
+        verbose_name=_("Situação Iniciática"),
+    )
+    
+    # Histórico iniciático como JSON
+    historico_iniciatico = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Histórico Iniciático"),
+        help_text=_("Histórico de eventos, cargos e registros iniciáticos"),
+    )
+
     # Metadados
     created_at = models.DateTimeField(default=timezone.now, verbose_name=_("Criado em"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Atualizado em"))
@@ -344,6 +368,44 @@ class Aluno(models.Model):
 
     def __str__(self):
         return str(self.nome)
+
+    def adicionar_evento_historico(self, tipo, descricao, data, observacoes="", ordem_servico=""):
+        """Adiciona evento ao histórico iniciático."""
+        from django.utils import timezone
+        
+        evento = {
+            'tipo': tipo,
+            'descricao': descricao,
+            'data': data.isoformat() if hasattr(data, 'isoformat') else str(data),
+            'observacoes': observacoes,
+            'ordem_servico': ordem_servico,
+            'criado_em': timezone.now().isoformat()
+        }
+        
+        if not isinstance(self.historico_iniciatico, list):
+            self.historico_iniciatico = []
+        
+        self.historico_iniciatico.append(evento)
+        self.save(update_fields=['historico_iniciatico'])
+    
+    def obter_historico_ordenado(self):
+        """Retorna histórico ordenado por data (mais recente primeiro)."""
+        if not isinstance(self.historico_iniciatico, list):
+            return []
+        
+        try:
+            return sorted(
+                self.historico_iniciatico,
+                key=lambda x: x.get('data', ''),
+                reverse=True
+            )
+        except (TypeError, AttributeError):
+            return []
+    
+    def obter_ultimo_evento(self):
+        """Retorna o último evento do histórico."""
+        historico = self.obter_historico_ordenado()
+        return historico[0] if historico else None
 
     @property
     def esta_ativo(self):
@@ -372,6 +434,30 @@ class Aluno(models.Model):
         if self.cidade_naturalidade:
             return self.cidade_naturalidade.nome_completo
         return self.naturalidade or "Não informada"
+
+    @property
+    def ultimo_curso_matriculado(self):
+        """Retorna o nome do último curso em que o aluno foi matriculado."""
+        try:
+            from importlib import import_module
+            matriculas_module = import_module("matriculas.models")
+            Matricula = matriculas_module.Matricula
+            
+            ultima_matricula = Matricula.objects.filter(
+                aluno=self, 
+                ativa=True
+            ).order_by('-data_matricula').first()
+            
+            if ultima_matricula and ultima_matricula.turma.curso:
+                return ultima_matricula.turma.curso.nome
+            return None
+        except (ImportError, AttributeError):
+            return None
+    
+    @property
+    def grau_atual_automatico(self):
+        """Retorna o grau atual baseado no último curso matriculado."""
+        return self.ultimo_curso_matriculado or self.grau_atual or "Não informado"
 
     def clean(self):
         """Validações adicionais para o modelo Aluno."""

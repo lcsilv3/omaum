@@ -417,3 +417,10 @@ def search_alunos(request):
 
 # Alias para manter compatibilidade com URLs
 listar_alunos_url = listar_alunos_view
+
+# Importar views das APIs para filtros dinâmicos
+from .views.aluno_views import (
+    listar_tipos_codigos_ajax,
+    listar_codigos_por_tipo_ajax,
+    adicionar_evento_historico_ajax
+)

@@ -3,7 +3,32 @@ from .models import Aluno, RegistroHistorico, Codigo
 
 
 class AlunoForm(forms.ModelForm):
-    """Formulário para criação e edição de alunos."""
+    """Formulário simplificado para criação e edição de alunos."""
+    
+    # Campos para adicionar novo evento ao histórico
+    novo_evento_tipo = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: CARGO, INICIAÇÃO, PUNIÇÃO'}),
+        label="Tipo do Evento"
+    )
+    novo_evento_descricao = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Descrição do evento'}),
+        label="Descrição do Evento"
+    )
+    novo_evento_data = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        label="Data do Evento"
+    )
+    novo_evento_observacoes = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Observações (opcional)'}),
+        label="Observações"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,15 +49,40 @@ class AlunoForm(forms.ModelForm):
             "celular_segundo_contato": "Somente números",
         }
         for field_name, field in self.fields.items():
-            field.widget.attrs["class"] = "form-control"
+            if not field.widget.attrs.get('class'):
+                field.widget.attrs["class"] = "form-control"
             if field_name in placeholders:
                 field.widget.attrs["placeholder"] = placeholders[field_name]
 
+    def save(self, commit=True):
+        """Salva o aluno e adiciona evento ao histórico se preenchido."""
+        instance = super().save(commit=False)
+        
+        # Adicionar novo evento se todos os campos obrigatórios estiverem preenchidos
+        if (self.cleaned_data.get('novo_evento_tipo') and 
+            self.cleaned_data.get('novo_evento_descricao') and
+            self.cleaned_data.get('novo_evento_data')):
+            
+            if commit:
+                instance.save()  # Salva primeiro para garantir que tem ID
+                instance.adicionar_evento_historico(
+                    tipo=self.cleaned_data['novo_evento_tipo'],
+                    descricao=self.cleaned_data['novo_evento_descricao'],
+                    data=self.cleaned_data['novo_evento_data'],
+                    observacoes=self.cleaned_data.get('novo_evento_observacoes', '')
+                )
+        elif commit:
+            instance.save()
+        
+        return instance
+
     class Meta:
         model = Aluno
-        fields = "__all__"
-        # Excluir campos que não devem ser editados pelo usuário no formulário público
-        exclude = ["ativo", "created_at", "updated_at"]
+        fields = [
+            "nome", "cpf", "email", "celular_primeiro_contato", "data_nascimento", "sexo", "estado_civil",
+            "nome_iniciatico", "numero_iniciatico", "grau_atual", "situacao_iniciatica",
+            "rua", "cidade", "estado", "cep"
+        ]
         widgets = {
             "data_nascimento": forms.DateInput(
                 attrs={"type": "date", "class": "form-control"}
@@ -40,15 +90,21 @@ class AlunoForm(forms.ModelForm):
             "hora_nascimento": forms.TimeInput(
                 attrs={"type": "time", "class": "form-control"}
             ),
+            "data_iniciacao": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
             "alergias": forms.Textarea(attrs={"rows": 3}),
             "condicoes_medicas_gerais": forms.Textarea(attrs={"rows": 3}),
             "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "nome_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
+            "grau_atual": forms.TextInput(attrs={"class": "form-control"}),
+            "situacao_iniciatica": forms.Select(attrs={"class": "form-control"}),
         }
 
 
+# Manter formulário original para compatibilidade durante migração
 class RegistroHistoricoForm(forms.ModelForm):
-    """Formulário para adicionar e editar registros do histórico de um aluno."""
+    """Formulário para registros históricos - mantido para compatibilidade."""
 
     class Meta:
         model = RegistroHistorico
@@ -74,16 +130,16 @@ class RegistroHistoricoForm(forms.ModelForm):
         self.fields["codigo"].queryset = Codigo.objects.order_by("tipo_codigo", "nome")
 
 
-# Usando inlineformset_factory para vincular o histórico diretamente ao aluno
+# Manter formset para compatibilidade durante migração
 RegistroHistoricoFormSet = forms.inlineformset_factory(
     Aluno,
     RegistroHistorico,
     form=RegistroHistoricoForm,
-    extra=1,  # Sempre começa com 1 formulário extra para facilitar adição
-    can_delete=True,  # Permite a exclusão de registros
+    extra=1,
+    can_delete=True,
     edit_only=False,
-    min_num=0,  # Mínimo de 0 formulários obrigatórios
-    max_num=20,  # Máximo de 20 registros históricos
-    validate_min=False,  # Não força o mínimo
-    validate_max=True,  # Valida o máximo
+    min_num=0,
+    max_num=20,
+    validate_min=False,
+    validate_max=True,
 )

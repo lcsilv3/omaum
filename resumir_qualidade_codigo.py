@@ -15,7 +15,6 @@ import os
 import sys
 import subprocess
 import argparse
-from pathlib import Path
 
 def run_command(cmd, description=""):
     """Executa comando e retorna resultado."""
@@ -80,7 +79,7 @@ def generate_report():
     
     for category in categories:
         cmd = f"python -m ruff check --select {category} . | head -5"
-        result = run_command(cmd, f"Verificando {category}")
+        run_command(cmd, f"Verificando {category}")
     
     return stats_result, django_ok
 
@@ -123,12 +122,12 @@ def main():
         print("\n🔧 Aplicando correções automáticas...")
         
         # Correções seguras
-        fix_result = apply_automatic_fixes()
+        apply_automatic_fixes()
         
         # Correções não seguras se solicitado
         if args.unsafe:
             print("\n⚠️  Aplicando correções não seguras...")
-            unsafe_result = apply_unsafe_fixes()
+            apply_unsafe_fixes()
         
         # Verificar Django novamente
         print("\n🔍 Verificando Django após correções...")

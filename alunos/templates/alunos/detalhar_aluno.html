@@ -24,16 +24,16 @@
         <i class="fas fa-exclamation-triangle"></i> {{ aluno.alerta_mensagem }}
     </div>
     {% endif %}
-    <!-- Seção: Dados Pessoais (recolhível, aberta por padrão) -->
+    <!-- Seção: Dados Pessoais (recolhível, contraída por padrão) -->
     <div class="card mb-4 border-primary">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">
-                <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#dados-pessoais" role="button" aria-expanded="true" aria-controls="dados-pessoais">
+                <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-pessoais" role="button" aria-expanded="false" aria-controls="dados-pessoais">
                     <span class="chevron">&#9654;</span> Dados Pessoais <small class="text-light">(clique para expandir/recolher)</small>
                 </a>
             </h5>
         </div>
-        <div id="dados-pessoais" class="card-body collapse show">
+        <div id="dados-pessoais" class="card-body collapse">
             <!-- ...existing code da seção Dados Pessoais... -->
             <div class="row">
                 <div class="col-md-8">
@@ -87,11 +87,32 @@
         </div>
         <div id="dados-iniciaticos" class="card-body collapse">
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <p><strong>Número Iniciático:</strong> {{ aluno.numero_iniciatico|default:"Não informado" }}</p>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <p><strong>Nome Iniciático:</strong> {{ aluno.nome_iniciatico|default:"Não informado" }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Grau Atual:</strong> {{ aluno.grau_atual_automatico }}</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Situação Iniciática:</strong> 
+                        {% if aluno.situacao_iniciatica == 'INICIADO' %}
+                            <span class="badge bg-success">{{ aluno.get_situacao_iniciatica_display }}</span>
+                        {% elif aluno.situacao_iniciatica == 'CANDIDATO' %}
+                            <span class="badge bg-warning">{{ aluno.get_situacao_iniciatica_display }}</span>
+                        {% elif aluno.situacao_iniciatica == 'SUSPENSO' %}
+                            <span class="badge bg-danger">{{ aluno.get_situacao_iniciatica_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ aluno.get_situacao_iniciatica_display }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Último Curso:</strong> {{ aluno.ultimo_curso_matriculado|default:"Não informado" }}</p>
                 </div>
             </div>
 
@@ -253,6 +274,109 @@
             </div>
         </div>
     </div>
+    
+    <!-- Seção: Adicionar Eventos ao Histórico (recolhível, fechada por padrão) -->
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#adicionar-eventos" role="button" aria-expanded="false" aria-controls="adicionar-eventos">
+                    <span class="chevron">&#9654;</span> Adicionar Eventos ao Histórico <small class="text-light">(clique para expandir/recolher)</small>
+                </a>
+            </h5>
+        </div>
+        <div id="adicionar-eventos" class="card-body collapse">
+            <form id="form-adicionar-evento" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="aluno_id" value="{{ aluno.id }}">
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="tipo_evento" class="form-label">Tipo do Evento <span class="text-danger">*</span></label>
+                        <select class="form-select" id="tipo_evento" name="tipo_evento" required>
+                            <option value="">Selecione</option>
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i> 
+                            <span id="tooltip-tipo-evento">Selecione o tipo de evento para ver a descrição</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="codigo_evento" class="form-label">Código <span class="text-danger">*</span></label>
+                        <select class="form-select" id="codigo_evento" name="codigo_evento" required disabled>
+                            <option value="">Selecione</option>
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i> 
+                            <span id="tooltip-codigo-evento">Selecione primeiro o tipo de evento</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="ordem_servico" class="form-label">Ordem de Serviço</label>
+                        <input type="text" class="form-control" id="ordem_servico" name="ordem_servico" placeholder="Ex: OS-2025-001">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="data_os" class="form-label">Data da Ordem de Serviço <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="data_os" name="data_os" required>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="data_evento" class="form-label">Data do Evento <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="data_evento" name="data_evento" required>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="2" placeholder="Observações sobre o evento"></textarea>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Adicionar Evento
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Lista de eventos recentes -->
+            <div class="mt-4">
+                <h6>Eventos Recentes</h6>
+                <div id="eventos-recentes" class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Código</th>
+                                <th>Data OS</th>
+                                <th>Data Evento</th>
+                                <th>Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-eventos-recentes">
+                            {% for evento in aluno.obter_historico_ordenado|slice:":5" %}
+                            <tr>
+                                <td>{{ evento.tipo }}</td>
+                                <td title="{{ evento.descricao }}">{{ evento.descricao|truncatechars:30 }}</td>
+                                <td>{{ evento.data }}</td>
+                                <td>{{ evento.data }}</td>
+                                <td title="{{ evento.observacoes }}">{{ evento.observacoes|default:"-"|truncatechars:20 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">Nenhum evento registrado.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="d-flex justify-content-between mb-5">
         <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
             <i class="fas fa-list"></i> Voltar para a lista
@@ -285,7 +409,153 @@
                 }, 150);
             });
         });
+        
+        // Carregar tipos de códigos
+        carregarTiposCodigos();
+        
+        // Event listeners para filtros dinâmicos
+        document.getElementById('tipo_evento').addEventListener('change', function() {
+            const tipoId = this.value;
+            const codigoSelect = document.getElementById('codigo_evento');
+            const tooltipCodigo = document.getElementById('tooltip-codigo-evento');
+            
+            if (tipoId) {
+                carregarCodigosPorTipo(tipoId);
+                codigoSelect.disabled = false;
+                
+                // Mostrar descrição do tipo selecionado
+                const selectedOption = this.options[this.selectedIndex];
+                const descricao = selectedOption.getAttribute('data-descricao');
+                document.getElementById('tooltip-tipo-evento').textContent = descricao || 'Descrição não disponível';
+            } else {
+                codigoSelect.innerHTML = '<option value="">Selecione</option>';
+                codigoSelect.disabled = true;
+                tooltipCodigo.textContent = 'Selecione primeiro o tipo de evento';
+            }
+        });
+        
+        document.getElementById('codigo_evento').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const descricao = selectedOption.getAttribute('data-descricao');
+            document.getElementById('tooltip-codigo-evento').textContent = descricao || 'Descrição não disponível';
+        });
+        
+        // Submissão do formulário via AJAX
+        document.getElementById('form-adicionar-evento').addEventListener('submit', function(e) {
+            e.preventDefault();
+            adicionarEventoHistorico();
+        });
     });
+    
+    function carregarTiposCodigos() {
+        fetch('{% url "alunos:api_tipos_codigos" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const select = document.getElementById('tipo_evento');
+                    select.innerHTML = '<option value="">Selecione</option>';
+                    
+                    data.tipos.forEach(tipo => {
+                        const option = document.createElement('option');
+                        option.value = tipo.id;
+                        option.textContent = tipo.nome;
+                        option.setAttribute('data-descricao', tipo.descricao || '');
+                        select.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar tipos de códigos:', error);
+            });
+    }
+    
+    function carregarCodigosPorTipo(tipoId) {
+        fetch(`{% url "alunos:api_codigos_por_tipo" %}?tipo_id=${tipoId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const select = document.getElementById('codigo_evento');
+                    select.innerHTML = '<option value="">Selecione</option>';
+                    
+                    data.codigos.forEach(codigo => {
+                        const option = document.createElement('option');
+                        option.value = codigo.id;
+                        option.textContent = codigo.nome;
+                        option.setAttribute('data-descricao', codigo.descricao || '');
+                        select.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar códigos:', error);
+            });
+    }
+    
+    function adicionarEventoHistorico() {
+        const formData = new FormData(document.getElementById('form-adicionar-evento'));
+        const data = {
+            aluno_id: formData.get('aluno_id'),
+            tipo_evento: document.getElementById('tipo_evento').options[document.getElementById('tipo_evento').selectedIndex].text,
+            codigo_id: formData.get('codigo_evento'),
+            ordem_servico: formData.get('ordem_servico'),
+            data_os: formData.get('data_os'),
+            data_evento: formData.get('data_evento'),
+            observacoes: formData.get('observacoes')
+        };
+        
+        fetch('{% url "alunos:api_adicionar_evento_historico" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Mostrar mensagem de sucesso
+                mostrarMensagem('Evento adicionado com sucesso!', 'success');
+                
+                // Limpar formulário
+                document.getElementById('form-adicionar-evento').reset();
+                document.getElementById('codigo_evento').disabled = true;
+                document.getElementById('tooltip-tipo-evento').textContent = 'Selecione o tipo de evento para ver a descrição';
+                document.getElementById('tooltip-codigo-evento').textContent = 'Selecione primeiro o tipo de evento';
+                
+                // Atualizar lista de eventos recentes (reload da página)
+                location.reload();
+            } else {
+                mostrarMensagem('Erro ao adicionar evento: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            mostrarMensagem('Erro ao adicionar evento', 'error');
+        });
+    }
+    
+    function mostrarMensagem(mensagem, tipo) {
+        const alertClass = tipo === 'success' ? 'alert-success' : 'alert-danger';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${mensagem}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        // Inserir antes do formulário
+        const form = document.getElementById('form-adicionar-evento');
+        form.insertAdjacentHTML('beforebegin', alertHtml);
+        
+        // Remover após 5 segundos
+        setTimeout(() => {
+            const alert = document.querySelector('.alert');
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>

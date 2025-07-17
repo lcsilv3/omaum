@@ -1,6 +1,16 @@
 from django.urls import path, include
+from django.shortcuts import redirect
 from rest_framework.routers import DefaultRouter
 from . import views, api_views
+from .views_simplified import (
+    listar_alunos_simple,
+    criar_aluno_simple,
+    editar_aluno_simple,
+    detalhar_aluno_simple,
+    excluir_aluno_simple,
+    adicionar_evento_historico_ajax,
+    obter_historico_aluno_ajax,
+)
 from .views.localidade_api import (
     search_paises,
     search_estados,
@@ -14,11 +24,32 @@ router = DefaultRouter()
 router.register(r"", api_views.AlunoViewSet, basename="aluno")
 
 urlpatterns = [
-    path("", views.listar_alunos, name="listar_alunos"),
-    path("criar/", views.criar_aluno, name="criar_aluno"),
-    path("<str:cpf>/detalhes/", views.detalhar_aluno, name="detalhar_aluno"),
-    path("<str:cpf>/editar/", views.editar_aluno, name="editar_aluno"),
-    path("<str:cpf>/excluir/", views.excluir_aluno, name="excluir_aluno"),
+    # REDIRECIONAMENTO AUTOMÁTICO - Sistema v2.0
+    path("", lambda request: redirect("alunos:listar_alunos_simple", permanent=True)),
+    path("listar/", lambda request: redirect("alunos:listar_alunos_simple", permanent=True)),
+    path("criar/", lambda request: redirect("alunos:criar_aluno_simple", permanent=True)),
+    
+    # URLs simplificadas - Sistema v2.0 (NOVO - RECOMENDADO)
+    path("simple/", listar_alunos_simple, name="listar_alunos_simple"),
+    path("simple/criar/", criar_aluno_simple, name="criar_aluno_simple"),
+    path("simple/<str:aluno_id>/", detalhar_aluno_simple, name="detalhar_aluno_simple"),
+    path("simple/<str:aluno_id>/editar/", editar_aluno_simple, name="editar_aluno_simple"),
+    path("simple/<str:aluno_id>/excluir/", excluir_aluno_simple, name="excluir_aluno_simple"),
+    path("simple/<str:aluno_id>/ajax/adicionar-evento/",
+         adicionar_evento_historico_ajax, name="adicionar_evento_historico_ajax"),
+    path("simple/<str:aluno_id>/ajax/historico/",
+         obter_historico_aluno_ajax, name="obter_historico_aluno_ajax"),
+    
+    # REDIRECIONAMENTO AUTOMÁTICO PARA SISTEMA v2.0
+    path("", lambda request: redirect("/alunos/simple/"), name="listar_alunos"),
+    path("criar/", lambda request: redirect("/alunos/simple/criar/"), name="criar_aluno"),
+    
+    # URLs originais - sistema legado (DEPRECATED)
+    path("legacy/", views.listar_alunos, name="listar_alunos_legacy"),
+    path("legacy/criar/", views.criar_aluno, name="criar_aluno_legacy"),
+    path("legacy/<str:cpf>/detalhes/", views.detalhar_aluno, name="detalhar_aluno_legacy"),
+    path("legacy/<str:cpf>/editar/", views.editar_aluno, name="editar_aluno_legacy"),
+    path("legacy/<str:cpf>/excluir/", views.excluir_aluno, name="excluir_aluno_legacy"),
     path("painel/", views.painel, name="painel"),
     path("exportar/", views.exportar_alunos, name="exportar_alunos"),
     path("importar/", views.importar_alunos, name="importar_alunos"),
@@ -49,5 +80,13 @@ urlpatterns = [
         "api/cidades/estado/<int:estado_id>/",
         get_cidades_por_estado,
         name="api_cidades_por_estado",
+    ),
+    # APIs para filtros dinâmicos - Dados Iniciáticos
+    path("api/tipos-codigos/", views.listar_tipos_codigos_ajax, name="api_tipos_codigos"),
+    path("api/codigos-por-tipo/", views.listar_codigos_por_tipo_ajax, name="api_codigos_por_tipo"),
+    path(
+        "api/adicionar-evento-historico/",
+        views.adicionar_evento_historico_ajax,
+        name="api_adicionar_evento_historico"
     ),
 ]
