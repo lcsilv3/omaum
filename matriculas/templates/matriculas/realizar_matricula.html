@@ -1,29 +1,67 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1>Realizar Matrícula</h1>
-    <form method="post" action="{% url 'matriculas:realizar' %}">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="aluno">Aluno</label>
-            <select id="aluno" name="aluno" class="form-control">
-                {% for aluno in alunos %}
-                <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
-                {% endfor %}
-            </select>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Realizar Matrícula</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'matriculas:listar_matriculas' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post" class="row g-3">
+                        {% csrf_token %}
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.aluno.label }}</label>
+                            {{ form.aluno }}
+                            {% if form.aluno.errors %}
+                                <div class="text-danger">{{ form.aluno.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.turma.label }}</label>
+                            {{ form.turma }}
+                            {% if form.turma.errors %}
+                                <div class="text-danger">{{ form.turma.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.data_matricula.label }}</label>
+                            {{ form.data_matricula }}
+                            {% if form.data_matricula.errors %}
+                                <div class="text-danger">{{ form.data_matricula.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.status.label }}</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Matrícula
+                            </button>
+                            <a href="{% url 'matriculas:listar_matriculas' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="turma">Turma</label>
-            <select id="turma" name="turma" class="form-control">
-                {% for turma in turmas %}
-                <option value="{{ turma.id }}">{{ turma.nome }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary">Matricular</button>
-    </form>
+    </div>
 </div>
-
-<a href="javascript:history.back()" class="back-button">Voltar</a>
 {% endblock %}

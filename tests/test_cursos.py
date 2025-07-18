@@ -11,10 +11,10 @@ from decimal import Decimal
 from datetime import timedelta
 from django.utils import timezone
 
-from cursos.models import Curso, TipoCurso
+from cursos.models import Curso
 from cursos.forms import CursoForm
 from cursos.services import CursoService
-from tests.factories import CursoFactory, TipoCursoFactory, UserFactory
+from tests.factories import CursoFactory, UserFactory
 
 
 class TipoCursoModelTest(TestCase):

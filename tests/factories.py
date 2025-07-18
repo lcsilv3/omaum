@@ -4,9 +4,29 @@ Factories otimizadas para testes usando factory_boy.
 
 try:
     import factory
+    from factory.django import DjangoModelFactory
     import factory.fuzzy
+    from django.contrib.auth.models import User
+    from django.utils import timezone
+    from datetime import timedelta
+    from decimal import Decimal
+    
+    # Importações dos modelos
+    from cursos.models import Curso
+    from alunos.models import Aluno
+    from matriculas.models import Matricula
+    from turmas.models import Turma
+    from presencas.models import Presenca
+    
+    FACTORY_BOY_AVAILABLE = True
+    
 except ImportError:
     # Se factory_boy não estiver disponível, criar classes mock
+    FACTORY_BOY_AVAILABLE = False
+    
+    class DjangoModelFactory:
+        pass
+    
     class factory:
         class django:
             class DjangoModelFactory:
@@ -47,12 +67,186 @@ except ImportError:
                 def __init__(self, low, high):
                     self.low = low
                     self.high = high
-            
-            class FuzzyDecimal:
-                def __init__(self, low, high, precision=2):
-                    self.low = low
-                    self.high = high
-                    self.precision = precision
+
+
+if FACTORY_BOY_AVAILABLE:
+    # Factories reais usando factory_boy
+    class UserFactory(DjangoModelFactory):
+        class Meta:
+            model = User
+        
+        username = factory.Sequence(lambda n: f'user{n}')
+        email = factory.Faker('email')
+        first_name = factory.Faker('first_name')
+        last_name = factory.Faker('last_name')
+        is_active = True
+        is_staff = False
+        is_superuser = False
+        password = factory.PostGenerationMethodCall('set_password', 'defaultpass')
+    
+    
+    class CursoFactory(DjangoModelFactory):
+        class Meta:
+            model = Curso
+        
+        nome = factory.Sequence(lambda n: f'Curso {n}')
+        descricao = factory.Faker('text', max_nb_chars=200)
+        ativo = True
+    
+    
+    class AlunoFactory(DjangoModelFactory):
+        class Meta:
+            model = Aluno
+        
+        nome = factory.Faker('name')
+        email = factory.Faker('email')
+        telefone = factory.Faker('phone_number')
+        endereco = factory.Faker('address')
+        data_nascimento = factory.Faker('date_of_birth')
+        ativo = True
+        usuario = factory.SubFactory(UserFactory)
+    
+    
+    class TurmaFactory(DjangoModelFactory):
+        class Meta:
+            model = Turma
+        
+        nome = factory.Sequence(lambda n: f'Turma {n}')
+        curso = factory.SubFactory(CursoFactory)
+        data_inicio = factory.Faker('date_this_year')
+        data_fim = factory.LazyAttribute(
+            lambda obj: obj.data_inicio + timedelta(days=90)
+        )
+        ativa = True
+    
+    
+    class MatriculaFactory(DjangoModelFactory):
+        class Meta:
+            model = Matricula
+        
+        aluno = factory.SubFactory(AlunoFactory)
+        turma = factory.SubFactory(TurmaFactory)
+        data_matricula = factory.Faker('date_this_year')
+        ativa = True
+    
+    
+    class PresencaFactory(DjangoModelFactory):
+        class Meta:
+            model = Presenca
+        
+        aluno = factory.SubFactory(AlunoFactory)
+        turma = factory.SubFactory(TurmaFactory)
+        data = factory.Faker('date_this_year')
+        presente = True
+        
+else:
+    # Classes mock para quando factory_boy não estiver disponível
+    class UserFactory:
+        @classmethod
+        def create(cls, **kwargs):
+            from django.contrib.auth.models import User
+            return User.objects.create_user(
+                username=kwargs.get('username', 'testuser'),
+                email=kwargs.get('email', 'test@example.com'),
+                password=kwargs.get('password', 'testpass')
+            )
+        
+        def __call__(self, **kwargs):
+            return self.create(**kwargs)
+    
+    
+    class CursoFactory:
+        @classmethod
+        def create(cls, **kwargs):
+            from cursos.models import Curso
+            return Curso.objects.create(
+                nome=kwargs.get('nome', 'Curso Teste'),
+                descricao=kwargs.get('descricao', 'Descrição teste'),
+                ativo=kwargs.get('ativo', True)
+            )
+        
+        def __call__(self, **kwargs):
+            return self.create(**kwargs)
+    
+    
+    class AlunoFactory:
+        @classmethod
+        def create(cls, **kwargs):
+            from alunos.models import Aluno
+            return Aluno.objects.create(
+                nome=kwargs.get('nome', 'Aluno Teste'),
+                email=kwargs.get('email', 'aluno@teste.com'),
+                telefone=kwargs.get('telefone', '11999999999'),
+                endereco=kwargs.get('endereco', 'Endereço teste'),
+                data_nascimento=kwargs.get('data_nascimento', '1990-01-01'),
+                ativo=kwargs.get('ativo', True),
+                usuario=kwargs.get('usuario', UserFactory.create())
+            )
+        
+        def __call__(self, **kwargs):
+            return self.create(**kwargs)
+    
+    
+    class TurmaFactory:
+        @classmethod
+        def create(cls, **kwargs):
+            from turmas.models import Turma
+            return Turma.objects.create(
+                nome=kwargs.get('nome', 'Turma Teste'),
+                curso=kwargs.get('curso', CursoFactory.create()),
+                data_inicio=kwargs.get('data_inicio', '2024-01-01'),
+                data_fim=kwargs.get('data_fim', '2024-03-31'),
+                ativa=kwargs.get('ativa', True)
+            )
+        
+        def __call__(self, **kwargs):
+            return self.create(**kwargs)
+    
+    
+    class MatriculaFactory:
+        @classmethod
+        def create(cls, **kwargs):
+            from matriculas.models import Matricula
+            return Matricula.objects.create(
+                aluno=kwargs.get('aluno', AlunoFactory.create()),
+                turma=kwargs.get('turma', TurmaFactory.create()),
+                data_matricula=kwargs.get('data_matricula', '2024-01-01'),
+                ativa=kwargs.get('ativa', True)
+            )
+        
+        def __call__(self, **kwargs):
+            return self.create(**kwargs)
+    
+    
+    class PresencaFactory:
+        @classmethod
+        def create(cls, **kwargs):
+            from presencas.models import Presenca
+            return Presenca.objects.create(
+                aluno=kwargs.get('aluno', AlunoFactory.create()),
+                turma=kwargs.get('turma', TurmaFactory.create()),
+                data=kwargs.get('data', '2024-01-01'),
+                presente=kwargs.get('presente', True)
+            )
+        
+        def __call__(self, **kwargs):
+            return self.create(**kwargs)
+
+
+# Instanciar factories
+UserFactory = UserFactory()
+CursoFactory = CursoFactory()
+
+AlunoFactory = AlunoFactory()
+TurmaFactory = TurmaFactory()
+MatriculaFactory = MatriculaFactory()
+PresencaFactory = PresencaFactory()
+
+class FuzzyDecimal:
+    def __init__(self, low, high, precision=2):
+        self.low = low
+        self.high = high
+        self.precision = precision
 
 from django.contrib.auth.models import User
 from django.utils import timezone

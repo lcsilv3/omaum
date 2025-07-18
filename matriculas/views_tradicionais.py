@@ -1,6 +1,28 @@
 """
 Views tradicionais para o aplicativo de Matrículas.
-Seguindo o padrão de nomenclatura do contrato.
+Seguindo o padrã@login_required
+def criar_matricula(request):
+    """Cria uma nova matrícula."""
+    if request.method == 'POST':
+        form = MatriculaForm(request.POST)
+        if form.is_valid():
+            try:
+                matricula = form.save()
+                messages.success(request, 'Matrícula criada com sucesso!')
+                return redirect('matriculas:detalhar_matricula', matricula_id=matricula.id)
+            except Exception as e:
+                messages.error(request, f'Erro ao criar matrícula: {str(e)}')
+        else:
+            messages.error(request, 'Erro ao criar matrícula. Verifique os dados.')
+    else:
+        form = MatriculaForm()
+    
+    context = {
+        'form': form,
+        'titulo': 'Nova Matrícula',
+    }
+    
+    return render(request, 'matriculas/realizar_matricula.html', context) contrato.
 """
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -91,7 +113,7 @@ def criar_matricula(request):
         'titulo': 'Nova Matrícula',
     }
     
-    return render(request, 'matriculas/form_matricula.html', context)
+    return render(request, 'matriculas/realizar_matricula.html', context)
 
 
 @login_required
@@ -128,7 +150,7 @@ def editar_matricula(request, matricula_id):
         'titulo': 'Editar Matrícula',
     }
     
-    return render(request, 'matriculas/form_matricula.html', context)
+    return render(request, 'matriculas/realizar_matricula.html', context)
 
 
 @login_required

@@ -1,8 +1,18 @@
 from django import forms
-from .models import Aluno, RegistroHistorico, Codigo
+from alunos.models import Aluno, RegistroHistorico, Codigo
 
 
 class AlunoForm(forms.ModelForm):
+    grau_atual_automatico = forms.CharField(
+        label="Grau Atual (automático)",
+        required=False,
+        widget=forms.TextInput(attrs={
+            'readonly': 'readonly',
+            'class': 'form-control-plaintext',
+            'tabindex': '-1',
+            'style': 'background: #f8f9fa; color: #333; font-weight: bold;',
+        })
+    )
     """Formulário simplificado para criação e edição de alunos."""
     
     # Campos para adicionar novo evento ao histórico
@@ -41,6 +51,12 @@ class AlunoForm(forms.ModelForm):
                 "%Y-%m-%d"
             )
 
+        # Preencher campo automático
+        if self.instance and self.instance.pk:
+            self.fields['grau_atual_automatico'].initial = self.instance.grau_atual_automatico
+        else:
+            self.fields['grau_atual_automatico'].initial = "Não informado"
+
         # Adiciona classes CSS e placeholders
         placeholders = {
             "cpf": "Somente números",
@@ -59,9 +75,11 @@ class AlunoForm(forms.ModelForm):
         instance = super().save(commit=False)
         
         # Adicionar novo evento se todos os campos obrigatórios estiverem preenchidos
-        if (self.cleaned_data.get('novo_evento_tipo') and 
+        if (
+            self.cleaned_data.get('novo_evento_tipo') and
             self.cleaned_data.get('novo_evento_descricao') and
-            self.cleaned_data.get('novo_evento_data')):
+            self.cleaned_data.get('novo_evento_data')
+        ):
             
             if commit:
                 instance.save()  # Salva primeiro para garantir que tem ID
@@ -80,7 +98,7 @@ class AlunoForm(forms.ModelForm):
         model = Aluno
         fields = [
             "nome", "cpf", "email", "celular_primeiro_contato", "data_nascimento", "sexo", "estado_civil",
-            "nome_iniciatico", "numero_iniciatico", "grau_atual", "situacao_iniciatica",
+            "nome_iniciatico", "numero_iniciatico", "grau_atual_automatico", "grau_atual", "situacao_iniciatica",
             "rua", "cidade", "estado", "cep"
         ]
         widgets = {
@@ -90,9 +108,6 @@ class AlunoForm(forms.ModelForm):
             "hora_nascimento": forms.TimeInput(
                 attrs={"type": "time", "class": "form-control"}
             ),
-            "data_iniciacao": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
-            ),
             "alergias": forms.Textarea(attrs={"rows": 3}),
             "condicoes_medicas_gerais": forms.Textarea(attrs={"rows": 3}),
             "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
@@ -100,6 +115,20 @@ class AlunoForm(forms.ModelForm):
             "grau_atual": forms.TextInput(attrs={"class": "form-control"}),
             "situacao_iniciatica": forms.Select(attrs={"class": "form-control"}),
         }
+
+    def _add_selecione_to_selects(self):
+        # Adiciona a opção 'Selecione' a todos os campos Select
+        for name, field in self.fields.items():
+            if isinstance(field.widget, forms.Select) and not field.required:
+                field.choices = [('', 'Selecione')] + list(field.choices)
+            elif isinstance(field.widget, forms.Select) and field.required:
+                # Se for required, ainda assim força 'Selecione' como primeira opção
+                field.choices = [('', 'Selecione')] + [c for c in field.choices if c[0] != '']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # ...existing code...
+        self._add_selecione_to_selects()
 
 
 # Manter formulário original para compatibilidade durante migração

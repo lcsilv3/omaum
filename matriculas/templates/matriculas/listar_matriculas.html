@@ -1,36 +1,157 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<!-- Padronizar cabeçalho com botões -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Lista de Matrículas</h1>
-    <div>
-        <a href="javascript:history.back()" class="btn btn-secondary me-2">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-        <a href="{% url 'matriculas:realizar_matricula' %}" class="btn btn-primary me-2">
-            <i class="fas fa-plus"></i> Nova Matrícula
-        </a>
-        <a href="{% url 'matriculas:exportar_matriculas' %}" class="btn btn-success me-2">
-            <i class="fas fa-file-export"></i> Exportar CSV
-        </a>
-        <a href="{% url 'matriculas:importar_matriculas' %}" class="btn btn-info">
-            <i class="fas fa-file-import"></i> Importar CSV
-        </a>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Lista de Matrículas</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'matriculas:realizar_matricula' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Nova Matrícula
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <form method="get" class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="Nome do aluno ou turma..." 
+                                   value="{{ search }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">Selecione</option>
+                                {% for codigo, nome in status_choices %}
+                                    <option value="{{ codigo }}" {% if status_filter == codigo %}selected{% endif %}>
+                                        {{ nome }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Turma</label>
+                            <select name="turma" class="form-select">
+                                <option value="">Selecione</option>
+                                {% for turma in turmas %}
+                                    <option value="{{ turma.id }}" {% if turma_filter == turma.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ turma.nome }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Tabela de Matrículas -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Aluno</th>
+                                    <th>Turma</th>
+                                    <th>Data Matrícula</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for matricula in page_obj %}
+                                <tr>
+                                    <td>{{ matricula.id }}</td>
+                                    <td>{{ matricula.aluno.nome }}</td>
+                                    <td>{{ matricula.turma.nome }}</td>
+                                    <td>{{ matricula.data_matricula|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if matricula.status == 'A' %}
+                                            <span class="badge bg-success">Ativa</span>
+                                        {% elif matricula.status == 'C' %}
+                                            <span class="badge bg-danger">Cancelada</span>
+                                        {% elif matricula.status == 'F' %}
+                                            <span class="badge bg-secondary">Finalizada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'matriculas:detalhar_matricula' matricula.id %}" 
+                                               class="btn btn-sm btn-info" title="Ver detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if matricula.status == 'A' %}
+                                            <a href="{% url 'matriculas:editar_matricula' matricula.id %}" 
+                                               class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'matriculas:excluir_matricula' matricula.id %}" 
+                                               class="btn btn-sm btn-danger" title="Excluir"
+                                               onclick="return confirm('Tem certeza que deseja excluir esta matrícula?')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">Nenhuma matrícula encontrada.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginação -->
+                    {% if page_obj.has_other_pages %}
+                    <nav aria-label="Paginação">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if turma_filter %}turma={{ turma_filter }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                                        Anterior
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if turma_filter %}turma={{ turma_filter }}&{% endif %}page={{ num }}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if turma_filter %}turma={{ turma_filter }}&{% endif %}page={{ page_obj.next_page_number }}">
+                                        Próximo
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-
-<!-- Padronizar botões de ação na tabela -->
-<td>
-    <div class="table-actions">
-        <a href="{% url 'matriculas:detalhar_matricula' matricula.id %}" class="btn btn-sm btn-info" title="Ver detalhes da matrícula">
-            <i class="fas fa-eye"></i> Detalhes
-        </a>
-        {% if matricula.status == 'A' %}
-        <a href="{% url 'matriculas:cancelar_matricula' matricula.id %}" class="btn btn-sm btn-danger" title="Cancelar matrícula">
-            <i class="fas fa-ban"></i> Cancelar
-        </a>
-        {% endif %}
-    </div>
-</td>
 {% endblock %}

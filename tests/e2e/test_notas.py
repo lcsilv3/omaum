@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from alunos.models import Aluno
 from turmas.models import Turma
 from atividades.models import Atividade
-from notas.models import Avaliacao, Nota
+from notas.models import Nota
 from matriculas.models import Matricula
 
 class NotasE2ETestCase(StaticLiveServerTestCase):

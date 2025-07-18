@@ -1,0 +1,35 @@
+--- a/matriculas/views_tradicionais.py
++++ b/matriculas/views_tradicionais.py
+@@ -1,6 +1,7 @@
+ # File: matriculas/views_tradicionais.py
+ from .models import Matricula
+ from .forms import MatriculaForm
++from alunos.models import Aluno
+ from django.shortcuts import render, get_object_or_404, redirect
+ from django.contrib import messages
+ 
+@@ -21,6 +22,26 @@
+     }
+     
+     return render(request, 'matriculas/form_matricula.html', context)
++
++def criar_matricula(request):
++    """Cria uma nova matrícula."""
++    alunos = Aluno.objects.all()
++
++    if request.method == 'POST':
++        form = MatriculaForm(request.POST)
++        if form.is_valid():
++            form.save()
++            messages.success(request, 'Matrícula criada com sucesso!')
++            return redirect('matriculas:listar_matriculas')
++        else:
++            messages.error(request, 'Erro ao criar matrícula. Verifique os dados.')
++    else:
++        form = MatriculaForm()
++
++    context = {
++        'form': form,
++        'alunos': alunos,
++    }
++    return render(request, 'matriculas/realizar_matricula.html', context)

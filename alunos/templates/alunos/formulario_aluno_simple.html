@@ -113,16 +113,14 @@
                             {% endif %}
                         </div>
                         
-                        <div class="col-md-6">
-                            <label class="form-label">Data de Iniciação</label>
-                            {{ form.data_iniciacao }}
-                            {% if form.data_iniciacao.errors %}
-                                <div class="text-danger">{{ form.data_iniciacao.errors }}</div>
-                            {% endif %}
-                        </div>
+
                         
                         <div class="col-md-6">
-                            <label class="form-label">Grau Atual</label>
+                            <label class="form-label">Grau Atual (automático)</label>
+                            {{ form.grau_atual_automatico }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Grau Atual (manual)</label>
                             {{ form.grau_atual }}
                             {% if form.grau_atual.errors %}
                                 <div class="text-danger">{{ form.grau_atual.errors }}</div>

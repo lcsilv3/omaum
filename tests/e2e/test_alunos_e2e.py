@@ -70,4 +70,18 @@ class TestAlunosE2E:
         
         # Verificar se o aluno aparece na listagem
         browser.get(f"{live_server_with_data.url}{reverse('alunos:listar_alunos')}")
+        
+        # Verificar se a página carregou corretamente (header robusto)
+        header = None
+        try:
+            header = browser.find_element(By.XPATH, "//h1[contains(text(), 'Aluno')]")
+        except Exception:
+            try:
+                header = browser.find_element(By.XPATH, "//*[self::h2 or self::h3][contains(text(), 'Aluno')]")
+            except Exception:
+                body = browser.find_element(By.TAG_NAME, "body").text
+                assert 'Aluno' in body
+        if header:
+            assert 'Aluno' in header.text
+        
         assert "Carlos Pereira" in browser.page_source

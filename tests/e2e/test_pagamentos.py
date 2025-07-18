@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from alunos.models import Aluno
 from turmas.models import Turma
-from pagamentos.models import Pagamento, TipoPagamento
+from pagamentos.models import Pagamento
 import datetime
 
 
@@ -53,12 +53,7 @@ class PagamentosE2ETestCase(StaticLiveServerTestCase):
             status="A",
         )
 
-        # Criar tipo de pagamento para os testes
-        self.tipo_pagamento = TipoPagamento.objects.create(
-            nome="Mensalidade",
-            descricao="Pagamento mensal do curso",
-            valor_padrao=500.00,
-        )
+        # Não existe modelo TipoPagamento, ajuste o fluxo conforme necessário
 
     def test_fluxo_pagamento_completo(self):
         """Testa o fluxo completo de criação e registro de pagamento."""
@@ -110,6 +105,18 @@ class PagamentosE2ETestCase(StaticLiveServerTestCase):
 
         # Acessar a página de listagem de pagamentos
         self.selenium.get(f"{self.live_server_url}/pagamentos/")
+        # Verificação robusta de header
+        header = None
+        try:
+            header = self.selenium.find_element(By.XPATH, "//h1[contains(text(), 'Pagamento')]")
+        except Exception:
+            try:
+                header = self.selenium.find_element(By.XPATH, "//*[self::h2 or self::h3][contains(text(), 'Pagamento')]")
+            except Exception:
+                body = self.selenium.find_element(By.TAG_NAME, "body").text
+                assert 'Pagamento' in body
+        if header:
+            assert 'Pagamento' in header.text
 
         # Verificar se o pagamento está na lista
         self.assertIn("Mensalidade de junho", self.selenium.page_source)

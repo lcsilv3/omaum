@@ -330,13 +330,8 @@ class Aluno(models.Model):
     )
     situacao_iniciatica = models.CharField(
         max_length=20,
-        default="CANDIDATO",
-        choices=[
-            ("CANDIDATO", "Candidato"),
-            ("INICIADO", "Iniciado"),
-            ("SUSPENSO", "Suspenso"),
-            ("INATIVO", "Inativo"),
-        ],
+        default="ATIVO",
+        choices=SITUACAO_CHOICES,
         verbose_name=_("Situação Iniciática"),
     )
     

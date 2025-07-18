@@ -6,13 +6,13 @@ This module contains the admin interface customizations for the Alunos app.
 
 from django.contrib import admin
 from django.utils.safestring import mark_safe
-from .models import (
+from alunos.models import (
     Aluno,
     TipoCodigo,
     Codigo,
     RegistroHistorico,
 )
-from .forms import AlunoForm
+from alunos.forms import AlunoForm
 
 
 class RegistroHistoricoInline(admin.TabularInline):
@@ -42,7 +42,11 @@ class AlunoAdmin(admin.ModelAdmin):
     """
 
     form = AlunoForm
-    list_display = ["nome", "email", "cpf", "grau_atual", "situacao_iniciatica", "situacao", "ativo"]
+    list_display = ["nome", "email", "cpf", "grau_atual_automatico_display", "grau_atual", "situacao_iniciatica", "situacao", "ativo"]
+
+    def grau_atual_automatico_display(self, obj):
+        return obj.grau_atual_automatico
+    grau_atual_automatico_display.short_description = "Grau Atual (automático)"
     list_filter = ["ativo", "situacao", "grau_atual", "situacao_iniciatica", "sexo", "cidade", "estado"]
     search_fields = ["nome", "email", "cpf", "numero_iniciatico", "nome_iniciatico"]
     readonly_fields = ["created_at", "updated_at", "historico_display"]
@@ -55,7 +59,7 @@ class AlunoAdmin(admin.ModelAdmin):
         }),
         ("Dados Iniciáticos", {
             "fields": (
-                "numero_iniciatico", "nome_iniciatico", "data_iniciacao",
+                "numero_iniciatico", "nome_iniciatico",
                 "grau_atual", "situacao_iniciatica"
             )
         }),
