@@ -64,31 +64,57 @@ def registrar_presenca_totais_atividades(request):
     turma = Turma.objects.get(id=turma_id) if turma_id else None
     curso = turma.curso if turma else None
     atividades = []
+    
     if turma and curso and ano and mes:
-        totais_atividades = request.session.get('presenca_totais_atividades', {})
-        if totais_atividades:
-            atividades_ids = [int(key.replace('qtd_ativ_', '')) for key in totais_atividades.keys() if int(totais_atividades[key]) > 0]
-            Atividade = get_model_class("Atividade")
-            atividades = Atividade.objects.filter(
-                id__in=atividades_ids,
-                turmas__id=turma.id,
-            )
-        else:
+        # CORREÇÃO: Sempre recalcular atividades na primeira chamada (GET)
+        # para evitar inconsistências na sessão
+        if request.method == 'GET':
+            # Forçar recalculo na primeira chamada
             primeiro_dia = date(int(ano), int(mes), 1)
             ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
             Atividade = get_model_class("Atividade")
             atividades = Atividade.objects.filter(
                 turmas__id=turma.id,
+                ativo=True,  # Adicionar filtro por ativo
                 curso=curso
             ).filter(
                 Q(data_inicio__lte=ultimo_dia) &
                 (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
             ).distinct()
+            
+            # Limpar possíveis dados antigos da sessão
+            if 'presenca_totais_atividades' in request.session:
+                del request.session['presenca_totais_atividades']
+                
+        else:
+            # POST: usar lógica existente
+            totais_atividades = request.session.get('presenca_totais_atividades', {})
+            if totais_atividades:
+                atividades_ids = [int(key.replace('qtd_ativ_', '')) for key in totais_atividades.keys() if int(totais_atividades[key]) > 0]
+                Atividade = get_model_class("Atividade")
+                atividades = Atividade.objects.filter(
+                    id__in=atividades_ids,
+                    turmas__id=turma.id,
+                )
+            else:
+                primeiro_dia = date(int(ano), int(mes), 1)
+                ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
+                Atividade = get_model_class("Atividade")
+                atividades = Atividade.objects.filter(
+                    turmas__id=turma.id,
+                    ativo=True,  # Adicionar filtro por ativo
+                    curso=curso
+                ).filter(
+                    Q(data_inicio__lte=ultimo_dia) &
+                    (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
+                ).distinct()
+                
     totais_registrados = []
     if turma and ano and mes:
         totais_registrados = TotalAtividadeMes.objects.filter(
             turma=turma, ano=ano, mes=mes
         ).select_related('atividade')
+        
     logger.debug("IDs das atividades passadas para o formulário: %s", [a.id for a in atividades])
     request.session['presenca_atividades_ids'] = [a.id for a in atividades]
     if request.method == 'POST':
@@ -126,7 +152,8 @@ def registrar_presenca_totais_atividades_ajax(request):
             Atividade = get_model_class("Atividade")
             atividades = Atividade.objects.filter(
                 id__in=atividades_ids,
-                turmas__id=turma.id
+                turmas__id=turma.id,
+                ativo=True  # Adicionar filtro por ativo para consistência
             )
         else:
             # Fallback para o filtro padrão
@@ -134,7 +161,8 @@ def registrar_presenca_totais_atividades_ajax(request):
             ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
             Atividade = get_model_class("Atividade")
             atividades = Atividade.objects.filter(
-                turmas__id=turma.id
+                turmas__id=turma.id,
+                ativo=True  # Adicionar filtro por ativo
             ).filter(
                 Q(data_inicio__lte=ultimo_dia) &
                 (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))

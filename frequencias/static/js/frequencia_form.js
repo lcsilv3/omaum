@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
             justificativaField.style.display = 'none';
         } else {
             justificativaField.style.display = 'block';
+            // Justificativa é opcional - não forçar obrigatoriedade
         }
     }
     

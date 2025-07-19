@@ -420,18 +420,17 @@ class RegistroRapidoFormTest(TestCase):
         self.assertIn('data', form.errors)
     
     def test_form_clean_ausencia_sem_justificativa(self):
-        """Testa validação: ausência requer justificativa."""
+        """Testa validação: ausência com justificativa opcional."""
         data = {
             'aluno': self.aluno.id,
             'turma': self.turma.id,
             'data': date.today(),
             'presente': False,
-            'justificativa': ''  # Vazio
+            'justificativa': ''  # Vazio - agora é opcional
         }
         
         form = RegistroRapidoForm(data=data)
-        self.assertFalse(form.is_valid())
-        self.assertIn('justificativa', form.errors)
+        self.assertTrue(form.is_valid())  # Deve ser válido agora
     
     def test_form_justificativa_opcional_presenca(self):
         """Testa que justificativa é opcional para presença."""

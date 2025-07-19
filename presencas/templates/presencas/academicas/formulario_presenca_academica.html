@@ -129,7 +129,8 @@
         function toggleJustificativa() {
             if (situacaoSelect.value === 'JUSTIFICADO') {
                 justificativaContainer.style.display = 'block';
-                document.getElementById('id_justificativa').setAttribute('required', 'required');
+                // Justificativa é opcional - não forçar obrigatoriedade
+                document.getElementById('id_justificativa').removeAttribute('required');
             } else {
                 justificativaContainer.style.display = 'none';
                 document.getElementById('id_justificativa').removeAttribute('required');

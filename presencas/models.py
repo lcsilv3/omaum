@@ -66,14 +66,12 @@ class Presenca(models.Model):
         """
         Valida os dados do modelo antes de salvar.
         - Data não pode ser futura.
-        - Justificativa obrigatória se ausente.
+        - Justificativa é opcional para ausências.
         """
         super().clean()
         if self.data and self.data > timezone.now().date():
             logger.warning(f"Data futura informada para presença: {self.data}")
             raise ValidationError({"data": "A data não pode ser futura."})
-        if not self.presente and not self.justificativa:
-            raise ValidationError({"justificativa": "É necessário fornecer uma justificativa para a ausência."})
 
 class TotalAtividadeMes(models.Model):
     """

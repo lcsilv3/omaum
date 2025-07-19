@@ -449,12 +449,12 @@ class RegrasNegocioUserStoryTest(UserStoryTestCase):
         self.assertEqual(response.status_code, 200)  # Volta ao form com erro
         self.assertContains(response, 'data não pode ser futura')
     
-    def test_regra_ausencia_sem_justificativa_bloqueada(self):
+    def test_regra_ausencia_sem_justificativa_opcional(self):
         """
-        REGRA: Ausência deve ter justificativa obrigatória
+        REGRA: Ausência com justificativa opcional
         DADO que aluno está marcado como ausente
         QUANDO não há justificativa
-        ENTÃO deve exigir justificativa antes de salvar
+        ENTÃO deve permitir salvar sem justificativa
         """
         self.client.login(username='prof_maria', password='senha123')
         
@@ -464,15 +464,15 @@ class RegrasNegocioUserStoryTest(UserStoryTestCase):
             'data': date.today().strftime('%Y-%m-%d'),
             # Marcar como ausente SEM justificativa
             f'aluno_{self.alunos_iniciacao[0].id}_presente': '',  # Ausente
-            f'aluno_{self.alunos_iniciacao[0].id}_justificativa': ''  # Sem justificativa
+            f'aluno_{self.alunos_iniciacao[0].id}_justificativa': ''  # Sem justificativa - agora é opcional
         }
         
         url = reverse('presencas:registro_rapido')
         response = self.client.post(url, presenca_data)
         
-        # Deve exigir justificativa
+        # Deve permitir salvar sem justificativa
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'justificativa')
+        # Não deve exigir justificativa - ela é opcional agora
     
     def test_regra_duplicata_presenca_bloqueada(self):
         """

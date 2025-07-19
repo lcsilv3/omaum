@@ -90,12 +90,12 @@
             {% for atividade in atividades %}
             <div class="accordion-item mb-2">
                 <h2 class="accordion-header" id="heading-{{ atividade.id }}">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ atividade.id }}" aria-expanded="true" aria-controls="collapse-{{ atividade.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ atividade.id }}" aria-expanded="false" aria-controls="collapse-{{ atividade.id }}">
                             <i class="fas fa-calendar-day me-2"></i>
                             {{ atividade.nome }} <span class="ms-2 badge bg-secondary">{{ atividade.qtd_ativ_mes|default:'0' }} dias</span>
                         </button>
                 </h2>
-                <div id="collapse-{{ atividade.id }}" class="accordion-collapse collapse show" aria-labelledby="heading-{{ atividade.id }}" data-bs-parent="#accordionAtividades">
+                <div id="collapse-{{ atividade.id }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ atividade.id }}" data-bs-parent="#accordionAtividades">
                     <div class="accordion-body p-0">
                         <div class="atividade-bloco-table table-responsive p-3">
                             <table class="table table-bordered table-sm mb-0" style="background:#f8f9fa;">

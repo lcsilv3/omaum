@@ -86,8 +86,8 @@ class PresencaModelTest(TestCase):
         self.assertIn('data', context.exception.message_dict)
         self.assertIn('futura', context.exception.message_dict['data'][0])
     
-    def test_clean_justificativa_obrigatoria_ausencia(self):
-        """Testa validação de justificativa obrigatória para ausência."""
+    def test_clean_justificativa_opcional_ausencia(self):
+        """Testa que justificativa é opcional para ausência."""
         presenca = Presenca(
             aluno=self.aluno,
             turma=self.turma,
@@ -96,10 +96,11 @@ class PresencaModelTest(TestCase):
             justificativa=""
         )
         
-        with self.assertRaises(ValidationError) as context:
+        # Não deve gerar exceção - justificativa é opcional agora
+        try:
             presenca.clean()
-        
-        self.assertIn('justificativa', context.exception.message_dict)
+        except ValidationError:
+            self.fail("Justificativa deve ser opcional para ausência")
     
     def test_unique_together_constraint(self):
         """Testa constraint unique_together."""
