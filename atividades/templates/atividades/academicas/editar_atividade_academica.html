@@ -3,6 +3,26 @@
 {% block title %}Editar Atividade Acadêmica{% endblock %}
 
 {% block content %}
+<style>
+    .collapse-toggle {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .collapse-toggle:hover {
+        opacity: 0.8;
+    }
+    
+    .chevron {
+        display: inline-block;
+        transition: transform 0.3s ease;
+        margin-right: 10px;
+    }
+    
+    .collapsed .chevron {
+        transform: rotate(90deg);
+    }
+</style>
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Editar Atividade Acadêmica</h1>
@@ -16,15 +36,15 @@
                 {% csrf_token %}
                 <!-- Seção 1: Informações Básicas -->
                 <div class="card mb-4">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
-                         data-bs-toggle="collapse" data-bs-target="#secao-basica" style="cursor:pointer;">
-                        <h5 class="mb-0">Informações Básicas</h5>
-                        <span class="collapse-arrow">
-                            <i class="bi bi-chevron-down"></i>
-                        </span>
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#secao-basica" role="button" aria-expanded="true" aria-controls="secao-basica">
+                                <span class="chevron">&#9654;</span>
+                                Informações Básicas <small class="text-light">(clique para expandir/recolher)</small>
+                            </a>
+                        </h5>
                     </div>
-                    <div id="secao-basica" class="collapse show">
-                        <div class="card-body">
+                    <div id="secao-basica" class="collapse show card-body">
                             <div class="mb-3">
                                 <label for="id_nome" class="form-label">
                                     Nome da Atividade <span class="text-danger">*</span>
@@ -64,17 +84,18 @@
                         </div>
                     </div>
                 </div>
+                
                 <!-- Seção 2: Datas e Horários -->
                 <div class="card mb-4">
-                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center"
-                         data-bs-toggle="collapse" data-bs-target="#secao-datas" style="cursor:pointer;">
-                        <h5 class="mb-0">Datas e Horários</h5>
-                        <span class="collapse-arrow">
-                            <i class="bi bi-chevron-down"></i>
-                        </span>
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#secao-datas" role="button" aria-expanded="false" aria-controls="secao-datas">
+                                <span class="chevron">&#9654;</span>
+                                Datas e Horários <small class="text-muted">(clique para expandir)</small>
+                            </a>
+                        </h5>
                     </div>
-                    <div id="secao-datas" class="collapse">
-                        <div class="card-body">
+                    <div id="secao-datas" class="collapse card-body">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="id_data_inicio" class="form-label">
@@ -91,7 +112,7 @@
                                     {% for error in form.data_fim.errors %}
                                         <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
-                                    <small class="form-text text-muted">Opcional. Se não informada, será considerada a mesma data de início.</small>
+                                    <small class="form-text text-muted">Opcional. Deixe em branco se a atividade ocorre apenas em um dia.</small>
                                 </div>
                             </div>
                             <div class="row">
@@ -110,23 +131,24 @@
                                     {% for error in form.hora_fim.errors %}
                                         <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
-                                    <small class="form-text text-muted">Opcional. Se não informada, será considerada 1 hora após o início.</small>
+                                    <small class="form-text text-muted">Opcional. Deixe em branco se não há horário específico de término.</small>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                
                 <!-- Seção 3: Vínculos -->
                 <div class="card mb-4">
-                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center"
-                         data-bs-toggle="collapse" data-bs-target="#secao-vinculos" style="cursor:pointer;">
-                        <h5 class="mb-0">Vínculos</h5>
-                        <span class="collapse-arrow">
-                            <i class="bi bi-chevron-down"></i>
-                        </span>
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#secao-vinculos" role="button" aria-expanded="false" aria-controls="secao-vinculos">
+                                <span class="chevron">&#9654;</span>
+                                Vínculos <small class="text-light">(clique para expandir)</small>
+                            </a>
+                        </h5>
                     </div>
-                    <div id="secao-vinculos" class="collapse">
-                        <div class="card-body">
+                    <div id="secao-vinculos" class="collapse card-body">
                             <div class="mb-3">
                                 <label for="id_local" class="form-label">Local</label>
                                 {{ form.local }}
@@ -202,7 +224,139 @@
 {% block extra_js %}
 <script src="{% static 'js/atividades_ajax.js' %}"></script>
 <script>
-    window.initTurmasAjax();
+    // Script inline para garantir que as turmas sejam carregadas
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded - iniciando carregamento direto de turmas (EDITAR)');
+        
+        const turmasSelect = document.getElementById('id_turmas');
+        const cursoSelect = document.getElementById('id_curso');
+        const noTurmasMsg = document.getElementById('no-turmas-msg');
+        
+        if (!turmasSelect) {
+            console.error('Select de turmas não encontrado!');
+            return;
+        }
+        
+        // Capturar turmas já selecionadas do contexto Django
+        const turmasSelecionadas = {{ turmas_selecionadas|safe }};
+        const cursoSelecionado = {{ curso_selecionado|default:"null" }};
+        console.log('Turmas já selecionadas:', turmasSelecionadas);
+        console.log('Curso selecionado:', cursoSelecionado);
+        
+        // Definir o curso selecionado se houver
+        if (cursoSelecionado && cursoSelect) {
+            cursoSelect.value = cursoSelecionado;
+        }
+        
+        // Função para carregar todas as turmas
+        function carregarTurmasDirecto() {
+            console.log('Fazendo fetch direto para turmas...');
+            fetch('/atividades/ajax/turmas-por-curso/')
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Dados recebidos:', data);
+                    
+                    // Limpar select
+                    turmasSelect.innerHTML = '';
+                    
+                    if (data.turmas && data.turmas.length > 0) {
+                        data.turmas.forEach(function(turma) {
+                            const option = document.createElement('option');
+                            option.value = turma.id;
+                            option.textContent = turma.nome;
+                            
+                            // Manter seleções anteriores usando dados do Django
+                            if (turmasSelecionadas.includes(turma.id)) {
+                                option.selected = true;
+                                console.log('Turma selecionada:', turma.nome);
+                            }
+                            
+                            turmasSelect.appendChild(option);
+                            console.log('Turma adicionada:', turma.nome);
+                        });
+                        if (noTurmasMsg) noTurmasMsg.textContent = '';
+                    } else {
+                        if (noTurmasMsg) noTurmasMsg.textContent = 'Nenhuma turma encontrada.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar turmas:', error);
+                    if (noTurmasMsg) noTurmasMsg.textContent = 'Erro ao carregar turmas: ' + error.message;
+                });
+        }
+        
+        // Carregar turmas imediatamente
+        carregarTurmasDirecto();
+        
+        // Configurar filtro por curso
+        if (cursoSelect) {
+            cursoSelect.addEventListener('change', function() {
+                const cursoId = this.value;
+                console.log('Curso selecionado:', cursoId);
+                
+                if (cursoId) {
+                    // Carregar turmas filtradas por curso
+                    fetch('/atividades/ajax/turmas-por-curso/?curso=' + cursoId)
+                        .then(response => {
+                            console.log('Response status (filtro):', response.status);
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Turmas filtradas recebidas:', data);
+                            
+                            // Preservar seleções atuais antes de limpar
+                            const selecoesSalvas = Array.from(turmasSelect.selectedOptions).map(opt => opt.value);
+                            
+                            // Limpar select
+                            turmasSelect.innerHTML = '';
+                            
+                            if (data.turmas && data.turmas.length > 0) {
+                                data.turmas.forEach(function(turma) {
+                                    const option = document.createElement('option');
+                                    option.value = turma.id;
+                                    option.textContent = turma.nome;
+                                    
+                                    // Restaurar seleção se estava selecionada antes
+                                    if (selecoesSalvas.includes(turma.id.toString())) {
+                                        option.selected = true;
+                                    }
+                                    
+                                    turmasSelect.appendChild(option);
+                                    console.log('Turma filtrada adicionada:', turma.nome);
+                                });
+                                if (noTurmasMsg) noTurmasMsg.textContent = '';
+                            } else {
+                                if (noTurmasMsg) noTurmasMsg.textContent = 'Nenhuma turma encontrada para este curso.';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro ao filtrar turmas:', error);
+                            if (noTurmasMsg) noTurmasMsg.textContent = 'Erro ao filtrar turmas: ' + error.message;
+                        });
+                } else {
+                    // Recarregar todas as turmas quando não houver curso selecionado
+                    console.log('Recarregando todas as turmas...');
+                    carregarTurmasDirecto();
+                }
+            });
+        }
+    });
+
+    // Tentar também com a função original como fallback
+    try {
+        window.initTurmasAjax();
+    } catch (e) {
+        console.log('initTurmasAjax não funcionou:', e);
+    }
 
     // Collapse arrow toggle
     document.querySelectorAll('.card-header[data-bs-toggle="collapse"]').forEach(function(header) {

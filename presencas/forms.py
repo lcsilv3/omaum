@@ -1,5 +1,4 @@
 from django import forms
-from datetime import date
 import logging
 from cursos.models import Curso
 from turmas.models import Turma
@@ -29,7 +28,11 @@ class RegistrarPresencaForm(forms.Form):
     )
 
     ANO_CHOICES = [(ano, str(ano)) for ano in range(timezone.now().year, timezone.now().year - 5, -1)]
-    MES_CHOICES = [(i, date(2000, i, 1).strftime('%B').capitalize()) for i in range(1, 13)]
+    MES_CHOICES = [
+        (1, 'Janeiro'), (2, 'Fevereiro'), (3, 'Março'), (4, 'Abril'),
+        (5, 'Maio'), (6, 'Junho'), (7, 'Julho'), (8, 'Agosto'),
+        (9, 'Setembro'), (10, 'Outubro'), (11, 'Novembro'), (12, 'Dezembro')
+    ]
 
     ano = forms.ChoiceField(
         choices=ANO_CHOICES,
@@ -87,7 +90,19 @@ class TotaisAtividadesPresencaForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        # Adicione validações customizadas se necessário
+        curso = cleaned_data.get('curso')
+        turma = cleaned_data.get('turma')
+        
+        # Validação cruzada curso-turma
+        if curso and turma and turma.curso != curso:
+            raise forms.ValidationError(
+                'A turma selecionada não pertence ao curso escolhido.'
+            )
+        
+        # Auto-preenchimento: se não há curso mas há turma, usar curso da turma
+        if turma and not curso:
+            cleaned_data['curso'] = turma.curso
+        
         return cleaned_data
 
 class AlunosPresencaForm(forms.Form):
@@ -98,13 +113,13 @@ class AlunosPresencaForm(forms.Form):
         super().__init__(*args, **kwargs)
         if alunos:
             for aluno in alunos:
-                self.fields[f'aluno_{aluno.id}_status'] = forms.ChoiceField(
+                self.fields[f'aluno_{aluno.cpf}_status'] = forms.ChoiceField(
                     choices=[('presente', 'Presente'), ('ausente', 'Ausente')],
                     initial='presente',
                     label=aluno.nome,
                     widget=forms.RadioSelect(attrs={'class': 'form-check-input', 'aria-label': aluno.nome})
                 )
-                self.fields[f'aluno_{aluno.id}_justificativa'] = forms.CharField(
+                self.fields[f'aluno_{aluno.cpf}_justificativa'] = forms.CharField(
                     required=False,
                     label='Justificativa',
                     widget=forms.TextInput(attrs={'placeholder': 'Justificativa da falta', 'class': 'form-control', 'aria-label': f'Justificativa {aluno.nome}'})
@@ -150,19 +165,27 @@ class FiltroConsolidadoForm(forms.Form):
     
     periodo_inicio = forms.DateField(
         label="Período Início",
-        widget=forms.DateInput(attrs={
-            'type': 'date',
-            'class': 'form-control'
-        }),
+        widget=forms.DateInput(
+            attrs={
+                'type': 'date',
+                'class': 'form-control'
+            },
+            format='%Y-%m-%d'
+        ),
+        input_formats=['%Y-%m-%d', '%d/%m/%Y'],
         required=False
     )
     
     periodo_fim = forms.DateField(
         label="Período Fim",
-        widget=forms.DateInput(attrs={
-            'type': 'date',
-            'class': 'form-control'
-        }),
+        widget=forms.DateInput(
+            attrs={
+                'type': 'date',
+                'class': 'form-control'
+            },
+            format='%Y-%m-%d'
+        ),
+        input_formats=['%Y-%m-%d', '%d/%m/%Y'],
         required=False
     )
     

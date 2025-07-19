@@ -49,14 +49,14 @@ class AtividadeFiltroForm(forms.Form):
     curso = forms.ModelChoiceField(
         queryset=None,
         required=False,
-        empty_label="Todos os cursos",
+        empty_label="Selecione",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
     turma = forms.ModelChoiceField(
         queryset=None,
         required=False,
-        empty_label="Todas as turmas",
+        empty_label="Selecione",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
@@ -94,7 +94,8 @@ class AtividadeForm(forms.ModelForm):
     """Formulário para criação e edição de atividades."""
 
     class Meta:
-        model = get_atividade_model()
+        from atividades.models import Atividade
+        model = Atividade
         fields = [
             'nome', 'descricao', 'tipo_atividade', 'data_inicio', 'data_fim',
             'hora_inicio', 'hora_fim', 'local', 'responsavel', 'status',
@@ -144,10 +145,10 @@ class AtividadeForm(forms.ModelForm):
         }
         help_texts = {
             'data_fim': (
-                'Opcional. Se não informada, será considerada a mesma data de início.'
+                'Opcional. Deixe em branco se a atividade ocorre apenas em um dia.'
             ),
             'hora_fim': (
-                'Opcional. Se não informada, será considerada 1 hora após o início.'
+                'Opcional. Deixe em branco se não há horário específico de término.'
             ),
             'turmas': 'Selecione uma ou mais turmas para esta atividade.',
         }
@@ -159,14 +160,62 @@ class AtividadeForm(forms.ModelForm):
         self.fields['data_fim'].input_formats = ['%Y-%m-%d', '%d/%m/%Y']
         models = get_models()
         Turma = models['Turma']
-        curso_id = self.initial.get('curso') or self.data.get('curso')
+        
+        # Para edição, usar o curso da instância, senão usar os dados do formulário
+        if self.instance and self.instance.pk:
+            curso_id = self.instance.curso_id if self.instance.curso else None
+        else:
+            curso_id = self.initial.get('curso') or self.data.get('curso')
+            
         if curso_id:
             self.fields['turmas'].queryset = Turma.objects.filter(
                 curso_id=curso_id
             )
         else:
-            self.fields['turmas'].queryset = Turma.objects.none()
-        self.fields['curso'].empty_label = "Selecione um curso"
+            # Para criação inicial, mostra todas as turmas disponíveis
+            self.fields['turmas'].queryset = Turma.objects.all()
+        self.fields['curso'].empty_label = "Selecione"
+
+    def clean(self):
+        """Validação customizada do formulário."""
+        cleaned_data = super().clean()
+        curso = cleaned_data.get('curso')
+        turmas = cleaned_data.get('turmas')
+        
+        if turmas:
+            # Se não foi selecionado um curso, mas há turmas, usar o curso da primeira turma
+            if not curso:
+                primeira_turma = turmas.first()
+                if primeira_turma and primeira_turma.curso:
+                    cleaned_data['curso'] = primeira_turma.curso
+                    
+            # Validar se todas as turmas pertencem ao mesmo curso
+            cursos_das_turmas = set(turma.curso_id for turma in turmas if turma.curso)
+            if len(cursos_das_turmas) > 1:
+                self.add_error('turmas', 'Todas as turmas devem pertencer ao mesmo curso.')
+            elif len(cursos_das_turmas) == 1 and curso:
+                curso_das_turmas = list(cursos_das_turmas)[0]
+                if curso.id != curso_das_turmas:
+                    self.add_error('curso', 'O curso selecionado deve ser o mesmo das turmas escolhidas.')
+        
+        return cleaned_data
+
+    def save(self, commit=True):
+        """Salva a instância garantindo consistência entre curso e turmas."""
+        instance = super().save(commit=False)
+        
+        # Se não há curso definido mas há turmas, definir o curso baseado nas turmas
+        turmas = self.cleaned_data.get('turmas')
+        if turmas and not instance.curso:
+            primeira_turma = turmas.first()
+            if primeira_turma and primeira_turma.curso:
+                instance.curso = primeira_turma.curso
+        
+        if commit:
+            instance.save()
+            self.save_m2m()
+        
+        return instance
 
 
 def get_curso_queryset():
@@ -187,12 +236,14 @@ class FiltroAtividadesForm(forms.Form):
         queryset=get_curso_queryset(),
         required=False,
         label="Curso",
+        empty_label="Selecione",
         widget=forms.Select(attrs={"class": "form-select", "id": "filtro-curso"})
     )
     turma = forms.ModelChoiceField(
         queryset=get_turma_queryset(),
         required=False,
         label="Turma",
+        empty_label="Selecione",
         widget=forms.Select(attrs={"class": "form-select", "id": "filtro-turma"})
     )
     q = forms.CharField(
@@ -210,12 +261,101 @@ class AtividadeAcademicaForm(forms.ModelForm):
     class Meta:
         from atividades.models import Atividade
         model = Atividade
-        fields = ['nome', 'descricao', 'tipo_atividade', 'data_inicio', 'hora_inicio', 'local']
+        fields = [
+            'nome', 'descricao', 'tipo_atividade', 'data_inicio', 'data_fim',
+            'hora_inicio', 'hora_fim', 'local', 'responsavel', 'status',
+            'curso', 'turmas', 'convocacao'
+        ]
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
             'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'tipo_atividade': forms.Select(attrs={'class': 'form-select'}),
-            'data_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'data_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}, format='%Y-%m-%d'),
+            'data_fim': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}, format='%Y-%m-%d'),
             'hora_inicio': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'hora_fim': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'local': forms.TextInput(attrs={'class': 'form-control'}),
+            'responsavel': forms.TextInput(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'curso': forms.Select(attrs={'class': 'form-select'}),
+            'turmas': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'convocacao': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+        labels = {
+            'nome': 'Nome da Atividade',
+            'descricao': 'Descrição',
+            'tipo_atividade': 'Tipo de Atividade',
+            'data_inicio': 'Data de Início',
+            'data_fim': 'Data de Término',
+            'hora_inicio': 'Hora de Início',
+            'hora_fim': 'Hora de Término',
+            'local': 'Local',
+            'responsavel': 'Responsável',
+            'status': 'Status',
+            'curso': 'Curso',
+            'turmas': 'Turmas',
+            'convocacao': 'Convocação',
+        }
+    def __init__(self, *args, **kwargs):
+        """Inicializa o formulário filtrando as turmas pelo curso."""
+        super().__init__(*args, **kwargs)
+        self.fields['data_inicio'].input_formats = ['%Y-%m-%d', '%d/%m/%Y']
+        self.fields['data_fim'].input_formats = ['%Y-%m-%d', '%d/%m/%Y']
+        models = get_models()
+        Turma = models['Turma']
+        
+        # Para edição, usar o curso da instância, senão usar os dados do formulário
+        if self.instance and self.instance.pk:
+            curso_id = self.instance.curso_id if self.instance.curso else None
+        else:
+            curso_id = self.initial.get('curso') or self.data.get('curso')
+            
+        if curso_id:
+            self.fields['turmas'].queryset = Turma.objects.filter(
+                curso_id=curso_id
+            )
+        else:
+            # Para criação inicial, mostra todas as turmas disponíveis
+            self.fields['turmas'].queryset = Turma.objects.all()
+        self.fields['curso'].empty_label = "Selecione"
+
+    def clean(self):
+        """Validação customizada do formulário."""
+        cleaned_data = super().clean()
+        curso = cleaned_data.get('curso')
+        turmas = cleaned_data.get('turmas')
+        
+        if turmas:
+            # Se não foi selecionado um curso, mas há turmas, usar o curso da primeira turma
+            if not curso:
+                primeira_turma = turmas.first()
+                if primeira_turma and primeira_turma.curso:
+                    cleaned_data['curso'] = primeira_turma.curso
+                    
+            # Validar se todas as turmas pertencem ao mesmo curso
+            cursos_das_turmas = set(turma.curso_id for turma in turmas if turma.curso)
+            if len(cursos_das_turmas) > 1:
+                self.add_error('turmas', 'Todas as turmas devem pertencer ao mesmo curso.')
+            elif len(cursos_das_turmas) == 1 and curso:
+                curso_das_turmas = list(cursos_das_turmas)[0]
+                if curso.id != curso_das_turmas:
+                    self.add_error('curso', 'O curso selecionado deve ser o mesmo das turmas escolhidas.')
+        
+        return cleaned_data
+
+    def save(self, commit=True):
+        """Salva a instância garantindo consistência entre curso e turmas."""
+        instance = super().save(commit=False)
+        
+        # Se não há curso definido mas há turmas, definir o curso baseado nas turmas
+        turmas = self.cleaned_data.get('turmas')
+        if turmas and not instance.curso:
+            primeira_turma = turmas.first()
+            if primeira_turma and primeira_turma.curso:
+                instance.curso = primeira_turma.curso
+        
+        if commit:
+            instance.save()
+            self.save_m2m()
+        
+        return instance

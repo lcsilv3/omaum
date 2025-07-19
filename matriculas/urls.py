@@ -23,10 +23,14 @@ urlpatterns = [
          name='excluir_matricula'),
     
     # Views AJAX
-    path('ajax/turmas-por-curso/', views_tradicionais.turmas_por_curso,
-         name='turmas_por_curso'),
-    path('ajax/alunos-disponiveis/', views_tradicionais.alunos_disponiveis,
-         name='alunos_disponiveis'),
+    path('ajax/buscar-turmas/', views_tradicionais.buscar_turmas,
+         name='buscar_turmas'),
+    path('ajax/buscar-alunos/', views_tradicionais.buscar_alunos,
+         name='buscar_alunos'),
+         
+    # Views de exportação/importação (placeholders)
+    path('exportar/', views_tradicionais.exportar_matriculas, name='exportar_matriculas'),
+    path('importar/', views_tradicionais.importar_matriculas, name='importar_matriculas'),
     
     # API REST
     path('api/', include(router.urls)),

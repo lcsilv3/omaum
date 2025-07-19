@@ -1,69 +1,199 @@
-<!-- filepath: presencas/templates/presencas/registrar_presenca_alunos.html -->
 {% extends 'base.html' %}
+{% load i18n %}
+
+{% block extra_css %}
+<style>
+    .collapse-toggle {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .collapse-toggle:hover {
+        opacity: 0.8;
+    }
+    
+    .chevron {
+        display: inline-block;
+        transition: transform 0.3s ease;
+        margin-right: 10px;
+    }
+    
+    .collapsed .chevron {
+        transform: rotate(90deg);
+    }
+    
+    .aluno-card {
+        transition: all 0.3s ease;
+        border: 2px solid #e0e0e0;
+    }
+    
+    .aluno-card.ausente {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+    }
+    
+    .aluno-card.presente {
+        border-color: #28a745;
+        background-color: #f8fff8;
+    }
+    
+    .form-switch .form-check-input {
+        width: 3em;
+        height: 1.5em;
+    }
+    
+    .resumo-item {
+        border-left: 4px solid #007bff;
+        padding-left: 15px;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <div class="accordion" id="accordionPresencaAlunos">
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="headingAlunosPresenca">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAlunosPresenca" aria-expanded="true" aria-controls="collapseAlunosPresenca">
-                    Marcação de Presença dos Alunos
-                </button>
-            </h2>
-            <div id="collapseAlunosPresenca" class="accordion-collapse collapse show" aria-labelledby="headingAlunosPresenca" data-bs-parent="#accordionPresencaAlunos">
-                <div class="accordion-body">
-                    <h2 id="titulo-pagina">Registrar Presença - Marque os Alunos Presentes/Ausentes</h2>
-                    <form id="form-alunos-presenca" method="post" autocomplete="off" aria-labelledby="titulo-pagina">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label">Alunos convocados para as atividades selecionadas:</label>
-                            {% if alunos %}
-                            <div class="row">
-                                {% for aluno in alunos %}
-                                <div class="col-md-6 col-lg-4 mb-3">
-                                    <div class="card p-2 h-100">
-                                        <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="fw-bold" id="aluno-label-{{ aluno.id }}">{{ aluno.nome }}</span>
-                                            <span class="badge bg-success" id="badge-presente-{{ aluno.id }}" aria-live="polite" style="font-size:1em;">Presente</span>
-                                            <span class="badge bg-danger d-none" id="badge-ausente-{{ aluno.id }}" aria-live="polite" style="font-size:1em;">Ausente</span>
-                                        </div>
-                                        <div class="mt-2">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input toggle-presenca" type="checkbox" id="toggle-{{ aluno.id }}" name="aluno_{{ aluno.id }}_status" value="ausente"
-                                                    role="switch" aria-checked="false" aria-labelledby="aluno-label-{{ aluno.id }} label-ausente-{{ aluno.id }}">
-                                                <label class="form-check-label" for="toggle-{{ aluno.id }}" id="label-ausente-{{ aluno.id }}">Marcar como Ausente</label>
-                                            </div>
-                                            <div class="mt-2 justificativa-group d-none" id="justificativa-group-{{ aluno.id }}">
-                                                <label for="justificativa-{{ aluno.id }}" class="form-label">Justificativa da falta <span class="text-danger">*</span></label>
-                                                <input type="text" class="form-control justificativa-input" name="aluno_{{ aluno.id }}_justificativa" id="justificativa-{{ aluno.id }}" placeholder="Informe o motivo da ausência" aria-required="true" maxlength="255">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <div class="alert alert-info mt-3" role="alert">
-                                Nenhum aluno disponível para marcação de presença nesta etapa.<br>
-                                Possíveis motivos:
-                                <ul>
-                                    <li>Não há alunos ativos na turma selecionada.</li>
-                                    <li>Nenhum aluno foi convocado nas etapas anteriores.</li>
-                                    <li>Houve um problema na seleção de turma ou atividades.</li>
-                                </ul>
-                                O que deseja fazer?
-                                <div class="mt-2">
-                                    <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-secondary">Voltar ao início</a>
-                                    <a href="javascript:history.back()" class="btn btn-outline-primary ms-2">Refazer escolhas</a>
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-                        <button type="submit" class="btn btn-primary" aria-label="Confirmar e avançar para confirmação de presença">Confirmar e Avançar</button>
-                    </form>
-                    <div id="form-errors" class="alert alert-danger mt-3 d-none" role="alert"></div>
-                    <div id="ajax-error" class="alert alert-danger mt-3 d-none" role="alert"></div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% trans "Registrar Presença" %}</h1>
+        <div class="btn-group" role="group">
+            <a href="{% url 'presencas:registrar_presenca_dias_atividades' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> {% trans "Etapa Anterior" %}
+            </a>
+            <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary">
+                <i class="fas fa-home"></i> {% trans "Voltar à Lista" %}
+            </a>
+        </div>
+    </div>
+    
+    <!-- Resumo das Etapas Anteriores -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#secao-resumo" role="button" aria-expanded="false" aria-controls="secao-resumo">
+                    <span class="chevron">&#9654;</span>
+                    {% trans "Resumo das Etapas Anteriores" %} <small class="text-light">(clique para expandir/recolher)</small>
+                </a>
+            </h5>
+        </div>
+        <div id="secao-resumo" class="collapse card-body">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="resumo-item">
+                        <h6><i class="fas fa-graduation-cap me-2"></i>{% trans "Dados Básicos" %}</h6>
+                        <p class="mb-1"><strong>{% trans "Curso:" %}</strong> {{ turma.curso.nome }}</p>
+                        <p class="mb-1"><strong>{% trans "Turma:" %}</strong> {{ turma.nome }}</p>
+                        <p class="mb-0"><strong>{% trans "Período:" %}</strong> {{ nome_mes }}/{{ ano }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="resumo-item">
+                        <h6><i class="fas fa-users me-2"></i>{% trans "Resumo de Alunos" %}</h6>
+                        <p class="mb-0"><strong>{% trans "Total de alunos convocados:" %}</strong> {{ total_alunos }}</p>
+                    </div>
                 </div>
             </div>
+            
+            {% if resumo_atividades %}
+            <div class="mt-3">
+                <h6><i class="fas fa-tasks me-2"></i>{% trans "Atividades Configuradas" %}</h6>
+                <div class="row">
+                    {% for atividade in resumo_atividades %}
+                    <div class="col-md-6 mb-2">
+                        <div class="card card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>{{ atividade.nome }}</strong>
+                                <span class="badge bg-primary">{{ atividade.total_dias }} {% trans "dias" %}</span>
+                            </div>
+                            {% if atividade.dias_selecionados %}
+                                <small class="text-muted">
+                                    {% trans "Dias:" %} 
+                                    {% for dia in atividade.dias_selecionados %}{{ dia }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Etapa 4: Marcação de Presença -->
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#secao-marcacao-presenca" role="button" aria-expanded="true" aria-controls="secao-marcacao-presenca">
+                    <span class="chevron">&#9660;</span>
+                    {% trans "Etapa 4 de 4 - Marcação de Presença dos Alunos" %} <small class="text-light">(clique para expandir/recolher)</small>
+                </a>
+            </h5>
+            <p class="mb-0 mt-2"><small>{% trans "Marque os alunos como presentes ou ausentes para as atividades configuradas." %}</small></p>
+        </div>
+        <div id="secao-marcacao-presenca" class="collapse show card-body">
+            <form id="form-alunos-presenca" method="post" autocomplete="off" aria-labelledby="titulo-pagina">
+                {% csrf_token %}
+                
+                {% if alunos %}
+                <div class="mb-3">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {% trans "Por padrão, todos os alunos estão marcados como" %} <strong>{% trans "PRESENTES" %}</strong>. 
+                        {% trans "Use os botões abaixo para marcar como ausente apenas aqueles que faltaram." %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    {% for aluno in alunos %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card aluno-card presente p-3 h-100" id="card-{{ aluno.cpf }}">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="fw-bold" id="aluno-label-{{ aluno.cpf }}">{{ aluno.nome }}</span>
+                                <span class="badge bg-success" id="badge-presente-{{ aluno.cpf }}" aria-live="polite" style="font-size:1em;">{% trans "Presente" %}</span>
+                                <span class="badge bg-danger d-none" id="badge-ausente-{{ aluno.cpf }}" aria-live="polite" style="font-size:1em;">{% trans "Ausente" %}</span>
+                            </div>
+                            <div class="mt-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input toggle-presenca" type="checkbox" id="toggle-{{ aluno.cpf }}" name="aluno_{{ aluno.cpf }}_status" value="ausente"
+                                        role="switch" aria-checked="false" aria-labelledby="aluno-label-{{ aluno.cpf }} label-ausente-{{ aluno.cpf }}">
+                                    <label class="form-check-label" for="toggle-{{ aluno.cpf }}" id="label-ausente-{{ aluno.cpf }}">{% trans "Marcar como Ausente" %}</label>
+                                </div>
+                                <div class="mt-2 justificativa-group d-none" id="justificativa-group-{{ aluno.cpf }}">
+                                    <label for="justificativa-{{ aluno.cpf }}" class="form-label">{% trans "Justificativa da falta" %} <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control justificativa-input" name="aluno_{{ aluno.cpf }}_justificativa" id="justificativa-{{ aluno.cpf }}" placeholder="{% trans 'Informe o motivo da ausência' %}" aria-required="true" maxlength="255">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-warning mt-3" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% trans "Nenhum aluno disponível para marcação de presença nesta etapa." %}<br>
+                    {% trans "Possíveis motivos:" %}
+                    <ul class="mt-2">
+                        <li>{% trans "Não há alunos ativos na turma selecionada." %}</li>
+                        <li>{% trans "Nenhum aluno foi convocado nas etapas anteriores." %}</li>
+                        <li>{% trans "Houve um problema na seleção de turma ou atividades." %}</li>
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success me-2" aria-label="{% trans 'Finalizar registro de presenças' %}">
+                        <i class="fas fa-check me-2"></i>{% trans "Finalizar Registro" %}
+                    </button>
+                    <a href="{% url 'presencas:registrar_presenca_dias_atividades' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i>{% trans "Etapa Anterior" %}
+                    </a>
+                    <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-info">
+                        <i class="fas fa-home me-2"></i>{% trans "Recomeçar" %}
+                    </a>
+                </div>
+            </form>
+            
+            <div id="form-errors" class="alert alert-danger mt-3 d-none" role="alert"></div>
+            <div id="ajax-error" class="alert alert-danger mt-3 d-none" role="alert"></div>
         </div>
     </div>
 </div>
@@ -74,35 +204,46 @@
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.toggle-presenca').forEach(function(toggle) {
         toggle.addEventListener('change', function() {
-            const alunoId = this.id.replace('toggle-', '');
-            const badgePresente = document.getElementById('badge-presente-' + alunoId);
-            const badgeAusente = document.getElementById('badge-ausente-' + alunoId);
-            const justificativaGroup = document.getElementById('justificativa-group-' + alunoId);
-            const justificativaInput = document.getElementById('justificativa-' + alunoId);
+            const alunoCpf = this.id.replace('toggle-', '');
+            const badgePresente = document.getElementById('badge-presente-' + alunoCpf);
+            const badgeAusente = document.getElementById('badge-ausente-' + alunoCpf);
+            const justificativaGroup = document.getElementById('justificativa-group-' + alunoCpf);
+            const justificativaInput = document.getElementById('justificativa-' + alunoCpf);
+            const card = document.getElementById('card-' + alunoCpf);
+            
             if (this.checked) {
+                // Marcar como ausente
                 badgePresente.classList.add('d-none');
                 badgeAusente.classList.remove('d-none');
                 justificativaGroup.classList.remove('d-none');
                 justificativaInput.required = true;
                 this.setAttribute('aria-checked', 'true');
+                card.classList.remove('presente');
+                card.classList.add('ausente');
             } else {
+                // Marcar como presente
                 badgePresente.classList.remove('d-none');
                 badgeAusente.classList.add('d-none');
                 justificativaGroup.classList.add('d-none');
                 justificativaInput.required = false;
                 justificativaInput.value = '';
                 this.setAttribute('aria-checked', 'false');
+                card.classList.remove('ausente');
+                card.classList.add('presente');
             }
         });
     });
+    
     const form = document.getElementById('form-alunos-presenca');
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         let valid = true;
         let firstInvalid = null;
+        
         document.querySelectorAll('.toggle-presenca').forEach(function(toggle) {
-            const alunoId = toggle.id.replace('toggle-', '');
-            const justificativaInput = document.getElementById('justificativa-' + alunoId);
+            const alunoCpf = toggle.id.replace('toggle-', '');
+            const justificativaInput = document.getElementById('justificativa-' + alunoCpf);
+            
             if (toggle.checked && justificativaInput.value.trim() === '') {
                 justificativaInput.classList.add('is-invalid');
                 valid = false;
@@ -111,15 +252,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 justificativaInput.classList.remove('is-invalid');
             }
         });
+        
         if (!valid) {
             let errorDiv = document.getElementById('form-errors');
-            errorDiv.innerHTML = 'Preencha a justificativa para todos os alunos marcados como ausentes.';
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>{% trans "Preencha a justificativa para todos os alunos marcados como ausentes." %}';
             errorDiv.classList.remove('d-none');
             if (firstInvalid) firstInvalid.focus();
             return;
         } else {
             document.getElementById('form-errors').classList.add('d-none');
         }
+        
         const formData = new FormData(form);
         // Marca todos os não checados como presente
         document.querySelectorAll('.toggle-presenca').forEach(function(toggle) {
@@ -127,6 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.set(toggle.name, 'presente');
             }
         });
+        
         fetch("{% url 'presencas:registrar_presenca_alunos_ajax' %}", {
             method: "POST",
             headers: {
@@ -140,16 +284,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = data.redirect_url;
             } else if (data.errors) {
                 let errorDiv = document.getElementById('form-errors');
-                errorDiv.innerHTML = '';
+                errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>';
                 for (const [field, errors] of Object.entries(data.errors)) {
                     errorDiv.innerHTML += `<strong>${field}:</strong> ${errors.join('<br>')}<br>`;
                 }
                 errorDiv.classList.remove('d-none');
             } else if (data.erro) {
                 let ajaxError = document.getElementById('ajax-error');
-                ajaxError.textContent = data.erro;
+                ajaxError.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>' + data.erro;
                 ajaxError.classList.remove('d-none');
             }
+        })
+        .catch(error => {
+            let ajaxError = document.getElementById('ajax-error');
+            ajaxError.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>{% trans "Erro de comunicação. Tente novamente." %}';
+            ajaxError.classList.remove('d-none');
         });
     });
 });

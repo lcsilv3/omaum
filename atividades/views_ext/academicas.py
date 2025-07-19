@@ -27,8 +27,28 @@ def listar_atividades_academicas(request):
     curso_id = request.GET.get("curso", "")
     turma_id = request.GET.get("turma", "")
 
+    # Auto-correção de atividades sem curso (executa uma vez por carregamento da página)
+    if not request.GET.get('corrected'):
+        try:
+            AtividadeAcademica = get_model_class("AtividadeAcademica")
+            atividades_sem_curso = AtividadeAcademica.objects.filter(curso__isnull=True).prefetch_related('turmas__curso')
+            corrigidas = 0
+            for atividade in atividades_sem_curso:
+                if atividade.turmas.exists():
+                    primeira_turma = atividade.turmas.first()
+                    if primeira_turma and primeira_turma.curso:
+                        atividade.curso = primeira_turma.curso
+                        atividade.save()
+                        corrigidas += 1
+            if corrigidas > 0:
+                logger.info(f"Auto-correção: {corrigidas} atividades receberam cursos automaticamente")
+        except Exception as e:
+            logger.error(f"Erro na auto-correção: {str(e)}")
+
     atividades = (
-        get_atividades_academicas().select_related("curso").prefetch_related("turmas")
+        get_atividades_academicas()
+        .select_related("curso")
+        .prefetch_related("turmas__curso")  # Incluir o curso das turmas
     )
     cursos = get_cursos()
     turmas = get_turmas()
@@ -80,7 +100,15 @@ def ajax_turmas_por_curso(request):
         turmas = Turma.objects.filter(curso_id=curso_id)
     else:
         turmas = Turma.objects.all()
-    data = [{"id": turma.id, "nome": turma.nome} for turma in turmas]
+    data = [
+        {
+            "id": turma.id,
+            "nome": f"{turma.curso.nome} - {turma.nome}" if hasattr(turma, 'curso') and turma.curso else turma.nome,
+            "codigo": turma.codigo if hasattr(turma, "codigo") else None,
+            "curso_id": turma.curso.id if hasattr(turma, 'curso') and turma.curso else None,
+        }
+        for turma in turmas
+    ]
     return JsonResponse({"turmas": data})
 
 
@@ -122,6 +150,15 @@ def editar_atividade_academica(request, id):
         AtividadeAcademica = models["AtividadeAcademica"]
         AtividadeAcademicaForm = get_form_class("AtividadeAcademicaForm")
         atividade = get_object_or_404(AtividadeAcademica, id=id)
+        
+        # Auto-correção: Se a atividade não tem curso mas tem turmas, corrigir
+        if not atividade.curso and atividade.turmas.exists():
+            primeira_turma = atividade.turmas.first()
+            if primeira_turma and primeira_turma.curso:
+                atividade.curso = primeira_turma.curso
+                atividade.save()
+                logger.info(f"Auto-correção aplicada: Atividade '{atividade.nome}' recebeu curso '{primeira_turma.curso.nome}'")
+        
         if request.method == "POST":
             form = AtividadeAcademicaForm(request.POST, instance=atividade)
             if form.is_valid():
@@ -135,7 +172,12 @@ def editar_atividade_academica(request, id):
         return render(
             request,
             "atividades/academicas/editar_atividade_academica.html",
-            {"form": form, "atividade": atividade},
+            {
+                "form": form,
+                "atividade": atividade,
+                "turmas_selecionadas": list(atividade.turmas.values_list('id', flat=True)),
+                "curso_selecionado": atividade.curso_id if atividade.curso else None,
+            },
         )
     except Exception as e:
         logger.error(
@@ -195,7 +237,9 @@ def excluir_atividade_academica(request, id):
             if any(len(lst) > 0 for lst in dependencias.values()):
                 messages.error(
                     request,
-                    "Não é possível excluir a atividade pois existem registros vinculados (presenças, observações, etc.). Remova as dependências antes de tentar novamente.",
+                    "Não é possível excluir a atividade pois existem registros "
+                    "vinculados (presenças, observações, etc.). Remova as "
+                    "dependências antes de tentar novamente.",
                     extra_tags="safe",
                 )
                 return redirect(
@@ -340,8 +384,9 @@ def api_get_turmas_por_curso(request):
         data = [
             {
                 "id": turma.id,
-                "nome": turma.nome,
+                "nome": f"{turma.curso.nome} - {turma.nome}" if hasattr(turma, 'curso') and turma.curso else turma.nome,
                 "codigo": turma.codigo if hasattr(turma, "codigo") else None,
+                "curso_id": turma.curso.id if hasattr(turma, 'curso') and turma.curso else None,
             }
             for turma in turmas
         ]

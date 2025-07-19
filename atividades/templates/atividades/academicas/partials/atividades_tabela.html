@@ -12,7 +12,9 @@
         <td>
             {% if atividade.turmas.exists %}
                 {% for turma in atividade.turmas.all %}
-                    <span class="badge bg-secondary">{{ turma.nome }}</span>
+                    <span class="badge bg-secondary">
+                        {{ turma.nome }}
+                    </span>
                 {% endfor %}
             {% else %}
                 <span class="text-muted">Nenhuma</span>

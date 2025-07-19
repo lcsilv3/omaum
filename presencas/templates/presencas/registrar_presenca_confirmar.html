@@ -16,7 +16,12 @@
                         <strong>Turma:</strong> {{ turma }}<br>
                         <strong>Ano:</strong> {{ ano }}<br>
                         <strong>Mês:</strong> {{ mes }}<br>
-                        <strong>Atividade:</strong> {{ atividade }}<br>
+                        <strong>Atividades:</strong> 
+                        {% for atividade_info in atividades_info %}
+                            {{ atividade_info }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                            Nenhuma atividade configurada
+                        {% endfor %}<br>
                         <strong>Alunos Presentes:</strong>
                         <ul>
                             {% for aluno in alunos_presentes %}

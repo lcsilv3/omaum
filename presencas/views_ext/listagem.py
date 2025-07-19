@@ -22,7 +22,10 @@ def listar_presencas(request):
     data_fim = request.GET.get('data_fim', '')
     presente = request.GET.get('presente', '')
     
-    presencas = Presenca.objects.all().select_related('aluno', 'atividade')
+    # Query otimizada com relacionamentos
+    presencas = Presenca.objects.select_related(
+        'aluno', 'atividade', 'turma__curso'
+    ).all()
     
     if query:
         presencas = presencas.filter(
@@ -45,7 +48,7 @@ def listar_presencas(request):
     if presente:
         presencas = presencas.filter(presente=(presente == 'true'))
     
-    # Ordenação
+    # Ordenação consistente
     presencas = presencas.order_by('-data', 'aluno__nome')
     
     # Paginação

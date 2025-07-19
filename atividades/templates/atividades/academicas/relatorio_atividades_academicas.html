@@ -10,7 +10,7 @@
     </div>
     <form method="get" class="mb-3">
         <select name="curso" class="form-select w-auto d-inline" onchange="this.form.submit()">
-            <option value="">Todos os cursos</option>
+            <option value="">Selecione</option>
             {% for curso in cursos %}
                 <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_id %}selected{% endif %}>{{ curso.nome }}</option>
             {% endfor %}

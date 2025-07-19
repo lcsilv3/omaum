@@ -12,17 +12,60 @@ Este arquivo contém as configurações principais do Django, incluindo:
 # Importações e configurações existentes
 import os
 from pathlib import Path
+import secrets
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-your-secret-key-here"
+# SECRET_KEY será definido na seção de segurança abaixo
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "testserver"]
+
+# ===== CONFIGURAÇÕES DE SEGURANÇA =====
+
+# Configurações de segurança para produção
+# Estas configurações devem ser ajustadas conforme o ambiente
+
+# HSTS (HTTP Strict Transport Security)
+# Define por quanto tempo o navegador deve lembrar que o site deve usar HTTPS
+SECURE_HSTS_SECONDS = 31536000  # 1 ano em segundos
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# SSL/HTTPS
+# Redireciona automaticamente HTTP para HTTPS
+SECURE_SSL_REDIRECT = not DEBUG  # Apenas em produção
+
+# Cookies seguros
+# Garante que os cookies só sejam enviados via HTTPS
+SESSION_COOKIE_SECURE = not DEBUG  # Apenas em produção
+CSRF_COOKIE_SECURE = not DEBUG     # Apenas em produção
+
+# Configurações adicionais de segurança
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Configuração da SECRET_KEY mais segura
+# IMPORTANTE: Em produção, use uma variável de ambiente
+if DEBUG:
+    # Para desenvolvimento, mantém uma chave consistente
+    SECRET_KEY = "django-insecure-dev-key-change-in-production-" + "x" * 20
+else:
+    # Para produção, use uma variável de ambiente
+    SECRET_KEY = os.environ.get('SECRET_KEY', secrets.token_urlsafe(50))
+
+# Configuração de hosts permitidos mais restritiva
+if not DEBUG:
+    ALLOWED_HOSTS = ['seu-dominio.com', 'www.seu-dominio.com']
+else:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "testserver"]
+
+# ===== FIM DAS CONFIGURAÇÕES DE SEGURANÇA =====
 
 # Application definition
 INSTALLED_APPS = [

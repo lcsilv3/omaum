@@ -3,29 +3,60 @@
 {% block title %}Presenças Acadêmicas{% endblock %}
 
 {% block content %}
+<style>
+    .collapse-toggle {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .collapse-toggle:hover {
+        opacity: 0.8;
+    }
+    
+    .chevron {
+        display: inline-block;
+        transition: transform 0.3s ease;
+        margin-right: 10px;
+    }
+    
+    .collapsed .chevron {
+        transform: rotate(90deg);
+    }
+</style>
 <div class="container-fluid mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 id="titulo-pagina">Presenças Acadêmicas</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2" aria-label="Voltar para página anterior">
+        <div class="d-flex gap-2">
+            <!-- 1. Voltar -->
+            <a href="javascript:history.back()" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Voltar para página anterior">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-success me-2" aria-label="Registrar nova presença (fluxo passo a passo)">
-                <i class="fas fa-plus"></i> Registrar Nova Presença (Fluxo Passo a Passo)
+            <!-- 2. Nova Presença -->
+            <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-success" data-bs-toggle="tooltip" title="Registrar nova presença">
+                <i class="fas fa-plus"></i> Nova Presença
             </a>
-            <a href="{% url 'presencas:exportar_presencas_academicas' %}" class="btn btn-success me-2" aria-label="Exportar presenças acadêmicas para CSV">
-                <i class="fas fa-file-export"></i> Exportar CSV
-            </a>
-            <a href="{% url 'presencas:importar_presencas_academicas' %}" class="btn btn-info" aria-label="Importar presenças acadêmicas de CSV">
-                <i class="fas fa-file-import"></i> Importar CSV
-            </a>
+            <!-- 3. Exportar -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-toggle="tooltip" title="Exportar presenças">
+                    <i class="fas fa-file-export"></i> Exportar
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'presencas:exportar_presencas_academicas' %}">Exportar CSV</a></li>
+                    <li><a class="dropdown-item" href="{% url 'presencas:importar_presencas_academicas' %}">Importar CSV</a></li>
+                </ul>
+            </div>
         </div>
     </div>
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Filtros</h5>
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#secao-filtros" role="button" aria-expanded="true" aria-controls="secao-filtros">
+                    <span class="chevron">&#9654;</span>
+                    Filtros <small class="text-light">(clique para expandir/recolher)</small>
+                </a>
+            </h5>
         </div>
-        <div class="card-body">
+        <div id="secao-filtros" class="collapse show card-body">
             <form id="filtro-presencas" method="get" class="row g-3 mb-4" aria-label="Filtro de presenças acadêmicas">
                 <div class="col-md-3">
                     <label for="id_curso" class="form-label">Curso</label>
@@ -113,7 +144,13 @@
                                 </div>
                             </td>
                             <td>{{ presenca.atividade.nome }}</td>
-                            <td>{{ presenca.atividade.turma.nome }}</td>
+                            <td>
+                                {% if presenca.turma %}
+                                    {% if presenca.turma.curso %}{{ presenca.turma.curso.nome }} - {% endif %}{{ presenca.turma.nome }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
                             <td>{{ presenca.data|date:"d/m/Y" }}</td>
                             <td>
                                 {% if presenca.presente %}

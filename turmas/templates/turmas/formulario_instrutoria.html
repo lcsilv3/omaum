@@ -34,7 +34,7 @@
                 </div>
                 <div class="alert alert-danger mt-2 d-none"></div>
                 <select name="instrutor" class="form-control d-none" id="id_instrutor">
-                    <option value="">---------</option>
+                    <option value="">Selecione</option>
                     {% if turma.instrutor %}
                         <option value="{{ turma.instrutor.cpf }}" selected>{{ turma.instrutor.nome }}</option>
                     {% endif %}
@@ -71,7 +71,7 @@
                 </div>
                 <div class="alert alert-danger mt-2 d-none"></div>
                 <select name="instrutor_auxiliar" class="form-control d-none" id="id_instrutor_auxiliar">
-                    <option value="">---------</option>
+                    <option value="">Selecione</option>
                     {% if turma.instrutor_auxiliar %}
                         <option value="{{ turma.instrutor_auxiliar.cpf }}" selected>{{ turma.instrutor_auxiliar.nome }}</option>
                     {% endif %}
@@ -108,7 +108,7 @@
                 </div>
                 <div class="alert alert-danger mt-2 d-none"></div>
                 <select name="auxiliar_instrucao" class="form-control d-none" id="id_auxiliar_instrucao">
-                    <option value="">---------</option>
+                    <option value="">Selecione</option>
                     {% if turma.auxiliar_instrucao %}
                         <option value="{{ turma.auxiliar_instrucao.cpf }}" selected>{{ turma.auxiliar_instrucao.nome }}</option>
                     {% endif %}

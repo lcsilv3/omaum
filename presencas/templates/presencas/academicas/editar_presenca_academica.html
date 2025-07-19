@@ -3,15 +3,53 @@
 {% block title %}Editar Presença Acadêmica{% endblock %}
 
 {% block content %}
+<style>
+    .collapse-toggle {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .collapse-toggle:hover {
+        opacity: 0.8;
+    }
+    
+    .chevron {
+        display: inline-block;
+        transition: transform 0.3s ease;
+        margin-right: 10px;
+    }
+    
+    .collapsed .chevron {
+        transform: rotate(90deg);
+    }
+</style>
 <div class="container mt-4">
-    <h1 id="titulo-pagina">Editar Presença Acadêmica</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Editar Presença Acadêmica</h1>
+        <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Lista
+        </a>
+    </div>
+    
+    <!-- Seção: Informações da Presença -->
     <div class="card mb-4">
-        <div class="card-body">
-            <form method="post" aria-labelledby="titulo-pagina">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#secao-presenca" role="button" aria-expanded="true" aria-controls="secao-presenca">
+                    <span class="chevron">&#9654;</span>
+                    Informações da Presença <small class="text-light">(clique para expandir/recolher)</small>
+                </a>
+            </h5>
+        </div>
+        <div id="secao-presenca" class="collapse show card-body">
+            <form method="post" novalidate>
                 {% csrf_token %}
                 {% for field in form %}
                 <div class="mb-3">
-                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                    <label for="{{ field.id_for_label }}" class="form-label">
+                        {{ field.label }}
+                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                    </label>
                     {{ field }}
                     {% if field.errors %}
                     <div class="text-danger" role="alert">
@@ -20,11 +58,19 @@
                         {% endfor %}
                     </div>
                     {% endif %}
+                    {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
                 </div>
                 {% endfor %}
+                
                 <div class="mt-4 d-flex justify-content-end gap-2">
-                    <button type="submit" class="btn btn-primary" aria-label="Salvar alterações">Salvar Alterações</button>
-                    <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary" aria-label="Cancelar e voltar para lista de presenças acadêmicas">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Alterações
+                    </button>
+                    <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
                 </div>
             </form>
         </div>

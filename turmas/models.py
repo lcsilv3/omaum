@@ -191,12 +191,3 @@ class Turma(models.Model):
             # return Turma.objects.get(nome=codigo_turma)
         except Turma.DoesNotExist:
             return None
-
-class TurmaForm(forms.ModelForm):
-    class Meta:
-        model = Turma
-        fields = '__all__'  # Ou especifique os campos desejados
-        widgets = {
-            'curso': forms.Select(attrs={'empty_label': 'Selecione'}),
-            # Repita para outros campos de select se necessário
-        }

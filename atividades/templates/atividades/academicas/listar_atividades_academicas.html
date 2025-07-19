@@ -47,7 +47,7 @@
         <div class="col-md-3">
             <label for="id_curso" class="form-label">Curso</label>
             <select name="curso" id="id_curso" class="form-select">
-                <option value="">Todos os cursos</option>
+                <option value="">Selecione</option>
                 {% for curso in cursos %}
                     <option value="{{ curso.id }}"
                         {% if curso.id|stringformat:"s" == curso_selecionado|stringformat:"s" %}selected{% endif %}>
@@ -59,7 +59,7 @@
         <div class="col-md-3">
             <label for="id_turma" class="form-label">Turma</label>
             <select name="turma" id="id_turma" class="form-select">
-                <option value="">Todas as turmas</option>
+                <option value="">Selecione</option>
                 {% for turma in turmas %}
                     <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == turma_selecionada|stringformat:"s" %}selected{% endif %}>
                         {{ turma.nome }}
@@ -97,7 +97,9 @@
                     <td>{{ atividade.curso }}</td>
                     <td>
                         {% for turma in atividade.turmas.all %}
-                            <span class="badge bg-info">{{ turma.nome }}</span>
+                            <span class="badge bg-info">
+                                {{ turma.nome }}
+                            </span>
                         {% empty %}
                             <span class="text-muted">-</span>
                         {% endfor %}

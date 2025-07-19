@@ -11,6 +11,7 @@ window.initTurmasAjax = function(options) {
     const selectAllTurmas = document.getElementById('select-all-turmas');
     let noTurmasMsg = document.getElementById('no-turmas-msg');
     const url = options && options.url ? options.url : '/atividades/ajax/turmas-por-curso/';
+    let todasTurmas = []; // Armazenar todas as turmas carregadas
 
     if (!cursoSelect || !turmasSelect) return;
 
@@ -21,44 +22,66 @@ window.initTurmasAjax = function(options) {
         turmasSelect.parentNode.appendChild(noTurmasMsg);
     }
 
-    function atualizarTurmas(cursoId, turmasSelecionadas=[]) {
-        if (!cursoId) {
-            turmasSelect.innerHTML = '';
-            noTurmasMsg.textContent = '';
-            return;
-        }
-        fetch(`${url}?curso=${cursoId}`)
+    function carregarTodasTurmas() {
+        fetch(`${url}`) // Sem parâmetro curso carrega todas
             .then(response => response.json())
             .then(data => {
-                turmasSelect.innerHTML = '';
-                if (data.turmas.length === 0) {
-                    noTurmasMsg.textContent = 'Não há turmas para este curso.';
-                } else {
-                    noTurmasMsg.textContent = '';
-                    data.turmas.forEach(function(turma) {
-                        const option = document.createElement('option');
-                        option.value = turma.id;
-                        option.textContent = turma.nome;
-                        if (turmasSelecionadas.includes(String(turma.id))) {
-                            option.selected = true;
-                        }
-                        turmasSelect.appendChild(option);
-                    });
-                }
+                todasTurmas = data.turmas || [];
+                atualizarTurmasDisplay();
+            })
+            .catch(error => {
+                console.error('Erro ao carregar turmas:', error);
+                noTurmasMsg.textContent = 'Erro ao carregar turmas.';
             });
+    }
+
+    function atualizarTurmasDisplay(cursoId = null, turmasSelecionadas = []) {
+        turmasSelect.innerHTML = '';
+        
+        let turmasFiltradas = todasTurmas;
+        if (cursoId) {
+            turmasFiltradas = todasTurmas.filter(turma => turma.curso_id == cursoId);
+        }
+
+        if (turmasFiltradas.length === 0) {
+            if (cursoId) {
+                noTurmasMsg.textContent = 'Não há turmas para este curso.';
+            } else {
+                noTurmasMsg.textContent = 'Nenhuma turma cadastrada.';
+            }
+        } else {
+            noTurmasMsg.textContent = '';
+            turmasFiltradas.forEach(function(turma) {
+                const option = document.createElement('option');
+                option.value = turma.id;
+                option.textContent = turma.nome;
+                if (turmasSelecionadas.includes(String(turma.id))) {
+                    option.selected = true;
+                }
+                turmasSelect.appendChild(option);
+            });
+        }
+    }
+
+    function atualizarTurmas(cursoId, turmasSelecionadas=[]) {
+        atualizarTurmasDisplay(cursoId, turmasSelecionadas);
     }
 
     cursoSelect.addEventListener('change', function() {
         atualizarTurmas(this.value);
     });
 
-    // Ao carregar a página, filtra as turmas se já houver curso selecionado
-    const turmasSelecionadas = Array.from(turmasSelect.selectedOptions).map(opt => opt.value);
+    // Carregar todas as turmas na inicialização - FORÇA O CARREGAMENTO IMEDIATO
+    setTimeout(function() {
+        carregarTodasTurmas();
+    }, 100);
+    
+    // Se há um curso pré-selecionado, aplicar o filtro após carregar as turmas
     if (cursoSelect.value) {
-        atualizarTurmas(cursoSelect.value, turmasSelecionadas);
-    } else {
-        turmasSelect.innerHTML = '';
-        noTurmasMsg.textContent = '';
+        const turmasSelecionadas = Array.from(turmasSelect.selectedOptions).map(opt => opt.value);
+        setTimeout(() => {
+            atualizarTurmas(cursoSelect.value, turmasSelecionadas);
+        }, 500);
     }
 
     // Selecionar todas as turmas (se existir o checkbox)

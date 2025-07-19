@@ -10,17 +10,49 @@
   .select2-container .select2-selection--single {
     height: calc(1.5em + .75rem + 2px);
   }
+  
+  .collapse-toggle {
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .collapse-toggle:hover {
+    opacity: 0.8;
+  }
+  
+  .chevron {
+    display: inline-block;
+    transition: transform 0.3s ease;
+    margin-right: 10px;
+  }
+  
+  .collapsed .chevron {
+    transform: rotate(90deg);
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% trans "Registrar Presença" %}</h1>
+        <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Lista
+        </a>
+    </div>
+    
+    <!-- Etapa 1: Dados Básicos -->
     <div class="card">
-        <div class="card-header">
-            <h4 class="card-title mb-0">{% trans "Registrar Presença - Etapa 1 de 4" %}</h4>
-            <p class="card-subtitle text-muted">{% trans "Selecione o curso, a turma e o período." %}</p>
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#secao-dados-basicos" role="button" aria-expanded="true" aria-controls="secao-dados-basicos">
+                    <span class="chevron">&#9654;</span>
+                    {% trans "Etapa 1 de 4 - Dados Básicos" %} <small class="text-light">(clique para expandir/recolher)</small>
+                </a>
+            </h5>
+            <p class="mb-0 mt-2"><small>{% trans "Selecione o curso, a turma e o período." %}</small></p>
         </div>
-        <div class="card-body">
+        <div id="secao-dados-basicos" class="collapse show card-body">
             <form id="form-dados-basicos" method="post" autocomplete="off" action="{% url 'presencas:registrar_presenca_dados_basicos_ajax' %}" novalidate>
                 {% csrf_token %}
                 <div class="row g-3">
@@ -105,7 +137,7 @@ $(function () {
         if (cursoId) {
             loadingSpan.removeClass('d-none');
             $.ajax({
-                url: '{% url "turmas:turmas_por_curso_json" %}',
+                url: '{% url "presencas:turmas_por_curso_ajax" %}',
                 data: { 'curso_id': cursoId },
                 success: function (data) {
                     turmaSelect.select2({

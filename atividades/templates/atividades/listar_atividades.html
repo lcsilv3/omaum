@@ -94,7 +94,7 @@
     </div>
     <div class="col-md-3">
         <select name="curso" id="id_curso" class="form-select" aria-label="Selecionar curso">
-            <option value="">Todos os cursos</option>
+            <option value="">Selecione</option>
             {% for curso in cursos %}
                 <option value="{{ curso.id }}" {% if codigo_curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>
                     {{ curso.nome }}
@@ -104,7 +104,7 @@
     </div>
     <div class="col-md-3">
         <select name="turma" id="id_turma" class="form-select" aria-label="Selecionar turma">
-            <option value="">Todas as turmas</option>
+            <option value="">Selecione</option>
             {% for turma in turmas %}
                 <option value="{{ turma.id }}" {% if turma_selecionada == turma.id|stringformat:"s" %}selected{% endif %}>
                     {{ turma.nome }}

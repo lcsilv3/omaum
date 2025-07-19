@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Turmas</title>
+</head>
+<body>
+    <h1>Teste de Carregamento de Turmas</h1>
+    
+    <select id="id_curso">
+        <option value="">Selecione</option>
+        <option value="10">Aprendiz</option>
+    </select>
+    
+    <select id="id_turmas" multiple></select>
+    <div id="no-turmas-msg"></div>
+    
+    <script>
+        console.log('Iniciando teste...');
+        
+        function carregarTurmas() {
+            console.log('Fazendo fetch para turmas...');
+            fetch('/atividades/ajax/turmas-por-curso/')
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Dados recebidos:', data);
+                    const select = document.getElementById('id_turmas');
+                    select.innerHTML = '';
+                    data.turmas.forEach(turma => {
+                        const option = document.createElement('option');
+                        option.value = turma.id;
+                        option.textContent = turma.nome;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                });
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, carregando turmas...');
+            carregarTurmas();
+        });
+    </script>
+</body>
+</html>

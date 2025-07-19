@@ -65,7 +65,7 @@ class RegistroRapidoView:
             alunos_data = []
             for aluno in alunos_queryset:
                 alunos_data.append({
-                    'id': aluno.id,
+                    'id': aluno.cpf,
                     'cpf': aluno.cpf,
                     'nome': aluno.nome,
                     'curso': aluno.curso.nome if aluno.curso else 'Sem curso',
@@ -115,7 +115,7 @@ class RegistroRapidoView:
                     break
                 
                 alunos_data.append({
-                    'id': aluno.id,
+                    'id': aluno.cpf,
                     'cpf': aluno.cpf,
                     'nome': aluno.nome,
                     'curso': aluno.curso.nome if aluno.curso else 'Sem curso',

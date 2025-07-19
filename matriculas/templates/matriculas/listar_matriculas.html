@@ -8,9 +8,17 @@
                 <div class="card-header">
                     <h3 class="card-title">Lista de Matrículas</h3>
                     <div class="card-tools">
-                        <a href="{% url 'matriculas:realizar_matricula' %}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Nova Matrícula
-                        </a>
+                        <div class="btn-group">
+                            <a href="{% url 'matriculas:exportar_matriculas' %}" class="btn btn-success">
+                                <i class="fas fa-download"></i> Exportar CSV
+                            </a>
+                            <a href="{% url 'matriculas:importar_matriculas' %}" class="btn btn-info">
+                                <i class="fas fa-upload"></i> Importar CSV
+                            </a>
+                            <a href="{% url 'matriculas:realizar_matricula' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nova Matrícula
+                            </a>
+                        </div>
                     </div>
                 </div>
                 

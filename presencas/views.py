@@ -24,7 +24,11 @@ def listar_presencas_academicas(request):
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
 
-    presencas = PresencaAcademica.objects.all().select_related('aluno', 'turma', 'atividade')
+    # Query otimizada com relacionamentos
+    presencas = PresencaAcademica.objects.select_related(
+        'aluno', 'turma__curso', 'atividade'
+    ).all()
+    
     if aluno_id:
         presencas = presencas.filter(aluno__cpf=aluno_id)
     if turma_id:
@@ -35,6 +39,9 @@ def listar_presencas_academicas(request):
         presencas = presencas.filter(data__gte=data_inicio)
     if data_fim:
         presencas = presencas.filter(data__lte=data_fim)
+
+    # Ordenação consistente
+    presencas = presencas.order_by('-data', 'aluno__nome')
 
     try:
         alunos_queryset = listar_alunos_service()

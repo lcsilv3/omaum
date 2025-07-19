@@ -8,10 +8,12 @@ from calendar import monthrange
 from types import SimpleNamespace
 
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -269,24 +271,99 @@ def registrar_presenca_alunos(request):
     if not turma_id:
         messages.error(request, 'Selecione a turma antes de marcar presença nos alunos.')
         return redirect('presencas:registrar_presenca_dados_basicos')
+    
+    # Busca informações da sessão para o resumo
+    ano = request.session.get('presenca_ano')
+    mes = request.session.get('presenca_mes')
+    totais_atividades = request.session.get('presenca_totais_atividades', {})
+    dias_atividades = request.session.get('presenca_dias_atividades', {})
+    
+    # Log de debug
+    logger.debug(f"Totais atividades da sessão: {totais_atividades}")
+    logger.debug(f"Dias atividades da sessão: {dias_atividades}")
+    
     turma = Turma.objects.get(id=turma_id)
     convocados_dict = request.session.get('presenca_convocados', {})
     alunos = Aluno.objects.filter(matricula__turma=turma, situacao='ATIVO').distinct()
+    
     # Se houver convocação, filtra apenas os convocados
     if convocados_dict:
         alunos_ids = set()
         for ids in convocados_dict.values():
             alunos_ids.update(ids)
-        alunos = alunos.filter(id__in=alunos_ids)
+        alunos = alunos.filter(cpf__in=alunos_ids)
+    
+    # Busca as atividades para o resumo
+    from atividades.models import AtividadeAcademica
+    
+    # Processa as chaves do totais_atividades para extrair IDs numéricos
+    atividades_ids = []
+    for key in totais_atividades.keys():
+        # Remove prefixo 'qtd_ativ_' se presente
+        if key.startswith('qtd_ativ_'):
+            atividade_id = key.replace('qtd_ativ_', '')
+        else:
+            atividade_id = key
+        
+        # Converte para inteiro se possível
+        try:
+            atividades_ids.append(int(atividade_id))
+        except (ValueError, TypeError):
+            logger.warning(f"Chave inválida em totais_atividades: {key}")
+            continue
+    
+    atividades = AtividadeAcademica.objects.filter(id__in=atividades_ids)
+    
+    # Prepara resumo das atividades
+    resumo_atividades = []
+    for atividade in atividades:
+        atividade_id_str = str(atividade.id)
+        
+        # Busca o total de dias considerando os diferentes formatos de chave
+        total_dias = 0
+        for key, value in totais_atividades.items():
+            if key.startswith('qtd_ativ_'):
+                key_id = key.replace('qtd_ativ_', '')
+            else:
+                key_id = key
+            
+            if key_id == atividade_id_str:
+                total_dias = value
+                break
+        
+        # Busca os dias selecionados
+        dias_selecionados = dias_atividades.get(atividade_id_str, [])
+        
+        resumo_atividades.append({
+            'nome': atividade.nome,
+            'total_dias': total_dias,
+            'dias_selecionados': sorted(dias_selecionados) if dias_selecionados else [],
+        })
+    
+    # Nome do mês
+    meses = {
+        1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+        5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+        9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+    }
+    nome_mes = meses.get(int(mes), 'Mês não definido') if mes else 'Mês não definido'
+    
     # Loga caso não haja alunos
     if not alunos.exists():
         logger.warning(f"Nenhum aluno encontrado para a turma {turma} (ID: {turma.id}) ou filtro de convocados. Usuário: {request.user}")
         messages.warning(request, "Nenhum aluno disponível para marcação de presença nesta etapa. Revise as etapas anteriores ou contate o suporte.")
+    
     form = AlunosPresencaForm(alunos=alunos)
+    
     return render(request, 'presencas/registrar_presenca_alunos.html', {
         'form': form,
         'alunos': alunos,
         'turma': turma,
+        'ano': ano,
+        'mes': mes,
+        'nome_mes': nome_mes,
+        'resumo_atividades': resumo_atividades,
+        'total_alunos': alunos.count(),
     })
 
 @login_required
@@ -295,22 +372,33 @@ def registrar_presenca_alunos(request):
 def registrar_presenca_alunos_ajax(request):
     turma_id = request.session.get('presenca_turma_id')
     turma = Turma.objects.get(id=turma_id) if turma_id else None
+    
+    # Log de debug
+    logger.debug(f"POST data recebido: {dict(request.POST)}")
+    
     # Recupera lista de alunos convocados da sessão (por atividade, se necessário)
     convocados_dict = request.session.get('presenca_convocados', {})
     alunos = Aluno.objects.filter(matricula__turma=turma, situacao='ATIVO').distinct() if turma else []
+    
     # Se houver convocação, filtra apenas os convocados
     if convocados_dict:
         alunos_ids = set()
         for ids in convocados_dict.values():
             alunos_ids.update(ids)
-        alunos = alunos.filter(id__in=alunos_ids)
+        alunos = alunos.filter(cpf__in=alunos_ids)
+    
     # Processa status de cada aluno
     resultado = {}
     for aluno in alunos:
-        status = request.POST.get(f'aluno_{aluno.id}_status', 'presente')
-        justificativa = request.POST.get(f'aluno_{aluno.id}_justificativa', '')
-        resultado[aluno.id] = {'status': status, 'justificativa': justificativa}
+        cpf_str = str(aluno.cpf)  # Garantir que sempre seja string
+        status = request.POST.get(f'aluno_{cpf_str}_status', 'presente')
+        justificativa = request.POST.get(f'aluno_{cpf_str}_justificativa', '')
+        resultado[cpf_str] = {'status': status, 'justificativa': justificativa}
+        logger.debug(f"Aluno {aluno.nome} (CPF: {cpf_str}) - Status: {status}, Justificativa: {justificativa}")
+    
     request.session['presenca_alunos_status'] = resultado
+    logger.debug(f"Dados salvos na sessão: {resultado}")
+    
     return JsonResponse({'success': True, 'redirect_url': '/presencas/registrar-presenca/confirmar/'})
 
 @login_required
@@ -331,22 +419,60 @@ def registrar_presenca_confirmar(request):
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
+    totais_atividades = request.session.get('presenca_totais_atividades', {})
+    
     turma = Turma.objects.get(id=turma_id) if turma_id else None
     alunos_status = request.session.get('presenca_alunos_status', {})
-    alunos = Aluno.objects.filter(id__in=alunos_status.keys()) if alunos_status else []
+    alunos = Aluno.objects.filter(cpf__in=alunos_status.keys()) if alunos_status else []
+    
+    # Buscar informações das atividades
+    from atividades.models import AtividadeAcademica
+    atividades_ids = []
+    for key in totais_atividades.keys():
+        if key.startswith('qtd_ativ_'):
+            atividade_id = key.replace('qtd_ativ_', '')
+            try:
+                atividades_ids.append(int(atividade_id))
+            except (ValueError, TypeError):
+                continue
+    
+    atividades = AtividadeAcademica.objects.filter(id__in=atividades_ids)
+    atividades_info = []
+    for atividade in atividades:
+        key = f'qtd_ativ_{atividade.id}'
+        total_dias = totais_atividades.get(key, 0)
+        atividades_info.append(f"{atividade.nome} ({total_dias} dias)")
+    
+    # Log de debug
+    logger.debug(f"Sessão presenca_alunos_status: {alunos_status}")
+    logger.debug(f"Alunos encontrados: {[aluno.nome for aluno in alunos]}")
+    logger.debug(f"Atividades encontradas: {atividades_info}")
+    
     alunos_info = []
     for aluno in alunos:
-        status = alunos_status.get(str(aluno.id)) or alunos_status.get(aluno.id) or {}
+        cpf_str = str(aluno.cpf)  # Garantir consistência
+        status = alunos_status.get(cpf_str, {})
         alunos_info.append({
             'aluno': aluno,
             'status': status.get('status', 'presente'),
             'justificativa': status.get('justificativa', ''),
         })
+        
+    # Preparar lista de alunos presentes para o template
+    alunos_presentes = []
+    for info in alunos_info:
+        if info['status'] == 'presente':
+            alunos_presentes.append(f"{info['aluno'].nome} - PRESENTE")
+        else:
+            alunos_presentes.append(f"{info['aluno'].nome} - AUSENTE ({info['justificativa']})")
+    
     return render(request, 'presencas/registrar_presenca_confirmar.html', {
         'turma': turma,
         'ano': ano,
         'mes': mes,
+        'atividades_info': atividades_info,
         'alunos_info': alunos_info,
+        'alunos_presentes': alunos_presentes,
     })
 
 @login_required
@@ -360,12 +486,12 @@ def registrar_presenca_confirmar_ajax(request):
     alunos_status = request.session.get('presenca_alunos_status', {})
     Atividade = get_model_class("Atividade")
     atividades = Atividade.objects.filter(turmas__id=turma.id) if turma else []
-    dias_atividades = request.session.get('presenca_totais_atividades', {})
+    totais_atividades = request.session.get('presenca_totais_atividades', {})
     for atividade in atividades:
         # Para cada atividade, obter dias e alunos convocados
         dias = []
         key = f'qtd_ativ_{atividade.id}'
-        qtd = int(dias_atividades.get(key, 0))
+        qtd = int(totais_atividades.get(key, 0))
         if qtd > 0:
             dias = range(1, qtd + 1)
         # Filtra alunos convocados se necessário
@@ -378,17 +504,25 @@ def registrar_presenca_confirmar_ajax(request):
             status_info = alunos_status.get(str(aluno_id)) or alunos_status.get(aluno_id) or {}
             presente = status_info.get('status', 'presente') == 'presente'
             justificativa = status_info.get('justificativa', '')
+            
+            # Busca o aluno pelo CPF
+            try:
+                aluno = Aluno.objects.get(cpf=aluno_id)
+            except Aluno.DoesNotExist:
+                logger.warning(f"Aluno com CPF {aluno_id} não encontrado")
+                continue
+            
             for dia in dias:
                 data = date(int(ano), int(mes), dia)
                 from presencas.models import Presenca
                 Presenca.objects.create(
-                    aluno_id=aluno_id,
+                    aluno=aluno,
                     turma=turma,
                     atividade=atividade,
                     data=data,
                     presente=presente,
                     registrado_por=request.user.username,
-                    data_registro=date.today(),
+                    data_registro=timezone.now(),
                     justificativa=justificativa if not presente else ''
                 )
     # Limpa sessão
@@ -513,9 +647,6 @@ def editar_presenca_dias_atividades(request, pk):
     else:
         form = TotaisAtividadesPresencaForm(instance=presenca)
     return render(request, 'presencas/academicas/editar_presenca_dias_atividades.html', {'form': form, 'presenca': presenca})
-
-
-from django.contrib import messages
 
 
 @login_required
