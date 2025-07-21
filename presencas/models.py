@@ -1,9 +1,48 @@
+
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 import logging
 from django.contrib.auth.models import User
+
+# NOVO MODELO: ConvocacaoPresenca
+class ConvocacaoPresenca(models.Model):
+    """
+    Representa a convocação individual de um aluno para uma atividade em um dia específico.
+    """
+    aluno = models.ForeignKey(
+        'alunos.Aluno',
+        on_delete=models.CASCADE,
+        related_name='convocacoes_presenca',
+        verbose_name='Aluno'
+    )
+    turma = models.ForeignKey(
+        'turmas.Turma',
+        on_delete=models.CASCADE,
+        related_name='convocacoes_presenca',
+        verbose_name='Turma'
+    )
+    atividade = models.ForeignKey(
+        'atividades.Atividade',
+        on_delete=models.CASCADE,
+        related_name='convocacoes_presenca',
+        verbose_name='Atividade'
+    )
+    data = models.DateField(verbose_name='Data da Atividade')
+    convocado = models.BooleanField(default=True, verbose_name='Convocado')
+    registrado_por = models.CharField(max_length=100, default='Sistema', verbose_name='Registrado por')
+    data_registro = models.DateTimeField(default=timezone.now, verbose_name='Data de registro')
+
+    class Meta:
+        verbose_name = 'Convocação de Presença'
+        verbose_name_plural = 'Convocações de Presença'
+        unique_together = ['aluno', 'turma', 'atividade', 'data']
+        ordering = ['-data', 'aluno__nome']
+
+    def __str__(self):
+        status = 'Convocado' if self.convocado else 'Não Convocado'
+        return f"{self.aluno} - {self.atividade} - {self.data} - {status}"
 
 logger = logging.getLogger(__name__)
 

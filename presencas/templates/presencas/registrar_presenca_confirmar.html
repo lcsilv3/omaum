@@ -1,51 +1,190 @@
 <!-- filepath: presencas/templates/presencas/registrar_presenca_confirmar.html -->
 {% extends 'base.html' %}
+{% load static %}
+{% block title %}Confirmação de Presença{% endblock %}
+
+{% block extra_css %}
+<style>
+    .atividade-card {
+        transition: all 0.3s ease;
+    }
+    .atividade-card:hover {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .aluno-checkbox {
+        transform: scale(1.2);
+        margin-right: 8px;
+    }
+    .aluno-row {
+        padding: 8px;
+        border-radius: 5px;
+        transition: background-color 0.2s ease;
+    }
+    .aluno-row:hover {
+        background-color: #f8f9fa;
+    }
+    .justificativa-field {
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <div class="accordion" id="accordionPresencaConfirmar">
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="headingConfirmarPresenca">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfirmarPresenca" aria-expanded="true" aria-controls="collapseConfirmarPresenca">
-                    Confirmação Final do Registro de Presença
-                </button>
-            </h2>
-            <div id="collapseConfirmarPresenca" class="accordion-collapse collapse show" aria-labelledby="headingConfirmarPresenca" data-bs-parent="#accordionPresencaConfirmar">
-                <div class="accordion-body">
-                    <h2 id="titulo-pagina">Confirmar Registro de Presença</h2>
-                    <div class="mb-3">
-                        <strong>Turma:</strong> {{ turma }}<br>
-                        <strong>Ano:</strong> {{ ano }}<br>
-                        <strong>Mês:</strong> {{ mes }}<br>
-                        <strong>Atividades:</strong> 
-                        {% for atividade_info in atividades_info %}
-                            {{ atividade_info }}{% if not forloop.last %}, {% endif %}
-                        {% empty %}
-                            Nenhuma atividade configurada
-                        {% endfor %}<br>
-                        <strong>Alunos Presentes:</strong>
-                        <ul>
-                            {% for aluno in alunos_presentes %}
-                                <li>{{ aluno }}</li>
-                            {% empty %}
-                                <li>Nenhum aluno selecionado para confirmação de presença.<br>
-                                    Possíveis motivos:
-                                    <ul>
-                                        <li>Não houve marcação de presença para nenhum aluno nas etapas anteriores.</li>
-                                        <li>Filtros aplicados resultaram em lista vazia.</li>
-                                    </ul>
-                                    O que deseja fazer?
-                                    <div class="mt-2">
-                                        <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-secondary btn-sm">Voltar ao início</a>
-                                        <a href="javascript:history.back()" class="btn btn-outline-primary btn-sm ms-2">Refazer escolhas</a>
-                                    </div>
-                                </li>
-                            {% endfor %}
-                        </ul>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Confirmação Final do Registro de Presença
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Informações Gerais -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary">
+                                        <i class="fas fa-info-circle me-2"></i>Informações Gerais
+                                    </h6>
+                                    <p class="mb-1"><strong>Turma:</strong> {{ turma }}</p>
+                                    <p class="mb-1"><strong>Ano:</strong> {{ ano }}</p>
+                                    <p class="mb-0"><strong>Mês:</strong> {{ mes }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-info">
+                                        <i class="fas fa-tasks me-2"></i>Atividades Configuradas
+                                    </h6>
+                                    {% for atividade_info in atividades_info %}
+                                        <span class="badge bg-info me-1 mb-1">{{ atividade_info }}</span>
+                                    {% empty %}
+                                        <span class="text-muted">Nenhuma atividade configurada</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <form id="form-confirmar-presenca" method="post" aria-labelledby="titulo-pagina">
+
+                    <!-- Formulário de Confirmação por Atividade -->
+                    <form id="form-confirmar-presenca" method="post">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-success" aria-label="Confirmar e salvar presença">Confirmar e Salvar</button>
+                        
+                        {% if alunos_info %}
+                            <div class="accordion" id="accordionAtividades">
+                                {% for atividade_info in atividades_info %}
+                                    {% with forloop.counter0 as atividade_index %}
+                                    <div class="atividade-card card mb-3">
+                                        <div class="card-header bg-primary text-white">
+                                            <h6 class="mb-0">
+                                                <button class="btn btn-link text-white text-decoration-none p-0 w-100 text-start" 
+                                                        type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#collapse-atividade-{{ atividade_index }}" 
+                                                        aria-expanded="true">
+                                                    <i class="fas fa-graduation-cap me-2"></i>
+                                                    {{ atividade_info }}
+                                                    <i class="fas fa-chevron-down float-end mt-1"></i>
+                                                </button>
+                                            </h6>
+                                        </div>
+                                        <div id="collapse-atividade-{{ atividade_index }}" 
+                                             class="collapse show" 
+                                             data-bs-parent="#accordionAtividades">
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                                            <h6 class="text-secondary mb-0">Marcar presença dos alunos:</h6>
+                                                            <div>
+                                                                <button type="button" class="btn btn-sm btn-outline-success me-1" 
+                                                                        onclick="marcarTodosPresentes({{ atividade_index }})">
+                                                                    <i class="fas fa-check"></i> Todos Presentes
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                                        onclick="marcarTodosAusentes({{ atividade_index }})">
+                                                                    <i class="fas fa-times"></i> Todos Ausentes
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {% for aluno_info in alunos_info %}
+                                                        <div class="aluno-row border-bottom pb-2 mb-2">
+                                                            <div class="d-flex align-items-center">
+                                                                <input type="checkbox" 
+                                                                       class="form-check-input aluno-checkbox" 
+                                                                       name="atividade_{{ atividade_index }}_aluno_{{ aluno_info.aluno.cpf }}"
+                                                                       id="ativ_{{ atividade_index }}_aluno_{{ aluno_info.aluno.cpf }}"
+                                                                       value="presente" 
+                                                                       {% if aluno_info.status == 'presente' %}checked{% endif %}
+                                                                       onchange="toggleJustificativa('{{ atividade_index }}', '{{ aluno_info.aluno.cpf }}', this)">
+                                                                <label class="form-check-label flex-grow-1" 
+                                                                       for="ativ_{{ atividade_index }}_aluno_{{ aluno_info.aluno.cpf }}">
+                                                                    <strong>{{ aluno_info.aluno.nome }}</strong>
+                                                                    <small class="text-muted d-block">CPF: {{ aluno_info.aluno.cpf }}</small>
+                                                                </label>
+                                                            </div>
+                                                            <div class="justificativa-container mt-2" 
+                                                                 id="justificativa_{{ atividade_index }}_{{ aluno_info.aluno.cpf }}" 
+                                                                 style="display: {% if aluno_info.status != 'presente' %}block{% else %}none{% endif %};">
+                                                                <input type="text" 
+                                                                       class="form-control form-control-sm justificativa-field" 
+                                                                       name="atividade_{{ atividade_index }}_justificativa_{{ aluno_info.aluno.cpf }}"
+                                                                       placeholder="Justificativa da ausência (opcional)"
+                                                                       value="{{ aluno_info.justificativa }}">
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endwith %}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Atenção!</strong> Nenhum aluno foi selecionado para confirmação de presença.
+                                <hr>
+                                <p class="mb-2"><strong>Possíveis motivos:</strong></p>
+                                <ul class="mb-3">
+                                    <li>Não houve marcação de presença para nenhum aluno nas etapas anteriores.</li>
+                                    <li>Filtros aplicados resultaram em lista vazia.</li>
+                                </ul>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" 
+                                       class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-home me-1"></i>Recomeçar
+                                    </a>
+                                    <button type="button" onclick="history.back()" 
+                                            class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-arrow-left me-1"></i>Voltar
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if alunos_info %}
+                        <div class="mt-4 pt-3 border-top">
+                            <div class="d-flex justify-content-between">
+                                <a href="javascript:history.back()" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                                </a>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-save me-2"></i>Confirmar e Salvar Presenças
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
                     </form>
+                    
                     <div id="form-errors" class="alert alert-danger mt-3 d-none" role="alert"></div>
                 </div>
             </div>
@@ -58,27 +197,82 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('form-confirmar-presenca');
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(form);
-        fetch("{% url 'presencas:registrar_presenca_confirmar_ajax' %}", {
-            method: "POST",
-            headers: {
-                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.href = data.redirect_url;
-            } else {
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            
+            // Mostrar loading
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvando...';
+            
+            fetch("{% url 'presencas:registrar_presenca_confirmar_ajax' %}", {
+                method: "POST",
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mostrar sucesso e redirecionar
+                    submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Salvo com Sucesso!';
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || "{% url 'presencas:listar_presencas_academicas' %}";
+                    }, 1000);
+                } else {
+                    // Restaurar botão e mostrar erro
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    let errorDiv = document.getElementById('form-errors');
+                    errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>' + 
+                                       (data.message || 'Erro ao salvar presença.');
+                    errorDiv.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                // Restaurar botão e mostrar erro
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
                 let errorDiv = document.getElementById('form-errors');
-                errorDiv.innerHTML = 'Erro ao salvar presença.';
+                errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Erro de comunicação. Tente novamente.';
                 errorDiv.classList.remove('d-none');
-            }
+            });
         });
-    });
+    }
 });
+
+function toggleJustificativa(atividadeIndex, cpf, checkbox) {
+    const justificativaContainer = document.getElementById(`justificativa_${atividadeIndex}_${cpf}`);
+    if (checkbox.checked) {
+        // Presente - ocultar justificativa
+        justificativaContainer.style.display = 'none';
+        justificativaContainer.querySelector('input').value = '';
+    } else {
+        // Ausente - mostrar justificativa
+        justificativaContainer.style.display = 'block';
+    }
+}
+
+function marcarTodosPresentes(atividadeIndex) {
+    const checkboxes = document.querySelectorAll(`input[name^="atividade_${atividadeIndex}_aluno_"]`);
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        const cpf = checkbox.name.split('_').pop();
+        toggleJustificativa(atividadeIndex, cpf, checkbox);
+    });
+}
+
+function marcarTodosAusentes(atividadeIndex) {
+    const checkboxes = document.querySelectorAll(`input[name^="atividade_${atividadeIndex}_aluno_"]`);
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+        const cpf = checkbox.name.split('_').pop();
+        toggleJustificativa(atividadeIndex, cpf, checkbox);
+    });
+}
 </script>
 {% endblock %}

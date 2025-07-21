@@ -1,4 +1,5 @@
 from django.urls import path, include
+from presencas.views_ext import registro_presenca
 from .views_ext.multiplas import (
     registrar_presencas_multiplas,
     formulario_presencas_multiplas,
@@ -39,6 +40,7 @@ from .views.registro_rapido import (
     obter_alunos_turma_ajax,
     salvar_presencas_lote_ajax,
     validar_presenca_ajax,
+    atualizar_convocacao_ajax,
 )
 from .views.painel import (
     PainelEstatisticasView,
@@ -267,6 +269,7 @@ urlpatterns = [
         name='salvar_presencas_lote_ajax',
     ),
     path('ajax/validar-presenca/', validar_presenca_ajax, name='validar_presenca_ajax'),
+    path('ajax/atualizar-convocacao/', atualizar_convocacao_ajax, name='atualizar_convocacao_ajax'),
     # Exportação Avançada
     path('exportacao/', ExportacaoAvancadaView.as_view(), name='exportacao_avancada'),
     path(
@@ -283,3 +286,8 @@ urlpatterns = [
         'exportacao/agendamento-form/', agendamento_form_ajax, name='agendamento_form'
     ),
 ]
+
+# Endpoint AJAX para alternância de convocação
+urlpatterns.append(
+    path('ajax/toggle-convocacao/', registro_presenca.toggle_convocacao_ajax, name='toggle_convocacao_ajax')
+)

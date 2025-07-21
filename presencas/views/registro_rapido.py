@@ -5,7 +5,7 @@ Views otimizadas para registro rápido de presenças.
 import logging
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Prefetch
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
@@ -22,6 +22,45 @@ logger = logging.getLogger(__name__)
 
 
 class RegistroRapidoView:
+    @staticmethod
+    @require_POST
+    @csrf_exempt
+    def atualizar_convocacao_ajax(request):
+        """Atualiza o status de convocação (convocado/voluntário) de um aluno para uma atividade/data/turma."""
+        try:
+            import json
+            data = json.loads(request.body)
+            turma_id = data.get('turma_id')
+            atividade_id = data.get('atividade_id')
+            data_str = data.get('data')
+            aluno_cpf = data.get('aluno_cpf')
+            convocado = data.get('convocado')
+            if not all([turma_id, atividade_id, data_str, aluno_cpf, convocado is not None]):
+                return JsonResponse({'error': 'Dados incompletos'}, status=400)
+            from presencas.models import ConvocacaoPresenca
+            from datetime import datetime
+            try:
+                data_obj = datetime.strptime(data_str, '%Y-%m-%d').date()
+            except Exception:
+                return JsonResponse({'error': 'Data inválida'}, status=400)
+            try:
+                aluno = Aluno.objects.get(cpf=aluno_cpf)
+            except Aluno.DoesNotExist:
+                return JsonResponse({'error': 'Aluno não encontrado'}, status=404)
+            # Atualizar ou criar registro de convocação
+            obj, created = ConvocacaoPresenca.objects.update_or_create(
+                turma_id=turma_id,
+                atividade_id=atividade_id,
+                data=data_obj,
+                aluno=aluno,
+                defaults={'convocado': convocado}
+            )
+            return JsonResponse({'success': True, 'created': created, 'convocado': convocado})
+        except Exception as e:
+            logger.error(f"Erro ao atualizar convocação: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return JsonResponse({'error': f'Erro ao atualizar convocação: {str(e)}'}, status=500)
     """View otimizada para registro rápido de presenças."""
     
     @staticmethod
@@ -81,53 +120,67 @@ class RegistroRapidoView:
     @staticmethod
     @require_GET
     def obter_alunos_turma_ajax(request):
-        """Obtém todos os alunos de uma turma específica."""
+        """Obtém todos os alunos de uma turma específica, incluindo status de convocação para atividade/dia."""
         turma_id = request.GET.get('turma_id')
-        
+        atividade_id = request.GET.get('atividade_id')
+        data_str = request.GET.get('data')  # formato esperado: YYYY-MM-DD
+
         if not turma_id:
             return JsonResponse({'error': 'Turma não especificada'}, status=400)
-        
+
         try:
-            # Busca alunos da turma com presenças já registradas para hoje
-            data_hoje = timezone.now().date()
+            logger.info(f"Buscando alunos da turma ID: {turma_id}")
             alunos = Aluno.objects.filter(
-                matriculas__turma_id=turma_id
-            ).select_related('curso').distinct().order_by('nome')
-            
-            # Prefetch presenças já registradas hoje
-            alunos = alunos.prefetch_related(
-                Prefetch(
-                    'presencaacademica_set',
-                    queryset=PresencaAcademica.objects.filter(
-                        data=data_hoje,
-                        turma_id=turma_id
-                    ),
-                    to_attr='presencas_hoje'
-                )
-            )
-            
+                matricula__turma_id=turma_id,
+                situacao='ATIVO'
+            ).distinct().order_by('nome')
+
+            logger.info(f"Encontrados {alunos.count()} alunos ativos na turma {turma_id}")
+
+            # Buscar status de convocação se atividade_id e data forem fornecidos
+            convoc_status = {}
+            if atividade_id and data_str:
+                from presencas.models import ConvocacaoPresenca
+                from datetime import datetime
+                try:
+                    data_obj = datetime.strptime(data_str, '%Y-%m-%d').date()
+                except Exception:
+                    data_obj = None
+                if data_obj:
+                    convocacoes = ConvocacaoPresenca.objects.filter(
+                        turma_id=turma_id,
+                        atividade_id=atividade_id,
+                        data=data_obj
+                    )
+                    for convoc in convocacoes:
+                        convoc_status[str(convoc.aluno.cpf)] = convoc.convocado
+
             alunos_data = []
             for aluno in alunos:
-                # Verifica se já tem presença registrada hoje
-                presenca_existente = None
-                for presenca in aluno.presencas_hoje:
-                    presenca_existente = presenca
-                    break
-                
-                alunos_data.append({
+                # Por padrão, todos são convocados se não houver registro
+                convocado = True
+                if atividade_id and data_str:
+                    convocado = convoc_status.get(str(aluno.cpf), True)
+                aluno_info = {
                     'id': aluno.cpf,
                     'cpf': aluno.cpf,
                     'nome': aluno.nome,
-                    'curso': aluno.curso.nome if aluno.curso else 'Sem curso',
-                    'presente': presenca_existente.presente if presenca_existente else None,
-                    'ja_registrado': bool(presenca_existente)
-                })
-            
+                    'curso': 'N/A',
+                    'presente': None,
+                    'ja_registrado': False,
+                    'convocado': convocado
+                }
+                alunos_data.append(aluno_info)
+                logger.debug(f"Aluno adicionado: {aluno.nome} (CPF: {aluno.cpf}) - Convocado: {convocado}")
+
+            logger.info(f"Retornando {len(alunos_data)} alunos para a turma {turma_id}")
             return JsonResponse({'alunos': alunos_data})
-            
+
         except Exception as e:
-            logger.error(f"Erro ao obter alunos da turma: {str(e)}")
-            return JsonResponse({'error': 'Erro ao obter alunos'}, status=500)
+            logger.error(f"Erro ao obter alunos da turma {turma_id}: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return JsonResponse({'error': f'Erro ao obter alunos: {str(e)}'}, status=500)
     
     @staticmethod
     @require_POST
@@ -269,3 +322,4 @@ buscar_alunos_ajax = RegistroRapidoView.buscar_alunos_ajax
 obter_alunos_turma_ajax = RegistroRapidoView.obter_alunos_turma_ajax
 salvar_presencas_lote_ajax = RegistroRapidoView.salvar_presencas_lote_ajax
 validar_presenca_ajax = RegistroRapidoView.validar_presenca_ajax
+atualizar_convocacao_ajax = RegistroRapidoView.atualizar_convocacao_ajax

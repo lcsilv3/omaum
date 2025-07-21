@@ -232,12 +232,10 @@ class RegistroRapidoManager {
         const presencaAtual = this.presencasModificadas[aluno.id] !== undefined 
             ? this.presencasModificadas[aluno.id] 
             : aluno.presente;
-            
         const jaRegistrado = aluno.ja_registrado;
-        
+
         let statusClass = '';
         let statusBadge = '';
-        
         if (presencaAtual === true) {
             statusClass = 'presente';
             statusBadge = '<span class="status-badge presente">Presente</span>';
@@ -248,6 +246,17 @@ class RegistroRapidoManager {
             statusClass = 'ja-registrado';
             statusBadge = '<span class="status-badge ja-registrado">Registrado</span>';
         }
+
+        // Badge de convocação/voluntário (clicável)
+        let convocacaoBadge = '';
+        if (typeof aluno.convocado !== 'undefined') {
+            if (aluno.convocado) {
+                convocacaoBadge = `<span class="badge bg-primary ms-2 badge-convocacao" title="Convocado" data-aluno-id="${aluno.id}" data-convocado="true" style="cursor:pointer;" onclick="registroManager.toggleConvocacao(${aluno.id}, this)">Convocado</span>`;
+            } else {
+                convocacaoBadge = `<span class="badge bg-secondary ms-2 badge-convocacao" title="Voluntário" data-aluno-id="${aluno.id}" data-convocado="false" style="cursor:pointer;" onclick="registroManager.toggleConvocacao(${aluno.id}, this)">Voluntário</span>`;
+            }
+        }
+        // ...continua normalmente...
         
         const div = document.createElement('div');
         div.className = `aluno-card ${statusClass}`;
@@ -256,7 +265,7 @@ class RegistroRapidoManager {
         div.innerHTML = `
             ${statusBadge}
             <div class="aluno-info">
-                <h5>${this.escapeHtml(aluno.nome)}</h5>
+                <h5>${this.escapeHtml(aluno.nome)} ${convocacaoBadge}</h5>
                 <div class="cpf">CPF: ${aluno.cpf}</div>
                 <div class="curso">${this.escapeHtml(aluno.curso)}</div>
             </div>
@@ -277,6 +286,96 @@ class RegistroRapidoManager {
                       placeholder="Digite uma observação..."></textarea>
         `;
         
+        return div;
+    }
+
+    // Alterna o status de convocação visualmente e dispara callback (futuro: integração backend)
+    toggleConvocacao(alunoId, badgeElem) {
+        const isConvocado = badgeElem.getAttribute('data-convocado') === 'true';
+        // Atualizar visual imediatamente
+        if (isConvocado) {
+            badgeElem.classList.remove('bg-primary');
+            badgeElem.classList.add('bg-secondary');
+            badgeElem.textContent = 'Voluntário';
+            badgeElem.setAttribute('title', 'Voluntário');
+            badgeElem.setAttribute('data-convocado', 'false');
+        } else {
+            badgeElem.classList.remove('bg-secondary');
+            badgeElem.classList.add('bg-primary');
+            badgeElem.textContent = 'Convocado';
+            badgeElem.setAttribute('title', 'Convocado');
+            badgeElem.setAttribute('data-convocado', 'true');
+        }
+
+        // Chamada AJAX para atualizar backend
+        const turmaId = $('#turma').val();
+        const atividadeId = $('#atividade').val();
+        const data = $('#data').val();
+        const aluno = this.alunosData.find(a => a.id == alunoId);
+        if (!turmaId || !atividadeId || !data || !aluno) return;
+        const novoStatus = !isConvocado;
+        $.ajax({
+            url: '/presencas/ajax/atualizar-convocacao/',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                turma_id: turmaId,
+                atividade_id: atividadeId,
+                data: data,
+                aluno_cpf: aluno.cpf,
+                convocado: novoStatus
+            }),
+            headers: { 'X-CSRFToken': this.getCSRFToken() },
+            success: (resp) => {
+                // Opcional: feedback visual
+            },
+            error: (xhr) => {
+                this.showToast('Erro ao atualizar convocação', 'error');
+            }
+        });
+    }
+
+    getCSRFToken() {
+        // Busca o token CSRF do cookie
+        const name = 'csrftoken';
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const c = cookies[i].trim();
+            if (c.startsWith(name + '=')) {
+                return decodeURIComponent(c.substring(name.length + 1));
+            }
+        }
+        return '';
+    }
+
+        const div = document.createElement('div');
+        div.className = `aluno-card ${statusClass}`;
+        div.setAttribute('data-aluno-id', aluno.id);
+
+        div.innerHTML = `
+            ${statusBadge}
+            <div class="aluno-info">
+                <h5>${this.escapeHtml(aluno.nome)} ${convocacaoBadge}</h5>
+                <div class="cpf">CPF: ${aluno.cpf}</div>
+                <div class="curso">${this.escapeHtml(aluno.curso)}</div>
+            </div>
+            <div class="presenca-controls">
+                <button type="button" class="btn-presenca btn-presente ${presencaAtual === true ? 'active' : ''}" 
+                        onclick="registroManager.marcarPresenca(${aluno.id}, true)">
+                    <i class="fas fa-check"></i> Presente
+                </button>
+                <button type="button" class="btn-presenca btn-ausente ${presencaAtual === false ? 'active' : ''}" 
+                        onclick="registroManager.marcarPresenca(${aluno.id}, false)">
+                    <i class="fas fa-times"></i> Ausente
+                </button>
+            </div>
+            <button type="button" class="btn-observacao" onclick="registroManager.toggleObservacao(${aluno.id})">
+                + Observação
+            </button>
+            <textarea class="observacao-input" id="obs-${aluno.id}" 
+                      placeholder="Digite uma observação..."></textarea>
+        `;
+
         return div;
     }
     

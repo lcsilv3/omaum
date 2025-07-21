@@ -9,7 +9,122 @@
     }
     
     .collapse-toggle:hover {
-        opacity: 0.8;
+                     </div>
+                
+                <!-- Interface Modo Individual -->
+                <div id="interface-modo-individual" style="display: none;">
+                    {% if alunos %}
+                    <div class="mb-3">
+                        <div class="alert alert-primary">
+                            <i class="fas fa-info-circle me-2"></i>
+                            {% trans "Modo Individual: Marque a presença de cada aluno para cada atividade separadamente." %}
+                            <br><small>{% trans "Cada atividade pode ter diferentes alunos presentes/ausentes." %}</small>
+                        </div>
+                    </div>
+
+                    <div class="accordion" id="accordionAtividadesIndividual">
+                        {% for atividade_info in atividades_detalhadas %}
+                        <div class="card mb-3 border-secondary">
+                            <div class="card-header border-secondary" id="heading-atividade-{{ forloop.counter0 }}">
+                                <h6 class="mb-0">
+                                    <button class="btn btn-link w-100 text-start collapsed text-decoration-none text-dark fw-bold" 
+                                            type="button" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#collapse-atividade-{{ forloop.counter0 }}" 
+                                            aria-expanded="false" 
+                                            aria-controls="collapse-atividade-{{ forloop.counter0 }}">
+                                        <i class="fas fa-graduation-cap me-2"></i>
+                                        {{ atividade_info }}
+                                        <i class="fas fa-chevron-down float-end mt-1"></i>
+                                    </button>
+                                </h6>
+                            </div>
+                            <div id="collapse-atividade-{{ forloop.counter0 }}" 
+                                 class="collapse" 
+                                 data-bs-parent="#accordionAtividadesIndividual">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h6 class="text-secondary mb-0">{% trans "Marcar presença dos alunos:" %}</h6>
+                                                <div>
+                                                    <button type="button" class="btn btn-sm btn-outline-success me-1" 
+                                                            onclick="marcarTodosPresentes({{ forloop.counter0 }})">
+                                                        <i class="fas fa-check"></i> {% trans "Todos Presentes" %}
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                            onclick="marcarTodosAusentes({{ forloop.counter0 }})">
+                                                        <i class="fas fa-times"></i> {% trans "Todos Ausentes" %}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            {% for aluno in alunos %}
+                                            <div class="aluno-row border-bottom pb-2 mb-2">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <!-- Badge de Convocação -->
+                                                    {% with key=aluno.id|stringformat:'s'|add:'_'|add:atividade.id|stringformat:'s' %}
+                                                        {% if convocacoes.key is not defined %}
+                                                            {# fallback para True (Convocado) se não houver chave #}
+                                                            <span class="badge bg-primary badge-convocacao" id="badge-convocacao-{{ key }}">Convocado</span>
+                                                        {% else %}
+                                                            {% if convocacoes.key %}
+                                                                <span class="badge bg-primary badge-convocacao" id="badge-convocacao-{{ key }}">Convocado</span>
+                                                            {% else %}
+                                                                <span class="badge bg-secondary badge-convocacao" id="badge-convocacao-{{ key }}">Não Convocado</span>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                        <button type="button" class="btn btn-sm btn-outline-info ms-2 toggle-convocacao-btn" data-aluno="{{ aluno.id }}" data-atividade="{{ atividade.id }}" data-key="{{ key }}">
+                                                            <i class="fas fa-exchange-alt"></i> Alternar
+                                                        </button>
+                                                    {% endwith %}
+                                                    <input type="checkbox" 
+                                                           class="form-check-input aluno-checkbox" 
+                                                           name="atividade_{{ forloop.parentloop.counter0 }}_aluno_{{ aluno.cpf }}"
+                                                           id="ativ_{{ forloop.parentloop.counter0 }}_aluno_{{ aluno.cpf }}"
+                                                           value="presente" 
+                                                           checked
+                                                           onchange="toggleJustificativa('{{ forloop.parentloop.counter0 }}', '{{ aluno.cpf }}', this)">
+                                                    <label class="form-check-label flex-grow-1" 
+                                                           for="ativ_{{ forloop.parentloop.counter0 }}_aluno_{{ aluno.cpf }}">
+                                                        <strong>{{ aluno.nome }}</strong>
+                                                        <small class="text-muted d-block">CPF: {{ aluno.cpf }}</small>
+                                                    </label>
+                                                </div>
+                                                <div class="justificativa-container mt-2" 
+                                                     id="justificativa_{{ forloop.parentloop.counter0 }}_{{ aluno.cpf }}" 
+                                                     style="display: none;">
+                                                    <input type="text" 
+                                                           class="form-control form-control-sm justificativa-field" 
+                                                           name="atividade_{{ forloop.parentloop.counter0 }}_justificativa_{{ aluno.cpf }}"
+                                                           placeholder="{% trans 'Justificativa da ausência (opcional)' %}">
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mt-3" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% trans "Nenhum aluno disponível para marcação individual." %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success me-2" aria-label="{% trans 'Finalizar registro de presenças' %}">
+                        <i class="fas fa-check me-2"></i>{% trans "Finalizar Registro" %}
+                    </button>
+                    <a href="{% url 'presencas:registrar_presenca_dias_atividades' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i>{% trans "Etapa Anterior" %}
+                    </a>
+                    <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-info">
+                        <i class="fas fa-home me-2"></i>{% trans "Recomeçar" %} 0.8;
     }
     
     .chevron {
@@ -46,6 +161,45 @@
         border-left: 4px solid #007bff;
         padding-left: 15px;
         margin-bottom: 10px;
+    }
+    
+    /* Estilos para modo individual */
+    .form-check-lg .form-check-input {
+        width: 1.5em;
+        height: 1.5em;
+    }
+    
+    .form-check-lg .form-check-label {
+        font-size: 1.1em;
+        padding-left: 0.5em;
+    }
+    
+    .aluno-row {
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+    }
+    
+    .aluno-row:hover {
+        background-color: #e9ecef;
+    }
+    
+    .justificativa-container {
+        margin-top: 8px;
+    }
+    
+    .justificativa-field {
+        border-radius: 4px;
+    }
+    
+    .accordion .card-header button {
+        color: inherit;
+    }
+    
+    .accordion .card-header button:focus {
+        box-shadow: none;
+        border-color: transparent;
     }
 </style>
 {% endblock %}
@@ -133,51 +287,174 @@
             <form id="form-alunos-presenca" method="post" autocomplete="off" aria-labelledby="titulo-pagina">
                 {% csrf_token %}
                 
-                {% if alunos %}
-                <div class="mb-3">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        {% trans "Por padrão, todos os alunos estão marcados como" %} <strong>{% trans "PRESENTES" %}</strong>. 
-                        {% trans "Use os botões abaixo para marcar como ausente apenas aqueles que faltaram." %}
+                <!-- Seletor de Modo -->
+                <div class="card mb-4 border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-cogs me-2"></i>{% trans "Modo de Marcação de Presença" %}
+                        </h6>
                     </div>
-                </div>
-                
-                <div class="row">
-                    {% for aluno in alunos %}
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card aluno-card presente p-3 h-100" id="card-{{ aluno.cpf }}">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="fw-bold" id="aluno-label-{{ aluno.cpf }}">{{ aluno.nome }}</span>
-                                <span class="badge bg-success" id="badge-presente-{{ aluno.cpf }}" aria-live="polite" style="font-size:1em;">{% trans "Presente" %}</span>
-                                <span class="badge bg-danger d-none" id="badge-ausente-{{ aluno.cpf }}" aria-live="polite" style="font-size:1em;">{% trans "Ausente" %}</span>
-                            </div>
-                            <div class="mt-2">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input toggle-presenca" type="checkbox" id="toggle-{{ aluno.cpf }}" name="aluno_{{ aluno.cpf }}_status" value="ausente"
-                                        role="switch" aria-checked="false" aria-labelledby="aluno-label-{{ aluno.cpf }} label-ausente-{{ aluno.cpf }}">
-                                    <label class="form-check-label" for="toggle-{{ aluno.cpf }}" id="label-ausente-{{ aluno.cpf }}">{% trans "Marcar como Ausente" %}</label>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-check-lg">
+                                    <input class="form-check-input" type="radio" name="modo_marcacao" id="modo_lote" value="lote" checked>
+                                    <label class="form-check-label" for="modo_lote">
+                                        <strong><i class="fas fa-users me-2"></i>{% trans "Modo Lote" %}</strong>
+                                        <br><small class="text-muted">{% trans "Marcar todos os alunos com o mesmo status para todas as atividades" %}</small>
+                                    </label>
                                 </div>
-                                <div class="mt-2 justificativa-group d-none" id="justificativa-group-{{ aluno.cpf }}">
-                                    <label for="justificativa-{{ aluno.cpf }}" class="form-label">{% trans "Justificativa da falta" %}</label>
-                                    <input type="text" class="form-control justificativa-input" name="aluno_{{ aluno.cpf }}_justificativa" id="justificativa-{{ aluno.cpf }}" placeholder="{% trans 'Informe o motivo da ausência' %}" aria-required="true" maxlength="255">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-check-lg">
+                                    <input class="form-check-input" type="radio" name="modo_marcacao" id="modo_individual" value="individual">
+                                    <label class="form-check-label" for="modo_individual">
+                                        <strong><i class="fas fa-user-check me-2"></i>{% trans "Modo Individual" %}</strong>
+                                        <br><small class="text-muted">{% trans "Controle granular: marcar presença por aluno em cada atividade separadamente" %}</small>
+                                    </label>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
-                {% else %}
-                <div class="alert alert-warning mt-3" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    {% trans "Nenhum aluno disponível para marcação de presença nesta etapa." %}<br>
-                    {% trans "Possíveis motivos:" %}
-                    <ul class="mt-2">
-                        <li>{% trans "Não há alunos ativos na turma selecionada." %}</li>
-                        <li>{% trans "Nenhum aluno foi convocado nas etapas anteriores." %}</li>
-                        <li>{% trans "Houve um problema na seleção de turma ou atividades." %}</li>
-                    </ul>
+                
+                <!-- Interface Modo Lote -->
+                <div id="interface-modo-lote">
+                    {% if alunos %}
+                    <div class="mb-3">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            {% trans "Por padrão, todos os alunos estão marcados como" %} <strong>{% trans "PRESENTES" %}</strong>. 
+                            {% trans "Use os botões abaixo para marcar como ausente apenas aqueles que faltaram." %}
+                        </div>
+                    </div>
+                
+                    <div class="row">
+                        {% for aluno in alunos %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card aluno-card presente p-3 h-100" id="card-{{ aluno.cpf }}">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="fw-bold" id="aluno-label-{{ aluno.cpf }}">{{ aluno.nome }}</span>
+                                    <span class="badge bg-success" id="badge-presente-{{ aluno.cpf }}" aria-live="polite" style="font-size:1em;">{% trans "Presente" %}</span>
+                                    <span class="badge bg-danger d-none" id="badge-ausente-{{ aluno.cpf }}" aria-live="polite" style="font-size:1em;">{% trans "Ausente" %}</span>
+                                </div>
+                                <div class="mt-2">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input toggle-presenca" type="checkbox" id="toggle-{{ aluno.cpf }}" name="aluno_{{ aluno.cpf }}_status" value="ausente"
+                                            role="switch" aria-checked="false" aria-labelledby="aluno-label-{{ aluno.cpf }} label-ausente-{{ aluno.cpf }}">
+                                        <label class="form-check-label" for="toggle-{{ aluno.cpf }}" id="label-ausente-{{ aluno.cpf }}">{% trans "Marcar como Ausente" %}</label>
+                                    </div>
+                                    <div class="mt-2 justificativa-group d-none" id="justificativa-group-{{ aluno.cpf }}">
+                                        <label for="justificativa-{{ aluno.cpf }}" class="form-label">{% trans "Justificativa da falta" %}</label>
+                                        <input type="text" class="form-control justificativa-input" name="aluno_{{ aluno.cpf }}_justificativa" id="justificativa-{{ aluno.cpf }}" placeholder="{% trans 'Informe o motivo da ausência' %}" aria-required="true" maxlength="255">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mt-3" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% trans "Nenhum aluno disponível para marcação de presença nesta etapa." %}<br>
+                        {% trans "Possíveis motivos:" %}
+                        <ul class="mt-2">
+                            <li>{% trans "Não há alunos ativos na turma selecionada." %}</li>
+                            <li>{% trans "Nenhum aluno foi convocado nas etapas anteriores." %}</li>
+                            <li>{% trans "Houve um problema na seleção de turma ou atividades." %}</li>
+                        </ul>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
+                
+                <!-- Interface Modo Individual -->
+                <div id="interface-modo-individual" style="display: none;">
+                    {% if alunos %}
+                    <div class="mb-3">
+                        <div class="alert alert-primary">
+                            <i class="fas fa-info-circle me-2"></i>
+                            {% trans "Modo Individual: Marque a presença de cada aluno para cada atividade separadamente." %}
+                            <br><small>{% trans "Cada atividade pode ter diferentes alunos presentes/ausentes." %}</small>
+                        </div>
+                    </div>
+
+                    <div class="accordion" id="accordionAtividadesIndividual">
+                        {% for atividade_info in atividades_detalhadas %}
+                        <div class="card mb-3 border-secondary">
+                            <div class="card-header border-secondary" id="heading-atividade-{{ forloop.counter0 }}">
+                                <h6 class="mb-0">
+                                    <button class="btn btn-link w-100 text-start collapsed text-decoration-none text-dark fw-bold" 
+                                            type="button" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#collapse-atividade-{{ forloop.counter0 }}" 
+                                            aria-expanded="false" 
+                                            aria-controls="collapse-atividade-{{ forloop.counter0 }}">
+                                        <i class="fas fa-graduation-cap me-2"></i>
+                                        {{ atividade_info }}
+                                        <i class="fas fa-chevron-down float-end mt-1"></i>
+                                    </button>
+                                </h6>
+                            </div>
+                            <div id="collapse-atividade-{{ forloop.counter0 }}" 
+                                 class="collapse" 
+                                 data-bs-parent="#accordionAtividadesIndividual">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h6 class="text-secondary mb-0">{% trans "Marcar presença dos alunos:" %}</h6>
+                                                <div>
+                                                    <button type="button" class="btn btn-sm btn-outline-success me-1" 
+                                                            onclick="marcarTodosPresentes({{ forloop.counter0 }})">
+                                                        <i class="fas fa-check"></i> {% trans "Todos Presentes" %}
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                            onclick="marcarTodosAusentes({{ forloop.counter0 }})">
+                                                        <i class="fas fa-times"></i> {% trans "Todos Ausentes" %}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            {% for aluno in alunos %}
+                                            <div class="aluno-row border-bottom pb-2 mb-2">
+                                                <div class="d-flex align-items-center">
+                                                    <input type="checkbox" 
+                                                           class="form-check-input aluno-checkbox" 
+                                                           name="atividade_{{ forloop.parentloop.counter0 }}_aluno_{{ aluno.cpf }}"
+                                                           id="ativ_{{ forloop.parentloop.counter0 }}_aluno_{{ aluno.cpf }}"
+                                                           value="presente" 
+                                                           checked
+                                                           onchange="toggleJustificativa('{{ forloop.parentloop.counter0 }}', '{{ aluno.cpf }}', this)">
+                                                    <label class="form-check-label flex-grow-1" 
+                                                           for="ativ_{{ forloop.parentloop.counter0 }}_aluno_{{ aluno.cpf }}">
+                                                        <strong>{{ aluno.nome }}</strong>
+                                                        <small class="text-muted d-block">CPF: {{ aluno.cpf }}</small>
+                                                    </label>
+                                                </div>
+                                                <div class="justificativa-container mt-2" 
+                                                     id="justificativa_{{ forloop.parentloop.counter0 }}_{{ aluno.cpf }}" 
+                                                     style="display: none;">
+                                                    <input type="text" 
+                                                           class="form-control form-control-sm justificativa-field" 
+                                                           name="atividade_{{ forloop.parentloop.counter0 }}_justificativa_{{ aluno.cpf }}"
+                                                           placeholder="{% trans 'Justificativa da ausência (opcional)' %}">
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mt-3" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% trans "Nenhum aluno disponível para marcação individual." %}
+                    </div>
+                    {% endif %}
+                </div>
                 
                 <div class="mt-4">
                     <button type="submit" class="btn btn-success me-2" aria-label="{% trans 'Finalizar registro de presenças' %}">
@@ -200,8 +477,34 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'presencas/js/convocacao.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Alternar entre modos
+    const modoLote = document.getElementById('modo_lote');
+    const modoIndividual = document.getElementById('modo_individual');
+    const interfaceLote = document.getElementById('interface-modo-lote');
+    const interfaceIndividual = document.getElementById('interface-modo-individual');
+    
+    function alternarModo() {
+        if (modoIndividual && modoIndividual.checked) {
+            if (interfaceLote) interfaceLote.style.display = 'none';
+            if (interfaceIndividual) interfaceIndividual.style.display = 'block';
+        } else {
+            if (interfaceLote) interfaceLote.style.display = 'block';
+            if (interfaceIndividual) interfaceIndividual.style.display = 'none';
+        }
+    }
+    
+    if (modoLote && modoIndividual) {
+        modoLote.addEventListener('change', alternarModo);
+        modoIndividual.addEventListener('change', alternarModo);
+    }
+    
+    // Inicializar no modo lote
+    alternarModo();
+    
+    // Funcionalidade do modo lote (original)
     document.querySelectorAll('.toggle-presenca').forEach(function(toggle) {
         toggle.addEventListener('change', function() {
             const alunoCpf = this.id.replace('toggle-', '');
@@ -234,34 +537,59 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Funcionalidades do modo individual
+    window.toggleJustificativa = function(atividadeIndex, alunoCpf, checkbox) {
+        const justificativaContainer = document.getElementById(`justificativa_${atividadeIndex}_${alunoCpf}`);
+        if (checkbox.checked) {
+            justificativaContainer.style.display = 'none';
+        } else {
+            justificativaContainer.style.display = 'block';
+        }
+    };
+    
+    window.marcarTodosPresentes = function(atividadeIndex) {
+        const checkboxes = document.querySelectorAll(`input[name^="atividade_${atividadeIndex}_aluno_"]`);
+        checkboxes.forEach(function(checkbox) {
+            checkbox.checked = true;
+            const alunoCpf = checkbox.name.replace(`atividade_${atividadeIndex}_aluno_`, '');
+            const justificativaContainer = document.getElementById(`justificativa_${atividadeIndex}_${alunoCpf}`);
+            if (justificativaContainer) {
+                justificativaContainer.style.display = 'none';
+            }
+        });
+    };
+    
+    window.marcarTodosAusentes = function(atividadeIndex) {
+        const checkboxes = document.querySelectorAll(`input[name^="atividade_${atividadeIndex}_aluno_"]`);
+        checkboxes.forEach(function(checkbox) {
+            checkbox.checked = false;
+            const alunoCpf = checkbox.name.replace(`atividade_${atividadeIndex}_aluno_`, '');
+            const justificativaContainer = document.getElementById(`justificativa_${atividadeIndex}_${alunoCpf}`);
+            if (justificativaContainer) {
+                justificativaContainer.style.display = 'block';
+            }
+        });
+    };
+    
+    // Submissão do formulário
     const form = document.getElementById('form-alunos-presenca');
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        let valid = true;
-        let firstInvalid = null;
         
-        document.querySelectorAll('.toggle-presenca').forEach(function(toggle) {
-            const alunoCpf = toggle.id.replace('toggle-', '');
-            const justificativaInput = document.getElementById('justificativa-' + alunoCpf);
-            
-            // Remover validação obrigatória - justificativa é opcional
-            justificativaInput.classList.remove('is-invalid');
-        });
-        
-        if (!valid) {
-            // Remover validação de justificativa obrigatória - não há mais erros obrigatórios
-            document.getElementById('form-errors').classList.add('d-none');
-        } else {
-            document.getElementById('form-errors').classList.add('d-none');
-        }
+        // Detectar modo selecionado
+        const modoSelecionado = document.querySelector('input[name="modo_marcacao"]:checked').value;
         
         const formData = new FormData(form);
-        // Marca todos os não checados como presente
-        document.querySelectorAll('.toggle-presenca').forEach(function(toggle) {
-            if (!toggle.checked) {
-                formData.set(toggle.name, 'presente');
-            }
-        });
+        
+        if (modoSelecionado === 'lote') {
+            // Processamento do modo lote (original)
+            document.querySelectorAll('.toggle-presenca').forEach(function(toggle) {
+                if (!toggle.checked) {
+                    formData.set(toggle.name, 'presente');
+                }
+            });
+        }
+        // Para modo individual, os dados já estão corretos no FormData
         
         fetch("{% url 'presencas:registrar_presenca_alunos_ajax' %}", {
             method: "POST",

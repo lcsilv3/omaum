@@ -1,6 +1,67 @@
-"""
-Views de registro de presença acadêmica (multi-etapas).
-"""
+import logging
+from datetime import date
+from calendar import monthrange
+from types import SimpleNamespace
+
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+from presencas.forms import (
+    RegistrarPresencaForm,
+    TotaisAtividadesPresencaForm,
+    AlunosPresencaForm,
+)
+from django.apps import apps
+from turmas.models import Turma
+from presencas.models import TotalAtividadeMes, ObservacaoPresenca, PresencaAcademica
+from alunos.models import Aluno
+
+# ---
+@login_required
+@require_POST
+@csrf_exempt
+def toggle_convocacao_ajax(request):
+    import json
+    from presencas.models import ConvocacaoPresenca
+    try:
+        data = json.loads(request.body)
+        aluno_id = int(data.get('aluno_id'))
+        atividade_id = int(data.get('atividade_id'))
+        turma_id = request.session.get('presenca_turma_id')
+        ano = request.session.get('presenca_ano')
+        mes = request.session.get('presenca_mes')
+        from alunos.models import Aluno
+        from atividades.models import AtividadeAcademica
+        from turmas.models import Turma
+        aluno = Aluno.objects.get(id=aluno_id)
+        atividade = AtividadeAcademica.objects.get(id=atividade_id)
+        turma = Turma.objects.get(id=turma_id)
+        # Para simplificação, usar o primeiro dia do mês como data
+        from datetime import date
+        data_atividade = date(int(ano), int(mes), 1)
+        convoc, created = ConvocacaoPresenca.objects.get_or_create(
+            aluno=aluno,
+            turma=turma,
+            atividade=atividade,
+            data=data_atividade,
+            defaults={
+                'convocado': True,
+                'registrado_por': request.user.username,
+            }
+        )
+        convoc.convocado = not convoc.convocado
+        convoc.registrado_por = request.user.username
+        convoc.save()
+        return JsonResponse({'success': True, 'convocado': convoc.convocado})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 import logging
 from datetime import date
@@ -24,7 +85,7 @@ from presencas.forms import (
 )
 from django.apps import apps
 from turmas.models import Turma
-from presencas.models import TotalAtividadeMes, ObservacaoPresenca
+from presencas.models import TotalAtividadeMes, ObservacaoPresenca, PresencaAcademica
 from alunos.models import Aluno
 
 # Função para obter modelos dinamicamente
@@ -259,39 +320,102 @@ def registrar_presenca_dias_atividades(request):
             'presencas': presencas,
             'presencas_obs': presencas_obs,
             'resumo_atividades': resumo_atividades,
+            'turma': turma,  # Adicionado para debug
+            'turma_id': turma_id,  # Adicionado para debug
         }
         return render(request, 'presencas/registrar_presenca_dias_atividades.html', context)
 
-    # POST
+    # POST - Processamento integrado de dias e presenças
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
     turma = Turma.objects.get(id=turma_id) if turma_id else None
 
-    for key in request.POST:
-        if key.startswith('presenca_'):
-            atividade_id = key.replace('presenca_', '')
-            dias = request.POST.getlist(key)
-            for dia in dias:
-                obs = request.POST.get(f'obs_{atividade_id}_{dia}', '')
-                try:
-                    Atividade = get_model_class("Atividade")
-                    atividade = Atividade.objects.get(id=atividade_id)
-                except Atividade.DoesNotExist:
-                    continue
-                try:
-                    data = date(int(ano), int(mes), int(dia))
-                except (ValueError, TypeError):
-                    continue
-                ObservacaoPresenca.objects.create(
-                    aluno=None,  # ou defina o aluno se necessário
-                    turma=turma,
-                    data=data,
-                    atividade=atividade,
-                    texto=obs,
-                    registrado_por=request.user.username
-                )
-    return redirect('presencas:registrar_presenca_alunos')
+    if not turma or not ano or not mes:
+        messages.error(request, 'Dados da sessão incompletos. Reinicie o processo.')
+        return redirect('presencas:registrar_presenca_dados_basicos')
+
+    try:
+        with transaction.atomic():
+            # Processa observações dos dias (funcionalidade original)
+            for key in request.POST:
+                if key.startswith('obs_'):
+                    # Formato: obs_atividade_id_dia
+                    parts = key.split('_')
+                    if len(parts) >= 3:
+                        atividade_id = parts[1]
+                        dia = parts[2]
+                        obs = request.POST.get(key, '')
+                        
+                        if obs.strip():  # Só salva se há observação
+                            try:
+                                Atividade = get_model_class("Atividade")
+                                atividade = Atividade.objects.get(id=atividade_id)
+                                data = date(int(ano), int(mes), int(dia))
+                                
+                                ObservacaoPresenca.objects.update_or_create(
+                                    aluno=None,
+                                    turma=turma,
+                                    data=data,
+                                    atividade=atividade,
+                                    defaults={
+                                        'texto': obs,
+                                        'registrado_por': request.user.username
+                                    }
+                                )
+                            except (Atividade.DoesNotExist, ValueError, TypeError):
+                                continue
+
+            # Processa presenças individuais por aluno/atividade/dia
+            presencas_processadas = 0
+            for key in request.POST:
+                if key.startswith('presenca_'):
+                    # Formato: presenca_{atividadeId}_{dia}_{cpfAluno}
+                    parts = key.split('_')
+                    if len(parts) >= 4:
+                        atividade_id = parts[1]
+                        dia = parts[2]
+                        cpf_aluno = '_'.join(parts[3:])
+                        presente = request.POST.get(key) == '1'
+                        justificativa = request.POST.get(f'justificativa_{atividade_id}_{dia}_{cpf_aluno}', '')
+                        try:
+                            aluno = Aluno.objects.get(cpf=cpf_aluno)
+                            Atividade = get_model_class("Atividade")
+                            atividade = Atividade.objects.get(id=atividade_id)
+                            data_presenca = date(int(ano), int(mes), int(dia))
+                            # Sempre registra a presença, independentemente da convocação
+                            # A distinção entre presença obrigatória e voluntária será feita no cálculo de frequência
+                            PresencaAcademica.objects.update_or_create(
+                                aluno=aluno,
+                                turma=turma,
+                                data=data_presenca,
+                                atividade=atividade,
+                                defaults={
+                                    'presente': presente,
+                                    'justificativa': justificativa if not presente else None,
+                                    'registrado_por': request.user.username,
+                                    'data_registro': timezone.now(),
+                                }
+                            )
+                            presencas_processadas += 1
+                        except Exception as e:
+                            logger.warning(f"Erro ao processar presença {key}: {e}")
+                            continue
+            if presencas_processadas > 0:
+                messages.success(request, f'Registro finalizado com sucesso! {presencas_processadas} presenças processadas.')
+                # Limpa dados da sessão
+                session_keys = ['presenca_turma_id', 'presenca_ano', 'presenca_mes', 'presenca_totais_atividades']
+                for key in session_keys:
+                    if key in request.session:
+                        del request.session[key]
+                return redirect('presencas:listar_presencas_academicas')
+            else:
+                messages.warning(request, 'Nenhuma presença foi registrada. Selecione os dias e marque as presenças antes de finalizar.')
+                return redirect('presencas:registrar_presenca_dias_atividades')
+    except Exception as e:
+        logger.error(f"Erro ao processar presenças integradas: {e}")
+        messages.error(request, 'Erro ao processar o registro. Tente novamente.')
+        return redirect('presencas:registrar_presenca_dias_atividades')
 
 @login_required
 def registrar_presenca_alunos(request):
@@ -312,77 +436,90 @@ def registrar_presenca_alunos(request):
     
     turma = Turma.objects.get(id=turma_id)
     convocados_dict = request.session.get('presenca_convocados', {})
+
+    from presencas.models import ConvocacaoPresenca
     alunos = Aluno.objects.filter(matricula__turma=turma, situacao='ATIVO').distinct()
-    
-    # Se houver convocação, filtra apenas os convocados
-    if convocados_dict:
-        alunos_ids = set()
-        for ids in convocados_dict.values():
-            alunos_ids.update(ids)
-        alunos = alunos.filter(cpf__in=alunos_ids)
-    
+
     # Busca as atividades para o resumo
     from atividades.models import AtividadeAcademica
-    
-    # Processa as chaves do totais_atividades para extrair IDs numéricos
     atividades_ids = []
     for key in totais_atividades.keys():
-        # Remove prefixo 'qtd_ativ_' se presente
         if key.startswith('qtd_ativ_'):
             atividade_id = key.replace('qtd_ativ_', '')
         else:
             atividade_id = key
-        
-        # Converte para inteiro se possível
         try:
             atividades_ids.append(int(atividade_id))
         except (ValueError, TypeError):
             logger.warning(f"Chave inválida em totais_atividades: {key}")
             continue
-    
     atividades = AtividadeAcademica.objects.filter(id__in=atividades_ids)
-    
+
+    # Buscar estado de convocação para cada aluno/atividade/dia
+    convocacoes = {}
+    for atividade in atividades:
+        for aluno in alunos:
+            convoc = ConvocacaoPresenca.objects.filter(
+                aluno=aluno,
+                turma=turma,
+                atividade=atividade,
+                data__year=ano,
+                data__month=mes
+            ).first()
+            key = f"{aluno.id}_{atividade.id}"
+            convocacoes[key] = convoc.convocado if convoc else True  # Default: convocado
+
     # Prepara resumo das atividades
     resumo_atividades = []
     for atividade in atividades:
         atividade_id_str = str(atividade.id)
-        
-        # Busca o total de dias considerando os diferentes formatos de chave
         total_dias = 0
         for key, value in totais_atividades.items():
             if key.startswith('qtd_ativ_'):
                 key_id = key.replace('qtd_ativ_', '')
             else:
                 key_id = key
-            
             if key_id == atividade_id_str:
                 total_dias = value
                 break
-        
-        # Busca os dias selecionados
         dias_selecionados = dias_atividades.get(atividade_id_str, [])
-        
         resumo_atividades.append({
             'nome': atividade.nome,
             'total_dias': total_dias,
             'dias_selecionados': sorted(dias_selecionados) if dias_selecionados else [],
         })
-    
-    # Nome do mês
+
     meses = {
         1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
         5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
         9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
     }
     nome_mes = meses.get(int(mes), 'Mês não definido') if mes else 'Mês não definido'
-    
-    # Loga caso não haja alunos
+
     if not alunos.exists():
         logger.warning(f"Nenhum aluno encontrado para a turma {turma} (ID: {turma.id}) ou filtro de convocados. Usuário: {request.user}")
         messages.warning(request, "Nenhum aluno disponível para marcação de presença nesta etapa. Revise as etapas anteriores ou contate o suporte.")
-    
+
+    atividades_detalhadas = []
+    for atividade in atividades:
+        atividade_id_str = str(atividade.id)
+        total_dias = 0
+        for key, value in totais_atividades.items():
+            if key.startswith('qtd_ativ_'):
+                key_id = key.replace('qtd_ativ_', '')
+            else:
+                key_id = key
+            if key_id == atividade_id_str:
+                total_dias = value
+                break
+        dias_selecionados = dias_atividades.get(atividade_id_str, [])
+        info_atividade = f"{atividade.nome} ({total_dias} dias)"
+        if dias_selecionados:
+            info_atividade += f" - Dias: {', '.join(map(str, sorted(dias_selecionados)))}"
+        atividades_detalhadas.append(info_atividade)
+
     form = AlunosPresencaForm(alunos=alunos)
-    
+
     return render(request, 'presencas/registrar_presenca_alunos.html', {
         'form': form,
         'alunos': alunos,
@@ -391,7 +528,10 @@ def registrar_presenca_alunos(request):
         'mes': mes,
         'nome_mes': nome_mes,
         'resumo_atividades': resumo_atividades,
+        'atividades_detalhadas': atividades_detalhadas,
         'total_alunos': alunos.count(),
+        'atividades': atividades,
+        'convocacoes': convocacoes,
     })
 
 @login_required
@@ -401,12 +541,28 @@ def registrar_presenca_alunos_ajax(request):
     turma_id = request.session.get('presenca_turma_id')
     turma = Turma.objects.get(id=turma_id) if turma_id else None
     
+    if not turma:
+        return JsonResponse({'success': False, 'erro': 'Dados de sessão ausentes. Refaça o processo.'})
+    
+    # Verificar modo de marcação
+    modo_marcacao = request.POST.get('modo_marcacao', 'lote')
+    
+    if modo_marcacao == 'individual':
+        # Processar modo individual - salvar diretamente as presenças
+        return processar_modo_individual(request, turma)
+    else:
+        # Processar modo lote - manter comportamento original
+        return processar_modo_lote(request, turma)
+
+
+def processar_modo_lote(request, turma):
+    """Processa o modo lote (comportamento original)"""
     # Log de debug
     logger.debug(f"POST data recebido: {dict(request.POST)}")
     
     # Recupera lista de alunos convocados da sessão (por atividade, se necessário)
     convocados_dict = request.session.get('presenca_convocados', {})
-    alunos = Aluno.objects.filter(matricula__turma=turma, situacao='ATIVO').distinct() if turma else []
+    alunos = Aluno.objects.filter(matricula__turma=turma, situacao='ATIVO').distinct()
     
     # Se houver convocação, filtra apenas os convocados
     if convocados_dict:
@@ -428,6 +584,95 @@ def registrar_presenca_alunos_ajax(request):
     logger.debug(f"Dados salvos na sessão: {resultado}")
     
     return JsonResponse({'success': True, 'redirect_url': '/presencas/registrar-presenca/confirmar/'})
+
+
+@transaction.atomic
+def processar_modo_individual(request, turma):
+    """Processa o modo individual - salva diretamente as presenças"""
+    ano = request.session.get('presenca_ano')
+    mes = request.session.get('presenca_mes')
+    
+    if not ano or not mes:
+        return JsonResponse({'success': False, 'erro': 'Dados de sessão ausentes. Refaça o processo.'})
+    
+    # Obter atividades e totais de dias
+    Atividade = get_model_class("Atividade")
+    atividades = Atividade.objects.filter(turmas__id=turma.id)
+    totais_atividades = request.session.get('presenca_totais_atividades', {})
+    convocados_dict = request.session.get('presenca_convocados', {})
+    
+    # Processar dados por atividade
+    atividades_processadas = []
+    for atividade_index, atividade in enumerate(atividades):
+        # Obter dias para esta atividade
+        key = f'qtd_ativ_{atividade.id}'
+        qtd_dias = int(totais_atividades.get(key, 0))
+        if qtd_dias <= 0:
+            continue
+            
+        dias = range(1, qtd_dias + 1)
+        atividades_processadas.append((atividade_index, atividade, dias))
+    
+    # Processar formulário
+    try:
+        for atividade_index, atividade, dias in atividades_processadas:
+            # Determinar alunos para esta atividade
+            if atividade.convocacao and str(atividade.id) in convocados_dict:
+                alunos_ids = convocados_dict[str(atividade.id)]
+            else:
+                # Se não tem convocação, usar todos os alunos da turma
+                alunos_ids = [aluno.cpf for aluno in turma.alunos.all()]
+            
+            for aluno_cpf in alunos_ids:
+                # Verificar se o aluno está presente nesta atividade
+                campo_presenca = f'atividade_{atividade_index}_aluno_{aluno_cpf}'
+                presente = campo_presenca in request.POST
+                
+                # Obter justificativa se ausente
+                justificativa = ''
+                if not presente:
+                    campo_justificativa = f'atividade_{atividade_index}_justificativa_{aluno_cpf}'
+                    justificativa = request.POST.get(campo_justificativa, '').strip()
+                
+                # Buscar aluno
+                try:
+                    aluno = Aluno.objects.get(cpf=aluno_cpf)
+                except Aluno.DoesNotExist:
+                    logger.warning(f"Aluno com CPF {aluno_cpf} não encontrado")
+                    continue
+                
+                # Criar registros de presença para cada dia
+                from presencas.models import Presenca
+                for dia in dias:
+                    data = date(int(ano), int(mes), dia)
+                    Presenca.objects.create(
+                        aluno=aluno,
+                        turma=turma,
+                        atividade=atividade,
+                        data=data,
+                        presente=presente,
+                        registrado_por=request.user.username,
+                        data_registro=timezone.now(),
+                        justificativa=justificativa if not presente else ''
+                    )
+        
+        # Limpar sessão
+        session_keys = [
+            'presenca_turma_id', 'presenca_ano', 'presenca_mes',
+            'presenca_atividade_id', 'presenca_alunos_presentes',
+            'presenca_totais_atividades', 'presenca_convocados',
+            'presenca_alunos_status'
+        ]
+        for key in session_keys:
+            if key in request.session:
+                del request.session[key]
+        
+        return JsonResponse({'success': True, 'redirect_url': '/presencas/'})
+        
+    except Exception as e:
+        logger.exception(f"Erro ao processar modo individual: {e}")
+        return JsonResponse({'success': False, 'erro': f'Erro ao salvar presenças: {str(e)}'})
+
 
 @login_required
 def turmas_por_curso_ajax(request):
@@ -466,10 +711,16 @@ def registrar_presenca_confirmar(request):
     
     atividades = AtividadeAcademica.objects.filter(id__in=atividades_ids)
     atividades_info = []
+    atividades_detalhadas = []
     for atividade in atividades:
         key = f'qtd_ativ_{atividade.id}'
         total_dias = totais_atividades.get(key, 0)
         atividades_info.append(f"{atividade.nome} ({total_dias} dias)")
+        atividades_detalhadas.append({
+            'id': atividade.id,
+            'nome': atividade.nome,
+            'total_dias': total_dias
+        })
     
     # Log de debug
     logger.debug(f"Sessão presenca_alunos_status: {alunos_status}")
@@ -499,6 +750,7 @@ def registrar_presenca_confirmar(request):
         'ano': ano,
         'mes': mes,
         'atividades_info': atividades_info,
+        'atividades_detalhadas': atividades_detalhadas,
         'alunos_info': alunos_info,
         'alunos_presentes': alunos_presentes,
     })
@@ -511,38 +763,59 @@ def registrar_presenca_confirmar_ajax(request):
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
     turma = Turma.objects.get(id=turma_id) if turma_id else None
-    alunos_status = request.session.get('presenca_alunos_status', {})
+    
+    if not turma or not ano or not mes:
+        return JsonResponse({'success': False, 'message': 'Dados de sessão ausentes. Refaça o processo.'})
+    
+    # Obter atividades e totais de dias
     Atividade = get_model_class("Atividade")
-    atividades = Atividade.objects.filter(turmas__id=turma.id) if turma else []
+    atividades = Atividade.objects.filter(turmas__id=turma.id)
     totais_atividades = request.session.get('presenca_totais_atividades', {})
-    for atividade in atividades:
-        # Para cada atividade, obter dias e alunos convocados
-        dias = []
+    convocados_dict = request.session.get('presenca_convocados', {})
+    
+    # Processar dados por atividade
+    atividades_processadas = []
+    for atividade_index, atividade in enumerate(atividades):
+        # Obter dias para esta atividade
         key = f'qtd_ativ_{atividade.id}'
-        qtd = int(totais_atividades.get(key, 0))
-        if qtd > 0:
-            dias = range(1, qtd + 1)
-        # Filtra alunos convocados se necessário
-        convocados_dict = request.session.get('presenca_convocados', {})
+        qtd_dias = int(totais_atividades.get(key, 0))
+        if qtd_dias <= 0:
+            continue
+            
+        dias = range(1, qtd_dias + 1)
+        atividades_processadas.append((atividade_index, atividade, dias))
+    
+    # Processar formulário
+    for atividade_index, atividade, dias in atividades_processadas:
+        # Determinar alunos para esta atividade
         if atividade.convocacao and str(atividade.id) in convocados_dict:
             alunos_ids = convocados_dict[str(atividade.id)]
         else:
-            alunos_ids = alunos_status.keys()
-        for aluno_id in alunos_ids:
-            status_info = alunos_status.get(str(aluno_id)) or alunos_status.get(aluno_id) or {}
-            presente = status_info.get('status', 'presente') == 'presente'
-            justificativa = status_info.get('justificativa', '')
+            # Se não tem convocação, usar todos os alunos da turma
+            alunos_ids = [aluno.cpf for aluno in turma.alunos.all()]
+        
+        for aluno_cpf in alunos_ids:
+            # Verificar se o aluno está presente nesta atividade
+            campo_presenca = f'atividade_{atividade_index}_aluno_{aluno_cpf}'
+            presente = campo_presenca in request.POST
             
-            # Busca o aluno pelo CPF
+            # Obter justificativa se ausente
+            justificativa = ''
+            if not presente:
+                campo_justificativa = f'atividade_{atividade_index}_justificativa_{aluno_cpf}'
+                justificativa = request.POST.get(campo_justificativa, '').strip()
+            
+            # Buscar aluno
             try:
-                aluno = Aluno.objects.get(cpf=aluno_id)
+                aluno = Aluno.objects.get(cpf=aluno_cpf)
             except Aluno.DoesNotExist:
-                logger.warning(f"Aluno com CPF {aluno_id} não encontrado")
+                logger.warning(f"Aluno com CPF {aluno_cpf} não encontrado")
                 continue
             
+            # Criar registros de presença para cada dia
+            from presencas.models import Presenca
             for dia in dias:
                 data = date(int(ano), int(mes), dia)
-                from presencas.models import Presenca
                 Presenca.objects.create(
                     aluno=aluno,
                     turma=turma,
@@ -553,15 +826,18 @@ def registrar_presenca_confirmar_ajax(request):
                     data_registro=timezone.now(),
                     justificativa=justificativa if not presente else ''
                 )
-    # Limpa sessão
-    for key in [
+    
+    # Limpar sessão
+    session_keys = [
         'presenca_turma_id', 'presenca_ano', 'presenca_mes',
         'presenca_atividade_id', 'presenca_alunos_presentes',
         'presenca_totais_atividades', 'presenca_convocados',
         'presenca_alunos_status'
-    ]:
+    ]
+    for key in session_keys:
         if key in request.session:
             del request.session[key]
+    
     return JsonResponse({'success': True, 'redirect_url': '/presencas/'})
 
 @login_required

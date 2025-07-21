@@ -28,6 +28,7 @@
     .accordion-button:focus { 
         box-shadow: 0 0 0 0.2rem #90caf9; 
     }
+    }
     
     .flatpickr-ok {
         background: #007bff;
@@ -50,6 +51,284 @@
         font-size: 0.95em;
         margin-top: 6px;
     }
+
+    /* Estilos para o modal de presença integrado */
+    .presenca-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999; /* Z-index muito alto para ficar acima do calendário */
+    }
+
+    .presenca-modal-content {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .presenca-modal-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .presenca-modal-title {
+        margin: 0;
+        color: #495057;
+        font-size: 1.25rem;
+    }
+
+    .presenca-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6c757d;
+        margin-left: auto;
+    }
+
+    .presenca-close:hover {
+        color: #000;
+    }
+
+    .modo-rapido {
+        background-color: #f8f9fa;
+        padding: 6px 10px;
+        border-radius: 6px;
+        margin-bottom: 4px;
+        border-left: 4px solid #007bff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 38px;
+    }
+
+    .modo-individual {
+        border-top: 2px solid #e9ecef;
+        padding-top: 20px;
+    }
+
+    .aluno-presenca-item {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 6px 8px;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        margin-bottom: 4px;
+        background-color: #fff;
+        font-size: 0.95em;
+        min-height: 36px;
+        gap: 8px;
+    }
+
+    .aluno-nome {
+        font-weight: 500;
+        color: #495057;
+        flex-grow: 1;
+        font-size: 0.95em;
+        max-width: 170px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    #alunosContainer {
+        max-height: 350px;
+        overflow-y: auto;
+        font-size: 0.95em;
+    }
+
+    .badge-presenca, .badge-uniforme {
+        cursor: pointer;
+        font-size: 0.95em;
+        padding: 6px 12px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        border: none;
+        font-weight: 500;
+        height: 28px;
+        min-width: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .badge-presente {
+        background-color: #198754;
+        color: white;
+    }
+
+    .badge-presente:hover {
+        background-color: #157347;
+    }
+
+    .badge-ausente {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .badge-ausente:hover {
+        background-color: #bb2d3b;
+    }
+
+    .justificativa-campo {
+        margin-top: 8px;
+        width: 100%;
+    }
+
+    .justificativa-campo input {
+        font-size: 0.875rem;
+    }
+
+    .day-selected {
+        background-color: #007bff !important;
+        color: white !important;
+        font-weight: bold;
+        position: relative;
+        cursor: pointer !important;
+        border: 2px solid #0056b3 !important;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3) !important;
+    }
+
+    .day-selected:hover {
+        background-color: #0056b3 !important;
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.5) !important;
+    }
+
+    .day-selected::before {
+        content: '👥';
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        font-size: 0.6rem;
+        background: #28a745;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid white;
+    }
+
+    .day-with-presence::after {
+        content: '✓';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        color: #198754;
+        font-size: 0.7rem;
+        font-weight: bold;
+        background: white;
+        border-radius: 50%;
+        width: 12px;
+        height: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .calendar-hint {
+        background-color: #e3f2fd;
+        border: 1px solid #2196f3;
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin: 8px;
+        font-size: 0.75rem;
+        color: #1976d2;
+        text-align: center;
+        display: none;
+    }
+
+    .calendar-hint.show {
+        display: block;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tooltip para dias selecionados */
+    .flatpickr-day.selected {
+        position: relative;
+    }
+
+    .flatpickr-day.selected:hover::after {
+        content: 'Clique para marcar presenças';
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        z-index: 1000;
+        pointer-events: none;
+    }
+
+    .modal-footer-custom {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .btn-salvar-presenca {
+        flex: 1;
+    }
+
+    /* Força o calendário do Flatpickr a ficar abaixo do modal */
+    .flatpickr-calendar {
+        z-index: 1000 !important; /* Força z-index menor que o modal */
+    }
+
+    /* Esconde calendários quando modal está aberto */
+    .presenca-modal.show ~ .flatpickr-calendar,
+    body.modal-open .flatpickr-calendar.open {
+        z-index: 999 !important;
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
+    /* Garante que o modal esteja sempre no topo */
+    body.modal-open .presenca-modal {
+        z-index: 100000 !important;
+    }
+
+    /* Força todos os elementos Flatpickr a ficarem abaixo do modal */
+    body.modal-open .flatpickr-calendar,
+    body.modal-open .flatpickr-calendar.open,
+    body.modal-open .flatpickr-calendar.animate,
+    body.modal-open .flatpickr-calendar.arrowTop,
+    body.modal-open .flatpickr-calendar.arrowLeft {
+        z-index: 500 !important;
+        opacity: 0.2 !important;
+        pointer-events: none !important;
+    }
 </style>
 {% endblock %}
 
@@ -67,16 +346,23 @@
         </div>
     </div>
     
-    <!-- Etapa 3: Designação dos Dias -->
+    <!-- Etapa 3: Designação dos Dias e Marcação de Presenças -->
     <div class="card">
         <div class="card-header bg-info text-white">
             <h5 class="mb-0">
                 <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#secao-dias-atividades" role="button" aria-expanded="true" aria-controls="secao-dias-atividades">
                     <span class="chevron">&#9660;</span>
-                    {% trans "Etapa 3 de 4 - Designação dos Dias das Atividades" %} <small class="text-light">(clique para expandir/recolher)</small>
+                    {% trans "Etapa 3 de 3 - Dias das Atividades e Marcação de Presenças" %} <small class="text-light">(clique para expandir/recolher)</small>
                 </a>
             </h5>
-            <p class="mb-0 mt-2"><small>{% trans "Selecione os dias específicos para cada atividade no mês escolhido." %}</small></p>
+                        <p class="mb-0 mt-2"><small>Selecione os dias e marque as presenças diretamente no calendário. Clique em cada dia para marcar presenças.</small></p>
+            <div class="alert alert-info mt-2 mb-0" style="font-size: 0.85rem;">
+                <i class="fas fa-lightbulb me-1"></i>
+                <strong>Como usar:</strong> 
+                1️⃣ Selecione os dias no calendário 
+                2️⃣ Clique nos dias <span class="badge bg-primary">azuis selecionados</span> para marcar presenças
+                3️⃣ Use modo rápido (todos presentes/ausentes) ou individual por aluno
+            </div>
         </div>
         <div id="secao-dias-atividades" class="collapse show card-body">
             <form id="form-presenca" method="post" autocomplete="off">
@@ -84,65 +370,142 @@
                 <div id="mensagem-ajax" class="alert d-none" role="alert"></div>
                 <div id="mensagem-erro-ajax" class="alert alert-danger d-none"></div>
                 <div id="mensagem-validacao" class="alert alert-danger d-none" role="alert"></div>
-                
+
                 {% if atividades %}
-                <div class="accordion" id="accordionAtividades">
-            {% for atividade in atividades %}
-            <div class="accordion-item mb-2">
-                <h2 class="accordion-header" id="heading-{{ atividade.id }}">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ atividade.id }}" aria-expanded="false" aria-controls="collapse-{{ atividade.id }}">
-                            <i class="fas fa-calendar-day me-2"></i>
-                            {{ atividade.nome }} <span class="ms-2 badge bg-secondary">{{ atividade.qtd_ativ_mes|default:'0' }} dias</span>
-                        </button>
-                </h2>
-                <div id="collapse-{{ atividade.id }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ atividade.id }}" data-bs-parent="#accordionAtividades">
-                    <div class="accordion-body p-0">
-                        <div class="atividade-bloco-table table-responsive p-3">
-                            <table class="table table-bordered table-sm mb-0" style="background:#f8f9fa;">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width:40%">Dias da atividade</th>
-                                        <th>Observações</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td style="vertical-align:middle;">
-                                            <label for="dias-atividade-{{ atividade.id }}" class="form-label visually-hidden">Selecione os dias da atividade</label>
-                                            <input type="text" id="dias-atividade-{{ atividade.id }}" name="presenca_{{ atividade.id }}" class="form-control dias-datepicker" placeholder="Clique para escolher os dias" readonly data-atividade="{{ atividade.id }}" data-maxdias="{{ atividade.qtd_ativ_mes|default:'0' }}">
-                                            <div class="form-text">Selecione até {{ atividade.qtd_ativ_mes|default:'0' }} dia(s) no mês.</div>
-                                            <div class="msg-limite-dias" id="msg-limite-{{ atividade.id }}"></div>
-                                        </td>
-                                        <td>
-                                            <div id="obs-dias-{{ atividade.id }}" class="row g-2">
-                                                <!-- Campos de observação por dia selecionado serão inseridos via JS -->
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                <div class="atividades-grid mb-3">
+                {% for atividade in atividades %}
+                    <div class="atividade-card">
+                        <div class="atividade-card-header">
+                            <i class="fas fa-calendar-day me-1"></i>
+                            <span class="atividade-nome">{{ atividade.nome }}</span>
+                            <span class="badge bg-secondary ms-1">{{ atividade.qtd_ativ_mes|default:'0' }} dias</span>
+                        </div>
+                        <div class="atividade-card-body">
+                            <label for="dias-atividade-{{ atividade.id }}" class="form-label visually-hidden">Selecione os dias da atividade</label>
+                            <div class="input-group input-group-calendar">
+                                <input type="text" id="dias-atividade-{{ atividade.id }}" name="presenca_{{ atividade.id }}" class="form-control dias-datepicker" placeholder="Clique para escolher os dias" data-atividade="{{ atividade.id }}" data-maxdias="{{ atividade.qtd_ativ_mes|default:'0' }}">
+                                <span class="input-group-text calendar-icon" style="cursor:pointer;"><i class="fas fa-calendar-alt"></i></span>
+                            </div>
+                            <div class="form-text form-text-mini">Selecione até {{ atividade.qtd_ativ_mes|default:'0' }} dia(s) no mês.</div>
+                            <div class="msg-limite-dias" id="msg-limite-{{ atividade.id }}"></div>
+                            <div id="obs-dias-{{ atividade.id }}" class="obs-dias-grid">
+                                <!-- Campos de observação por dia selecionado serão inseridos via JS -->
+                            </div>
                         </div>
                     </div>
+                {% endfor %}
                 </div>
-            </div>
-            {% endfor %}
+                <style>
+                .input-group-calendar {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                }
+                .input-group-calendar .form-control {
+                    padding-right: 2.2em;
+                }
+                .calendar-icon {
+                    position: absolute;
+                    right: 8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: none;
+                    border: none;
+                    color: #007bff;
+                    font-size: 1.1em;
+                    pointer-events: auto;
+                    z-index: 2;
+                    display: flex;
+                    align-items: center;
+                }
+                </style>
+                {% else %}
+                <div class="alert alert-warning mt-3" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% trans "Nenhuma atividade encontrada para o mês/turma selecionados." %}<br>
+                    {% trans "Possíveis motivos:" %}
+                    <ul class="mt-2">
+                        <li>{% trans "Não há atividades cadastradas para a turma selecionada." %}</li>
+                        <li>{% trans "Os totais de atividades não foram preenchidos ou estão zerados." %}</li>
+                        <li>{% trans "Houve um problema na seleção de turma ou atividades." %}</li>
+                    </ul>
                 </div>
-        {% else %}
-            <div class="alert alert-warning mt-3" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {% trans "Nenhuma atividade encontrada para o mês/turma selecionados." %}<br>
-                {% trans "Possíveis motivos:" %}
-                <ul class="mt-2">
-                    <li>{% trans "Não há atividades cadastradas para a turma selecionada." %}</li>
-                    <li>{% trans "Os totais de atividades não foram preenchidos ou estão zerados." %}</li>
-                    <li>{% trans "Houve um problema na seleção de turma ou atividades." %}</li>
-                </ul>
-            </div>
-        {% endif %}
+                {% endif %}
+<style>
+    .atividades-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-start;
+    }
+    .atividade-card {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 10px 10px 8px 10px;
+        min-width: 200px;
+        max-width: 23%;
+        flex: 1 1 23%;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 8px;
+        font-size: 0.93em;
+    }
+    @media (max-width: 1200px) {
+        .atividade-card { max-width: 32%; flex-basis: 32%; }
+    }
+    @media (max-width: 900px) {
+        .atividade-card { max-width: 48%; flex-basis: 48%; }
+    }
+    @media (max-width: 600px) {
+        .atividade-card { max-width: 100%; flex-basis: 100%; }
+    }
+    .atividade-card-header {
+        font-weight: 600;
+        font-size: 1em;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .atividade-nome {
+        font-size: 0.98em;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 90px;
+    }
+    .atividade-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .atividade-card-body .form-control {
+        font-size: 0.93em;
+        padding: 2px 6px;
+        min-height: 28px;
+    }
+    .form-text-mini {
+        font-size: 0.85em;
+        margin-bottom: 2px;
+    }
+    .obs-dias-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: 2px;
+    }
+    .obs-dias-grid input {
+        font-size: 0.91em;
+        padding: 2px 6px;
+        min-height: 24px;
+    }
+</style>
                 
                 <div class="mt-4">
-                    <button type="submit" class="btn btn-success me-2" aria-label="{% trans 'Salvar e avançar para seleção de alunos' %}">
-                        <i class="fas fa-arrow-right me-2"></i>{% trans "Salvar e Avançar" %}
+                    <button type="submit" class="btn btn-success me-2" aria-label="{% trans 'Finalizar registro de presenças' %}">
+                        <i class="fas fa-check me-2"></i>{% trans "Finalizar Registro" %}
                     </button>
                     <a href="{% url 'presencas:registrar_presenca_totais_atividades' %}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left me-2"></i>{% trans "Etapa Anterior" %}
@@ -155,17 +518,71 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para marcação de presenças integrado -->
+<div id="presencaModal" class="presenca-modal">
+    <div class="presenca-modal-content">
+        <div class="presenca-modal-header">
+            <h5 class="presenca-modal-title" id="modalTitle">Marcar Presença</h5>
+            <button type="button" class="presenca-close" onclick="fecharModalPresenca()">&times;</button>
+        </div>
+        
+        <div id="modalBody">
+            <!-- Modo Rápido sem separador -->
+            <div class="modo-rapido">
+                <h6 style="margin-bottom:0;font-size:1em;font-weight:500;margin-right:10px;"><i class="fas fa-bolt text-primary me-2"></i>Modo Rápido (Lote)</h6>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success btn-sm" style="padding: 2px 10px; font-size: 0.97em;" onclick="marcarTodosPresentes()">
+                        <i class="fas fa-check me-1"></i>Todos Presentes
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 10px; font-size: 0.97em;" onclick="marcarTodosAusentes()">
+                        <i class="fas fa-times me-1"></i>Todos Ausentes
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modo Individual -->
+            <div class="modo-individual">
+                <h6><i class="fas fa-user text-info me-2"></i>Modo Individual</h6>
+                <div id="alunosContainer">
+                    <!-- Lista de alunos será preenchida via JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer-custom">
+            <button type="button" class="btn btn-secondary" onclick="fecharModalPresenca()">
+                <i class="fas fa-times me-1"></i>Cancelar
+            </button>
+            <button type="button" class="btn btn-primary btn-salvar-presenca" onclick="salvarPresencaDia()">
+                <i class="fas fa-save me-1"></i>Salvar Presenças
+            </button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
+// Variáveis globais para o modal de presença
+let modalAtual = null;
+let diaAtual = null;
+let atividadeAtual = null;
+let alunosData = []; // Lista de alunos será carregada via AJAX
+let presencasRegistradas = {}; // Objeto para armazenar presenças por atividade/dia
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Flatpickr setup
+    // Carrega lista de alunos via AJAX
+    carregarAlunos();
+    
+    // Configuração do Flatpickr para cada atividade
     document.querySelectorAll('.dias-datepicker').forEach(function(input) {
         const atividadeId = input.dataset.atividade;
         const maxDias = parseInt(input.dataset.maxdias) || 0;
         const msgLimite = document.getElementById('msg-limite-' + atividadeId);
+        
         flatpickr(input, {
             mode: 'multiple',
             dateFormat: 'd',
@@ -174,7 +591,7 @@ document.addEventListener('DOMContentLoaded', function() {
             locale: 'pt',
             onChange: function(selectedDates, dateStr, instance) {
                 if (selectedDates.length > maxDias) {
-                    msgLimite.textContent = `Você só pode selecionar até ${maxDias} dia(s) para esta atividade. Caso deseje mais, volte e altere o total de dias na etapa anterior.`;
+                    msgLimite.textContent = `Você só pode selecionar até ${maxDias} dia(s) para esta atividade.`;
                     msgLimite.style.display = 'block';
                     // Remove o último selecionado
                     selectedDates.pop();
@@ -183,7 +600,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     msgLimite.style.display = 'none';
                 }
-                // Limpa e insere campos de observação para cada dia selecionado
+                
+                // Atualiza campos de observação
                 const obsDiv = document.getElementById('obs-dias-' + atividadeId);
                 obsDiv.innerHTML = '';
                 selectedDates.forEach(function(date) {
@@ -196,8 +614,40 @@ document.addEventListener('DOMContentLoaded', function() {
                     obsInput.maxLength = 200;
                     obsDiv.appendChild(obsInput);
                 });
+                
+                // Adiciona indicadores visuais para dias com presenças registradas
+                atualizarIndicadoresCalendario(atividadeId, instance);
+                
+                // Atualiza aparência dos dias selecionados
+                atualizarAparenciaDiasSelecionados(instance);
+            },
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                const atividadeId = input.dataset.atividade;
+                const dia = dayElem.textContent;
+                // Adiciona evento de clique para abrir modal de presença
+                dayElem.addEventListener('mousedown', function(e) {
+                    // Só abre modal se o dia estiver selecionado e for um clique com botão esquerdo
+                    if (dayElem.classList.contains('selected') && e.button === 0) {
+                        // Aguarda o flatpickr processar o clique antes de abrir o modal
+                        setTimeout(function() {
+                            abrirModalPresenca(atividadeId, dia);
+                        }, 120);
+                    }
+                });
+                // Adiciona interatividade visual para dias selecionados
+                dayElem.addEventListener('mouseenter', function() {
+                    if (dayElem.classList.contains('selected')) {
+                        dayElem.style.cursor = 'pointer';
+                        dayElem.title = 'Clique para marcar presenças dos alunos';
+                    }
+                });
+                // Verifica se há presenças registradas para este dia
+                if (presencasRegistradas[atividadeId] && presencasRegistradas[atividadeId][dia]) {
+                    dayElem.classList.add('day-with-presence');
+                }
             },
             onReady: function(selectedDates, dateStr, instance) {
+                // Adiciona botão OK
                 if (!instance.calendarContainer.querySelector('.flatpickr-ok')) {
                     const okBtn = document.createElement('button');
                     okBtn.type = 'button';
@@ -208,39 +658,546 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                     instance.calendarContainer.appendChild(okBtn);
                 }
+                
+                // Adiciona mensagem explicativa
+                if (!instance.calendarContainer.querySelector('.calendar-hint')) {
+                    const hint = document.createElement('div');
+                    hint.className = 'calendar-hint';
+                    hint.innerHTML = '💡 <strong>Dica:</strong> Após selecionar os dias, clique em cada dia <strong>azul</strong> para marcar as presenças dos alunos';
+                    instance.calendarContainer.appendChild(hint);
+                }
+            },
+            onOpen: function() {
+                // Mostra a dica quando o calendário abre
+                setTimeout(() => {
+                    const hint = document.querySelector('.calendar-hint');
+                    if (hint) {
+                        hint.classList.add('show');
+                    }
+                }, 300);
             }
         });
     });
-
-    // Validação do formulário antes do envio
-    document.getElementById('form-presenca').addEventListener('submit', function(e) {
-        let valid = true;
-        let msg = '';
-        let atividades = document.querySelectorAll('.dias-datepicker');
-        if (atividades.length === 0) {
-            msg = 'Nenhuma atividade foi selecionada para este mês/turma. Volte e preencha os totais de atividades.';
-            valid = false;
-        } else {
-            atividades.forEach(function(input) {
-                const maxDias = parseInt(input.dataset.maxdias) || 0;
-                const selected = input._flatpickr ? input._flatpickr.selectedDates.length : 0;
-                if (selected !== maxDias) {
-                    valid = false;
-                    msg += `Selecione exatamente ${maxDias} dia(s) para a atividade "${input.closest('.accordion-item').querySelector('.accordion-button').textContent.trim()}".\n`;
+        // Torna o ícone do calendário clicável para abrir o calendário
+        const calendarIcon = input.parentElement.querySelector('.calendar-icon');
+        if (calendarIcon) {
+            calendarIcon.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (input._flatpickr) {
+                    input._flatpickr.open();
                 }
             });
         }
-        if (!valid) {
+    
+    // Validação do formulário
+    document.getElementById('form-presenca').addEventListener('submit', function(e) {
+        // Ao invés de validar seleção de dias, agora valida se há presenças registradas
+        if (Object.keys(presencasRegistradas).length === 0) {
             e.preventDefault();
             let msgDiv = document.getElementById('mensagem-validacao');
-            msgDiv.textContent = msg;
+            msgDiv.textContent = 'É necessário registrar pelo menos uma presença antes de finalizar.';
             msgDiv.classList.remove('d-none');
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return false;
+        }
+        
+        // Adiciona dados das presenças ao formulário
+        adicionarDadosPresencasAoFormulario();
+    });
+});
+
+function carregarAlunos() {
+    // Faz requisição AJAX para carregar lista de alunos da turma
+    let turmaId = {{ request.session.presenca_turma_id|default:"null" }};
+    
+    // Se não conseguir da sessão, tenta do contexto
+    if (!turmaId || turmaId === "null") {
+        turmaId = {{ turma.id|default:"null" }};
+        console.log('Usando turma do contexto:', turmaId);
+    }
+    
+    console.log('Turma ID da sessão:', {{ request.session.presenca_turma_id|default:"null" }});
+    console.log('Turma do contexto:', {{ turma.id|default:"null" }});
+    console.log('Nome da turma:', "{{ turma.nome|default:"Turma não encontrada" }}");
+    console.log('Turma ID final usado:', turmaId);
+    
+    if (!turmaId || turmaId === "null") {
+        console.error('Turma não encontrada na sessão nem no contexto');
+        return;
+    }
+    
+    console.log('Fazendo requisição para carregar alunos...');
+    console.log('URL da requisição:', `{% url "presencas:obter_alunos_turma_ajax" %}?turma_id=${turmaId}`);
+    
+    fetch(`{% url "presencas:obter_alunos_turma_ajax" %}?turma_id=${turmaId}`)
+    .then(response => {
+        console.log('Status da resposta:', response.status);
+        console.log('Response headers:', response.headers);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Dados recebidos completos:', JSON.stringify(data, null, 2));
+        if (data.alunos && data.alunos.length > 0) {
+            alunosData = data.alunos; // Corrigido: pega array de dentro do objeto
+            console.log('Alunos carregados com sucesso:', alunosData.length);
+            console.log('Lista de alunos:', alunosData);
+        } else if (data.error) {
+            console.error('Erro ao carregar alunos:', data.error);
         } else {
-            document.getElementById('mensagem-validacao').classList.add('d-none');
+            console.warn('Nenhum aluno encontrado para a turma');
+            console.log('Estrutura de dados retornada:', data);
+        }
+    })
+    .catch(error => {
+        console.error('Erro na requisição:', error);
+        console.error('Stack trace:', error.stack);
+    });
+}
+
+function abrirModalPresenca(atividadeId, dia) {
+    atividadeAtual = atividadeId;
+    diaAtual = dia;
+    
+    // Busca nome da atividade no novo layout (atividade-card)
+    let nomeAtividade = '';
+    const inputAtividade = document.querySelector(`#dias-atividade-${atividadeId}`);
+    if (inputAtividade) {
+        const card = inputAtividade.closest('.atividade-card');
+        if (card) {
+            const header = card.querySelector('.atividade-card-header .atividade-nome');
+            if (header) {
+                nomeAtividade = header.textContent.trim();
+            }
+        }
+    }
+    if (!nomeAtividade) {
+        // fallback para antigo
+        const atividadeElement = document.querySelector(`[data-atividade="${atividadeId}"]`);
+        if (atividadeElement) {
+            nomeAtividade = atividadeElement.getAttribute('data-atividade') || '';
+        }
+    }
+    document.getElementById('modalTitle').textContent = 
+        `${nomeAtividade} - Dia ${dia}/{{ mes }}/{{ ano }}`;
+    preencherListaAlunos();
+    document.getElementById('presencaModal').style.display = 'flex';
+}
+
+function abrirModalPresenca(atividadeId, dia) {
+    atividadeAtual = atividadeId;
+    diaAtual = dia;
+    
+    // Fecha todos os calendários abertos
+    document.querySelectorAll('.flatpickr-calendar.open').forEach(function(calendar) {
+        if (calendar._flatpickr) {
+            calendar._flatpickr.close();
         }
     });
+    
+    // Fecha todos os calendários Flatpickr que possam estar abertos
+    document.querySelectorAll('.dias-datepicker').forEach(function(input) {
+        if (input._flatpickr) {
+            input._flatpickr.close();
+        }
+    });
+    
+    // Busca nome da atividade
+    const atividadeElement = document.querySelector(`[data-atividade="${atividadeId}"]`)
+                                   .closest('.accordion-item')
+                                   .querySelector('.accordion-button');
+    const nomeAtividade = atividadeElement.textContent.trim().split(' ')[0]; // Pega só o nome, sem o badge
+    
+    // Atualiza título do modal
+    document.getElementById('modalTitle').textContent = 
+        `${nomeAtividade} - Dia ${dia}/{{ mes }}/{{ ano }}`;
+    
+    // Preenche lista de alunos
+    preencherListaAlunos();
+    
+    // Adiciona classe ao body para controlar z-index
+    document.body.classList.add('modal-open');
+    
+    // Exibe modal
+    const modal = document.getElementById('presencaModal');
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+}
+
+function fecharModalPresenca() {
+    const modal = document.getElementById('presencaModal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    
+    // Remove classe do body
+    document.body.classList.remove('modal-open');
+    
+    modalAtual = null;
+    diaAtual = null;
+    atividadeAtual = null;
+}
+
+function preencherListaAlunos() {
+    const container = document.getElementById('alunosContainer');
+    container.innerHTML = '';
+    
+    console.log('Preenchendo lista de alunos. Total:', alunosData.length);
+    console.log('Dados dos alunos:', alunosData);
+    
+    if (alunosData.length === 0) {
+        container.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Nenhum aluno encontrado para esta turma. Verifique se há alunos matriculados e ativos.</div>';
+        return;
+    }
+    
+    alunosData.forEach(function(aluno) {
+        const cpfAluno = aluno.cpf || aluno.id;
+        const presencaAtual = obterPresencaAluno(atividadeAtual, diaAtual, cpfAluno);
+        let convocado = aluno.convocado;
+        // Badge à esquerda
+        const badgeConvocado = document.createElement('span');
+        badgeConvocado.className = 'badge badge-convocado me-2 badge-uniforme';
+        badgeConvocado.style.cursor = 'pointer';
+        badgeConvocado.textContent = convocado ? 'Convocado' : 'Voluntário';
+        badgeConvocado.style.backgroundColor = convocado ? '#1976d2' : '#aaa';
+        badgeConvocado.style.color = 'white';
+        badgeConvocado.setAttribute('data-cpf', cpfAluno);
+        badgeConvocado.setAttribute('data-convocado', convocado ? '1' : '0');
+        badgeConvocado.title = 'Clique para alternar entre Convocado/Voluntário';
+        badgeConvocado.style.fontSize = '0.95em';
+        badgeConvocado.style.height = '28px';
+        badgeConvocado.style.display = 'flex';
+        badgeConvocado.style.alignItems = 'center';
+        badgeConvocado.style.minWidth = '90px';
+        badgeConvocado.onclick = function() {
+            badgeConvocado.style.pointerEvents = 'none';
+            convocado = !convocado;
+            badgeConvocado.textContent = convocado ? 'Convocado' : 'Voluntário';
+            badgeConvocado.style.backgroundColor = convocado ? '#1976d2' : '#aaa';
+            badgeConvocado.setAttribute('data-convocado', convocado ? '1' : '0');
+            const payload = {
+                turma_id: window.turmaIdFinal || {{ turma.id|default:'null' }},
+                atividade_id: atividadeAtual,
+                data: (typeof diaAtual === 'string' && diaAtual.includes('-')) ? diaAtual : `${('0'+diaAtual).slice(-2)}/{{ mes }}/{{ ano }}`,
+                aluno_cpf: cpfAluno,
+                convocado: convocado
+            };
+            if (typeof payload.data === 'string' && payload.data.includes('/')) {
+                const [dia, mes, ano] = payload.data.split('/');
+                payload.data = `${ano}-${('0'+mes).slice(-2)}-${('0'+dia).slice(-2)}`;
+            }
+            fetch('/presencas/ajax/atualizar-convocacao/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(async response => {
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    mostrarMensagem('Resposta inválida do servidor.', 'danger');
+                    return;
+                }
+                if (data.success) {
+                    const novoConvocado = data.convocado;
+                    convocado = novoConvocado;
+                    badgeConvocado.textContent = novoConvocado ? 'Convocado' : 'Voluntário';
+                    badgeConvocado.style.backgroundColor = novoConvocado ? '#1976d2' : '#aaa';
+                    badgeConvocado.setAttribute('data-convocado', novoConvocado ? '1' : '0');
+                    mostrarMensagem('Status de convocação atualizado!', 'success');
+                } else {
+                    mostrarMensagem('Erro ao atualizar status de convocação.', 'danger');
+                }
+            })
+            .catch((err) => {
+                mostrarMensagem('Erro de comunicação ao atualizar status de convocação.', 'danger');
+            })
+            .finally(() => {
+                badgeConvocado.style.pointerEvents = 'auto';
+            });
+        };
+
+        // Nome truncado com tooltip
+        const nomeAlunoDiv = document.createElement('div');
+        nomeAlunoDiv.className = 'aluno-nome';
+        let nomeExibido = aluno.nome;
+        if (aluno.nome.length > 25) {
+            nomeExibido = aluno.nome.slice(0, 25) + '...';
+        }
+        nomeAlunoDiv.textContent = nomeExibido;
+        nomeAlunoDiv.title = aluno.nome;
+        nomeAlunoDiv.style.fontSize = '0.95em';
+
+        // Container de controles
+        const controlesDiv = document.createElement('div');
+        controlesDiv.className = 'aluno-controles d-flex align-items-center';
+        controlesDiv.style.gap = '8px';
+
+        // Badge de presença
+        const botaoPresenca = document.createElement('button');
+        botaoPresenca.type = 'button';
+        botaoPresenca.className = `badge-presenca badge-uniforme ${presencaAtual.presente ? 'badge-presente' : 'badge-ausente'}`;
+        botaoPresenca.onclick = function() { togglePresencaAluno(cpfAluno, botaoPresenca); };
+        botaoPresenca.textContent = presencaAtual.presente ? 'Presente' : 'Ausente';
+        botaoPresenca.style.fontSize = '0.95em';
+        botaoPresenca.style.height = '28px';
+        botaoPresenca.style.minWidth = '80px';
+        botaoPresenca.style.display = 'flex';
+        botaoPresenca.style.alignItems = 'center';
+
+        // Campo de justificativa ao lado do badge
+        const justificativaDiv = document.createElement('div');
+        justificativaDiv.className = 'justificativa-campo';
+        justificativaDiv.style.marginTop = '0';
+        justificativaDiv.style.display = presencaAtual.presente ? 'none' : 'block';
+        justificativaDiv.style.maxWidth = '180px';
+        justificativaDiv.style.minWidth = '120px';
+
+        // Truncar justificativa e mostrar tooltip
+        const justificativaInput = document.createElement('input');
+        justificativaInput.type = 'text';
+        justificativaInput.className = 'form-control form-control-sm';
+        justificativaInput.placeholder = 'Justificativa (opcional)';
+        justificativaInput.value = presencaAtual.justificativa || '';
+        justificativaInput.onchange = function() { atualizarJustificativa(cpfAluno, this.value); };
+        justificativaInput.maxLength = 200;
+        justificativaInput.style.fontSize = '0.95em';
+
+        // Truncar valor exibido e mostrar tooltip
+        justificativaInput.oninput = function() {
+            if (this.value.length > 25) {
+                this.title = this.value;
+                this.value = this.value.slice(0, 25);
+            } else {
+                this.title = '';
+            }
+        };
+        // Inicializa tooltip se necessário
+        if (justificativaInput.value.length > 25) {
+            justificativaInput.title = justificativaInput.value;
+            justificativaInput.value = justificativaInput.value.slice(0, 25);
+        }
+
+        justificativaDiv.appendChild(justificativaInput);
+
+        controlesDiv.appendChild(botaoPresenca);
+        controlesDiv.appendChild(justificativaDiv);
+
+        const alunoDiv = document.createElement('div');
+        alunoDiv.className = 'aluno-presenca-item';
+        alunoDiv.style.fontSize = '0.95em';
+        alunoDiv.appendChild(badgeConvocado);
+        alunoDiv.appendChild(nomeAlunoDiv);
+        alunoDiv.appendChild(controlesDiv);
+        container.appendChild(alunoDiv);
+    });
+}
+
+function abrirModalPresenca(atividadeId, dia) {
+    atividadeAtual = atividadeId;
+    diaAtual = dia;
+
+    // Fecha todos os calendários abertos
+    document.querySelectorAll('.flatpickr-calendar.open').forEach(function(calendar) {
+        if (calendar._flatpickr) {
+            calendar._flatpickr.close();
+        }
+    });
+
+    // Fecha todos os calendários Flatpickr que possam estar abertos
+    document.querySelectorAll('.dias-datepicker').forEach(function(input) {
+        if (input._flatpickr) {
+            input._flatpickr.close();
+        }
+    });
+
+    // Busca nome da atividade no novo layout (atividade-card)
+    let nomeAtividade = '';
+    const inputAtividade = document.querySelector(`#dias-atividade-${atividadeId}`);
+    if (inputAtividade) {
+        const card = inputAtividade.closest('.atividade-card');
+        if (card) {
+            const header = card.querySelector('.atividade-card-header .atividade-nome');
+            if (header) {
+                nomeAtividade = header.textContent.trim();
+            }
+        }
+    }
+    if (!nomeAtividade) {
+        // fallback para antigo
+        const atividadeElement = document.querySelector(`[data-atividade="${atividadeId}"]`);
+        if (atividadeElement) {
+            nomeAtividade = atividadeElement.getAttribute('data-atividade') || '';
+        }
+    }
+    document.getElementById('modalTitle').textContent = 
+        `${nomeAtividade} - Dia ${dia}/2/2025`;
+    preencherListaAlunos();
+
+    // Adiciona classe ao body para controlar z-index
+    document.body.classList.add('modal-open');
+
+    // Exibe modal
+    const modal = document.getElementById('presencaModal');
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+}
+    mostrarMensagem('Presenças do dia ' + diaAtual + ' registradas com sucesso!', 'success');
+}
+
+function atualizarContadorProgresso() {
+    // Conta quantos dias têm presenças registradas
+    let totalDias = 0;
+    let diasComPresenca = 0;
+    for (let atividadeId in presencasRegistradas) {
+        for (let dia in presencasRegistradas[atividadeId]) {
+            totalDias++;
+            if (Object.keys(presencasRegistradas[atividadeId][dia]).length > 0) {
+                diasComPresenca++;
+            }
+        }
+    }
+    // Atualiza badges dos acordeões
+    document.querySelectorAll('.accordion-button').forEach(function(btn) {
+        const atividadeId = btn.getAttribute('data-bs-target')?.replace('#collapse-', '');
+        if (atividadeId && presencasRegistradas[atividadeId]) {
+            const diasRegistrados = Object.keys(presencasRegistradas[atividadeId]).length;
+            const totalDiasAtividade = Object.keys(presencasRegistradas[atividadeId]).length;
+            // Adiciona indicador visual no cabeçalho do acordeão
+            let indicator = btn.querySelector('.presenca-indicator');
+            if (!indicator && diasRegistrados > 0) {
+                indicator = document.createElement('span');
+                indicator.className = 'presenca-indicator badge bg-success ms-2';
+                indicator.innerHTML = `<i class="fas fa-check"></i> ${diasRegistrados} dias`;
+                btn.appendChild(indicator);
+            } else if (indicator && diasRegistrados === 0) {
+                indicator.remove();
+            }
+        }
+    });
+}
+
+function atualizarIndicadorCalendario(atividadeId, dia) {
+    // Adiciona classe visual no dia do calendário para indicar que há presenças registradas
+    const input = document.querySelector(`[data-atividade="${atividadeId}"]`);
+    if (input && input._flatpickr) {
+        const calendar = input._flatpickr.calendarContainer;
+        const dayElement = calendar.querySelector(`[aria-label*="${dia}"]`);
+        if (dayElement) {
+            dayElement.classList.add('day-with-presence');
+        }
+    }
+}
+
+function atualizarIndicadoresCalendario(atividadeId, instance) {
+    // Atualiza todos os indicadores visuais do calendário
+    const calendar = instance.calendarContainer;
+    const dayElements = calendar.querySelectorAll('.flatpickr-day');
+    
+    dayElements.forEach(function(dayElem) {
+        const dia = dayElem.textContent;
+        if (presencasRegistradas[atividadeId] && presencasRegistradas[atividadeId][dia]) {
+            dayElem.classList.add('day-with-presence');
+        }
+    });
+}
+
+function atualizarAparenciaDiasSelecionados(instance) {
+    // Adiciona aparência especial e tooltips para dias selecionados
+    const calendar = instance.calendarContainer;
+    const dayElements = calendar.querySelectorAll('.flatpickr-day.selected');
+    
+    dayElements.forEach(function(dayElem) {
+        dayElem.classList.add('day-selected');
+        dayElem.style.cursor = 'pointer';
+        dayElem.title = 'Clique para marcar presenças dos alunos neste dia';
+        
+        // Adiciona efeito de hover
+        dayElem.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+        });
+        
+        dayElem.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // Mostra/esconde a dica baseado na seleção
+    const hint = calendar.querySelector('.calendar-hint');
+    if (hint) {
+        if (dayElements.length > 0) {
+            hint.classList.add('show');
+        } else {
+            hint.classList.remove('show');
+        }
+    }
+}
+
+function adicionarDadosPresencasAoFormulario() {
+    const form = document.getElementById('form-presenca');
+    
+    // Remove campos anteriores se existirem
+    const camposAnteriores = form.querySelectorAll('.presenca-data');
+    camposAnteriores.forEach(campo => campo.remove());
+    
+    // Adiciona dados das presenças como campos hidden
+    for (let atividadeId in presencasRegistradas) {
+        for (let dia in presencasRegistradas[atividadeId]) {
+            for (let cpfAluno in presencasRegistradas[atividadeId][dia]) {
+                const presenca = presencasRegistradas[atividadeId][dia][cpfAluno];
+                
+                // Campo para presença
+                const inputPresenca = document.createElement('input');
+                inputPresenca.type = 'hidden';
+                inputPresenca.name = `presenca_${atividadeId}_${dia}_${cpfAluno}`;
+                inputPresenca.value = presenca.presente ? '1' : '0';
+                inputPresenca.className = 'presenca-data';
+                form.appendChild(inputPresenca);
+                
+                // Campo para justificativa (se houver)
+                if (presenca.justificativa) {
+                    const inputJustificativa = document.createElement('input');
+                    inputJustificativa.type = 'hidden';
+                    inputJustificativa.name = `justificativa_${atividadeId}_${dia}_${cpfAluno}`;
+                    inputJustificativa.value = presenca.justificativa;
+                    inputJustificativa.className = 'presenca-data';
+                    form.appendChild(inputJustificativa);
+                }
+            }
+        }
+    }
+}
+
+function mostrarMensagem(texto, tipo = 'info') {
+    const mensagemDiv = document.getElementById('mensagem-ajax');
+    mensagemDiv.className = `alert alert-${tipo}`;
+    mensagemDiv.textContent = texto;
+    mensagemDiv.classList.remove('d-none');
+    
+    // Auto-esconder após 3 segundos
+    setTimeout(function() {
+        mensagemDiv.classList.add('d-none');
+    }, 3000);
+}
+
+// Fechar modal ao clicar fora dele
+document.getElementById('presencaModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        fecharModalPresenca();
+    }
+});
+
+// Fechar modal com ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('presencaModal').style.display === 'flex') {
+        fecharModalPresenca();
+    }
 });
 </script>
 {% endblock %}
