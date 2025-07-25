@@ -1,7 +1,3 @@
-"""
-Testes de interface JavaScript e interações do usuário.
-Simulação de comportamentos de browser para funcionalidades avançadas.
-"""
 
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -167,6 +163,82 @@ class JavaScriptTestCase(TestCase):
 
 # Testes que requerem Selenium (executados apenas se disponível)
 if SELENIUM_AVAILABLE:
+    # ... definição de SeleniumTestCase ...
+
+    # ... definição de SeleniumTestCase ...
+
+    # ... definição de SeleniumTestCase ...
+
+    # ... definição de SeleniumTestCase ...
+
+    # Outras classes de teste Selenium...
+
+    class BadgeConvocadoModalTest(SeleniumTestCase):
+        """Testa se o badge 'Convocado' aparece no modal para atividade convocada."""
+        def setUp(self):
+            if not self.driver:
+                self.skipTest("Selenium driver não disponível")
+            # Cria usuário e faz login
+            self.user = User.objects.create_user(username="lcsilv3", password="iG356900")
+            self.turma = Turma.objects.create(codigo_turma="SEL002", nome="Turma Badge Test")
+            self.atividade = Atividade.objects.create(nome="Atividade Convocada", tipo="AULA", ativa=True, convocada=True)
+            self.aluno = criar_aluno({
+                "cpf": "99999999999",
+                "nome": "Aluno Badge",
+                "data_nascimento": "1990-01-01",
+                "hora_nascimento": "14:30",
+                "email": "badge@test.com",
+                "sexo": "M",
+                "nacionalidade": "Brasileira",
+                "naturalidade": "São Paulo",
+                "rua": "Rua Badge",
+                "numero_imovel": "1",
+                "cidade": "São Paulo",
+                "estado": "SP",
+                "bairro": "Centro",
+                "cep": "01234567",
+                "nome_primeiro_contato": "Contato Badge",
+                "celular_primeiro_contato": "11999999999",
+                "tipo_relacionamento_primeiro_contato": "Mãe",
+                "nome_segundo_contato": "Pai Badge",
+                "celular_segundo_contato": "11888888888",
+                "tipo_relacionamento_segundo_contato": "Pai",
+                "tipo_sanguineo": "A",
+                "fator_rh": "+",
+            })
+
+        def test_badge_convocado_modal(self):
+            # Login
+            self.driver.get(f"{self.live_server_url}/admin/login/")
+            username_input = self.driver.find_element(By.NAME, "username")
+            password_input = self.driver.find_element(By.NAME, "password")
+            username_input.send_keys("lcsilv3")
+            password_input.send_keys("iG356900")
+            password_input.send_keys(Keys.RETURN)
+            WebDriverWait(self.driver, 10).until(EC.url_changes(f"{self.live_server_url}/admin/login/"))
+
+            # Acessa página de registro de presença
+            url = f"{self.live_server_url}" + reverse("presencas:registro_rapido")
+            self.driver.get(f"{url}?turma={self.turma.id}")
+
+            # Espera o calendário carregar e seleciona o input da atividade convocada
+            input_selector = f"input[data-atividade='{self.atividade.id}']"
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, input_selector)))
+            input_elem = self.driver.find_element(By.CSS_SELECTOR, input_selector)
+            input_elem.click()
+
+            # Seleciona o primeiro dia disponível no calendário
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "flatpickr-day")))
+            day_elem = self.driver.find_element(By.CLASS_NAME, "flatpickr-day")
+            day_elem.click()
+
+            # Clica novamente para abrir o modal
+            day_elem.click()
+
+            # Espera o modal abrir e verifica o badge
+            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.ID, "presencaModal")))
+            modal_title = self.driver.find_element(By.ID, "modalTitle")
+            self.assertIn("Convocado", modal_title.get_attribute("innerHTML"))
 
     class SeleniumTestCase(StaticLiveServerTestCase):
         """Classe base para testes com Selenium."""

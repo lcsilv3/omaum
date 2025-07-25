@@ -1,0 +1,343 @@
+Backup automático antes de refatoração para correção de CSS, duplicidade de funções JS, organização de estilos e atualização de seletores/JS para o layout atual.
+
+Arquivo original: registrar_presenca_dias_atividades.html
+Data: 2025-07-22
+
+--- INÍCIO DO ARQUIVO ORIGINAL ---
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+{% load presenca_extras %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .collapse-toggle {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .collapse-toggle:hover {
+        opacity: 0.8;
+    }
+    
+    .chevron {
+        display: inline-block;
+        transition: transform 0.3s ease;
+        margin-right: 10px;
+    }
+    
+    .collapsed .chevron {
+        transform: rotate(90deg);
+    }
+    
+    .accordion-button:focus { 
+        box-shadow: 0 0 0 0.2rem #90caf9; 
+    }
+    }
+    
+    .flatpickr-ok {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        margin: 5px;
+        cursor: pointer;
+        border-radius: 3px;
+    }
+    
+    .msg-limite-dias {
+        color: #d32f2f;
+        font-size: 0.98em;
+        margin-top: 4px;
+        display: none;
+    }
+    
+    .obs-dia {
+        font-size: 0.95em;
+        margin-top: 6px;
+    }
+
+    /* Estilos para o modal de presença integrado */
+    .presenca-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999; /* Z-index muito alto para ficar acima do calendário */
+    }
+
+    .presenca-modal-content {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .presenca-modal-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .presenca-modal-title {
+        margin: 0;
+        color: #495057;
+        font-size: 1.25rem;
+    }
+
+    .presenca-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6c757d;
+        margin-left: auto;
+    }
+
+    .presenca-close:hover {
+        color: #000;
+    }
+
+    .modo-rapido {
+        background-color: #f8f9fa;
+        padding: 6px 10px;
+        border-radius: 6px;
+        margin-bottom: 4px;
+        border-left: 4px solid #007bff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 38px;
+    }
+
+    .modo-individual {
+        border-top: 2px solid #e9ecef;
+        padding-top: 20px;
+    }
+
+    .aluno-presenca-item {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 6px 8px;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        margin-bottom: 4px;
+        background-color: #fff;
+        font-size: 0.95em;
+        min-height: 36px;
+        gap: 8px;
+    }
+
+    .aluno-nome {
+        font-weight: 500;
+        color: #495057;
+        flex-grow: 1;
+        font-size: 0.95em;
+        max-width: 170px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    #alunosContainer {
+        max-height: 350px;
+        overflow-y: auto;
+        font-size: 0.95em;
+    }
+
+    .badge-presenca, .badge-uniforme {
+        cursor: pointer;
+        font-size: 0.95em;
+        padding: 6px 12px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        border: none;
+        font-weight: 500;
+        height: 28px;
+        min-width: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .badge-presente {
+        background-color: #198754;
+        color: white;
+    }
+
+    .badge-presente:hover {
+        background-color: #157347;
+    }
+
+    .badge-ausente {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .badge-ausente:hover {
+        background-color: #bb2d3b;
+    }
+
+    .justificativa-campo {
+        margin-top: 8px;
+        width: 100%;
+    }
+
+    .justificativa-campo input {
+        font-size: 0.875rem;
+    }
+
+    .day-selected {
+        background-color: #007bff !important;
+        color: white !important;
+        font-weight: bold;
+        position: relative;
+        cursor: pointer !important;
+        border: 2px solid #0056b3 !important;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3) !important;
+    }
+
+    .day-selected:hover {
+        background-color: #0056b3 !important;
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.5) !important;
+    }
+
+    .day-selected::before {
+        content: '👥';
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        font-size: 0.6rem;
+        background: #28a745;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid white;
+    }
+
+    .day-with-presence::after {
+        content: '✓';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        color: #198754;
+        font-size: 0.7rem;
+        font-weight: bold;
+        background: white;
+        border-radius: 50%;
+        width: 12px;
+        height: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .calendar-hint {
+        background-color: #e3f2fd;
+        border: 1px solid #2196f3;
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin: 8px;
+        font-size: 0.75rem;
+        color: #1976d2;
+        text-align: center;
+        display: none;
+    }
+
+    .calendar-hint.show {
+        display: block;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tooltip para dias selecionados */
+    .flatpickr-day.selected {
+        position: relative;
+    }
+
+    .flatpickr-day.selected:hover::after {
+        content: 'Clique para marcar presenças';
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        z-index: 1000;
+        pointer-events: none;
+    }
+
+    .modal-footer-custom {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .btn-salvar-presenca {
+        flex: 1;
+    }
+
+    /* Força o calendário do Flatpickr a ficar abaixo do modal */
+    .flatpickr-calendar {
+        z-index: 1000 !important; /* Força z-index menor que o modal */
+    }
+
+    /* Esconde calendários quando modal está aberto */
+    .presenca-modal.show ~ .flatpickr-calendar,
+    body.modal-open .flatpickr-calendar.open {
+        z-index: 999 !important;
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
+    /* Garante que o modal esteja sempre no topo */
+    body.modal-open .presenca-modal {
+        z-index: 100000 !important;
+    }
+
+    /* Força todos os elementos Flatpickr a ficarem abaixo do modal */
+    body.modal-open .flatpickr-calendar,
+    body.modal-open .flatpickr-calendar.open,
+    body.modal-open .flatpickr-calendar.animate,
+    body.modal-open .flatpickr-calendar.arrowTop,
+    body.modal-open .flatpickr-calendar.arrowLeft {
+        z-index: 500 !important;
+        opacity: 0.2 !important;
+        pointer-events: none !important;
+    }
+</style>
+{% endblock %}
+
+...restante do arquivo...
+
+--- FIM DO ARQUIVO ORIGINAL ---

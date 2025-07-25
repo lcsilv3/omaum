@@ -1,12 +1,10 @@
 from django.test import TestCase
 from django.utils import timezone
-from notas.models import Avaliacao, Nota
+from notas.models import Nota
 from alunos.services import criar_aluno
 from turmas.models import Turma
-from atividades.models import Atividade
-
-class AvaliacaoModelTestCase(TestCase):
-    """Testes unitários para o modelo Avaliacao."""
+class NotaModelTestCase(TestCase):
+    """Testes unitários para o modelo Nota."""
     
     def setUp(self):
         """Configuração inicial para os testes."""
@@ -29,15 +27,39 @@ class AvaliacaoModelTestCase(TestCase):
         )
         self.atividade.turmas.add(self.turma)
         
-        # Criar avaliação para os testes
-        self.avaliacao = Avaliacao.objects.create(
-            nome="Prova Final",
-            descricao="Avaliação final do curso",
-            data=timezone.now().date(),
-            peso=2.0,
+        # Criar um aluno para os testes usando o serviço
+        self.aluno = criar_aluno({
+            "cpf": "12345678900",
+            "nome": "Aluno Teste",
+            "email": "aluno@teste.com",
+            "data_nascimento": "1990-01-01"
+        })
+        
+        # Criar nota para os testes
+        self.nota = Nota.objects.create(
+            aluno=self.aluno,
+            curso=None,
             turma=self.turma,
-            atividade=self.atividade
+            tipo_avaliacao='prova',
+            valor=8.5,
+            peso=2.0,
+            data=timezone.now().date()
         )
+
+    def test_valor_ponderado(self):
+        self.assertEqual(self.nota.valor_ponderado, 17.0)
+
+    def test_situacao_aprovado(self):
+        self.nota.valor = 8.0
+        self.assertEqual(self.nota.situacao, 'Aprovado')
+
+    def test_situacao_recuperacao(self):
+        self.nota.valor = 5.5
+        self.assertEqual(self.nota.situacao, 'Em Recuperação')
+
+    def test_situacao_reprovado(self):
+        self.nota.valor = 4.0
+        self.assertEqual(self.nota.situacao, 'Reprovado')
     
     def test_criacao_avaliacao(self):
         """Testa a criação de uma avaliação."""

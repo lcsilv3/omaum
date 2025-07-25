@@ -2,11 +2,14 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.utils import timezone
-from frequencias.models import Frequencia, RegistroFrequencia
+from frequencias.models import FrequenciaMensal, Carencia
+from alunos.services import criar_aluno
+from turmas.models import Turma
 from alunos.services import criar_aluno
 from turmas.models import Turma
 from atividades.models import Atividade
 from matriculas.models import Matricula
+
 
 class FrequenciasViewsTestCase(TestCase):
     """Testes de integração para as views do módulo de frequências."""
@@ -68,26 +71,34 @@ class FrequenciasViewsTestCase(TestCase):
             status="A"
         )
         
-        # Criar uma frequência para os testes
-        self.frequencia = Frequencia.objects.create(
-            atividade=self.atividade,
-            data=timezone.now().date(),
-            observacoes="Teste de frequência"
+        # Criar uma frequência mensal para os testes
+        self.frequencia = FrequenciaMensal.objects.create(
+            turma=self.turma,
+            mes=timezone.now().month,
+            ano=timezone.now().year
         )
-        
-        # Criar registros de frequência para os testes
-        RegistroFrequencia.objects.create(
-            frequencia=self.frequencia,
+        # Criar carências para os alunos
+        Carencia.objects.create(
+            frequencia_mensal=self.frequencia,
             aluno=self.aluno1,
-            presente=True,
-            justificativa=""
+            total_presencas=5,
+            total_atividades=6,
+            percentual_presenca=83.3,
+            numero_carencias=1,
+            liberado=True,
+            data_identificacao=timezone.now().date(),
+            status='RESOLVIDO'
         )
-        
-        RegistroFrequencia.objects.create(
-            frequencia=self.frequencia,
+        Carencia.objects.create(
+            frequencia_mensal=self.frequencia,
             aluno=self.aluno2,
-            presente=False,
-            justificativa="Atestado médico"
+            total_presencas=2,
+            total_atividades=6,
+            percentual_presenca=33.3,
+            numero_carencias=4,
+            liberado=False,
+            data_identificacao=timezone.now().date(),
+            status='PENDENTE'
         )
         
         # Cliente para fazer requisições
