@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User, Permission
@@ -11,6 +12,7 @@ from notas.models import Avaliacao
 from pagamentos.models import Pagamento, TipoPagamento
 import datetime
 
+@pytest.mark.django_db
 class SecurityTestCase(TestCase):
     """Testes de segurança para os módulos adicionais."""
     

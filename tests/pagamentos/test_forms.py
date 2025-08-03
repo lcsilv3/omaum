@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase
 from django.utils import timezone
 from pagamentos.forms import PagamentoForm, RegistrarPagamentoForm
@@ -6,6 +7,7 @@ from turmas.models import Turma
 from pagamentos.models import TipoPagamento
 import datetime
 
+@pytest.mark.django_db
 class PagamentoFormTestCase(TestCase):
     """Testes unitários para o formulário de pagamento."""
     
@@ -77,6 +79,7 @@ class PagamentoFormTestCase(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('valor', form.errors)
 
+@pytest.mark.django_db
 class RegistrarPagamentoFormTestCase(TestCase):
     """Testes unitários para o formulário de registro de pagamento."""
     

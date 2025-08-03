@@ -395,16 +395,17 @@
             <h5 class="mb-0">
                 <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#secao-dias-atividades" role="button" aria-expanded="true" aria-controls="secao-dias-atividades">
                     <span class="chevron">&#9660;</span>
-                    {% trans "Etapa 3 de 3 - Dias das Atividades e Marcação de Presenças" %} <small class="text-light">(clique para expandir/recolher)</small>
+                    {% trans "Etapa 3 de 3 - Finalização: Dias das Atividades e Marcação de Presenças" %} <small class="text-light">(clique para expandir/recolher)</small>
                 </a>
             </h5>
-                        <p class="mb-0 mt-2"><small>Selecione os dias e marque as presenças diretamente no calendário. Clique em cada dia para marcar presenças.</small></p>
-            <div class="alert alert-info mt-2 mb-0" style="font-size: 0.85rem;">
-                <i class="fas fa-lightbulb me-1"></i>
-                <strong>Como usar:</strong> 
+                        <p class="mb-0 mt-2"><small><strong>Etapa Final:</strong> Selecione os dias e marque as presenças diretamente no calendário. Clique em cada dia para marcar presenças e finalize o registro.</small></p>
+            <div class="alert alert-success mt-2 mb-0" style="font-size: 0.85rem;">
+                <i class="fas fa-check-circle me-1"></i>
+                <strong>Fluxo Simplificado:</strong> 
                 1️⃣ Selecione os dias no calendário 
                 2️⃣ Clique nos dias <span class="badge bg-primary">azuis selecionados</span> para marcar presenças
                 3️⃣ Use modo rápido (todos presentes/ausentes) ou individual por aluno
+                4️⃣ Clique em <strong>"Finalizar Registro"</strong> para concluir
             </div>
         </div>
         <div id="secao-dias-atividades" class="collapse show card-body">
@@ -454,8 +455,8 @@
 <!-- Estilos movidos para o bloco extra_css -->
                 
                 <div class="mt-4">
-                    <button type="submit" class="btn btn-success me-2" aria-label="{% trans 'Finalizar registro de presenças' %}">
-                        <i class="fas fa-check me-2"></i>{% trans "Finalizar Registro" %}
+                    <button type="submit" class="btn btn-success btn-lg me-2" aria-label="{% trans 'Finalizar registro de presenças' %}">
+                        <i class="fas fa-check-circle me-2"></i>{% trans "Finalizar Registro Completo" %}
                     </button>
                     <a href="{% url 'presencas:registrar_presenca_totais_atividades' %}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left me-2"></i>{% trans "Etapa Anterior" %}
@@ -505,6 +506,11 @@
         </div>
         
         <div class="modal-footer-custom">
+            <!-- Aviso de dias faltando -->
+            <div class="aviso-dias-faltando alert alert-warning" style="display: none; margin-bottom: 10px; width: 100%;">
+                <!-- Texto será preenchido via JavaScript -->
+            </div>
+            
             <button type="button" class="btn btn-secondary" onclick="fecharModalPresenca()">
                 <i class="fas fa-times me-1"></i>Cancelar
             </button>
@@ -531,6 +537,23 @@ const PresencaApp = {
     presencasRegistradas: {}, // Objeto para armazenar presenças por atividade/dia
     turmaIdFinal: undefined, // Encapsula turmaIdFinal
 };
+
+// Torna PresencaApp disponível globalmente
+window.PresencaApp = PresencaApp;
+
+console.log('✅ [TEMPLATE] PresencaApp criado e disponibilizado globalmente');
+console.log('✅ [TEMPLATE] PresencaApp:', PresencaApp);
+</script>
+
+<!-- Carrega o presenca_app.js primeiro -->
+<script src="{% static 'presencas/presenca_app.js' %}"></script>
+
+<!-- Depois carrega os scripts de integração -->
+<script src="/static/js/presencas/registrar_presenca_dias_atividades.js"></script>
+<script src="/static/js/presencas/registrar_presenca_dias_atividades_submit.js"></script>
+
+<script>
+// Inclusão do script de submit AJAX e exibição de erros detalhados para etapa 3
 
 // Alterna presença do aluno (corrigido para criar objeto se necessário)
 PresencaApp.togglePresencaAluno = function(cpfAluno, botaoPresenca) {
@@ -635,8 +658,13 @@ PresencaApp.salvarPresencaDia = function() {
         // Se não estiver na lista, adiciona
         if (!datas.some(d => d.getDate() === diaSalvo)) {
             datas.push(dataSalva);
-            inputAtividade._flatpickr.setDate(datas, true);
         }
+        
+        // 🎯 ORDENA OS DIAS ANTES DE SALVAR NO FLATPICKR
+        datas.sort((a, b) => a.getDate() - b.getDate());
+        console.log('📅 [ORDENAÇÃO] Dias ordenados:', datas.map(d => d.getDate()));
+        
+        inputAtividade._flatpickr.setDate(datas, true);
     }
     PresencaApp.mostrarMensagem('Presenças do dia ' + PresencaApp.diaAtual + ' registradas com sucesso!', 'success');
 };
@@ -681,7 +709,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Atualiza campos de observação
                 const obsDiv = document.getElementById('obs-dias-' + atividadeId);
                 obsDiv.innerHTML = '';
-                selectedDates.forEach(function(date) {
+                
+                // 🎯 ORDENA OS DIAS SELECIONADOS ANTES DE CRIAR OS CAMPOS DE OBSERVAÇÃO
+                const diasOrdenados = selectedDates.slice().sort((a, b) => a.getDate() - b.getDate());
+                console.log('📅 [ORDENAÇÃO-ONCHANGE] Dias ordenados:', diasOrdenados.map(d => d.getDate()));
+                
+                diasOrdenados.forEach(function(date) {
                     const dia = date.getDate();
                     const obsInput = document.createElement('input');
                     obsInput.type = 'text';
@@ -827,6 +860,8 @@ document.addEventListener('DOMContentLoaded', function() {
     {% endif %}
 });
 
+/* FUNÇÃO DESABILITADA - USANDO A FUNÇÃO DO ARQUIVO JS EXTERNO */
+/*
 PresencaApp.abrirModalPresenca = function(atividadeId, dia) {
     console.log('[DEBUG] abrirModalPresenca', { atividadeId, dia, presencasRegistradas: JSON.parse(JSON.stringify(PresencaApp.presencasRegistradas)) });
     PresencaApp.atividadeAtual = atividadeId;
@@ -876,6 +911,7 @@ PresencaApp.abrirModalPresenca = function(atividadeId, dia) {
     document.body.classList.add('modal-open');
     PresencaApp.preencherListaAlunos();
 };
+*/
 
 PresencaApp.carregarAlunos = function() {
     // Faz requisição AJAX para carregar lista de alunos da turma

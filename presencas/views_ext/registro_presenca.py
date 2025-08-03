@@ -466,7 +466,8 @@ def registrar_presenca_alunos(request):
                 data__year=ano,
                 data__month=mes
             ).first()
-            key = f"{aluno.id}_{atividade.id}"
+            # Aluno usa cpf como primary_key, então use aluno.pk
+            key = f"{aluno.pk}_{atividade.id}"
             convocacoes[key] = convoc.convocado if convoc else True  # Default: convocado
 
     # Prepara resumo das atividades
@@ -863,7 +864,9 @@ def obter_limites_calendario_ajax(request):
 @login_required
 @require_POST
 def registrar_presenca_dias_atividades_ajax(request):
+    import json
     from datetime import date
+    from django.utils import timezone
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
@@ -872,45 +875,96 @@ def registrar_presenca_dias_atividades_ajax(request):
     if not turma or not ano or not mes:
         return JsonResponse({'success': False, 'message': 'Dados de sessão ausentes. Refaça o processo.'})
 
-    # Remove observações anteriores para evitar duplicidade
-    Atividade = get_model_class("Atividade")
-    atividades = Atividade.objects.filter(
-        turmas__id=turma.id,
-        data_inicio__year=ano,
-        data_inicio__month=mes
-    )
-    ObservacaoPresenca.objects.filter(
-        turma=turma,
-        data__year=ano,
-        data__month=mes,
-        atividade__in=atividades
-    ).delete()
-
     try:
-        for key in request.POST:
-            if key.startswith('presenca_'):
-                atividade_id = key.replace('presenca_', '')
-                dias = request.POST.getlist(key)
-                for dia in dias:
-                    obs = request.POST.get(f'obs_{atividade_id}_{dia}', '')
-                    try:
-                        Atividade = get_model_class("Atividade")
-                        atividade = Atividade.objects.get(id=atividade_id)
-                        data = date(int(ano), int(mes), int(dia))
-                        ObservacaoPresenca.objects.create(
-                            aluno=None,
-                            turma=turma,
-                            data=data,
-                            atividade=atividade,
-                            texto=obs,
-                            registrado_por=request.user.username
-                        )
-                    except (Atividade.DoesNotExist, ValueError, TypeError) as e:
-                        logger.exception('Erro ao registrar observação para atividade %s, dia %s: %s', atividade_id, dia, e)
-                        continue
-        return JsonResponse({'success': True, 'redirect_url': '/presencas/registrar-presenca/alunos/', 'message': 'Presenças salvas com sucesso!'})
+        with transaction.atomic():
+            presencas_processadas = 0
+            
+            # Processa presenças do JSON (dados do modal)
+            presencas_json = request.POST.get('presencas_json')
+            if presencas_json:
+                try:
+                    presencas_data = json.loads(presencas_json)
+                    logger.debug(f"Processando presenças JSON: {presencas_data}")
+                    
+                    for atividade_id, dias_data in presencas_data.items():
+                        for dia, alunos_data in dias_data.items():
+                            for cpf_aluno, presenca_info in alunos_data.items():
+                                try:
+                                    aluno = Aluno.objects.get(cpf=cpf_aluno)
+                                    Atividade = get_model_class("Atividade")
+                                    atividade = Atividade.objects.get(id=atividade_id)
+                                    data_presenca = date(int(ano), int(mes), int(dia))
+                                    
+                                    # Registra a presença
+                                    PresencaAcademica.objects.update_or_create(
+                                        aluno=aluno,
+                                        turma=turma,
+                                        data=data_presenca,
+                                        atividade=atividade,
+                                        defaults={
+                                            'presente': presenca_info.get('presente', True),
+                                            'justificativa': presenca_info.get('justificativa', '') if not presenca_info.get('presente', True) else None,
+                                            'registrado_por': request.user.username,
+                                            'data_registro': timezone.now(),
+                                        }
+                                    )
+                                    presencas_processadas += 1
+                                except Exception as e:
+                                    logger.warning(f"Erro ao processar presença {cpf_aluno}: {e}")
+                                    continue
+                except json.JSONDecodeError as e:
+                    logger.error(f"Erro ao decodificar JSON de presenças: {e}")
+                    return JsonResponse({'success': False, 'message': 'Erro nos dados de presenças. Tente novamente.'})
+
+            # Processa observações dos dias (funcionalidade original)  
+            for key in request.POST:
+                if key.startswith('obs_'):
+                    # Formato: obs_atividade_id_dia
+                    parts = key.split('_')
+                    if len(parts) >= 3:
+                        atividade_id = parts[1]
+                        dia = parts[2]
+                        obs = request.POST.get(key, '')
+                        
+                        if obs.strip():  # Só salva se há observação
+                            try:
+                                Atividade = get_model_class("Atividade")
+                                atividade = Atividade.objects.get(id=atividade_id)
+                                data = date(int(ano), int(mes), int(dia))
+                                
+                                ObservacaoPresenca.objects.update_or_create(
+                                    aluno=None,
+                                    turma=turma,
+                                    data=data,
+                                    atividade=atividade,
+                                    defaults={
+                                        'texto': obs,
+                                        'registrado_por': request.user.username
+                                    }
+                                )
+                            except (Atividade.DoesNotExist, ValueError, TypeError):
+                                continue
+
+            if presencas_processadas > 0:
+                # Limpa dados da sessão após sucesso
+                session_keys = ['presenca_turma_id', 'presenca_ano', 'presenca_mes', 'presenca_totais_atividades']
+                for key in session_keys:
+                    if key in request.session:
+                        del request.session[key]
+                        
+                return JsonResponse({
+                    'success': True, 
+                    'redirect_url': '/presencas/listar/', 
+                    'message': f'Registro finalizado com sucesso! {presencas_processadas} presenças processadas.'
+                })
+            else:
+                return JsonResponse({
+                    'success': False, 
+                    'message': 'Nenhuma presença foi registrada. Selecione os dias e marque as presenças antes de finalizar.'
+                })
+                
     except Exception as e:
-        logger.exception('Erro inesperado ao salvar presenças: %s', e)
+        logger.exception('Erro inesperado ao salvar presenças AJAX: %s', e)
         return JsonResponse({'success': False, 'message': f'Erro ao salvar: {str(e)}'})
 
 @login_required
@@ -1020,4 +1074,4 @@ def registrar_presenca_convocados_ajax(request):
             convocados = request.POST.getlist(f'convocados_{atividade.id}')
             convocados_dict[str(atividade.id)] = [int(aid) for aid in convocados]
     request.session['presenca_convocados'] = convocados_dict
-    return JsonResponse({'success': True, 'redirect_url': '/presencas/registrar-presenca/alunos/'})
+    return JsonResponse({'success': True, 'redirect_url': '/presencas/listar/'})

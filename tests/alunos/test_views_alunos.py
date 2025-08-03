@@ -1,8 +1,10 @@
+import pytest
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from alunos.services import criar_aluno, buscar_aluno_por_cpf
 
+@pytest.mark.django_db
 class AlunosViewsTestCase(TestCase):
     """Testes de integração para as views do módulo de alunos."""
     

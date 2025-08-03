@@ -8,6 +8,7 @@ from turmas.models import Turma
 from atividades.models import Atividade
 from matriculas.models import Matricula
 
+@pytest.mark.django_db
 class NotasViewsTestCase(TestCase):
     """Testes de integração para as views do módulo de notas."""
     

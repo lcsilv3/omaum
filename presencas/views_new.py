@@ -297,10 +297,15 @@ def registrar_presenca_dias_atividades(request):
     turma = Turma.objects.get(id=turma_id)
     
     if request.method == 'POST':
-        # Processar dados do formulário
+        # Processar dados do formulário - Agora redireciona diretamente para a lista
         request.session['presenca_dias_atividades'] = True
-        messages.success(request, 'Dias de atividades registrados com sucesso!')
-        return redirect('presencas:registrar_presenca_alunos')
+        messages.success(request, 'Registro de presenças finalizado com sucesso!')
+        # Limpa dados da sessão
+        session_keys = ['presenca_turma_id', 'presenca_ano', 'presenca_mes', 'presenca_totais_atividades']
+        for key in session_keys:
+            if key in request.session:
+                del request.session[key]
+        return redirect('presencas:listar_presencas_academicas')
     
     context = {
         'turma': turma,

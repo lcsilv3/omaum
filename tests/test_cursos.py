@@ -17,6 +17,7 @@ from cursos.services import CursoService
 from tests.factories import CursoFactory, UserFactory
 
 
+@pytest.mark.django_db
 class TipoCursoModelTest(TestCase):
     """Testes para o modelo TipoCurso."""
     
@@ -45,6 +46,7 @@ class TipoCursoModelTest(TestCase):
         assert self.tipo_curso.ativo is False
 
 
+@pytest.mark.django_db
 class CursoModelTest(TestCase):
     """Testes para o modelo Curso."""
     
@@ -89,6 +91,7 @@ class CursoModelTest(TestCase):
         assert self.curso.tipo_curso.ativo is True
 
 
+@pytest.mark.django_db
 class CursoFormTest(TestCase):
     """Testes para o formulário de Curso."""
     
@@ -139,6 +142,7 @@ class CursoFormTest(TestCase):
         assert curso.tipo_curso == self.tipo_curso
 
 
+@pytest.mark.django_db
 class CursoServiceTest(TestCase):
     """Testes para o serviço de Curso."""
     
@@ -226,6 +230,7 @@ class CursoServiceTest(TestCase):
         assert preco_com_desconto == preco_esperado
 
 
+@pytest.mark.django_db
 class CursoViewTest(TestCase):
     """Testes para as views de Curso."""
     
@@ -320,6 +325,7 @@ class CursoViewTest(TestCase):
         assert self.curso in response.context['cursos']
 
 
+@pytest.mark.django_db
 class CursoAPITest(TestCase):
     """Testes para a API de Curso."""
     

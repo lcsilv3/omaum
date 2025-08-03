@@ -47,17 +47,22 @@ class PresencaAPIBaseTest(APITestCase):
         )
         
         # Criar turma
+        from cursos.models import Curso
+        self.curso = Curso.objects.create(nome='Curso Teste')
         self.turma = Turma.objects.create(
             nome='Turma A',
-            ano=2024,
-            semestre=1
+            curso=self.curso
         )
         
         # Criar atividade
+        from datetime import time
         self.atividade = Atividade.objects.create(
             nome='Atividade Teste',
             descricao='Descrição da atividade',
-            tipo='academica'
+            tipo_atividade='AULA',
+            data_inicio=date(2024, 1, 1),
+            hora_inicio=time(8, 0),
+            status='CONFIRMADA'
         )
     
     def authenticate(self):
@@ -100,7 +105,7 @@ class PresencaViewSetTest(PresencaAPIBaseTest):
         self.authenticate()
         
         data = {
-            'aluno': self.aluno.id,
+            'aluno': self.aluno.pk,
             'turma': self.turma.id,
             'atividade': self.atividade.id,
             'data': date.today().isoformat(),
@@ -129,7 +134,7 @@ class PresencaViewSetTest(PresencaAPIBaseTest):
         self.authenticate()
         
         data = {
-            'aluno': self.aluno.id,
+            'aluno': self.aluno.pk,
             'turma': self.turma.id,
             'data': (date.today() + timedelta(days=1)).isoformat(),
             'presente': True
@@ -154,7 +159,7 @@ class PresencaViewSetTest(PresencaAPIBaseTest):
         
         # Tentar criar duplicada
         data = {
-            'aluno': self.aluno.id,
+            'aluno': self.aluno.pk,
             'turma': self.turma.id,
             'data': date.today().isoformat(),
             'presente': False
@@ -234,7 +239,7 @@ class PresencaViewSetTest(PresencaAPIBaseTest):
         url = reverse('presenca-list')
         
         # Filtrar por aluno
-        response = self.client.get(url, {'aluno': self.aluno.id})
+        response = self.client.get(url, {'aluno': self.aluno.pk})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], presenca1.id)
@@ -306,16 +311,21 @@ class AjaxEndpointsTest(TestCase):
             email='joao@example.com'
         )
         
+        from cursos.models import Curso
+        self.curso = Curso.objects.create(nome='Curso Teste')
         self.turma = Turma.objects.create(
             nome='Turma A',
-            ano=2024,
-            semestre=1
+            curso=self.curso
         )
         
+        from datetime import time
         self.atividade = Atividade.objects.create(
             nome='Atividade Teste',
             descricao='Descrição da atividade',
-            tipo='academica'
+            tipo_atividade='AULA',
+            data_inicio=date(2024, 1, 1),
+            hora_inicio=time(8, 0),
+            status='CONFIRMADA'
         )
     
     def login_user(self):
@@ -329,7 +339,7 @@ class AjaxEndpointsTest(TestCase):
         try:
             url = reverse('presencas:ajax_registrar_presenca_rapida')
             data = {
-                'aluno_id': self.aluno.id,
+                'aluno_id': self.aluno.pk,
                 'turma_id': self.turma.id,
                 'atividade_id': self.atividade.id,
                 'data': date.today().isoformat(),
@@ -391,7 +401,7 @@ class AjaxEndpointsTest(TestCase):
         try:
             url = reverse('presencas:ajax_calcular_consolidado')
             data = {
-                'aluno_id': self.aluno.id,
+                'aluno_id': self.aluno.pk,
                 'turma_id': self.turma.id,
                 'periodo_inicio': '2024-01-01',
                 'periodo_fim': '2024-12-31'
@@ -469,16 +479,21 @@ class SerializerTest(TestCase):
             email='joao@example.com'
         )
         
+        from cursos.models import Curso
+        self.curso = Curso.objects.create(nome='Curso Teste')
         self.turma = Turma.objects.create(
             nome='Turma A',
-            ano=2024,
-            semestre=1
+            curso=self.curso
         )
         
+        from datetime import time
         self.atividade = Atividade.objects.create(
             nome='Atividade Teste',
             descricao='Descrição da atividade',
-            tipo='academica'
+            tipo_atividade='AULA',
+            data_inicio=date(2024, 1, 1),
+            hora_inicio=time(8, 0),
+            status='CONFIRMADA'
         )
     
     def test_presenca_serializer_valido(self):

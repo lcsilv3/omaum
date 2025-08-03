@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase
 from django.utils import timezone
 from pagamentos.models import Pagamento, TipoPagamento
@@ -6,6 +7,7 @@ from turmas.models import Turma
 import datetime
 
 
+@pytest.mark.django_db
 class TipoPagamentoModelTestCase(TestCase):
     """Testes unitários para o modelo TipoPagamento."""
     
@@ -29,6 +31,7 @@ class TipoPagamentoModelTestCase(TestCase):
         self.assertEqual(str(self.tipo_pagamento), "Mensalidade")
 
 
+@pytest.mark.django_db
 class PagamentoModelTestCase(TestCase):
     """Testes unitários para o modelo Pagamento."""
     

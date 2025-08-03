@@ -1,5 +1,6 @@
 from django.urls import reverse
 # Testes de integração para as views simplificadas do app alunos
+@pytest.mark.django_db
 class AlunoViewsIntegracaoTest(TestCase):
     """Testes de integração para as views CRUD simplificadas do app alunos."""
 
@@ -76,6 +77,7 @@ from datetime import date
 from alunos.models import Aluno, Pais, Estado, Cidade
 
 
+@pytest.mark.django_db
 class AlunoSimpleTest(TestCase):
     """Testes simples para o modelo Aluno."""
     
@@ -168,6 +170,7 @@ class AlunoSimpleTest(TestCase):
         self.assertEqual(aluno._meta.verbose_name_plural, 'Alunos')
 
 
+@pytest.mark.django_db
 class AlunoViewSimpleTest(TestCase):
     """Testes simples para views de Aluno."""
     
@@ -233,6 +236,7 @@ class AlunoViewSimpleTest(TestCase):
 
 
 @pytest.mark.unit
+@pytest.mark.django_db
 class AlunoUnitSimpleTest(TestCase):
     """Testes unitários muito básicos para o módulo de alunos."""
     
@@ -317,6 +321,7 @@ class AlunoUnitSimpleTest(TestCase):
 
 
 @pytest.mark.critical
+@pytest.mark.django_db
 class AlunoCriticalSimpleTest(TestCase):
     """Testes críticos simples para o módulo de alunos."""
     
@@ -429,6 +434,7 @@ class AlunoCriticalSimpleTest(TestCase):
             )
 
 
+@pytest.mark.django_db
 class AlunoPerformanceSimpleTest(TestCase):
     """Testes de performance simples para o módulo de alunos."""
     
@@ -520,6 +526,7 @@ class AlunoPerformanceSimpleTest(TestCase):
         self.assertEqual(len(alunos), 5)
 
 
+@pytest.mark.django_db
 class PaisSimpleTest(TestCase):
     """Testes simples para o modelo Pais."""
     
@@ -547,6 +554,7 @@ class PaisSimpleTest(TestCase):
         self.assertEqual(str(pais), 'Brasil')
 
 
+@pytest.mark.django_db
 class EstadoSimpleTest(TestCase):
     """Testes simples para o modelo Estado."""
     
@@ -581,6 +589,7 @@ class EstadoSimpleTest(TestCase):
         self.assertEqual(str(estado), 'São Paulo (SP)')
 
 
+@pytest.mark.django_db
 class CidadeSimpleTest(TestCase):
     """Testes simples para o modelo Cidade."""
     

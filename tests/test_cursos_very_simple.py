@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from cursos.models import Curso
 
 
+@pytest.mark.django_db
 class CursoSimpleTest(TestCase):
     """Testes simples para o modelo Curso."""
     
@@ -53,6 +54,7 @@ class CursoSimpleTest(TestCase):
         self.assertEqual(curso._meta.ordering, ["id"])
 
 
+@pytest.mark.django_db
 class CursoViewSimpleTest(TestCase):
     """Testes simples para views de Curso."""
     
@@ -93,6 +95,7 @@ class CursoViewSimpleTest(TestCase):
 
 
 @pytest.mark.unit
+@pytest.mark.django_db
 class CursoUnitSimpleTest(TestCase):
     """Testes unitários muito básicos para o módulo de cursos."""
     
@@ -124,6 +127,7 @@ class CursoUnitSimpleTest(TestCase):
 
 
 @pytest.mark.critical
+@pytest.mark.django_db
 class CursoCriticalSimpleTest(TestCase):
     """Testes críticos simples para o módulo de cursos."""
     
@@ -163,6 +167,7 @@ class CursoCriticalSimpleTest(TestCase):
             self.assertEqual(curso.nome, f"Curso {i}")
 
 
+@pytest.mark.django_db
 class CursoPerformanceSimpleTest(TestCase):
     """Testes de performance simples para o módulo de cursos."""
     

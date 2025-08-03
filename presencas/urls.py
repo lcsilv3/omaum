@@ -154,17 +154,17 @@ urlpatterns = [
         registrar_presenca_dias_atividades_ajax,
         name='registrar_presenca_dias_atividades_ajax',
     ),
-    # Registro de presença - alunos
-    path(
-        'registrar-presenca/alunos/',
-        registrar_presenca_alunos,
-        name='registrar_presenca_alunos',
-    ),
-    path(
-        'registrar-presenca/alunos/ajax/',
-        registrar_presenca_alunos_ajax,
-        name='registrar_presenca_alunos_ajax',
-    ),
+    # Registro de presença - alunos (OBSOLETO - Funcionalidade integrada na etapa de dias)
+    # path(
+    #     'registrar-presenca/alunos/',
+    #     registrar_presenca_alunos,
+    #     name='registrar_presenca_alunos',
+    # ),
+    # path(
+    #     'registrar-presenca/alunos/ajax/',
+    #     registrar_presenca_alunos_ajax,
+    #     name='registrar_presenca_alunos_ajax',
+    # ),
     # Confirmação de registro de presença
     path(
         'registrar-presenca/confirmar/',

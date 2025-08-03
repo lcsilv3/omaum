@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase
 from django.utils import timezone
 from frequencias.models import FrequenciaMensal, Carencia
@@ -6,6 +7,7 @@ from turmas.models import Turma
 from atividades.models import Atividade
 
 
+@pytest.mark.django_db
 class FrequenciaMensalModelTestCase(TestCase):
     """Testes unitários para o modelo FrequenciaMensal."""
     def setUp(self):
@@ -35,6 +37,7 @@ class FrequenciaMensalModelTestCase(TestCase):
         self.assertIn("2024", representacao)
 
 
+@pytest.mark.django_db
 class CarenciaModelTestCase(TestCase):
     """Testes unitários para o modelo Carencia."""
     def setUp(self):

@@ -1,3 +1,4 @@
+from cursos.models import Curso
 """Modelos do aplicativo Alunos."""
 
 import datetime

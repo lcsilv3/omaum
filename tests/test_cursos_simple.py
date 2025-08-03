@@ -16,6 +16,7 @@ from cursos.forms import CursoForm
 from tests.factories import CursoFactory, UserFactory
 
 
+@pytest.mark.django_db
 class CursoModelTest(TestCase):
     """Testes para o modelo Curso."""
     
@@ -46,6 +47,7 @@ class CursoModelTest(TestCase):
         self.assertEqual(curso._meta.ordering, ["id"])
 
 
+@pytest.mark.django_db
 class CursoFormTest(TestCase):
     """Testes para o formulário de Curso."""
     
@@ -88,6 +90,7 @@ class CursoFormTest(TestCase):
         self.assertTrue(curso.ativo)
 
 
+@pytest.mark.django_db
 class CursoViewTest(TestCase):
     """Testes para views de Curso."""
     
@@ -176,6 +179,7 @@ class CursoViewTest(TestCase):
         self.assertFalse(Curso.objects.filter(pk=self.curso.pk).exists())
 
 
+@pytest.mark.django_db
 class CursoIntegrationTest(TestCase):
     """Testes de integração para o módulo de cursos."""
     
@@ -261,6 +265,7 @@ class CursoIntegrationTest(TestCase):
 
 
 # Testes de marcação para diferentes tipos
+@pytest.mark.django_db
 class CursoSlowTest(TestCase):
     """Testes mais lentos para o módulo de cursos."""
     
@@ -290,6 +295,7 @@ class CursoSlowTest(TestCase):
 
 
 @pytest.mark.unit
+@pytest.mark.django_db
 class CursoUnitTest(TestCase):
     """Testes unitários específicos para o módulo de cursos."""
     
@@ -311,6 +317,7 @@ class CursoUnitTest(TestCase):
 
 
 @pytest.mark.critical
+@pytest.mark.django_db
 class CursoCriticalTest(TestCase):
     """Testes críticos para o módulo de cursos."""
     

@@ -1,6 +1,7 @@
 """
 Testes de integração para o fluxo completo do sistema OMAUM.
 """
+import pytest
 
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -8,6 +9,7 @@ from datetime import date, time
 from importlib import import_module
 
 
+@pytest.mark.django_db
 class FluxoCompletoTestCase(TestCase):
     """Testa o fluxo completo: criar curso → criar turma → criar aluno → matricular."""
     

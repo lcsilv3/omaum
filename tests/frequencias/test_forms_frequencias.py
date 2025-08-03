@@ -1,9 +1,11 @@
+import pytest
 from django.test import TestCase
 from django.utils import timezone
 from frequencias.forms import FrequenciaMensalForm
 from turmas.models import Turma
 from atividades.models import Atividade
 
+@pytest.mark.django_db
 class FrequenciaFormTestCase(TestCase):
     """Testes unitários para o formulário de frequência."""
     

@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -6,6 +7,7 @@ from alunos.services import criar_aluno
 from matriculas.models import Matricula
 from django.utils import timezone
 
+@pytest.mark.django_db
 class TurmasViewsTestCase(TestCase):
     """Testes de integração para as views do módulo de turmas."""
     

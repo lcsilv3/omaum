@@ -187,10 +187,8 @@
         </nav>
     </header>
     <main class="py-4">
-        <div class="container">
-            {% include 'partials/messages.html' %}
-            {% block content %}{% endblock %}
-        </div>
+        {% include 'partials/messages.html' %}
+        {% block content %}{% endblock %}
     </main>
     <footer class="footer">
         <div class="container text-center">

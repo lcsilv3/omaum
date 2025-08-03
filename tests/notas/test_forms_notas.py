@@ -7,6 +7,7 @@ from turmas.models import Turma
 from atividades.models import Atividade
 from matriculas.models import Matricula
 
+@pytest.mark.django_db
 class AvaliacaoFormTestCase(TestCase):
     """Testes unitários para o formulário de avaliação."""
     
@@ -71,6 +72,7 @@ class AvaliacaoFormTestCase(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('peso', form.errors)
 
+@pytest.mark.django_db
 class NotaFormSetTestCase(TestCase):
     """Testes unitários para o formset de notas."""
     

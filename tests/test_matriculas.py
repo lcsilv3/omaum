@@ -20,6 +20,7 @@ from tests.factories import (
 )
 
 
+@pytest.mark.django_db
 class StatusMatriculaModelTest(TestCase):
     """Testes para o modelo StatusMatricula."""
     
@@ -48,6 +49,7 @@ class StatusMatriculaModelTest(TestCase):
         assert self.status_matricula.ativo is False
 
 
+@pytest.mark.django_db
 class MatriculaModelTest(TestCase):
     """Testes para o modelo Matricula."""
     
@@ -112,6 +114,7 @@ class MatriculaModelTest(TestCase):
         assert matricula.valor_pendente == valor_pendente
 
 
+@pytest.mark.django_db
 class MatriculaFormTest(TestCase):
     """Testes para o formulário de Matricula."""
     
@@ -168,6 +171,7 @@ class MatriculaFormTest(TestCase):
         assert not form.is_valid()
 
 
+@pytest.mark.django_db
 class MatriculaServiceTest(TestCase):
     """Testes para o serviço de Matricula."""
     
@@ -299,6 +303,7 @@ class MatriculaServiceTest(TestCase):
         assert nao_existe is False
 
 
+@pytest.mark.django_db
 class MatriculaViewTest(TestCase):
     """Testes para as views de Matricula."""
     
@@ -418,6 +423,7 @@ class MatriculaViewTest(TestCase):
         assert data['exists'] is True
 
 
+@pytest.mark.django_db
 class MatriculaAPITest(TestCase):
     """Testes para a API de Matricula."""
     

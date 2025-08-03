@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -11,6 +12,7 @@ from atividades.models import Atividade
 from matriculas.models import Matricula
 
 
+@pytest.mark.django_db
 class FrequenciasViewsTestCase(TestCase):
     """Testes de integração para as views do módulo de frequências."""
     

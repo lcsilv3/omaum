@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -5,6 +6,7 @@ from atividades.models import Atividade
 from turmas.models import Turma
 from django.utils import timezone
 
+@pytest.mark.django_db
 class AtividadesAcademicasViewsTestCase(TestCase):
     """Testes de integração para as views de atividades acadêmicas."""
     
@@ -118,6 +120,7 @@ class AtividadesAcademicasViewsTestCase(TestCase):
         # Verificar se a mensagem de sucesso está na página
         self.assertContains(response, "Atividade acadêmica criada com sucesso")
 
+@pytest.mark.django_db
 class AtividadesRitualisticasViewsTestCase(TestCase):
     """Testes de integração para as views de atividades ritualísticas."""
     

@@ -16,6 +16,7 @@ from alunos.services import AlunoService
 from tests.factories import AlunoFactory, TipoAlunoFactory, UserFactory
 
 
+@pytest.mark.django_db
 class TipoAlunoModelTest(TestCase):
     """Testes para o modelo TipoAluno."""
     
@@ -44,6 +45,7 @@ class TipoAlunoModelTest(TestCase):
         assert self.tipo_aluno.ativo is False
 
 
+@pytest.mark.django_db
 class AlunoModelTest(TestCase):
     """Testes para o modelo Aluno."""
     
@@ -102,6 +104,7 @@ class AlunoModelTest(TestCase):
         assert aluno.codigo_iniciatico == codigo
 
 
+@pytest.mark.django_db
 class AlunoFormTest(TestCase):
     """Testes para o formulário de Aluno."""
     
@@ -154,6 +157,7 @@ class AlunoFormTest(TestCase):
         assert aluno.tipo_aluno == self.tipo_aluno
 
 
+@pytest.mark.django_db
 class AlunoServiceTest(TestCase):
     """Testes para o serviço de Aluno."""
     
@@ -259,6 +263,7 @@ class AlunoServiceTest(TestCase):
         assert aluno_adulto in alunos_adultos
 
 
+@pytest.mark.django_db
 class AlunoViewTest(TestCase):
     """Testes para as views de Aluno."""
     
@@ -366,6 +371,7 @@ class AlunoViewTest(TestCase):
         assert data['exists'] is True
 
 
+@pytest.mark.django_db
 class AlunoAPITest(TestCase):
     """Testes para a API de Aluno."""
     

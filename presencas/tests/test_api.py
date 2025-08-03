@@ -22,32 +22,43 @@ class PresencasAPITestCase(TestCase):
     def setUp(self):
         """Configuração inicial para todos os testes."""
         self.client = Client()
-        
         # Criar usuário de teste
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
             password='testpass123'
         )
-        
-        # Criar dados de teste
+        # Criar curso obrigatório
+        from cursos.models import Curso
+        self.curso = Curso.objects.create(nome='Curso Teste')
+        # Criar turma vinculada ao curso
         self.turma = Turma.objects.create(
             nome='Turma Teste',
-            perc_carencia=75.0
+            perc_carencia=75.0,
+            curso=self.curso
         )
-        
+        from datetime import date, time
         self.atividade = Atividade.objects.create(
             nome='Atividade Teste',
-            tipo='Acadêmica'
+            tipo_atividade='AULA',
+            data_inicio=date(2024, 1, 1),
+            hora_inicio=time(8, 0),
+            status='CONFIRMADA'
         )
-        
         self.aluno = Aluno.objects.create(
             nome='Aluno Teste',
             cpf='12345678901',
             email='aluno@test.com',
-            turma=self.turma
+            data_nascimento=date(2000, 1, 1)
         )
-        
+        from matriculas.models import Matricula
+        Matricula.objects.create(
+            aluno=self.aluno,
+            turma=self.turma,
+            data_matricula=date(2024, 1, 1),
+            ativa=True,
+            status='A'
+        )
         # Login do usuário
         self.client.login(username='testuser', password='testpass123')
     
@@ -66,7 +77,7 @@ class TestAtualizarPresencasAPI(PresencasAPITestCase):
         data = {
             'presencas': [
                 {
-                    'aluno_id': self.aluno.id,
+                    'aluno_id': self.aluno.pk,
                     'turma_id': self.turma.id,
                     'atividade_id': self.atividade.id,
                     'periodo': '2024-01-01',
@@ -108,7 +119,7 @@ class TestAtualizarPresencasAPI(PresencasAPITestCase):
         data = {
             'presencas': [
                 {
-                    'aluno_id': self.aluno.id,
+                    'aluno_id': self.aluno.pk,
                     'turma_id': self.turma.id,
                     'atividade_id': self.atividade.id,
                     'periodo': '2024-01-01',
@@ -252,7 +263,7 @@ class TestValidarDadosAPI(PresencasAPITestCase):
         url = reverse('presencas:presencas_api:validar_dados')
         
         data = {
-            'aluno_id': self.aluno.id,
+            'aluno_id': self.aluno.pk,
             'turma_id': self.turma.id,
             'atividade_id': self.atividade.id,
             'periodo': '2024-01-01',
@@ -278,7 +289,7 @@ class TestValidarDadosAPI(PresencasAPITestCase):
         url = reverse('presencas:presencas_api:validar_dados')
         
         data = {
-            'aluno_id': self.aluno.id,
+            'aluno_id': self.aluno.pk,
             'turma_id': self.turma.id,
             'atividade_id': self.atividade.id,
             'periodo': '2024-01-15',  # Não é primeiro dia do mês

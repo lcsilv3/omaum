@@ -1,5 +1,18 @@
 from rest_framework import serializers
-from .models import Presenca, PresencaDetalhada, ConfiguracaoPresenca
+from .models import Presenca, PresencaDetalhada, ConfiguracaoPresenca, TotalAtividadeMes, ObservacaoPresenca
+# Serializer para ObservacaoPresenca
+class ObservacaoPresencaSerializer(serializers.ModelSerializer):
+    aluno_nome = serializers.CharField(source='aluno.nome', read_only=True)
+    turma_nome = serializers.CharField(source='turma.nome', read_only=True)
+    atividade_nome = serializers.CharField(source='atividade.nome', read_only=True)
+
+    class Meta:
+        model = ObservacaoPresenca
+        fields = [
+            'id', 'aluno', 'aluno_nome', 'turma', 'turma_nome',
+            'atividade', 'atividade_nome', 'data', 'texto',
+            'registrado_por', 'data_registro'
+        ]
 
 
 class PresencaSerializer(serializers.ModelSerializer):
@@ -113,14 +126,15 @@ class BuscaAlunoSerializer(serializers.Serializer):
         return value.strip()
 
 
-class EstatisticasSerializer(serializers.Serializer):
-    """Serializer para parâmetros de estatísticas."""
-    turma_id = serializers.IntegerField(required=False)
-    atividade_id = serializers.IntegerField(required=False)
-    periodo = serializers.DateField(required=False)
-    
-    def validate_periodo(self, value):
-        """Validar período."""
-        if value and value.day != 1:
-            raise serializers.ValidationError("Período deve ser o primeiro dia do mês")
-        return value
+
+# Serializer para TotalAtividadeMes
+class TotalAtividadeMesSerializer(serializers.ModelSerializer):
+    atividade_nome = serializers.CharField(source='atividade.nome', read_only=True)
+    turma_nome = serializers.CharField(source='turma.nome', read_only=True)
+
+    class Meta:
+        model = TotalAtividadeMes
+        fields = [
+            'id', 'atividade', 'atividade_nome', 'turma', 'turma_nome',
+            'ano', 'mes', 'qtd_ativ_mes', 'registrado_por', 'data_registro'
+        ]

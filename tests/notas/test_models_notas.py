@@ -1,8 +1,10 @@
+import pytest
 from django.test import TestCase
 from django.utils import timezone
 from notas.models import Nota
 from alunos.services import criar_aluno
 from turmas.models import Turma
+@pytest.mark.django_db
 class NotaModelTestCase(TestCase):
     """Testes unitários para o modelo Nota."""
     
@@ -74,6 +76,7 @@ class NotaModelTestCase(TestCase):
         representacao_esperada = f"Prova Final - {self.turma.nome}"
         self.assertEqual(str(self.avaliacao), representacao_esperada)
 
+@pytest.mark.django_db
 class NotaModelTestCase(TestCase):
     """Testes unitários para o modelo Nota."""
     

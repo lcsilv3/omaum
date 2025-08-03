@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -9,6 +10,7 @@ from matriculas.models import Matricula
 import datetime
 import random
 
+@pytest.mark.django_db
 class PerformanceTestCase(TestCase):
     """Testes de desempenho para os módulos adicionais."""
     

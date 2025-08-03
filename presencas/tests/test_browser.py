@@ -161,15 +161,33 @@ class JavaScriptTestCase(TestCase):
         self.assertContains(response, "data-col=")
 
 
-# Testes que requerem Selenium (executados apenas se disponível)
 if SELENIUM_AVAILABLE:
-    # ... definição de SeleniumTestCase ...
+    class SeleniumTestCase(StaticLiveServerTestCase):
+        """Classe base para testes com Selenium."""
 
-    # ... definição de SeleniumTestCase ...
+        @classmethod
+        def setUpClass(cls):
+            super().setUpClass()
 
-    # ... definição de SeleniumTestCase ...
+            # Configurar Chrome em modo headless
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
 
-    # ... definição de SeleniumTestCase ...
+            try:
+                cls.driver = webdriver.Chrome(options=chrome_options)
+                cls.driver.implicitly_wait(10)
+            except Exception as e:
+                cls.driver = None
+
+        @classmethod
+        def tearDownClass(cls):
+            if hasattr(cls, 'driver') and cls.driver:
+                cls.driver.quit()
+            super().tearDownClass()
 
     # Outras classes de teste Selenium...
 

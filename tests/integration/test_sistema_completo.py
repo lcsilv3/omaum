@@ -220,6 +220,7 @@ class FluxoCompletoSistemaTest(TransactionTestCase):
         assert len(list(presencas)) > 0
 
 
+@pytest.mark.django_db
 class APIIntegrationTest(TestCase):
     """Testes de integração das APIs."""
     

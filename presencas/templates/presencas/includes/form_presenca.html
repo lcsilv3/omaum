@@ -1,0 +1,15 @@
+{# Formulário principal de presenças #}
+<form id="form-presenca" method="post" autocomplete="off">
+    {% csrf_token %}
+    <div class="mt-4">
+        <button type="submit" class="btn btn-success me-2" aria-label="Finalizar registro de presenças">
+            <i class="fas fa-check me-2"></i>Finalizar Registro
+        </button>
+        <a href="{% url 'presencas:registrar_presenca_totais_atividades' %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-2"></i>Etapa Anterior
+        </a>
+        <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-outline-info">
+            <i class="fas fa-home me-2"></i>Recomeçar
+        </a>
+    </div>
+</form>

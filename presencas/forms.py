@@ -1,4 +1,14 @@
 from django import forms
+
+class RegistroRapidoForm(forms.Form):
+    pass
+
+class ExportacaoForm(forms.Form):
+    pass
+
+class PresencaDetalhadaForm(forms.Form):
+    pass
+
 import logging
 from cursos.models import Curso
 from turmas.models import Turma

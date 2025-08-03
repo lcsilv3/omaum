@@ -187,7 +187,7 @@ class CalcularEstatisticasView(APIResponseMixin, View):
             # Estatísticas por aluno
             stats_por_aluno = queryset.values(
                 'aluno__nome',
-                'aluno__id'
+                'aluno__pk'
             ).annotate(
                 total_convocacoes=Sum('convocacoes'),
                 total_presencas=Sum('presencas'),
@@ -269,26 +269,30 @@ class BuscarAlunosView(APIResponseMixin, View):
                 Q(cpf__icontains=termo) |
                 Q(email__icontains=termo)
             )
-            
-            # Filtrar por turma se especificada
+            # Filtrar por turma se especificada (via Matricula)
             if turma_id:
-                queryset = queryset.filter(turma_id=turma_id)
-            
+                from matriculas.models import Matricula
+                matriculas = Matricula.objects.filter(turma_id=turma_id).values_list('aluno_id', flat=True)
+                queryset = queryset.filter(pk__in=matriculas)
             # Limitar resultados
-            alunos = queryset.select_related('turma')[:limit]
-            
+            alunos = queryset[:limit]
             # Preparar dados
             alunos_data = []
+            from matriculas.models import Matricula
+            turma_map = {}
+            if turma_id:
+                turma_map = {m.aluno_id: m.turma for m in Matricula.objects.filter(turma_id=turma_id)}
             for aluno in alunos:
+                turma_info = None
+                if turma_id and aluno.pk in turma_map:
+                    turma = turma_map[aluno.pk]
+                    turma_info = {'id': turma.pk, 'nome': turma.nome}
                 alunos_data.append({
-                    'id': aluno.id,
+                    'id': aluno.pk,
                     'nome': aluno.nome,
                     'cpf': aluno.cpf,
                     'email': aluno.email,
-                    'turma': {
-                        'id': aluno.turma.id if aluno.turma else None,
-                        'nome': aluno.turma.nome if aluno.turma else None
-                    }
+                    'turma': turma_info
                 })
             
             return self.success_response({
@@ -329,7 +333,7 @@ class ValidarDadosView(APIResponseMixin, View):
             
             # Validar se objetos existem
             try:
-                Aluno.objects.get(id=data['aluno_id'])
+                Aluno.objects.get(pk=data['aluno_id'])
             except Aluno.DoesNotExist:
                 erros.append("Aluno não encontrado")
             
@@ -427,9 +431,9 @@ class AtividadesTurmaView(APIResponseMixin, View):
             except Turma.DoesNotExist:
                 return self.error_response("Turma não encontrada")
             
-            # Buscar atividades relacionadas à turma
+            # Buscar atividades relacionadas à turma (ManyToMany)
             atividades = Atividade.objects.filter(
-                Q(turma=turma) | Q(turma__isnull=True)  # Atividades específicas da turma ou gerais
+                Q(turmas=turma) | Q(turmas__isnull=True)
             ).order_by('nome')
             
             # Preparar dados

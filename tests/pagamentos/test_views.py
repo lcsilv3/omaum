@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -7,6 +8,7 @@ from alunos.services import criar_aluno
 from turmas.models import Turma
 import datetime
 
+@pytest.mark.django_db
 class PagamentosViewsTestCase(TestCase):
     """Testes de integração para as views do módulo de pagamentos."""
     
