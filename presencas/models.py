@@ -94,7 +94,7 @@ class Presenca(models.Model):
         verbose_name = "Presença"
         verbose_name_plural = "Presenças"
         ordering = ["-data", "aluno__nome"]
-        unique_together = ["aluno", "turma", "data"]
+        unique_together = ["aluno", "turma", "data", "atividade"]
 
     def __str__(self):
         """Retorna uma representação em string do objeto."""

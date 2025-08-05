@@ -477,7 +477,7 @@
         <div class="presenca-modal-header" style="flex-direction: column; align-items: flex-start; gap: 2px;">
             <div style="width: 100%; display: flex; align-items: center;">
                 <h5 class="presenca-modal-title" id="modalTitle" style="margin-bottom: 0;"></h5>
-                <button type="button" class="presenca-close" onclick="PresencaApp.fecharModalPresenca()" style="margin-left: auto;">&times;</button>
+                <button type="button" class="presenca-close" onclick="window.PresencaManager.fecharModal()" style="margin-left: auto;">&times;</button>
             </div>
             <div id="modalAtividadeNome" style="font-size: 1.08em; color: #1976d2; font-weight: 500; margin-top: 2px; display: flex; align-items: center; gap: 8px;"></div>
         </div>
@@ -487,10 +487,10 @@
             <div class="modo-rapido">
                 <h6 style="margin-bottom:0;font-size:1em;font-weight:500;margin-right:10px;"><i class="fas fa-bolt text-primary me-2"></i>Modo Rápido (Lote)</h6>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-success btn-sm" style="padding: 2px 10px; font-size: 0.97em;" onclick="PresencaApp.marcarTodosPresentes()">
+                    <button type="button" class="btn btn-success btn-sm" style="padding: 2px 10px; font-size: 0.97em;" onclick="window.PresencaManager.marcarTodosPresentes()">
                         <i class="fas fa-check me-1"></i>Todos Presentes
                     </button>
-                    <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 10px; font-size: 0.97em;" onclick="PresencaApp.marcarTodosAusentes()">
+                    <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 10px; font-size: 0.97em;" onclick="window.PresencaManager.marcarTodosAusentes()">
                         <i class="fas fa-times me-1"></i>Todos Ausentes
                     </button>
                 </div>
@@ -511,10 +511,10 @@
                 <!-- Texto será preenchido via JavaScript -->
             </div>
             
-            <button type="button" class="btn btn-secondary" onclick="fecharModalPresenca()">
+            <button type="button" class="btn btn-secondary" onclick="window.PresencaManager.fecharModal()">
                 <i class="fas fa-times me-1"></i>Cancelar
             </button>
-            <button type="button" class="btn btn-primary btn-salvar-presenca" onclick="PresencaApp.salvarPresencaDia()">
+            <button type="button" class="btn btn-primary btn-salvar-presenca" onclick="window.PresencaManager.salvarDiaAtual()">
                 <i class="fas fa-save me-1"></i>Salvar Presenças
             </button>
         </div>
@@ -528,644 +528,77 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
 <script>
-// Encapsulamento das variáveis e funções em um objeto global
-const PresencaApp = {
-    modalAtual: null,
-    diaAtual: null,
-    atividadeAtual: null,
-    alunosData: [], // Lista de alunos será carregada via AJAX
-    presencasRegistradas: {}, // Objeto para armazenar presenças por atividade/dia
-    turmaIdFinal: undefined, // Encapsula turmaIdFinal
-};
+// CONFIGURAÇÃO MÍNIMA PARA PRESENÇA MANAGER
+// Fornece dados do contexto Django para o PresencaManager
 
-// Torna PresencaApp disponível globalmente
-window.PresencaApp = PresencaApp;
+// Dados do contexto Django
+window.ano = {{ ano }};
+window.mes = {{ mes }};
+window.diasDoMes = {{ dias_do_mes|length }};
 
-console.log('✅ [TEMPLATE] PresencaApp criado e disponibilizado globalmente');
-console.log('✅ [TEMPLATE] PresencaApp:', PresencaApp);
-</script>
-
-<!-- Carrega o presenca_app.js primeiro -->
-<script src="{% static 'presencas/presenca_app.js' %}"></script>
-
-<!-- Depois carrega os scripts de integração -->
-<script src="/static/js/presencas/registrar_presenca_dias_atividades.js"></script>
-<script src="/static/js/presencas/registrar_presenca_dias_atividades_submit.js"></script>
-
-<script>
-// Inclusão do script de submit AJAX e exibição de erros detalhados para etapa 3
-
-// Alterna presença do aluno (corrigido para criar objeto se necessário)
-PresencaApp.togglePresencaAluno = function(cpfAluno, botaoPresenca) {
-    if (!PresencaApp.atividadeAtual || !PresencaApp.diaAtual) return;
-    // Garante a existência da estrutura no dicionário global
-    if (!PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual]) {
-        PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual] = {};
-    }
-    if (!PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual]) {
-        PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual] = {};
-    }
-    // Alterna o estado
-    const atual = PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual][cpfAluno];
-    let novoPresente;
-    if (!atual) {
-        // Se não existe, cria como presente
-        novoPresente = true;
-    } else {
-        novoPresente = !atual.presente;
-    }
-    PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual][cpfAluno] = {
-        presente: novoPresente,
-        justificativa: atual ? atual.justificativa : ''
-    };
-    // Atualiza visual do botão e campo justificativa
-    if (botaoPresenca) {
-        botaoPresenca.classList.toggle('badge-presente', novoPresente);
-        botaoPresenca.classList.toggle('badge-ausente', !novoPresente);
-        botaoPresenca.textContent = novoPresente ? 'Presente' : 'Ausente';
-        // Mostra/esconde campo justificativa
-        const justificativaDiv = botaoPresenca.parentElement.querySelector('.justificativa-campo');
-        if (justificativaDiv) {
-            justificativaDiv.style.display = novoPresente ? 'none' : 'block';
-        }
-    }
-};
-
-// Definição única da função obterPresencaAluno como método do objeto global
-PresencaApp.obterPresencaAluno = function(atividadeId, dia, cpfAluno) {
-    if (
-        PresencaApp.presencasRegistradas[atividadeId] &&
-        PresencaApp.presencasRegistradas[atividadeId][dia] &&
-        PresencaApp.presencasRegistradas[atividadeId][dia][cpfAluno]
-    ) {
-        return PresencaApp.presencasRegistradas[atividadeId][dia][cpfAluno];
-    } else {
-        return undefined;
-    }
-};
-
-PresencaApp.marcarTodosPresentes = function() {
-    if (!PresencaApp.atividadeAtual || !PresencaApp.diaAtual) return;
-    if (!PresencaApp.alunosData || PresencaApp.alunosData.length === 0) return;
-    if (!PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual]) {
-        PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual] = {};
-    }
-    if (!PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual]) {
-        PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual] = {};
-    }
-    PresencaApp.alunosData.forEach(function(aluno) {
-        const cpfAluno = aluno.cpf || aluno.id;
-        PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual][cpfAluno] = {
-            presente: true,
-            justificativa: ''
-        };
-    });
-    PresencaApp.preencherListaAlunos();
-};
-
-PresencaApp.marcarTodosAusentes = function() {
-    if (!PresencaApp.atividadeAtual || !PresencaApp.diaAtual) return;
-    if (!PresencaApp.alunosData || PresencaApp.alunosData.length === 0) return;
-    if (!PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual]) {
-        PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual] = {};
-    }
-    if (!PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual]) {
-        PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual] = {};
-    }
-    PresencaApp.alunosData.forEach(function(aluno) {
-        const cpfAluno = aluno.cpf || aluno.id;
-        PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual][cpfAluno] = {
-            presente: false,
-            justificativa: ''
-        };
-    });
-    PresencaApp.preencherListaAlunos();
-};
-
-PresencaApp.salvarPresencaDia = function() {
-    console.log('[DEBUG] salvarPresencaDia', { atividadeAtual: PresencaApp.atividadeAtual, diaAtual: PresencaApp.diaAtual, presencasRegistradas: JSON.parse(JSON.stringify(PresencaApp.presencasRegistradas)) });
-    PresencaApp.fecharModalPresenca();
-    // Atualiza o Flatpickr do input da atividade atual com o(s) dia(s) salvo(s)
-    const inputAtividade = document.getElementById('dias-atividade-' + PresencaApp.atividadeAtual);
-    if (inputAtividade && inputAtividade._flatpickr && PresencaApp.diaAtual) {
-        // Garante que o dia salvo esteja selecionado
-        let datas = inputAtividade._flatpickr.selectedDates || [];
-        const diaSalvo = parseInt(PresencaApp.diaAtual);
-        const mes = inputAtividade._flatpickr.currentMonth;
-        const ano = inputAtividade._flatpickr.currentYear;
-        // Cria a data do dia salvo
-        const dataSalva = new Date(ano, mes, diaSalvo);
-        // Se não estiver na lista, adiciona
-        if (!datas.some(d => d.getDate() === diaSalvo)) {
-            datas.push(dataSalva);
-        }
-        
-        // 🎯 ORDENA OS DIAS ANTES DE SALVAR NO FLATPICKR
-        datas.sort((a, b) => a.getDate() - b.getDate());
-        console.log('📅 [ORDENAÇÃO] Dias ordenados:', datas.map(d => d.getDate()));
-        
-        inputAtividade._flatpickr.setDate(datas, true);
-    }
-    PresencaApp.mostrarMensagem('Presenças do dia ' + PresencaApp.diaAtual + ' registradas com sucesso!', 'success');
-};
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Carrega lista de alunos via AJAX
-    PresencaApp.carregarAlunos();
-
-    // Configuração do Flatpickr para cada atividade
-    document.querySelectorAll('.dias-datepicker').forEach(function(input) {
-        const atividadeId = input.dataset.atividade;
-        const maxDias = parseInt(input.dataset.maxdias) || 0;
-        const msgLimite = document.getElementById('msg-limite-' + atividadeId);
-
-        // Inicializa o Flatpickr
-        flatpickr(input, {
-            mode: 'multiple',
-            dateFormat: 'd',
-            minDate: new Date({{ ano }}, {{ mes }} - 1, 1),
-            maxDate: new Date({{ ano }}, {{ mes }} - 1, {{ dias_do_mes|length }}),
-            locale: 'pt',
-            onChange: function(selectedDates, dateStr, instance) {
-                console.log('[DEBUG] onChange Flatpickr', { atividadeId, selectedDates, dateStr });
-                // IMPEDIR DESMARCAR O ÚNICO DIA SELECIONADO
-                if (selectedDates.length === 0 && maxDias === 1) {
-                    // Reverte a remoção, mantendo o último selecionado
-                    if (instance.selectedDates && instance.selectedDates.length > 0) {
-                        instance.setDate(instance.selectedDates, true);
-                    }
-                    return;
-                }
-                if (selectedDates.length > maxDias) {
-                    msgLimite.textContent = `Você só pode selecionar até ${maxDias} dia(s) para esta atividade.`;
-                    msgLimite.style.display = 'block';
-                    // Remove o último selecionado
-                    selectedDates.pop();
-                    instance.setDate(selectedDates, true);
-                    return;
-                } else {
-                    msgLimite.style.display = 'none';
-                }
-                // Atualiza campos de observação
-                const obsDiv = document.getElementById('obs-dias-' + atividadeId);
-                obsDiv.innerHTML = '';
-                
-                // 🎯 ORDENA OS DIAS SELECIONADOS ANTES DE CRIAR OS CAMPOS DE OBSERVAÇÃO
-                const diasOrdenados = selectedDates.slice().sort((a, b) => a.getDate() - b.getDate());
-                console.log('📅 [ORDENAÇÃO-ONCHANGE] Dias ordenados:', diasOrdenados.map(d => d.getDate()));
-                
-                diasOrdenados.forEach(function(date) {
-                    const dia = date.getDate();
-                    const obsInput = document.createElement('input');
-                    obsInput.type = 'text';
-                    obsInput.name = `obs_${atividadeId}_${dia}`;
-                    obsInput.className = 'form-control obs-dia col-md-4';
-                    obsInput.placeholder = `Obs. do dia ${dia}`;
-                    obsInput.maxLength = 200;
-                    obsDiv.appendChild(obsInput);
-                });
-                // Adiciona indicadores visuais para dias com presenças registradas
-                PresencaApp.atualizarIndicadoresCalendario(atividadeId, instance);
-                // Atualiza aparência dos dias selecionados
-                PresencaApp.atualizarAparenciaDiasSelecionados(instance);
-                console.log('[DEBUG] Fim onChange Flatpickr', { atividadeId, selectedDates, presencasRegistradas: JSON.parse(JSON.stringify(PresencaApp.presencasRegistradas)) });
-            },
-            onDayCreate: function(dObj, dStr, fp, dayElem) {
-                const atividadeId = input.dataset.atividade;
-                const dia = dayElem.textContent;
-                // Adiciona evento de clique para abrir modal de presença
-                dayElem.addEventListener('mousedown', function(e) {
-                    // Só abre modal se o dia estiver selecionado e for um clique com botão esquerdo
-                    if (dayElem.classList.contains('selected') && e.button === 0) {
-                        // Aguarda o flatpickr processar o clique antes de abrir o modal
-                        setTimeout(function() {
-                            PresencaApp.abrirModalPresenca(atividadeId, dia);
-                        }, 120);
-                    }
-                });
-                // Adiciona interatividade visual para dias selecionados
-                dayElem.addEventListener('mouseenter', function() {
-                    if (dayElem.classList.contains('selected')) {
-                        dayElem.style.cursor = 'pointer';
-                        dayElem.title = 'Clique para marcar presenças dos alunos';
-                    }
-                });
-                // Verifica se há presenças registradas para este dia
-                if (PresencaApp.presencasRegistradas[atividadeId] && PresencaApp.presencasRegistradas[atividadeId][dia]) {
-                    dayElem.classList.add('day-with-presence');
-                }
-            },
-            onReady: function(selectedDates, dateStr, instance) {
-                // Adiciona botão OK
-                if (!instance.calendarContainer.querySelector('.flatpickr-ok')) {
-                    const okBtn = document.createElement('button');
-                    okBtn.type = 'button';
-                    okBtn.textContent = 'OK';
-                    okBtn.className = 'flatpickr-ok';
-                    okBtn.onclick = function() {
-                        instance.close();
-                    };
-                    instance.calendarContainer.appendChild(okBtn);
-                }
-                // Adiciona mensagem explicativa
-                if (!instance.calendarContainer.querySelector('.calendar-hint')) {
-                    const hint = document.createElement('div');
-                    hint.className = 'calendar-hint';
-                    hint.innerHTML = '💡 <strong>Dica:</strong> Após selecionar os dias, clique em cada dia <strong>azul</strong> para marcar as presenças dos alunos';
-                    instance.calendarContainer.appendChild(hint);
-                }
-            },
-            onOpen: function() {
-                // Mostra a dica quando o calendário abre
-                setTimeout(() => {
-                    const hint = document.querySelector('.calendar-hint');
-                    if (hint) {
-                        hint.classList.add('show');
-                    }
-                }, 300);
-            }
-        });
-
-        // Torna o ícone do calendário clicável para abrir o calendário
-        const calendarIcon = input.parentElement.querySelector('.calendar-icon');
-        if (calendarIcon) {
-            calendarIcon.addEventListener('mousedown', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (input._flatpickr) {
-                    input._flatpickr.open();
-                }
-            });
-        }
-        // Torna o input inteiro clicável para abrir o calendário (além do foco padrão)
-        input.addEventListener('mousedown', function(e) {
-            if (input._flatpickr) {
-                input._flatpickr.open();
-            }
-        });
-    });
-
-    // Validação do formulário
-    document.getElementById('form-presenca').addEventListener('submit', function(e) {
-        // Ao invés de validar seleção de dias, agora valida se há presenças registradas
-        if (Object.keys(PresencaApp.presencasRegistradas).length === 0) {
-            e.preventDefault();
-            let msgDiv = document.getElementById('mensagem-validacao');
-            msgDiv.textContent = 'É necessário registrar pelo menos uma presença antes de finalizar.';
-            msgDiv.classList.remove('d-none');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return false;
-        }
-        // Adiciona dados das presenças ao formulário
-        console.log('[DEBUG] submit form-presenca', { presencasRegistradas: JSON.parse(JSON.stringify(PresencaApp.presencasRegistradas)) });
-        PresencaApp.adicionarDadosPresencasAoFormulario();
-    });
-    // Serializa o objeto presencasRegistradas e adiciona ao formulário antes do submit
-    PresencaApp.adicionarDadosPresencasAoFormulario = function() {
-        const form = document.getElementById('form-presenca');
-        // Remove campos antigos
-        Array.from(form.querySelectorAll('input[name^="presencas_json"], input[name^="convocados_json"]')).forEach(el => el.remove());
-        // Serializa o objeto de presenças
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'presencas_json';
-        input.value = JSON.stringify(PresencaApp.presencasRegistradas);
-        form.appendChild(input);
-        // Serializa o estado de convocação individual
-        if (PresencaApp.convocadosIndividuais) {
-            const inputConvocados = document.createElement('input');
-            inputConvocados.type = 'hidden';
-            inputConvocados.name = 'convocados_json';
-            inputConvocados.value = JSON.stringify(PresencaApp.convocadosIndividuais);
-            form.appendChild(inputConvocados);
-        }
-    };
-});
-
-// Função global para abrir o modal de presença
-
-// Adiciona controle para saber se a atividade é convocada e o nome da atividade
-PresencaApp.atividadesConvocadas = {};
-PresencaApp.atividadesNomes = {};
-
-// Preenche o dicionário de atividades convocadas ao carregar a página
-document.addEventListener('DOMContentLoaded', function() {
-    PresencaApp.atividadesConvocadas = {};
-    PresencaApp.atividadesNomes = {};
+// Atividades e seus metadados
+window.atividadesData = {
     {% if atividades %}
     {% for atividade in atividades %}
-        PresencaApp.atividadesConvocadas['{{ atividade.id }}'] = {{ atividade.convocacao|yesno:'true,false'|lower }};
-        PresencaApp.atividadesNomes['{{ atividade.id }}'] = "{{ atividade.nome|escapejs }}";
+    '{{ atividade.id }}': {
+        id: '{{ atividade.id }}',
+        nome: "{{ atividade.nome|escapejs }}",
+        convocacao: {{ atividade.convocacao|yesno:'true,false'|lower }},
+        qtdDias: {{ atividade.qtd_ativ_mes|default:'0' }}
+    }{% if not forloop.last %},{% endif %}
     {% endfor %}
     {% endif %}
-});
-
-/* FUNÇÃO DESABILITADA - USANDO A FUNÇÃO DO ARQUIVO JS EXTERNO */
-/*
-PresencaApp.abrirModalPresenca = function(atividadeId, dia) {
-    console.log('[DEBUG] abrirModalPresenca', { atividadeId, dia, presencasRegistradas: JSON.parse(JSON.stringify(PresencaApp.presencasRegistradas)) });
-    PresencaApp.atividadeAtual = atividadeId;
-    PresencaApp.diaAtual = dia;
-    PresencaApp.atividadeAtualConvocada = PresencaApp.atividadesConvocadas[atividadeId] === true;
-    // Inicializa presenças como presente para todos os alunos se ainda não houver registro
-    if (!PresencaApp.presencasRegistradas[atividadeId]) {
-        PresencaApp.presencasRegistradas[atividadeId] = {};
-    }
-    if (!PresencaApp.presencasRegistradas[atividadeId][dia]) {
-        PresencaApp.presencasRegistradas[atividadeId][dia] = {};
-        if (PresencaApp.alunosData && PresencaApp.alunosData.length > 0) {
-            PresencaApp.alunosData.forEach(function(aluno) {
-                const cpfAluno = aluno.cpf || aluno.id;
-                PresencaApp.presencasRegistradas[atividadeId][dia][cpfAluno] = {
-                    presente: true,
-                    justificativa: ''
-                };
-            });
-        }
-    }
-    var nomeAtividade = PresencaApp.atividadesNomes[atividadeId] || '';
-    // Linha 1: título + data
-    var modalTitle = document.getElementById('modalTitle');
-    let dataFormatada = '';
-    if (PresencaApp.diaAtual) {
-        const mes = ({{ mes }}).toString().padStart(2, '0');
-        const ano = {{ ano }};
-        const diaStr = PresencaApp.diaAtual.toString().padStart(2, '0');
-        dataFormatada = `${diaStr}/${mes}/${ano}`;
-    }
-    if (modalTitle) {
-        modalTitle.textContent = `Marcar Presença${dataFormatada ? ' - (' + dataFormatada + ')' : ''}`;
-    }
-    // Linha 2: nome da atividade entre colchetes e, ao lado, info de convocação se aplicável
-    var modalAtividadeNome = document.getElementById('modalAtividadeNome');
-    if (modalAtividadeNome) {
-        let html = nomeAtividade ? `[${nomeAtividade}]` : '';
-        if (PresencaApp.atividadeAtualConvocada) {
-            html += ' <span style="font-size:0.92em;color:#b8860b; margin-left:8px;">Atividade com convocação</span>';
-        }
-        modalAtividadeNome.innerHTML = html;
-    }
-    const modal = document.getElementById('presencaModal');
-    modal.style.display = 'flex';
-    modal.classList.add('show');
-    document.body.classList.add('modal-open');
-    PresencaApp.preencherListaAlunos();
-};
-*/
-
-PresencaApp.carregarAlunos = function() {
-    // Faz requisição AJAX para carregar lista de alunos da turma
-    let turmaId = {{ request.session.presenca_turma_id|default:"null" }};
-    // Se não conseguir da sessão, tenta do contexto
-    if (!turmaId || turmaId === "null") {
-        turmaId = {{ turma.id|default:"null" }};
-    }
-    PresencaApp.turmaIdFinal = turmaId;
-    if (!turmaId || turmaId === "null") {
-        return;
-    }
-    fetch(`{% url "presencas:obter_alunos_turma_ajax" %}?turma_id=${turmaId}`)
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.alunos && data.alunos.length > 0) {
-            PresencaApp.alunosData = data.alunos; // Corrigido: pega array de dentro do objeto
-        } else if (data.error) {
-        } else {
-        }
-    })
-    .catch(error => {
-    });
 };
 
+// Turma ID para carregamento de alunos
+window.turmaId = {{ request.session.presenca_turma_id|default:"null" }} || {{ turma.id|default:"null" }};
 
-// Consolidada: abrirModalPresenca
+console.log('✅ [TEMPLATE] Dados Django disponibilizados para PresencaManager');
+console.log('📊 [TEMPLATE] Ano:', window.ano, 'Mês:', window.mes, 'Turma:', window.turmaId);
+console.log('🏷️ [TEMPLATE] Atividades:', Object.keys(window.atividadesData).length);
+</script>
 
+<!-- PRESENÇA MANAGER - ARQUITETURA SIMPLIFICADA -->
+<script src="/static/js/presencas/presenca_manager.js"></script>
 
-PresencaApp.fecharModalPresenca = function() {
-    console.log('[DEBUG] fecharModalPresenca', { atividadeAtual: PresencaApp.atividadeAtual, diaAtual: PresencaApp.diaAtual, presencasRegistradas: JSON.parse(JSON.stringify(PresencaApp.presencasRegistradas)) });
-    const modal = document.getElementById('presencaModal');
-    modal.style.display = 'none';
-    modal.classList.remove('show');
-    document.body.classList.remove('modal-open');
-    // Só reabre o calendário se ele estava aberto antes de abrir o modal
-    const atividadeIdTemp = PresencaApp.atividadeAtual;
-    let reabrir = false;
-    if (atividadeIdTemp) {
-        const input = document.getElementById('dias-atividade-' + atividadeIdTemp);
-        if (input && input._flatpickr) {
-            // Só reabre se o calendário estava aberto antes do modal
-            reabrir = input._flatpickr.isOpen;
-        }
-    }
-    PresencaApp.modalAtual = null;
-    PresencaApp.diaAtual = null;
-    PresencaApp.atividadeAtual = null;
-    if (atividadeIdTemp && reabrir) {
-        const input = document.getElementById('dias-atividade-' + atividadeIdTemp);
-        if (input && input._flatpickr) {
-            setTimeout(function() {
-                input._flatpickr.open();
-            }, 200);
-        }
-    }
-};
-
-
-
-PresencaApp.preencherListaAlunos = function() {
-    const container = document.getElementById('alunosContainer');
-    container.innerHTML = '';
-    if (PresencaApp.alunosData.length === 0) {
-        container.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Nenhum aluno encontrado para esta turma. Verifique se há alunos matriculados e ativos.</div>';
-        return;
-    }
-    PresencaApp.alunosData.forEach(function(aluno) {
-        const cpfAluno = aluno.cpf || aluno.id;
-        const presencaAtual = PresencaApp.obterPresencaAluno(PresencaApp.atividadeAtual, PresencaApp.diaAtual, cpfAluno);
-        // Nome truncado com tooltip
-        const nomeAlunoDiv = document.createElement('div');
-        nomeAlunoDiv.className = 'aluno-nome';
-        let nomeExibido = aluno.nome;
-        if (aluno.nome.length > 25) {
-            nomeExibido = aluno.nome.slice(0, 25) + '...';
-        }
-        nomeAlunoDiv.textContent = nomeExibido;
-        nomeAlunoDiv.title = aluno.nome;
-        nomeAlunoDiv.style.fontSize = '0.95em';
-        // Container de controles
-        const controlesDiv = document.createElement('div');
-        controlesDiv.className = 'aluno-controles d-flex align-items-center';
-        controlesDiv.style.gap = '8px';
-        // Badge de presença (padrão: Presente)
-        const botaoPresenca = document.createElement('button');
-        botaoPresenca.type = 'button';
-        const presentePadrao = presencaAtual && typeof presencaAtual.presente !== 'undefined' ? presencaAtual.presente : true;
-        botaoPresenca.className = `badge-presenca badge-uniforme ${presentePadrao ? 'badge-presente' : 'badge-ausente'}`;
-        botaoPresenca.onclick = function() { PresencaApp.togglePresencaAluno(cpfAluno, botaoPresenca); };
-        botaoPresenca.textContent = presentePadrao ? 'Presente' : 'Ausente';
-        botaoPresenca.style.fontSize = '0.95em';
-        botaoPresenca.style.height = '28px';
-        botaoPresenca.style.minWidth = '80px';
-        botaoPresenca.style.display = 'flex';
-        botaoPresenca.style.alignItems = 'center';
-        // Campo de justificativa ao lado do badge
-        const justificativaDiv = document.createElement('div');
-        justificativaDiv.className = 'justificativa-campo';
-        justificativaDiv.style.marginTop = '0';
-        justificativaDiv.style.display = presentePadrao ? 'none' : 'block';
-        justificativaDiv.style.maxWidth = '180px';
-        justificativaDiv.style.minWidth = '120px';
-        // Truncar justificativa e mostrar tooltip
-        const justificativaInput = document.createElement('input');
-        justificativaInput.type = 'text';
-        justificativaInput.className = 'form-control form-control-sm';
-        justificativaInput.placeholder = 'Justificativa (opcional)';
-        justificativaInput.value = presencaAtual && presencaAtual.justificativa ? presencaAtual.justificativa : '';
-        justificativaInput.onchange = function() { PresencaApp.atualizarJustificativa(cpfAluno, this.value); };
-        justificativaInput.maxLength = 200;
-        justificativaInput.style.fontSize = '0.95em';
-        justificativaInput.oninput = function() {
-            if (this.value.length > 25) {
-                this.title = this.value;
-                this.value = this.value.slice(0, 25);
-            } else {
-                this.title = '';
-            }
-        };
-        if (justificativaInput.value.length > 25) {
-            justificativaInput.title = justificativaInput.value;
-            justificativaInput.value = justificativaInput.value.slice(0, 25);
-        }
-        justificativaDiv.appendChild(justificativaInput);
-        controlesDiv.appendChild(botaoPresenca);
-        controlesDiv.appendChild(justificativaDiv);
-        const alunoDiv = document.createElement('div');
-        alunoDiv.className = 'aluno-presenca-item';
-        alunoDiv.style.fontSize = '0.95em';
-        // Exibe a badge de convocado apenas se a atividade for convocada, permitindo alternar para 'Não Convocado'
-        if (PresencaApp.atividadeAtualConvocada) {
-            // Estado de convocação individual: default true
-            if (!PresencaApp.convocadosIndividuais) PresencaApp.convocadosIndividuais = {};
-            if (typeof PresencaApp.convocadosIndividuais[cpfAluno] === 'undefined') {
-                PresencaApp.convocadosIndividuais[cpfAluno] = true;
-            }
-            const badgeConvocado = document.createElement('span');
-            badgeConvocado.className = 'badge badge-convocado me-2 badge-uniforme';
-            badgeConvocado.style.cursor = 'pointer';
-            badgeConvocado.textContent = PresencaApp.convocadosIndividuais[cpfAluno] ? 'Convocado' : 'Não Convocado';
-            badgeConvocado.style.backgroundColor = PresencaApp.convocadosIndividuais[cpfAluno] ? '#1976d2' : '#bdbdbd';
-            badgeConvocado.style.color = 'white';
-            badgeConvocado.setAttribute('data-cpf', cpfAluno);
-            badgeConvocado.setAttribute('data-convocado', PresencaApp.convocadosIndividuais[cpfAluno] ? '1' : '0');
-            badgeConvocado.title = PresencaApp.convocadosIndividuais[cpfAluno] ? 'Atividade marcada como convocação' : 'Aluno não convocado para esta atividade';
-            badgeConvocado.style.fontSize = '0.95em';
-            badgeConvocado.style.height = '28px';
-            badgeConvocado.style.display = 'flex';
-            badgeConvocado.style.alignItems = 'center';
-            badgeConvocado.style.minWidth = '90px';
-            // Alternar ao clicar
-            badgeConvocado.addEventListener('click', function() {
-                PresencaApp.convocadosIndividuais[cpfAluno] = !PresencaApp.convocadosIndividuais[cpfAluno];
-                badgeConvocado.textContent = PresencaApp.convocadosIndividuais[cpfAluno] ? 'Convocado' : 'Não Convocado';
-                badgeConvocado.style.backgroundColor = PresencaApp.convocadosIndividuais[cpfAluno] ? '#1976d2' : '#bdbdbd';
-                badgeConvocado.setAttribute('data-convocado', PresencaApp.convocadosIndividuais[cpfAluno] ? '1' : '0');
-                badgeConvocado.title = PresencaApp.convocadosIndividuais[cpfAluno] ? 'Atividade marcada como convocação' : 'Aluno não convocado para esta atividade';
-            });
-            alunoDiv.appendChild(badgeConvocado);
-        }
-        alunoDiv.appendChild(nomeAlunoDiv);
-        alunoDiv.appendChild(controlesDiv);
-        container.appendChild(alunoDiv);
-    });
-};
-
-PresencaApp.atualizarJustificativa = function(cpfAluno, valor) {
-    // Atualiza justificativa no objeto de presenças
-    if (!PresencaApp.atividadeAtual || !PresencaApp.diaAtual) return;
-    if (!PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual]) return;
-    if (!PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual]) return;
-    if (!PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual][cpfAluno]) return;
-    PresencaApp.presencasRegistradas[PresencaApp.atividadeAtual][PresencaApp.diaAtual][cpfAluno].justificativa = valor;
-};
-
-// Função de progresso pode ser adaptada para cards se necessário
-
-
-
-PresencaApp.atualizarIndicadoresCalendario = function(atividadeId, instance) {
-    // Atualiza todos os indicadores visuais do calendário
-    const calendar = instance.calendarContainer;
-    const dayElements = calendar.querySelectorAll('.flatpickr-day');
+<!-- LOGS DE DEBUG PARA CLIQUES NOS BOTÕES -->
+<script>
+// 🎯 LOG DE DEBUG PARA BOTÃO FINALIZAR REGISTRO
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎯 [DEBUG-CLIQUES] Instalando logs de cliques dos botões...');
     
-    dayElements.forEach(function(dayElem) {
-        const dia = dayElem.textContent;
-        if (PresencaApp.presencasRegistradas[atividadeId] && PresencaApp.presencasRegistradas[atividadeId][dia]) {
-            dayElem.classList.add('day-with-presence');
-        }
-    });
-};
-
-PresencaApp.atualizarAparenciaDiasSelecionados = function(instance) {
-    // Adiciona aparência especial e tooltips para dias selecionados
-    const calendar = instance.calendarContainer;
-    const dayElements = calendar.querySelectorAll('.flatpickr-day.selected');
-    
-    dayElements.forEach(function(dayElem) {
-        dayElem.classList.add('day-selected');
-        dayElem.style.cursor = 'pointer';
-        dayElem.title = 'Clique para marcar presenças dos alunos neste dia';
-        
-        // Adiciona efeito de hover
-        dayElem.addEventListener('mouseenter', function() {
-            this.style.transform = 'scale(1.05)';
+    // Log para botão Finalizar Registro
+    const form = document.getElementById('form-presenca');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('🚀 [DEBUG-CLIQUE] ========================================');
+            console.log('🚀 [DEBUG-CLIQUE] BOTÃO "FINALIZAR REGISTRO" FOI CLICADO!');
+            console.log('🚀 [DEBUG-CLIQUE] Timestamp:', new Date().toLocaleString());
+            console.log('🚀 [DEBUG-CLIQUE] Formulário será enviado...');
+            console.log('🚀 [DEBUG-CLIQUE] Event:', e);
+            console.log('🚀 [DEBUG-CLIQUE] Form:', this);
+            console.log('🚀 [DEBUG-CLIQUE] ========================================');
         });
-        
-        dayElem.addEventListener('mouseleave', function() {
-            this.style.transform = 'scale(1)';
-        });
-    });
+        console.log('✅ [DEBUG-CLIQUES] Log instalado no formulário de finalização');
+    }
     
-    // Mostra/esconde a dica baseado na seleção
-    const hint = calendar.querySelector('.calendar-hint');
-    if (hint) {
-        if (dayElements.length > 0) {
-            hint.classList.add('show');
-        } else {
-            hint.classList.remove('show');
-        }
-    }
-};
-
-
-
-PresencaApp.mostrarMensagem = function(texto, tipo = 'info') {
-    const mensagemDiv = document.getElementById('mensagem-ajax');
-    mensagemDiv.className = `alert alert-${tipo}`;
-    mensagemDiv.textContent = texto;
-    mensagemDiv.classList.remove('d-none');
-    // Auto-esconder após 3 segundos
-    setTimeout(function() {
-        mensagemDiv.classList.add('d-none');
-    }, 3000);
-};
-
-// Fechar modal ao clicar fora dele
-document.getElementById('presencaModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        PresencaApp.fecharModalPresenca();
-    }
-});
-
-// Fechar modal com ESC
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.getElementById('presencaModal').style.display === 'flex') {
-        PresencaApp.fecharModalPresenca();
+    // Log adicional para botão submit direto
+    const btnFinalizar = document.querySelector('button[type="submit"]');
+    if (btnFinalizar) {
+        btnFinalizar.addEventListener('click', function(e) {
+            console.log('🎯 [DEBUG-CLIQUE] ========================================');
+            console.log('🎯 [DEBUG-CLIQUE] CLIQUE DIRETO NO BOTÃO FINALIZAR!');
+            console.log('🎯 [DEBUG-CLIQUE] Timestamp:', new Date().toLocaleString());
+            console.log('🎯 [DEBUG-CLIQUE] Botão:', this);
+            console.log('🎯 [DEBUG-CLIQUE] Text:', this.textContent.trim());
+            console.log('🎯 [DEBUG-CLIQUE] ========================================');
+        });
+        console.log('✅ [DEBUG-CLIQUES] Log instalado no botão finalizar');
     }
 });
 </script>
+
+<!-- SCRIPT INLINE REMOVIDO - MIGRADO PARA PRESENCA_MANAGER.JS -->
+<!-- Toda a lógica foi simplificada e centralizada no arquivo presenca_manager.js -->
+<!-- Compatibilidade mantida através do objeto window.PresencaApp que redireciona para window.PresencaManager -->
 {% endblock %}

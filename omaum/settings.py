@@ -205,6 +205,11 @@ LOGGING = {
         },
     },
     "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
         "file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
@@ -215,6 +220,11 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["file"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "presencas.views_ext.registro_presenca": {
+            "handlers": ["console", "file"],
             "level": "DEBUG",
             "propagate": True,
         },

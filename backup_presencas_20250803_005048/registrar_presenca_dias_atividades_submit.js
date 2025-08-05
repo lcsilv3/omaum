@@ -57,34 +57,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('form-presenca');
     if (form) {
         form.addEventListener('submit', function (e) {
-            // 🎯 LOG DE DEBUG PARA SUBMIT DO FORMULÁRIO
-            console.log('📤 [DEBUG-SUBMIT] ========================================');
-            console.log('📤 [DEBUG-SUBMIT] FORMULÁRIO SENDO ENVIADO!');
-            console.log('📤 [DEBUG-SUBMIT] Timestamp:', new Date().toLocaleString());
-            console.log('📤 [DEBUG-SUBMIT] Event:', e);
-            console.log('📤 [DEBUG-SUBMIT] Form:', this);
-            console.log('📤 [DEBUG-SUBMIT] ========================================');
-            
             e.preventDefault();
             limparErroAjaxEtapa3();
             const formData = new FormData(form);
-            
-            // 🎯 LOG DOS DADOS QUE SERÃO ENVIADOS
-            console.log('📋 [DEBUG-SUBMIT] Dados sendo enviados no FormData:');
-            for (let [key, value] of formData.entries()) {
-                if (key.includes('json')) {
-                    try {
-                        const parsed = JSON.parse(value);
-                        console.log(`📋 [DEBUG-SUBMIT] ${key}:`, JSON.stringify(parsed, null, 2));
-                    } catch (e) {
-                        console.log(`📋 [DEBUG-SUBMIT] ${key}: (não é JSON válido)`, value);
-                    }
-                } else {
-                    console.log(`📋 [DEBUG-SUBMIT] ${key}:`, value);
-                }
-            }
-            console.log('📤 [DEBUG-SUBMIT] Enviando para:', '/presencas/registrar-presenca/dias-atividades/ajax/');
-            
             fetch('/presencas/registrar-presenca/dias-atividades/ajax/', {
                 method: 'POST',
                 headers: {
@@ -93,60 +68,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: formData
             })
             .then(async response => {
-                // 🎯 LOG DA RESPOSTA DO BACKEND
-                console.log('📥 [DEBUG-SUBMIT] ========================================');
-                console.log('📥 [DEBUG-SUBMIT] RESPOSTA RECEBIDA DO BACKEND!');
-                console.log('📥 [DEBUG-SUBMIT] Status:', response.status);
-                console.log('📥 [DEBUG-SUBMIT] StatusText:', response.statusText);
-                console.log('📥 [DEBUG-SUBMIT] Headers:', response.headers);
-                console.log('📥 [DEBUG-SUBMIT] ========================================');
-                
                 if (response.ok) {
                     const data = await response.json();
-                    
-                    // 🎯 LOG DO CONTEÚDO DA RESPOSTA
-                    console.log('📋 [DEBUG-SUBMIT] Dados da resposta:');
-                    console.log('📋 [DEBUG-SUBMIT] success:', data.success);
-                    console.log('📋 [DEBUG-SUBMIT] errors:', data.errors);
-                    console.log('📋 [DEBUG-SUBMIT] redirect_url:', data.redirect_url);
-                    console.log('📋 [DEBUG-SUBMIT] Resposta completa:', JSON.stringify(data, null, 2));
-                    
                     if (data.success) {
-                        console.log('✅ [DEBUG-SUBMIT] Sucesso! Redirecionando para:', data.redirect_url);
                         window.location.href = data.redirect_url;
                     } else if (data.errors) {
-                        console.log('❌ [DEBUG-SUBMIT] Erro retornado pelo backend:', data.errors);
                         mostrarErroAjaxEtapa3(data.errors || 'Erro de validação.');
                     } else {
-                        console.log('❌ [DEBUG-SUBMIT] Resposta sem success nem errors - erro desconhecido');
                         mostrarErroAjaxEtapa3('Erro desconhecido.');
                     }
                 } else {
                     // Tenta extrair mensagem de erro detalhada
-                    console.log('❌ [DEBUG-SUBMIT] Response não OK - Status:', response.status);
                     let msg = 'Erro ao registrar presenças.';
                     try {
                         const data = await response.json();
-                        console.log('❌ [DEBUG-SUBMIT] Dados do erro:', JSON.stringify(data, null, 2));
                         if (data && data.errors) {
                             msg = data.errors;
                         } else if (data && data.detail) {
                             msg = data.detail;
                         }
-                    } catch (parseError) {
-                        console.log('❌ [DEBUG-SUBMIT] Erro ao fazer parse do JSON de erro:', parseError);
-                    }
-                    console.log('❌ [DEBUG-SUBMIT] Exibindo mensagem de erro:', msg);
+                    } catch {}
                     mostrarErroAjaxEtapa3(msg);
                 }
             })
             .catch(error => {
-                console.log('❌ [DEBUG-SUBMIT] ========================================');
-                console.log('❌ [DEBUG-SUBMIT] ERRO DE REDE!');
-                console.log('❌ [DEBUG-SUBMIT] Error:', error);
-                console.log('❌ [DEBUG-SUBMIT] Error message:', error.message);
-                console.log('❌ [DEBUG-SUBMIT] Error stack:', error.stack);
-                console.log('❌ [DEBUG-SUBMIT] ========================================');
                 mostrarErroAjaxEtapa3('Erro de rede ao enviar dados. Tente novamente.');
             });
         });
