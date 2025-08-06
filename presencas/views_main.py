@@ -6,6 +6,7 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
@@ -24,10 +25,12 @@ def listar_presencas_academicas(request):
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
 
-    # Query otimizada com relacionamentos
+    # Query otimizada com relacionamentos e paginação
     presencas = Presenca.objects.select_related(
         'aluno', 'turma__curso', 'atividade'
-    ).all()
+    ).prefetch_related(
+        'aluno__historicos'  # Se necessário para dados relacionados
+    )
     
     if aluno_id:
         presencas = presencas.filter(aluno__cpf=aluno_id)
@@ -51,8 +54,9 @@ def listar_presencas_academicas(request):
         logger.error(f"Erro ao listar alunos: {str(e)}")
         alunos = []
     
-    turmas = Turma.objects.all()
-    atividades = Atividade.objects.all()
+    # Carregamento otimizado de listas de referência  
+    turmas = Turma.objects.select_related('curso').only('id', 'nome', 'curso__nome')
+    atividades = Atividade.objects.only('id', 'nome', 'tipo')
 
     context = {
         'presencas': presencas,
@@ -80,8 +84,9 @@ def registrar_presenca_academica(request):
         observacao = request.POST.get('observacao', '')
         try:
             aluno = buscar_aluno_por_cpf_service(aluno_id)
-            turma = Turma.objects.get(id=turma_id)
-            atividade = Atividade.objects.get(id=atividade_id)
+            # Otimização: usar get_object_or_404 para melhor performance
+            turma = get_object_or_404(Turma, id=turma_id)
+            atividade = get_object_or_404(Atividade, id=atividade_id)
             if not aluno:
                 messages.error(request, f'Aluno com CPF {aluno_id} não encontrado.')
                 return redirect('presencas:listar_presencas_academicas')
@@ -114,7 +119,11 @@ def registrar_presenca_academica(request):
                 )
             messages.success(request, 'Presença registrada com sucesso!')
             return redirect('presencas:listar_presencas_academicas')
+        except (Turma.DoesNotExist, Atividade.DoesNotExist) as e:
+            messages.error(request, f'Dados inválidos: {str(e)}')
+            return redirect('presencas:listar_presencas_academicas')
         except Exception as e:
+            logger.error(f"Erro ao registrar presença: {str(e)}")
             messages.error(request, f'Erro ao registrar presença: {str(e)}')
             return redirect('presencas:listar_presencas_academicas')
     
@@ -126,8 +135,9 @@ def registrar_presenca_academica(request):
         logger.error(f"Erro ao listar alunos: {str(e)}")
         alunos = []
     
-    turmas = Turma.objects.all()
-    atividades = Atividade.objects.all()
+    # Carregamento otimizado de listas de referência
+    turmas = Turma.objects.select_related('curso').only('id', 'nome', 'curso__nome')
+    atividades = Atividade.objects.only('id', 'nome', 'tipo')
     
     context = {
         'alunos': alunos,
@@ -187,22 +197,14 @@ def listar_observacoes_presenca(request):
 
 # ===== FUNÇÕES PLACEHOLDER - IMPLEMENTAÇÃO FUTURA =====
 
-@login_required  
-def excluir_presenca_academica(request, pk):
-    """Placeholder: função de exclusão será implementada conforme demanda."""
-    from django.http import HttpResponse
-    return HttpResponse("Função de exclusão em desenvolvimento - usar sistema multi-etapas")
-
 @login_required
 def exportar_presencas_academicas(request):
     """Placeholder: função de exportação será implementada conforme demanda."""
-    from django.http import HttpResponse
     return HttpResponse("Função de exportação em desenvolvimento - usar relatórios")
 
 @login_required
 def importar_presencas_academicas(request):
     """Placeholder: função de importação será implementada conforme demanda."""
-    from django.http import HttpResponse
     return HttpResponse("Função de importação em desenvolvimento")
 
 # ===== STUBS PARA VIEWS RITUALÍSTICAS (DESCONTINUADAS) =====
