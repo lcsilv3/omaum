@@ -4,7 +4,9 @@ from .views_ext.multiplas import (
     registrar_presencas_multiplas,
     formulario_presencas_multiplas,
 )
-from . import views
+from . import views as views_module  # Importar o arquivo views.py
+# Import direto do arquivo views_main.py
+from . import views_main as presencas_views
 from .views_ext.academicas import listar_presencas_academicas
 from .views_ext.registro_presenca import (
     registrar_presenca_dados_basicos,
@@ -81,11 +83,11 @@ urlpatterns = [
     path("detalhar/<int:pk>/", redirect_to_multi_step_detail, name="detalhar_presenca_academica"),
     
     # Placeholders temporários (serão removidos na Fase 2)
-    path("excluir/<int:pk>/", views.excluir_presenca_academica, name="excluir_presenca_academica"),
-    path("exportar/", views.exportar_presencas_academicas, name="exportar_presencas_academicas"),
-    path("importar/", views.importar_presencas_academicas, name="importar_presencas_academicas"),
+    path("excluir/<int:pk>/", presencas_views.excluir_presenca_academica, name="excluir_presenca_academica"),
+    path("exportar/", presencas_views.exportar_presencas_academicas, name="exportar_presencas_academicas"),
+    path("importar/", presencas_views.importar_presencas_academicas, name="importar_presencas_academicas"),
     # Observações de presença
-    path("observacoes/", views.listar_observacoes_presenca, name="listar_observacoes_presenca"),
+    path("observacoes/", presencas_views.listar_observacoes_presenca, name="listar_observacoes_presenca"),
     
     # ===== SISTEMA MULTI-ETAPAS (PRINCIPAL) =====
     # Registro de presença - 4 etapas

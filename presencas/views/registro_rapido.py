@@ -14,7 +14,7 @@ from django.views.decorators.http import require_POST, require_GET
 from django.db import transaction
 
 from atividades.models import Atividade
-from presencas.models import PresencaAcademica, ObservacaoPresenca
+from presencas.models import Presenca, ObservacaoPresenca
 from turmas.models import Turma
 from alunos.models import Aluno
 
@@ -224,7 +224,7 @@ class RegistroRapidoView:
                         aluno = Aluno.objects.get(id=aluno_id)
                         
                         # Criar ou atualizar presença
-                        presenca_obj, created = PresencaAcademica.objects.get_or_create(
+                        presenca_obj, created = Presenca.objects.get_or_create(
                             aluno=aluno,
                             turma=turma,
                             atividade=atividade,
@@ -292,7 +292,7 @@ class RegistroRapidoView:
             data_obj = datetime.strptime(data_presenca, '%Y-%m-%d').date()
             aluno = Aluno.objects.get(id=aluno_id)
             
-            presenca_existente = PresencaAcademica.objects.filter(
+            presenca_existente = Presenca.objects.filter(
                 aluno=aluno,
                 turma_id=turma_id,
                 atividade_id=atividade_id,

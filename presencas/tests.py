@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User, Permission
 from django.utils import timezone
-from .models import PresencaAcademica
+from .models import Presenca
 from alunos.models import Aluno
 from turmas.models import Turma
 
@@ -52,7 +52,7 @@ class PresencaAcademicaTestCase(TestCase):
             data_inicio_ativ=date(2024, 1, 15),
             ativo=True
         )
-        self.presenca = PresencaAcademica.objects.create(
+        self.presenca = Presenca.objects.create(
             aluno=self.aluno,
             turma=self.turma,
             data=timezone.now().date(),
@@ -83,7 +83,7 @@ class PresencaAcademicaTestCase(TestCase):
             reverse("presencas:registrar_presenca"), data
         )
         self.assertRedirects(response, reverse("presencas:listar_presencas"))
-        self.assertEqual(PresencaAcademica.objects.count(), 2)
+        self.assertEqual(Presenca.objects.count(), 2)
 
     def test_editar_presenca_view(self):
         self.client.login(username="testuser", password="12345")
@@ -115,7 +115,7 @@ class PresencaAcademicaTestCase(TestCase):
         # Testar POST
         response = self.client.post(url)
         self.assertRedirects(response, reverse("presencas:listar_presencas"))
-        self.assertEqual(PresencaAcademica.objects.count(), 0)
+        self.assertEqual(Presenca.objects.count(), 0)
 
     def test_detalhar_presenca_view(self):
         self.client.login(username="testuser", password="12345")

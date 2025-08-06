@@ -10,7 +10,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
 from atividades.models import Atividade
-from presencas.models import ObservacaoPresenca, PresencaAcademica
+from presencas.models import ObservacaoPresenca, Presenca
 from alunos.services import listar_alunos as listar_alunos_service, buscar_aluno_por_cpf as buscar_aluno_por_cpf_service
 from turmas.models import Turma
 
@@ -24,7 +24,11 @@ def listar_presencas_academicas(request):
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
 
-    presencas = PresencaAcademica.objects.all().select_related('aluno', 'turma', 'atividade')
+    # Query otimizada com relacionamentos
+    presencas = Presenca.objects.select_related(
+        'aluno', 'turma__curso', 'atividade'
+    ).all()
+    
     if aluno_id:
         presencas = presencas.filter(aluno__cpf=aluno_id)
     if turma_id:
@@ -36,7 +40,17 @@ def listar_presencas_academicas(request):
     if data_fim:
         presencas = presencas.filter(data__lte=data_fim)
 
-    alunos = listar_alunos_service()
+    # Ordenação consistente
+    presencas = presencas.order_by('-data', 'aluno__nome')
+
+    try:
+        alunos_queryset = listar_alunos_service()
+        # listar_alunos_service agora retorna um queryset, não um objeto paginado
+        alunos = list(alunos_queryset) if alunos_queryset else []
+    except Exception as e:
+        logger.error(f"Erro ao listar alunos: {str(e)}")
+        alunos = []
+    
     turmas = Turma.objects.all()
     atividades = Atividade.objects.all()
 
@@ -72,7 +86,7 @@ def registrar_presenca_academica(request):
                 messages.error(request, f'Aluno com CPF {aluno_id} não encontrado.')
                 return redirect('presencas:listar_presencas_academicas')
             
-            presenca, created = PresencaAcademica.objects.get_or_create(
+            presenca, created = Presenca.objects.get_or_create(
                 aluno=aluno,
                 turma=turma,
                 atividade=atividade,
@@ -104,7 +118,14 @@ def registrar_presenca_academica(request):
             messages.error(request, f'Erro ao registrar presença: {str(e)}')
             return redirect('presencas:listar_presencas_academicas')
     
-    alunos = listar_alunos_service()
+    try:
+        alunos_queryset = listar_alunos_service()
+        # listar_alunos_service agora retorna um queryset, não um objeto paginado
+        alunos = list(alunos_queryset) if alunos_queryset else []
+    except Exception as e:
+        logger.error(f"Erro ao listar alunos: {str(e)}")
+        alunos = []
+    
     turmas = Turma.objects.all()
     atividades = Atividade.objects.all()
     
@@ -118,7 +139,7 @@ def registrar_presenca_academica(request):
 
 @login_required
 def editar_presenca_academica(request, pk):
-    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    presenca = get_object_or_404(Presenca, pk=pk)
     
     if request.method == 'POST':
         # Lógica de edição
@@ -139,7 +160,7 @@ def editar_presenca_academica(request, pk):
 
 @login_required
 def excluir_presenca_academica(request, pk):
-    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    presenca = get_object_or_404(Presenca, pk=pk)
     
     if request.method == 'POST':
         presenca.delete()
@@ -151,7 +172,7 @@ def excluir_presenca_academica(request, pk):
 
 @login_required
 def detalhar_presenca_academica(request, pk):
-    presenca = get_object_or_404(PresencaAcademica, pk=pk)
+    presenca = get_object_or_404(Presenca, pk=pk)
     context = {'presenca': presenca}
     return render(request, 'presencas/academicas/detalhar_presenca_academica.html', context)
 
@@ -200,7 +221,38 @@ def exportar_presencas_ritualisticas(request):
     messages.warning(request, 'Presenças ritualísticas não estão mais disponíveis.')
     return redirect('presencas:listar_presencas_academicas')
 
+
 @login_required
 def importar_presencas_ritualisticas(request):
     messages.warning(request, 'Presenças ritualísticas não estão mais disponíveis.')
     return redirect('presencas:listar_presencas_academicas')
+
+
+# ===== FUNÇÕES PLACEHOLDER TEMPORÁRIAS =====
+
+@login_required  
+def excluir_presenca_academica(request, pk):
+    """Placeholder: função de exclusão será implementada conforme demanda."""
+    from django.http import HttpResponse
+    return HttpResponse("Função de exclusão em desenvolvimento")
+
+
+@login_required
+def exportar_presencas_academicas(request):
+    """Placeholder: função de exportação será implementada conforme demanda."""
+    from django.http import HttpResponse
+    return HttpResponse("Função de exportação em desenvolvimento")
+
+
+@login_required
+def importar_presencas_academicas(request):
+    """Placeholder: função de importação será implementada conforme demanda."""
+    from django.http import HttpResponse
+    return HttpResponse("Função de importação em desenvolvimento")
+
+
+@login_required
+def listar_observacoes_presenca(request):
+    """Placeholder: função de observações será implementada conforme demanda."""
+    from django.http import HttpResponse
+    return HttpResponse("Função de observações em desenvolvimento")

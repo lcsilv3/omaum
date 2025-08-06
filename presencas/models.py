@@ -542,10 +542,6 @@ class ConfiguracaoPresenca(models.Model):
         )
 
 
-# Aliases para compatibilidade após refatoramento
-PresencaAcademica = Presenca
-
-
 class AgendamentoRelatorio(models.Model):
     """
     Modelo para agendamento de relatórios automáticos.
@@ -908,4 +904,3 @@ class AgendamentoRelatorio(models.Model):
         self.ultima_execucao = timezone.now()
         self.calcular_proxima_execucao()
         self.save()
-PresencaRitualistica = Presenca

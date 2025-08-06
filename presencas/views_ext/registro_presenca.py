@@ -21,7 +21,7 @@ from presencas.forms import (
 )
 from django.apps import apps
 from turmas.models import Turma
-from presencas.models import TotalAtividadeMes, ObservacaoPresenca, PresencaAcademica
+from presencas.models import TotalAtividadeMes, ObservacaoPresenca, Presenca
 from alunos.models import Aluno
 
 # ---
@@ -361,7 +361,7 @@ def registrar_presenca_dias_atividades(request):
                             data_presenca = date(int(ano), int(mes), int(dia))
                             # Sempre registra a presença, independentemente da convocação
                             # A distinção entre presença obrigatória e voluntária será feita no cálculo de frequência
-                            PresencaAcademica.objects.update_or_create(
+                            Presenca.objects.update_or_create(
                                 aluno=aluno,
                                 turma=turma,
                                 data=data_presenca,
@@ -906,7 +906,7 @@ def registrar_presenca_dias_atividades_ajax(request):
                                     
                                     # Registra a presença - TESTE ESPECÍFICO COM MAIS LOGS
                                     try:
-                                        presenca_obj, created = PresencaAcademica.objects.update_or_create(
+                                        presenca_obj, created = Presenca.objects.update_or_create(
                                             aluno=aluno,
                                             turma=turma,
                                             data=data_presenca,
