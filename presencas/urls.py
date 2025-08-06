@@ -4,8 +4,7 @@ from .views_ext.multiplas import (
     registrar_presencas_multiplas,
     formulario_presencas_multiplas,
 )
-from . import views as views_module  # Importar o arquivo views.py
-# Import direto do arquivo views_main.py
+# Import consolidado de views principais
 from . import views_main as presencas_views
 from .views_ext.academicas import listar_presencas_academicas
 from .views_ext.registro_presenca import (

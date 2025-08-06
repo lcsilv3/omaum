@@ -176,73 +176,28 @@ def detalhar_presenca_academica(request, pk):
     context = {'presenca': presenca}
     return render(request, 'presencas/academicas/detalhar_presenca_academica.html', context)
 
-@login_required
-def exportar_presencas_academicas(request):
-    return render(request, 'presencas/academicas/exportar_presencas_academicas.html')
-
-@login_required
-def importar_presencas_academicas(request):
-    return render(request, 'presencas/academicas/importar_presencas_academicas.html')
+# ===== FUNÇÕES ACADÊMICAS IMPLEMENTADAS =====
 
 @login_required
 def listar_observacoes_presenca(request):
+    """Lista todas as observações de presença."""
     observacoes = ObservacaoPresenca.objects.all().order_by('-data_registro')
     context = {'observacoes': observacoes}
     return render(request, 'presencas/listar_observacoes_presenca.html', context)
 
-# Stubs para views ritualísticas (removidas)
-@login_required
-def listar_presencas_ritualisticas(request):
-    messages.warning(request, 'Presenças ritualísticas não estão mais disponíveis.')
-    return redirect('presencas:listar_presencas_academicas')
-
-@login_required
-def registrar_presenca_ritualistica(request):
-    messages.warning(request, 'Presenças ritualísticas não estão mais disponíveis.')
-    return redirect('presencas:listar_presencas_academicas')
-
-@login_required
-def editar_presenca_ritualistica(request, pk):
-    messages.warning(request, 'Presenças ritualísticas não estão mais disponíveis.')
-    return redirect('presencas:listar_presencas_academicas')
-
-@login_required
-def excluir_presenca_ritualistica(request, pk):
-    messages.warning(request, 'Presenças ritualísticas não estão mais disponíveis.')
-    return redirect('presencas:listar_presencas_academicas')
-
-@login_required
-def detalhar_presenca_ritualistica(request, pk):
-    messages.warning(request, 'Presenças ritualísticas não estão mais disponíveis.')
-    return redirect('presencas:listar_presencas_academicas')
-
-@login_required
-def exportar_presencas_ritualisticas(request):
-    messages.warning(request, 'Presenças ritualísticas não estão mais disponíveis.')
-    return redirect('presencas:listar_presencas_academicas')
-
-
-@login_required
-def importar_presencas_ritualisticas(request):
-    messages.warning(request, 'Presenças ritualísticas não estão mais disponíveis.')
-    return redirect('presencas:listar_presencas_academicas')
-
-
-# ===== FUNÇÕES PLACEHOLDER TEMPORÁRIAS =====
+# ===== FUNÇÕES PLACEHOLDER - IMPLEMENTAÇÃO FUTURA =====
 
 @login_required  
 def excluir_presenca_academica(request, pk):
     """Placeholder: função de exclusão será implementada conforme demanda."""
     from django.http import HttpResponse
-    return HttpResponse("Função de exclusão em desenvolvimento")
-
+    return HttpResponse("Função de exclusão em desenvolvimento - usar sistema multi-etapas")
 
 @login_required
 def exportar_presencas_academicas(request):
     """Placeholder: função de exportação será implementada conforme demanda."""
     from django.http import HttpResponse
-    return HttpResponse("Função de exportação em desenvolvimento")
-
+    return HttpResponse("Função de exportação em desenvolvimento - usar relatórios")
 
 @login_required
 def importar_presencas_academicas(request):
@@ -250,9 +205,39 @@ def importar_presencas_academicas(request):
     from django.http import HttpResponse
     return HttpResponse("Função de importação em desenvolvimento")
 
+# ===== STUBS PARA VIEWS RITUALÍSTICAS (DESCONTINUADAS) =====
 
 @login_required
-def listar_observacoes_presenca(request):
-    """Placeholder: função de observações será implementada conforme demanda."""
-    from django.http import HttpResponse
-    return HttpResponse("Função de observações em desenvolvimento")
+def listar_presencas_ritualisticas(request):
+    messages.warning(request, 'Presenças ritualísticas foram descontinuadas. Use o sistema acadêmico.')
+    return redirect('presencas:listar_presencas_academicas')
+
+@login_required
+def registrar_presenca_ritualistica(request):
+    messages.warning(request, 'Presenças ritualísticas foram descontinuadas. Use o sistema acadêmico.')
+    return redirect('presencas:listar_presencas_academicas')
+
+@login_required
+def editar_presenca_ritualistica(request, pk):
+    messages.warning(request, 'Presenças ritualísticas foram descontinuadas. Use o sistema acadêmico.')
+    return redirect('presencas:listar_presencas_academicas')
+
+@login_required
+def excluir_presenca_ritualistica(request, pk):
+    messages.warning(request, 'Presenças ritualísticas foram descontinuadas. Use o sistema acadêmico.')
+    return redirect('presencas:listar_presencas_academicas')
+
+@login_required
+def detalhar_presenca_ritualistica(request, pk):
+    messages.warning(request, 'Presenças ritualísticas foram descontinuadas. Use o sistema acadêmico.')
+    return redirect('presencas:listar_presencas_academicas')
+
+@login_required
+def exportar_presencas_ritualisticas(request):
+    messages.warning(request, 'Presenças ritualísticas foram descontinuadas. Use o sistema acadêmico.')
+    return redirect('presencas:listar_presencas_academicas')
+
+@login_required
+def importar_presencas_ritualisticas(request):
+    messages.warning(request, 'Presenças ritualísticas foram descontinuadas. Use o sistema acadêmico.')
+    return redirect('presencas:listar_presencas_academicas')
