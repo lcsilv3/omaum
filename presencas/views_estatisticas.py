@@ -7,9 +7,12 @@ from datetime import datetime
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import cache_page
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.core.cache import cache
 from django.utils import timezone
+from django.db.models import Count, Q, F, Avg, Max, Min
 
 from .services.calculadora_estatisticas import CalculadoraEstatisticas
 from .models import PresencaDetalhada, ConfiguracaoPresenca
@@ -24,7 +27,7 @@ logger = logging.getLogger(__name__)
 @require_http_methods(["GET"])
 def consolidado_aluno(request, aluno_id):
     """
-    Retorna consolidado de presença de um aluno específico.
+    FASE 3B: Retorna consolidado de presença com cache inteligente.
     
     Parâmetros GET:
     - turma_id: ID da turma (opcional)
@@ -34,8 +37,19 @@ def consolidado_aluno(request, aluno_id):
     - formato: 'json' ou 'html' (padrão: json)
     """
     try:
-        # Verificar se aluno existe
-        aluno = get_object_or_404(Aluno, id=aluno_id)
+        # Cache baseado nos parâmetros da requisição
+        params = request.GET.copy()
+        cache_key = f"consolidado_aluno_{aluno_id}_{hash(str(sorted(params.items())))}"
+        
+        cached_result = cache.get(cache_key)
+        if cached_result:
+            logger.debug(f"Cache hit para consolidado_aluno: {cache_key}")
+            if params.get('formato') == 'html':
+                return render(request, 'presencas/consolidado_aluno.html', cached_result['context'])
+            return JsonResponse(cached_result['data'])
+        
+        # Verificar se aluno existe com query otimizada
+        aluno = get_object_or_404(Aluno.objects.select_related('curso'), id=aluno_id)
         
         # Obter parâmetros da requisição
         turma_id = request.GET.get('turma_id')

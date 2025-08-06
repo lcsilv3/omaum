@@ -32,12 +32,12 @@ window.PresencaManager = {
     debug: true,
     _processandoSalvamento: false, // Flag para evitar conflitos durante salvamento
     
-    // [PERFORMANCE] Sistema de cache para alunos
+    // [PERFORMANCE] Sistema de cache AVANÇADO - FASE 3B
     _cacheAlunos: {
         dados: null,
         timestamp: null,
         turmaId: null,
-        DURACAO_CACHE: 5 * 60 * 1000, // 5 minutos
+        DURACAO_CACHE: 10 * 60 * 1000, // 10 minutos
         
         // Verifica se o cache é válido
         isValido: function(turmaId) {
@@ -48,11 +48,58 @@ window.PresencaManager = {
             return (agora - this.timestamp) < this.DURACAO_CACHE;
         },
         
-        // Salva dados no cache
+        // Salva dados no cache com compressão
         salvar: function(dados, turmaId) {
-            this.dados = dados;
-            this.timestamp = Date.now();
-            this.turmaId = turmaId;
+            try {
+                // FASE 3B: Cache com localStorage para persistência
+                const cacheData = {
+                    dados: dados,
+                    timestamp: Date.now(),
+                    turmaId: turmaId
+                };
+                
+                // Salvar no localStorage para persistir entre sessões
+                localStorage.setItem('presencas_cache_alunos', JSON.stringify(cacheData));
+                
+                // Cache em memória para acesso rápido
+                this.dados = dados;
+                this.timestamp = cacheData.timestamp;
+                this.turmaId = turmaId;
+                
+                console.log(`[CACHE] Salvos ${dados.length} alunos para turma ${turmaId}`);
+            } catch (error) {
+                console.warn('[CACHE] Erro ao salvar no localStorage:', error);
+                // Fallback para cache em memória apenas
+                this.dados = dados;
+                this.timestamp = Date.now();
+                this.turmaId = turmaId;
+            }
+        },
+        
+        // Carrega cache do localStorage se disponível
+        carregar: function(turmaId) {
+            try {
+                const cached = localStorage.getItem('presencas_cache_alunos');
+                if (cached) {
+                    const cacheData = JSON.parse(cached);
+                    if (cacheData.turmaId === turmaId && this.isValidTimestamp(cacheData.timestamp)) {
+                        this.dados = cacheData.dados;
+                        this.timestamp = cacheData.timestamp;
+                        this.turmaId = cacheData.turmaId;
+                        console.log(`[CACHE] Carregados ${this.dados.length} alunos do localStorage`);
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.warn('[CACHE] Erro ao carregar do localStorage:', error);
+            }
+            return false;
+        },
+        
+        // Verifica se timestamp é válido
+        isValidTimestamp: function(timestamp) {
+            const agora = Date.now();
+            return (agora - timestamp) < this.DURACAO_CACHE;
         },
         
         // Limpa o cache
@@ -60,6 +107,42 @@ window.PresencaManager = {
             this.dados = null;
             this.timestamp = null;
             this.turmaId = null;
+            try {
+                localStorage.removeItem('presencas_cache_alunos');
+            } catch (error) {
+                console.warn('[CACHE] Erro ao limpar localStorage:', error);
+            }
+        }
+    },
+    
+    // [PERFORMANCE] Cache para estatísticas - FASE 3B
+    _cacheEstatisticas: {
+        dados: new Map(),
+        DURACAO_CACHE: 5 * 60 * 1000, // 5 minutos
+        
+        get: function(key) {
+            const cached = this.dados.get(key);
+            if (cached && (Date.now() - cached.timestamp) < this.DURACAO_CACHE) {
+                return cached.data;
+            }
+            return null;
+        },
+        
+        set: function(key, data) {
+            this.dados.set(key, {
+                data: data,
+                timestamp: Date.now()
+            });
+            
+            // Limpar cache antigo (máximo 50 entradas)
+            if (this.dados.size > 50) {
+                const firstKey = this.dados.keys().next().value;
+                this.dados.delete(firstKey);
+            }
+        },
+        
+        clear: function() {
+            this.dados.clear();
         }
     },
     

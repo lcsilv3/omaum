@@ -7,10 +7,13 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.pagination import PageNumberPagination
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.db import transaction
+from django.db.models import Q, F, Count, Prefetch
 import json
 import logging
 from alunos.models import Aluno
@@ -27,44 +30,92 @@ from .services import (
 logger = logging.getLogger(__name__)
 
 
+# FASE 3B: Paginação customizada para melhor performance
+class PresencaPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 200
+    
+    def get_paginated_response(self, data):
+        return Response({
+            'links': {
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link()
+            },
+            'count': self.page.paginator.count,
+            'page_size': self.page_size,
+            'total_pages': self.page.paginator.num_pages,
+            'current_page': self.page.number,
+            'results': data
+        })
+
+
 class PresencaViewSet(ModelViewSet):
     """ViewSet para gerenciar presenças via API REST."""
     
-    queryset = Presenca.objects.select_related("aluno", "turma", "atividade").all()
+    # FASE 3B: Queryset otimizado com cache estratégico
+    queryset = Presenca.objects.select_related(
+        "aluno", "turma__curso", "atividade"
+    ).prefetch_related(
+        Prefetch('aluno', queryset=Aluno.objects.only('id', 'nome', 'cpf')),
+        Prefetch('turma', queryset=Turma.objects.select_related('curso').only('id', 'nome', 'curso__nome'))
+    ).all()
+    
     serializer_class = PresencaSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = PresencaPagination
     
     def get_queryset(self):
-        """Customiza o queryset com filtros opcionais."""
-        queryset = self.queryset
+        """FASE 3B: Customiza queryset com cache inteligente e filtros otimizados."""
+        # Cache baseado nos parâmetros de filtro
+        filter_params = self.request.query_params.copy()
+        cache_key = f"presencas_api_{hash(str(sorted(filter_params.items())))}"
         
-        # Filtros via query parameters
-        aluno_cpf = self.request.query_params.get('aluno_cpf')
-        turma_id = self.request.query_params.get('turma_id')
-        atividade_id = self.request.query_params.get('atividade_id')
-        data_inicio = self.request.query_params.get('data_inicio')
-        data_fim = self.request.query_params.get('data_fim')
-        presente = self.request.query_params.get('presente')
+        cached_ids = cache.get(cache_key)
+        if cached_ids:
+            # Usar apenas IDs em cache para evitar problemas de serialização
+            queryset = self.queryset.filter(id__in=cached_ids)
+            logger.debug(f"API Cache hit: {cache_key}")
+        else:
+            queryset = self.queryset
+            
+            # Filtros via query parameters otimizados
+            aluno_cpf = filter_params.get('aluno_cpf')
+            turma_id = filter_params.get('turma_id')
+            atividade_id = filter_params.get('atividade_id')
+            data_inicio = filter_params.get('data_inicio')
+            data_fim = filter_params.get('data_fim')
+            presente = filter_params.get('presente')
+            
+            # Construir filtros de forma eficiente
+            filters = Q()
+            
+            if aluno_cpf:
+                filters &= Q(aluno__cpf=aluno_cpf)
+            
+            if turma_id:
+                filters &= Q(turma_id=turma_id)
+            
+            if atividade_id:
+                filters &= Q(atividade_id=atividade_id)
+            
+            if data_inicio:
+                filters &= Q(data__gte=data_inicio)
+            
+            if data_fim:
+                filters &= Q(data__lte=data_fim)
+            
+            if presente is not None:
+                filters &= Q(presente=presente.lower() == 'true')
+            
+            queryset = queryset.filter(filters) if filters else queryset
+            
+            # Cache apenas os IDs para reduzir uso de memória
+            ids = list(queryset.values_list('id', flat=True)[:1000])  # Limite para cache
+            cache.set(cache_key, ids, 300)  # 5 minutos
+            logger.debug(f"API Cache set: {cache_key} with {len(ids)} items")
         
-        if aluno_cpf:
-            queryset = queryset.filter(aluno__cpf=aluno_cpf)
-        
-        if turma_id:
-            queryset = queryset.filter(turma_id=turma_id)
-        
-        if atividade_id:
-            queryset = queryset.filter(atividade_id=atividade_id)
-        
-        if data_inicio:
-            queryset = queryset.filter(data__gte=data_inicio)
-        
-        if data_fim:
-            queryset = queryset.filter(data__lte=data_fim)
-        
-        if presente is not None:
-            queryset = queryset.filter(presente=presente.lower() == 'true')
-        
-        return queryset.order_by('-data')
+        return queryset.order_by('-data', 'id')  # ID como desempate
     
     @action(detail=False, methods=["get"], url_path="listar_presencas")
     def listar_presencas_action(self, request):

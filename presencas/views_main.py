@@ -6,9 +6,12 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from django.db.models import Count, Q, F, Prefetch
 
 from atividades.models import Atividade
 from presencas.models import ObservacaoPresenca, Presenca
@@ -25,26 +28,48 @@ def listar_presencas_academicas(request):
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
 
-    # Query otimizada com relacionamentos e paginação
-    presencas = Presenca.objects.select_related(
-        'aluno', 'turma__curso', 'atividade'
-    ).prefetch_related(
-        'aluno__historicos'  # Se necessário para dados relacionados
-    )
+    # FASE 3B: Cache para queries de filtros complexos
+    cache_key = f"presencas_filtros_{aluno_id}_{turma_id}_{atividade_id}_{data_inicio}_{data_fim}"
+    cached_result = cache.get(cache_key)
     
-    if aluno_id:
-        presencas = presencas.filter(aluno__cpf=aluno_id)
-    if turma_id:
-        presencas = presencas.filter(turma__id=turma_id)
-    if atividade_id:
-        presencas = presencas.filter(atividade__id=atividade_id)
-    if data_inicio:
-        presencas = presencas.filter(data__gte=data_inicio)
-    if data_fim:
-        presencas = presencas.filter(data__lte=data_fim)
+    if cached_result:
+        presencas_qs, total_count = cached_result
+        logger.debug(f"Cache hit para presencas: {cache_key}")
+    else:
+        # Query otimizada com relacionamentos e agregações
+        presencas_qs = Presenca.objects.select_related(
+            'aluno', 'turma__curso', 'atividade'
+        ).prefetch_related(
+            'aluno__historicos'  # Se necessário para dados relacionados
+        ).annotate(
+            turma_nome=F('turma__nome'),
+            curso_nome=F('turma__curso__nome'),
+            aluno_nome=F('aluno__nome')
+        )
+        
+        if aluno_id:
+            presencas_qs = presencas_qs.filter(aluno__cpf=aluno_id)
+        if turma_id:
+            presencas_qs = presencas_qs.filter(turma__id=turma_id)
+        if atividade_id:
+            presencas_qs = presencas_qs.filter(atividade__id=atividade_id)
+        if data_inicio:
+            presencas_qs = presencas_qs.filter(data__gte=data_inicio)
+        if data_fim:
+            presencas_qs = presencas_qs.filter(data__lte=data_fim)
 
-    # Ordenação consistente
-    presencas = presencas.order_by('-data', 'aluno__nome')
+        # Ordenação consistente com índices
+        presencas_qs = presencas_qs.order_by('-data', 'aluno__nome')
+        
+        # Cache do queryset base (sem count para performance)
+        total_count = presencas_qs.count()
+        cache.set(cache_key, (presencas_qs, total_count), 300)  # 5 minutos
+        logger.debug(f"Cache set para presencas: {cache_key}")
+
+    # FASE 3B: Paginação eficiente
+    paginator = Paginator(presencas_qs, 25)  # 25 itens por página
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     try:
         alunos_queryset = listar_alunos_service()
@@ -54,12 +79,24 @@ def listar_presencas_academicas(request):
         logger.error(f"Erro ao listar alunos: {str(e)}")
         alunos = []
     
-    # Carregamento otimizado de listas de referência  
-    turmas = Turma.objects.select_related('curso').only('id', 'nome', 'curso__nome')
-    atividades = Atividade.objects.only('id', 'nome', 'tipo')
+    # Carregamento otimizado de listas de referência com cache
+    turmas_cache_key = "turmas_listagem"
+    atividades_cache_key = "atividades_listagem"
+    
+    turmas = cache.get(turmas_cache_key)
+    if not turmas:
+        turmas = list(Turma.objects.select_related('curso').only('id', 'nome', 'curso__nome'))
+        cache.set(turmas_cache_key, turmas, 600)  # 10 minutos
+    
+    atividades = cache.get(atividades_cache_key)
+    if not atividades:
+        atividades = list(Atividade.objects.only('id', 'nome', 'tipo'))
+        cache.set(atividades_cache_key, atividades, 600)  # 10 minutos
 
     context = {
-        'presencas': presencas,
+        'page_obj': page_obj,
+        'presencas': page_obj.object_list,
+        'total_count': total_count,
         'alunos': alunos,
         'turmas': turmas,
         'atividades': atividades,
