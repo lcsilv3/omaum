@@ -12,32 +12,32 @@
  */
 
 window.PresencaManager = {
-    // 📊 ESTADO CENTRALIZADO
+    // [DATA] ESTADO CENTRALIZADO
     turmaId: null,
     atividades: {},
     alunosData: [],
     
-    // 🎯 CONTROLE DE FLUXO
+    // [TARGET] CONTROLE DE FLUXO
     atividadeAtual: null,
     diaAtual: null,
     diasSelecionados: {},
     presencasRegistradas: {},
     convocadosIndividuais: {},
     
-    // 📈 PROGRESSO
+    // [EMOJI] PROGRESSO
     totalDiasPendentes: 0,
     diasConcluidos: 0,
     
-    // 🔧 CONFIGURAÇÕES
+    // [FIX] CONFIGURAÇÕES
     debug: true,
     _processandoSalvamento: false, // Flag para evitar conflitos durante salvamento
     
     /**
-     * 🚀 INICIALIZAÇÃO
+     * [SEND] INICIALIZAÇÃO
      */
     init: function() {
-        this.log('� [CRITICAL] INÍCIO init()');
-        this.log('�🚀 Inicializando PresencaManager...');
+        this.log('[EMOJI] [CRITICAL] INÍCIO init()');
+        this.log('[EMOJI][SEND] Inicializando PresencaManager...');
         
         // DETECTA CONFLITOS COM SCRIPTS ANTIGOS
         this.detectarConflitos();
@@ -49,27 +49,27 @@ window.PresencaManager = {
         // VERIFICA ENVIO AUTOMÁTICO APÓS ERRO
         this.verificarEnvioAutomaticamente();
         
-        this.log('✅ PresencaManager inicializado');
-        this.log('🔥 [CRITICAL] FIM init()');
+        this.log('[SUCCESS] PresencaManager inicializado');
+        this.log('[DEBUG] [CRITICAL] FIM init()');
     },
     
     /**
-     * 🔍 VERIFICAR ENVIO AUTOMATICAMENTE NA INICIALIZAÇÃO
+     * [SEARCH] VERIFICAR ENVIO AUTOMATICAMENTE NA INICIALIZAÇÃO
      */
     verificarEnvioAutomaticamente: function() {
         const mensagemErro = document.querySelector('.alert-warning');
         const temErroPresenca = mensagemErro && mensagemErro.textContent.includes('Nenhuma presença foi registrada');
         
         if (temErroPresenca) {
-            this.log('🔍 [AUTO-VERIF] Mensagem de erro detectada, verificando estado salvo...');
+            this.log('[SEARCH] [AUTO-VERIF] Mensagem de erro detectada, verificando estado salvo...');
             
             // Executa a verificação automática após um delay
             setTimeout(() => {
                 if (window.verificarEnvioRealizado) {
                     const resultado = window.verificarEnvioRealizado();
                     if (resultado && !resultado.enviadoComSucesso && resultado.estadoRecuperado) {
-                        this.log('💡 [AUTO-VERIF] Estado recuperado! Use os calendários para finalizar.');
-                        this.mostrarMensagem('📁 Estado anterior recuperado! Seus dados foram restaurados. Finalize o registro novamente.', 'info');
+                        this.log('[TIP] [AUTO-VERIF] Estado recuperado! Use os calendários para finalizar.');
+                        this.mostrarMensagem('[EMOJI] Estado anterior recuperado! Seus dados foram restaurados. Finalize o registro novamente.', 'info');
                     }
                 }
             }, 2000);
@@ -77,23 +77,23 @@ window.PresencaManager = {
     },
     
     /**
-     * 🔍 DETECTAR CONFLITOS COM SCRIPTS ANTIGOS
+     * [SEARCH] DETECTAR CONFLITOS COM SCRIPTS ANTIGOS
      */
     detectarConflitos: function() {
-        this.log('🔍 [CRITICAL] Detectando possíveis conflitos...');
+        this.log('[SEARCH] [CRITICAL] Detectando possíveis conflitos...');
         
         // Verifica window.PresencaApp
         if (window.PresencaApp && typeof window.PresencaApp.abrirModalPresenca === 'function') {
-            this.log('⚠️ [CRITICAL] PresencaApp antigo DETECTADO! Pode causar conflitos!');
-            this.log('⚠️ [CRITICAL] PresencaApp.abrirModalPresenca existe:', !!window.PresencaApp.abrirModalPresenca);
+            this.log('[WARNING] [CRITICAL] PresencaApp antigo DETECTADO! Pode causar conflitos!');
+            this.log('[WARNING] [CRITICAL] PresencaApp.abrirModalPresenca existe:', !!window.PresencaApp.abrirModalPresenca);
         }
         
         // Verifica outros scripts legados
         if (window.salvarPresencaDia) {
-            this.log('⚠️ [CRITICAL] Função global salvarPresencaDia() DETECTADA!');
+            this.log('[WARNING] [CRITICAL] Função global salvarPresencaDia() DETECTADA!');
         }
         if (window.marcarTodosPresentes) {
-            this.log('⚠️ [CRITICAL] Função global marcarTodosPresentes() DETECTADA!');
+            this.log('[WARNING] [CRITICAL] Função global marcarTodosPresentes() DETECTADA!');
         }
         
         // Verifica elementos DOM com event listeners
@@ -102,9 +102,9 @@ window.PresencaManager = {
             // getEventListeners só existe nas DevTools, não no runtime normal
             if (typeof getEventListeners !== 'undefined') {
                 const listeners = getEventListeners(modal);
-                this.log('🔍 [CRITICAL] Event listeners no modal:', listeners);
+                this.log('[SEARCH] [CRITICAL] Event listeners no modal:', listeners);
             } else {
-                this.log('🔍 [CRITICAL] getEventListeners não disponível (normal em produção)');
+                this.log('[SEARCH] [CRITICAL] getEventListeners não disponível (normal em produção)');
             }
         }
         
@@ -115,13 +115,13 @@ window.PresencaManager = {
                 globalFunctions.push(prop);
             }
         }
-        this.log('🔍 [CRITICAL] Funções globais com "presenc":', globalFunctions);
+        this.log('[SEARCH] [CRITICAL] Funções globais com "presenc":', globalFunctions);
         
-        this.log('✅ [CRITICAL] Detecção de conflitos concluída');
+        this.log('[SUCCESS] [CRITICAL] Detecção de conflitos concluída');
     },
     
     /**
-     * 📝 LOGGING CENTRALIZADO
+     * [FORM] LOGGING CENTRALIZADO
      */
     log: function(msg, data = null) {
         if (this.debug) {
@@ -130,54 +130,54 @@ window.PresencaManager = {
     },
     
     /**
-     * 👥 CARREGAR ALUNOS VIA AJAX
+     * [EMOJI] CARREGAR ALUNOS VIA AJAX
      */
     carregarAlunos: function() {
         const turmaId = this.obterTurmaId();
         if (!turmaId) {
-            this.log('❌ Turma ID não encontrado');
+            this.log('[ERROR] Turma ID não encontrado');
             return;
         }
         
-        this.log('📡 Carregando alunos da turma:', turmaId);
+        this.log('[EMOJI] Carregando alunos da turma:', turmaId);
         
         fetch(`/presencas/ajax/alunos-turma/?turma_id=${turmaId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.alunos && data.alunos.length > 0) {
                     this.alunosData = data.alunos;
-                    this.log('✅ Alunos carregados:', this.alunosData.length);
+                    this.log('[SUCCESS] Alunos carregados:', this.alunosData.length);
                 } else {
-                    this.log('⚠️ Nenhum aluno encontrado');
+                    this.log('[WARNING] Nenhum aluno encontrado');
                     this.alunosData = [];
                 }
             })
             .catch(error => {
-                this.log('❌ Erro ao carregar alunos:', error);
+                this.log('[ERROR] Erro ao carregar alunos:', error);
                 this.alunosData = [];
             });
     },
     
     /**
-     * 🔄 GARANTIR QUE ALUNOS SEJAM CARREGADOS (COM PROMISE)
+     * [RELOAD] GARANTIR QUE ALUNOS SEJAM CARREGADOS (COM PROMISE)
      */
     garantirAlunosCarregados: function() {
         return new Promise((resolve, reject) => {
             // Se já temos alunos carregados, resolve imediatamente
             if (this.alunosData && this.alunosData.length > 0) {
-                this.log('✅ Alunos já carregados:', this.alunosData.length);
+                this.log('[SUCCESS] Alunos já carregados:', this.alunosData.length);
                 resolve(this.alunosData);
                 return;
             }
             
             const turmaId = this.obterTurmaId();
             if (!turmaId) {
-                this.log('❌ Turma ID não encontrado');
+                this.log('[ERROR] Turma ID não encontrado');
                 reject(new Error('Turma ID não encontrado'));
                 return;
             }
             
-            this.log('📡 Carregando alunos da turma:', turmaId);
+            this.log('[EMOJI] Carregando alunos da turma:', turmaId);
             
             fetch(`/presencas/ajax/alunos-turma/?turma_id=${turmaId}`)
                 .then(response => {
@@ -189,16 +189,16 @@ window.PresencaManager = {
                 .then(data => {
                     if (data.alunos && data.alunos.length > 0) {
                         this.alunosData = data.alunos;
-                        this.log('✅ Alunos carregados:', this.alunosData.length);
+                        this.log('[SUCCESS] Alunos carregados:', this.alunosData.length);
                         resolve(this.alunosData);
                     } else {
-                        this.log('⚠️ Nenhum aluno encontrado na resposta');
+                        this.log('[WARNING] Nenhum aluno encontrado na resposta');
                         this.alunosData = [];
                         reject(new Error('Nenhum aluno encontrado para esta turma'));
                     }
                 })
                 .catch(error => {
-                    this.log('❌ Erro ao carregar alunos:', error);
+                    this.log('[ERROR] Erro ao carregar alunos:', error);
                     this.alunosData = [];
                     reject(error);
                 });
@@ -206,7 +206,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 🆔 OBTER TURMA ID
+     * [EMOJI] OBTER TURMA ID
      */
     obterTurmaId: function() {
         // Tenta múltiplas fontes para obter o turma ID
@@ -227,7 +227,7 @@ window.PresencaManager = {
     },
     
     /**
-     * ⚙️ CONFIGURAR EVENTOS GLOBAIS
+     * [EMOJI] CONFIGURAR EVENTOS GLOBAIS
      */
     configurarEventos: function() {
         // Modal: fechar com ESC
@@ -253,20 +253,20 @@ window.PresencaManager = {
             form.addEventListener('submit', (e) => this.validarSubmit(e));
         }
         
-        this.log('✅ Eventos configurados');
+        this.log('[SUCCESS] Eventos configurados');
     },
     
     /**
-     * 📅 CONFIGURAR FLATPICKR PARA TODAS AS ATIVIDADES
+     * [CALENDAR] CONFIGURAR FLATPICKR PARA TODAS AS ATIVIDADES
      */
     configurarFlatpickr: function() {
-        this.log('🔥 [CRITICAL] INÍCIO configurarFlatpickr()');
+        this.log('[DEBUG] [CRITICAL] INÍCIO configurarFlatpickr()');
         
         const inputs = document.querySelectorAll('.dias-datepicker');
-        this.log('🔍 [CRITICAL] Inputs encontrados:', inputs.length);
+        this.log('[SEARCH] [CRITICAL] Inputs encontrados:', inputs.length);
         
         if (inputs.length === 0) {
-            this.log('❌ [CRITICAL] NENHUM INPUT .dias-datepicker encontrado!');
+            this.log('[ERROR] [CRITICAL] NENHUM INPUT .dias-datepicker encontrado!');
             return;
         }
         
@@ -274,12 +274,12 @@ window.PresencaManager = {
             const atividadeId = input.dataset.atividade;
             const maxDias = parseInt(input.dataset.maxdias) || 0;
             
-            this.log(`📅 [${index}] Configurando Flatpickr para atividade ${atividadeId} (max: ${maxDias} dias)`);
-            this.log(`📅 [${index}] Input ID: ${input.id}, Classes: ${input.className}`);
+            this.log(`[CALENDAR] [${index}] Configurando Flatpickr para atividade ${atividadeId} (max: ${maxDias} dias)`);
+            this.log(`[CALENDAR] [${index}] Input ID: ${input.id}, Classes: ${input.className}`);
             
             // Verifica se o Flatpickr está disponível
             if (typeof flatpickr === 'undefined') {
-                this.log('❌ [CRITICAL] Flatpickr não está carregado!');
+                this.log('[ERROR] [CRITICAL] Flatpickr não está carregado!');
                 return;
             }
             
@@ -301,46 +301,46 @@ window.PresencaManager = {
                     }
                 });
 
-                this.log(`✅ [${index}] Flatpickr inicializado para atividade ${atividadeId}`);
+                this.log(`[SUCCESS] [${index}] Flatpickr inicializado para atividade ${atividadeId}`);
 
                 // Torna o ícone clicável
                 const icon = input.parentElement.querySelector('.calendar-icon');
                 if (icon) {
-                    this.log(`🔧 [${index}] Configurando clique no ícone`);
+                    this.log(`[FIX] [${index}] Configurando clique no ícone`);
                     icon.addEventListener('click', () => {
-                        this.log(`🖱️ [${index}] Ícone clicado - abrindo calendário`);
+                        this.log(`[EMOJI] [${index}] Ícone clicado - abrindo calendário`);
                         if (input._flatpickr) {
                             input._flatpickr.open();
                         } else {
-                            this.log(`❌ [${index}] _flatpickr não encontrado no input!`);
+                            this.log(`[ERROR] [${index}] _flatpickr não encontrado no input!`);
                         }
                     });
                 } else {
-                    this.log(`⚠️ [${index}] Ícone .calendar-icon não encontrado`);
+                    this.log(`[WARNING] [${index}] Ícone .calendar-icon não encontrado`);
                 }
                 
                 // Adiciona clique no próprio input também
                 input.addEventListener('click', () => {
-                    this.log(`🖱️ [${index}] Input clicado - abrindo calendário`);
+                    this.log(`[EMOJI] [${index}] Input clicado - abrindo calendário`);
                     if (input._flatpickr) {
                         input._flatpickr.open();
                     }
                 });
                 
             } catch (error) {
-                this.log(`❌ [${index}] Erro ao inicializar Flatpickr:`, error);
+                this.log(`[ERROR] [${index}] Erro ao inicializar Flatpickr:`, error);
             }
         });
         
-        this.log('🔥 [CRITICAL] FIM configurarFlatpickr()');
+        this.log('[DEBUG] [CRITICAL] FIM configurarFlatpickr()');
     },
     
     /**
-     * 📅 HANDLER: FLATPICKR CHANGE
+     * [CALENDAR] HANDLER: FLATPICKR CHANGE
      */
     onFlatpickrChange: function(atividadeId, selectedDates, maxDias, instance) {
-        this.log(`� INÍCIO onFlatpickrChange() - Atividade: ${atividadeId}, Dias: ${selectedDates.length}`);
-        this.log(`�📅 Flatpickr onChange - Atividade: ${atividadeId}, Dias: ${selectedDates.length}`);
+        this.log(`[EMOJI] INÍCIO onFlatpickrChange() - Atividade: ${atividadeId}, Dias: ${selectedDates.length}`);
+        this.log(`[EMOJI][CALENDAR] Flatpickr onChange - Atividade: ${atividadeId}, Dias: ${selectedDates.length}`);
         
         // VERIFICAÇÃO DE CHAMADAS DUPLICADAS
         if (this._lastFlatpickrCall) {
@@ -349,7 +349,7 @@ window.PresencaManager = {
             if (intervalo < 100 && 
                 this._lastFlatpickrCall.atividade === atividadeId && 
                 this._lastFlatpickrCall.dias === selectedDates.length) {
-                this.log(`⚠️ POSSÍVEL CHAMADA DUPLICADA detectada! Intervalo: ${intervalo}ms`);
+                this.log(`[WARNING] POSSÍVEL CHAMADA DUPLICADA detectada! Intervalo: ${intervalo}ms`);
             }
         }
         this._lastFlatpickrCall = {
@@ -360,51 +360,51 @@ window.PresencaManager = {
         
         // Validação de limite
         if (selectedDates.length > maxDias) {
-            this.log(`❌ Limite excedido: ${selectedDates.length} > ${maxDias}`);
+            this.log(`[ERROR] Limite excedido: ${selectedDates.length} > ${maxDias}`);
             this.mostrarMensagem(`Você só pode selecionar até ${maxDias} dia(s) para esta atividade.`, 'warning');
             selectedDates.pop();
             instance.setDate(selectedDates, true);
-            this.log('🔥 FIM onFlatpickrChange() - LIMITE EXCEDIDO');
+            this.log('[DEBUG] FIM onFlatpickrChange() - LIMITE EXCEDIDO');
             return;
         }
         
         // Atualiza estado interno
         this.diasSelecionados[atividadeId] = selectedDates.map(date => date.getDate()).sort((a, b) => a - b);
-        this.log('📊 Estado interno atualizado:', this.diasSelecionados[atividadeId]);
+        this.log('[DATA] Estado interno atualizado:', this.diasSelecionados[atividadeId]);
         
         // Atualiza campos de observação
-        this.log('📝 Atualizando campos de observação...');
+        this.log('[FORM] Atualizando campos de observação...');
         this.atualizarCamposObservacao(atividadeId, this.diasSelecionados[atividadeId]);
-        this.log('✅ Campos de observação atualizados');
+        this.log('[SUCCESS] Campos de observação atualizados');
         
         // Atualiza indicadores visuais
-        this.log('🎨 Atualizando indicadores visuais...');
+        this.log('[UI] Atualizando indicadores visuais...');
         this.atualizarIndicadoresVisuais(atividadeId, instance);
-        this.log('✅ Indicadores visuais atualizados');
+        this.log('[SUCCESS] Indicadores visuais atualizados');
         
-        this.log(`✅ Dias selecionados para atividade ${atividadeId}:`, this.diasSelecionados[atividadeId]);
-        this.log('🔥 FIM onFlatpickrChange()');
+        this.log(`[SUCCESS] Dias selecionados para atividade ${atividadeId}:`, this.diasSelecionados[atividadeId]);
+        this.log('[DEBUG] FIM onFlatpickrChange()');
     },
     
     /**
-     * 📅 HANDLER: FLATPICKR DAY CREATE
+     * [CALENDAR] HANDLER: FLATPICKR DAY CREATE
      */
     onFlatpickrDayCreate: function(atividadeId, dayElem) {
         const dia = parseInt(dayElem.textContent);
         
         // Adiciona evento de clique APENAS para dias selecionados
         dayElem.addEventListener('click', (e) => {
-            this.log(`🖱️ [CLICK] Clique no dia ${dia} da atividade ${atividadeId}`);
+            this.log(`[EMOJI] [CLICK] Clique no dia ${dia} da atividade ${atividadeId}`);
             
             // Verifica se há modal aberto - se sim, evita conflitos
             if (this.isModalAberto()) {
-                this.log('⚠️ [CLICK] Modal já está aberto, ignorando clique');
+                this.log('[WARNING] [CLICK] Modal já está aberto, ignorando clique');
                 return;
             }
             
             // Verifica se estamos processando uma operação de salvamento
             if (this._processandoSalvamento) {
-                this.log('⚠️ [CLICK] Salvamento em andamento, ignorando clique');
+                this.log('[WARNING] [CLICK] Salvamento em andamento, ignorando clique');
                 return;
             }
             
@@ -412,10 +412,10 @@ window.PresencaManager = {
             setTimeout(() => {
                 // Dupla verificação de estado para garantir estabilidade
                 if (dayElem.classList.contains('selected') && !this.isModalAberto()) {
-                    this.log(`✅ [CLICK] Abrindo modal para atividade ${atividadeId}, dia ${dia}`);
+                    this.log(`[SUCCESS] [CLICK] Abrindo modal para atividade ${atividadeId}, dia ${dia}`);
                     this.abrirModal(atividadeId, dia);
                 } else {
-                    this.log(`❌ [CLICK] Dia não selecionado ou modal já aberto - atividade ${atividadeId}, dia ${dia}`);
+                    this.log(`[ERROR] [CLICK] Dia não selecionado ou modal já aberto - atividade ${atividadeId}, dia ${dia}`);
                 }
             }, 200); // Aumentado para 200ms para mais estabilidade
         });
@@ -438,7 +438,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 📅 HANDLER: FLATPICKR READY
+     * [CALENDAR] HANDLER: FLATPICKR READY
      */
     onFlatpickrReady: function(instance) {
         // Adiciona botão OK se não existir
@@ -455,13 +455,13 @@ window.PresencaManager = {
         if (!instance.calendarContainer.querySelector('.calendar-hint')) {
             const hint = document.createElement('div');
             hint.className = 'calendar-hint';
-            hint.innerHTML = '💡 <strong>Dica:</strong> Após selecionar os dias, clique em cada dia <strong>azul</strong> para marcar as presenças';
+            hint.innerHTML = '[TIP] <strong>Dica:</strong> Após selecionar os dias, clique em cada dia <strong>azul</strong> para marcar as presenças';
             instance.calendarContainer.appendChild(hint);
         }
     },
     
     /**
-     * 🗓️ HELPERS DE DATA
+     * [EMOJI] HELPERS DE DATA
      */
     obterPrimeiroDiaDoMes: function() {
         // Extrai do contexto Django se disponível
@@ -480,7 +480,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 📝 ATUALIZAR CAMPOS DE OBSERVAÇÃO
+     * [FORM] ATUALIZAR CAMPOS DE OBSERVAÇÃO
      */
     atualizarCamposObservacao: function(atividadeId, dias) {
         const obsDiv = document.getElementById(`obs-dias-${atividadeId}`);
@@ -498,11 +498,11 @@ window.PresencaManager = {
             obsDiv.appendChild(input);
         });
         
-        this.log(`📝 Campos de observação atualizados para atividade ${atividadeId}`);
+        this.log(`[FORM] Campos de observação atualizados para atividade ${atividadeId}`);
     },
     
     /**
-     * 🎨 ATUALIZAR INDICADORES VISUAIS
+     * [UI] ATUALIZAR INDICADORES VISUAIS
      */
     atualizarIndicadoresVisuais: function(atividadeId, instance) {
         const calendar = instance.calendarContainer;
@@ -532,7 +532,7 @@ window.PresencaManager = {
     },
     
     /**
-     * ✅ VERIFICAR SE TEM PRESENÇAS REGISTRADAS
+     * [SUCCESS] VERIFICAR SE TEM PRESENÇAS REGISTRADAS
      */
     temPresencasRegistradas: function(atividadeId, dia) {
         return !!(this.presencasRegistradas[atividadeId] && 
@@ -548,14 +548,14 @@ window.PresencaManager = {
         
         // Verifica se há salvamento em andamento
         if (this._processandoSalvamento) {
-            this.log('⚠️ [MODAL] Salvamento em andamento, aguardando conclusão...');
+            this.log('[WARNING] [MODAL] Salvamento em andamento, aguardando conclusão...');
             this.mostrarMensagem('Aguarde a conclusão da operação anterior...', 'warning');
             return;
         }
         
         // Verifica se já há modal aberto
         if (this.isModalAberto()) {
-            this.log('⚠️ [MODAL] Modal já está aberto, fechando primeiro...');
+            this.log('[WARNING] [MODAL] Modal já está aberto, fechando primeiro...');
             this.fecharModal();
             
             // Aguarda um pouco antes de abrir o novo modal
@@ -569,10 +569,10 @@ window.PresencaManager = {
     },
     
     /**
-     * 🔄 EXECUTAR ABERTURA DO MODAL (MÉTODO AUXILIAR)
+     * [RELOAD] EXECUTAR ABERTURA DO MODAL (MÉTODO AUXILIAR)
      */
     executarAberturaModal: function(atividadeId, dia) {
-        this.log(`🔄 [MODAL] Executando abertura - Atividade: ${atividadeId}, Dia: ${dia}`);
+        this.log(`[RELOAD] [MODAL] Executando abertura - Atividade: ${atividadeId}, Dia: ${dia}`);
         
         // Define estado atual
         this.atividadeAtual = atividadeId;
@@ -596,15 +596,15 @@ window.PresencaManager = {
             modal.classList.remove('d-none');
             document.body.classList.add('modal-open');
             
-            this.log('✅ Modal aberto com sucesso');
+            this.log('[SUCCESS] Modal aberto com sucesso');
         }).catch(error => {
-            this.log('❌ Erro ao carregar alunos:', error);
+            this.log('[ERROR] Erro ao carregar alunos:', error);
             alert('Erro ao carregar dados dos alunos. Tente novamente.');
         });
     },
     
     /**
-     * ➕ INICIALIZAR PRESENÇAS DO DIA
+     * [EMOJI] INICIALIZAR PRESENÇAS DO DIA
      */
     inicializarPresencasDoDia: function(atividadeId, dia) {
         if (!this.presencasRegistradas[atividadeId]) {
@@ -620,22 +620,22 @@ window.PresencaManager = {
                 this.presencasRegistradas[atividadeId][dia][cpfAluno] = {
                     presente: true,
                     justificativa: '',
-                    convocado: true // 🔧 NOVA FUNCIONALIDADE: Estado de convocação persistido
+                    convocado: true // [FIX] NOVA FUNCIONALIDADE: Estado de convocação persistido
                 };
             });
             
-            this.log(`➕ Presenças inicializadas para atividade ${atividadeId}, dia ${dia}`);
+            this.log(`[EMOJI] Presenças inicializadas para atividade ${atividadeId}, dia ${dia}`);
         }
         
-        // 🔧 NOVA FUNCIONALIDADE: Carrega estado de convocação salvo
+        // [FIX] NOVA FUNCIONALIDADE: Carrega estado de convocação salvo
         this.carregarEstadoConvocacao(atividadeId, dia);
     },
     
     /**
-     * 📥 CARREGAR ESTADO DE CONVOCAÇÃO SALVO
+     * [EMOJI] CARREGAR ESTADO DE CONVOCAÇÃO SALVO
      */
     carregarEstadoConvocacao: function(atividadeId, dia) {
-        this.log(`📥 [CONVOCACAO] Carregando estado de convocação para atividade ${atividadeId}, dia ${dia}`);
+        this.log(`[EMOJI] [CONVOCACAO] Carregando estado de convocação para atividade ${atividadeId}, dia ${dia}`);
         
         // Carrega estado salvo nas presenças
         const presencasDoDia = this.presencasRegistradas[atividadeId]?.[dia];
@@ -644,20 +644,20 @@ window.PresencaManager = {
                 const presenca = presencasDoDia[cpfAluno];
                 if (presenca && typeof presenca.convocado !== 'undefined') {
                     this.convocadosIndividuais[cpfAluno] = presenca.convocado;
-                    this.log(`📥 [CONVOCACAO] CPF ${cpfAluno}: ${presenca.convocado ? 'Convocado' : 'Não Convocado'}`);
+                    this.log(`[EMOJI] [CONVOCACAO] CPF ${cpfAluno}: ${presenca.convocado ? 'Convocado' : 'Não Convocado'}`);
                 } else {
                     // Se não tem estado salvo, usa padrão: convocado
                     this.convocadosIndividuais[cpfAluno] = true;
-                    this.log(`📥 [CONVOCACAO] CPF ${cpfAluno}: Usando padrão (Convocado)`);
+                    this.log(`[EMOJI] [CONVOCACAO] CPF ${cpfAluno}: Usando padrão (Convocado)`);
                 }
             });
         }
         
-        this.log(`📥 [CONVOCACAO] Estado carregado:`, this.convocadosIndividuais);
+        this.log(`[EMOJI] [CONVOCACAO] Estado carregado:`, this.convocadosIndividuais);
     },
     
     /**
-     * 💾 SALVAR ESTADO DE CONVOCAÇÃO
+     * [SAVE] SALVAR ESTADO DE CONVOCAÇÃO
      */
     salvarEstadoConvocacao: function(cpfAluno) {
         if (!this.atividadeAtual || !this.diaAtual) return;
@@ -680,12 +680,12 @@ window.PresencaManager = {
         const estadoConvocacao = this.convocadosIndividuais[cpfAluno];
         this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno].convocado = estadoConvocacao;
         
-        this.log(`💾 [CONVOCACAO] Estado salvo - CPF: ${cpfAluno}, Convocado: ${estadoConvocacao}`);
-        this.log(`💾 [CONVOCACAO] Presença completa:`, this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno]);
+        this.log(`[SAVE] [CONVOCACAO] Estado salvo - CPF: ${cpfAluno}, Convocado: ${estadoConvocacao}`);
+        this.log(`[SAVE] [CONVOCACAO] Presença completa:`, this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno]);
     },
     
     /**
-     * 📋 ATUALIZAR CABEÇALHO DO MODAL
+     * [LIST] ATUALIZAR CABEÇALHO DO MODAL
      */
     atualizarCabecalhoModal: function(atividadeId, dia) {
         // Obter nome da atividade
@@ -711,11 +711,11 @@ window.PresencaManager = {
             modalAtividadeNome.innerHTML = html;
         }
         
-        this.log(`📋 Cabeçalho do modal atualizado: ${nomeAtividade} (${dataFormatada})`);
+        this.log(`[LIST] Cabeçalho do modal atualizado: ${nomeAtividade} (${dataFormatada})`);
     },
     
     /**
-     * 📅 FORMATAR DATA
+     * [CALENDAR] FORMATAR DATA
      */
     formatarData: function(dia) {
         const mes = (typeof window.mes !== 'undefined' ? window.mes : new Date().getMonth() + 1).toString().padStart(2, '0');
@@ -724,7 +724,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 🏷️ OBTER NOME DA ATIVIDADE
+     * [EMOJI] OBTER NOME DA ATIVIDADE
      */
     obterNomeAtividade: function(atividadeId) {
         // Tenta dados do contexto Django primeiro
@@ -748,7 +748,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 🔔 VERIFICAR SE ATIVIDADE É CONVOCADA
+     * [EMOJI] VERIFICAR SE ATIVIDADE É CONVOCADA
      */
     isAtividadeConvocada: function(atividadeId) {
         // Tenta dados do contexto Django primeiro
@@ -765,13 +765,13 @@ window.PresencaManager = {
     },
     
     /**
-     * 👥 PREENCHER LISTA DE ALUNOS NO MODAL
+     * [EMOJI] PREENCHER LISTA DE ALUNOS NO MODAL
      */
     preencherListaAlunos: function() {
-        this.log('🔥 [RELOAD DEBUG] ================================');
-        this.log('🔥 [RELOAD DEBUG] INICIANDO preencherListaAlunos()');
-        this.log('🔥 [RELOAD DEBUG] ================================');
-        this.log('🔍 [RELOAD DEBUG] Estado de convocação no início:', JSON.stringify(this.convocadosIndividuais, null, 2));
+        this.log('[DEBUG] [RELOAD DEBUG] ================================');
+        this.log('[DEBUG] [RELOAD DEBUG] INICIANDO preencherListaAlunos()');
+        this.log('[DEBUG] [RELOAD DEBUG] ================================');
+        this.log('[SEARCH] [RELOAD DEBUG] Estado de convocação no início:', JSON.stringify(this.convocadosIndividuais, null, 2));
         
         const container = document.getElementById('alunosContainer');
         if (!container) return;
@@ -784,30 +784,30 @@ window.PresencaManager = {
         }
         
         const isConvocada = this.isAtividadeConvocada(this.atividadeAtual);
-        this.log(`🔍 [RELOAD DEBUG] Atividade é convocada: ${isConvocada}`);
+        this.log(`[SEARCH] [RELOAD DEBUG] Atividade é convocada: ${isConvocada}`);
         
         this.alunosData.forEach((aluno, index) => {
             const cpfAluno = aluno.cpf || aluno.id;
             const presencaAtual = this.obterPresencaAluno(cpfAluno);
             
-            this.log(`🔥 [RELOAD ALUNO ${cpfAluno}] =====================================================`);
-            this.log(`👤 [ALUNO] Criando item ${index}: CPF=${cpfAluno}, Nome=${aluno.nome}`);
-            this.log(`📊 [ALUNO] Presença atual obtida:`, presencaAtual);
-            this.log(`🔍 [ALUNO] Estado de convocação em convocadosIndividuais[${cpfAluno}]:`, this.convocadosIndividuais[cpfAluno]);
+            this.log(`[DEBUG] [RELOAD ALUNO ${cpfAluno}] =====================================================`);
+            this.log(`[EMOJI] [ALUNO] Criando item ${index}: CPF=${cpfAluno}, Nome=${aluno.nome}`);
+            this.log(`[DATA] [ALUNO] Presença atual obtida:`, presencaAtual);
+            this.log(`[SEARCH] [ALUNO] Estado de convocação em convocadosIndividuais[${cpfAluno}]:`, this.convocadosIndividuais[cpfAluno]);
             
             // Container do aluno
             const alunoDiv = document.createElement('div');
             alunoDiv.className = 'aluno-presenca-item';
-            alunoDiv.setAttribute('data-cpf', cpfAluno); // 🔧 CORREÇÃO: Adiciona atributo data-cpf para identificar o aluno
+            alunoDiv.setAttribute('data-cpf', cpfAluno); // [FIX] CORREÇÃO: Adiciona atributo data-cpf para identificar o aluno
             
-            this.log(`🔧 [ALUNO] Atributo data-cpf="${cpfAluno}" adicionado ao container ${index}`);
+            this.log(`[FIX] [ALUNO] Atributo data-cpf="${cpfAluno}" adicionado ao container ${index}`);
             
             // Badge de convocação (se aplicável)
             if (isConvocada) {
-                this.log(`🔔 [ALUNO] Criando badge de convocação para CPF ${cpfAluno}...`);
+                this.log(`[EMOJI] [ALUNO] Criando badge de convocação para CPF ${cpfAluno}...`);
                 const badgeConvocado = this.criarBadgeConvocacao(cpfAluno);
                 alunoDiv.appendChild(badgeConvocado);
-                this.log(`✅ [ALUNO] Badge de convocação criado e adicionado`);
+                this.log(`[SUCCESS] [ALUNO] Badge de convocação criado e adicionado`);
             }
             
             // Nome do aluno
@@ -820,33 +820,33 @@ window.PresencaManager = {
             
             container.appendChild(alunoDiv);
             
-            this.log(`🔥 [RELOAD ALUNO ${cpfAluno}] FIM ==========================================`);
+            this.log(`[DEBUG] [RELOAD ALUNO ${cpfAluno}] FIM ==========================================`);
         });
         
-        this.log('🔥 [RELOAD DEBUG] ================================');
-        this.log('🔥 [RELOAD DEBUG] FINALIZANDO preencherListaAlunos()');
-        this.log('🔥 [RELOAD DEBUG] Estado de convocação no final:', JSON.stringify(this.convocadosIndividuais, null, 2));
-        this.log('🔥 [RELOAD DEBUG] ================================');
+        this.log('[DEBUG] [RELOAD DEBUG] ================================');
+        this.log('[DEBUG] [RELOAD DEBUG] FINALIZANDO preencherListaAlunos()');
+        this.log('[DEBUG] [RELOAD DEBUG] Estado de convocação no final:', JSON.stringify(this.convocadosIndividuais, null, 2));
+        this.log('[DEBUG] [RELOAD DEBUG] ================================');
         
-        this.log(`👥 Lista de alunos preenchida: ${this.alunosData.length} alunos`);
+        this.log(`[EMOJI] Lista de alunos preenchida: ${this.alunosData.length} alunos`);
     },
     
     /**
-     * 🔔 CRIAR BADGE DE CONVOCAÇÃO
+     * [EMOJI] CRIAR BADGE DE CONVOCAÇÃO
      */
     criarBadgeConvocacao: function(cpfAluno) {
-        this.log(`🔥 [BADGE CRIAÇÃO] ================================`);
-        this.log(`🔥 [BADGE CRIAÇÃO] Criando badge para CPF: ${cpfAluno}`);
-        this.log(`🔍 [BADGE CRIAÇÃO] Estado atual em convocadosIndividuais[${cpfAluno}]:`, this.convocadosIndividuais[cpfAluno]);
-        this.log(`🔍 [BADGE CRIAÇÃO] typeof convocadosIndividuais[${cpfAluno}]:`, typeof this.convocadosIndividuais[cpfAluno]);
+        this.log(`[DEBUG] [BADGE CRIAÇÃO] ================================`);
+        this.log(`[DEBUG] [BADGE CRIAÇÃO] Criando badge para CPF: ${cpfAluno}`);
+        this.log(`[SEARCH] [BADGE CRIAÇÃO] Estado atual em convocadosIndividuais[${cpfAluno}]:`, this.convocadosIndividuais[cpfAluno]);
+        this.log(`[SEARCH] [BADGE CRIAÇÃO] typeof convocadosIndividuais[${cpfAluno}]:`, typeof this.convocadosIndividuais[cpfAluno]);
         
-        // � CORREÇÃO CRÍTICA: Só inicializa se o estado for realmente undefined
+        // [EMOJI] CORREÇÃO CRÍTICA: Só inicializa se o estado for realmente undefined
         if (this.convocadosIndividuais[cpfAluno] === undefined) {
-            this.log(`⚠️ [BADGE CRIAÇÃO] Estado realmente undefined - inicializando para true`);
+            this.log(`[WARNING] [BADGE CRIAÇÃO] Estado realmente undefined - inicializando para true`);
             this.convocadosIndividuais[cpfAluno] = true; // Default: convocado
-            this.log(`✅ [BADGE CRIAÇÃO] DEPOIS da inicialização: convocadosIndividuais[${cpfAluno}] = ${this.convocadosIndividuais[cpfAluno]}`);
+            this.log(`[SUCCESS] [BADGE CRIAÇÃO] DEPOIS da inicialização: convocadosIndividuais[${cpfAluno}] = ${this.convocadosIndividuais[cpfAluno]}`);
         } else {
-            this.log(`✅ [BADGE CRIAÇÃO] Estado já existe (${this.convocadosIndividuais[cpfAluno]}), mantendo sem alteração`);
+            this.log(`[SUCCESS] [BADGE CRIAÇÃO] Estado já existe (${this.convocadosIndividuais[cpfAluno]}), mantendo sem alteração`);
         }
         
         const badge = document.createElement('span');
@@ -859,30 +859,30 @@ window.PresencaManager = {
         badge.style.alignItems = 'center';
         badge.style.justifyContent = 'center';
         
-        this.log(`🎨 [BADGE CRIAÇÃO] Chamando atualizarBadgeConvocacao...`);
+        this.log(`[UI] [BADGE CRIAÇÃO] Chamando atualizarBadgeConvocacao...`);
         this.atualizarBadgeConvocacao(badge, cpfAluno);
-        this.log(`✅ [BADGE CRIAÇÃO] Badge atualizado`);
+        this.log(`[SUCCESS] [BADGE CRIAÇÃO] Badge atualizado`);
         
         // Evento de clique para alternar
         badge.addEventListener('click', () => {
-            this.log(`🖱️ [BADGE CLICK] Badge clicado para CPF: ${cpfAluno}`);
-            this.log(`🔍 [BADGE CLICK] Estado ANTES do toggle: ${this.convocadosIndividuais[cpfAluno]}`);
+            this.log(`[EMOJI] [BADGE CLICK] Badge clicado para CPF: ${cpfAluno}`);
+            this.log(`[SEARCH] [BADGE CLICK] Estado ANTES do toggle: ${this.convocadosIndividuais[cpfAluno]}`);
             this.convocadosIndividuais[cpfAluno] = !this.convocadosIndividuais[cpfAluno];
-            this.log(`🔄 [BADGE CLICK] Estado DEPOIS do toggle: ${this.convocadosIndividuais[cpfAluno]}`);
+            this.log(`[RELOAD] [BADGE CLICK] Estado DEPOIS do toggle: ${this.convocadosIndividuais[cpfAluno]}`);
             this.atualizarBadgeConvocacao(badge, cpfAluno);
             
-            // 🔧 NOVA FUNCIONALIDADE: Salva estado de convocação imediatamente
+            // [FIX] NOVA FUNCIONALIDADE: Salva estado de convocação imediatamente
             this.salvarEstadoConvocacao(cpfAluno);
         });
         
-        this.log(`🔥 [BADGE CRIAÇÃO] Badge criado para CPF ${cpfAluno} com estado final: ${this.convocadosIndividuais[cpfAluno]}`);
-        this.log(`🔥 [BADGE CRIAÇÃO] ================================`);
+        this.log(`[DEBUG] [BADGE CRIAÇÃO] Badge criado para CPF ${cpfAluno} com estado final: ${this.convocadosIndividuais[cpfAluno]}`);
+        this.log(`[DEBUG] [BADGE CRIAÇÃO] ================================`);
         
         return badge;
     },
     
     /**
-     * 🔄 ATUALIZAR BADGE DE CONVOCAÇÃO
+     * [RELOAD] ATUALIZAR BADGE DE CONVOCAÇÃO
      */
     atualizarBadgeConvocacao: function(badge, cpfAluno) {
         const isConvocado = this.convocadosIndividuais[cpfAluno];
@@ -893,7 +893,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 👤 CRIAR NOME DO ALUNO
+     * [EMOJI] CRIAR NOME DO ALUNO
      */
     criarNomeAluno: function(aluno) {
         const nomeDiv = document.createElement('div');
@@ -916,7 +916,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 🎛️ CRIAR CONTROLES DE PRESENÇA
+     * [EMOJI] CRIAR CONTROLES DE PRESENÇA
      */
     criarControlesPresenca: function(cpfAluno, presencaAtual) {
         const controlesDiv = document.createElement('div');
@@ -935,7 +935,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 🔘 CRIAR BOTÃO DE PRESENÇA
+     * [EMOJI] CRIAR BOTÃO DE PRESENÇA
      */
     criarBotaoPresenca: function(cpfAluno, presencaAtual) {
         const botao = document.createElement('button');
@@ -962,16 +962,16 @@ window.PresencaManager = {
     },
     
     /**
-     * 🔄 ATUALIZAR BOTÃO DE PRESENÇA
+     * [RELOAD] ATUALIZAR BOTÃO DE PRESENÇA
      */
     atualizarBotaoPresenca: function(botao, cpfAluno) {
-        this.log(`🔘 [BOTAO] Atualizando botão para CPF: ${cpfAluno}`);
+        this.log(`[EMOJI] [BOTAO] Atualizando botão para CPF: ${cpfAluno}`);
         
         const presenca = this.obterPresencaAluno(cpfAluno);
         const isPresente = presenca ? presenca.presente : true;
         
-        this.log(`📊 [BOTAO] Estado da presença:`, {cpf: cpfAluno, presente: isPresente, presenca: presenca});
-        this.log(`📊 [BOTAO] Estado atual do botão ANTES:`, {
+        this.log(`[DATA] [BOTAO] Estado da presença:`, {cpf: cpfAluno, presente: isPresente, presenca: presenca});
+        this.log(`[DATA] [BOTAO] Estado atual do botão ANTES:`, {
             texto: botao.textContent,
             classes: botao.className,
             backgroundColor: botao.style.backgroundColor,
@@ -993,24 +993,24 @@ window.PresencaManager = {
         } else {
             botao.style.setProperty('background-color', '#dc3545', 'important');
             botao.style.setProperty('color', 'white', 'important');
-            this.log(`🔴 [BOTAO] Aplicando estilo AUSENTE (vermelho) com !important`);
+            this.log(`[EMOJI] [BOTAO] Aplicando estilo AUSENTE (vermelho) com !important`);
         }
         
         // Força um reflow/repaint do elemento
         botao.offsetHeight; // Trigger reflow
         
-        this.log(`📊 [BOTAO] Estado atual do botão DEPOIS:`, {
+        this.log(`[DATA] [BOTAO] Estado atual do botão DEPOIS:`, {
             texto: botao.textContent,
             classes: botao.className,
             backgroundColor: botao.style.backgroundColor,
             color: botao.style.color
         });
         
-        this.log(`✅ [BOTAO] Botão atualizado - Texto: "${botao.textContent}", Classes: "${botao.className}"`);
+        this.log(`[SUCCESS] [BOTAO] Botão atualizado - Texto: "${botao.textContent}", Classes: "${botao.className}"`);
     },
     
     /**
-     * 📝 CRIAR CAMPO DE JUSTIFICATIVA
+     * [FORM] CRIAR CAMPO DE JUSTIFICATIVA
      */
     criarCampoJustificativa: function(cpfAluno, presencaAtual) {
         const div = document.createElement('div');
@@ -1055,7 +1055,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 📊 OBTER PRESENÇA DO ALUNO
+     * [DATA] OBTER PRESENÇA DO ALUNO
      */
     obterPresencaAluno: function(cpfAluno) {
         if (!this.atividadeAtual || !this.diaAtual) return null;
@@ -1070,7 +1070,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 🔄 TOGGLE PRESENÇA DO ALUNO
+     * [RELOAD] TOGGLE PRESENÇA DO ALUNO
      */
     togglePresenca: function(cpfAluno) {
         if (!this.atividadeAtual || !this.diaAtual) return;
@@ -1084,68 +1084,68 @@ window.PresencaManager = {
         }
         
         const atual = this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno];
-        const novoPresente = atual ? !atual.presente : true; // 🔧 CORREÇÃO: Se não existe, assume PRESENTE por padrão
+        const novoPresente = atual ? !atual.presente : true; // [FIX] CORREÇÃO: Se não existe, assume PRESENTE por padrão
         
         // Atualiza estado preservando convocação
         this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno] = {
             presente: novoPresente,
             justificativa: atual ? atual.justificativa : '',
-            convocado: atual && atual.convocado !== undefined ? atual.convocado : (this.convocadosIndividuais[cpfAluno] !== undefined ? this.convocadosIndividuais[cpfAluno] : true) // 🔧 CORREÇÃO: Preserva estado atual
+            convocado: atual && atual.convocado !== undefined ? atual.convocado : (this.convocadosIndividuais[cpfAluno] !== undefined ? this.convocadosIndividuais[cpfAluno] : true) // [FIX] CORREÇÃO: Preserva estado atual
         };
         
         // Atualiza interface
         this.atualizarInterfaceAluno(cpfAluno);
         
-        this.log(`🔄 Toggle presença - Aluno: ${cpfAluno}, Presente: ${novoPresente}`);
+        this.log(`[RELOAD] Toggle presença - Aluno: ${cpfAluno}, Presente: ${novoPresente}`);
     },
     
     /**
-     * 🔄 ATUALIZAR INTERFACE DO ALUNO
+     * [RELOAD] ATUALIZAR INTERFACE DO ALUNO
      */
     atualizarInterfaceAluno: function(cpfAluno) {
-        this.log(`🔄 [INTERFACE] Atualizando interface do aluno: ${cpfAluno}`);
+        this.log(`[RELOAD] [INTERFACE] Atualizando interface do aluno: ${cpfAluno}`);
         
-        // 🔍 DEBUG DETALHADO: Lista todos os elementos disponíveis
+        // [SEARCH] DEBUG DETALHADO: Lista todos os elementos disponíveis
         const todosAlunos = document.querySelectorAll('.aluno-presenca-item');
-        this.log(`🔍 [INTERFACE] Total de containers .aluno-presenca-item encontrados: ${todosAlunos.length}`);
+        this.log(`[SEARCH] [INTERFACE] Total de containers .aluno-presenca-item encontrados: ${todosAlunos.length}`);
         
         todosAlunos.forEach((div, idx) => {
             const dataCpf = div.getAttribute('data-cpf');
-            this.log(`🔍 [INTERFACE] Container ${idx}: data-cpf="${dataCpf}"`);
+            this.log(`[SEARCH] [INTERFACE] Container ${idx}: data-cpf="${dataCpf}"`);
         });
         
         // Busca o container do aluno usando múltiplas estratégias
         let alunoDiv = document.querySelector(`[data-cpf="${cpfAluno}"]`);
         
         if (!alunoDiv) {
-            this.log(`❌ [INTERFACE] Busca por data-cpf="${cpfAluno}" falhou, tentando busca alternativa...`);
+            this.log(`[ERROR] [INTERFACE] Busca por data-cpf="${cpfAluno}" falhou, tentando busca alternativa...`);
             
             // Estratégia alternativa: busca por posição na lista (se só há 1 aluno)
             if (todosAlunos.length === 1) {
                 alunoDiv = todosAlunos[0];
-                this.log(`🔄 [INTERFACE] Usando o único container disponível como fallback`);
+                this.log(`[RELOAD] [INTERFACE] Usando o único container disponível como fallback`);
                 // Adiciona o data-cpf que estava faltando
                 alunoDiv.setAttribute('data-cpf', cpfAluno);
-                this.log(`� [INTERFACE] Adicionado data-cpf="${cpfAluno}" ao container`);
+                this.log(`[EMOJI] [INTERFACE] Adicionado data-cpf="${cpfAluno}" ao container`);
             } else {
-                this.log(`❌ [INTERFACE] Múltiplos containers encontrados, não é possível determinar qual usar`);
+                this.log(`[ERROR] [INTERFACE] Múltiplos containers encontrados, não é possível determinar qual usar`);
                 return;
             }
         }
         
-        this.log(`✅ [INTERFACE] Container encontrado para CPF: ${cpfAluno}`);
+        this.log(`[SUCCESS] [INTERFACE] Container encontrado para CPF: ${cpfAluno}`);
         
         // Atualiza botão de presença
         const botao = alunoDiv.querySelector('.badge-presenca');
         if (botao) {
-            this.log(`🔘 [INTERFACE] Botão encontrado, atualizando...`);
+            this.log(`[EMOJI] [INTERFACE] Botão encontrado, atualizando...`);
             this.atualizarBotaoPresenca(botao, cpfAluno);
-            this.log(`✅ [INTERFACE] Botão de presença atualizado`);
+            this.log(`[SUCCESS] [INTERFACE] Botão de presença atualizado`);
         } else {
-            this.log(`❌ [INTERFACE] Botão de presença não encontrado no container`);
+            this.log(`[ERROR] [INTERFACE] Botão de presença não encontrado no container`);
             // Lista todos os elementos filhos para debug
             const filhos = alunoDiv.querySelectorAll('*');
-            this.log(`🔍 [INTERFACE] Elementos filhos no container:`, Array.from(filhos).map(el => el.className));
+            this.log(`[SEARCH] [INTERFACE] Elementos filhos no container:`, Array.from(filhos).map(el => el.className));
         }
         
         // Atualiza visibilidade da justificativa
@@ -1154,16 +1154,16 @@ window.PresencaManager = {
             const presenca = this.obterPresencaAluno(cpfAluno);
             const isPresente = presenca ? presenca.presente : true;
             justificativaDiv.style.display = isPresente ? 'none' : 'block';
-            this.log(`📝 [INTERFACE] Justificativa ${isPresente ? 'oculta' : 'exibida'}`);
+            this.log(`[FORM] [INTERFACE] Justificativa ${isPresente ? 'oculta' : 'exibida'}`);
         } else {
-            this.log(`⚠️ [INTERFACE] Campo de justificativa não encontrado`);
+            this.log(`[WARNING] [INTERFACE] Campo de justificativa não encontrado`);
         }
         
-        this.log(`✅ [INTERFACE] Interface do aluno ${cpfAluno} atualizada com sucesso`);
+        this.log(`[SUCCESS] [INTERFACE] Interface do aluno ${cpfAluno} atualizada com sucesso`);
     },
     
     /**
-     * ✏️ ATUALIZAR JUSTIFICATIVA
+     * [EMOJI] ATUALIZAR JUSTIFICATIVA
      */
     atualizarJustificativa: function(cpfAluno, valor) {
         if (!this.atividadeAtual || !this.diaAtual) return;
@@ -1171,49 +1171,49 @@ window.PresencaManager = {
         const presenca = this.presencasRegistradas[this.atividadeAtual]?.[this.diaAtual]?.[cpfAluno];
         if (presenca) {
             presenca.justificativa = valor;
-            // 🔧 Garante que o estado de convocação seja preservado
+            // [FIX] Garante que o estado de convocação seja preservado
             if (typeof presenca.convocado === 'undefined') {
                 presenca.convocado = this.convocadosIndividuais[cpfAluno] || true;
             }
-            this.log(`✏️ Justificativa atualizada - Aluno: ${cpfAluno}, Valor: "${valor}"`);
+            this.log(`[EMOJI] Justificativa atualizada - Aluno: ${cpfAluno}, Valor: "${valor}"`);
         }
     },
     
     /**
-     * ⚡ MARCAR TODOS PRESENTES (MODO RÁPIDO)
+     * [FAST] MARCAR TODOS PRESENTES (MODO RÁPIDO)
      */
     marcarTodosPresentes: function() {
         if (!this.atividadeAtual || !this.diaAtual) return;
         
-        this.log('🔥 [DEBUG CRÍTICO] ================================');
-        this.log('🔥 [DEBUG CRÍTICO] INICIANDO TODOS PRESENTES');
-        this.log('🔥 [DEBUG CRÍTICO] ================================');
-        this.log('⚡ [MODO RAPIDO] Estado COMPLETO de convocação ANTES:', JSON.stringify(this.convocadosIndividuais, null, 2));
-        this.log('⚡ [MODO RAPIDO] Quantidade de alunos a processar:', this.alunosData.length);
+        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
+        this.log('[DEBUG] [DEBUG CRÍTICO] INICIANDO TODOS PRESENTES');
+        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
+        this.log('[FAST] [MODO RAPIDO] Estado COMPLETO de convocação ANTES:', JSON.stringify(this.convocadosIndividuais, null, 2));
+        this.log('[FAST] [MODO RAPIDO] Quantidade de alunos a processar:', this.alunosData.length);
         
-        // 🔍 DIAGNÓSTICO: Verifica estado inicial de cada badge no DOM
+        // [SEARCH] DIAGNÓSTICO: Verifica estado inicial de cada badge no DOM
         this.alunosData.forEach(aluno => {
             const cpfAluno = aluno.cpf || aluno.id;
             const badgeElement = document.querySelector(`[data-cpf="${cpfAluno}"] .badge-convocado`);
             if (badgeElement) {
-                this.log(`🔍 [DOM ANTES] CPF ${cpfAluno}: Badge DOM texto = "${badgeElement.textContent}" | cor = ${badgeElement.style.backgroundColor}`);
+                this.log(`[SEARCH] [DOM ANTES] CPF ${cpfAluno}: Badge DOM texto = "${badgeElement.textContent}" | cor = ${badgeElement.style.backgroundColor}`);
             }
         });
         
         this.alunosData.forEach(aluno => {
             const cpfAluno = aluno.cpf || aluno.id;
             
-            this.log(`🔥 [ALUNO ${cpfAluno}] =====================================================`);
+            this.log(`[DEBUG] [ALUNO ${cpfAluno}] =====================================================`);
             
             // Estado ANTES da operação
             const estadoConvocacaoAtual = this.convocadosIndividuais[cpfAluno];
             const presencaAnterior = this.presencasRegistradas[this.atividadeAtual]?.[this.diaAtual]?.[cpfAluno];
             
-            this.log(`🔍 [ANTES] CPF: ${cpfAluno}`);
-            this.log(`🔍 [ANTES] convocadosIndividuais[${cpfAluno}] =`, estadoConvocacaoAtual);
-            this.log(`🔍 [ANTES] typeof convocadosIndividuais[${cpfAluno}] =`, typeof estadoConvocacaoAtual);
-            this.log(`🔍 [ANTES] convocadosIndividuais[${cpfAluno}] !== undefined =`, estadoConvocacaoAtual !== undefined);
-            this.log(`🔍 [ANTES] Presença anterior:`, presencaAnterior);
+            this.log(`[SEARCH] [ANTES] CPF: ${cpfAluno}`);
+            this.log(`[SEARCH] [ANTES] convocadosIndividuais[${cpfAluno}] =`, estadoConvocacaoAtual);
+            this.log(`[SEARCH] [ANTES] typeof convocadosIndividuais[${cpfAluno}] =`, typeof estadoConvocacaoAtual);
+            this.log(`[SEARCH] [ANTES] convocadosIndividuais[${cpfAluno}] !== undefined =`, estadoConvocacaoAtual !== undefined);
+            this.log(`[SEARCH] [ANTES] Presença anterior:`, presencaAnterior);
             
             // Atualiza estado
             if (!this.presencasRegistradas[this.atividadeAtual]) {
@@ -1223,17 +1223,17 @@ window.PresencaManager = {
                 this.presencasRegistradas[this.atividadeAtual][this.diaAtual] = {};
             }
             
-            // 🔧 CORREÇÃO CRÍTICA: Usa a lógica mais rigorosa
+            // [FIX] CORREÇÃO CRÍTICA: Usa a lógica mais rigorosa
             let estadoConvocacaoFinal;
             if (estadoConvocacaoAtual !== undefined) {
                 estadoConvocacaoFinal = estadoConvocacaoAtual;
-                this.log(`✅ [LÓGICA] Usando estado atual: ${estadoConvocacaoFinal}`);
+                this.log(`[SUCCESS] [LÓGICA] Usando estado atual: ${estadoConvocacaoFinal}`);
             } else {
                 estadoConvocacaoFinal = true;
-                this.log(`⚠️ [LÓGICA] Estado undefined, usando padrão: ${estadoConvocacaoFinal}`);
+                this.log(`[WARNING] [LÓGICA] Estado undefined, usando padrão: ${estadoConvocacaoFinal}`);
             }
             
-            this.log(`🎯 [DECISÃO] Estado final escolhido: ${estadoConvocacaoFinal}`);
+            this.log(`[TARGET] [DECISÃO] Estado final escolhido: ${estadoConvocacaoFinal}`);
             
             this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno] = {
                 presente: true,
@@ -1241,59 +1241,59 @@ window.PresencaManager = {
                 convocado: estadoConvocacaoFinal
             };
             
-            this.log(`💾 [SALVO] Dados salvos:`, this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno]);
-            this.log(`🔥 [ALUNO ${cpfAluno}] FIM ==========================================`);
+            this.log(`[SAVE] [SALVO] Dados salvos:`, this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno]);
+            this.log(`[DEBUG] [ALUNO ${cpfAluno}] FIM ==========================================`);
         });
         
         // Recarrega a lista para refletir mudanças
-        this.log('🔄 [RELOAD] Chamando preencherListaAlunos()...');
+        this.log('[RELOAD] [RELOAD] Chamando preencherListaAlunos()...');
         this.preencherListaAlunos();
-        this.log('✅ [RELOAD] preencherListaAlunos() concluído');
+        this.log('[SUCCESS] [RELOAD] preencherListaAlunos() concluído');
         
-        // 🔍 DIAGNÓSTICO: Verifica estado final de cada badge no DOM
-        this.log('🔍 [DOM DEPOIS] Verificando badges após reload:');
+        // [SEARCH] DIAGNÓSTICO: Verifica estado final de cada badge no DOM
+        this.log('[SEARCH] [DOM DEPOIS] Verificando badges após reload:');
         this.alunosData.forEach(aluno => {
             const cpfAluno = aluno.cpf || aluno.id;
             const badgeElement = document.querySelector(`[data-cpf="${cpfAluno}"] .badge-convocado`);
             if (badgeElement) {
-                this.log(`🔍 [DOM DEPOIS] CPF ${cpfAluno}: Badge DOM texto = "${badgeElement.textContent}" | cor = ${badgeElement.style.backgroundColor}`);
+                this.log(`[SEARCH] [DOM DEPOIS] CPF ${cpfAluno}: Badge DOM texto = "${badgeElement.textContent}" | cor = ${badgeElement.style.backgroundColor}`);
             }
         });
         
-        this.log('🔥 [DEBUG CRÍTICO] ================================');
-        this.log('🔥 [DEBUG CRÍTICO] FINALIZANDO TODOS PRESENTES');
-        this.log('🔥 [DEBUG CRÍTICO] Estado FINAL de convocação:', JSON.stringify(this.convocadosIndividuais, null, 2));
-        this.log('🔥 [DEBUG CRÍTICO] ================================');
+        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
+        this.log('[DEBUG] [DEBUG CRÍTICO] FINALIZANDO TODOS PRESENTES');
+        this.log('[DEBUG] [DEBUG CRÍTICO] Estado FINAL de convocação:', JSON.stringify(this.convocadosIndividuais, null, 2));
+        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
         
-        this.log('⚡ Todos os alunos marcados como presentes');
+        this.log('[FAST] Todos os alunos marcados como presentes');
         this.mostrarMensagem('Todos os alunos foram marcados como presentes!', 'success');
     },
     
     /**
-     * ⚡ MARCAR TODOS AUSENTES (MODO RÁPIDO)
+     * [FAST] MARCAR TODOS AUSENTES (MODO RÁPIDO)
      */
     marcarTodosAusentes: function() {
         if (!this.atividadeAtual || !this.diaAtual) return;
         
-        this.log('🔥 [DEBUG CRÍTICO] ================================');
-        this.log('🔥 [DEBUG CRÍTICO] INICIANDO TODOS AUSENTES');
-        this.log('🔥 [DEBUG CRÍTICO] ================================');
-        this.log('⚡ [MODO RAPIDO] Estado COMPLETO de convocação ANTES:', JSON.stringify(this.convocadosIndividuais, null, 2));
+        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
+        this.log('[DEBUG] [DEBUG CRÍTICO] INICIANDO TODOS AUSENTES');
+        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
+        this.log('[FAST] [MODO RAPIDO] Estado COMPLETO de convocação ANTES:', JSON.stringify(this.convocadosIndividuais, null, 2));
         
         this.alunosData.forEach(aluno => {
             const cpfAluno = aluno.cpf || aluno.id;
             
-            this.log(`🔥 [ALUNO ${cpfAluno}] =====================================================`);
+            this.log(`[DEBUG] [ALUNO ${cpfAluno}] =====================================================`);
             
             // Estado ANTES da operação
             const estadoConvocacaoAtual = this.convocadosIndividuais[cpfAluno];
             const presencaAnterior = this.presencasRegistradas[this.atividadeAtual]?.[this.diaAtual]?.[cpfAluno];
             
-            this.log(`🔍 [ANTES] CPF: ${cpfAluno}`);
-            this.log(`🔍 [ANTES] convocadosIndividuais[${cpfAluno}] =`, estadoConvocacaoAtual);
-            this.log(`🔍 [ANTES] typeof convocadosIndividuais[${cpfAluno}] =`, typeof estadoConvocacaoAtual);
-            this.log(`🔍 [ANTES] convocadosIndividuais[${cpfAluno}] !== undefined =`, estadoConvocacaoAtual !== undefined);
-            this.log(`🔍 [ANTES] Presença anterior:`, presencaAnterior);
+            this.log(`[SEARCH] [ANTES] CPF: ${cpfAluno}`);
+            this.log(`[SEARCH] [ANTES] convocadosIndividuais[${cpfAluno}] =`, estadoConvocacaoAtual);
+            this.log(`[SEARCH] [ANTES] typeof convocadosIndividuais[${cpfAluno}] =`, typeof estadoConvocacaoAtual);
+            this.log(`[SEARCH] [ANTES] convocadosIndividuais[${cpfAluno}] !== undefined =`, estadoConvocacaoAtual !== undefined);
+            this.log(`[SEARCH] [ANTES] Presença anterior:`, presencaAnterior);
             
             // Atualiza estado
             if (!this.presencasRegistradas[this.atividadeAtual]) {
@@ -1303,17 +1303,17 @@ window.PresencaManager = {
                 this.presencasRegistradas[this.atividadeAtual][this.diaAtual] = {};
             }
             
-            // 🔧 CORREÇÃO CRÍTICA: Usa a lógica mais rigorosa
+            // [FIX] CORREÇÃO CRÍTICA: Usa a lógica mais rigorosa
             let estadoConvocacaoFinal;
             if (estadoConvocacaoAtual !== undefined) {
                 estadoConvocacaoFinal = estadoConvocacaoAtual;
-                this.log(`✅ [LÓGICA] Usando estado atual: ${estadoConvocacaoFinal}`);
+                this.log(`[SUCCESS] [LÓGICA] Usando estado atual: ${estadoConvocacaoFinal}`);
             } else {
                 estadoConvocacaoFinal = true;
-                this.log(`⚠️ [LÓGICA] Estado undefined, usando padrão: ${estadoConvocacaoFinal}`);
+                this.log(`[WARNING] [LÓGICA] Estado undefined, usando padrão: ${estadoConvocacaoFinal}`);
             }
             
-            this.log(`🎯 [DECISÃO] Estado final escolhido: ${estadoConvocacaoFinal}`);
+            this.log(`[TARGET] [DECISÃO] Estado final escolhido: ${estadoConvocacaoFinal}`);
             
             this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno] = {
                 presente: false,
@@ -1321,113 +1321,113 @@ window.PresencaManager = {
                 convocado: estadoConvocacaoFinal
             };
             
-            this.log(`💾 [SALVO] Dados salvos:`, this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno]);
-            this.log(`🔥 [ALUNO ${cpfAluno}] FIM ==========================================`);
+            this.log(`[SAVE] [SALVO] Dados salvos:`, this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno]);
+            this.log(`[DEBUG] [ALUNO ${cpfAluno}] FIM ==========================================`);
         });
         
         // Recarrega a lista para refletir mudanças
-        this.log('🔄 [RELOAD] Chamando preencherListaAlunos()...');
+        this.log('[RELOAD] [RELOAD] Chamando preencherListaAlunos()...');
         this.preencherListaAlunos();
-        this.log('✅ [RELOAD] preencherListaAlunos() concluído');
+        this.log('[SUCCESS] [RELOAD] preencherListaAlunos() concluído');
         
-        this.log('🔥 [DEBUG CRÍTICO] ================================');
-        this.log('🔥 [DEBUG CRÍTICO] FINALIZANDO TODOS AUSENTES');
-        this.log('🔥 [DEBUG CRÍTICO] Estado FINAL de convocação:', JSON.stringify(this.convocadosIndividuais, null, 2));
-        this.log('🔥 [DEBUG CRÍTICO] ================================');
+        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
+        this.log('[DEBUG] [DEBUG CRÍTICO] FINALIZANDO TODOS AUSENTES');
+        this.log('[DEBUG] [DEBUG CRÍTICO] Estado FINAL de convocação:', JSON.stringify(this.convocadosIndividuais, null, 2));
+        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
         
-        this.log('⚡ Todos os alunos marcados como ausentes');
+        this.log('[FAST] Todos os alunos marcados como ausentes');
         this.mostrarMensagem('Todos os alunos foram marcados como ausentes!', 'warning');
     },
     
     /**
-     * 💾 SALVAR PRESENÇAS DO DIA ATUAL
+     * [SAVE] SALVAR PRESENÇAS DO DIA ATUAL
      */
     salvarDiaAtual: function() {
-        // 🎯 LOG DE DEBUG PARA CLIQUE NO BOTÃO
-        console.log('🔥 [DEBUG-CLIQUE] ========================================');
-        console.log('🔥 [DEBUG-CLIQUE] BOTÃO "SALVAR PRESENÇAS" FOI CLICADO!');
-        console.log('🔥 [DEBUG-CLIQUE] Timestamp:', new Date().toLocaleString());
-        console.log('🔥 [DEBUG-CLIQUE] Função salvarDiaAtual() chamada');
-        console.log('🔥 [DEBUG-CLIQUE] ========================================');
+        // [TARGET] LOG DE DEBUG PARA CLIQUE NO BOTÃO
+        console.log('[DEBUG] [DEBUG-CLIQUE] ========================================');
+        console.log('[DEBUG] [DEBUG-CLIQUE] BOTÃO "SALVAR PRESENÇAS" FOI CLICADO!');
+        console.log('[DEBUG] [DEBUG-CLIQUE] Timestamp:', new Date().toLocaleString());
+        console.log('[DEBUG] [DEBUG-CLIQUE] Função salvarDiaAtual() chamada');
+        console.log('[DEBUG] [DEBUG-CLIQUE] ========================================');
         
-        this.log('🔥 INÍCIO salvarDiaAtual()');
+        this.log('[DEBUG] INÍCIO salvarDiaAtual()');
         
         if (!this.atividadeAtual || !this.diaAtual) {
-            this.log('❌ Atividade ou dia não definidos - SAINDO', {atividade: this.atividadeAtual, dia: this.diaAtual});
+            this.log('[ERROR] Atividade ou dia não definidos - SAINDO', {atividade: this.atividadeAtual, dia: this.diaAtual});
             this.mostrarMensagem('Erro: dia ou atividade não definidos', 'danger');
             return;
         }
         
-        // 🔒 BLOQUEIA OUTRAS OPERAÇÕES DURANTE O SALVAMENTO
+        // [LOCK] BLOQUEIA OUTRAS OPERAÇÕES DURANTE O SALVAMENTO
         this._processandoSalvamento = true;
-        this.log('🔒 [LOCK] Salvamento iniciado - bloqueando outras operações');
+        this.log('[LOCK] [LOCK] Salvamento iniciado - bloqueando outras operações');
         
-        this.log(`💾 Salvando presenças - Atividade: ${this.atividadeAtual}, Dia: ${this.diaAtual}`);
+        this.log(`[SAVE] Salvando presenças - Atividade: ${this.atividadeAtual}, Dia: ${this.diaAtual}`);
         
         // Atualiza o Flatpickr para garantir que o dia esteja selecionado
-        this.log('🔧 Chamando atualizarFlatpickr()...');
+        this.log('[FIX] Chamando atualizarFlatpickr()...');
         this.atualizarFlatpickr();
-        this.log('✅ atualizarFlatpickr() concluído');
+        this.log('[SUCCESS] atualizarFlatpickr() concluído');
         
         // Fecha o modal automaticamente após salvar
-        this.log('📨 Exibindo mensagem de sucesso...');
+        this.log('[MESSAGE] Exibindo mensagem de sucesso...');
         this.mostrarMensagem(`Presenças do dia ${this.diaAtual} registradas com sucesso!`, 'success');
-        this.log('✅ Mensagem exibida');
+        this.log('[SUCCESS] Mensagem exibida');
         
         // Atualiza indicadores visuais no calendário
-        this.log('🎨 Marcando dia como processado...');
+        this.log('[UI] Marcando dia como processado...');
         this.marcarDiaComoProcessado(this.atividadeAtual, this.diaAtual);
-        this.log('✅ Dia marcado visualmente');
+        this.log('[SUCCESS] Dia marcado visualmente');
         
-        this.log('✅ Presenças salvas com sucesso');
+        this.log('[SUCCESS] Presenças salvas com sucesso');
         
-        // 🎯 PRESERVA ID DA ATIVIDADE E DIA ANTES DE QUALQUER OPERAÇÃO
-        this.log('🔍 [UX] DEBUG CRÍTICO - Estado ANTES da preservação:');
-        this.log('🔍 [UX] this.atividadeAtual (antes):', this.atividadeAtual);
-        this.log('🔍 [UX] this.diaAtual (antes):', this.diaAtual);
-        this.log('🔍 [UX] typeof this.atividadeAtual:', typeof this.atividadeAtual);
+        // [TARGET] PRESERVA ID DA ATIVIDADE E DIA ANTES DE QUALQUER OPERAÇÃO
+        this.log('[SEARCH] [UX] DEBUG CRÍTICO - Estado ANTES da preservação:');
+        this.log('[SEARCH] [UX] this.atividadeAtual (antes):', this.atividadeAtual);
+        this.log('[SEARCH] [UX] this.diaAtual (antes):', this.diaAtual);
+        this.log('[SEARCH] [UX] typeof this.atividadeAtual:', typeof this.atividadeAtual);
         
         const atividadeParaReabrir = this.atividadeAtual; // Salva ANTES de qualquer operação
         const diaProcessado = this.diaAtual; // Também preserva o dia
         
-        this.log('💾 [UX] ID da atividade preservado para reabertura:', atividadeParaReabrir);
-        this.log('💾 [UX] Dia processado preservado:', diaProcessado);
-        this.log('💾 [UX] typeof atividadeParaReabrir:', typeof atividadeParaReabrir);
+        this.log('[SAVE] [UX] ID da atividade preservado para reabertura:', atividadeParaReabrir);
+        this.log('[SAVE] [UX] Dia processado preservado:', diaProcessado);
+        this.log('[SAVE] [UX] typeof atividadeParaReabrir:', typeof atividadeParaReabrir);
         
         // VALIDAÇÃO CRÍTICA DOS DADOS
         if (!atividadeParaReabrir) {
-            this.log('❌ [UX] ERRO CRÍTICO: atividadeAtual está undefined/null antes de preservar!');
-            this.log('❌ [UX] this.atividadeAtual:', this.atividadeAtual);
-            this.log('❌ [UX] this.diaAtual:', this.diaAtual);
-            this.log('❌ [UX] Tentando recuperar de outras fontes...');
+            this.log('[ERROR] [UX] ERRO CRÍTICO: atividadeAtual está undefined/null antes de preservar!');
+            this.log('[ERROR] [UX] this.atividadeAtual:', this.atividadeAtual);
+            this.log('[ERROR] [UX] this.diaAtual:', this.diaAtual);
+            this.log('[ERROR] [UX] Tentando recuperar de outras fontes...');
             
             // Tenta recuperar do DOM ou contexto
             const modal = document.getElementById('presencaModal');
             if (modal) {
                 const modalTitle = modal.querySelector('#modalTitle');
                 const modalAtividade = modal.querySelector('#modalAtividadeNome');
-                this.log('🔍 [UX] Modal title:', modalTitle?.textContent);
-                this.log('🔍 [UX] Modal atividade:', modalAtividade?.textContent);
+                this.log('[SEARCH] [UX] Modal title:', modalTitle?.textContent);
+                this.log('[SEARCH] [UX] Modal atividade:', modalAtividade?.textContent);
             }
             
             // Tenta extrair de qualquer input ativo
             const inputsAtivos = document.querySelectorAll('.dias-datepicker');
             inputsAtivos.forEach((input, idx) => {
                 if (input._flatpickr && input._flatpickr.isOpen) {
-                    this.log(`🔍 [UX] Input ativo ${idx}:`, input.dataset.atividade);
+                    this.log(`[SEARCH] [UX] Input ativo ${idx}:`, input.dataset.atividade);
                 }
             });
         } else {
-            this.log('✅ [UX] Dados preservados com sucesso!');
+            this.log('[SUCCESS] [UX] Dados preservados com sucesso!');
         }
         
         // Fecha o modal IMEDIATAMENTE após 1 segundo
-        this.log('⏰ [CRITICAL] Configurando setTimeout para fechar modal em 1s...');
+        this.log('[TIME] [CRITICAL] Configurando setTimeout para fechar modal em 1s...');
         const timeoutId = setTimeout(() => {
-            this.log('🚪 [CRITICAL] EXECUTANDO setTimeout - Fechando modal FORÇADAMENTE...');
-            this.log('🎯 [UX] Validando dados preservados dentro do setTimeout:');
-            this.log('🎯 [UX] atividadeParaReabrir:', atividadeParaReabrir);
-            this.log('🎯 [UX] diaProcessado:', diaProcessado);
+            this.log('[CLOSE] [CRITICAL] EXECUTANDO setTimeout - Fechando modal FORÇADAMENTE...');
+            this.log('[TARGET] [UX] Validando dados preservados dentro do setTimeout:');
+            this.log('[TARGET] [UX] atividadeParaReabrir:', atividadeParaReabrir);
+            this.log('[TARGET] [UX] diaProcessado:', diaProcessado);
             
             // FORÇA o fechamento imediato usando ESTRATÉGIAS EXTREMAS
             const modal = document.getElementById('presencaModal');
@@ -1453,82 +1453,82 @@ window.PresencaManager = {
             // Chama também o método normal (que vai limpar this.atividadeAtual)
             this.fecharModal();
             
-            this.log('✅ [CRITICAL] Modal fechado via setTimeout FORÇADO');
+            this.log('[SUCCESS] [CRITICAL] Modal fechado via setTimeout FORÇADO');
             
-            // 🎯 NOVA FUNCIONALIDADE: Reabre o calendário automaticamente após fechar modal
-            this.log('📅 [UX] Reabrindo calendário para facilitar seleção do próximo dia...');
-            this.log('🎯 [UX] Usando atividade preservada (final):', atividadeParaReabrir);
+            // [TARGET] NOVA FUNCIONALIDADE: Reabre o calendário automaticamente após fechar modal
+            this.log('[CALENDAR] [UX] Reabrindo calendário para facilitar seleção do próximo dia...');
+            this.log('[TARGET] [UX] Usando atividade preservada (final):', atividadeParaReabrir);
             
             // Valida novamente antes de chamar
             if (atividadeParaReabrir) {
                 setTimeout(() => {
                     this.reabrirCalendarioAutomaticamente(atividadeParaReabrir);
                     
-                    // 🔓 LIBERA OPERAÇÕES APÓS REABERTURA DO CALENDÁRIO
+                    // [EMOJI] LIBERA OPERAÇÕES APÓS REABERTURA DO CALENDÁRIO
                     setTimeout(() => {
                         this._processandoSalvamento = false;
-                        this.log('🔓 [UNLOCK] Salvamento concluído - liberando outras operações');
+                        this.log('[EMOJI] [UNLOCK] Salvamento concluído - liberando outras operações');
                     }, 500); // Aguarda 500ms para estabilizar
                     
                 }, 300); // Pequeno delay para garantir que o modal foi fechado
             } else {
-                this.log('❌ [UX] ERRO CRÍTICO: atividadeParaReabrir está undefined no momento da reabertura!');
-                // 🔓 LIBERA MESMO EM CASO DE ERRO
+                this.log('[ERROR] [UX] ERRO CRÍTICO: atividadeParaReabrir está undefined no momento da reabertura!');
+                // [EMOJI] LIBERA MESMO EM CASO DE ERRO
                 this._processandoSalvamento = false;
-                this.log('🔓 [UNLOCK] Salvamento concluído (com erro) - liberando outras operações');
+                this.log('[EMOJI] [UNLOCK] Salvamento concluído (com erro) - liberando outras operações');
             }
             
         }, 1000);
         
-        this.log('⏰ [CRITICAL] setTimeout configurado com ID:', timeoutId);
-        this.log('🔥 FIM salvarDiaAtual()');
+        this.log('[TIME] [CRITICAL] setTimeout configurado com ID:', timeoutId);
+        this.log('[DEBUG] FIM salvarDiaAtual()');
     },
     
     /**
-     * 📅 REABRIR CALENDÁRIO AUTOMATICAMENTE (UX MELHORADA)
+     * [CALENDAR] REABRIR CALENDÁRIO AUTOMATICAMENTE (UX MELHORADA)
      */
     reabrirCalendarioAutomaticamente: function(atividadeId) {
-        this.log('🎯 [UX] INÍCIO reabrirCalendarioAutomaticamente()');
-        this.log('🎯 [UX] Parâmetro atividadeId recebido:', atividadeId);
-        this.log('🎯 [UX] Tipo do parâmetro:', typeof atividadeId);
+        this.log('[TARGET] [UX] INÍCIO reabrirCalendarioAutomaticamente()');
+        this.log('[TARGET] [UX] Parâmetro atividadeId recebido:', atividadeId);
+        this.log('[TARGET] [UX] Tipo do parâmetro:', typeof atividadeId);
         
         if (!atividadeId) {
-            this.log('❌ [UX] ID da atividade não fornecido, tentando usar this.atividadeAtual...');
+            this.log('[ERROR] [UX] ID da atividade não fornecido, tentando usar this.atividadeAtual...');
             atividadeId = this.atividadeAtual;
-            this.log('🔄 [UX] Valor de this.atividadeAtual:', atividadeId);
+            this.log('[RELOAD] [UX] Valor de this.atividadeAtual:', atividadeId);
         }
         
         if (!atividadeId) {
-            this.log('❌ [UX] ID da atividade ainda não disponível - ABORTANDO');
+            this.log('[ERROR] [UX] ID da atividade ainda não disponível - ABORTANDO');
             return;
         }
         
-        this.log('✅ [UX] Processando com atividadeId:', atividadeId);
+        this.log('[SUCCESS] [UX] Processando com atividadeId:', atividadeId);
         
         // Busca o input do Flatpickr para esta atividade
         const inputId = `dias-atividade-${atividadeId}`;
-        this.log('🔍 [UX] Procurando input com ID:', inputId);
+        this.log('[SEARCH] [UX] Procurando input com ID:', inputId);
         const input = document.getElementById(inputId);
         
         if (!input) {
-            this.log('❌ [UX] Input não encontrado para ID:', inputId);
+            this.log('[ERROR] [UX] Input não encontrado para ID:', inputId);
             // Lista todos os inputs disponíveis para debug
             const todosInputs = document.querySelectorAll('[id^="dias-atividade-"]');
-            this.log('🔍 [UX] Inputs disponíveis:', Array.from(todosInputs).map(inp => inp.id));
+            this.log('[SEARCH] [UX] Inputs disponíveis:', Array.from(todosInputs).map(inp => inp.id));
             return;
         }
         
         if (!input._flatpickr) {
-            this.log('❌ [UX] Flatpickr não encontrado no input:', inputId);
+            this.log('[ERROR] [UX] Flatpickr não encontrado no input:', inputId);
             return;
         }
         
-        this.log('📅 [UX] Reabrindo calendário da atividade:', atividadeId);
+        this.log('[CALENDAR] [UX] Reabrindo calendário da atividade:', atividadeId);
         
         try {
             // Primeiro, verifica se o calendário não está já aberto
             if (input._flatpickr.isOpen) {
-                this.log('⚠️ [UX] Calendário já está aberto, fechando primeiro...');
+                this.log('[WARNING] [UX] Calendário já está aberto, fechando primeiro...');
                 input._flatpickr.close();
                 
                 // Aguarda um pouco antes de reabrir
@@ -1540,21 +1540,21 @@ window.PresencaManager = {
             }
             
         } catch (error) {
-            this.log('❌ [UX] Erro ao reabrir calendário:', error);
+            this.log('[ERROR] [UX] Erro ao reabrir calendário:', error);
         }
         
-        this.log('🎯 [UX] FIM reabrirCalendarioAutomaticamente()');
+        this.log('[TARGET] [UX] FIM reabrirCalendarioAutomaticamente()');
     },
     
     /**
-     * 🔄 EXECUTAR REABERTURA DO CALENDÁRIO (MÉTODO AUXILIAR)
+     * [RELOAD] EXECUTAR REABERTURA DO CALENDÁRIO (MÉTODO AUXILIAR)
      */
     executarReaberturaCalendario: function(input, atividadeId) {
-        this.log('🔄 [UX] Executando reabertura do calendário...');
+        this.log('[RELOAD] [UX] Executando reabertura do calendário...');
         
         // Abre o calendário
         input._flatpickr.open();
-        this.log('✅ [UX] Calendário reaberto com sucesso');
+        this.log('[SUCCESS] [UX] Calendário reaberto com sucesso');
         
         // Foca no input para melhor UX
         input.focus();
@@ -1566,7 +1566,7 @@ window.PresencaManager = {
                 behavior: 'smooth', 
                 block: 'center' 
             });
-            this.log('📍 [UX] Scroll para o card da atividade realizado');
+            this.log('[LOCATION] [UX] Scroll para o card da atividade realizado');
         }
         
         // Adiciona uma dica visual temporária no calendário
@@ -1583,14 +1583,14 @@ window.PresencaManager = {
                 
                 setTimeout(() => {
                     calendar.style.transform = 'scale(1)';
-                    this.log('🎯 [UX] Calendário estabilizado e pronto para uso');
+                    this.log('[TARGET] [UX] Calendário estabilizado e pronto para uso');
                 }, 200);
             }
         }, 600);
     },
     
     /**
-     * 💡 ADICIONAR DICA VISUAL NO CALENDÁRIO
+     * [TIP] ADICIONAR DICA VISUAL NO CALENDÁRIO
      */
     adicionarDicaVisualCalendario: function(flatpickrInstance) {
         if (!flatpickrInstance || !flatpickrInstance.calendarContainer) return;
@@ -1612,9 +1612,9 @@ window.PresencaManager = {
         let mensagem = '';
         
         if (diasPendentes.length > 0) {
-            mensagem = `🎯 <strong>Próximo passo:</strong> Clique no dia <strong style="color:#1976d2;">${diasPendentes[0]}</strong> para marcar presenças ou selecione novos dias`;
+            mensagem = `[TARGET] <strong>Próximo passo:</strong> Clique no dia <strong style="color:#1976d2;">${diasPendentes[0]}</strong> para marcar presenças ou selecione novos dias`;
         } else {
-            mensagem = '🎯 <strong>Próximo passo:</strong> Clique nos dias <strong style="color:#1976d2;">azuis selecionados</strong> para marcar presenças ou selecione novos dias';
+            mensagem = '[TARGET] <strong>Próximo passo:</strong> Clique nos dias <strong style="color:#1976d2;">azuis selecionados</strong> para marcar presenças ou selecione novos dias';
         }
         
         dica.innerHTML = mensagem;
@@ -1656,11 +1656,11 @@ window.PresencaManager = {
             }
         }, 8000);
         
-        this.log('💡 [UX] Dica visual adicionada ao calendário');
+        this.log('[TIP] [UX] Dica visual adicionada ao calendário');
     },
     
     /**
-     * 📋 VERIFICAR DIAS PENDENTES (SELECIONADOS MAS SEM PRESENÇAS)
+     * [LIST] VERIFICAR DIAS PENDENTES (SELECIONADOS MAS SEM PRESENÇAS)
      */
     verificarDiasPendentes: function(flatpickrInstance) {
         if (!flatpickrInstance || !flatpickrInstance.selectedDates) return [];
@@ -1681,12 +1681,12 @@ window.PresencaManager = {
             }
         });
         
-        this.log('📋 [UX] Dias pendentes encontrados:', diasPendentes);
+        this.log('[LIST] [UX] Dias pendentes encontrados:', diasPendentes);
         return diasPendentes.sort((a, b) => a - b);
     },
     
     /**
-     * 📅 ATUALIZAR FLATPICKR APÓS SALVAR
+     * [CALENDAR] ATUALIZAR FLATPICKR APÓS SALVAR
      */
     atualizarFlatpickr: function() {
         const input = document.getElementById(`dias-atividade-${this.atividadeAtual}`);
@@ -1713,12 +1713,12 @@ window.PresencaManager = {
             // Atualiza o Flatpickr
             flatpickr.setDate(datas, true);
             
-            this.log(`📅 Flatpickr atualizado - Dia ${diaSalvo} adicionado`);
+            this.log(`[CALENDAR] Flatpickr atualizado - Dia ${diaSalvo} adicionado`);
         }
     },
     
     /**
-     * ✅ MARCAR DIA COMO PROCESSADO VISUALMENTE
+     * [SUCCESS] MARCAR DIA COMO PROCESSADO VISUALMENTE
      */
     marcarDiaComoProcessado: function(atividadeId, dia) {
         const input = document.getElementById(`dias-atividade-${atividadeId}`);
@@ -1730,42 +1730,42 @@ window.PresencaManager = {
         dayElements.forEach(dayElem => {
             if (parseInt(dayElem.textContent) === parseInt(dia)) {
                 dayElem.classList.add('day-with-presence');
-                this.log(`✅ Dia ${dia} marcado visualmente como processado`);
+                this.log(`[SUCCESS] Dia ${dia} marcado visualmente como processado`);
             }
         });
     },
     
     /**
-     * 🚪 FECHAR MODAL
+     * [CLOSE] FECHAR MODAL
      */
     fecharModal: function() {
-        this.log('� INÍCIO fecharModal()');
-        this.log('�🚪 Fechando modal...');
+        this.log('[EMOJI] INÍCIO fecharModal()');
+        this.log('[EMOJI][CLOSE] Fechando modal...');
         
         const modal = document.getElementById('presencaModal');
         if (modal) {
-            this.log('🔍 Modal encontrado, alterando display...');
+            this.log('[SEARCH] Modal encontrado, alterando display...');
             modal.style.display = 'none';
             modal.classList.remove('show');
             document.body.classList.remove('modal-open');
-            this.log('✅ Estilos do modal alterados');
+            this.log('[SUCCESS] Estilos do modal alterados');
         } else {
-            this.log('❌ Modal NÃO encontrado no DOM!');
+            this.log('[ERROR] Modal NÃO encontrado no DOM!');
         }
         
         // Limpa estado atual
-        this.log('🧹 Limpando estado atual...');
+        this.log('[CLEAN] Limpando estado atual...');
         const estadoAnterior = {atividade: this.atividadeAtual, dia: this.diaAtual};
         this.atividadeAtual = null;
         this.diaAtual = null;
-        this.log('🧹 Estado limpo:', estadoAnterior);
+        this.log('[CLEAN] Estado limpo:', estadoAnterior);
         
-        this.log('✅ Modal fechado com sucesso');
-        this.log('🔥 FIM fecharModal()');
+        this.log('[SUCCESS] Modal fechado com sucesso');
+        this.log('[DEBUG] FIM fecharModal()');
     },
     
     /**
-     * ❓ VERIFICAR SE MODAL ESTÁ ABERTO
+     * [EMOJI] VERIFICAR SE MODAL ESTÁ ABERTO
      */
     isModalAberto: function() {
         const modal = document.getElementById('presencaModal');
@@ -1779,7 +1779,7 @@ window.PresencaManager = {
         
         const isOpen = displayCheck && classCheck && visibilityCheck && opacityCheck;
         
-        this.log(`❓ [MODAL] Verificação de estado:`, {
+        this.log(`[EMOJI] [MODAL] Verificação de estado:`, {
             display: modal.style.display,
             classes: modal.className,
             visibility: modal.style.visibility,
@@ -1791,7 +1791,7 @@ window.PresencaManager = {
     },
     
     /**
-     * 📨 MOSTRAR MENSAGEM
+     * [MESSAGE] MOSTRAR MENSAGEM
      */
     mostrarMensagem: function(texto, tipo = 'info') {
         const mensagemDiv = document.getElementById('mensagem-ajax');
@@ -1806,127 +1806,127 @@ window.PresencaManager = {
             mensagemDiv.classList.add('d-none');
         }, 3000);
         
-        this.log(`📨 Mensagem exibida (${tipo}): ${texto}`);
+        this.log(`[MESSAGE] Mensagem exibida (${tipo}): ${texto}`);
     },
     
     /**
-     * ✅ VALIDAR SUBMIT DO FORMULÁRIO
+     * [SUCCESS] VALIDAR SUBMIT DO FORMULÁRIO
      */
     validarSubmit: function(e) {
-        this.log('🔥 [SUBMIT DEBUG] ================================');
-        this.log('🔥 [SUBMIT DEBUG] VALIDANDO FORMULÁRIO');
-        this.log('🔥 [SUBMIT DEBUG] ================================');
-        this.log('📊 [SUBMIT] presencasRegistradas:', JSON.stringify(this.presencasRegistradas, null, 2));
-        this.log('📅 [SUBMIT] diasSelecionados:', JSON.stringify(this.diasSelecionados, null, 2));
-        this.log('🔍 [SUBMIT] window._presenca_confirmado:', window._presenca_confirmado);
+        this.log('[DEBUG] [SUBMIT DEBUG] ================================');
+        this.log('[DEBUG] [SUBMIT DEBUG] VALIDANDO FORMULÁRIO');
+        this.log('[DEBUG] [SUBMIT DEBUG] ================================');
+        this.log('[DATA] [SUBMIT] presencasRegistradas:', JSON.stringify(this.presencasRegistradas, null, 2));
+        this.log('[CALENDAR] [SUBMIT] diasSelecionados:', JSON.stringify(this.diasSelecionados, null, 2));
+        this.log('[SEARCH] [SUBMIT] window._presenca_confirmado:', window._presenca_confirmado);
         
         // Se o usuário já confirmou, permite o envio
         if (window._presenca_confirmado) {
-            this.log('✅ [SUBMIT] Usuário já confirmou - permitindo envio');
-            this.log('🔥 [SUBMIT DEBUG] ENVIANDO FORMULÁRIO CONFIRMADO');
+            this.log('[SUCCESS] [SUBMIT] Usuário já confirmou - permitindo envio');
+            this.log('[DEBUG] [SUBMIT DEBUG] ENVIANDO FORMULÁRIO CONFIRMADO');
             return true;
         }
         
         // Sempre previne o envio inicial para mostrar modal de confirmação
         e.preventDefault();
         
-        this.log('🔍 [SUBMIT] Checando se há dados para enviar...');
+        this.log('[SEARCH] [SUBMIT] Checando se há dados para enviar...');
         
         // Verifica se há dados mínimos para mostrar o modal
         const temAlgumDado = Object.keys(this.diasSelecionados).length > 0 || 
                             Object.keys(this.presencasRegistradas).length > 0;
         
         if (!temAlgumDado) {
-            this.log('❌ [SUBMIT] Nenhum dado encontrado - mostrando erro');
+            this.log('[ERROR] [SUBMIT] Nenhum dado encontrado - mostrando erro');
             this.mostrarMensagem('Selecione os dias e marque as presenças antes de finalizar.', 'danger');
             return false;
         }
         
         // Gera resumo para modal de confirmação
-        this.log('📋 [SUBMIT] Gerando resumo...');
+        this.log('[LIST] [SUBMIT] Gerando resumo...');
         const resultado = this.gerarResumoFinalizacao();
-        this.log('📋 [SUBMIT] Resultado do resumo:', resultado);
+        this.log('[LIST] [SUBMIT] Resultado do resumo:', resultado);
         
         // Adiciona dados ao formulário antes de exibir o modal
-        this.log('📝 [SUBMIT] Adicionando dados ao formulário...');
+        this.log('[FORM] [SUBMIT] Adicionando dados ao formulário...');
         const dadosAdicionados = this.adicionarDadosAoFormulario();
-        this.log('📝 [SUBMIT] Dados adicionados:', dadosAdicionados);
+        this.log('[FORM] [SUBMIT] Dados adicionados:', dadosAdicionados);
         
         // Exibe modal de confirmação
-        this.log('📋 [SUBMIT] Exibindo modal de confirmação...');
+        this.log('[LIST] [SUBMIT] Exibindo modal de confirmação...');
         this.exibirModalConfirmacao(resultado);
         
-        this.log('🔥 [SUBMIT DEBUG] Modal de confirmação exibido');
+        this.log('[DEBUG] [SUBMIT DEBUG] Modal de confirmação exibido');
         return false;
     },
     
     /**
-     * 📋 ADICIONAR DADOS AO FORMULÁRIO
+     * [LIST] ADICIONAR DADOS AO FORMULÁRIO
      */
     adicionarDadosAoFormulario: function() {
-        this.log('🔥 [FORM DEBUG] ================================');
-        this.log('🔥 [FORM DEBUG] ADICIONANDO DADOS AO FORMULÁRIO');
-        this.log('🔥 [FORM DEBUG] ================================');
+        this.log('[DEBUG] [FORM DEBUG] ================================');
+        this.log('[DEBUG] [FORM DEBUG] ADICIONANDO DADOS AO FORMULÁRIO');
+        this.log('[DEBUG] [FORM DEBUG] ================================');
         
         const form = document.getElementById('form-presenca');
         if (!form) {
-            this.log('❌ [FORM] Formulário não encontrado');
+            this.log('[ERROR] [FORM] Formulário não encontrado');
             return;
         }
         
-        this.log('✅ [FORM] Formulário encontrado');
-        this.log('📊 [FORM] Dados a serem enviados:');
-        this.log('📊 [FORM] presencasRegistradas:', JSON.stringify(this.presencasRegistradas, null, 2));
-        this.log('📊 [FORM] convocadosIndividuais:', JSON.stringify(this.convocadosIndividuais, null, 2));
-        this.log('📊 [FORM] diasSelecionados:', JSON.stringify(this.diasSelecionados, null, 2));
+        this.log('[SUCCESS] [FORM] Formulário encontrado');
+        this.log('[DATA] [FORM] Dados a serem enviados:');
+        this.log('[DATA] [FORM] presencasRegistradas:', JSON.stringify(this.presencasRegistradas, null, 2));
+        this.log('[DATA] [FORM] convocadosIndividuais:', JSON.stringify(this.convocadosIndividuais, null, 2));
+        this.log('[DATA] [FORM] diasSelecionados:', JSON.stringify(this.diasSelecionados, null, 2));
         
         // Remove campos antigos para evitar duplicação
         form.querySelectorAll('input[name^="presencas_json"], input[name^="convocados_json"], input[name^="dias_json"]').forEach(el => {
-            this.log(`🗑️ [FORM] Removendo campo antigo: ${el.name}`);
+            this.log(`[EMOJI] [FORM] Removendo campo antigo: ${el.name}`);
             el.remove();
         });
         
-        // 1️⃣ ADICIONA DADOS DE PRESENÇAS
+        // 1[EMOJI]⃣ ADICIONA DADOS DE PRESENÇAS
         if (Object.keys(this.presencasRegistradas).length > 0) {
             const inputPresencas = document.createElement('input');
             inputPresencas.type = 'hidden';
             inputPresencas.name = 'presencas_json';
             inputPresencas.value = JSON.stringify(this.presencasRegistradas);
             form.appendChild(inputPresencas);
-            this.log('✅ [FORM] Campo presencas_json adicionado');
-            this.log('📝 [FORM] Valor:', inputPresencas.value);
+            this.log('[SUCCESS] [FORM] Campo presencas_json adicionado');
+            this.log('[FORM] [FORM] Valor:', inputPresencas.value);
         } else {
-            this.log('⚠️ [FORM] Nenhuma presença registrada para enviar');
+            this.log('[WARNING] [FORM] Nenhuma presença registrada para enviar');
         }
         
-        // 2️⃣ ADICIONA DADOS DE CONVOCAÇÃO (se houver)
+        // 2[EMOJI]⃣ ADICIONA DADOS DE CONVOCAÇÃO (se houver)
         if (Object.keys(this.convocadosIndividuais).length > 0) {
             const inputConvocados = document.createElement('input');
             inputConvocados.type = 'hidden';
             inputConvocados.name = 'convocados_json';
             inputConvocados.value = JSON.stringify(this.convocadosIndividuais);
             form.appendChild(inputConvocados);
-            this.log('✅ [FORM] Campo convocados_json adicionado');
-            this.log('📝 [FORM] Valor:', inputConvocados.value);
+            this.log('[SUCCESS] [FORM] Campo convocados_json adicionado');
+            this.log('[FORM] [FORM] Valor:', inputConvocados.value);
         } else {
-            this.log('⚠️ [FORM] Nenhuma convocação individual para enviar');
+            this.log('[WARNING] [FORM] Nenhuma convocação individual para enviar');
         }
         
-        // 3️⃣ ADICIONA DIAS SELECIONADOS
+        // 3[EMOJI]⃣ ADICIONA DIAS SELECIONADOS
         if (Object.keys(this.diasSelecionados).length > 0) {
             const inputDias = document.createElement('input');
             inputDias.type = 'hidden';
             inputDias.name = 'dias_json';
             inputDias.value = JSON.stringify(this.diasSelecionados);
             form.appendChild(inputDias);
-            this.log('✅ [FORM] Campo dias_json adicionado');
-            this.log('📝 [FORM] Valor:', inputDias.value);
+            this.log('[SUCCESS] [FORM] Campo dias_json adicionado');
+            this.log('[FORM] [FORM] Valor:', inputDias.value);
         } else {
-            this.log('⚠️ [FORM] Nenhum dia selecionado para enviar');
+            this.log('[WARNING] [FORM] Nenhum dia selecionado para enviar');
         }
         
-        // 4️⃣ ATUALIZA TAMBÉM OS CAMPOS NATIVOS DO FLATPICKR
-        this.log('🔄 [FORM] Atualizando campos nativos do Flatpickr...');
+        // 4[EMOJI]⃣ ATUALIZA TAMBÉM OS CAMPOS NATIVOS DO FLATPICKR
+        this.log('[RELOAD] [FORM] Atualizando campos nativos do Flatpickr...');
         Object.keys(this.diasSelecionados).forEach(atividadeId => {
             const dias = this.diasSelecionados[atividadeId];
             if (dias && dias.length > 0) {
@@ -1938,54 +1938,54 @@ window.PresencaManager = {
                     
                     const datas = dias.map(dia => new Date(ano, mes - 1, dia));
                     input._flatpickr.setDate(datas, true);
-                    this.log(`✅ [FORM] Flatpickr atualizado para atividade ${atividadeId}: dias ${dias.join(', ')}`);
+                    this.log(`[SUCCESS] [FORM] Flatpickr atualizado para atividade ${atividadeId}: dias ${dias.join(', ')}`);
                 } else {
-                    this.log(`❌ [FORM] Input ou Flatpickr não encontrado para atividade ${atividadeId}`);
+                    this.log(`[ERROR] [FORM] Input ou Flatpickr não encontrado para atividade ${atividadeId}`);
                 }
             }
         });
         
-        // 5️⃣ VERIFICA SE TODOS OS DADOS NECESSÁRIOS ESTÃO PRESENTES
+        // 5[EMOJI]⃣ VERIFICA SE TODOS OS DADOS NECESSÁRIOS ESTÃO PRESENTES
         const temPresencas = Object.keys(this.presencasRegistradas).length > 0;
         const temDias = Object.keys(this.diasSelecionados).length > 0;
         
-        this.log('🔍 [FORM] VERIFICAÇÃO FINAL:');
-        this.log(`📊 [FORM] Tem presenças: ${temPresencas}`);
-        this.log(`📅 [FORM] Tem dias selecionados: ${temDias}`);
+        this.log('[SEARCH] [FORM] VERIFICAÇÃO FINAL:');
+        this.log(`[DATA] [FORM] Tem presenças: ${temPresencas}`);
+        this.log(`[CALENDAR] [FORM] Tem dias selecionados: ${temDias}`);
         
         if (!temPresencas || !temDias) {
-            this.log('❌ [FORM] DADOS INSUFICIENTES PARA ENVIO!');
-            this.log('💡 [FORM] Certifique-se de:');
+            this.log('[ERROR] [FORM] DADOS INSUFICIENTES PARA ENVIO!');
+            this.log('[TIP] [FORM] Certifique-se de:');
             this.log('   - Selecionar dias nos calendários');
             this.log('   - Marcar presenças clicando nos dias azuis');
             return false;
         }
         
-        this.log('🔥 [FORM DEBUG] ================================');
-        this.log('🔥 [FORM DEBUG] DADOS ADICIONADOS COM SUCESSO');
-        this.log('🔥 [FORM DEBUG] ================================');
+        this.log('[DEBUG] [FORM DEBUG] ================================');
+        this.log('[DEBUG] [FORM DEBUG] DADOS ADICIONADOS COM SUCESSO');
+        this.log('[DEBUG] [FORM DEBUG] ================================');
         
         return true;
     },
     
     /**
-     * 🔍 DEBUGAR FORMULÁRIO ANTES DO ENVIO
+     * [SEARCH] DEBUGAR FORMULÁRIO ANTES DO ENVIO
      */
     debugarFormulario: function() {
         const form = document.getElementById('form-presenca');
         if (!form) {
-            this.log('❌ [DEBUG FORM] Formulário não encontrado');
+            this.log('[ERROR] [DEBUG FORM] Formulário não encontrado');
             return;
         }
         
-        this.log('🔍 [DEBUG FORM] ================================');
-        this.log('🔍 [DEBUG FORM] ESTADO DO FORMULÁRIO');
-        this.log('🔍 [DEBUG FORM] ================================');
+        this.log('[SEARCH] [DEBUG FORM] ================================');
+        this.log('[SEARCH] [DEBUG FORM] ESTADO DO FORMULÁRIO');
+        this.log('[SEARCH] [DEBUG FORM] ================================');
         
         // Verificar todos os campos do formulário
         const formData = new FormData(form);
         
-        this.log('📝 [DEBUG FORM] Dados do FormData:');
+        this.log('[FORM] [DEBUG FORM] Dados do FormData:');
         for (let [key, value] of formData.entries()) {
             this.log(`   ${key}: ${value}`);
         }
@@ -1995,19 +1995,19 @@ window.PresencaManager = {
         camposEspeciais.forEach(campo => {
             const input = form.querySelector(`input[name="${campo}"]`);
             if (input) {
-                this.log(`✅ [DEBUG FORM] ${campo} encontrado:`, input.value);
+                this.log(`[SUCCESS] [DEBUG FORM] ${campo} encontrado:`, input.value);
             } else {
-                this.log(`❌ [DEBUG FORM] ${campo} NÃO encontrado`);
+                this.log(`[ERROR] [DEBUG FORM] ${campo} NÃO encontrado`);
             }
         });
         
         // Verificar estado interno
-        this.log('📊 [DEBUG FORM] Estado interno:');
+        this.log('[DATA] [DEBUG FORM] Estado interno:');
         this.log('   presencasRegistradas:', Object.keys(this.presencasRegistradas).length);
         this.log('   diasSelecionados:', Object.keys(this.diasSelecionados).length);
         this.log('   convocadosIndividuais:', Object.keys(this.convocadosIndividuais).length);
         
-        this.log('🔍 [DEBUG FORM] ================================');
+        this.log('[SEARCH] [DEBUG FORM] ================================');
         
         return {
             temFormulario: !!form,
@@ -2021,10 +2021,10 @@ window.PresencaManager = {
     },
 
     /**
-     * 📋 FUNÇÃO: GERAR RESUMO PARA FINALIZAÇÃO
+     * [LIST] FUNÇÃO: GERAR RESUMO PARA FINALIZAÇÃO
      */
     gerarResumoFinalizacao: function() {
-        this.log('📋 [RESUMO] Gerando resumo para finalização...');
+        this.log('[LIST] [RESUMO] Gerando resumo para finalização...');
         
         const erros = [];
         const avisos = [];
@@ -2102,9 +2102,9 @@ window.PresencaManager = {
         const sucesso = erros.length === 0;
         const podeFinalizar = sucesso;
         
-        this.log(`📋 [RESUMO] Sucesso: ${sucesso}, Presenças: ${totalPresencas}, Dias: ${totalDiasSelecionados}`);
-        this.log(`📋 [RESUMO] Atividades completas:`, atividadesCompletas);
-        this.log(`📋 [RESUMO] Atividades com problemas:`, atividadesComProblemas);
+        this.log(`[LIST] [RESUMO] Sucesso: ${sucesso}, Presenças: ${totalPresencas}, Dias: ${totalDiasSelecionados}`);
+        this.log(`[LIST] [RESUMO] Atividades completas:`, atividadesCompletas);
+        this.log(`[LIST] [RESUMO] Atividades com problemas:`, atividadesComProblemas);
         
         return {
             sucesso,
@@ -2122,10 +2122,10 @@ window.PresencaManager = {
     },
 
     /**
-     * 📋 FUNÇÃO: EXIBIR MODAL DE CONFIRMAÇÃO
+     * [LIST] FUNÇÃO: EXIBIR MODAL DE CONFIRMAÇÃO
      */
     exibirModalConfirmacao: function(resultado) {
-        this.log('📋 [MODAL-CONF] Exibindo modal de confirmação:', resultado);
+        this.log('[LIST] [MODAL-CONF] Exibindo modal de confirmação:', resultado);
         
         // Busca o modal de confirmação ou cria se não existir
         let modalConf = document.getElementById('modal-confirmacao-finalizacao');
@@ -2140,25 +2140,25 @@ window.PresencaManager = {
         const botaoCancelar = modalConf.querySelector('.btn-cancelar');
         
         if (!titulo || !corpo || !botaoCancelar) {
-            this.log('❌ [MODAL-CONF] Elementos do modal não encontrados, recriando...');
+            this.log('[ERROR] [MODAL-CONF] Elementos do modal não encontrados, recriando...');
             modalConf.remove();
             modalConf = this.criarModalConfirmacao();
             return this.exibirModalConfirmacao(resultado);
         }
         
         if (resultado.sucesso) {
-            titulo.textContent = '✅ Finalização Confirmada';
+            titulo.textContent = '[SUCCESS] Finalização Confirmada';
             titulo.className = 'modal-title text-success';
             
             let html = '<div class="alert alert-success">';
-            html += `<strong>📊 Resumo dos dados a serem enviados:</strong><br>`;
+            html += `<strong>[DATA] Resumo dos dados a serem enviados:</strong><br>`;
             html += `• <strong>${resultado.dados.totalPresencas}</strong> presenças registradas<br>`;
             html += `• <strong>${resultado.dados.totalDias}</strong> dias selecionados<br>`;
             html += `• <strong>${resultado.dados.totalAlunos}</strong> alunos na turma<br><br>`;
             
             // Mostra detalhes das atividades completas
             if (resultado.dados.atividadesCompletas && resultado.dados.atividadesCompletas.length > 0) {
-                html += '<strong>🎯 Atividades Prontas:</strong><br>';
+                html += '<strong>[TARGET] Atividades Prontas:</strong><br>';
                 resultado.dados.atividadesCompletas.forEach(atividade => {
                     const diasTexto = atividade.dias.length === 1 ? 
                         `dia ${atividade.dias[0]}` : 
@@ -2170,7 +2170,7 @@ window.PresencaManager = {
             html += '</div>';
             
             if (resultado.avisos.length > 0) {
-                html += '<div class="alert alert-warning"><strong>⚠️ Observações:</strong><ul>';
+                html += '<div class="alert alert-warning"><strong>[WARNING] Observações:</strong><ul>';
                 resultado.avisos.forEach(aviso => {
                     html += `<li>${aviso}</li>`;
                 });
@@ -2184,10 +2184,10 @@ window.PresencaManager = {
                 botaoConfirmar.style.display = 'inline-block';
             }
         } else {
-            titulo.textContent = '❌ Erros Encontrados';
+            titulo.textContent = '[ERROR] Erros Encontrados';
             titulo.className = 'modal-title text-danger';
             
-            let html = '<div class="alert alert-danger"><strong>🚫 Problemas que impedem o envio:</strong><ul>';
+            let html = '<div class="alert alert-danger"><strong>[EMOJI] Problemas que impedem o envio:</strong><ul>';
             resultado.erros.forEach(erro => {
                 html += `<li>${erro}</li>`;
             });
@@ -2195,15 +2195,15 @@ window.PresencaManager = {
             
             // Adiciona instruções específicas
             html += '<div class="alert alert-info">';
-            html += '<strong>💡 Como resolver:</strong><br>';
-            html += '1️⃣ Selecione os dias nos calendários das atividades<br>';
-            html += '2️⃣ Clique nos <span class="badge bg-primary">dias azuis selecionados</span> para marcar presenças<br>';
-            html += '3️⃣ Use os botões "Todos Presentes/Ausentes" ou marque individualmente<br>';
-            html += '4️⃣ Clique em "Salvar Presenças" em cada dia marcado';
+            html += '<strong>[TIP] Como resolver:</strong><br>';
+            html += '1[EMOJI]⃣ Selecione os dias nos calendários das atividades<br>';
+            html += '2[EMOJI]⃣ Clique nos <span class="badge bg-primary">dias azuis selecionados</span> para marcar presenças<br>';
+            html += '3[EMOJI]⃣ Use os botões "Todos Presentes/Ausentes" ou marque individualmente<br>';
+            html += '4[EMOJI]⃣ Clique em "Salvar Presenças" em cada dia marcado';
             html += '</div>';
             
             if (resultado.avisos.length > 0) {
-                html += '<div class="alert alert-warning"><strong>⚠️ Observações:</strong><ul>';
+                html += '<div class="alert alert-warning"><strong>[WARNING] Observações:</strong><ul>';
                 resultado.avisos.forEach(aviso => {
                     html += `<li>${aviso}</li>`;
                 });
@@ -2219,30 +2219,30 @@ window.PresencaManager = {
         // Configura eventos dos botões
         if (botaoConfirmar) {
             botaoConfirmar.onclick = () => {
-                // 🎯 LOG DE DEBUG PARA CLIQUE NO BOTÃO CONFIRMAR ENVIO
-                console.log('🚀 [DEBUG-CLIQUE] ========================================');
-                console.log('🚀 [DEBUG-CLIQUE] BOTÃO "CONFIRMAR ENVIO" FOI CLICADO!');
-                console.log('🚀 [DEBUG-CLIQUE] Timestamp:', new Date().toLocaleString());
-                console.log('🚀 [DEBUG-CLIQUE] Modal de confirmação -> Confirmar Envio');
-                console.log('🚀 [DEBUG-CLIQUE] ========================================');
+                // [TARGET] LOG DE DEBUG PARA CLIQUE NO BOTÃO CONFIRMAR ENVIO
+                console.log('[SEND] [DEBUG-CLIQUE] ========================================');
+                console.log('[SEND] [DEBUG-CLIQUE] BOTÃO "CONFIRMAR ENVIO" FOI CLICADO!');
+                console.log('[SEND] [DEBUG-CLIQUE] Timestamp:', new Date().toLocaleString());
+                console.log('[SEND] [DEBUG-CLIQUE] Modal de confirmação -> Confirmar Envio');
+                console.log('[SEND] [DEBUG-CLIQUE] ========================================');
                 
-                this.log('📋 [MODAL-CONF] Usuário confirmou envio');
+                this.log('[LIST] [MODAL-CONF] Usuário confirmou envio');
                 window._presenca_confirmado = true;
                 modalConf.style.display = 'none';
                 
-                // 🔍 DIAGNÓSTICO FINAL ANTES DO ENVIO
-                this.log('🔍 [ENVIO] ================================');
-                this.log('🔍 [ENVIO] DIAGNÓSTICO FINAL PRÉ-ENVIO');
-                this.log('🔍 [ENVIO] ================================');
+                // [SEARCH] DIAGNÓSTICO FINAL ANTES DO ENVIO
+                this.log('[SEARCH] [ENVIO] ================================');
+                this.log('[SEARCH] [ENVIO] DIAGNÓSTICO FINAL PRÉ-ENVIO');
+                this.log('[SEARCH] [ENVIO] ================================');
                 
                 const form = document.getElementById('form-presenca');
                 if (form) {
                     // GARANTIR que os dados estão no formulário ANTES do envio
-                    this.log('📝 [ENVIO] Adicionando dados ao formulário uma última vez...');
+                    this.log('[FORM] [ENVIO] Adicionando dados ao formulário uma última vez...');
                     const dadosAdicionados = this.adicionarDadosAoFormulario();
                     
                     if (!dadosAdicionados) {
-                        this.log('❌ [ENVIO] ERRO: Dados não foram adicionados corretamente!');
+                        this.log('[ERROR] [ENVIO] ERRO: Dados não foram adicionados corretamente!');
                         alert('Erro: Dados não puderam ser preparados para envio. Tente novamente.');
                         window._presenca_confirmado = false;
                         return;
@@ -2250,23 +2250,23 @@ window.PresencaManager = {
                     
                     // Lista todos os campos que serão enviados
                     const formData = new FormData(form);
-                    this.log('📝 [ENVIO] Dados que serão enviados:');
+                    this.log('[FORM] [ENVIO] Dados que serão enviados:');
                     let temDadosEssenciais = false;
                     
                     for (let [key, value] of formData.entries()) {
                         if (key.includes('json')) {
-                            this.log(`   📋 ${key}:`, JSON.stringify(JSON.parse(value), null, 2));
+                            this.log(`   [LIST] ${key}:`, JSON.stringify(JSON.parse(value), null, 2));
                             if (key === 'presencas_json' && value !== '{}') {
                                 temDadosEssenciais = true;
                             }
                         } else {
-                            this.log(`   📄 ${key}: ${value}`);
+                            this.log(`   [EMOJI] ${key}: ${value}`);
                         }
                     }
                     
                     // Verificação final de segurança
                     if (!temDadosEssenciais) {
-                        this.log('❌ [ENVIO] ERRO CRÍTICO: Nenhum dado de presença encontrado!');
+                        this.log('[ENVIO] ERRO CRITICO: Nenhum dado de presenca encontrado!');
                         alert('ERRO: Nenhuma presença foi encontrada para envio. Selecione os dias e marque as presenças antes de finalizar.');
                         window._presenca_confirmado = false;
                         return;
@@ -2275,34 +2275,48 @@ window.PresencaManager = {
                     // Salva estado atual no localStorage para recuperação após reload
                     this.salvarEstadoParaRecuperacao();
                     
-                    this.log('📤 [ENVIO] Enviando formulário...');
+                    this.log('[ENVIO] Enviando via AJAX...');
                     
-                    // 🔧 CORREÇÃO: Força URL do endpoint AJAX
-                    form.action = '/presencas/registrar-presenca/dias-atividades/ajax/';
+                    // [FIX] CORREÇÃO: Usa AJAX ao invés de form.submit() para evitar exibir JSON na tela
+                    // Reutiliza o formData já criado acima
                     
-                    this.log('🎯 [ENVIO] URL de destino:', form.action);
-                    this.log('🎯 [ENVIO] Método:', form.method || 'POST');
+                    fetch('/presencas/registrar-presenca/dias-atividades/ajax/', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        this.log('[ENVIO] Resposta recebida:', data);
+                        if (data.success && data.redirect_url) {
+                            this.log('[ENVIO] Sucesso! Redirecionando para:', data.redirect_url);
+                            window.location.href = data.redirect_url;
+                        } else {
+                            this.log('[ENVIO] Erro na resposta:', data);
+                            alert(data.message || 'Erro ao finalizar registro');
+                        }
+                    })
+                    .catch(error => {
+                        this.log('[ENVIO] Erro na requisição:', error);
+                        alert('Erro de conexão. Tente novamente.');
+                    });
                     
-                    // Força o envio
-                    form.submit();
-                    
-                    this.log('✅ [ENVIO] Comando submit() executado');
+                    this.log('[ENVIO] Requisição AJAX enviada');
                 } else {
-                    this.log('❌ [ENVIO] Formulário não encontrado!');
+                    this.log('[ERROR] [ENVIO] Formulário não encontrado!');
                     alert('Erro: Formulário não encontrado. Recarregue a página e tente novamente.');
                 }
             };
         }
         
         botaoCancelar.onclick = () => {
-            // 🎯 LOG DE DEBUG PARA CLIQUE NO BOTÃO CANCELAR DO MODAL DE CONFIRMAÇÃO
-            console.log('❌ [DEBUG-CLIQUE] ========================================');
-            console.log('❌ [DEBUG-CLIQUE] BOTÃO "CANCELAR" (MODAL CONFIRMAÇÃO) FOI CLICADO!');
-            console.log('❌ [DEBUG-CLIQUE] Timestamp:', new Date().toLocaleString());
-            console.log('❌ [DEBUG-CLIQUE] Modal de confirmação -> Cancelar');
-            console.log('❌ [DEBUG-CLIQUE] ========================================');
+            // [TARGET] LOG DE DEBUG PARA CLIQUE NO BOTÃO CANCELAR DO MODAL DE CONFIRMAÇÃO
+            console.log('[ERROR] [DEBUG-CLIQUE] ========================================');
+            console.log('[ERROR] [DEBUG-CLIQUE] BOTÃO "CANCELAR" (MODAL CONFIRMAÇÃO) FOI CLICADO!');
+            console.log('[ERROR] [DEBUG-CLIQUE] Timestamp:', new Date().toLocaleString());
+            console.log('[ERROR] [DEBUG-CLIQUE] Modal de confirmação -> Cancelar');
+            console.log('[ERROR] [DEBUG-CLIQUE] ========================================');
             
-            this.log('📋 [MODAL-CONF] Usuário cancelou envio');
+            this.log('[LIST] [MODAL-CONF] Usuário cancelou envio');
             window._presenca_confirmado = false;
             modalConf.style.display = 'none';
         };
@@ -2315,10 +2329,10 @@ window.PresencaManager = {
     },
 
     /**
-     * 📋 FUNÇÃO: CRIAR MODAL DE CONFIRMAÇÃO (SE NÃO EXISTIR)
+     * [LIST] FUNÇÃO: CRIAR MODAL DE CONFIRMAÇÃO (SE NÃO EXISTIR)
      */
     criarModalConfirmacao: function() {
-        this.log('📋 [MODAL-CONF] Criando modal de confirmação...');
+        this.log('[LIST] [MODAL-CONF] Criando modal de confirmação...');
         
         const modalHtml = `
             <div id="modal-confirmacao-finalizacao" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000;">
@@ -2343,16 +2357,16 @@ window.PresencaManager = {
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         const modal = document.getElementById('modal-confirmacao-finalizacao');
         
-        this.log('📋 [MODAL-CONF] Modal criado com sucesso');
+        this.log('[LIST] [MODAL-CONF] Modal criado com sucesso');
         
         return modal;
     },
     
     /**
-     * 💾 SALVAR ESTADO PARA RECUPERAÇÃO APÓS RELOAD
+     * [SAVE] SALVAR ESTADO PARA RECUPERAÇÃO APÓS RELOAD
      */
     salvarEstadoParaRecuperacao: function() {
-        this.log('💾 [ESTADO] Salvando estado para recuperação...');
+        this.log('[SAVE] [ESTADO] Salvando estado para recuperação...');
         
         const estado = {
             timestamp: Date.now(),
@@ -2365,22 +2379,22 @@ window.PresencaManager = {
         
         try {
             localStorage.setItem('presenca_estado_backup', JSON.stringify(estado));
-            this.log('✅ [ESTADO] Estado salvo no localStorage');
+            this.log('[SUCCESS] [ESTADO] Estado salvo no localStorage');
         } catch (error) {
-            this.log('❌ [ESTADO] Erro ao salvar estado:', error);
+            this.log('[ERROR] [ESTADO] Erro ao salvar estado:', error);
         }
     },
     
     /**
-     * 🔄 RECUPERAR ESTADO APÓS RELOAD
+     * [RELOAD] RECUPERAR ESTADO APÓS RELOAD
      */
     recuperarEstadoAposReload: function() {
-        this.log('🔄 [ESTADO] Verificando se há estado para recuperar...');
+        this.log('[RELOAD] [ESTADO] Verificando se há estado para recuperar...');
         
         try {
             const estadoSalvo = localStorage.getItem('presenca_estado_backup');
             if (!estadoSalvo) {
-                this.log('ℹ️ [ESTADO] Nenhum estado salvo encontrado');
+                this.log('ℹ[EMOJI] [ESTADO] Nenhum estado salvo encontrado');
                 return false;
             }
             
@@ -2389,25 +2403,25 @@ window.PresencaManager = {
             
             // Só recupera se foi salvo há menos de 5 minutos
             if (tempoDecorrido > 5 * 60 * 1000) {
-                this.log('⏰ [ESTADO] Estado muito antigo, ignorando');
+                this.log('[TIME] [ESTADO] Estado muito antigo, ignorando');
                 localStorage.removeItem('presenca_estado_backup');
                 return false;
             }
             
             // Verifica se estamos na mesma URL
             if (estado.url !== window.location.href) {
-                this.log('🔗 [ESTADO] URL diferente, ignorando estado');
+                this.log('[LINK] [ESTADO] URL diferente, ignorando estado');
                 return false;
             }
             
-            this.log('🔄 [ESTADO] Recuperando estado...');
+            this.log('[RELOAD] [ESTADO] Recuperando estado...');
             this.presencasRegistradas = estado.presencasRegistradas || {};
             this.diasSelecionados = estado.diasSelecionados || {};
             this.convocadosIndividuais = estado.convocadosIndividuais || {};
             this.turmaId = estado.turmaId;
             
-            this.log('✅ [ESTADO] Estado recuperado com sucesso');
-            this.log('📊 [ESTADO] Dados recuperados:');
+            this.log('[SUCCESS] [ESTADO] Estado recuperado com sucesso');
+            this.log('[DATA] [ESTADO] Dados recuperados:');
             this.log('   presencasRegistradas:', Object.keys(this.presencasRegistradas).length, 'atividades');
             this.log('   diasSelecionados:', Object.keys(this.diasSelecionados).length, 'atividades');
             this.log('   convocadosIndividuais:', Object.keys(this.convocadosIndividuais).length, 'alunos');
@@ -2423,17 +2437,17 @@ window.PresencaManager = {
             return true;
             
         } catch (error) {
-            this.log('❌ [ESTADO] Erro ao recuperar estado:', error);
+            this.log('[ERROR] [ESTADO] Erro ao recuperar estado:', error);
             localStorage.removeItem('presenca_estado_backup');
             return false;
         }
     },
     
     /**
-     * 🎨 ATUALIZAR INTERFACE COM ESTADO RECUPERADO
+     * [UI] ATUALIZAR INTERFACE COM ESTADO RECUPERADO
      */
     atualizarInterfaceComEstadoRecuperado: function() {
-        this.log('🎨 [INTERFACE] Atualizando interface com estado recuperado...');
+        this.log('[UI] [INTERFACE] Atualizando interface com estado recuperado...');
         
         // Atualiza os calendários Flatpickr
         Object.keys(this.diasSelecionados).forEach(atividadeId => {
@@ -2447,7 +2461,7 @@ window.PresencaManager = {
                     const datas = dias.map(dia => new Date(ano, mes - 1, dia));
                     input._flatpickr.setDate(datas, true);
                     
-                    this.log(`📅 [INTERFACE] Calendário ${atividadeId} atualizado com dias: ${dias.join(', ')}`);
+                    this.log(`[CALENDAR] [INTERFACE] Calendário ${atividadeId} atualizado com dias: ${dias.join(', ')}`);
                 }
             }
         });
@@ -2455,18 +2469,18 @@ window.PresencaManager = {
         // Mostra mensagem de estado recuperado
         this.mostrarMensagem('Estado anterior recuperado! Seus dados foram preservados.', 'info');
         
-        this.log('✅ [INTERFACE] Interface atualizada com estado recuperado');
+        this.log('[SUCCESS] [INTERFACE] Interface atualizada com estado recuperado');
     }
 };
 
 /**
- * � FUNÇÕES GLOBAIS DE DEBUG PARA CONSOLE (continuação)
+ * [EMOJI] FUNÇÕES GLOBAIS DE DEBUG PARA CONSOLE (continuação)
  */
 window.debugarFormulario = function() {
     if (window.PresencaApp) {
         return window.PresencaApp.debugarFormulario();
     } else {
-        console.log('❌ PresencaApp não está disponível');
+        console.log('[ERROR] PresencaApp não está disponível');
         return null;
     }
 };
@@ -2474,14 +2488,14 @@ window.debugarFormulario = function() {
 window.verificarDadosFormulario = function() {
     const form = document.getElementById('form-presenca');
     if (!form) {
-        console.log('❌ Formulário não encontrado');
+        console.log('[ERROR] Formulário não encontrado');
         return;
     }
     
-    console.log('🔍 Verificando dados do formulário...');
+    console.log('[SEARCH] Verificando dados do formulário...');
     const formData = new FormData(form);
     
-    console.log('📝 Todos os dados do formulário:');
+    console.log('[FORM] Todos os dados do formulário:');
     for (let [key, value] of formData.entries()) {
         console.log(`   ${key}: ${value}`);
     }
@@ -2490,11 +2504,11 @@ window.verificarDadosFormulario = function() {
 };
 
 /**
- * �🚀 AUTO-INICIALIZAÇÃO QUANDO DOM ESTIVER PRONTO
+ * [EMOJI][SEND] AUTO-INICIALIZAÇÃO QUANDO DOM ESTIVER PRONTO
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔥 [CRITICAL] DOMContentLoaded disparado!');
-    console.log('🔥 [CRITICAL] Estado atual do window:', {
+    console.log('[DEBUG] [CRITICAL] DOMContentLoaded disparado!');
+    console.log('[DEBUG] [CRITICAL] Estado atual do window:', {
         PresencaManager: !!window.PresencaManager,
         PresencaApp: !!window.PresencaApp,
         flatpickr: !!window.flatpickr
@@ -2502,21 +2516,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // DETECTA MÚLTIPLAS INSTÂNCIAS
     if (window.__presencaManagerInitialized) {
-        console.error('❌ [CRITICAL] PresencaManager já foi inicializado! Possível carregamento duplo!');
+        console.error('[ERROR] [CRITICAL] PresencaManager já foi inicializado! Possível carregamento duplo!');
         return;
     }
     window.__presencaManagerInitialized = true;
     
     // Aguarda um pouco para garantir que outros scripts carregaram
     setTimeout(() => {
-        console.log('🔥 [CRITICAL] Inicializando PresencaManager...');
+        console.log('[DEBUG] [CRITICAL] Inicializando PresencaManager...');
         window.PresencaManager.init();
-        console.log('🔥 [CRITICAL] PresencaManager inicializado!');
+        console.log('[DEBUG] [CRITICAL] PresencaManager inicializado!');
     }, 100);
 });
 
 /**
- * 🌐 FUNÇÕES GLOBAIS PARA COMPATIBILIDADE COM O TEMPLATE
+ * [EMOJI] FUNÇÕES GLOBAIS PARA COMPATIBILIDADE COM O TEMPLATE
  */
 
 // Função global para fechar modal (compatibilidade)
@@ -2540,14 +2554,14 @@ window.PresencaApp = {
     get diaAtual() { return window.PresencaManager.diaAtual; }
 };
 
-console.log('🚀 PresencaManager carregado - Arquitetura Simplificada Ativa!');
+console.log('[SEND] PresencaManager carregado - Arquitetura Simplificada Ativa!');
 
 // MONITOR DE ESTADO DO MODAL (DEBUG CRÍTICO)
 window.DebugPresenca = {
     monitorar: function() {
         const modal = document.getElementById('presencaModal');
         if (!modal) {
-            console.log('🔍 [MONITOR] Modal não encontrado');
+            console.log('[SEARCH] [MONITOR] Modal não encontrado');
             return;
         }
         
@@ -2564,15 +2578,15 @@ window.DebugPresenca = {
             }
         };
         
-        console.log('🔍 [MONITOR] Estado do modal:', estado);
+        console.log('[SEARCH] [MONITOR] Estado do modal:', estado);
         return estado;
     },
     
     forcarFechar: function() {
-        console.log('🔧 [FORCE] Forçando fechamento do modal...');
+        console.log('[FIX] [FORCE] Forçando fechamento do modal...');
         const modal = document.getElementById('presencaModal');
         if (modal) {
-            console.log('📊 [FORCE] Estado ANTES:', {
+            console.log('[DATA] [FORCE] Estado ANTES:', {
                 display: modal.style.display,
                 classes: modal.className,
                 visibility: modal.style.visibility
@@ -2602,7 +2616,7 @@ window.DebugPresenca = {
                 window.PresencaManager.diaAtual = null;
             }
             
-            console.log('� [FORCE] Estado DEPOIS:', {
+            console.log('[EMOJI] [FORCE] Estado DEPOIS:', {
                 display: modal.style.display,
                 classes: modal.className,
                 visibility: modal.style.visibility,
@@ -2610,20 +2624,20 @@ window.DebugPresenca = {
                 zIndex: modal.style.zIndex
             });
             
-            console.log('✅ [FORCE] Modal fechado à força!');
+            console.log('[SUCCESS] [FORCE] Modal fechado à força!');
         } else {
-            console.log('❌ [FORCE] Modal não encontrado!');
+            console.log('[ERROR] [FORCE] Modal não encontrado!');
         }
     },
     
     destruirModal: function() {
-        console.log('💥 [DESTROY] DESTRUINDO modal completamente...');
+        console.log('[EMOJI] [DESTROY] DESTRUINDO modal completamente...');
         const modal = document.getElementById('presencaModal');
         if (modal) {
             // Salva o HTML para poder recriar depois se necessário
             window._modalHTML = modal.outerHTML;
             modal.remove();
-            console.log('💥 [DESTROY] Modal REMOVIDO do DOM!');
+            console.log('[EMOJI] [DESTROY] Modal REMOVIDO do DOM!');
             
             // Limpa estado do PresencaManager
             if (window.PresencaManager) {
@@ -2632,24 +2646,24 @@ window.DebugPresenca = {
             }
             
             document.body.classList.remove('modal-open');
-            console.log('✅ [DESTROY] Modal destruído com sucesso!');
+            console.log('[SUCCESS] [DESTROY] Modal destruído com sucesso!');
         } else {
-            console.log('❌ [DESTROY] Modal não encontrado!');
+            console.log('[ERROR] [DESTROY] Modal não encontrado!');
         }
     },
     
     recriarModal: function() {
-        console.log('🔨 [RECREATE] Recriando modal...');
+        console.log('[EMOJI] [RECREATE] Recriando modal...');
         if (window._modalHTML) {
             document.body.insertAdjacentHTML('beforeend', window._modalHTML);
-            console.log('✅ [RECREATE] Modal recriado!');
+            console.log('[SUCCESS] [RECREATE] Modal recriado!');
         } else {
-            console.log('❌ [RECREATE] HTML do modal não foi salvo!');
+            console.log('[ERROR] [RECREATE] HTML do modal não foi salvo!');
         }
     },
     
     emergencia: function() {
-        console.log('🚨 [EMERGENCY] EXECUTANDO PROTOCOLO DE EMERGÊNCIA!');
+        console.log('[EMOJI] [EMERGENCY] EXECUTANDO PROTOCOLO DE EMERGÊNCIA!');
         
         // Etapa 1: Força fechamento
         this.forcarFechar();
@@ -2661,17 +2675,17 @@ window.DebugPresenca = {
         setTimeout(() => {
             const modal = document.getElementById('presencaModal');
             if (modal && modal.style.display !== 'none') {
-                console.log('🚨 [EMERGENCY] Modal ainda aberto! DESTRUINDO...');
+                console.log('[EMOJI] [EMERGENCY] Modal ainda aberto! DESTRUINDO...');
                 this.destruirModal();
             }
         }, 100);
         
-        console.log('✅ [EMERGENCY] Protocolo de emergência executado!');
+        console.log('[SUCCESS] [EMERGENCY] Protocolo de emergência executado!');
     },
     
     verificarSetTimeouts: function() {
-        console.log('⏰ [DEBUG] Verificando setTimeouts ativos...');
-        console.log('⏰ [DEBUG] Note: Esta funcionalidade requer ferramentas avançadas de debug');
+        console.log('[TIME] [DEBUG] Verificando setTimeouts ativos...');
+        console.log('[TIME] [DEBUG] Note: Esta funcionalidade requer ferramentas avançadas de debug');
         // Não há uma forma nativa de listar todos os setTimeouts ativos
         // Mas podemos verificar se há algum conflito
         
@@ -2679,25 +2693,25 @@ window.DebugPresenca = {
         for (let i = 1; i < 10000; i++) {
             clearTimeout(i);
         }
-        console.log('🧹 [DEBUG] Limpeza de setTimeouts concluída');
+        console.log('[CLEAN] [DEBUG] Limpeza de setTimeouts concluída');
     },
     
     verificarCalendarios: function() {
-        console.log('📅 [DEBUG] === DIAGNÓSTICO DE CALENDÁRIOS ===');
+        console.log('[CALENDAR] [DEBUG] === DIAGNÓSTICO DE CALENDÁRIOS ===');
         
         // Verifica se Flatpickr está carregado
-        console.log('📦 [DEBUG] Flatpickr carregado:', typeof flatpickr !== 'undefined');
+        console.log('[EMOJI] [DEBUG] Flatpickr carregado:', typeof flatpickr !== 'undefined');
         
         // Verifica inputs
         const inputs = document.querySelectorAll('.dias-datepicker');
-        console.log('🔍 [DEBUG] Inputs .dias-datepicker encontrados:', inputs.length);
+        console.log('[SEARCH] [DEBUG] Inputs .dias-datepicker encontrados:', inputs.length);
         
         inputs.forEach((input, index) => {
             const atividadeId = input.dataset.atividade;
             const maxDias = input.dataset.maxdias;
             const temFlatpickr = !!input._flatpickr;
             
-            console.log(`📅 [DEBUG] Input ${index}:`, {
+            console.log(`[CALENDAR] [DEBUG] Input ${index}:`, {
                 id: input.id,
                 atividade: atividadeId,
                 maxDias: maxDias,
@@ -2710,7 +2724,7 @@ window.DebugPresenca = {
             
             // Verifica ícone
             const icon = input.parentElement?.querySelector('.calendar-icon');
-            console.log(`🔍 [DEBUG] Ícone ${index}:`, {
+            console.log(`[SEARCH] [DEBUG] Ícone ${index}:`, {
                 encontrado: !!icon,
                 classes: icon?.className,
                 style: icon?.style.cssText
@@ -2723,49 +2737,49 @@ window.DebugPresenca = {
             if (PresencaManager && PresencaManager.reabrirCalendarioAutomaticamente) {
                 PresencaManager.reabrirCalendarioAutomaticamente(atividadeId);
             } else {
-                console.log('❌ [TEST] PresencaManager não disponível');
+                console.log('[ERROR] [TEST] PresencaManager não disponível');
             }
         };
         
         // Função de emergência para reabrir calendário da última atividade
         window.reabrirUltimoCalendario = function() {
-            console.log('🚨 [EMERGENCY] Tentando reabrir último calendário...');
+            console.log('[EMOJI] [EMERGENCY] Tentando reabrir último calendário...');
             
             // Tenta extrair da variável global atividadesData
             if (typeof window.atividadesData !== 'undefined') {
                 const atividades = Object.keys(window.atividadesData);
-                console.log('🔍 [EMERGENCY] Atividades disponíveis:', atividades);
+                console.log('[SEARCH] [EMERGENCY] Atividades disponíveis:', atividades);
                 
                 if (atividades.length > 0) {
                     // Pega a primeira atividade como fallback
                     const atividadeId = atividades[0];
-                    console.log('🎯 [EMERGENCY] Usando atividade:', atividadeId);
+                    console.log('[TARGET] [EMERGENCY] Usando atividade:', atividadeId);
                     if (PresencaManager && PresencaManager.reabrirCalendarioAutomaticamente) {
                         PresencaManager.reabrirCalendarioAutomaticamente(atividadeId);
                     }
                 } else {
-                    console.log('❌ [EMERGENCY] Nenhuma atividade encontrada');
+                    console.log('[ERROR] [EMERGENCY] Nenhuma atividade encontrada');
                 }
             } else {
-                console.log('❌ [EMERGENCY] atividadesData não disponível');
+                console.log('[ERROR] [EMERGENCY] atividadesData não disponível');
             }
         };
         
         console.log('🧪 [DEBUG] Função de teste criada: testarReaberturaCalendario(atividadeId)');
-        console.log('🚨 [DEBUG] Função de emergência criada: reabrirUltimoCalendario()');
-        console.log('💡 [DEBUG] Exemplo de uso: testarReaberturaCalendario(3)');
-        console.log('📅 [DEBUG] === FIM DIAGNÓSTICO ===');
+        console.log('[EMOJI] [DEBUG] Função de emergência criada: reabrirUltimoCalendario()');
+        console.log('[TIP] [DEBUG] Exemplo de uso: testarReaberturaCalendario(3)');
+        console.log('[CALENDAR] [DEBUG] === FIM DIAGNÓSTICO ===');
     }
 };
 
 // DISPONIBILIZA IMEDIATAMENTE
-console.log('🔍 [MONITOR] DebugPresenca disponível IMEDIATAMENTE!');
-console.log('� [EMERGENCY] Use DebugPresenca.emergencia() para PROTOCOLO DE EMERGÊNCIA!');
-console.log('�🔧 [FORCE] Use DebugPresenca.forcarFechar() para forçar fechamento BRUTAL!');
-console.log('💥 [DESTROY] Use DebugPresenca.destruirModal() para REMOVER modal do DOM!');
-console.log('🔨 [RECREATE] Use DebugPresenca.recriarModal() para recriar modal!');
-console.log('⏰ [DEBUG] Use DebugPresenca.verificarSetTimeouts() para limpar timeouts!');
-console.log('📅 [CALENDAR] Use DebugPresenca.verificarCalendarios() para diagnosticar calendários!');
+console.log('[SEARCH] [MONITOR] DebugPresenca disponível IMEDIATAMENTE!');
+console.log('[EMOJI] [EMERGENCY] Use DebugPresenca.emergencia() para PROTOCOLO DE EMERGÊNCIA!');
+console.log('[EMOJI][FIX] [FORCE] Use DebugPresenca.forcarFechar() para forçar fechamento BRUTAL!');
+console.log('[EMOJI] [DESTROY] Use DebugPresenca.destruirModal() para REMOVER modal do DOM!');
+console.log('[EMOJI] [RECREATE] Use DebugPresenca.recriarModal() para recriar modal!');
+console.log('[TIME] [DEBUG] Use DebugPresenca.verificarSetTimeouts() para limpar timeouts!');
+console.log('[CALENDAR] [CALENDAR] Use DebugPresenca.verificarCalendarios() para diagnosticar calendários!');
 
 // 🧪 FUNÇÕES GLOBAIS DE TESTE (disponíveis no console)
 window.testarReaberturaCalendario = function(atividadeId) {
@@ -2773,35 +2787,35 @@ window.testarReaberturaCalendario = function(atividadeId) {
     if (window.PresencaManager && window.PresencaManager.reabrirCalendarioAutomaticamente) {
         window.PresencaManager.reabrirCalendarioAutomaticamente(atividadeId);
     } else {
-        console.log('❌ [TEST] PresencaManager não disponível');
+        console.log('[ERROR] [TEST] PresencaManager não disponível');
     }
 };
 
 window.reabrirUltimoCalendario = function() {
-    console.log('🚨 [EMERGENCY] Tentando reabrir último calendário...');
+    console.log('[EMOJI] [EMERGENCY] Tentando reabrir último calendário...');
     
     // Tenta extrair da variável global atividadesData
     if (typeof window.atividadesData !== 'undefined') {
         const atividades = Object.keys(window.atividadesData);
-        console.log('🔍 [EMERGENCY] Atividades disponíveis:', atividades);
+        console.log('[SEARCH] [EMERGENCY] Atividades disponíveis:', atividades);
         
         if (atividades.length > 0) {
             // Pega a primeira atividade como fallback
             const atividadeId = atividades[0];
-            console.log('🎯 [EMERGENCY] Usando atividade:', atividadeId);
+            console.log('[TARGET] [EMERGENCY] Usando atividade:', atividadeId);
             if (window.PresencaManager && window.PresencaManager.reabrirCalendarioAutomaticamente) {
                 window.PresencaManager.reabrirCalendarioAutomaticamente(atividadeId);
             }
         } else {
-            console.log('❌ [EMERGENCY] Nenhuma atividade encontrada');
+            console.log('[ERROR] [EMERGENCY] Nenhuma atividade encontrada');
         }
     } else {
-        console.log('❌ [EMERGENCY] atividadesData não disponível');
+        console.log('[ERROR] [EMERGENCY] atividadesData não disponível');
     }
 };
 
 window.debugarEstadoPresenca = function() {
-    console.log('🔍 [DEBUG] === ESTADO ATUAL DO PRESENCA MANAGER ===');
+    console.log('[SEARCH] [DEBUG] === ESTADO ATUAL DO PRESENCA MANAGER ===');
     console.log('PresencaManager disponível:', !!window.PresencaManager);
     
     if (window.PresencaManager) {
@@ -2836,16 +2850,16 @@ window.debugarEstadoPresenca = function() {
         });
     }
     
-    console.log('🔍 [DEBUG] === FIM DEBUG ===');
+    console.log('[SEARCH] [DEBUG] === FIM DEBUG ===');
 };
 
 // Expõe as funções
 console.log('🧪 [SETUP] Funções de teste GLOBAIS disponíveis:');
-console.log('✅ testarReaberturaCalendario(atividadeId)');
-console.log('✅ reabrirUltimoCalendario()');
-console.log('✅ debugarEstadoPresenca()');
-console.log('✅ estabilizarCalendario(atividadeId) - NOVO!');
-console.log('✅ diagnosticarSistema() - DIAGNÓSTICO COMPLETO!');
+console.log('[SUCCESS] testarReaberturaCalendario(atividadeId)');
+console.log('[SUCCESS] reabrirUltimoCalendario()');
+console.log('[SUCCESS] debugarEstadoPresenca()');
+console.log('[SUCCESS] estabilizarCalendario(atividadeId) - NOVO!');
+console.log('[SUCCESS] diagnosticarSistema() - DIAGNÓSTICO COMPLETO!');
 
 // 🧪 FUNÇÃO DE TESTE: Simular dados para teste
 window.simularDadosParaTeste = function() {
@@ -2853,7 +2867,7 @@ window.simularDadosParaTeste = function() {
     
     const pm = window.PresencaManager;
     if (!pm) {
-        console.log('❌ [TESTE] PresencaManager não encontrado');
+        console.log('[ERROR] [TESTE] PresencaManager não encontrado');
         return;
     }
     
@@ -2877,9 +2891,9 @@ window.simularDadosParaTeste = function() {
         }
     };
     
-    console.log('✅ [TESTE] Dados simulados adicionados');
-    console.log('📊 [TESTE] diasSelecionados:', pm.diasSelecionados);
-    console.log('📊 [TESTE] presencasRegistradas:', pm.presencasRegistradas);
+    console.log('[SUCCESS] [TESTE] Dados simulados adicionados');
+    console.log('[DATA] [TESTE] diasSelecionados:', pm.diasSelecionados);
+    console.log('[DATA] [TESTE] presencasRegistradas:', pm.presencasRegistradas);
     
     // Atualiza os calendários visuais
     Object.keys(pm.diasSelecionados).forEach(atividadeId => {
@@ -2890,25 +2904,25 @@ window.simularDadosParaTeste = function() {
             const mes = window.mes || new Date().getMonth() + 1;
             const datas = dias.map(dia => new Date(ano, mes - 1, dia));
             input._flatpickr.setDate(datas, true);
-            console.log(`📅 [TESTE] Calendário atualizado para atividade ${atividadeId}`);
+            console.log(`[CALENDAR] [TESTE] Calendário atualizado para atividade ${atividadeId}`);
         }
     });
     
     console.log('🧪 [TESTE] Agora você pode tentar "Finalizar Registro"');
 };
 
-// 🆘 FUNÇÃO DE EMERGÊNCIA PARA ESTABILIZAR CALENDÁRIO
+// [EMOJI] FUNÇÃO DE EMERGÊNCIA PARA ESTABILIZAR CALENDÁRIO
 window.estabilizarCalendario = function(atividadeId) {
-    console.log('🆘 [ESTABILIZAR] Forçando estabilização do calendário para atividade:', atividadeId);
+    console.log('[EMOJI] [ESTABILIZAR] Forçando estabilização do calendário para atividade:', atividadeId);
     
     if (!atividadeId) {
-        console.log('❌ [ESTABILIZAR] ID da atividade é obrigatório');
+        console.log('[ERROR] [ESTABILIZAR] ID da atividade é obrigatório');
         return;
     }
     
     const input = document.getElementById(`dias-atividade-${atividadeId}`);
     if (!input || !input._flatpickr) {
-        console.log('❌ [ESTABILIZAR] Input ou Flatpickr não encontrado');
+        console.log('[ERROR] [ESTABILIZAR] Input ou Flatpickr não encontrado');
         return;
     }
     
@@ -2916,60 +2930,60 @@ window.estabilizarCalendario = function(atividadeId) {
     
     // Força fechamento se estiver aberto
     if (flatpickr.isOpen) {
-        console.log('🔧 [ESTABILIZAR] Fechando calendário...');
+        console.log('[FIX] [ESTABILIZAR] Fechando calendário...');
         flatpickr.close();
     }
     
     // Aguarda e reabre
     setTimeout(() => {
-        console.log('🔧 [ESTABILIZAR] Reabrindo calendário...');
+        console.log('[FIX] [ESTABILIZAR] Reabrindo calendário...');
         flatpickr.open();
         
         // Força foco
         setTimeout(() => {
             input.focus();
-            console.log('✅ [ESTABILIZAR] Calendário estabilizado');
+            console.log('[SUCCESS] [ESTABILIZAR] Calendário estabilizado');
         }, 200);
     }, 300);
     
     // Libera qualquer bloqueio de salvamento
     if (window.PresencaManager) {
         window.PresencaManager._processandoSalvamento = false;
-        console.log('🔓 [ESTABILIZAR] Flag de salvamento liberada');
+        console.log('[EMOJI] [ESTABILIZAR] Flag de salvamento liberada');
     }
 };
 
-// 🔧 FUNÇÃO DE DIAGNÓSTICO COMPLETO
+// [FIX] FUNÇÃO DE DIAGNÓSTICO COMPLETO
 window.diagnosticarSistema = function() {
-    console.log('🔧 [DIAGNÓSTICO] ================================');
-    console.log('🔧 [DIAGNÓSTICO] SISTEMA COMPLETO');
-    console.log('🔧 [DIAGNÓSTICO] ================================');
+    console.log('[FIX] [DIAGNÓSTICO] ================================');
+    console.log('[FIX] [DIAGNÓSTICO] SISTEMA COMPLETO');
+    console.log('[FIX] [DIAGNÓSTICO] ================================');
     
     if (!window.PresencaManager) {
-        console.log('❌ [DIAGNÓSTICO] PresencaManager não encontrado!');
+        console.log('[ERROR] [DIAGNÓSTICO] PresencaManager não encontrado!');
         return;
     }
     
     const pm = window.PresencaManager;
     
-    console.log('📊 [DIAGNÓSTICO] Estado atual:');
+    console.log('[DATA] [DIAGNÓSTICO] Estado atual:');
     console.log('   - alunosData:', pm.alunosData.length, 'alunos');
     console.log('   - presencasRegistradas:', Object.keys(pm.presencasRegistradas).length, 'atividades');
     console.log('   - diasSelecionados:', Object.keys(pm.diasSelecionados).length, 'atividades');
     console.log('   - convocadosIndividuais:', Object.keys(pm.convocadosIndividuais).length, 'alunos');
     
-    console.log('📋 [DIAGNÓSTICO] Dados detalhados:');
+    console.log('[LIST] [DIAGNÓSTICO] Dados detalhados:');
     console.log('   presencasRegistradas:', JSON.stringify(pm.presencasRegistradas, null, 2));
     console.log('   diasSelecionados:', JSON.stringify(pm.diasSelecionados, null, 2));
     console.log('   convocadosIndividuais:', JSON.stringify(pm.convocadosIndividuais, null, 2));
     
     // Verifica formulário
     const form = document.getElementById('form-presenca');
-    console.log('📝 [DIAGNÓSTICO] Formulário encontrado:', !!form);
+    console.log('[FORM] [DIAGNÓSTICO] Formulário encontrado:', !!form);
     
     if (form) {
         const camposHidden = form.querySelectorAll('input[type="hidden"]');
-        console.log('📝 [DIAGNÓSTICO] Campos hidden no formulário:', camposHidden.length);
+        console.log('[FORM] [DIAGNÓSTICO] Campos hidden no formulário:', camposHidden.length);
         camposHidden.forEach(campo => {
             console.log(`   - ${campo.name}: ${campo.value.substring(0, 100)}...`);
         });
@@ -2977,7 +2991,7 @@ window.diagnosticarSistema = function() {
     
     // Verifica calendários
     const calendarios = document.querySelectorAll('.dias-datepicker');
-    console.log('📅 [DIAGNÓSTICO] Calendários encontrados:', calendarios.length);
+    console.log('[CALENDAR] [DIAGNÓSTICO] Calendários encontrados:', calendarios.length);
     calendarios.forEach((input, idx) => {
         const atividadeId = input.dataset.atividade;
         const temFlatpickr = !!input._flatpickr;
@@ -2985,8 +2999,8 @@ window.diagnosticarSistema = function() {
         console.log(`   [${idx}] Atividade ${atividadeId}: Flatpickr=${temFlatpickr}, Valor="${valor}"`);
     });
     
-    // 🎯 ANÁLISE DE PROBLEMAS ESPECÍFICOS
-    console.log('🎯 [DIAGNÓSTICO] Análise de Problemas:');
+    // [TARGET] ANÁLISE DE PROBLEMAS ESPECÍFICOS
+    console.log('[TARGET] [DIAGNÓSTICO] Análise de Problemas:');
     const problemas = [];
     
     Object.keys(pm.diasSelecionados).forEach(atividadeId => {
@@ -2994,7 +3008,7 @@ window.diagnosticarSistema = function() {
         const presencasAtividade = pm.presencasRegistradas[atividadeId] || {};
         const nomeAtividade = pm.obterNomeAtividade ? pm.obterNomeAtividade(atividadeId) : `Atividade ${atividadeId}`;
         
-        console.log(`   📋 ${nomeAtividade}:`);
+        console.log(`   [LIST] ${nomeAtividade}:`);
         console.log(`      Dias selecionados: [${diasSelecionados.join(', ')}]`);
         
         diasSelecionados.forEach(dia => {
@@ -3002,29 +3016,29 @@ window.diagnosticarSistema = function() {
             if (!presencasDia || Object.keys(presencasDia).length === 0) {
                 const problema = `${nomeAtividade}: Dia ${dia} selecionado mas SEM PRESENÇAS marcadas`;
                 problemas.push(problema);
-                console.log(`      ❌ Dia ${dia}: SEM PRESENÇAS MARCADAS`);
-                console.log(`      💡 SOLUÇÃO: Clique no dia ${dia} azul no calendário para marcar presenças`);
+                console.log(`      [ERROR] Dia ${dia}: SEM PRESENÇAS MARCADAS`);
+                console.log(`      [TIP] SOLUÇÃO: Clique no dia ${dia} azul no calendário para marcar presenças`);
             } else {
-                console.log(`      ✅ Dia ${dia}: ${Object.keys(presencasDia).length} presenças registradas`);
+                console.log(`      [SUCCESS] Dia ${dia}: ${Object.keys(presencasDia).length} presenças registradas`);
             }
         });
     });
     
     if (problemas.length > 0) {
-        console.log('⚠️ [DIAGNÓSTICO] PROBLEMAS ENCONTRADOS:');
+        console.log('[WARNING] [DIAGNÓSTICO] PROBLEMAS ENCONTRADOS:');
         problemas.forEach((problema, idx) => {
             console.log(`   ${idx + 1}. ${problema}`);
         });
-        console.log('💡 [DIAGNÓSTICO] Use resolverTravamento() para corrigir automaticamente');
+        console.log('[TIP] [DIAGNÓSTICO] Use resolverTravamento() para corrigir automaticamente');
     } else {
-        console.log('✅ [DIAGNÓSTICO] Nenhum problema encontrado!');
+        console.log('[SUCCESS] [DIAGNÓSTICO] Nenhum problema encontrado!');
     }
     
-    console.log('🔧 [DIAGNÓSTICO] ================================');
-    console.log('📋 [DIAGNÓSTICO] Para testar envio: window.PresencaManager.debugarFormulario()');
-    console.log('📋 [DIAGNÓSTICO] Para verificar resumo: window.PresencaManager.gerarResumoFinalizacao()');
-    console.log('🎯 [DIAGNÓSTICO] Para resolver problemas: resolverTravamento()');
-    console.log('🔧 [DIAGNÓSTICO] ================================');
+    console.log('[FIX] [DIAGNÓSTICO] ================================');
+    console.log('[LIST] [DIAGNÓSTICO] Para testar envio: window.PresencaManager.debugarFormulario()');
+    console.log('[LIST] [DIAGNÓSTICO] Para verificar resumo: window.PresencaManager.gerarResumoFinalizacao()');
+    console.log('[TARGET] [DIAGNÓSTICO] Para resolver problemas: resolverTravamento()');
+    console.log('[FIX] [DIAGNÓSTICO] ================================');
     
     return {
         problemas: problemas,
@@ -3033,33 +3047,33 @@ window.diagnosticarSistema = function() {
     };
 };
 
-// 🎯 FUNÇÃO PARA RESOLVER TRAVAMENTOS
+// [TARGET] FUNÇÃO PARA RESOLVER TRAVAMENTOS
 window.resolverTravamento = function() {
-    console.log('🎯 [RESOLVER] ================================');
-    console.log('🎯 [RESOLVER] DETECTANDO E RESOLVENDO TRAVAMENTOS');
-    console.log('🎯 [RESOLVER] ================================');
+    console.log('[TARGET] [RESOLVER] ================================');
+    console.log('[TARGET] [RESOLVER] DETECTANDO E RESOLVENDO TRAVAMENTOS');
+    console.log('[TARGET] [RESOLVER] ================================');
     
     const PM = window.PresencaManager;
     if (!PM) {
-        console.log('❌ [RESOLVER] PresencaManager não encontrado');
+        console.log('[ERROR] [RESOLVER] PresencaManager não encontrado');
         return false;
     }
     
     // 1. Fecha qualquer modal aberto
     const modal = document.getElementById('presencaModal');
     if (modal && modal.style.display !== 'none') {
-        console.log('🚪 [RESOLVER] Fechando modal aberto...');
+        console.log('[CLOSE] [RESOLVER] Fechando modal aberto...');
         PM.fecharModal();
     }
     
     // 2. Reset estado interno
-    console.log('🔄 [RESOLVER] Resetando estado interno...');
+    console.log('[RELOAD] [RESOLVER] Resetando estado interno...');
     PM.atividadeAtual = null;
     PM.diaAtual = null;
     PM._processandoSalvamento = false;
     
     // 3. Verifica e corrige Flatpickr
-    console.log('📅 [RESOLVER] Verificando calendários...');
+    console.log('[CALENDAR] [RESOLVER] Verificando calendários...');
     const inputs = document.querySelectorAll('.dias-datepicker');
     let calendáriosCorrigidos = 0;
     
@@ -3068,17 +3082,17 @@ window.resolverTravamento = function() {
             try {
                 if (input._flatpickr.isOpen) {
                     input._flatpickr.close();
-                    console.log(`📅 [RESOLVER] Calendário ${input.id} fechado`);
+                    console.log(`[CALENDAR] [RESOLVER] Calendário ${input.id} fechado`);
                 }
                 calendáriosCorrigidos++;
             } catch (error) {
-                console.log(`❌ [RESOLVER] Erro no calendário ${input.id}:`, error);
+                console.log(`[ERROR] [RESOLVER] Erro no calendário ${input.id}:`, error);
             }
         }
     });
     
     // 4. Detecta dias selecionados sem presenças
-    console.log('🔍 [RESOLVER] Detectando problemas específicos...');
+    console.log('[SEARCH] [RESOLVER] Detectando problemas específicos...');
     const problemas = [];
     
     Object.keys(PM.diasSelecionados).forEach(atividadeId => {
@@ -3100,12 +3114,12 @@ window.resolverTravamento = function() {
     });
     
     if (problemas.length > 0) {
-        console.log('⚠️ [RESOLVER] Problemas detectados:');
+        console.log('[WARNING] [RESOLVER] Problemas detectados:');
         problemas.forEach((problema, idx) => {
             console.log(`   ${idx + 1}. ${problema.nome}: Dia ${problema.dia} sem presenças`);
         });
         
-        console.log('💡 [RESOLVER] INSTRUÇÕES PARA RESOLVER:');
+        console.log('[TIP] [RESOLVER] INSTRUÇÕES PARA RESOLVER:');
         problemas.forEach((problema, idx) => {
             console.log(`   ${idx + 1}. Clique no dia ${problema.dia} azul no calendário da atividade "${problema.nome}"`);
             console.log(`      (Input ID: ${problema.inputId})`);
@@ -3117,7 +3131,7 @@ window.resolverTravamento = function() {
             if (inputProblema) {
                 inputProblema.style.border = '3px solid #ff4444';
                 inputProblema.style.animation = 'pulse 1s infinite';
-                console.log(`🎯 [RESOLVER] Destacando visualmente o calendário "${problemas[0].inputId}"`);
+                console.log(`[TARGET] [RESOLVER] Destacando visualmente o calendário "${problemas[0].inputId}"`);
                 
                 // Remove destaque após 10 segundos
                 setTimeout(() => {
@@ -3127,13 +3141,13 @@ window.resolverTravamento = function() {
             }
         }
     } else {
-        console.log('✅ [RESOLVER] Nenhum problema detectado');
+        console.log('[SUCCESS] [RESOLVER] Nenhum problema detectado');
     }
     
-    console.log('🎯 [RESOLVER] ================================');
-    console.log(`✅ [RESOLVER] Sistema estabilizado (${calendáriosCorrigidos} calendários processados)`);
-    console.log(`📊 [RESOLVER] Problemas detectados: ${problemas.length}`);
-    console.log('🎯 [RESOLVER] ================================');
+    console.log('[TARGET] [RESOLVER] ================================');
+    console.log(`[SUCCESS] [RESOLVER] Sistema estabilizado (${calendáriosCorrigidos} calendários processados)`);
+    console.log(`[DATA] [RESOLVER] Problemas detectados: ${problemas.length}`);
+    console.log('[TARGET] [RESOLVER] ================================');
     
     return {
         sucesso: true,
@@ -3142,31 +3156,31 @@ window.resolverTravamento = function() {
     };
 };
 
-// 🔍 FUNÇÃO PARA VERIFICAR SE OS DADOS FORAM REALMENTE ENVIADOS
+// [SEARCH] FUNÇÃO PARA VERIFICAR SE OS DADOS FORAM REALMENTE ENVIADOS
 window.verificarEnvioRealizado = function() {
-    console.log('🔍 [VERIFICAR] ================================');
-    console.log('🔍 [VERIFICAR] VERIFICANDO SE DADOS FORAM ENVIADOS');
-    console.log('🔍 [VERIFICAR] ================================');
+    console.log('[SEARCH] [VERIFICAR] ================================');
+    console.log('[SEARCH] [VERIFICAR] VERIFICANDO SE DADOS FORAM ENVIADOS');
+    console.log('[SEARCH] [VERIFICAR] ================================');
     
     // Verifica se há mensagem de erro na página
     const mensagemErro = document.querySelector('.alert-warning');
     const temErroPresenca = mensagemErro && mensagemErro.textContent.includes('Nenhuma presença foi registrada');
     
     if (temErroPresenca) {
-        console.log('❌ [VERIFICAR] CONFIRMADO: Dados NÃO foram gravados no Django');
-        console.log('❌ [VERIFICAR] Mensagem de erro encontrada:', mensagemErro.textContent.trim());
+        console.log('[ERROR] [VERIFICAR] CONFIRMADO: Dados NÃO foram gravados no Django');
+        console.log('[ERROR] [VERIFICAR] Mensagem de erro encontrada:', mensagemErro.textContent.trim());
         
         // Verifica se há estado no localStorage
         const estadoSalvo = localStorage.getItem('presenca_estado_backup');
         if (estadoSalvo) {
-            console.log('💾 [VERIFICAR] Estado encontrado no localStorage');
+            console.log('[SAVE] [VERIFICAR] Estado encontrado no localStorage');
             const estado = JSON.parse(estadoSalvo);
-            console.log('📊 [VERIFICAR] Dados no localStorage:');
+            console.log('[DATA] [VERIFICAR] Dados no localStorage:');
             console.log('   presencasRegistradas:', Object.keys(estado.presencasRegistradas || {}).length, 'atividades');
             console.log('   diasSelecionados:', Object.keys(estado.diasSelecionados || {}).length, 'atividades');
             console.log('   convocadosIndividuais:', Object.keys(estado.convocadosIndividuais || {}).length, 'alunos');
             
-            console.log('🔄 [VERIFICAR] Recuperando estado automaticamente...');
+            console.log('[RELOAD] [VERIFICAR] Recuperando estado automaticamente...');
             window.PresencaManager.recuperarEstadoAposReload();
             
             return {
@@ -3184,8 +3198,8 @@ window.verificarEnvioRealizado = function() {
             };
         }
     } else {
-        console.log('✅ [VERIFICAR] Nenhuma mensagem de erro encontrada');
-        console.log('✅ [VERIFICAR] Possivelmente os dados foram enviados com sucesso');
+        console.log('[SUCCESS] [VERIFICAR] Nenhuma mensagem de erro encontrada');
+        console.log('[SUCCESS] [VERIFICAR] Possivelmente os dados foram enviados com sucesso');
         
         // Limpa qualquer estado salvo
         localStorage.removeItem('presenca_estado_backup');
@@ -3197,7 +3211,7 @@ window.verificarEnvioRealizado = function() {
         };
     }
     
-    console.log('🔍 [VERIFICAR] ================================');
+    console.log('[SEARCH] [VERIFICAR] ================================');
 };
 
 // 🧪 FUNÇÃO PARA TESTAR DADOS ANTES DO ENVIO
@@ -3208,7 +3222,7 @@ window.testarDadosParaEnvio = function() {
     
     const PM = window.PresencaManager;
     if (!PM) {
-        console.log('❌ [TESTE] PresencaManager não encontrado');
+        console.log('[ERROR] [TESTE] PresencaManager não encontrado');
         return false;
     }
     
@@ -3218,7 +3232,7 @@ window.testarDadosParaEnvio = function() {
     // Verifica o formulário
     const form = document.getElementById('form-presenca');
     if (!form) {
-        console.log('❌ [TESTE] Formulário não encontrado');
+        console.log('[ERROR] [TESTE] Formulário não encontrado');
         return false;
     }
     
@@ -3229,7 +3243,7 @@ window.testarDadosParaEnvio = function() {
         campos[key] = value;
     }
     
-    console.log('📊 [TESTE] Campos do formulário:');
+    console.log('[DATA] [TESTE] Campos do formulário:');
     Object.keys(campos).forEach(key => {
         if (key.includes('json')) {
             console.log(`   ${key}:`, JSON.parse(campos[key]));
@@ -3242,7 +3256,7 @@ window.testarDadosParaEnvio = function() {
     const temPresencas = campos.presencas_json && campos.presencas_json !== '{}';
     const temDias = campos.dias_json && campos.dias_json !== '{}';
     
-    console.log('✅ [TESTE] Verificação:');
+    console.log('[SUCCESS] [TESTE] Verificação:');
     console.log(`   Tem presenças: ${temPresencas}`);
     console.log(`   Tem dias: ${temDias}`);
     console.log(`   Pronto para envio: ${temPresencas && temDias}`);
@@ -3260,27 +3274,27 @@ window.testarDadosParaEnvio = function() {
 };
 
 /**
- * 🔍 ANÁLISE REVERSA - TESTE DE ENVIO ESPECÍFICO
+ * [SEARCH] ANÁLISE REVERSA - TESTE DE ENVIO ESPECÍFICO
  */
 function testarEnvioEspecifico() {
-    console.log('🔍 ANÁLISE REVERSA - TESTE DE ENVIO ESPECÍFICO');
+    console.log('[SEARCH] ANÁLISE REVERSA - TESTE DE ENVIO ESPECÍFICO');
     console.log('=' + '='.repeat(49));
     
     const PM = window.PresencaManager;
     if (!PM) {
-        console.error('❌ PresencaManager não encontrado');
+        console.error('[ERROR] PresencaManager não encontrado');
         return;
     }
     
-    // 1️⃣ Verificar dados atuais
-    console.log('📊 DADOS ATUAIS:');
+    // 1[EMOJI]⃣ Verificar dados atuais
+    console.log('[DATA] DADOS ATUAIS:');
     console.log('presencasRegistradas:', JSON.stringify(PM.presencasRegistradas, null, 2));
     console.log('convocadosIndividuais:', JSON.stringify(PM.convocadosIndividuais, null, 2));
     console.log('diasSelecionados:', JSON.stringify(PM.diasSelecionados, null, 2));
     
-    // 2️⃣ Simular dados se vazio
+    // 2[EMOJI]⃣ Simular dados se vazio
     if (Object.keys(PM.presencasRegistradas).length === 0) {
-        console.log('⚠️ Nenhuma presença registrada, simulando dados...');
+        console.log('[WARNING] Nenhuma presença registrada, simulando dados...');
         PM.presencasRegistradas = {
             "1": {
                 "3": {
@@ -3291,22 +3305,22 @@ function testarEnvioEspecifico() {
                 }
             }
         };
-        console.log('✅ Dados simulados adicionados');
+        console.log('[SUCCESS] Dados simulados adicionados');
     }
     
-    // 3️⃣ Testar formulário
+    // 3[EMOJI]⃣ Testar formulário
     const form = document.getElementById('form-presenca');
     if (!form) {
-        console.error('❌ Formulário não encontrado');
+        console.error('[ERROR] Formulário não encontrado');
         return;
     }
     
-    // 4️⃣ Adicionar dados ao formulário
+    // 4[EMOJI]⃣ Adicionar dados ao formulário
     PM.adicionarDadosAoFormulario();
     
-    // 5️⃣ Verificar FormData
+    // 5[EMOJI]⃣ Verificar FormData
     const formData = new FormData(form);
-    console.log('📝 DADOS DO FORMULÁRIO:');
+    console.log('[FORM] DADOS DO FORMULÁRIO:');
     for (let [key, value] of formData.entries()) {
         console.log(`   ${key}: ${value}`);
         if (key === 'presencas_json') {
@@ -3314,13 +3328,13 @@ function testarEnvioEspecifico() {
                 const parsed = JSON.parse(value);
                 console.log(`   ${key} (parsed):`, parsed);
             } catch (e) {
-                console.error(`   ❌ Erro ao parsear ${key}:`, e);
+                console.error(`   [ERROR] Erro ao parsear ${key}:`, e);
             }
         }
     }
     
-    // 6️⃣ Enviar para Django
-    console.log('🚀 ENVIANDO PARA DJANGO...');
+    // 6[EMOJI]⃣ Enviar para Django
+    console.log('[SEND] ENVIANDO PARA DJANGO...');
     
     fetch('/presencas/registrar-presenca/dias-atividades/ajax/', {
         method: 'POST',
@@ -3331,15 +3345,15 @@ function testarEnvioEspecifico() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('✅ RESPOSTA DO DJANGO:', data);
+        console.log('[SUCCESS] RESPOSTA DO DJANGO:', data);
         if (data.success) {
-            console.log('🎉 SUCESSO!');
+            console.log('[EMOJI] SUCESSO!');
         } else {
-            console.log('❌ FALHA:', data.message);
+            console.log('[ERROR] FALHA:', data.message);
         }
     })
     .catch(error => {
-        console.error('❌ ERRO DE REDE:', error);
+        console.error('[ERROR] ERRO DE REDE:', error);
     });
 }
 

@@ -844,65 +844,65 @@ def registrar_presenca_dias_atividades_ajax(request):
     from datetime import date
     from django.utils import timezone
     
-    # 🔍 ANÁLISE REVERSA - LOGGING ULTRA DETALHADO
+    # ANALISE REVERSA - LOGGING ULTRA DETALHADO
     logger.info("=" * 60)
-    logger.info("🔍 ANÁLISE REVERSA - DIAGNÓSTICO COMPLETO")
+    logger.info("[REVERSE] ANALISE REVERSA - DIAGNOSTICO COMPLETO")
     logger.info("=" * 60)
     
-    # 1️⃣ Dados da sessão
+    # 1 Dados da sessao
     turma_id = request.session.get('presenca_turma_id')
     ano = request.session.get('presenca_ano')
     mes = request.session.get('presenca_mes')
-    logger.info(f"📊 Sessão - Turma: {turma_id}, Ano: {ano}, Mês: {mes}")
+    logger.info(f"[SESSION] Sessao - Turma: {turma_id}, Ano: {ano}, Mes: {mes}")
     
     turma = Turma.objects.get(id=turma_id) if turma_id else None
-    logger.info(f"🏫 Turma encontrada: {turma.nome if turma else 'NENHUMA'}")
+    logger.info(f"[TURMA] Turma encontrada: {turma.nome if turma else 'NENHUMA'}")
 
     if not turma or not ano or not mes:
-        logger.error("❌ Dados de sessão ausentes")
+        logger.error("[ERROR] Dados de sessao ausentes")
         return JsonResponse({'success': False, 'message': 'Dados de sessão ausentes. Refaça o processo.'})
 
-    # 2️⃣ Análise completa do POST
-    logger.info("📬 DADOS RECEBIDOS NO POST:")
+    # 2 Analise completa do POST
+    logger.info("[POST] DADOS RECEBIDOS NO POST:")
     for key, value in request.POST.items():
         if key == 'presencas_json':
-            logger.info(f"   🎯 {key}: {value}")
+            logger.info(f"   [TARGET] {key}: {value}")
             try:
                 parsed = json.loads(value)
-                logger.info(f"   🎯 {key} (parsed): {json.dumps(parsed, indent=2)}")
+                logger.info(f"   [TARGET] {key} (parsed): {json.dumps(parsed, indent=2)}")
             except:
-                logger.error(f"   ❌ {key} - ERRO AO PARSEAR JSON")
+                logger.error(f"   [ERROR] {key} - ERRO AO PARSEAR JSON")
         else:
-            logger.info(f"   📝 {key}: {value}")
+            logger.info(f"   [OTHER] {key}: {value}")
 
     try:
         with transaction.atomic():
             presencas_processadas = 0
-            logger.info("🔄 Iniciando processamento...")
+            logger.info("[PROC] Iniciando processamento...")
             
             # Processa presenças do JSON (dados do modal)
             presencas_json = request.POST.get('presencas_json')
-            logger.info(f"🎯 presencas_json recebido: {bool(presencas_json)}")
-            logger.info(f"🎯 presencas_json conteúdo: {presencas_json}")
+            logger.info(f"[PROC] presencas_json recebido: {bool(presencas_json)}")
+            logger.info(f"[PROC] presencas_json conteudo: {presencas_json}")
             
             if presencas_json:
                 try:
                     presencas_data = json.loads(presencas_json)
-                    logger.info(f"✅ JSON parsed com sucesso: {json.dumps(presencas_data, indent=2)}")
+                    logger.info(f"[SUCCESS] JSON parsed com sucesso: {json.dumps(presencas_data, indent=2)}")
                     
                     for atividade_id, dias_data in presencas_data.items():
-                        logger.info(f"🔄 Processando atividade {atividade_id}: {dias_data}")
+                        logger.info(f"[PROC] Processando atividade {atividade_id}: {dias_data}")
                         for dia, alunos_data in dias_data.items():
-                            logger.info(f"🔄 Processando dia {dia}: {alunos_data}")
+                            logger.info(f"[PROC] Processando dia {dia}: {alunos_data}")
                             for cpf_aluno, presenca_info in alunos_data.items():
-                                logger.info(f"🔄 Processando aluno {cpf_aluno}: {presenca_info}")
+                                logger.info(f"[PROC] Processando aluno {cpf_aluno}: {presenca_info}")
                                 try:
                                     aluno = Aluno.objects.get(cpf=cpf_aluno)
                                     Atividade = get_model_class("Atividade")
                                     atividade = Atividade.objects.get(id=atividade_id)
                                     data_presenca = date(int(ano), int(mes), int(dia))
                                     
-                                    logger.info(f"✅ Criando presença: Aluno={aluno.nome}, Atividade={atividade.nome}, Data={data_presenca}")
+                                    logger.info(f"[SUCCESS] Criando presenca: Aluno={aluno.nome}, Atividade={atividade.nome}, Data={data_presenca}")
                                     
                                     # Registra a presença - TESTE ESPECÍFICO COM MAIS LOGS
                                     try:
@@ -919,27 +919,27 @@ def registrar_presenca_dias_atividades_ajax(request):
                                             }
                                         )
                                         presencas_processadas += 1
-                                        logger.info(f"✅ Presença {'criada' if created else 'atualizada'}: ID={presenca_obj.id}")
-                                        logger.info(f"✅ SUCESSO na presença {presencas_processadas}: {aluno.nome} - {atividade.nome} - {data_presenca}")
+                                        logger.info(f"[SUCCESS] Presenca {'criada' if created else 'atualizada'}: ID={presenca_obj.id}")
+                                        logger.info(f"[SUCCESS] SUCESSO na presenca {presencas_processadas}: {aluno.nome} - {atividade.nome} - {data_presenca}")
                                         
                                     except Exception as save_error:
-                                        logger.error(f"❌ ERRO ESPECÍFICO ao salvar presença: {save_error}")
-                                        logger.error(f"❌ Dados da presença: aluno={aluno.id}, turma={turma.id}, atividade={atividade.id}, data={data_presenca}")
+                                        logger.error(f"[ERROR] ERRO ESPECIFICO ao salvar presenca: {save_error}")
+                                        logger.error(f"[ERROR] Dados da presenca: aluno={aluno.id}, turma={turma.id}, atividade={atividade.id}, data={data_presenca}")
                                         import traceback
-                                        logger.error(f"❌ Traceback: {traceback.format_exc()}")
+                                        logger.error(f"[ERROR] Traceback: {traceback.format_exc()}")
                                         continue
                                     
                                 except Exception as e:
-                                    logger.error(f"❌ Erro ao processar presença {cpf_aluno}: {e}")
+                                    logger.error(f"[ERROR] Erro ao processar presenca {cpf_aluno}: {e}")
                                     continue
                                     
                 except json.JSONDecodeError as e:
-                    logger.error(f"❌ Erro ao decodificar JSON de presenças: {e}")
+                    logger.error(f"[ERROR] Erro ao decodificar JSON de presencas: {e}")
                     return JsonResponse({'success': False, 'message': 'Erro nos dados de presenças. Tente novamente.'})
             else:
-                logger.warning("⚠️ presencas_json não encontrado no POST")
+                logger.warning("[WARNING] presencas_json nao encontrado no POST")
 
-            logger.info(f"📊 RESULTADO FINAL: {presencas_processadas} presenças processadas")
+            logger.info(f"[RESULT] RESULTADO FINAL: {presencas_processadas} presencas processadas")
 
             # Processa observações dos dias (funcionalidade original)  
             for key in request.POST:
@@ -971,7 +971,7 @@ def registrar_presenca_dias_atividades_ajax(request):
                                 continue
 
             if presencas_processadas > 0:
-                logger.info("✅ SUCESSO - Limpando sessão e retornando sucesso")
+                logger.info("[SUCCESS] SUCESSO - Limpando sessao e retornando sucesso")
                 # Limpa dados da sessão após sucesso
                 session_keys = ['presenca_turma_id', 'presenca_ano', 'presenca_mes', 'presenca_totais_atividades']
                 for key in session_keys:
@@ -984,9 +984,9 @@ def registrar_presenca_dias_atividades_ajax(request):
                     'message': f'Registro finalizado com sucesso! {presencas_processadas} presenças processadas.'
                 })
             else:
-                logger.warning("❌ FALHA - Nenhuma presença processada")
-                logger.warning(f"❌ presencas_json estava presente? {bool(presencas_json)}")
-                logger.warning(f"❌ Conteúdo do POST: {dict(request.POST)}")
+                logger.warning("[ERROR] FALHA - Nenhuma presenca processada")
+                logger.warning(f"[ERROR] presencas_json estava presente? {bool(presencas_json)}")
+                logger.warning(f"[ERROR] Conteudo do POST: {dict(request.POST)}")
                 return JsonResponse({
                     'success': False, 
                     'message': 'Nenhuma presença foi registrada. Selecione os dias e marque as presenças antes de finalizar.'

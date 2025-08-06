@@ -162,13 +162,13 @@
                             <td>{{ presenca.justificativa|truncatechars:30|default:"-" }}</td>
                             <td>
                                 <div class="table-actions">
-                                    <a href="{% url 'presencas:detalhar_presenca_academica' presenca.id %}" class="btn btn-sm btn-info" title="Ver detalhes da presença" aria-label="Ver detalhes da presença">
+                                    <a href="{% url 'presencas:detalhar_presenca_dados_basicos' presenca.id %}" class="btn btn-sm btn-info" title="Ver detalhes da presença" aria-label="Ver detalhes da presença">
                                         <i class="fas fa-eye"></i> Detalhes
                                     </a>
-                                    <a href="{% url 'presencas:editar_presenca_academica' presenca.id %}" class="btn btn-sm btn-warning" title="Editar presença" aria-label="Editar presença">
+                                    <a href="{% url 'presencas:editar_presenca_dados_basicos' presenca.id %}" class="btn btn-sm btn-warning" title="Editar presença" aria-label="Editar presença">
                                         <i class="fas fa-edit"></i> Editar
                                     </a>
-                                    <a href="{% url 'presencas:excluir_presenca_academica' presenca.id %}" class="btn btn-sm btn-danger" title="Excluir presença" aria-label="Excluir presença">
+                                    <a href="#" onclick="confirmarExclusao({{ presenca.id }}, '{{ presenca.aluno.nome }}')" class="btn btn-sm btn-danger" title="Excluir presença" aria-label="Excluir presença">
                                         <i class="fas fa-trash"></i> Excluir
                                     </a>
                                 </div>
@@ -289,5 +289,13 @@
                 });
         });
     });
+
+    // Função para confirmar exclusão de presença
+    function confirmarExclusao(presencaId, nomeAluno) {
+        if (confirm(`Tem certeza que deseja excluir a presença de ${nomeAluno}?`)) {
+            // TODO: Implementar exclusão via AJAX
+            alert('Funcionalidade de exclusão será implementada em breve.');
+        }
+    }
 </script>
 {% endblock %}
