@@ -32,6 +32,37 @@ window.PresencaManager = {
     debug: true,
     _processandoSalvamento: false, // Flag para evitar conflitos durante salvamento
     
+    // [PERFORMANCE] Sistema de cache para alunos
+    _cacheAlunos: {
+        dados: null,
+        timestamp: null,
+        turmaId: null,
+        DURACAO_CACHE: 5 * 60 * 1000, // 5 minutos
+        
+        // Verifica se o cache é válido
+        isValido: function(turmaId) {
+            if (!this.dados || !this.timestamp || this.turmaId !== turmaId) {
+                return false;
+            }
+            const agora = Date.now();
+            return (agora - this.timestamp) < this.DURACAO_CACHE;
+        },
+        
+        // Salva dados no cache
+        salvar: function(dados, turmaId) {
+            this.dados = dados;
+            this.timestamp = Date.now();
+            this.turmaId = turmaId;
+        },
+        
+        // Limpa o cache
+        limpar: function() {
+            this.dados = null;
+            this.timestamp = null;
+            this.turmaId = null;
+        }
+    },
+    
     /**
      * [SEND] INICIALIZAÇÃO
      */
@@ -139,37 +170,45 @@ window.PresencaManager = {
             return;
         }
         
-        this.log('[EMOJI] Carregando alunos da turma:', turmaId);
+        // [PERFORMANCE] Verifica cache primeiro
+        if (this._cacheAlunos.isValido(turmaId)) {
+            this.log('[CACHE] Usando dados de alunos do cache');
+            this.alunosData = this._cacheAlunos.dados;
+            this.log('[SUCCESS] Alunos carregados do cache:', this.alunosData.length);
+            return Promise.resolve(this.alunosData);
+        }
         
-        fetch(`/presencas/ajax/alunos-turma/?turma_id=${turmaId}`)
+        this.log('[LOAD] Carregando alunos da turma via AJAX:', turmaId);
+        
+        return fetch(`/presencas/ajax/alunos-turma/?turma_id=${turmaId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.alunos && data.alunos.length > 0) {
                     this.alunosData = data.alunos;
-                    this.log('[SUCCESS] Alunos carregados:', this.alunosData.length);
+                    
+                    // [PERFORMANCE] Salva no cache
+                    this._cacheAlunos.salvar(data.alunos, turmaId);
+                    
+                    this.log('[SUCCESS] Alunos carregados via AJAX:', this.alunosData.length);
+                    this.log('[CACHE] Dados salvos no cache por 5 minutos');
                 } else {
                     this.log('[WARNING] Nenhum aluno encontrado');
                     this.alunosData = [];
                 }
+                return this.alunosData;
             })
             .catch(error => {
                 this.log('[ERROR] Erro ao carregar alunos:', error);
                 this.alunosData = [];
+                return this.alunosData;
             });
     },
     
     /**
-     * [RELOAD] GARANTIR QUE ALUNOS SEJAM CARREGADOS (COM PROMISE)
+     * [RELOAD] GARANTIR QUE ALUNOS SEJAM CARREGADOS (COM PROMISE E CACHE)
      */
     garantirAlunosCarregados: function() {
         return new Promise((resolve, reject) => {
-            // Se já temos alunos carregados, resolve imediatamente
-            if (this.alunosData && this.alunosData.length > 0) {
-                this.log('[SUCCESS] Alunos já carregados:', this.alunosData.length);
-                resolve(this.alunosData);
-                return;
-            }
-            
             const turmaId = this.obterTurmaId();
             if (!turmaId) {
                 this.log('[ERROR] Turma ID não encontrado');
@@ -177,36 +216,49 @@ window.PresencaManager = {
                 return;
             }
             
-            this.log('[EMOJI] Carregando alunos da turma:', turmaId);
+            // [PERFORMANCE] Verifica cache primeiro
+            if (this._cacheAlunos.isValido(turmaId)) {
+                this.log('[CACHE] Usando dados de alunos do cache');
+                this.alunosData = this._cacheAlunos.dados;
+                this.log('[SUCCESS] Alunos disponibilizados do cache:', this.alunosData.length);
+                resolve(this.alunosData);
+                return;
+            }
             
-            fetch(`/presencas/ajax/alunos-turma/?turma_id=${turmaId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.alunos && data.alunos.length > 0) {
-                        this.alunosData = data.alunos;
-                        this.log('[SUCCESS] Alunos carregados:', this.alunosData.length);
+            // Se já temos alunos carregados (mas cache expirou), usa os dados existentes
+            if (this.alunosData && this.alunosData.length > 0) {
+                this.log('[SUCCESS] Alunos já carregados (sem cache):', this.alunosData.length);
+                resolve(this.alunosData);
+                return;
+            }
+            
+            // Carrega alunos via AJAX com cache
+            const carregamentoPromise = this.carregarAlunos();
+            if (carregamentoPromise && typeof carregamentoPromise.then === 'function') {
+                carregamentoPromise
+                    .then(alunos => {
+                        this.log('[SUCCESS] Alunos carregados via garantirAlunosCarregados:', alunos.length);
+                        resolve(alunos);
+                    })
+                    .catch(error => {
+                        this.log('[ERROR] Erro ao garantir carregamento:', error);
+                        reject(error);
+                    });
+            } else {
+                // Fallback para compatibilidade (caso carregarAlunos não retorne promise)
+                setTimeout(() => {
+                    if (this.alunosData && this.alunosData.length > 0) {
                         resolve(this.alunosData);
                     } else {
-                        this.log('[WARNING] Nenhum aluno encontrado na resposta');
-                        this.alunosData = [];
-                        reject(new Error('Nenhum aluno encontrado para esta turma'));
+                        reject(new Error('Falha ao carregar alunos'));
                     }
-                })
-                .catch(error => {
-                    this.log('[ERROR] Erro ao carregar alunos:', error);
-                    this.alunosData = [];
-                    reject(error);
-                });
+                }, 1000);
+            }
         });
     },
     
     /**
-     * [EMOJI] OBTER TURMA ID
+     * [TARGET] OBTER TURMA ID
      */
     obterTurmaId: function() {
         // Tenta múltiplas fontes para obter o turma ID
