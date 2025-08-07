@@ -160,14 +160,49 @@ def editar_presenca_academica(request, pk):
 
 @login_required
 def excluir_presenca_academica(request, pk):
+    from presencas.permissions import PresencaPermissionEngine
+    from django.contrib import messages
+    
     presenca = get_object_or_404(Presenca, pk=pk)
     
-    if request.method == 'POST':
-        presenca.delete()
-        messages.success(request, 'Presença excluída com sucesso!')
-        return redirect('presencas:listar_presencas_academicas')
+    # Verificar permissões de exclusão
+    pode_excluir, motivo_exclusao = PresencaPermissionEngine.pode_excluir_presenca(presenca, request.user)
     
-    context = {'presenca': presenca}
+    if not pode_excluir:
+        messages.error(request, f'Não é possível excluir esta presença: {motivo_exclusao}')
+        return redirect('presencas:detalhar_presenca_dados_basicos', pk=pk)
+    
+    if request.method == 'POST':
+        # Confirmar exclusão
+        confirmar = request.POST.get('confirmar_exclusao')
+        motivo = request.POST.get('motivo_exclusao', '').strip()
+        
+        if confirmar == 'sim':
+            if not motivo:
+                messages.error(request, 'Motivo da exclusão é obrigatório.')
+                context = {
+                    'presenca': presenca,
+                    'pode_excluir': pode_excluir,
+                    'motivo_exclusao': motivo_exclusao if not pode_excluir else None,
+                }
+                return render(request, 'presencas/academicas/excluir_presenca_academica.html', context)
+            
+            # Registrar motivo da exclusão antes de excluir
+            presenca.registrado_por = f"{presenca.registrado_por} (excluído por {request.user.username}: {motivo})"
+            presenca.save()
+            presenca.delete()
+            
+            messages.success(request, 'Presença excluída com sucesso!')
+            return redirect('presencas:listar_presencas_academicas')
+        else:
+            messages.info(request, 'Exclusão cancelada.')
+            return redirect('presencas:detalhar_presenca_dados_basicos', pk=pk)
+    
+    context = {
+        'presenca': presenca,
+        'pode_excluir': pode_excluir,
+        'motivo_exclusao': motivo_exclusao if not pode_excluir else None,
+    }
     return render(request, 'presencas/academicas/excluir_presenca_academica.html', context)
 
 @login_required

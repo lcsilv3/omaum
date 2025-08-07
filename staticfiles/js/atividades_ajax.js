@@ -71,16 +71,17 @@ window.initTurmasAjax = function(options) {
         atualizarTurmas(this.value);
     });
 
-    // Carregar todas as turmas na inicialização
-    carregarTodasTurmas();
+    // Carregar todas as turmas na inicialização - FORÇA O CARREGAMENTO IMEDIATO
+    setTimeout(function() {
+        carregarTodasTurmas();
+    }, 100);
     
     // Se há um curso pré-selecionado, aplicar o filtro após carregar as turmas
     if (cursoSelect.value) {
         const turmasSelecionadas = Array.from(turmasSelect.selectedOptions).map(opt => opt.value);
-        // Aguardar o carregamento das turmas antes de filtrar
         setTimeout(() => {
             atualizarTurmas(cursoSelect.value, turmasSelecionadas);
-        }, 100);
+        }, 500);
     }
 
     // Selecionar todas as turmas (se existir o checkbox)

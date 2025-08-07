@@ -999,80 +999,162 @@ def registrar_presenca_dias_atividades_ajax(request):
 @login_required
 def editar_presenca_dados_basicos(request, pk):
     from presencas.models import Presenca
+    from presencas.forms import EditarPresencaIndividualForm
+    from presencas.permissions import PresencaPermissionEngine
+    
     presenca = get_object_or_404(Presenca, pk=pk)
+    
+    # Verificar permissões usando o engine
+    pode_editar, motivo_edicao = PresencaPermissionEngine.pode_alterar_presenca(presenca, request.user)
+    
+    if not pode_editar:
+        messages.error(request, f'Não é possível editar esta presença: {motivo_edicao}')
+        return redirect('presencas:detalhar_presenca_dados_basicos', pk=pk)
+    
     if request.method == 'POST':
-        form = RegistrarPresencaForm(request.POST, instance=presenca)
+        form = EditarPresencaIndividualForm(request.POST, instance=presenca)
         if form.is_valid():
-            form.save()
-            return redirect('editar_presenca_totais_atividades', pk=pk)
+            presenca_atualizada = form.save(commit=False)
+            presenca_atualizada.registrado_por = f"{presenca.registrado_por} (editado por {request.user.username})"
+            presenca_atualizada.save()
+            messages.success(request, 'Presença atualizada com sucesso!')
+            return redirect('presencas:listar_presencas_academicas')
     else:
-        form = RegistrarPresencaForm(instance=presenca)
-    return render(request, 'presencas/academicas/editar_presenca_dados_basicos.html', {'form': form, 'presenca': presenca})
+        form = EditarPresencaIndividualForm(instance=presenca)
+    
+    context = {
+        'form': form, 
+        'presenca': presenca,
+        'pode_editar': pode_editar,
+        'motivo_edicao': motivo_edicao if not pode_editar else None,
+    }
+    return render(request, 'presencas/academicas/editar_presenca_dados_basicos.html', context)
 
 @login_required
 def editar_presenca_totais_atividades(request, pk):
     from presencas.models import Presenca
+    from presencas.permissions import PresencaPermissionEngine
+    
     presenca = get_object_or_404(Presenca, pk=pk)
-    if request.method == 'POST':
-        form = TotaisAtividadesPresencaForm(request.POST, instance=presenca)
-        if form.is_valid():
-            form.save()
-            return redirect('editar_presenca_dias_atividades', pk=pk)
-    else:
-        form = TotaisAtividadesPresencaForm(instance=presenca)
-    return render(request, 'presencas/academicas/editar_presenca_totais_atividades.html', {'form': form, 'presenca': presenca})
+    
+    # Verificar permissões
+    pode_editar, motivo_edicao = PresencaPermissionEngine.pode_alterar_presenca(presenca, request.user)
+    
+    if not pode_editar:
+        messages.error(request, f'Não é possível editar esta presença: {motivo_edicao}')
+        return redirect('presencas:detalhar_presenca_dados_basicos', pk=pk)
+    
+    # Esta etapa é específica para edição de totais de atividades por período
+    # Redireciona diretamente para a etapa final (dias/atividades)
+    messages.info(request, 'Redirecionando para edição de dias/atividades...')
+    return redirect('presencas:editar_presenca_dias_atividades', pk=pk)
 
 @login_required
 def editar_presenca_dias_atividades(request, pk):
     from presencas.models import Presenca
+    from presencas.forms import EditarPresencaIndividualForm
+    from presencas.permissions import PresencaPermissionEngine
+    
     presenca = get_object_or_404(Presenca, pk=pk)
+    
+    # Verificar permissões
+    pode_editar, motivo_edicao = PresencaPermissionEngine.pode_alterar_presenca(presenca, request.user)
+    
+    if not pode_editar:
+        messages.error(request, f'Não é possível editar esta presença: {motivo_edicao}')
+        return redirect('presencas:detalhar_presenca_dados_basicos', pk=pk)
+    
     if request.method == 'POST':
-        form = TotaisAtividadesPresencaForm(request.POST, instance=presenca)
+        form = EditarPresencaIndividualForm(request.POST, instance=presenca)
         if form.is_valid():
-            form.save()
-            return redirect('editar_presenca_alunos', pk=pk)
+            presenca_atualizada = form.save(commit=False)
+            presenca_atualizada.registrado_por = f"{presenca.registrado_por} (editado por {request.user.username})"
+            presenca_atualizada.save()
+            messages.success(request, 'Presença atualizada com sucesso!')
+            return redirect('presencas:listar_presencas_academicas')
     else:
-        form = TotaisAtividadesPresencaForm(instance=presenca)
-    return render(request, 'presencas/academicas/editar_presenca_dias_atividades.html', {'form': form, 'presenca': presenca})
+        form = EditarPresencaIndividualForm(instance=presenca)
+    
+    context = {
+        'form': form, 
+        'presenca': presenca,
+        'pode_editar': pode_editar,
+        'motivo_edicao': motivo_edicao if not pode_editar else None,
+    }
+    return render(request, 'presencas/academicas/editar_presenca_dias_atividades.html', context)
 
 
 @login_required
 def editar_presenca_alunos(request, pk):
-    from presencas.models import Presenca
-    presenca = get_object_or_404(Presenca, pk=pk)
-    if request.method == 'POST':
-        form = AlunosPresencaForm(request.POST, instance=presenca)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Presença acadêmica atualizada com sucesso.')
-            return redirect('listar_presencas_academicas')
-    else:
-        form = AlunosPresencaForm(instance=presenca)
-    return render(request, 'presencas/academicas/editar_presenca_alunos.html', {'form': form, 'presenca': presenca})
+    """
+    Etapa obsoleta - redireciona para edição de dados básicos.
+    Mantida para compatibilidade com URLs existentes.
+    """
+    messages.info(request, 'Redirecionando para edição de dados básicos...')
+    return redirect('presencas:editar_presenca_dados_basicos', pk=pk)
 
 @login_required
 def detalhar_presenca_dados_basicos(request, pk):
     from presencas.models import Presenca
+    from presencas.permissions import PresencaPermissionEngine
     presenca = get_object_or_404(Presenca, pk=pk)
-    return render(request, 'presencas/academicas/detalhar_presenca_dados_basicos.html', {'presenca': presenca})
+    pode_editar, motivo_edicao = PresencaPermissionEngine.pode_alterar_presenca(presenca, request.user)
+    pode_excluir, motivo_exclusao = PresencaPermissionEngine.pode_excluir_presenca(presenca, request.user)
+    pode_ver_auditoria = request.user.has_perm('presencas.can_view_audit_trail')
+    historico = getattr(presenca, 'historico', None)
+    context = {
+        'presenca': presenca,
+        'pode_editar': pode_editar,
+        'motivo_edicao': motivo_edicao if not pode_editar else None,
+        'pode_excluir': pode_excluir,
+        'motivo_exclusao': motivo_exclusao if not pode_excluir else None,
+        'pode_ver_auditoria': pode_ver_auditoria,
+        'historico': historico.all()[:10] if historico and pode_ver_auditoria else [],
+    }
+    return render(request, 'presencas/academicas/detalhar_presenca_dados_basicos.html', context)
 
 @login_required
 def detalhar_presenca_totais_atividades(request, pk):
-    from presencas.models import Presenca
-    presenca = get_object_or_404(Presenca, pk=pk)
-    return render(request, 'presencas/academicas/detalhar_presenca_totais_atividades.html', {'presenca': presenca})
+    """
+    Etapa de detalhamento específica para totais de atividades.
+    Redireciona para dias/atividades que contém informações mais completas.
+    """
+    messages.info(request, 'Visualizando detalhes de dias/atividades...')
+    return redirect('presencas:detalhar_presenca_dias_atividades', pk=pk)
 
 @login_required
 def detalhar_presenca_dias_atividades(request, pk):
     from presencas.models import Presenca
+    from presencas.permissions import PresencaPermissionEngine
     presenca = get_object_or_404(Presenca, pk=pk)
-    return render(request, 'presencas/academicas/detalhar_presenca_dias_atividades.html', {'presenca': presenca})
+    
+    # Verificar permissões
+    pode_editar, motivo_edicao = PresencaPermissionEngine.pode_alterar_presenca(presenca, request.user)
+    pode_excluir, motivo_exclusao = PresencaPermissionEngine.pode_excluir_presenca(presenca, request.user)
+    pode_ver_auditoria = request.user.has_perm('presencas.can_view_audit_trail')
+    
+    # Histórico de auditoria
+    historico = getattr(presenca, 'historico', None)
+    
+    context = {
+        'presenca': presenca,
+        'pode_editar': pode_editar,
+        'motivo_edicao': motivo_edicao if not pode_editar else None,
+        'pode_excluir': pode_excluir,
+        'motivo_exclusao': motivo_exclusao if not pode_excluir else None,
+        'pode_ver_auditoria': pode_ver_auditoria,
+        'historico': historico.all()[:10] if historico and pode_ver_auditoria else [],
+    }
+    return render(request, 'presencas/academicas/detalhar_presenca_dias_atividades.html', context)
 
 @login_required
 def detalhar_presenca_alunos(request, pk):
-    from presencas.models import Presenca
-    presenca = get_object_or_404(Presenca, pk=pk)
-    return render(request, 'presencas/academicas/detalhar_presenca_alunos.html', {'presenca': presenca})
+    """
+    Etapa de detalhamento obsoleta - redireciona para dados básicos.
+    Mantida para compatibilidade com URLs existentes.
+    """
+    messages.info(request, 'Visualizando detalhes básicos da presença...')
+    return redirect('presencas:detalhar_presenca_dados_basicos', pk=pk)
 
 @login_required
 @csrf_exempt

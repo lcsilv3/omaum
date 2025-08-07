@@ -277,6 +277,8 @@ class FiltroConsolidadoForm(forms.Form):
         return cleaned_data
 
 
+from django.forms import ModelForm
+
 class EditarPresencaDetalhadaForm(forms.Form):
     """
     Formulário para edição inline de presença detalhada.
@@ -346,5 +348,63 @@ class EditarPresencaDetalhadaForm(forms.Form):
             raise forms.ValidationError(
                 "A soma de presenças e faltas não pode ser maior que convocações."
             )
+        
+        return cleaned_data
+
+
+class EditarPresencaIndividualForm(ModelForm):
+    """
+    Formulário para edição de presenças individuais compatível com o modelo Presenca.
+    Este formulário segue o mesmo padrão do processo de marcação de presenças.
+    """
+    
+    class Meta:
+        model = None  # Será definido dinamicamente na view
+        fields = ['presente', 'justificativa']
+        widgets = {
+            'presente': forms.Select(
+                choices=[(True, 'Presente'), (False, 'Ausente')],
+                attrs={
+                    'class': 'form-select',
+                    'required': True
+                }
+            ),
+            'justificativa': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Justificativa obrigatória para ausências...',
+                'maxlength': 500
+            }),
+        }
+        labels = {
+            'presente': 'Status de Presença',
+            'justificativa': 'Justificativa (obrigatória para ausências)',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        # Importação dinâmica para evitar circular import
+        from presencas.models import Presenca
+        self._meta.model = Presenca
+        super().__init__(*args, **kwargs)
+        
+        # Tornar justificativa obrigatória apenas se ausente
+        if self.instance and hasattr(self.instance, 'presente') and hasattr(self.instance, 'pk') and self.instance.pk:
+            if not self.instance.presente and 'justificativa' in self.fields:
+                self.fields['justificativa'].required = True
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        presente = cleaned_data.get('presente')
+        justificativa = cleaned_data.get('justificativa', '').strip()
+        
+        # Validar justificativa obrigatória para ausências
+        if presente is False and not justificativa:
+            raise forms.ValidationError({
+                'justificativa': 'Justificativa é obrigatória para ausências.'
+            })
+        
+        # Limpar justificativa se presente
+        if presente is True:
+            cleaned_data['justificativa'] = ''
         
         return cleaned_data

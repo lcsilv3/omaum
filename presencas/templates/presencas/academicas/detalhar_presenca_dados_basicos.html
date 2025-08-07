@@ -10,12 +10,86 @@
             </h2>
             <div id="collapseDetalharDadosBasicos" class="accordion-collapse collapse show" aria-labelledby="headingDetalharDadosBasicos" data-bs-parent="#accordionDetalharPresenca">
                 <div class="accordion-body">
-                    <ul>
-                        <li>Campo 1: {{ presenca.campo1 }}</li>
-                        <li>Campo 2: {{ presenca.campo2 }}</li>
-                        <!-- Adicione os campos necessários -->
-                    </ul>
-                    <a href="{% url 'detalhar_presenca_totais_atividades' presenca.pk %}" class="btn btn-secondary">Próximo</a>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Informações do Aluno</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Nome:</strong> {{ presenca.aluno.nome }}</li>
+                                <li><strong>Matrícula:</strong> {{ presenca.aluno.matricula_numero|default:"N/A" }}</li>
+                                <li><strong>Email:</strong> {{ presenca.aluno.email|default:"N/A" }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Dados da Presença</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Turma:</strong> {{ presenca.turma.nome }}</li>
+                                <li><strong>Atividade:</strong> {{ presenca.atividade.nome }}</li>
+                                <li><strong>Data:</strong> {{ presenca.data|date:"d/m/Y" }}</li>
+                                <li><strong>Status:</strong> 
+                                    {% if presenca.presente %}
+                                        <span class="badge bg-success">Presente</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Ausente</span>
+                                    {% endif %}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if presenca.justificativa %}
+                    <div class="mt-3">
+                        <h6>Justificativa</h6>
+                        <div class="alert alert-info">
+                            {{ presenca.justificativa }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <h6>Informações de Registro</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Registrado por:</strong> {{ presenca.registrado_por }}</li>
+                            <li><strong>Data de registro:</strong> {{ presenca.data_registro|date:"d/m/Y H:i" }}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-4">
+                        {% if pode_editar %}
+                            <a href="{% url 'presencas:editar_presenca_dados_basicos' presenca.pk %}" class="btn btn-primary">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar à Lista
+                        </a>
+                    </div>
+                    <div class="permissoes mt-3">
+                      {% if pode_editar %}
+                        <span class="badge bg-success">Pode editar</span>
+                      {% else %}
+                        <span class="badge bg-danger" title="{{ motivo_edicao }}">Não pode editar</span>
+                      {% endif %}
+                      {% if pode_excluir %}
+                        <span class="badge bg-success">Pode excluir</span>
+                      {% else %}
+                        <span class="badge bg-danger" title="{{ motivo_exclusao }}">Não pode excluir</span>
+                      {% endif %}
+                      {% if pode_ver_auditoria %}
+                        <span class="badge bg-info">Pode ver auditoria</span>
+                      {% endif %}
+                    </div>
+                    <div class="historico mt-3">
+                      <h5>Histórico de alterações</h5>
+                      {% if historico %}
+                        <ul>
+                          {% for evento in historico %}
+                            <li>{{ evento.data }} - {{ evento.descricao }}</li>
+                          {% endfor %}
+                        </ul>
+                      {% else %}
+                        <p>Nenhum evento registrado.</p>
+                      {% endif %}
+                    </div>
                 </div>
             </div>
         </div>

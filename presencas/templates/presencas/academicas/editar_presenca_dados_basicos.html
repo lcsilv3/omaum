@@ -1,23 +1,144 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
+
 {% block content %}
 <div class="container mt-4">
-    <div class="accordion" id="accordionEditarPresenca">
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="headingEditarDadosBasicos">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEditarDadosBasicos" aria-expanded="true" aria-controls="collapseEditarDadosBasicos">
-                    Editar Dados Básicos
-                </button>
-            </h2>
-            <div id="collapseEditarDadosBasicos" class="accordion-collapse collapse show" aria-labelledby="headingEditarDadosBasicos" data-bs-parent="#accordionEditarPresenca">
-                <div class="accordion-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        {{ form.as_p }}
-                        <button type="submit" class="btn btn-primary">Próximo</button>
-                    </form>
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit"></i> Editar Presença
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Informações da Presença -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Informações do Aluno</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Nome:</strong> {{ presenca.aluno.nome }}</li>
+                                <li><strong>Turma:</strong> {{ presenca.turma.nome }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Dados da Atividade</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Atividade:</strong> {{ presenca.atividade.nome }}</li>
+                                <li><strong>Data:</strong> {{ presenca.data|date:"d/m/Y" }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if pode_editar %}
+                        <!-- Formulário de Edição -->
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.presente.id_for_label }}" class="form-label">
+                                            {{ form.presente.label }}
+                                        </label>
+                                        {{ form.presente|add_class:"form-select" }}
+                                        {% if form.presente.help_text %}
+                                            <div class="form-text">{{ form.presente.help_text }}</div>
+                                        {% endif %}
+                                        {% if form.presente.errors %}
+                                            <div class="text-danger">{{ form.presente.errors|join:", " }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.justificativa.id_for_label }}" class="form-label">
+                                            {{ form.justificativa.label }}
+                                        </label>
+                                        {{ form.justificativa|add_class:"form-control" }}
+                                        {% if form.justificativa.help_text %}
+                                            <div class="form-text">{{ form.justificativa.help_text }}</div>
+                                        {% endif %}
+                                        {% if form.justificativa.errors %}
+                                            <div class="text-danger">{{ form.justificativa.errors|join:", " }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger">
+                                    {{ form.non_field_errors|join:", " }}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Salvar Alterações
+                                </button>
+                                <a href="{% url 'presencas:detalhar_presenca_dados_basicos' presenca.pk %}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Voltar à Lista
+                                </a>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Edição não permitida:</strong> {{ motivo_edicao }}
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'presencas:detalhar_presenca_dados_basicos' presenca.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar ao Detalhamento
+                            </a>
+                            <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-list"></i> Voltar à Lista
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// JavaScript para controle de justificativa obrigatória
+document.addEventListener('DOMContentLoaded', function() {
+    const presenteSelect = document.getElementById('{{ form.presente.id_for_label }}');
+    const justificativaField = document.getElementById('{{ form.justificativa.id_for_label }}');
+    
+    if (presenteSelect && justificativaField) {
+        function toggleJustificativa() {
+            const isPresente = presenteSelect.value === 'True';
+            
+            if (isPresente) {
+                justificativaField.required = false;
+                justificativaField.parentElement.style.display = 'none';
+            } else {
+                justificativaField.required = true;
+                justificativaField.parentElement.style.display = 'block';
+            }
+        }
+        
+        // Configurar estado inicial
+        toggleJustificativa();
+        
+        // Reagir a mudanças
+        presenteSelect.addEventListener('change', toggleJustificativa);
+    }
+});
+</script>
 {% endblock %}

@@ -1,0 +1,32 @@
+# FASE 3C: Infraestrutura Avançada - Configuração Celery
+# Instalar dependências para processamento assíncrono
+
+# Background tasks
+celery==5.4.0
+redis==5.2.1
+
+# Monitoramento
+flower==2.0.1
+django-celery-beat==2.8.0
+django-celery-results==2.5.1
+
+# Performance monitoring
+django-debug-toolbar==5.1.0
+django-extensions==3.2.3
+sentry-sdk==2.20.0
+
+# Database optimization
+psycopg2-binary==2.9.11  # PostgreSQL production
+
+# Cache
+django-redis==5.4.0
+
+# Rate limiting
+django-ratelimit==4.1.0
+
+# API documentation
+drf-yasg==1.21.9
+
+# Excel/PDF processing (já existem, mantendo para referência)
+# openpyxl==3.1.5
+# reportlab==4.3.1
