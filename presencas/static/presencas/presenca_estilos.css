@@ -10,12 +10,6 @@
 .flatpickr-ok { background: #007bff; color: #fff; border: none; border-radius: 4px; padding: 4px 12px; margin: 8px 0 0 0; cursor: pointer; font-size: 0.95em; }
 .msg-limite-dias { margin-top: 4px; display: none; color: #dc3545; font-size: 0.95em; }
 .obs-dia { font-size: 0.95em; margin-top: 6px; }
-.presenca-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 99999; }
-.presenca-modal-content { background: #fff; border-radius: 8px; padding: 20px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-.presenca-modal-header { display: flex; justify-content: between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e9ecef; }
-.presenca-modal-title { margin: 0; color: #495057; font-size: 1.25rem; }
-.presenca-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6c757d; margin-left: auto; }
-.presenca-close:hover { color: #000; }
 .modo-rapido { background-color: #f8f9fa; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; border-left: 4px solid #007bff; display: flex; align-items: center; gap: 10px; min-height: 38px; }
 .modo-individual { border-top: 2px solid #e9ecef; padding-top: 20px; }
 .aluno-presenca-item { display: flex; flex-direction: row; align-items: center; padding: 6px 8px; border: 1px solid #e9ecef; border-radius: 6px; margin-bottom: 4px; background-color: #fff; font-size: 0.95em; min-height: 36px; gap: 8px; }
@@ -40,6 +34,19 @@
 .modal-footer-custom { margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef; display: flex; justify-content: space-between; gap: 10px; }
 .btn-salvar-presenca { flex: 1; }
 .flatpickr-calendar { z-index: 1000 !important; }
-.presenca-modal.show ~ .flatpickr-calendar, body.modal-open .flatpickr-calendar.open { z-index: 999 !important; opacity: 0.3; pointer-events: none; }
-body.modal-open .presenca-modal { z-index: 100000 !important; }
-body.modal-open .flatpickr-calendar, body.modal-open .flatpickr-calendar.open, body.modal-open .flatpickr-calendar.animate, body.modal-open .flatpickr-calendar.arrowTop, body.modal-open .flatpickr-calendar.arrowLeft { z-index: 500 !important; opacity: 0.2 !important; pointer-events: none !important; }
+/* Removidas regras do modal custom legado (presenca-modal) e z-index forçado do Flatpickr
+	para evitar conflitos com Bootstrap. */
+/*
+DEPRECATED: presencas/static/presencas/presenca_estilos.css
+
+Este arquivo de estilos pertencia a um modal custom ("presenca-modal") que foi
+descontinuado. O projeto agora utiliza exclusivamente o modal do Bootstrap.
+
+Para evitar conflitos de z-index, backdrop e sobreposição com o Bootstrap, todo
+o conteúdo antigo foi removido. Não importe este arquivo em novos templates.
+
+Caso encontre um include/link para este CSS, remova-o e utilize apenas os
+estilos compartilhados e os componentes do Bootstrap.
+*/
+
+/* Intencionalmente vazio. */

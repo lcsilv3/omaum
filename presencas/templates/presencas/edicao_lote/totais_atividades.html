@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edição em Lote - Totais de Atividades{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'presencas/css/presenca.css' %}">
+<link rel="stylesheet" href="{% static 'css/components/stat-cards.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+                    
+            <!-- Breadcrumbs/Progresso -->
+            <nav aria-label="Progresso de Edição">
+                <ol class="breadcrumb">
+                    {% for item in breadcrumb %}
+                    <li class="breadcrumb-item {% if item.ativa %}active{% endif %}">
+                        {% if item.ativa %}
+                            <strong>{{ item.etapa }}</strong>
+                        {% else %}
+                            {{ item.etapa }}
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ol>
+            </nav>
+
+            <div class="alert alert-info">
+                <i class="fas fa-edit me-2"></i>
+                <strong>Configuração:</strong> {{ descricao_pagina }}
+            </div>
+
+            <!-- Resumo do Período (mini cards) -->
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-3">
+                    <div class="stat-card success h-100 p-3 d-flex align-items-center">
+                        <div class="stat-icon me-3"><i class="fas fa-list-check"></i></div>
+                        <div>
+                            <div class="stat-value">{{ atividades|length }}</div>
+                            <div class="stat-label">Atividades do Período</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="stat-card primary h-100 p-3 d-flex align-items-center">
+                        <div class="stat-icon me-3"><i class="fas fa-calendar-alt"></i></div>
+                        <div>
+                            <div class="stat-value">{{ mes }}/{{ ano }}</div>
+                            <div class="stat-label">Período</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="stat-card warning h-100 p-3 d-flex align-items-center">
+                        <div class="stat-icon me-3"><i class="fas fa-chalkboard"></i></div>
+                        <div>
+                            <div class="stat-value">{{ turma.nome }}</div>
+                            <div class="stat-label">Turma</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="stat-card info h-100 p-3 d-flex align-items-center">
+                        <div class="stat-icon me-3"><i class="fas fa-hashtag"></i></div>
+                        <div>
+                            <div class="stat-value">{{ atividades_com_totais|length }}</div>
+                            <div class="stat-label">Atividades Listadas</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" class="row g-3">
+                {% csrf_token %}
+                        
+                        <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-calculator me-1"></i>
+                                {{ titulo_pagina }} - {{ mes }}/{{ ano }} - {{ turma.nome }}
+                            </h6>
+                        </div>
+                                <div class="card-body">
+                                    {% if atividades_com_totais %}
+                                    <div class="row">
+                                        {% for item in atividades_com_totais %}
+                                        <div class="col-md-6 mb-3">
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">{{ item.atividade.nome }}</h6>
+                                                    <p class="card-text small text-muted">{{ item.atividade.descricao|default:"Sem descrição" }}</p>
+                                                    
+                                                    <div class="mb-2">
+                                                        <label for="qtd_ativ_{{ item.atividade.id }}" class="form-label small">
+                                                            <strong>Dias de Atividade no Mês:</strong>
+                                                        </label>
+                                                        <input type="number" 
+                                                               class="form-control" 
+                                                               id="qtd_ativ_{{ item.atividade.id }}" 
+                                                               name="qtd_ativ_{{ item.atividade.id }}" 
+                                                               value="{{ item.total_atual }}"
+                                                               min="{{ item.valor_minimo }}" 
+                                                               max="31"
+                                                               required>
+                                                        <div class="form-text">
+                                                            <i class="fas fa-info-circle me-1"></i>
+                                                            Total atual: {{ item.total_atual }} dias
+                                                            <br><small class="text-warning">
+                                                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                                                Não é possível diminuir dias (mínimo: {{ item.valor_minimo }})
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Nenhuma atividade encontrada para o período selecionado.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% url 'presencas:editar_lote_dados_basicos' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>
+                                    Voltar
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-arrow-right me-1"></i>
+                                    Continuar para Edição
+                                </button>
+                            </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Totais de atividades para edição carregados');
+    
+    // Validação aprimorada dos campos numéricos
+    const inputs = document.querySelectorAll('input[type="number"]');
+    inputs.forEach(input => {
+        const minValue = parseInt(input.getAttribute('min')) || 0;
+        const maxValue = parseInt(input.getAttribute('max')) || 31;
+        
+        input.addEventListener('change', function() {
+            const value = parseInt(this.value);
+            const originalValue = parseInt(this.defaultValue);
+            
+            if (value < minValue) {
+                this.value = minValue;
+                alert(`O valor não pode ser menor que ${minValue} (total atual).`);
+            } else if (value > maxValue) {
+                this.value = maxValue;
+                alert('O valor não pode ser maior que 31.');
+            } else if (value < originalValue) {
+                this.value = originalValue;
+                alert(`Não é possível diminuir o número de dias. Use a funcionalidade "Exclusão em Lote" para remover dias.`);
+            }
+        });
+        
+        // Adicionar tooltip visual
+        input.setAttribute('title', `Mínimo: ${minValue} dias (não pode diminuir)`);
+    });
+});
+</script>
+{% endblock %}

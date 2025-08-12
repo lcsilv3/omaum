@@ -21,13 +21,7 @@
           </nav>
           <!-- Conteúdo da etapa -->
           <h2>Detalhar Totais de Atividades</h2>
-          {% if messages %}
-            <div>
-              {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
-              {% endfor %}
-            </div>
-          {% endif %}
+          
           <ul class="list-group mb-3">
               <li class="list-group-item">Total de Atividades: {{ presenca.total_atividades }}</li>
               <li class="list-group-item">Total de Horas: {{ presenca.total_horas }}</li>

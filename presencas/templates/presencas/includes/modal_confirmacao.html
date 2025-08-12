@@ -1,17 +1,9 @@
-{# Modal de confirmação customizado #}
-<div id="modalConfirmacaoPresenca" class="presenca-modal" style="display:none;">
-    <div class="presenca-modal-content">
-        <div class="presenca-modal-header">
-            <h5 class="presenca-modal-title">Confirmação de Registro</h5>
-        </div>
-        <div id="modalConfirmacaoBody" style="margin-bottom:18px;white-space:pre-line;font-size:1.08em;"></div>
-        <div class="modal-footer-custom">
-            <button type="button" class="btn btn-secondary btn-cancelar" style="display:none;">
-                <i class="fas fa-times me-1"></i>Cancelar
-            </button>
-            <button type="button" class="btn btn-primary btn-confirmar">
-                <i class="fas fa-check me-1"></i><span class="btn-confirmar-text">Confirmar</span>
-            </button>
-        </div>
+{% comment %}
+ARQUIVO DEPRECATED: modal de confirmação custom — substituído por Bootstrap Modal programático em presenca_manager.js.
+Não inclua este arquivo.
+{% endcomment %}
+<div class="alert alert-danger" role="alert" style="margin:10px">
+        Template legado carregado: presencas/includes/modal_confirmacao.html — remova o include e use a confirmação do PresencaManager.
+        Consulte static/js/presencas/presenca_manager.js (função exibirModalConfirmacao).
     </div>
-</div>
+<script>console.error('Deprecated include used: presencas/includes/modal_confirmacao.html');</script>

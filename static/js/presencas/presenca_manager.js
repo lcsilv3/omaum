@@ -31,6 +31,7 @@ window.PresencaManager = {
     // [FIX] CONFIGURAÇÕES
     debug: true,
     _processandoSalvamento: false, // Flag para evitar conflitos durante salvamento
+    _bsModal: null, // Instância do Bootstrap Modal quando disponível
     
     // [PERFORMANCE] Sistema de cache AVANÇADO - FASE 3B
     _cacheAlunos: {
@@ -396,78 +397,84 @@ window.PresencaManager = {
      */
     configurarFlatpickr: function() {
         this.log('[DEBUG] [CRITICAL] INÍCIO configurarFlatpickr()');
-        
-        const inputs = document.querySelectorAll('.dias-datepicker');
-        this.log('[SEARCH] [CRITICAL] Inputs encontrados:', inputs.length);
-        
-        if (inputs.length === 0) {
-            this.log('[ERROR] [CRITICAL] NENHUM INPUT .dias-datepicker encontrado!');
+        // Permite que páginas especializadas controlem seus próprios calendários
+        if (window.__DISABLE_PM_FLATPICKR) {
+            this.log('[INFO] Flatpickr global desabilitado por flag de página (__DISABLE_PM_FLATPICKR).');
             return;
         }
-        
-        inputs.forEach((input, index) => {
-            const atividadeId = input.dataset.atividade;
-            const maxDias = parseInt(input.dataset.maxdias) || 0;
-            
-            this.log(`[CALENDAR] [${index}] Configurando Flatpickr para atividade ${atividadeId} (max: ${maxDias} dias)`);
-            this.log(`[CALENDAR] [${index}] Input ID: ${input.id}, Classes: ${input.className}`);
-            
-            // Verifica se o Flatpickr está disponível
-            if (typeof flatpickr === 'undefined') {
-                this.log('[ERROR] [CRITICAL] Flatpickr não está carregado!');
+        const init = () => {
+            const inputs = document.querySelectorAll('.dias-datepicker');
+            this.log('[SEARCH] [CRITICAL] Inputs encontrados:', inputs.length);
+            if (inputs.length === 0) {
+                this.log('[ERROR] [CRITICAL] NENHUM INPUT .dias-datepicker encontrado!');
                 return;
             }
-            
-            try {
-                const fpInstance = flatpickr(input, {
-                    mode: 'multiple',
-                    dateFormat: 'd',
-                    minDate: this.obterPrimeiroDiaDoMes(),
-                    maxDate: this.obterUltimoDiaDoMes(),
-                    locale: 'pt',
-                    onChange: (selectedDates, dateStr, instance) => {
-                        this.onFlatpickrChange(atividadeId, selectedDates, maxDias, instance);
-                    },
-                    onDayCreate: (dObj, dStr, fp, dayElem) => {
-                        this.onFlatpickrDayCreate(atividadeId, dayElem);
-                    },
-                    onReady: (selectedDates, dateStr, instance) => {
-                        this.onFlatpickrReady(instance);
-                    }
-                });
-
-                this.log(`[SUCCESS] [${index}] Flatpickr inicializado para atividade ${atividadeId}`);
-
-                // Torna o ícone clicável
-                const icon = input.parentElement.querySelector('.calendar-icon');
-                if (icon) {
-                    this.log(`[FIX] [${index}] Configurando clique no ícone`);
-                    icon.addEventListener('click', () => {
-                        this.log(`[EMOJI] [${index}] Ícone clicado - abrindo calendário`);
-                        if (input._flatpickr) {
-                            input._flatpickr.open();
-                        } else {
-                            this.log(`[ERROR] [${index}] _flatpickr não encontrado no input!`);
-                        }
-                    });
-                } else {
-                    this.log(`[WARNING] [${index}] Ícone .calendar-icon não encontrado`);
+            inputs.forEach((input, index) => {
+                const atividadeId = input.dataset.atividade;
+                const maxDias = parseInt(input.dataset.maxdias) || 0;
+                this.log(`[CALENDAR] [${index}] Configurando Flatpickr para atividade ${atividadeId} (max: ${maxDias} dias)`);
+                this.log(`[CALENDAR] [${index}] Input ID: ${input.id}, Classes: ${input.className}`);
+                // Verifica se o Flatpickr está disponível
+                if (typeof flatpickr === 'undefined') {
+                    this.log('[ERROR] [CRITICAL] Flatpickr não está carregado!');
+                    return;
                 }
-                
-                // Adiciona clique no próprio input também
-                input.addEventListener('click', () => {
-                    this.log(`[EMOJI] [${index}] Input clicado - abrindo calendário`);
-                    if (input._flatpickr) {
-                        input._flatpickr.open();
+                try {
+                    const options = {
+                        mode: 'multiple',
+                        dateFormat: 'd',
+                        minDate: this.obterPrimeiroDiaDoMes(),
+                        maxDate: this.obterUltimoDiaDoMes(),
+                        locale: 'pt',
+                        onChange: (selectedDates, dateStr, instance) => {
+                            this.onFlatpickrChange(atividadeId, selectedDates, maxDias, instance);
+                        },
+                        onDayCreate: (dObj, dStr, fp, dayElem) => {
+                            this.onFlatpickrDayCreate(atividadeId, dayElem);
+                        },
+                        onReady: (selectedDates, dateStr, instance) => {
+                            this.onFlatpickrReady(instance);
+                        }
+                    };
+                    if (window.FlatpickrUtil && typeof window.FlatpickrUtil.initInput === 'function') {
+                        window.FlatpickrUtil.initInput(input, options, { openOnIcon: true, openOnInput: true });
+                    } else {
+                        flatpickr(input, options);
                     }
-                });
-                
-            } catch (error) {
-                this.log(`[ERROR] [${index}] Erro ao inicializar Flatpickr:`, error);
-            }
-        });
-        
-        this.log('[DEBUG] [CRITICAL] FIM configurarFlatpickr()');
+                    this.log(`[SUCCESS] [${index}] Flatpickr inicializado para atividade ${atividadeId}`);
+                    // Clique no ícone (se util não estiver presente)
+                    if (!window.FlatpickrUtil) {
+                        const icon = input.parentElement.querySelector('.calendar-icon');
+                        if (icon) {
+                            this.log(`[FIX] [${index}] Configurando clique no ícone`);
+                            icon.addEventListener('click', () => {
+                                this.log(`[EMOJI] [${index}] Ícone clicado - abrindo calendário`);
+                                if (input._flatpickr) {
+                                    input._flatpickr.open();
+                                } else {
+                                    this.log(`[ERROR] [${index}] _flatpickr não encontrado no input!`);
+                                }
+                            });
+                        } else {
+                            this.log(`[WARNING] [${index}] Ícone .calendar-icon não encontrado`);
+                        }
+                        input.addEventListener('click', () => {
+                            this.log(`[EMOJI] [${index}] Input clicado - abrindo calendário`);
+                            if (input._flatpickr) input._flatpickr.open();
+                        });
+                    }
+                } catch (error) {
+                    this.log(`[ERROR] [${index}] Erro ao inicializar Flatpickr:`, error);
+                }
+            });
+            this.log('[DEBUG] [CRITICAL] FIM configurarFlatpickr()');
+        };
+
+        if (window.FlatpickrUtil && typeof window.FlatpickrUtil.withFlatpickr === 'function') {
+            window.FlatpickrUtil.withFlatpickr(() => init());
+        } else {
+            init();
+        }
     },
     
     /**
@@ -724,12 +731,28 @@ window.PresencaManager = {
             // Preenche lista de alunos
             this.preencherListaAlunos();
             
-            // Exibe o modal
+            // Exibe o modal (prefere Bootstrap Modal se disponível)
             const modal = document.getElementById('presencaModal');
-            modal.style.display = 'flex';
-            modal.classList.add('show');
-            modal.classList.remove('d-none');
-            document.body.classList.add('modal-open');
+            if (window.bootstrap && window.bootstrap.Modal) {
+                try {
+                    if (!this._bsModal) {
+                        this._bsModal = new window.bootstrap.Modal(modal, { backdrop: true, keyboard: true });
+                    }
+                    this._bsModal.show();
+                } catch (e) {
+                    this.log('[WARNING] Falha ao usar Bootstrap.Modal, usando fallback:', e);
+                    modal.style.display = 'flex';
+                    modal.classList.add('show');
+                    modal.classList.remove('d-none');
+                    document.body.classList.add('modal-open');
+                }
+            } else {
+                // Fallback legacy
+                modal.style.display = 'flex';
+                modal.classList.add('show');
+                modal.classList.remove('d-none');
+                document.body.classList.add('modal-open');
+            }
             
             this.log('[SUCCESS] Modal aberto com sucesso');
         }).catch(error => {
@@ -845,6 +868,12 @@ window.PresencaManager = {
             }
             modalAtividadeNome.innerHTML = html;
         }
+
+    // Mostrar/ocultar botões de ações em massa de convocação
+    const btnTodosConv = document.getElementById('btnTodosConvocados');
+    const btnTodosNaoConv = document.getElementById('btnTodosNaoConvocados');
+    if (btnTodosConv) btnTodosConv.style.display = isConvocada ? '' : 'none';
+    if (btnTodosNaoConv) btnTodosNaoConv.style.display = isConvocada ? '' : 'none';
         
         this.log(`[LIST] Cabeçalho do modal atualizado: ${nomeAtividade} (${dataFormatada})`);
     },
@@ -1314,164 +1343,109 @@ window.PresencaManager = {
         }
     },
     
-    /**
-     * [FAST] MARCAR TODOS PRESENTES (MODO RÁPIDO)
-     */
+    // Ações em massa no modal atual
     marcarTodosPresentes: function() {
         if (!this.atividadeAtual || !this.diaAtual) return;
-        
-        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
-        this.log('[DEBUG] [DEBUG CRÍTICO] INICIANDO TODOS PRESENTES');
-        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
-        this.log('[FAST] [MODO RAPIDO] Estado COMPLETO de convocação ANTES:', JSON.stringify(this.convocadosIndividuais, null, 2));
-        this.log('[FAST] [MODO RAPIDO] Quantidade de alunos a processar:', this.alunosData.length);
-        
-        // [SEARCH] DIAGNÓSTICO: Verifica estado inicial de cada badge no DOM
-        this.alunosData.forEach(aluno => {
-            const cpfAluno = aluno.cpf || aluno.id;
-            const badgeElement = document.querySelector(`[data-cpf="${cpfAluno}"] .badge-convocado`);
-            if (badgeElement) {
-                this.log(`[SEARCH] [DOM ANTES] CPF ${cpfAluno}: Badge DOM texto = "${badgeElement.textContent}" | cor = ${badgeElement.style.backgroundColor}`);
-            }
-        });
-        
-        this.alunosData.forEach(aluno => {
-            const cpfAluno = aluno.cpf || aluno.id;
-            
-            this.log(`[DEBUG] [ALUNO ${cpfAluno}] =====================================================`);
-            
-            // Estado ANTES da operação
-            const estadoConvocacaoAtual = this.convocadosIndividuais[cpfAluno];
-            const presencaAnterior = this.presencasRegistradas[this.atividadeAtual]?.[this.diaAtual]?.[cpfAluno];
-            
-            this.log(`[SEARCH] [ANTES] CPF: ${cpfAluno}`);
-            this.log(`[SEARCH] [ANTES] convocadosIndividuais[${cpfAluno}] =`, estadoConvocacaoAtual);
-            this.log(`[SEARCH] [ANTES] typeof convocadosIndividuais[${cpfAluno}] =`, typeof estadoConvocacaoAtual);
-            this.log(`[SEARCH] [ANTES] convocadosIndividuais[${cpfAluno}] !== undefined =`, estadoConvocacaoAtual !== undefined);
-            this.log(`[SEARCH] [ANTES] Presença anterior:`, presencaAnterior);
-            
-            // Atualiza estado
-            if (!this.presencasRegistradas[this.atividadeAtual]) {
-                this.presencasRegistradas[this.atividadeAtual] = {};
-            }
-            if (!this.presencasRegistradas[this.atividadeAtual][this.diaAtual]) {
-                this.presencasRegistradas[this.atividadeAtual][this.diaAtual] = {};
-            }
-            
-            // [FIX] CORREÇÃO CRÍTICA: Usa a lógica mais rigorosa
-            let estadoConvocacaoFinal;
-            if (estadoConvocacaoAtual !== undefined) {
-                estadoConvocacaoFinal = estadoConvocacaoAtual;
-                this.log(`[SUCCESS] [LÓGICA] Usando estado atual: ${estadoConvocacaoFinal}`);
-            } else {
-                estadoConvocacaoFinal = true;
-                this.log(`[WARNING] [LÓGICA] Estado undefined, usando padrão: ${estadoConvocacaoFinal}`);
-            }
-            
-            this.log(`[TARGET] [DECISÃO] Estado final escolhido: ${estadoConvocacaoFinal}`);
-            
+        // Garante estrutura
+        if (!this.presencasRegistradas[this.atividadeAtual]) {
+            this.presencasRegistradas[this.atividadeAtual] = {};
+        }
+        if (!this.presencasRegistradas[this.atividadeAtual][this.diaAtual]) {
+            this.presencasRegistradas[this.atividadeAtual][this.diaAtual] = {};
+        }
+
+        // Itera sobre todos os alunos renderizados no modal e marca presente
+        const itens = document.querySelectorAll('#alunosContainer .aluno-presenca-item');
+        itens.forEach(div => {
+            const cpfAluno = div.getAttribute('data-cpf');
+            if (!cpfAluno) return;
+            const atual = this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno] || {};
             this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno] = {
                 presente: true,
-                justificativa: '',
-                convocado: estadoConvocacaoFinal
+                justificativa: atual.justificativa || '',
+                convocado: (typeof atual.convocado !== 'undefined') ? atual.convocado : (this.convocadosIndividuais[cpfAluno] ?? true)
             };
-            
-            this.log(`[SAVE] [SALVO] Dados salvos:`, this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno]);
-            this.log(`[DEBUG] [ALUNO ${cpfAluno}] FIM ==========================================`);
+            this.atualizarInterfaceAluno(cpfAluno);
         });
-        
-        // Recarrega a lista para refletir mudanças
-        this.log('[RELOAD] [RELOAD] Chamando preencherListaAlunos()...');
-        this.preencherListaAlunos();
-        this.log('[SUCCESS] [RELOAD] preencherListaAlunos() concluído');
-        
-        // [SEARCH] DIAGNÓSTICO: Verifica estado final de cada badge no DOM
-        this.log('[SEARCH] [DOM DEPOIS] Verificando badges após reload:');
-        this.alunosData.forEach(aluno => {
-            const cpfAluno = aluno.cpf || aluno.id;
-            const badgeElement = document.querySelector(`[data-cpf="${cpfAluno}"] .badge-convocado`);
-            if (badgeElement) {
-                this.log(`[SEARCH] [DOM DEPOIS] CPF ${cpfAluno}: Badge DOM texto = "${badgeElement.textContent}" | cor = ${badgeElement.style.backgroundColor}`);
-            }
-        });
-        
-        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
-        this.log('[DEBUG] [DEBUG CRÍTICO] FINALIZANDO TODOS PRESENTES');
-        this.log('[DEBUG] [DEBUG CRÍTICO] Estado FINAL de convocação:', JSON.stringify(this.convocadosIndividuais, null, 2));
-        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
-        
-        this.log('[FAST] Todos os alunos marcados como presentes');
-        this.mostrarMensagem('Todos os alunos foram marcados como presentes!', 'success');
+
+        this.mostrarMensagem('Todos marcados como presentes.', 'success');
     },
-    
-    /**
-     * [FAST] MARCAR TODOS AUSENTES (MODO RÁPIDO)
-     */
+
     marcarTodosAusentes: function() {
         if (!this.atividadeAtual || !this.diaAtual) return;
-        
-        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
-        this.log('[DEBUG] [DEBUG CRÍTICO] INICIANDO TODOS AUSENTES');
-        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
-        this.log('[FAST] [MODO RAPIDO] Estado COMPLETO de convocação ANTES:', JSON.stringify(this.convocadosIndividuais, null, 2));
-        
-        this.alunosData.forEach(aluno => {
-            const cpfAluno = aluno.cpf || aluno.id;
-            
-            this.log(`[DEBUG] [ALUNO ${cpfAluno}] =====================================================`);
-            
-            // Estado ANTES da operação
-            const estadoConvocacaoAtual = this.convocadosIndividuais[cpfAluno];
-            const presencaAnterior = this.presencasRegistradas[this.atividadeAtual]?.[this.diaAtual]?.[cpfAluno];
-            
-            this.log(`[SEARCH] [ANTES] CPF: ${cpfAluno}`);
-            this.log(`[SEARCH] [ANTES] convocadosIndividuais[${cpfAluno}] =`, estadoConvocacaoAtual);
-            this.log(`[SEARCH] [ANTES] typeof convocadosIndividuais[${cpfAluno}] =`, typeof estadoConvocacaoAtual);
-            this.log(`[SEARCH] [ANTES] convocadosIndividuais[${cpfAluno}] !== undefined =`, estadoConvocacaoAtual !== undefined);
-            this.log(`[SEARCH] [ANTES] Presença anterior:`, presencaAnterior);
-            
-            // Atualiza estado
-            if (!this.presencasRegistradas[this.atividadeAtual]) {
-                this.presencasRegistradas[this.atividadeAtual] = {};
-            }
-            if (!this.presencasRegistradas[this.atividadeAtual][this.diaAtual]) {
-                this.presencasRegistradas[this.atividadeAtual][this.diaAtual] = {};
-            }
-            
-            // [FIX] CORREÇÃO CRÍTICA: Usa a lógica mais rigorosa
-            let estadoConvocacaoFinal;
-            if (estadoConvocacaoAtual !== undefined) {
-                estadoConvocacaoFinal = estadoConvocacaoAtual;
-                this.log(`[SUCCESS] [LÓGICA] Usando estado atual: ${estadoConvocacaoFinal}`);
-            } else {
-                estadoConvocacaoFinal = true;
-                this.log(`[WARNING] [LÓGICA] Estado undefined, usando padrão: ${estadoConvocacaoFinal}`);
-            }
-            
-            this.log(`[TARGET] [DECISÃO] Estado final escolhido: ${estadoConvocacaoFinal}`);
-            
+        // Garante estrutura
+        if (!this.presencasRegistradas[this.atividadeAtual]) {
+            this.presencasRegistradas[this.atividadeAtual] = {};
+        }
+        if (!this.presencasRegistradas[this.atividadeAtual][this.diaAtual]) {
+            this.presencasRegistradas[this.atividadeAtual][this.diaAtual] = {};
+        }
+
+        // Itera sobre todos os alunos renderizados no modal e marca ausente
+        const itens = document.querySelectorAll('#alunosContainer .aluno-presenca-item');
+        itens.forEach(div => {
+            const cpfAluno = div.getAttribute('data-cpf');
+            if (!cpfAluno) return;
+            const atual = this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno] || {};
             this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno] = {
                 presente: false,
-                justificativa: '',
-                convocado: estadoConvocacaoFinal
+                justificativa: atual.justificativa || '',
+                convocado: (typeof atual.convocado !== 'undefined') ? atual.convocado : (this.convocadosIndividuais[cpfAluno] ?? true)
             };
-            
-            this.log(`[SAVE] [SALVO] Dados salvos:`, this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno]);
-            this.log(`[DEBUG] [ALUNO ${cpfAluno}] FIM ==========================================`);
+            this.atualizarInterfaceAluno(cpfAluno);
         });
-        
-        // Recarrega a lista para refletir mudanças
-        this.log('[RELOAD] [RELOAD] Chamando preencherListaAlunos()...');
-        this.preencherListaAlunos();
-        this.log('[SUCCESS] [RELOAD] preencherListaAlunos() concluído');
-        
-        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
-        this.log('[DEBUG] [DEBUG CRÍTICO] FINALIZANDO TODOS AUSENTES');
-        this.log('[DEBUG] [DEBUG CRÍTICO] Estado FINAL de convocação:', JSON.stringify(this.convocadosIndividuais, null, 2));
-        this.log('[DEBUG] [DEBUG CRÍTICO] ================================');
-        
-        this.log('[FAST] Todos os alunos marcados como ausentes');
-        this.mostrarMensagem('Todos os alunos foram marcados como ausentes!', 'warning');
+
+        this.mostrarMensagem('Todos marcados como ausentes.', 'warning');
+    },
+
+    // Ações em massa de CONVOCAÇÃO no modal atual (apenas se atividade for convocada)
+    marcarTodosConvocados: function() {
+        if (!this.atividadeAtual || !this.diaAtual) return;
+        if (!this.isAtividadeConvocada(this.atividadeAtual)) return;
+
+        // Atualiza estado global de convocação e interface
+        const itens = document.querySelectorAll('#alunosContainer .aluno-presenca-item');
+        itens.forEach(div => {
+            const cpfAluno = div.getAttribute('data-cpf');
+            if (!cpfAluno) return;
+            this.convocadosIndividuais[cpfAluno] = true;
+            // Salva no registro do dia
+            const atual = this.presencasRegistradas[this.atividadeAtual]?.[this.diaAtual]?.[cpfAluno] || {};
+            if (!this.presencasRegistradas[this.atividadeAtual]) this.presencasRegistradas[this.atividadeAtual] = {};
+            if (!this.presencasRegistradas[this.atividadeAtual][this.diaAtual]) this.presencasRegistradas[this.atividadeAtual][this.diaAtual] = {};
+            this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno] = {
+                presente: (typeof atual.presente !== 'undefined') ? atual.presente : true,
+                justificativa: atual.justificativa || '',
+                convocado: true
+            };
+            // Atualiza badge se encontrado
+            const badge = div.querySelector('.badge-convocado');
+            if (badge) this.atualizarBadgeConvocacao(badge, cpfAluno);
+        });
+        this.mostrarMensagem('Todos marcados como convocados.', 'info');
+    },
+
+    marcarTodosNaoConvocados: function() {
+        if (!this.atividadeAtual || !this.diaAtual) return;
+        if (!this.isAtividadeConvocada(this.atividadeAtual)) return;
+
+        const itens = document.querySelectorAll('#alunosContainer .aluno-presenca-item');
+        itens.forEach(div => {
+            const cpfAluno = div.getAttribute('data-cpf');
+            if (!cpfAluno) return;
+            this.convocadosIndividuais[cpfAluno] = false;
+            const atual = this.presencasRegistradas[this.atividadeAtual]?.[this.diaAtual]?.[cpfAluno] || {};
+            if (!this.presencasRegistradas[this.atividadeAtual]) this.presencasRegistradas[this.atividadeAtual] = {};
+            if (!this.presencasRegistradas[this.atividadeAtual][this.diaAtual]) this.presencasRegistradas[this.atividadeAtual][this.diaAtual] = {};
+            this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpfAluno] = {
+                presente: (typeof atual.presente !== 'undefined') ? atual.presente : true,
+                justificativa: atual.justificativa || '',
+                convocado: false
+            };
+            const badge = div.querySelector('.badge-convocado');
+            if (badge) this.atualizarBadgeConvocacao(badge, cpfAluno);
+        });
+        this.mostrarMensagem('Todos marcados como não convocados.', 'secondary');
     },
     
     /**
@@ -1559,33 +1533,10 @@ window.PresencaManager = {
         // Fecha o modal IMEDIATAMENTE após 1 segundo
         this.log('[TIME] [CRITICAL] Configurando setTimeout para fechar modal em 1s...');
         const timeoutId = setTimeout(() => {
-            this.log('[CLOSE] [CRITICAL] EXECUTANDO setTimeout - Fechando modal FORÇADAMENTE...');
-            this.log('[TARGET] [UX] Validando dados preservados dentro do setTimeout:');
-            this.log('[TARGET] [UX] atividadeParaReabrir:', atividadeParaReabrir);
-            this.log('[TARGET] [UX] diaProcessado:', diaProcessado);
+            this.log('[CLOSE] [CRITICAL] EXECUTANDO setTimeout - Fechando modal...');
+            this.log('[TARGET] [UX] atividadeParaReabrir:', atividadeParaReabrir, 'diaProcessado:', diaProcessado);
             
-            // FORÇA o fechamento imediato usando ESTRATÉGIAS EXTREMAS
-            const modal = document.getElementById('presencaModal');
-            if (modal) {
-                modal.style.setProperty('display', 'none', 'important');
-                modal.style.setProperty('visibility', 'hidden', 'important');
-                modal.style.setProperty('opacity', '0', 'important');
-                modal.style.setProperty('z-index', '-99999', 'important');
-                modal.style.setProperty('position', 'fixed', 'important');
-                modal.style.setProperty('top', '-9999px', 'important');
-                modal.style.setProperty('left', '-9999px', 'important');
-                modal.classList.remove('show');
-                modal.classList.add('d-none');
-                modal.removeAttribute('style'); // Remove todos os estilos inline
-                modal.style.display = 'none'; // Reaplica sem !important
-                document.body.classList.remove('modal-open');
-                
-                // Remove qualquer backdrop
-                const backdrops = document.querySelectorAll('.modal-backdrop, .presenca-modal-backdrop');
-                backdrops.forEach(backdrop => backdrop.remove());
-            }
-            
-            // Chama também o método normal (que vai limpar this.atividadeAtual)
+            // Usa fluxo normal de fechamento preferindo Bootstrap
             this.fecharModal();
             
             this.log('[SUCCESS] [CRITICAL] Modal fechado via setTimeout FORÇADO');
@@ -1879,11 +1830,23 @@ window.PresencaManager = {
         
         const modal = document.getElementById('presencaModal');
         if (modal) {
-            this.log('[SEARCH] Modal encontrado, alterando display...');
-            modal.style.display = 'none';
-            modal.classList.remove('show');
-            document.body.classList.remove('modal-open');
-            this.log('[SUCCESS] Estilos do modal alterados');
+            if (this._bsModal && typeof this._bsModal.hide === 'function') {
+                try {
+                    this._bsModal.hide();
+                } catch (e) {
+                    this.log('[WARNING] Erro ao esconder Bootstrap.Modal, aplicando fallback:', e);
+                    modal.style.display = 'none';
+                    modal.classList.remove('show');
+                    document.body.classList.remove('modal-open');
+                }
+            } else {
+                // Fallback legacy
+                this.log('[SEARCH] Modal encontrado (fallback), alterando display...');
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
+            this.log('[SUCCESS] Modal fechado');
         } else {
             this.log('[ERROR] Modal NÃO encontrado no DOM!');
         }
@@ -1906,13 +1869,19 @@ window.PresencaManager = {
         const modal = document.getElementById('presencaModal');
         if (!modal) return false;
         
-        // Múltiplas verificações para garantir precisão
-        const displayCheck = modal.style.display === 'flex';
+        // Preferir lógica do Bootstrap quando disponível
+        if (this._bsModal || (window.bootstrap && window.bootstrap.Modal)) {
+            const isOpen = modal.classList.contains('show') && modal.getAttribute('aria-hidden') !== 'true';
+            this.log(`[EMOJI] [MODAL] (Bootstrap) Estado:`, { classes: modal.className, ariaHidden: modal.getAttribute('aria-hidden'), isOpen });
+            return isOpen;
+        }
+        
+        // Fallback: verificações baseadas em estilo/classe
+        const displayCheck = (modal.style.display && modal.style.display !== 'none');
         const classCheck = modal.classList.contains('show') && !modal.classList.contains('d-none');
         const visibilityCheck = modal.style.visibility !== 'hidden';
         const opacityCheck = modal.style.opacity !== '0';
-        
-        const isOpen = displayCheck && classCheck && visibilityCheck && opacityCheck;
+        const isOpen = (displayCheck || classCheck) && visibilityCheck && opacityCheck;
         
         this.log(`[EMOJI] [MODAL] Verificação de estado:`, {
             display: modal.style.display,
@@ -2675,7 +2644,7 @@ function fecharModalPresenca() {
 
 // Expor PresencaApp para compatibilidade total
 window.PresencaApp = {
-    // Redirect para PresencaManager
+    // Redirects e compatibilidade
     marcarTodosPresentes: () => window.PresencaManager.marcarTodosPresentes(),
     marcarTodosAusentes: () => window.PresencaManager.marcarTodosAusentes(),
     salvarPresencaDia: () => window.PresencaManager.salvarDiaAtual(),
@@ -2741,8 +2710,8 @@ window.DebugPresenca = {
             modal.style.display = 'none !important'; // Reaplica o display
             document.body.classList.remove('modal-open');
             
-            // Força remoção de qualquer backdrop
-            const backdrops = document.querySelectorAll('.modal-backdrop, .presenca-modal-backdrop');
+            // Força remoção de qualquer backdrop (Bootstrap)
+            const backdrops = document.querySelectorAll('.modal-backdrop');
             backdrops.forEach(backdrop => backdrop.remove());
             
             // Chama também o método do PresencaManager

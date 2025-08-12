@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edição em Lote - Seleção do Período{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'presencas/css/presenca.css' %}">
+<link rel="stylesheet" href="{% static 'css/components/stat-cards.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="accordion" id="accordionEdicaoLote">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingSelecaoPeriodo">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#collapseSelecaoPeriodo" aria-expanded="true" 
+                        aria-controls="collapseSelecaoPeriodo">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    {{ titulo_pagina }}
+                </button>
+            </h2>
+            <div id="collapseSelecaoPeriodo" class="accordion-collapse collapse show" 
+                 aria-labelledby="headingSelecaoPeriodo" data-bs-parent="#accordionEdicaoLote">
+                <div class="accordion-body">
+                    
+                    <!-- Breadcrumbs/Progresso -->
+                    <nav aria-label="Progresso de Edição">
+                        <ol class="breadcrumb">
+                            {% for item in breadcrumb %}
+                            <li class="breadcrumb-item {% if item.ativa %}active{% endif %}">
+                                {% if item.ativa %}
+                                    <strong>{{ item.etapa }}</strong>
+                                {% else %}
+                                    {{ item.etapa }}
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </nav>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Edição em Lote:</strong> {{ descricao_pagina }}
+                        <br><small>Você poderá editar múltiplas presenças de uma vez, seguindo o mesmo fluxo da marcação original.</small>
+                    </div>
+
+                    <!-- Resumo (mini cards) -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-3">
+                            <div class="stat-card success h-100 p-3 d-flex align-items-center">
+                                <div class="stat-icon me-3"><i class="fas fa-graduation-cap"></i></div>
+                                <div>
+                                    <div id="statCursosVal" class="stat-value">{{ cursos|length }}</div>
+                                    <div class="stat-label">Cursos disponíveis</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="stat-card info h-100 p-3 d-flex align-items-center">
+                                <div class="stat-icon me-3"><i class="fas fa-users"></i></div>
+                                <div>
+                                    <div id="statTurmasVal" class="stat-value">{{ turmas|length }}</div>
+                                    <div class="stat-label">Turmas disponíveis</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="stat-card primary h-100 p-3 d-flex align-items-center">
+                                <div class="stat-icon me-3"><i class="fas fa-calendar-alt"></i></div>
+                                <div>
+                                    <div id="statPeriodoVal" class="stat-value">{% if mes_selecionado and ano_selecionado %}{{ mes_selecionado }}/{{ ano_selecionado }}{% else %}--/--{% endif %}</div>
+                                    <div class="stat-label">Período selecionado</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="stat-card warning h-100 p-3 d-flex align-items-center">
+                                <div class="stat-icon me-3"><i class="fas fa-chalkboard"></i></div>
+                                <div>
+                                    <div id="statTurmaVal" class="stat-value">{% if turma_selecionada %}{% for t in turmas %}{% if t.id|stringformat:"s" == turma_selecionada %}{{ t.nome }}{% endif %}{% endfor %}{% else %}—{% endif %}</div>
+                                    <div class="stat-label">Turma selecionada</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <form method="post" class="row g-3">
+                        {% csrf_token %}
+                        
+                        <div class="col-md-6">
+                            <label for="curso" class="form-label">
+                                <i class="fas fa-graduation-cap me-1"></i>
+                                Curso
+                            </label>
+                            <select name="curso" id="curso" class="form-select" required>
+                                <option value="">Selecione um curso</option>
+                                {% for curso in cursos %}
+                                    <option value="{{ curso.id }}" {% if turma_selecionada %}data-curso-turma="{{ curso.id }}"{% endif %}>{{ curso.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="turma" class="form-label">
+                                <i class="fas fa-users me-1"></i>
+                                Turma
+                            </label>
+                            <select name="turma" id="turma" class="form-select" required {% if not turma_selecionada %}disabled{% endif %}>
+                                {% if not turma_selecionada %}
+                                    <option value="">Primeiro selecione um curso</option>
+                                {% else %}
+                                    <option value="">Selecione uma turma</option>
+                                    {% for turma in turmas %}
+                                        <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == turma_selecionada %}selected{% endif %}>{{ turma.nome }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="ano" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>
+                                Ano
+                            </label>
+                            <select name="ano" id="ano" class="form-select" required>
+                                <option value="">Selecione o ano</option>
+                                {% for ano in anos %}
+                                    <option value="{{ ano }}" {% if ano|stringformat:"s" == ano_selecionado %}selected{% endif %}>{{ ano }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="mes" class="form-label">
+                                <i class="fas fa-calendar-day me-1"></i>
+                                Mês
+                            </label>
+                            <select name="mes" id="mes" class="form-select" required>
+                                <option value="">Selecione o mês</option>
+                                {% for numero, nome in meses %}
+                                    <option value="{{ numero }}" {% if numero == mes_selecionado %}selected{% endif %}>{{ nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% url 'presencas:listar_presencas_academicas' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>
+                                    Voltar à Listagem
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-search me-1"></i>
+                                    Buscar Presenças
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cursoSelect = document.getElementById('curso');
+    const turmaSelect = document.getElementById('turma');
+    const anoSelect = document.getElementById('ano');
+    const mesSelect = document.getElementById('mes');
+    const statTurmasVal = document.getElementById('statTurmasVal');
+    const statTurmaVal = document.getElementById('statTurmaVal');
+    const statPeriodoVal = document.getElementById('statPeriodoVal');
+    
+    {% if turma_selecionada %}
+    // Encontrar o curso da turma selecionada e marcar como selecionado
+    const turmas = [
+        {% for turma in turmas %}
+        {id: {{ turma.id }}, nome: "{{ turma.nome }}", curso_id: {{ turma.curso.id }}},
+        {% endfor %}
+    ];
+    const turmaSelecionada = turmas.find(t => t.id == {{ turma_selecionada }});
+    if (turmaSelecionada) {
+        cursoSelect.value = turmaSelecionada.curso_id;
+        // Disparar evento para carregar turmas do curso
+        cursoSelect.dispatchEvent(new Event('change'));
+    }
+    {% endif %}
+    
+    // Dataset de turmas para filtro dinâmico
+    const ALL_TURMAS = [
+        {% for turma in turmas %}
+        {id: {{ turma.id }}, nome: "{{ turma.nome }}", curso_id: {{ turma.curso.id }}},
+        {% endfor %}
+    ];
+
+    function atualizarStatPeriodo() {
+        const ano = anoSelect.value;
+        const mes = mesSelect.value;
+        statPeriodoVal.textContent = (ano && mes) ? `${mes}/${ano}` : '--/--';
+    }
+
+    function atualizarStatTurmas(cursoId) {
+        if (!cursoId) {
+            statTurmasVal.textContent = {{ turmas|length }};
+            statTurmaVal.textContent = '—';
+            return;
+        }
+        const filtradas = ALL_TURMAS.filter(t => String(t.curso_id) === String(cursoId));
+        statTurmasVal.textContent = filtradas.length;
+        statTurmaVal.textContent = '—';
+    }
+
+    function popularTurmas(cursoId) {
+        turmaSelect.innerHTML = '<option value="">Carregando turmas...</option>';
+        turmaSelect.disabled = true;
+        if (!cursoId) {
+            turmaSelect.innerHTML = '<option value="">Primeiro selecione um curso</option>';
+            return;
+        }
+        const filtradas = ALL_TURMAS.filter(t => String(t.curso_id) === String(cursoId));
+        turmaSelect.innerHTML = '<option value="">Selecione uma turma</option>';
+        filtradas.forEach(turma => {
+            turmaSelect.innerHTML += `<option value="${turma.id}">${turma.nome}</option>`;
+        });
+        turmaSelect.disabled = false;
+    }
+
+    // Eventos
+    cursoSelect.addEventListener('change', function() {
+        const cursoId = this.value;
+        popularTurmas(cursoId);
+        atualizarStatTurmas(cursoId);
+    });
+
+    turmaSelect.addEventListener('change', function() {
+        const opt = this.options[this.selectedIndex];
+        statTurmaVal.textContent = opt && opt.value ? opt.text : '—';
+    });
+
+    anoSelect.addEventListener('change', atualizarStatPeriodo);
+    mesSelect.addEventListener('change', atualizarStatPeriodo);
+});
+</script>
+{% endblock %}

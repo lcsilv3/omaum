@@ -1,0 +1,1166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edição em Lote - Dias e Presenças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'presencas/css/presenca.css' %}">
+<link rel="stylesheet" href="{% static 'css/components/stat-cards.css' %}">
+<link rel="stylesheet" href="{% static 'css/components/atividade-cards.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/flatpickr/flatpickr.min.css' %}">
+<style>
+    /* stat-card e atividade-card agora vêm de CSS compartilhado */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="accordion" id="accordionEdicaoLoteDias">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingDiasAtividades">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#collapseDiasAtividades" aria-expanded="true" 
+                        aria-controls="collapseDiasAtividades">
+                    <i class="fas fa-edit me-2"></i>
+                    {{ titulo_pagina }}
+                </button>
+            </h2>
+            <div id="collapseDiasAtividades" class="accordion-collapse collapse show" 
+                 aria-labelledby="headingDiasAtividades" data-bs-parent="#accordionEdicaoLoteDias">
+                <div class="accordion-body">
+                    
+                    <!-- Breadcrumbs/Progresso -->
+                    <nav aria-label="Progresso de Edição">
+                        <ol class="breadcrumb">
+                            {% for item in breadcrumb %}
+                            <li class="breadcrumb-item {% if item.ativa %}active{% endif %}">
+                                {% if item.ativa %}
+                                    <strong>{{ item.etapa }}</strong>
+                                {% else %}
+                                    {{ item.etapa }}
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </nav>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Modo Edição:</strong> edite diretamente no calendário; clique nos dias marcados para alterar.
+                    </div>
+
+
+                    <!-- Resumo da Edição (layout compacto, alinhado ao padrão) -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-3">
+                            <div class="stat-card success h-100 p-3 d-flex align-items-center">
+                                <div class="stat-icon me-3"><i class="fas fa-list-check"></i></div>
+                                <div>
+                                    <div class="stat-value">{{ atividades|length }}</div>
+                                    <div class="stat-label">Atividades com Presenças</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="stat-card info h-100 p-3 d-flex align-items-center">
+                                <div class="stat-icon me-3"><i class="fas fa-user"></i></div>
+                                <div>
+                                    <div class="stat-value">{{ alunos|length }}</div>
+                                    <div class="stat-label">Alunos da Turma</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="stat-card warning h-100 p-3 d-flex align-items-center">
+                                <div class="stat-icon me-3"><i class="fas fa-chalkboard"></i></div>
+                                <div>
+                                    <div class="stat-value">{{ turma.nome }}</div>
+                                    <div class="stat-label">Turma</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="stat-card primary h-100 p-3 d-flex align-items-center">
+                                <div class="stat-icon me-3"><i class="fas fa-calendar-alt"></i></div>
+                                <div>
+                                    <div class="stat-value">{{ mes }}/{{ ano }}</div>
+                                    <div class="stat-label">Período</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendários das Atividades - Layout Horizontal -->
+                    <div id="atividades-container">
+                    {% for atividade in atividades %}
+                    <div class="card atividade-card" data-atividade-id="{{ atividade.id }}"
+                        data-total-esperado="{{ atividade.total_dias|default:0 }}"
+                        data-total-existente="{{ atividade.total_dias_existentes|default:0 }}">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-tasks me-1"></i>
+                                    {{ atividade.nome }}
+                                </h6>
+                                <div class="atividade-stats">
+                                    <span class="badge bg-light text-dark me-2">
+                                        {{ atividade.total_dias|default:0 }} dias
+                                    </span>
+                                    <span class="badge bg-light text-dark">
+                                        {{ atividade.total_presencas|default:0 }} presenças
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body py-3">
+                                <!-- Layout Horizontal: Calendário + Label inline -->
+                                <div class="d-flex align-items-center">
+                                    <label class="form-label fw-bold me-3 mb-0 text-nowrap">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        Dias com Presenças:
+                                    </label>
+                                    <div class="flex-grow-1">
+                                        <input type="text" 
+                                               class="form-control dias-datepicker" 
+                                               data-atividade="{{ atividade.id }}"
+                                               data-dias-existentes="{{ atividade.dias_existentes_str }}"
+                                               readonly
+                                               data-open-on-click="1"
+                                               title="Clique para abrir o calendário"
+                                               placeholder="">
+                                        <small class="form-text text-muted mt-1">Clique para ver/editar dias desta atividade</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <a href="{% url 'presencas:editar_lote_totais_atividades' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Voltar
+                        </a>
+                        
+                        <button type="button" class="btn btn-success btn-lg" onclick="EdicaoLoteManager.finalizarEdicao()">
+                            <i class="fas fa-save me-1"></i>
+                            Finalizar Edição
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Edição de Presenças (REUTILIZA o modal do sistema de marcação) -->
+<div class="modal fade" id="presencaModal" tabindex="-1" aria-labelledby="presencaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="presencaModalLabel">
+                    <i class="fas fa-edit me-2"></i>
+                    Editar Presenças
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-content-placeholder">
+                    <!-- Conteúdo será carregado dinamicamente pelo JavaScript -->
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Carregando presenças...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="EdicaoLoteManager.salvarAlteracoes()">
+                    <i class="fas fa-save me-1"></i>
+                    Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Resumo da Finalização (avisos de pendências) -->
+<div class="modal fade" id="resumoFinalizacaoModal" tabindex="-1" aria-labelledby="resumoFinalizacaoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="resumoFinalizacaoLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Pendências de Marcação
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Você alterou a quantidade de dias em algumas atividades, mas ainda faltam marcações:</p>
+                <div id="listaPendencias"></div>
+                <small class="text-muted d-block mt-2">Dica: clique no botão para ir direto à primeira atividade pendente.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar e marcar</button>
+                <button type="button" class="btn btn-primary" id="btnIrPrimeiraPendente">Ir para a primeira pendente</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>window.FLATPICKR_BASE_URL = "{% static 'vendor/flatpickr' %}";</script>
+<script>window.FLATPICKR_STRICT_LOCAL = true;</script>
+<script src="{% static 'js/components/flatpickr_util.js' %}"></script>
+<script src="{% static 'js/presencas/presenca_manager.js' %}"></script>
+
+{# Dados do backend em JSON seguro para consumo no JS (evita True/False/None do Python) #}
+{{ presencas_existentes|json_script:"presencas_existentes_json" }}
+{{ dias_por_atividade|json_script:"dias_por_atividade_json" }}
+
+<script>
+// Mapa auxiliar: id da atividade -> nome, para exibir no modal
+window.nomesAtividades = {
+    {% for atividade in atividades %}
+    "{{ atividade.id }}": "{{ atividade.nome|escapejs }}"{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+// Dados auxiliares de atividades (inclui flag de convocação) para uso de isAtividadeConvocada
+window.atividadesData = window.atividadesData || {};
+{% for atividade in atividades %}
+window.atividadesData["{{ atividade.id }}"] = {
+    convocacao: {{ atividade.convocacao|yesno:'true,false'|lower }}
+};
+{% endfor %}
+</script>
+
+<script>
+// Garantir Flatpickr carregado via utilitário
+if (window.FlatpickrUtil && typeof window.FlatpickrUtil.ensureLoaded === 'function') {
+    window.FlatpickrUtil.ensureLoaded();
+}
+</script>
+
+<script>
+// Desabilita a inicialização padrão do Flatpickr no PresencaManager nesta página
+window.__DISABLE_PM_FLATPICKR = true;
+// Hard override para ambientes com cache antigo do JS global
+if (window.PresencaManager && typeof window.PresencaManager.configurarFlatpickr === 'function') {
+    window.PresencaManager.configurarFlatpickr = function() {
+        console.log('[DiasAtividades] configurarFlatpickr do PresencaManager foi desabilitado nesta página.');
+        return;
+    };
+}
+// Dados das presenças existentes (passados do backend) – carregamento seguro via json_script
+try {
+    window.presencasExistentes = JSON.parse(document.getElementById('presencas_existentes_json').textContent);
+} catch (e) {
+    console.error('Falha ao ler presencas_existentes_json:', e);
+    window.presencasExistentes = {};
+}
+try {
+    window.diasPorAtividade = JSON.parse(document.getElementById('dias_por_atividade_json').textContent);
+} catch (e) {
+    console.error('Falha ao ler dias_por_atividade_json:', e);
+    window.diasPorAtividade = {};
+}
+window.dadosTurma = {
+    id: {{ turma.id }},
+    nome: "{{ turma.nome }}",
+    ano: {{ ano }},
+    mes: {{ mes }}
+};
+
+// Manager específico para edição em lote
+window.EdicaoLoteManager = {
+    // Herda funcionalidades do PresencaManager
+    ...window.PresencaManager,
+    
+    // Dados específicos da edição
+    presencasOriginais: {},
+    alteracoesPendentes: {},
+    
+    // Inicialização
+    init: function() {
+        console.log('🔧 Inicializando EdicaoLoteManager...');
+        this.carregarPresencasExistentes();
+        this.inicializarCalendarios();
+        this.configurarEventos();
+    },
+    
+    // Carrega presenças já registradas
+    carregarPresencasExistentes: function() {
+        console.log('📊 Carregando presenças existentes...');
+        this.presencasOriginais = JSON.parse(JSON.stringify(window.presencasExistentes));
+        this.presencasRegistradas = JSON.parse(JSON.stringify(window.presencasExistentes));
+        console.log('✅ Presenças carregadas:', this.presencasRegistradas);
+    },
+    
+    // Inicializa calendários (lazy: cria a instância somente no primeiro clique/foco)
+    inicializarCalendarios: function() {
+        console.log('📅 Inicializando listeners (lazy init)...');
+        const self = this;
+        document.querySelectorAll('.dias-datepicker').forEach(input => {
+            // Pré-preencher o valor com os dias existentes (ex.: "1, 3, 5") para indicar visualmente
+            if (input.dataset && input.dataset.diasExistentes && !input.value) {
+                const diasStr = input.dataset.diasExistentes
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean)
+                    .join(', ');
+                if (diasStr) input.value = diasStr;
+            }
+            // Garantir foco navegável
+            if (!input.hasAttribute('tabindex')) input.setAttribute('tabindex', '0');
+            input.setAttribute('role', 'button');
+            input.setAttribute('aria-haspopup', 'dialog');
+            // Focus: não impedir o comportamento padrão
+            input.addEventListener('focus', (e) => {
+                if (!input.dataset.fpInitialized) {
+                    self.setupFlatpickrForInput(input);
+                }
+                if (input._flatpickr) input._flatpickr.open();
+            }, { passive: true });
+            // Click: prevenir seleção do input e abrir
+            input.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!input.dataset.fpInitialized) {
+                    self.setupFlatpickrForInput(input);
+                }
+                if (input._flatpickr) input._flatpickr.open();
+            }, { passive: false });
+
+            // Abrir também ao clicar na área adjacente (wrapper flex-grow-1)
+            const wrapper = input.closest('.flex-grow-1') || input.parentElement;
+            if (wrapper && !wrapper.dataset.fpClickBound) {
+                wrapper.addEventListener('click', (e) => {
+                    // Evita duplo disparo se o destino já é o input
+                    if (e.target === input) return;
+                    e.preventDefault();
+                    if (!input.dataset.fpInitialized) {
+                        self.setupFlatpickrForInput(input);
+                    }
+                    if (input._flatpickr) input._flatpickr.open();
+                }, { passive: false });
+                wrapper.dataset.fpClickBound = '1';
+            }
+        });
+    },
+
+    // Configura o Flatpickr para um input específico e aplica seleção
+    setupFlatpickrForInput: function(input) {
+        const self = this;
+        const atividadeId = input.dataset.atividade;
+        const diasExistentes = input.dataset.diasExistentes || '';
+        
+        let diasArray = [];
+        if (diasExistentes && diasExistentes.trim() && diasExistentes !== 'undefined') {
+            diasArray = diasExistentes.split(',')
+                .map(d => parseInt(d.trim(), 10))
+                .filter(d => !isNaN(d) && d > 0);
+        }
+        const defaultDates = diasArray.map(dia => new Date({{ ano }}, {{ mes }} - 1, dia));
+        const lastDayOfMonth = new Date({{ ano }}, {{ mes }}, 0);
+        const localePt = (window.flatpickr && window.flatpickr.l10ns && window.flatpickr.l10ns.pt) ? window.flatpickr.l10ns.pt : 'pt';
+
+        if (typeof flatpickr !== 'function') {
+            console.error('Flatpickr não carregado. Verifique a conexão com CDN.');
+            input.title = 'Calendário indisponível';
+            return;
+        }
+        const instance = flatpickr(input, {
+            locale: localePt,
+            mode: 'multiple',
+            inline: false,
+            allowInput: false,
+            clickOpens: true,
+            dateFormat: 'd',
+            minDate: new Date({{ ano }}, {{ mes }} - 1, 1),
+            maxDate: lastDayOfMonth,
+            defaultDate: defaultDates,
+            onReady: function(selectedDates, dateStr, fp) {
+                fp.jumpToDate(new Date({{ ano }}, {{ mes }} - 1, 1));
+                self.aplicarSelecaoManual(fp, diasArray, atividadeId);
+            },
+            onOpen: function(selectedDates, dateStr, fp) {
+                fp.jumpToDate(new Date({{ ano }}, {{ mes }} - 1, 1));
+                setTimeout(() => self.aplicarSelecaoManual(fp, diasArray, atividadeId), 50);
+            },
+            onMonthChange: function(sd, ds, fp) {
+                setTimeout(() => self.aplicarSelecaoManual(fp, diasArray, atividadeId), 0);
+            },
+            onYearChange: function(sd, ds, fp) {
+                setTimeout(() => self.aplicarSelecaoManual(fp, diasArray, atividadeId), 0);
+            },
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                const dia = dayElem.dateObj.getDate();
+                const mes = dayElem.dateObj.getMonth();
+                const ano = dayElem.dateObj.getFullYear();
+                if (ano === {{ ano }} && mes === {{ mes }} - 1 && diasArray.includes(dia)) {
+                    dayElem.classList.add('dia-com-presenca', 'selected');
+                    dayElem.setAttribute('aria-selected', 'true');
+                    dayElem.title = `Dia ${dia} - Clique para editar presenças`;
+                }
+                // Interceptar clique para abrir modal diretamente
+                dayElem.addEventListener('mousedown', function(evt) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    self.abrirModalEdicao(atividadeId, dia);
+                });
+            }
+        });
+        input._flatpickr = instance;
+        input._diasExistentes = diasArray;
+        input.dataset.fpInitialized = '1';
+        console.log(`📋 Flatpickr inicializado (lazy) para atividade ${atividadeId}`);
+    },
+    
+    // Aplica seleção manual nos dias
+    aplicarSelecaoManual: function(flatpickrInstance, diasArray, atividadeId) {
+        console.log(`🎯 Aplicando seleção manual para atividade ${atividadeId}. Dias:`, diasArray);
+        
+        if (!diasArray || diasArray.length === 0) {
+            console.log(`⚠️ Nenhum dia para selecionar na atividade ${atividadeId}`);
+            return;
+        }
+        
+        // Estratégia 1: Usar setDate do Flatpickr
+        try {
+            const dates = diasArray.map(dia => new Date({{ ano }}, {{ mes }} - 1, dia));
+            flatpickrInstance.setDate(dates, false); // não dispara change em massa
+            flatpickrInstance.redraw();
+            console.log(`✅ SetDate aplicado para atividade ${atividadeId}:`, dates);
+        } catch (e) {
+            console.error(`❌ Erro no setDate para atividade ${atividadeId}:`, e);
+        }
+        
+        // Estratégia 2: Aplicar classes CSS manualmente
+        setTimeout(() => {
+            const dayElements = flatpickrInstance.calendarContainer.querySelectorAll('.flatpickr-day');
+            let diasAplicados = 0;
+            
+            dayElements.forEach(dayElem => {
+                const dayNumber = parseInt(dayElem.textContent);
+                const isCurrentMonth = !dayElem.classList.contains('prevMonthDay') && 
+                                      !dayElem.classList.contains('nextMonthDay');
+                
+                if (isCurrentMonth && diasArray.includes(dayNumber)) {
+                    // Aplicar todas as classes necessárias
+                    dayElem.classList.add('selected');
+                    dayElem.classList.add('dia-com-presenca');
+                    dayElem.setAttribute('aria-selected', 'true');
+                    dayElem.title = `Dia ${dayNumber} - Clique para editar presenças`;
+                    
+                    diasAplicados++;
+                    console.log(`🎨 Dia ${dayNumber} marcado manualmente para atividade ${atividadeId}`);
+                }
+            });
+            
+            console.log(`📊 Atividade ${atividadeId}: ${diasAplicados}/${diasArray.length} dias marcados`);
+            
+            // Não forçar valor no input; Flatpickr controla o estado
+            
+        }, 100);
+    },
+    
+    // Configura eventos adicionais após inicialização
+    configurarEventos: function() {
+        console.log('⚙️ Configurando eventos adicionais...');
+        
+        // Adicionar botão de debug para cada calendário
+        document.querySelectorAll('.atividade-card').forEach(card => {
+            const atividadeId = card.dataset.atividadeId;
+            const input = card.querySelector('.dias-datepicker');
+            
+            if (input && input._flatpickr) {
+                // Criar botão de debug
+                const debugBtn = document.createElement('button');
+                debugBtn.className = 'btn btn-outline-info btn-sm mb-2 w-100';
+                debugBtn.innerHTML = '<i class="fas fa-bug"></i> Debug';
+                debugBtn.onclick = () => this.debugCalendario(atividadeId);
+                
+                // Adicionar botão aos controles
+                const controles = card.querySelector('.atividade-controles');
+                if (controles) {
+                    controles.appendChild(debugBtn);
+                }
+            }
+        });
+    },
+    
+    // Função de debug para calendários
+    debugCalendario: function(atividadeId) {
+        const input = document.querySelector(`[data-atividade="${atividadeId}"]`);
+        if (!input || !input._flatpickr) {
+            console.error(`❌ Calendário não encontrado para atividade ${atividadeId}`);
+            return;
+        }
+        
+        const instance = input._flatpickr;
+        const diasExistentes = input._diasExistentes || [];
+        
+        console.log(`🔍 DEBUG CALENDÁRIO ATIVIDADE ${atividadeId}:`);
+        console.log(`📊 Dias existentes esperados:`, diasExistentes);
+        console.log(`📅 Datas selecionadas no Flatpickr:`, instance.selectedDates);
+        console.log(`📝 String de datas:`, instance.input.value);
+        console.log(`🎯 Config do Flatpickr:`, {
+            mode: instance.config.mode,
+            dateFormat: instance.config.dateFormat
+        });
+        
+        // Verificar DOM dos dias
+        const dayElements = instance.calendarContainer.querySelectorAll('.flatpickr-day');
+        const diasSelecionados = [];
+        const diasComPresenca = [];
+        
+        dayElements.forEach(dayElem => {
+            const dia = parseInt(dayElem.textContent);
+            const isCurrentMonth = !dayElem.classList.contains('prevMonthDay') && !dayElem.classList.contains('nextMonthDay');
+            
+            if (isCurrentMonth) {
+                if (dayElem.classList.contains('selected')) {
+                    diasSelecionados.push(dia);
+                }
+                if (dayElem.classList.contains('dia-com-presenca')) {
+                    diasComPresenca.push(dia);
+                }
+            }
+        });
+        
+        console.log(`🎨 Dias com classe 'selected':`, diasSelecionados);
+        console.log(`🟢 Dias com classe 'dia-com-presenca':`, diasComPresenca);
+        
+        // Forçar aplicação manual
+        console.log(`🔧 Forçando aplicação manual...`);
+        this.aplicarSelecaoManual(instance, diasExistentes, atividadeId);
+    },
+    
+    // Abre modal de edição para dia específico
+    abrirModalEdicao: function(atividadeId, dia) {
+        console.log(`🖱️ Abrindo edição para atividade ${atividadeId}, dia ${dia}`);
+        
+        // Definir contexto atual
+        this.atividadeAtual = atividadeId;
+        this.diaAtual = dia;
+        
+        // Carregar dados do modal
+        this.carregarModalEdicao(atividadeId, dia);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('presencaModal'));
+        modal.show();
+    },
+    
+    // Carrega conteúdo do modal de edição
+    carregarModalEdicao: function(atividadeId, dia) {
+        const presencasDia = this.presencasRegistradas[atividadeId] && this.presencasRegistradas[atividadeId][dia] 
+                             ? this.presencasRegistradas[atividadeId][dia] : {};
+    const nomeAtividade = (window.nomesAtividades && window.nomesAtividades[String(atividadeId)])
+        ? window.nomesAtividades[String(atividadeId)]
+        : '(atividade não encontrada)';
+        const temConvocacao = (typeof this.isAtividadeConvocada === 'function') ? this.isAtividadeConvocada(String(atividadeId)) : false;
+
+        // Carregar estado de convocação (reaproveita do PresencaManager)
+        if (temConvocacao && typeof this.carregarEstadoConvocacao === 'function') {
+            this.carregarEstadoConvocacao(String(atividadeId), String(dia));
+        }
+
+    // (adiado) Mostrar/ocultar botões de convocação – feito após injetar HTML
+        
+        let html = `
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-calendar me-1"></i> Dia: ${dia}/{{ mes }}/{{ ano }}</h6>
+                </div>
+                <div class="col-md-6">
+            <h6><i class="fas fa-tasks me-1"></i> Atividade: ${nomeAtividade}</h6>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            ${Object.keys(presencasDia).length > 0 ? `<th style=\"width:55px;\" title=\"Selecionar para excluir\"><input type=\"checkbox\" id=\"chkExcluirTodos\" onclick=\"EdicaoLoteManager.toggleSelecionarTodosExclusao(this)\"></th>` : ''}
+                            <th>Aluno</th>
+                            ${temConvocacao ? '<th>Convocação</th>' : ''}
+                            <th>Status</th>
+                            <th>Justificativa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        {% for aluno in alunos %}
+    const presencaAluno = presencasDia['{{ aluno.cpf }}'] || { presente: true, justificativa: '' };
+        
+        html += `
+            <tr data-aluno-cpf="{{ aluno.cpf }}">
+                ${Object.keys(presencasDia).length > 0 ? `<td class=\"text-center\"><input type=\"checkbox\" class=\"chk-excluir\" data-aluno=\"{{ aluno.cpf }}\" onclick=\"EdicaoLoteManager.atualizarEstadoBotaoExcluir()\" title=\"Marcar para excluir este registro de presença\"></td>` : ''}
+                <td><strong>{{ aluno.nome }}</strong></td>
+                ${temConvocacao ? `<td class=\"convoc-cell\" data-aluno-cpf=\"{{ aluno.cpf }}\"></td>` : ''}
+                <td>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="presente_{{ aluno.cpf }}" value="1" ${presencaAluno.presente ? 'checked' : ''}>
+                        <label class="form-check-label text-success">Presente</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="presente_{{ aluno.cpf }}" value="0" ${!presencaAluno.presente ? 'checked' : ''}>
+                        <label class="form-check-label text-danger">Ausente</label>
+                    </div>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm" name="justificativa_{{ aluno.cpf }}" value="${presencaAluno.justificativa || ''}" placeholder="Justificativa (opcional)">
+                </td>
+            </tr>
+        `;
+        {% endfor %}
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="row mt-3">
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-success w-100" onclick="EdicaoLoteManager.marcarTodosPresentes()">
+                            <i class="fas fa-check-circle me-1"></i>
+                            Marcar Todos Presentes
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-warning w-100" onclick="EdicaoLoteManager.marcarTodosAusentes()">
+                            <i class="fas fa-times-circle me-1"></i>
+                            Marcar Todos Ausentes
+                        </button>
+                    </div>
+                    <!-- Botões de ação em massa para convocação -->
+                    <div class="col-md-3">
+                        <button type="button" id="btnTodosConvocadosLote" class="btn btn-outline-primary w-100" style="display:none;" onclick="EdicaoLoteManager.marcarTodosConvocados()">
+                            <i class="fas fa-bullhorn me-1"></i>
+                            Marcar Todos Convocados
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" id="btnTodosNaoConvocadosLote" class="btn btn-outline-secondary w-100" style="display:none;" onclick="EdicaoLoteManager.marcarTodosNaoConvocados()">
+                            <i class="fas fa-user-slash me-1"></i>
+                            Todos não Convocados
+                        </button>
+                    </div>
+            </div>
+            ${Object.keys(presencasDia).length > 0 ? `
+            <div class=\"row mt-3\">
+                <div class=\"col-12\">
+                    <button type=\"button\" id=\"btnExcluirSelecionados\" class=\"btn btn-outline-danger w-100\" disabled onclick=\"EdicaoLoteManager.excluirSelecionadosConfirm()\">Excluir Selecionados</button>
+                </div>
+            </div>` : ''}
+        `;
+        
+    document.getElementById('modal-content-placeholder').innerHTML = html;
+
+    // Agora que os botões existem no DOM, controlar visibilidade
+    const btnTodosConv = document.getElementById('btnTodosConvocadosLote');
+    const btnTodosNaoConv = document.getElementById('btnTodosNaoConvocadosLote');
+    if (btnTodosConv) btnTodosConv.style.display = temConvocacao ? '' : 'none';
+    if (btnTodosNaoConv) btnTodosNaoConv.style.display = temConvocacao ? '' : 'none';
+
+        // Preencher as células de convocação com badges e estados, se aplicável
+        if (temConvocacao) {
+            const linhas = document.querySelectorAll('#presencaModal tbody tr');
+            linhas.forEach(row => {
+                const cpf = row.dataset.alunoCpf;
+                const cell = row.querySelector('.convoc-cell');
+                if (!cell) return;
+                if (typeof this.criarBadgeConvocacao === 'function') {
+                    const badge = this.criarBadgeConvocacao(cpf);
+                    cell.appendChild(badge);
+                } else {
+                    // Fallback simples: texto
+                    const span = document.createElement('span');
+                    span.className = 'badge bg-secondary';
+                    span.textContent = 'Voluntário';
+                    cell.appendChild(span);
+                }
+            });
+        }
+    },
+    
+    // Salva alterações do modal
+    salvarAlteracoes: function() {
+        console.log('💾 Salvando alterações...');
+    // Antes: capturar exclusões marcadas (apenas desta atividade/dia)
+    this.capturarExclusoesMarcadas();
+        const dadosModal = this.coletarDadosModal();
+        this.aplicarAlteracoes(dadosModal);
+        
+        // Fechar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('presencaModal'));
+        modal.hide();
+        
+        // Atualizar interface
+        this.atualizarInterface();
+    },
+    
+    // Coleta dados do modal
+    coletarDadosModal: function() {
+        const dados = {};
+        const tbody = document.querySelector('#presencaModal tbody');
+        const temConvocacao = (typeof this.isAtividadeConvocada === 'function') ? this.isAtividadeConvocada(String(this.atividadeAtual)) : false;
+        
+        tbody.querySelectorAll('tr').forEach(row => {
+            const cpf = row.dataset.alunoCpf;
+            // Se marcado para exclusão, não incluir nos dados de update (será excluído)
+            const marcadoExcluir = row.querySelector('.chk-excluir')?.checked;
+            if (marcadoExcluir) return;
+            const presente = row.querySelector(`input[name="presente_${cpf}"]:checked`).value === '1';
+            const justificativa = row.querySelector(`input[name="justificativa_${cpf}"]`).value;
+            let convocado;
+            if (temConvocacao) {
+                // Usa o estado atual do manager
+                if (this.convocadosIndividuais && Object.prototype.hasOwnProperty.call(this.convocadosIndividuais, cpf)) {
+                    convocado = !!this.convocadosIndividuais[cpf];
+                } else {
+                    convocado = true; // padrão
+                }
+            }
+            
+            const base = { presente, justificativa };
+            if (temConvocacao) base.convocado = convocado;
+            dados[cpf] = base;
+        });
+        
+        return dados;
+    },
+
+    // Captura exclusões marcadas na UI e adiciona à fila exclusoesPendentes
+    capturarExclusoesMarcadas: function() {
+        if (!this.atividadeAtual || !this.diaAtual) return;
+        const checks = document.querySelectorAll('#presencaModal .chk-excluir:checked');
+        if (checks.length === 0) return;
+        if (!this.exclusoesPendentes) this.exclusoesPendentes = {};
+        if (!this.exclusoesPendentes[this.atividadeAtual]) this.exclusoesPendentes[this.atividadeAtual] = {};
+        if (!this.exclusoesPendentes[this.atividadeAtual][this.diaAtual]) this.exclusoesPendentes[this.atividadeAtual][this.diaAtual] = [];
+        checks.forEach(chk => {
+            const cpf = chk.dataset.aluno;
+            if (cpf && !this.exclusoesPendentes[this.atividadeAtual][this.diaAtual].includes(cpf)) {
+                this.exclusoesPendentes[this.atividadeAtual][this.diaAtual].push(cpf);
+                // Remover do estado local imediatamente
+                if (this.presencasRegistradas[this.atividadeAtual] && this.presencasRegistradas[this.atividadeAtual][this.diaAtual]) {
+                    delete this.presencasRegistradas[this.atividadeAtual][this.diaAtual][cpf];
+                }
+            }
+        });
+        // Se após exclusões o dia ficar vazio, remover o dia do mapa
+        if (this.presencasRegistradas[this.atividadeAtual] && this.presencasRegistradas[this.atividadeAtual][this.diaAtual]) {
+            if (Object.keys(this.presencasRegistradas[this.atividadeAtual][this.diaAtual]).length === 0) {
+                delete this.presencasRegistradas[this.atividadeAtual][this.diaAtual];
+                // Também remover de alteracoesPendentes caso exista
+                if (this.alteracoesPendentes[this.atividadeAtual]) {
+                    delete this.alteracoesPendentes[this.atividadeAtual][this.diaAtual];
+                    if (Object.keys(this.alteracoesPendentes[this.atividadeAtual]).length === 0) {
+                        delete this.alteracoesPendentes[this.atividadeAtual];
+                    }
+                }
+                console.log(`[EXCLUSAO] Dia ${this.diaAtual} da atividade ${this.atividadeAtual} removido por ficar vazio.`);
+            }
+        }
+    // Atualizar input/calendário visualmente para atividade afetada
+    this.atualizarDiasAtividade(this.atividadeAtual);
+        console.log('[EXCLUSAO] Marcados para exclusão:', this.exclusoesPendentes);
+    },
+
+    toggleSelecionarTodosExclusao: function(master) {
+        const checks = document.querySelectorAll('#presencaModal .chk-excluir');
+        checks.forEach(ch => { ch.checked = master.checked; });
+        this.atualizarEstadoBotaoExcluir();
+    },
+
+    atualizarEstadoBotaoExcluir: function() {
+        const any = document.querySelector('#presencaModal .chk-excluir:checked');
+        const btn = document.getElementById('btnExcluirSelecionados');
+        if (btn) btn.disabled = !any;
+    },
+
+    excluirSelecionadosConfirm: function() {
+        const checks = document.querySelectorAll('#presencaModal .chk-excluir:checked');
+        if (checks.length === 0) return;
+        if (!confirm(`Confirmar exclusão de ${checks.length} registro(s) de presença? Esta ação removerá definitivamente.`)) return;
+        // Marcar e aplicar visual
+        checks.forEach(chk => {
+            const row = chk.closest('tr');
+            if (row) {
+                row.classList.add('table-danger');
+            }
+        });
+        // Captura e mantém na fila (não fecha modal ainda; usuário ainda deve clicar Salvar Alterações)
+        this.capturarExclusoesMarcadas();
+        this.atualizarEstadoBotaoExcluir();
+    },
+
+    // Recalcula os dias existentes de uma atividade e atualiza input + flatpickr (se já inicializado)
+    atualizarDiasAtividade: function(atividadeId) {
+        try {
+            const registro = this.presencasRegistradas[atividadeId] || {};
+            const dias = Object.keys(registro).map(n => parseInt(n, 10)).filter(n => !isNaN(n)).sort((a,b) => a-b);
+            const input = document.querySelector(`.dias-datepicker[data-atividade="${atividadeId}"]`);
+            if (!input) return;
+            // Atualiza dataset e valor textual
+            input.dataset.diasExistentes = dias.join(',');
+            input.value = dias.join(', ');
+            // Se o flatpickr já foi inicializado, re-aplica seleção
+            if (input._flatpickr) {
+                input._diasExistentes = dias;
+                const fp = input._flatpickr;
+                const ano = window.dadosTurma?.ano || {{ ano }};
+                const mes = window.dadosTurma?.mes || {{ mes }};
+                const dates = dias.map(d => new Date(ano, mes - 1, d));
+                fp.setDate(dates, false);
+                fp.redraw();
+                // Reaplica classes manuais (caso use estratégia híbrida)
+                setTimeout(() => this.aplicarSelecaoManual(fp, dias, atividadeId), 30);
+            }
+            console.log(`[UI] Dias da atividade ${atividadeId} atualizados:`, dias);
+        } catch(e) {
+            console.warn('[UI] Falha ao atualizar dias da atividade', atividadeId, e);
+        }
+    },
+    
+    // Aplica alterações aos dados
+    aplicarAlteracoes: function(dadosModal) {
+        const atividadeId = this.atividadeAtual;
+        const dia = this.diaAtual;
+        
+        if (!this.presencasRegistradas[atividadeId]) {
+            this.presencasRegistradas[atividadeId] = {};
+        }
+        
+        this.presencasRegistradas[atividadeId][dia] = dadosModal;
+        
+        // Registrar alteração
+        this.registrarAlteracao(atividadeId, dia, dadosModal);
+    },
+    
+    // Registra alteração para envio posterior
+    registrarAlteracao: function(atividadeId, dia, dados) {
+        if (!this.alteracoesPendentes[atividadeId]) {
+            this.alteracoesPendentes[atividadeId] = {};
+        }
+        this.alteracoesPendentes[atividadeId][dia] = dados;
+    },
+    
+    // Finaliza edição e envia dados
+    finalizarEdicao: function() {
+        console.log('🏁 Finalizando edição...');
+
+        // 1) Checar pendências de marcação com base nos totais esperados x dias marcados
+        const pendencias = this.calcularPendenciasAtividades();
+        if (pendencias.length > 0) {
+            this.abrirResumoFinalizacao(pendencias);
+            return;
+        }
+
+        // 2) Se não há pendências, mas também não há alterações, manter feedback atual
+        if (Object.keys(this.alteracoesPendentes).length === 0) {
+            alert('Nenhuma alteração foi feita.');
+            return;
+        }
+
+        // 3) Confirmar envio normal
+        if (!confirm('Deseja salvar todas as alterações feitas?')) {
+            return;
+        }
+        this.enviarAlteracoes();
+    },
+
+    // Calcula pendências por atividade com base nos totais esperados e dias atualmente marcados
+    calcularPendenciasAtividades: function() {
+        const pendencias = [];
+        document.querySelectorAll('.atividade-card').forEach(card => {
+            const atividadeId = card.dataset.atividadeId;
+            const esperado = parseInt(card.dataset.totalEsperado || '0', 10) || 0;
+
+            // Dias marcados no estado atual (presencasRegistradas)
+            const registro = this.presencasRegistradas[atividadeId] || {};
+            const diasAtuais = Object.keys(registro).map(k => parseInt(k, 10)).filter(n => !isNaN(n));
+            const distintos = new Set(diasAtuais).size;
+
+            if (esperado > distintos) {
+                pendencias.push({
+                    atividadeId: atividadeId,
+                    nome: (window.nomesAtividades && window.nomesAtividades[String(atividadeId)]) || `Atividade ${atividadeId}`,
+                    esperado: esperado,
+                    marcado: distintos,
+                    faltam: esperado - distintos
+                });
+            }
+        });
+        return pendencias;
+    },
+
+    // Abre modal de resumo com a lista de pendências e ação para navegar
+    abrirResumoFinalizacao: function(pendencias) {
+        const lista = document.getElementById('listaPendencias');
+        if (!lista) return;
+        let html = '<ul class="list-group">';
+        pendencias.forEach(p => {
+            html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><strong>${p.nome}</strong></span>
+                        <span class="badge bg-warning text-dark">Faltam ${p.faltam} de ${p.esperado}</span>
+                     </li>`;
+        });
+        html += '</ul>';
+        lista.innerHTML = html;
+
+        const modalEl = document.getElementById('resumoFinalizacaoModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        const btnIr = document.getElementById('btnIrPrimeiraPendente');
+        if (btnIr) {
+            btnIr.onclick = () => {
+                modal.hide();
+                const primeira = pendencias[0];
+                const card = document.querySelector(`.atividade-card[data-atividade-id="${primeira.atividadeId}"]`);
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const input = card.querySelector('.dias-datepicker');
+                    if (input) {
+                        // Abre calendário para facilitar a marcação
+                        if (!input.dataset.fpInitialized && typeof this.setupFlatpickrForInput === 'function') {
+                            this.setupFlatpickrForInput(input);
+                        }
+                        if (input._flatpickr) input._flatpickr.open();
+                    }
+                }
+            };
+        }
+    },
+    
+    // Envia alterações via AJAX
+    enviarAlteracoes: function() {
+        const dados = {
+            presencas: this.alteracoesPendentes,
+            exclusoes: this.exclusoesPendentes || {},
+            turma_id: window.dadosTurma.id,
+            ano: window.dadosTurma.ano,
+            mes: window.dadosTurma.mes
+        };
+        
+        fetch('{% url "presencas:editar_lote_dias_atividades_ajax" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(dados)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Sucesso! ${data.alteracoes} alterações realizadas.`);
+                window.location.href = '{% url "presencas:listar_presencas_academicas" %}';
+            } else {
+                alert('Erro: ' + data.erro);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao enviar alterações.');
+        });
+    },
+    
+    // Funções auxiliares do modal
+    marcarTodosPresentes: function() {
+        document.querySelectorAll('input[name^="presente_"][value="1"]').forEach(input => {
+            input.checked = true;
+        });
+    },
+
+        // Ações em massa de CONVOCAÇÃO no modal atual (apenas se atividade for convocada)
+        marcarTodosConvocados: function() {
+            const temConvocacao = (typeof this.isAtividadeConvocada === 'function') ? this.isAtividadeConvocada(String(this.atividadeAtual)) : false;
+            if (!temConvocacao) return;
+            const tbody = document.querySelector('#presencaModal tbody');
+            if (!tbody) return;
+            tbody.querySelectorAll('tr').forEach(row => {
+                const cpf = row.dataset.alunoCpf;
+                if (!cpf) return;
+                this.convocadosIndividuais[cpf] = true;
+                // Atualiza badge
+                const cell = row.querySelector('.convoc-cell');
+                if (cell && typeof this.atualizarBadgeConvocacao === 'function') {
+                    const badge = cell.querySelector('.badge-convocado');
+                    if (badge) this.atualizarBadgeConvocacao(badge, cpf);
+                }
+            });
+        },
+
+        marcarTodosNaoConvocados: function() {
+            const temConvocacao = (typeof this.isAtividadeConvocada === 'function') ? this.isAtividadeConvocada(String(this.atividadeAtual)) : false;
+            if (!temConvocacao) return;
+            const tbody = document.querySelector('#presencaModal tbody');
+            if (!tbody) return;
+            tbody.querySelectorAll('tr').forEach(row => {
+                const cpf = row.dataset.alunoCpf;
+                if (!cpf) return;
+                this.convocadosIndividuais[cpf] = false;
+                // Atualiza badge
+                const cell = row.querySelector('.convoc-cell');
+                if (cell && typeof this.atualizarBadgeConvocacao === 'function') {
+                    const badge = cell.querySelector('.badge-convocado');
+                    if (badge) this.atualizarBadgeConvocacao(badge, cpf);
+                }
+            });
+        },
+    
+    marcarTodosAusentes: function() {
+        document.querySelectorAll('input[name^="presente_"][value="0"]').forEach(input => {
+            input.checked = true;
+        });
+    },
+
+    // Remove a presença de um aluno no dia atual (marca como ausente e limpa justificativa)
+    removerPresencaAluno: function(cpf) {
+        try {
+            const row = document.querySelector(`#presencaModal tbody tr[data-aluno-cpf="${cpf}"]`);
+            if (!row) return;
+
+            // Marca como ausente
+            const radioAusente = row.querySelector(`input[name="presente_${cpf}"][value="0"]`);
+            if (radioAusente) radioAusente.checked = true;
+
+            // Limpa justificativa
+            const justInput = row.querySelector(`input[name="justificativa_${cpf}"]`);
+            if (justInput) justInput.value = '';
+
+            // Realce visual temporário para feedback
+            row.classList.add('table-warning');
+            setTimeout(() => row.classList.remove('table-warning'), 600);
+        } catch (e) {
+            console.error('[EdicaoLote] Falha ao remover presença do aluno', cpf, e);
+        }
+    },
+    
+    // Atualiza interface após alterações
+    atualizarInterface: function() {
+        // Atualizar contadores e status
+        console.log('🔄 Atualizando interface...');
+    },
+    
+    // Outras funções...
+    visualizarResumo: function(atividadeId) {
+        console.log(`📊 Visualizando resumo da atividade ${atividadeId}`);
+        // Implementar visualização de resumo
+    },
+    
+    // (Removido) aplicarModoRapidoModal: função de modo rápido não é mais utilizada
+};
+
+// Inicializar quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    window.EdicaoLoteManager.init();
+});
+</script>
+
+<style>
+.dia-com-presenca {
+    background-color: #28a745 !important;
+    color: white !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    font-weight: bold !important;
+    position: relative !important;
+    border: 2px solid #155724 !important;
+}
+
+.dia-com-presenca:hover {
+    background-color: #218838 !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.5) !important;
+}
+
+.dia-com-presenca::after {
+    content: "✓";
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #ffc107;
+    color: #000;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    font-size: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.modal-xl {
+    max-width: 90%;
+}
+
+/* Melhorar visibilidade do Flatpickr - SIMPLIFICADO */
+.flatpickr-day.selected {
+    background: #007bff !important;
+    border: 2px solid #0056b3 !important;
+    color: white !important;
+    font-weight: bold !important;
+}
+
+/* Dias com presença têm prioridade ABSOLUTA */
+.flatpickr-day.dia-com-presenca {
+    background: #28a745 !important;
+    border: 3px solid #155724 !important;
+    color: white !important;
+    font-weight: bold !important;
+}
+
+/* Garantir máxima visibilidade para dias selecionados */
+.flatpickr-day.selected,
+.flatpickr-day.selected.inRange,
+.flatpickr-day.selected:focus,
+.flatpickr-day.selected:hover {
+    background: #007bff !important;
+    border: 2px solid #0056b3 !important;
+    color: white !important;
+    font-weight: bold !important;
+}
+
+/* Dias com presença sempre verdes, mesmo quando selecionados */
+.flatpickr-day.dia-com-presenca,
+.flatpickr-day.dia-com-presenca.selected,
+.flatpickr-day.selected.dia-com-presenca {
+    background: #28a745 !important;
+    border: 3px solid #ffc107 !important;
+    color: white !important;
+    font-weight: bold !important;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.6) !important;
+}
+
+/* Força para atributo aria-selected */
+.flatpickr-day[aria-selected="true"] {
+    font-weight: bold !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5) !important;
+}
+
+.flatpickr-day.dia-com-presenca[aria-selected="true"] {
+    background: #28a745 !important;
+    border: 3px solid #ffc107 !important;
+    box-shadow: 0 0 12px rgba(255, 193, 7, 0.8) !important;
+}
+
+/* Garantir que o calendário fique sobre outros elementos */
+.flatpickr-calendar { z-index: 1050; }
+
+/* Ajustes mínimos específicos desta página */
+.atividade-card .card-body { min-height: auto; }
+</style>
+{% endblock %}

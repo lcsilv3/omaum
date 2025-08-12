@@ -4,7 +4,9 @@
 {% load presenca_extras %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="{% static 'vendor/flatpickr/flatpickr.min.css' %}">
+<link rel="stylesheet" href="/static/css/components/stat-cards.css">
+<link rel="stylesheet" href="/static/css/components/atividade-cards.css">
 <style>
     /* Grid de atividades responsivo */
     .atividades-grid {
@@ -95,70 +97,9 @@
         margin-top: 6px;
     }
 
-    /* Estilos para o modal de presença integrado */
-    .presenca-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 99999; /* Z-index muito alto para ficar acima do calendário */
-    }
+    /* Modal custom removido: usamos Bootstrap Modal */
 
-    .presenca-modal-content {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
-        max-width: 600px;
-        width: 90%;
-        max-height: 80vh;
-        overflow-y: auto;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    }
-
-    .presenca-modal-header {
-        display: flex;
-        justify-content: between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .presenca-modal-title {
-        margin: 0;
-        color: #495057;
-        font-size: 1.25rem;
-    }
-
-    .presenca-close {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #6c757d;
-        margin-left: auto;
-    }
-
-    .presenca-close:hover {
-        color: #000;
-    }
-
-    .modo-rapido {
-        background-color: #f8f9fa;
-        padding: 6px 10px;
-        border-radius: 6px;
-        margin-bottom: 4px;
-        border-left: 4px solid #007bff;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-height: 38px;
-    }
+    /* (Removido) .modo-rapido: não utilizado após unificação do fluxo */
 
     .modo-individual {
         border-top: 2px solid #e9ecef;
@@ -350,17 +291,14 @@
     }
 
     /* Esconde calendários quando modal está aberto */
-    .presenca-modal.show ~ .flatpickr-calendar,
     body.modal-open .flatpickr-calendar.open {
         z-index: 999 !important;
         opacity: 0.3;
         pointer-events: none;
     }
 
-    /* Garante que o modal esteja sempre no topo */
-    body.modal-open .presenca-modal {
-        z-index: 100000 !important;
-    }
+    /* Garante que o modal (Bootstrap) esteja acima do calendário
+       Observação: Bootstrap já usa z-index alto; mantemos apenas o ajuste do Flatpickr. */
 
     /* Força todos os elementos Flatpickr a ficarem abaixo do modal */
     body.modal-open .flatpickr-calendar,
@@ -398,13 +336,13 @@
                     {% trans "Etapa 3 de 3 - Finalização: Dias das Atividades e Marcação de Presenças" %} <small class="text-light">(clique para expandir/recolher)</small>
                 </a>
             </h5>
-                        <p class="mb-0 mt-2"><small><strong>Etapa Final:</strong> Selecione os dias e marque as presenças diretamente no calendário. Clique em cada dia para marcar presenças e finalize o registro.</small></p>
+                        <p class="mb-0 mt-2"><small><strong>Etapa Final:</strong> Selecione os dias e, para cada dia, marque presenças no modal. Em seguida, finalize o registro.</small></p>
             <div class="alert alert-success mt-2 mb-0" style="font-size: 0.85rem;">
                 <i class="fas fa-check-circle me-1"></i>
                 <strong>Fluxo Simplificado:</strong> 
                 1️⃣ Selecione os dias no calendário 
                 2️⃣ Clique nos dias <span class="badge bg-primary">azuis selecionados</span> para marcar presenças
-                3️⃣ Use modo rápido (todos presentes/ausentes) ou individual por aluno
+                3️⃣ Marque presença por aluno no modal
                 4️⃣ Clique em <strong>"Finalizar Registro"</strong> para concluir
             </div>
         </div>
@@ -470,53 +408,58 @@
     </div>
 </div>
 
-<!-- Modal para marcação de presenças integrado -->
-<div id="presencaModal" class="presenca-modal">
-    <div class="presenca-modal-content">
-
-        <div class="presenca-modal-header" style="flex-direction: column; align-items: flex-start; gap: 2px;">
-            <div style="width: 100%; display: flex; align-items: center;">
-                <h5 class="presenca-modal-title" id="modalTitle" style="margin-bottom: 0;"></h5>
-                <button type="button" class="presenca-close" onclick="window.PresencaManager.fecharModal()" style="margin-left: auto;">&times;</button>
+<!-- Modal de Marcação de Presenças (Bootstrap, alinhado ao de Edição) -->
+<div class="modal fade" id="presencaModal" tabindex="-1" aria-labelledby="presencaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="presencaModalLabel">
+                    <i class="fas fa-user-check me-2"></i>
+                    <span id="modalTitle"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="window.PresencaManager.fecharModal()"></button>
             </div>
-            <div id="modalAtividadeNome" style="font-size: 1.08em; color: #1976d2; font-weight: 500; margin-top: 2px; display: flex; align-items: center; gap: 8px;"></div>
-        </div>
-        
-        <div id="modalBody">
-            <!-- Modo Rápido sem separador -->
-            <div class="modo-rapido">
-                <h6 style="margin-bottom:0;font-size:1em;font-weight:500;margin-right:10px;"><i class="fas fa-bolt text-primary me-2"></i>Modo Rápido (Lote)</h6>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-success btn-sm" style="padding: 2px 10px; font-size: 0.97em;" onclick="window.PresencaManager.marcarTodosPresentes()">
-                        <i class="fas fa-check me-1"></i>Todos Presentes
-                    </button>
-                    <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 10px; font-size: 0.97em;" onclick="window.PresencaManager.marcarTodosAusentes()">
-                        <i class="fas fa-times me-1"></i>Todos Ausentes
-                    </button>
+            <div class="modal-body">
+                <div id="modalAtividadeNome" class="mb-2" style="font-size: 1.05em; color: #1976d2; font-weight: 500;"></div>
+                <div id="modalBody">
+                    <div class="modo-individual">
+                        <h6><i class="fas fa-user text-info me-2"></i>Modo Individual</h6>
+                        <div id="alunosContainer">
+                            <!-- Lista de alunos será preenchida via JavaScript -->
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Modo Individual -->
-            <div class="modo-individual">
-                <h6><i class="fas fa-user text-info me-2"></i>Modo Individual</h6>
-                <div id="alunosContainer">
-                    <!-- Lista de alunos será preenchida via JavaScript -->
+            <div class="modal-footer">
+                <div class="aviso-dias-faltando alert alert-warning me-auto" style="display: none; margin: 0;">
+                    <!-- Texto será preenchido via JavaScript -->
                 </div>
+                <div class="d-flex flex-wrap gap-2 me-2">
+                    <button type="button" class="btn btn-success" onclick="window.PresencaManager.marcarTodosPresentes()">
+                        <i class="fas fa-check-circle me-1"></i>
+                        Marcar Todos Presentes
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="window.PresencaManager.marcarTodosAusentes()">
+                        <i class="fas fa-times-circle me-1"></i>
+                        Marcar Todos Ausentes
+                    </button>
+                    <!-- Ações em massa de Convocação (visíveis apenas se atividade for convocada) -->
+                    <button type="button" id="btnTodosConvocados" class="btn btn-outline-primary" style="display:none;" onclick="window.PresencaManager.marcarTodosConvocados()">
+                        <i class="fas fa-bullhorn me-1"></i>
+                        Marcar Todos Convocados
+                    </button>
+                    <button type="button" id="btnTodosNaoConvocados" class="btn btn-outline-secondary" style="display:none;" onclick="window.PresencaManager.marcarTodosNaoConvocados()">
+                        <i class="fas fa-user-slash me-1"></i>
+                        Todos não Convocados
+                    </button>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="window.PresencaManager.fecharModal()">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary btn-salvar-presenca" onclick="window.PresencaManager.salvarDiaAtual()">
+                    <i class="fas fa-save me-1"></i>Salvar Presenças
+                </button>
             </div>
-        </div>
-        
-        <div class="modal-footer-custom">
-            <!-- Aviso de dias faltando -->
-            <div class="aviso-dias-faltando alert alert-warning" style="display: none; margin-bottom: 10px; width: 100%;">
-                <!-- Texto será preenchido via JavaScript -->
-            </div>
-            
-            <button type="button" class="btn btn-secondary" onclick="window.PresencaManager.fecharModal()">
-                <i class="fas fa-times me-1"></i>Cancelar
-            </button>
-            <button type="button" class="btn btn-primary btn-salvar-presenca" onclick="window.PresencaManager.salvarDiaAtual()">
-                <i class="fas fa-save me-1"></i>Salvar Presenças
-            </button>
         </div>
     </div>
 </div>
@@ -524,9 +467,10 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>window.FLATPICKR_BASE_URL = "{% static 'vendor/flatpickr' %}";</script>
+<script>window.FLATPICKR_STRICT_LOCAL = true;</script>
 
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+<script src="{% static 'js/components/flatpickr_util.js' %}"></script>
 <script>
 // CONFIGURAÇÃO MÍNIMA PARA PRESENÇA MANAGER
 // Fornece dados do contexto Django para o PresencaManager
@@ -559,7 +503,7 @@ console.log('🏷️ [TEMPLATE] Atividades:', Object.keys(window.atividadesData)
 </script>
 
 <!-- PRESENÇA MANAGER - ARQUITETURA SIMPLIFICADA -->
-<script src="/static/js/presencas/presenca_manager.js"></script>
+<script src="{% static 'js/presencas/presenca_manager.js' %}"></script>
 
 <!-- LOGS DE DEBUG PARA CLIQUES NOS BOTÕES -->
 <script>

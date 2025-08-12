@@ -29,6 +29,13 @@ from .views_ext.registro_presenca import (
     detalhar_presenca_alunos,
     toggle_convocacao_ajax,
 )
+from .views_ext.edicao_lote import (
+    editar_presencas_lote,
+    editar_lote_dados_basicos,
+    editar_lote_totais_atividades,
+    editar_lote_dias_atividades,
+    editar_lote_dias_atividades_ajax,
+)
 from .views.consolidado import (
     ConsolidadoPresencasView,
     FiltroConsolidadoView,
@@ -107,6 +114,13 @@ urlpatterns = [
     path('editar-presenca/totais-atividades/<int:pk>/', editar_presenca_totais_atividades, name='editar_presenca_totais_atividades'),
     path('editar-presenca/dias-atividades/<int:pk>/', editar_presenca_dias_atividades, name='editar_presenca_dias_atividades'),
     path('editar-presenca/alunos/<int:pk>/', editar_presenca_alunos, name='editar_presenca_alunos'),
+    
+    # ===== EDIÇÃO EM LOTE (NOVA FUNCIONALIDADE) =====
+    path('editar-lote/', editar_presencas_lote, name='editar_presencas_lote'),
+    path('editar-lote/dados-basicos/', editar_lote_dados_basicos, name='editar_lote_dados_basicos'),
+    path('editar-lote/totais-atividades/', editar_lote_totais_atividades, name='editar_lote_totais_atividades'),
+    path('editar-lote/dias-atividades/', editar_lote_dias_atividades, name='editar_lote_dias_atividades'),
+    path('editar-lote/dias-atividades/ajax/', editar_lote_dias_atividades_ajax, name='editar_lote_dias_atividades_ajax'),
     
     # ===== DETALHAMENTO MULTI-ETAPAS =====
     path('detalhar-presenca/dados-basicos/<int:pk>/', detalhar_presenca_dados_basicos, name='detalhar_presenca_dados_basicos'),
