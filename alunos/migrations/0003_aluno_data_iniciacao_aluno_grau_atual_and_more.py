@@ -4,52 +4,51 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         (
-            'alunos',
-            '0002_cidade_alter_aluno_options_alter_aluno_nacionalidade_and_more',
+            "alunos",
+            "0002_cidade_alter_aluno_options_alter_aluno_nacionalidade_and_more",
         ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='aluno',
-            name='data_iniciacao',
+            model_name="aluno",
+            name="data_iniciacao",
             field=models.DateField(
-                blank=True, null=True, verbose_name='Data de Iniciação'
+                blank=True, null=True, verbose_name="Data de Iniciação"
             ),
         ),
         migrations.AddField(
-            model_name='aluno',
-            name='grau_atual',
+            model_name="aluno",
+            name="grau_atual",
             field=models.CharField(
-                blank=True, max_length=50, null=True, verbose_name='Grau Atual'
+                blank=True, max_length=50, null=True, verbose_name="Grau Atual"
             ),
         ),
         migrations.AddField(
-            model_name='aluno',
-            name='historico_iniciatico',
+            model_name="aluno",
+            name="historico_iniciatico",
             field=models.JSONField(
                 blank=True,
                 default=list,
-                help_text='Histórico de eventos, cargos e registros iniciáticos',
-                verbose_name='Histórico Iniciático',
+                help_text="Histórico de eventos, cargos e registros iniciáticos",
+                verbose_name="Histórico Iniciático",
             ),
         ),
         migrations.AddField(
-            model_name='aluno',
-            name='situacao_iniciatica',
+            model_name="aluno",
+            name="situacao_iniciatica",
             field=models.CharField(
                 choices=[
-                    ('CANDIDATO', 'Candidato'),
-                    ('INICIADO', 'Iniciado'),
-                    ('SUSPENSO', 'Suspenso'),
-                    ('INATIVO', 'Inativo'),
+                    ("CANDIDATO", "Candidato"),
+                    ("INICIADO", "Iniciado"),
+                    ("SUSPENSO", "Suspenso"),
+                    ("INATIVO", "Inativo"),
                 ],
-                default='CANDIDATO',
+                default="CANDIDATO",
                 max_length=20,
-                verbose_name='Situação Iniciática',
+                verbose_name="Situação Iniciática",
             ),
         ),
     ]

@@ -6,38 +6,53 @@ class AlunoForm(forms.ModelForm):
     grau_atual_automatico = forms.CharField(
         label="Grau Atual (automático)",
         required=False,
-        widget=forms.TextInput(attrs={
-            'readonly': 'readonly',
-            'class': 'form-control-plaintext',
-            'tabindex': '-1',
-            'style': 'background: #f8f9fa; color: #333; font-weight: bold;',
-        })
+        widget=forms.TextInput(
+            attrs={
+                "readonly": "readonly",
+                "class": "form-control-plaintext",
+                "tabindex": "-1",
+                "style": "background: #f8f9fa; color: #333; font-weight: bold;",
+            }
+        ),
     )
     """Formulário simplificado para criação e edição de alunos."""
-    
+
     # Campos para adicionar novo evento ao histórico
     novo_evento_tipo = forms.CharField(
         max_length=50,
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: CARGO, INICIAÇÃO, PUNIÇÃO'}),
-        label="Tipo do Evento"
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Ex: CARGO, INICIAÇÃO, PUNIÇÃO",
+            }
+        ),
+        label="Tipo do Evento",
     )
     novo_evento_descricao = forms.CharField(
         max_length=200,
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Descrição do evento'}),
-        label="Descrição do Evento"
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Descrição do evento"}
+        ),
+        label="Descrição do Evento",
     )
     novo_evento_data = forms.DateField(
         required=False,
-        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-        label="Data do Evento"
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        label="Data do Evento",
     )
     novo_evento_observacoes = forms.CharField(
         max_length=500,
         required=False,
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Observações (opcional)'}),
-        label="Observações"
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 2,
+                "placeholder": "Observações (opcional)",
+            }
+        ),
+        label="Observações",
     )
 
     def __init__(self, *args, **kwargs):
@@ -53,9 +68,11 @@ class AlunoForm(forms.ModelForm):
 
         # Preencher campo automático
         if self.instance and self.instance.pk:
-            self.fields['grau_atual_automatico'].initial = self.instance.grau_atual_automatico
+            self.fields[
+                "grau_atual_automatico"
+            ].initial = self.instance.grau_atual_automatico
         else:
-            self.fields['grau_atual_automatico'].initial = "Não informado"
+            self.fields["grau_atual_automatico"].initial = "Não informado"
 
         # Adiciona classes CSS e placeholders
         placeholders = {
@@ -65,7 +82,7 @@ class AlunoForm(forms.ModelForm):
             "celular_segundo_contato": "Somente números",
         }
         for field_name, field in self.fields.items():
-            if not field.widget.attrs.get('class'):
+            if not field.widget.attrs.get("class"):
                 field.widget.attrs["class"] = "form-control"
             if field_name in placeholders:
                 field.widget.attrs["placeholder"] = placeholders[field_name]
@@ -73,33 +90,45 @@ class AlunoForm(forms.ModelForm):
     def save(self, commit=True):
         """Salva o aluno e adiciona evento ao histórico se preenchido."""
         instance = super().save(commit=False)
-        
+
         # Adicionar novo evento se todos os campos obrigatórios estiverem preenchidos
         if (
-            self.cleaned_data.get('novo_evento_tipo') and
-            self.cleaned_data.get('novo_evento_descricao') and
-            self.cleaned_data.get('novo_evento_data')
+            self.cleaned_data.get("novo_evento_tipo")
+            and self.cleaned_data.get("novo_evento_descricao")
+            and self.cleaned_data.get("novo_evento_data")
         ):
-            
             if commit:
                 instance.save()  # Salva primeiro para garantir que tem ID
                 instance.adicionar_evento_historico(
-                    tipo=self.cleaned_data['novo_evento_tipo'],
-                    descricao=self.cleaned_data['novo_evento_descricao'],
-                    data=self.cleaned_data['novo_evento_data'],
-                    observacoes=self.cleaned_data.get('novo_evento_observacoes', '')
+                    tipo=self.cleaned_data["novo_evento_tipo"],
+                    descricao=self.cleaned_data["novo_evento_descricao"],
+                    data=self.cleaned_data["novo_evento_data"],
+                    observacoes=self.cleaned_data.get("novo_evento_observacoes", ""),
                 )
         elif commit:
             instance.save()
-        
+
         return instance
 
     class Meta:
         model = Aluno
         fields = [
-            "nome", "cpf", "email", "celular_primeiro_contato", "data_nascimento", "sexo", "estado_civil",
-            "nome_iniciatico", "numero_iniciatico", "grau_atual_automatico", "grau_atual", "situacao_iniciatica",
-            "rua", "cidade", "estado", "cep"
+            "nome",
+            "cpf",
+            "email",
+            "celular_primeiro_contato",
+            "data_nascimento",
+            "sexo",
+            "estado_civil",
+            "nome_iniciatico",
+            "numero_iniciatico",
+            "grau_atual_automatico",
+            "grau_atual",
+            "situacao_iniciatica",
+            "rua",
+            "cidade",
+            "estado",
+            "cep",
         ]
         widgets = {
             "data_nascimento": forms.DateInput(
@@ -120,10 +149,12 @@ class AlunoForm(forms.ModelForm):
         # Adiciona a opção 'Selecione' a todos os campos Select
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.Select) and not field.required:
-                field.choices = [('', 'Selecione')] + list(field.choices)
+                field.choices = [("", "Selecione")] + list(field.choices)
             elif isinstance(field.widget, forms.Select) and field.required:
                 # Se for required, ainda assim força 'Selecione' como primeira opção
-                field.choices = [('', 'Selecione')] + [c for c in field.choices if c[0] != '']
+                field.choices = [("", "Selecione")] + [
+                    c for c in field.choices if c[0] != ""
+                ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

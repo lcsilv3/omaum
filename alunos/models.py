@@ -1,4 +1,5 @@
 from cursos.models import Curso
+
 """Modelos do aplicativo Alunos."""
 
 import datetime
@@ -335,7 +336,7 @@ class Aluno(models.Model):
         choices=SITUACAO_CHOICES,
         verbose_name=_("Situação Iniciática"),
     )
-    
+
     # Histórico iniciático como JSON
     historico_iniciatico = models.JSONField(
         default=list,
@@ -365,39 +366,39 @@ class Aluno(models.Model):
     def __str__(self):
         return str(self.nome)
 
-    def adicionar_evento_historico(self, tipo, descricao, data, observacoes="", ordem_servico=""):
+    def adicionar_evento_historico(
+        self, tipo, descricao, data, observacoes="", ordem_servico=""
+    ):
         """Adiciona evento ao histórico iniciático."""
         from django.utils import timezone
-        
+
         evento = {
-            'tipo': tipo,
-            'descricao': descricao,
-            'data': data.isoformat() if hasattr(data, 'isoformat') else str(data),
-            'observacoes': observacoes,
-            'ordem_servico': ordem_servico,
-            'criado_em': timezone.now().isoformat()
+            "tipo": tipo,
+            "descricao": descricao,
+            "data": data.isoformat() if hasattr(data, "isoformat") else str(data),
+            "observacoes": observacoes,
+            "ordem_servico": ordem_servico,
+            "criado_em": timezone.now().isoformat(),
         }
-        
+
         if not isinstance(self.historico_iniciatico, list):
             self.historico_iniciatico = []
-        
+
         self.historico_iniciatico.append(evento)
-        self.save(update_fields=['historico_iniciatico'])
-    
+        self.save(update_fields=["historico_iniciatico"])
+
     def obter_historico_ordenado(self):
         """Retorna histórico ordenado por data (mais recente primeiro)."""
         if not isinstance(self.historico_iniciatico, list):
             return []
-        
+
         try:
             return sorted(
-                self.historico_iniciatico,
-                key=lambda x: x.get('data', ''),
-                reverse=True
+                self.historico_iniciatico, key=lambda x: x.get("data", ""), reverse=True
             )
         except (TypeError, AttributeError):
             return []
-    
+
     def obter_ultimo_evento(self):
         """Retorna o último evento do histórico."""
         historico = self.obter_historico_ordenado()
@@ -436,20 +437,22 @@ class Aluno(models.Model):
         """Retorna o nome do último curso em que o aluno foi matriculado."""
         try:
             from importlib import import_module
+
             matriculas_module = import_module("matriculas.models")
             Matricula = matriculas_module.Matricula
-            
-            ultima_matricula = Matricula.objects.filter(
-                aluno=self, 
-                ativa=True
-            ).order_by('-data_matricula').first()
-            
+
+            ultima_matricula = (
+                Matricula.objects.filter(aluno=self, ativa=True)
+                .order_by("-data_matricula")
+                .first()
+            )
+
             if ultima_matricula and ultima_matricula.turma.curso:
                 return ultima_matricula.turma.curso.nome
             return None
         except (ImportError, AttributeError):
             return None
-    
+
     @property
     def grau_atual_automatico(self):
         """Retorna o grau atual baseado no último curso matriculado."""

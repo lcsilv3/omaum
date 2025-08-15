@@ -20,21 +20,18 @@ class MatriculaTestCase(TestCase):
 
         # Criar objetos relacionados
         self.curso = Curso.objects.create(
-            nome="Curso Teste",
-            descricao="Curso de teste"
+            nome="Curso Teste", descricao="Curso de teste"
         )
 
         self.turma = Turma.objects.create(
-            nome="Turma Teste",
-            curso=self.curso,
-            status="ATIVA"
+            nome="Turma Teste", curso=self.curso, status="ATIVA"
         )
 
         self.aluno = Aluno.objects.create(
             nome="Aluno Teste",
             cpf="12345678901",
             email="aluno@teste.com",
-            data_nascimento=date(1990, 1, 1)
+            data_nascimento=date(1990, 1, 1),
         )
 
         # Criar uma matrícula de teste
@@ -42,7 +39,7 @@ class MatriculaTestCase(TestCase):
             aluno=self.aluno,
             turma=self.turma,
             data_matricula=timezone.now().date(),
-            status="A"  # Usar 'A' conforme o modelo
+            status="A",  # Usar 'A' conforme o modelo
         )
 
     def test_listar_matriculas(self):
@@ -57,14 +54,14 @@ class MatriculaTestCase(TestCase):
             nome="Novo Aluno",
             cpf="98765432100",
             email="novo@aluno.com",
-            data_nascimento=date(1990, 1, 1)
+            data_nascimento=date(1990, 1, 1),
         )
-        
+
         data = {
             "aluno": novo_aluno.cpf,
             "turma": self.turma.id,
             "data_matricula": timezone.now().date(),
-            "status": "A"  # Usar 'A' conforme o modelo
+            "status": "A",  # Usar 'A' conforme o modelo
         }
         response = self.client.post(reverse("matriculas:criar_matricula"), data)
         self.assertEqual(response.status_code, 302)  # Redirecionamento após sucesso
@@ -95,7 +92,7 @@ class MatriculaTestCase(TestCase):
     def test_matricula_status(self):
         """Testar o status da matrícula"""
         self.assertEqual(self.matricula.status, "A")
-        
+
         # Alterar status
         self.matricula.status = "C"
         self.matricula.save()

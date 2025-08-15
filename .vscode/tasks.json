@@ -4,10 +4,153 @@
 		{
 			"type": "shell",
 			"label": "Monitoramento automático Ruff",
-			"command": "python scripts/format_code.py",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"scripts/format_code.py"
+			],
+			"dependsOn": [
+				"Setup venv deps"
+			],
 			"group": "build",
 			"isBackground": true,
-			"problemMatcher": []
+			"problemMatcher": [],
+			"runOptions": {
+				"runOn": "folderOpen"
+			},
+			"presentation": {
+				"reveal": "never",
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": true
+			}
+		},
+		{
+			"type": "shell",
+			"label": "Watch testes presenças",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"scripts/watch_tests.py"
+			],
+			"dependsOn": [
+				"Setup venv deps"
+			],
+			"group": "build",
+			"isBackground": true,
+			"runOptions": {
+				"runOn": "folderOpen"
+			},
+			"presentation": {
+				"reveal": "never",
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false
+			}
+		},
+		{
+			"label": "Smoke tests (marcadores)",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"scripts/run_smoke_tests.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$python"
+			],
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"showReuseMessage": false,
+				"clear": false
+			},
+			"dependsOn": [
+				"Setup venv deps"
+			]
+		},
+		{
+			"label": "Testes rápidos presenças",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"-m",
+				"pytest",
+				"-q",
+				"presencas/tests/test_edicao_lote_ajax_smoke.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$python"
+			],
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"showReuseMessage": false,
+				"clear": false
+			}
+		},
+		{
+			"label": "Setup venv deps",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"-m",
+				"pip",
+				"install",
+				"-q",
+				"ruff",
+				"watchdog",
+				"pytest",
+				"pytest-django"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$python"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run smoke test verbose",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"-m",
+				"pytest",
+				"-vv",
+				"presencas/tests/test_edicao_lote_ajax_smoke.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$python"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Start watchers",
+			"type": "shell",
+			"command": "echo",
+			"args": [
+				"Iniciando watchers (Ruff + Pytest)..."
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$python"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Smoke tests (marcadores)",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"scripts/run_smoke_tests.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$python"
+			],
+			"group": "build"
 		}
 	]
 }

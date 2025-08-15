@@ -545,4 +545,37 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- SCRIPT INLINE REMOVIDO - MIGRADO PARA PRESENCA_MANAGER.JS -->
 <!-- Toda a lógica foi simplificada e centralizada no arquivo presenca_manager.js -->
 <!-- Compatibilidade mantida através do objeto window.PresencaApp que redireciona para window.PresencaManager -->
+<script>
+function excluirPresenca(presencaId, turmaId, ano, mes) {
+    fetch('/presencas/excluir/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ presenca_id: presencaId, turma_id: turmaId, ano: ano, mes: mes })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Presença excluída com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro ao excluir presença: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao excluir presença.');
+    });
+}
+</script>
+
+<!-- Adicionando botão de exclusão na listagem de presenças -->
+<div class="aluno-presenca-item">
+    <span class="aluno-nome">{{ aluno.nome }}</span>
+    <button class="btn btn-danger btn-sm" onclick="excluirPresenca({{ presenca.id }}, {{ turma.id }}, {{ ano }}, {{ mes }})">
+        Excluir
+    </button>
+</div>
 {% endblock %}

@@ -38,15 +38,19 @@ class AlunoUITest(LiveServerTestCase):
         # Verificação robusta de header
         header = None
         try:
-            header = self.browser.find_element(By.XPATH, "//h1[contains(text(), 'Aluno')]")
+            header = self.browser.find_element(
+                By.XPATH, "//h1[contains(text(), 'Aluno')]"
+            )
         except Exception:
             try:
-                header = self.browser.find_element(By.XPATH, "//*[self::h2 or self::h3][contains(text(), 'Aluno')]")
+                header = self.browser.find_element(
+                    By.XPATH, "//*[self::h2 or self::h3][contains(text(), 'Aluno')]"
+                )
             except Exception:
                 body = self.browser.find_element(By.TAG_NAME, "body").text
-                self.assertIn('Aluno', body)
+                self.assertIn("Aluno", body)
         if header:
-            self.assertIn('Aluno', header.text)
+            self.assertIn("Aluno", header.text)
 
         # Check if test student is listed
         student_element = self.browser.find_element(

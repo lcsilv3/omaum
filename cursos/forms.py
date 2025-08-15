@@ -13,9 +13,7 @@ class CursoForm(forms.ModelForm):
         fields = ["nome", "descricao"]
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
+            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
     def clean_nome(self):

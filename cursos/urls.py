@@ -6,7 +6,7 @@ app_name = "cursos"
 
 # Roteador para a API
 router = DefaultRouter()
-router.register(r'api', api_views.CursoViewSet, basename='curso-api')
+router.register(r"api", api_views.CursoViewSet, basename="curso-api")
 
 # URLs da aplicação web e da API
 urlpatterns = [
@@ -20,7 +20,6 @@ urlpatterns = [
     path("<int:id>/excluir/", views.excluir_curso, name="excluir_curso"),
     path("exportar/", views.exportar_cursos, name="exportar_cursos"),
     path("importar/", views.importar_cursos, name="importar_cursos"),
-
     # URLs da API
     path("", include(router.urls)),
 ]

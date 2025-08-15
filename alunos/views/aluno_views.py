@@ -117,6 +117,7 @@ def listar_alunos(request):
 def criar_aluno(request):
     """Cria um novo aluno."""
     import sys
+
     print("[DEBUG] View criar_aluno chamada", file=sys.stderr)
     AlunoForm = get_aluno_form()
     CustomFormSet = forms.inlineformset_factory(
@@ -164,7 +165,9 @@ def criar_aluno(request):
     else:
         try:
             form = AlunoForm()
-            historico_formset = CustomFormSet(queryset=RegistroHistorico.objects.none(), prefix="historico")
+            historico_formset = CustomFormSet(
+                queryset=RegistroHistorico.objects.none(), prefix="historico"
+            )
             # Garante que o management_form SEMPRE seja gerado
             _ = historico_formset.management_form
             return render(
@@ -174,7 +177,11 @@ def criar_aluno(request):
             )
         except Exception as e:
             from django.http import HttpResponse
-            return HttpResponse(f"<h1>Erro ao renderizar o template:</h1><pre>{str(e)}</pre>", status=500)
+
+            return HttpResponse(
+                f"<h1>Erro ao renderizar o template:</h1><pre>{str(e)}</pre>",
+                status=500,
+            )
 
 
 @login_required
@@ -253,6 +260,7 @@ def detalhar_aluno(request, cpf):
     historico_registros = []
     try:
         from alunos.models import RegistroHistorico
+
         historico_registros = RegistroHistorico.objects.filter(
             aluno=aluno, ativo=True
         ).order_by("-data_os")[:10]  # Últimos 10 registros
@@ -371,17 +379,11 @@ def listar_tipos_codigos_ajax(request):
     """Retorna lista de tipos de códigos via AJAX."""
     try:
         from alunos.models import TipoCodigo
-        
-        tipos = TipoCodigo.objects.all().values('id', 'nome', 'descricao')
-        return JsonResponse({
-            'status': 'success',
-            'tipos': list(tipos)
-        })
+
+        tipos = TipoCodigo.objects.all().values("id", "nome", "descricao")
+        return JsonResponse({"status": "success", "tipos": list(tipos)})
     except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        }, status=500)
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
 @login_required
@@ -390,27 +392,21 @@ def listar_codigos_por_tipo_ajax(request):
     """Retorna códigos filtrados por tipo via AJAX."""
     try:
         from alunos.models import Codigo
-        
-        tipo_id = request.GET.get('tipo_id')
+
+        tipo_id = request.GET.get("tipo_id")
         if not tipo_id:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Tipo de código não fornecido'
-            }, status=400)
-        
-        codigos = Codigo.objects.filter(
-            tipo_codigo_id=tipo_id
-        ).values('id', 'nome', 'descricao')
-        
-        return JsonResponse({
-            'status': 'success',
-            'codigos': list(codigos)
-        })
+            return JsonResponse(
+                {"status": "error", "message": "Tipo de código não fornecido"},
+                status=400,
+            )
+
+        codigos = Codigo.objects.filter(tipo_codigo_id=tipo_id).values(
+            "id", "nome", "descricao"
+        )
+
+        return JsonResponse({"status": "success", "codigos": list(codigos)})
     except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        }, status=500)
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
 @login_required
@@ -419,60 +415,61 @@ def adicionar_evento_historico_ajax(request):
     """Adiciona evento ao histórico via AJAX."""
     try:
         import json
-        
+
         data = json.loads(request.body)
-        aluno_id = data.get('aluno_id')
-        tipo_evento = data.get('tipo_evento')
-        codigo_id = data.get('codigo_id')
-        ordem_servico = data.get('ordem_servico', '')
-        data_os = data.get('data_os')
-        data_evento = data.get('data_evento')
-        observacoes = data.get('observacoes', '')
-        
+        aluno_id = data.get("aluno_id")
+        tipo_evento = data.get("tipo_evento")
+        codigo_id = data.get("codigo_id")
+        ordem_servico = data.get("ordem_servico", "")
+        data_os = data.get("data_os")
+        data_evento = data.get("data_evento")
+        observacoes = data.get("observacoes", "")
+
         # Validar campos obrigatórios
         if not all([aluno_id, tipo_evento, codigo_id, data_os, data_evento]):
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Campos obrigatórios não preenchidos'
-            }, status=400)
-        
+            return JsonResponse(
+                {"status": "error", "message": "Campos obrigatórios não preenchidos"},
+                status=400,
+            )
+
         # Obter objetos
         aluno = get_object_or_404(Aluno, id=aluno_id)
         from alunos.models import Codigo
+
         codigo = get_object_or_404(Codigo, id=codigo_id)
-        
+
         # Criar registro histórico
         from alunos.models import RegistroHistorico
+
         registro = RegistroHistorico.objects.create(
             aluno=aluno,
             codigo=codigo,
             ordem_servico=ordem_servico,
             data_os=data_os,
-            observacoes=observacoes
+            observacoes=observacoes,
         )
-        
+
         # Adicionar também ao histórico JSON do aluno
         aluno.adicionar_evento_historico(
             tipo=tipo_evento,
             descricao=f"{codigo.nome} - {codigo.descricao}",
             data=data_evento,
             observacoes=observacoes,
-            ordem_servico=ordem_servico
+            ordem_servico=ordem_servico,
         )
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Evento adicionado com sucesso',
-            'registro': {
-                'id': registro.id,
-                'codigo': codigo.nome,
-                'data_os': registro.data_os.strftime('%d/%m/%Y'),
-                'observacoes': registro.observacoes
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": "Evento adicionado com sucesso",
+                "registro": {
+                    "id": registro.id,
+                    "codigo": codigo.nome,
+                    "data_os": registro.data_os.strftime("%d/%m/%Y"),
+                    "observacoes": registro.observacoes,
+                },
             }
-        })
-        
+        )
+
     except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        }, status=500)
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)

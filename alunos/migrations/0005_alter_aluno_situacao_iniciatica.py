@@ -4,27 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0004_remove_data_iniciacao'),
+        ("alunos", "0004_remove_data_iniciacao"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='aluno',
-            name='situacao_iniciatica',
+            model_name="aluno",
+            name="situacao_iniciatica",
             field=models.CharField(
                 choices=[
-                    ('ATIVO', 'Ativo'),
-                    ('AFASTADO', 'Afastado'),
-                    ('ESPECIAIS', 'Especiais'),
-                    ('EXCLUIDO', 'Excluído'),
-                    ('FALECIDO', 'Falecido'),
-                    ('LOI', 'LOI'),
+                    ("ATIVO", "Ativo"),
+                    ("AFASTADO", "Afastado"),
+                    ("ESPECIAIS", "Especiais"),
+                    ("EXCLUIDO", "Excluído"),
+                    ("FALECIDO", "Falecido"),
+                    ("LOI", "LOI"),
                 ],
-                default='ATIVO',
+                default="ATIVO",
                 max_length=20,
-                verbose_name='Situação Iniciática',
+                verbose_name="Situação Iniciática",
             ),
         ),
     ]

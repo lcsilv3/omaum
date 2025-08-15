@@ -5,68 +5,67 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
-        ('turmas', '0001_initial'),
+        ("alunos", "0001_initial"),
+        ("turmas", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Matricula',
+            name="Matricula",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
-                ('data_matricula', models.DateField(verbose_name='Data da Matrícula')),
+                ("data_matricula", models.DateField(verbose_name="Data da Matrícula")),
                 (
-                    'ativa',
-                    models.BooleanField(default=True, verbose_name='Matrícula Ativa'),
+                    "ativa",
+                    models.BooleanField(default=True, verbose_name="Matrícula Ativa"),
                 ),
                 (
-                    'status',
+                    "status",
                     models.CharField(
                         choices=[
-                            ('A', 'Ativa'),
-                            ('C', 'Cancelada'),
-                            ('F', 'Finalizada'),
+                            ("A", "Ativa"),
+                            ("C", "Cancelada"),
+                            ("F", "Finalizada"),
                         ],
-                        default='A',
+                        default="A",
                         max_length=1,
-                        verbose_name='Status',
+                        verbose_name="Status",
                     ),
                 ),
                 (
-                    'aluno',
+                    "aluno",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to='alunos.aluno',
-                        verbose_name='Aluno',
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
                     ),
                 ),
                 (
-                    'turma',
+                    "turma",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='matriculas',
-                        to='turmas.turma',
-                        verbose_name='Turma',
+                        related_name="matriculas",
+                        to="turmas.turma",
+                        verbose_name="Turma",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Matrícula',
-                'verbose_name_plural': 'Matrículas',
-                'ordering': ['-data_matricula'],
-                'unique_together': {('aluno', 'turma')},
+                "verbose_name": "Matrícula",
+                "verbose_name_plural": "Matrículas",
+                "ordering": ["-data_matricula"],
+                "unique_together": {("aluno", "turma")},
             },
         ),
     ]

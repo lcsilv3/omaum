@@ -16,5 +16,6 @@ class MatriculaSerializer(serializers.ModelSerializer):
             fields: Especifica que todos os campos do modelo
                 serão serializados.
         """
+
         model = Matricula
-        fields = '__all__'
+        fields = "__all__"

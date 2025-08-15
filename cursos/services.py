@@ -32,11 +32,14 @@ def get_pagamento_model():
     pagamentos_module = import_module("pagamentos.models")
     return getattr(pagamentos_module, "Pagamento")
 
+
 # --- Funções de Leitura (Read) ---
+
 
 def listar_cursos():
     """Retorna uma queryset com todos os cursos, ordenados por id."""
-    return Curso.objects.all().order_by('id')
+    return Curso.objects.all().order_by("id")
+
 
 def obter_curso_por_id(curso_id):
     """
@@ -48,7 +51,9 @@ def obter_curso_por_id(curso_id):
     except Curso.DoesNotExist:
         return None
 
+
 # --- Funções de Escrita (Create, Update, Delete) ---
+
 
 @transaction.atomic
 def criar_curso(nome, descricao):
@@ -58,9 +63,10 @@ def criar_curso(nome, descricao):
     """
     if not nome:
         raise ValueError("O nome do curso é obrigatório.")
-    
+
     curso = Curso.objects.create(nome=nome, descricao=descricao)
     return curso
+
 
 @transaction.atomic
 def atualizar_curso(curso_id, nome, descricao):
@@ -75,6 +81,7 @@ def atualizar_curso(curso_id, nome, descricao):
         curso.save()
     return curso
 
+
 @transaction.atomic
 def excluir_curso(curso_id):
     """
@@ -84,17 +91,21 @@ def excluir_curso(curso_id):
     """
     curso = obter_curso_por_id(curso_id)
     if not curso:
-        return False # Curso não existe
+        return False  # Curso não existe
 
     dependencias = verificar_dependencias_curso(curso)
     # Verifica se alguma lista de dependência não está vazia
     if any(dependencias.values()):
-        raise ValueError("Não é possível excluir o curso pois existem dependências associadas.")
+        raise ValueError(
+            "Não é possível excluir o curso pois existem dependências associadas."
+        )
 
     curso.delete()
     return True
 
+
 # --- Funções de Lógica de Negócio ---
+
 
 def verificar_dependencias_curso(curso):
     """
@@ -106,19 +117,17 @@ def verificar_dependencias_curso(curso):
     Nota = get_nota_model()
     Matricula = get_matricula_model()
     Pagamento = get_pagamento_model()
-    
+
     # Alunos matriculados em turmas deste curso
-    alunos_ids = Matricula.objects.filter(
-        turma__curso=curso
-    ).values_list('aluno_id', flat=True)
-    
+    alunos_ids = Matricula.objects.filter(turma__curso=curso).values_list(
+        "aluno_id", flat=True
+    )
+
     dependencias = {
-        'turmas': list(Turma.objects.filter(curso=curso)),
-        'atividades': list(Atividade.objects.filter(curso=curso)),
-        'notas': list(Nota.objects.filter(curso=curso)),
-        'matriculas': list(Matricula.objects.filter(turma__curso=curso)),
-        'pagamentos': list(Pagamento.objects.filter(
-            aluno_id__in=alunos_ids
-        )),
+        "turmas": list(Turma.objects.filter(curso=curso)),
+        "atividades": list(Atividade.objects.filter(curso=curso)),
+        "notas": list(Nota.objects.filter(curso=curso)),
+        "matriculas": list(Matricula.objects.filter(turma__curso=curso)),
+        "pagamentos": list(Pagamento.objects.filter(aluno_id__in=alunos_ids)),
     }
     return {key: value for key, value in dependencias.items() if value}

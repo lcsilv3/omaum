@@ -9,7 +9,10 @@ import logging
 from importlib import import_module
 
 from alunos.utils import get_aluno_model
-from alunos.services import remover_instrutor_de_turmas, verificar_elegibilidade_instrutor
+from alunos.services import (
+    remover_instrutor_de_turmas,
+    verificar_elegibilidade_instrutor,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,7 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
     try:
         turmas_module = import_module("turmas.models")
         Turma = turmas_module.Turma
-        
+
         import_module("core.models")
 
         # Buscar turmas onde o aluno é instrutor

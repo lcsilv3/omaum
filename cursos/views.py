@@ -25,43 +25,49 @@ def relatorio_cursos(request):
     cursos = services.listar_cursos()
     data_emissao = datetime.now()
     context = {
-        'titulo': 'Relatório de Cursos',
-        'cursos': cursos,
-        'data_emissao': data_emissao.strftime('%d/%m/%Y %H:%M'),
-        'nome_organizacao': 'OMAUM - Ordem Mística de Aspiração Universal ao Mestrado',
-        'nome_sistema': 'Sistema de Gestão Integrada'
+        "titulo": "Relatório de Cursos",
+        "cursos": cursos,
+        "data_emissao": data_emissao.strftime("%d/%m/%Y %H:%M"),
+        "nome_organizacao": "OMAUM - Ordem Mística de Aspiração Universal ao Mestrado",
+        "nome_sistema": "Sistema de Gestão Integrada",
     }
-    return render(request, 'cursos/relatorio_cursos.html', context)
+    return render(request, "cursos/relatorio_cursos.html", context)
 
 
 @login_required
 def gerar_relatorio_pdf(request):
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'inline; filename="relatorio_cursos.pdf"'
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'inline; filename="relatorio_cursos.pdf"'
 
     p = canvas.Canvas(response, pagesize=letter)
     width, height = letter
 
     # Cabeçalho Institucional
-    data_emissao = datetime.now().strftime('%d/%m/%Y %H:%M')
-    
+    data_emissao = datetime.now().strftime("%d/%m/%Y %H:%M")
+
     # Linha 1: Nome da organização (centralizado)
     p.setFont("Helvetica-Bold", 12)
-    p.drawCentredString(width / 2.0, height - inch, "OMAUM - Ordem Mística de Aspiração Universal ao Mestrado")
-    
+    p.drawCentredString(
+        width / 2.0,
+        height - inch,
+        "OMAUM - Ordem Mística de Aspiração Universal ao Mestrado",
+    )
+
     # Linha 2: Nome do sistema (centralizado) e Data (à direita)
     p.setFont("Helvetica", 10)
     p.drawCentredString(width / 2.0, height - 1.2 * inch, "Sistema de Gestão Integrada")
     p.setFont("Helvetica", 8)
-    p.drawRightString(width - inch, height - 1.2 * inch, f"Data de Emissão: {data_emissao}")
+    p.drawRightString(
+        width - inch, height - 1.2 * inch, f"Data de Emissão: {data_emissao}"
+    )
 
     # Linha 3: Título do Relatório (centralizado)
     p.setFont("Helvetica-Bold", 16)
     p.drawCentredString(width / 2.0, height - 1.5 * inch, "Relatório de Cursos")
 
     p.setFont("Helvetica", 12)
-    y = height - 1.9 * inch # Ajuste na posição inicial da tabela
-    
+    y = height - 1.9 * inch  # Ajuste na posição inicial da tabela
+
     # Cabeçalhos da tabela
     p.setFont("Helvetica-Bold", 12)
     p.drawString(inch, y, "ID")
@@ -76,7 +82,9 @@ def gerar_relatorio_pdf(request):
         if y < inch:
             p.showPage()
             p.setFont("Helvetica-Bold", 12)
-            p.drawCentredString(width / 2.0, height - inch, "Relatório de Cursos (Continuação)")
+            p.drawCentredString(
+                width / 2.0, height - inch, "Relatório de Cursos (Continuação)"
+            )
             y = height - 1.5 * inch
             p.setFont("Helvetica-Bold", 12)
             p.drawString(inch, y, "ID")
@@ -88,23 +96,24 @@ def gerar_relatorio_pdf(request):
 
         p.drawString(inch, y, str(curso.id))
         p.drawString(1.5 * inch, y, curso.nome)
-        
+
         # Lógica para quebrar a linha da descrição
         descricao_text = curso.descricao if curso.descricao else ""
         text_object = p.beginText(4 * inch, y)
         text_object.setFont("Helvetica", 10)
-        
+
         # Quebra a linha a cada 50 caracteres
-        wrapped_text = [descricao_text[i:i+50] for i in range(0, len(descricao_text), 50)]
-        
+        wrapped_text = [
+            descricao_text[i : i + 50] for i in range(0, len(descricao_text), 50)
+        ]
+
         for line in wrapped_text:
             text_object.textLine(line)
-        
+
         p.drawText(text_object)
-        
+
         # Ajusta a posição Y com base no número de linhas da descrição
         y -= (0.2 * inch * len(wrapped_text)) + 0.1 * inch
-
 
     p.showPage()
     p.save()
@@ -120,8 +129,8 @@ def criar_curso(request):
         if form.is_valid():
             try:
                 services.criar_curso(
-                    nome=form.cleaned_data['nome'], 
-                    descricao=form.cleaned_data['descricao']
+                    nome=form.cleaned_data["nome"],
+                    descricao=form.cleaned_data["descricao"],
                 )
                 messages.success(request, "Curso criado com sucesso!")
                 return redirect("cursos:listar_cursos")
@@ -154,9 +163,9 @@ def editar_curso(request, id):
         form = CursoForm(request.POST, instance=curso)
         if form.is_valid():
             services.atualizar_curso(
-                curso_id=id, 
-                nome=form.cleaned_data['nome'], 
-                descricao=form.cleaned_data['descricao']
+                curso_id=id,
+                nome=form.cleaned_data["nome"],
+                descricao=form.cleaned_data["descricao"],
             )
             messages.success(request, "Curso atualizado com sucesso!")
             return redirect("cursos:listar_cursos")
@@ -191,7 +200,11 @@ def excluir_curso(request, id):
             messages.error(request, "Erro de integridade. Verifique as dependências.")
             return redirect("cursos:excluir_curso", id=id)
 
-    return render(request, "cursos/excluir_curso.html", {"curso": curso, "dependencias": dependencias})
+    return render(
+        request,
+        "cursos/excluir_curso.html",
+        {"curso": curso, "dependencias": dependencias},
+    )
 
 
 @login_required

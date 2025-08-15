@@ -63,6 +63,4 @@ class Matricula(models.Model):
         if (
             not self.pk and self.turma.vagas_disponiveis <= 0
         ):  # Only for new enrollments
-            raise ValidationError(
-                {"turma": _("Não há vagas disponíveis nesta turma.")}
-            )
+            raise ValidationError({"turma": _("Não há vagas disponíveis nesta turma.")})

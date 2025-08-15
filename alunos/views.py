@@ -135,12 +135,12 @@ def criar_aluno(request):
         "aluno": None,
         "debug": True,  # Habilitar debug temporariamente
     }
-    
+
     # DEBUG: Verificar se o management form está sendo duplicado
     mgmt_form_html = str(historico_formset.management_form)
     mgmt_count = mgmt_form_html.count('name="historico-TOTAL_FORMS"')
     print(f"[DEBUG] View criar_aluno: Management forms no formset: {mgmt_count}")
-    
+
     return render(request, "alunos/formulario_aluno.html", context)
 
 
@@ -422,5 +422,5 @@ listar_alunos_url = listar_alunos_view
 from .views.aluno_views import (
     listar_tipos_codigos_ajax,
     listar_codigos_por_tipo_ajax,
-    adicionar_evento_historico_ajax
+    adicionar_evento_historico_ajax,
 )

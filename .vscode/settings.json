@@ -23,5 +23,16 @@
         "**/__pycache__": true,
         "**/.pytest_cache": true,
         "**/staticfiles": true
-    }
+    },
+    // Permitir automação sem prompts
+    "task.allowAutomaticTasks": "on",
+    "terminal.integrated.allowWorkspaceConfiguration": true,
+    // Ativar venv automaticamente e fixar interpretador do projeto
+    "python.terminal.activateEnvironment": true,
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+    // Confiar arquivos não confiáveis como 'open' (não bloquear)
+    "security.workspace.trust.untrustedFiles": "open",
+    "terminal.integrated.stickyScroll.enabled": true,
+    "terminal.integrated.suggest.enabled": true,
+    "chat.mcp.autostart": "never"
 }

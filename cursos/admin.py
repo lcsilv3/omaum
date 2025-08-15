@@ -18,11 +18,9 @@ class CursoAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path(
-                'desativar-impacto/',
-                self.admin_site.admin_view(
-                    get_desativar_cursos_impacto_view(self)
-                ),
-                name='desativar_cursos_impacto',
+                "desativar-impacto/",
+                self.admin_site.admin_view(get_desativar_cursos_impacto_view(self)),
+                name="desativar_cursos_impacto",
             ),
         ]
         return custom_urls + urls

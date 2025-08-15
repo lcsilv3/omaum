@@ -22,7 +22,7 @@
                 </div>
                 <div class="col-md-4">
                     <select id="curso-select" name="curso" class="form-select">
-                        <option value="">Selecione</option>
+                        <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
                             <option value="{{ curso.id }}" {% if curso_selecionado == curso.id %}selected{% endif %}>{{ curso.nome }}</option>
                         {% endfor %}

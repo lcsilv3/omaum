@@ -34,6 +34,4 @@ class CursoIntegrationTest(TestCase):
             response_criar.status_code, 302
         )  # Redirecionamento após sucesso
         # Corrigido para não ultrapassar 79 caracteres
-        self.assertTrue(
-            Curso.objects.filter(nome="Curso de Integração").exists()
-        )
+        self.assertTrue(Curso.objects.filter(nome="Curso de Integração").exists())

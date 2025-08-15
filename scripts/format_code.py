@@ -5,6 +5,7 @@ usando black, isort e flake8.
 """
 
 import time
+import sys
 from pathlib import Path
 import subprocess
 from watchdog.observers import Observer
@@ -36,12 +37,16 @@ class CodeFormatter(FileSystemEventHandler):
         try:
             # Formata o arquivo com Ruff
             subprocess.run(
-                ["ruff", "format", file_path], check=True, capture_output=True
+                [sys.executable, "-m", "ruff", "format", file_path],
+                check=True,
+                capture_output=True,
             )
             print("✅ Ruff: Formatação aplicada")
             # Verifica problemas de lint com Ruff
             result = subprocess.run(
-                ["ruff", "check", file_path], capture_output=True, text=True
+                [sys.executable, "-m", "ruff", "check", file_path],
+                capture_output=True,
+                text=True,
             )
             if result.returncode == 0:
                 print("✅ Ruff: Nenhum problema de lint encontrado")
