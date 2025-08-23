@@ -29,6 +29,8 @@ urlpatterns = [
     path('entrar/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     # Adicionar rota para 'register'
     path('register/', core_views.registro_usuario, name='register'),
+    # Rota do django-select2 para widgets AJAX
+    path('select2/', include('django_select2.urls')),
 ]
 
 # Configurações para ambiente de desenvolvimento

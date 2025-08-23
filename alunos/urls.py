@@ -1,5 +1,4 @@
 from django.urls import path, include
-from django.shortcuts import redirect
 from rest_framework.routers import DefaultRouter
 from . import views, api_views
 from .views_simplified import (
@@ -16,6 +15,8 @@ from .views.localidade_api import (
     search_estados,
     search_cidades,
     get_cidades_por_estado,
+    search_bairros,
+    get_bairros_por_cidade,
 )
 
 app_name = "alunos"
@@ -27,7 +28,11 @@ urlpatterns = [
     # REDIRECIONAMENTO AUTOMÁTICO - Sistema completo como padrão
     path("", views.listar_alunos, name="listar_alunos"),
     path("listar/", views.listar_alunos, name="listar_alunos_alt"),
+    # CRUD de Tipos e Códigos
+    path("tipos-codigos/", include("alunos.urls_codigos")),
     path("criar/", views.criar_aluno, name="criar_aluno"),
+    # Autocomplete AJAX (django-select2)
+    path("autocomplete/", include("alunos.urls_autocomplete")),
     # URLs simplificadas - Sistema v2.0 (ALTERNATIVO)
     path("simple/", listar_alunos_simple, name="listar_alunos_simple"),
     path("simple/criar/", criar_aluno_simple, name="criar_aluno_simple"),
@@ -83,9 +88,7 @@ urlpatterns = [
         views.diagnostico_instrutores,
         name="diagnostico_instrutores",
     ),
-    # Rotas da API
-    path("api/", include(router.urls)),
-    # APIs de localidade
+    # APIs de localidade (devem vir antes do include do router para evitar shadowing)
     path("api/paises/", search_paises, name="api_search_paises"),
     path("api/estados/", search_estados, name="api_search_estados"),
     path("api/cidades/", search_cidades, name="api_search_cidades"),
@@ -94,7 +97,13 @@ urlpatterns = [
         get_cidades_por_estado,
         name="api_cidades_por_estado",
     ),
-    # APIs para filtros dinâmicos - Dados Iniciáticos
+    path("api/bairros/", search_bairros, name="api_search_bairros"),
+    path(
+        "api/bairros/cidade/<int:cidade_id>/",
+        get_bairros_por_cidade,
+        name="api_bairros_por_cidade",
+    ),
+    # APIs para filtros dinâmicos - Dados Iniciáticos (devem vir antes do include(router.urls))
     path(
         "api/tipos-codigos/", views.listar_tipos_codigos_ajax, name="api_tipos_codigos"
     ),
@@ -108,4 +117,11 @@ urlpatterns = [
         views.adicionar_evento_historico_ajax,
         name="api_adicionar_evento_historico",
     ),
+    path(
+        "api/historico/<str:cpf>/",
+        views.historico_iniciatico_paginado_ajax,
+        name="api_historico_iniciatico",
+    ),
+    # Rotas da API base (ViewSet Aluno) - manter após endpoints específicos
+    path("api/", include(router.urls)),
 ]

@@ -43,12 +43,12 @@ SECURE_SSL_REDIRECT = not DEBUG  # Apenas em produção
 # Cookies seguros
 # Garante que os cookies só sejam enviados via HTTPS
 SESSION_COOKIE_SECURE = not DEBUG  # Apenas em produção
-CSRF_COOKIE_SECURE = not DEBUG     # Apenas em produção
+CSRF_COOKIE_SECURE = not DEBUG  # Apenas em produção
 
 # Configurações adicionais de segurança
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = "DENY"
 
 # Configuração da SECRET_KEY mais segura
 # IMPORTANTE: Em produção, use uma variável de ambiente
@@ -57,11 +57,11 @@ if DEBUG:
     SECRET_KEY = "django-insecure-dev-key-change-in-production-" + "x" * 20
 else:
     # Para produção, use uma variável de ambiente
-    SECRET_KEY = os.environ.get('SECRET_KEY', secrets.token_urlsafe(50))
+    SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_urlsafe(50))
 
 # Configuração de hosts permitidos mais restritiva
 if not DEBUG:
-    ALLOWED_HOSTS = ['seu-dominio.com', 'www.seu-dominio.com']
+    ALLOWED_HOSTS = ["seu-dominio.com", "www.seu-dominio.com"]
 else:
     ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "testserver"]
 
@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Aplicações do projeto
+    "omaum",
     "core",
     "alunos",
     "atividades",

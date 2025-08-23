@@ -1,7 +1,7 @@
 import csv
 from django.core.management.base import BaseCommand, CommandParser
 from django.db import transaction
-from alunos.models import TipoCodigo, Codigo
+from alunos.utils import get_tipo_codigo_model, get_codigo_model
 
 
 class Command(BaseCommand):
@@ -27,6 +27,12 @@ class Command(BaseCommand):
                 codigos_criados = 0
                 tipos_criados = 0
                 codigos_ignorados = 0
+
+                TipoCodigo = get_tipo_codigo_model()
+                Codigo = get_codigo_model()
+                if not (TipoCodigo and Codigo):
+                    self.stdout.write(self.style.ERROR("Modelos iniciáticos indisponíveis."))
+                    return
 
                 with transaction.atomic():
                     for row in reader:

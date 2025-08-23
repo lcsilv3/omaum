@@ -1,8 +1,30 @@
 from django import forms
-from alunos.models import Aluno, RegistroHistorico, Codigo
+from alunos.models import Aluno, RegistroHistorico, Estado, Codigo, TipoCodigo
+from django_select2.forms import ModelSelect2Widget
 
 
 class AlunoForm(forms.ModelForm):
+    # Substituir widgets de cidade_ref e bairro_ref por AJAX
+    cidade_ref = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        widget=ModelSelect2Widget(
+            model=Aluno._meta.get_field('cidade_ref').related_model,
+            search_fields=['nome__icontains'],
+            attrs={'data-placeholder': 'Busque a cidade...'}
+        ),
+        label="Cidade (Ref)"
+    )
+    bairro_ref = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        widget=ModelSelect2Widget(
+            model=Aluno._meta.get_field('bairro_ref').related_model,
+            search_fields=['nome__icontains'],
+            attrs={'data-placeholder': 'Busque o bairro...'}
+        ),
+        label="Bairro (Ref)"
+    )
     grau_atual_automatico = forms.CharField(
         label="Grau Atual (automático)",
         required=False,
@@ -55,38 +77,6 @@ class AlunoForm(forms.ModelForm):
         label="Observações",
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Formata a data para o input type="date"
-        instance_exists = (
-            self.instance and self.instance.pk and self.instance.data_nascimento
-        )
-        if instance_exists:
-            self.initial["data_nascimento"] = self.instance.data_nascimento.strftime(
-                "%Y-%m-%d"
-            )
-
-        # Preencher campo automático
-        if self.instance and self.instance.pk:
-            self.fields[
-                "grau_atual_automatico"
-            ].initial = self.instance.grau_atual_automatico
-        else:
-            self.fields["grau_atual_automatico"].initial = "Não informado"
-
-        # Adiciona classes CSS e placeholders
-        placeholders = {
-            "cpf": "Somente números",
-            "cep": "Somente números",
-            "celular_primeiro_contato": "Somente números",
-            "celular_segundo_contato": "Somente números",
-        }
-        for field_name, field in self.fields.items():
-            if not field.widget.attrs.get("class"):
-                field.widget.attrs["class"] = "form-control"
-            if field_name in placeholders:
-                field.widget.attrs["placeholder"] = placeholders[field_name]
-
     def save(self, commit=True):
         """Salva o aluno e adiciona evento ao histórico se preenchido."""
         instance = super().save(commit=False)
@@ -113,62 +103,199 @@ class AlunoForm(forms.ModelForm):
     class Meta:
         model = Aluno
         fields = [
+            # Identificação
             "nome",
             "cpf",
             "email",
-            "celular_primeiro_contato",
+            "foto",
             "data_nascimento",
+            "hora_nascimento",
             "sexo",
-            "estado_civil",
-            "nome_iniciatico",
+            "situacao",
+            # Iniciáticos
             "numero_iniciatico",
+            "nome_iniciatico",
             "grau_atual_automatico",
             "grau_atual",
             "situacao_iniciatica",
+            # Nacionalidade / Naturalidade (novos + legacy)
+            "pais_nacionalidade",
+            "cidade_naturalidade",
+            "nacionalidade",
+            "naturalidade",
+            # Endereço
             "rua",
+            "numero_imovel",
+            "complemento",
+            "bairro",
             "cidade",
             "estado",
             "cep",
+            "cidade_ref",
+            "bairro_ref",
+            # Contatos
+            "nome_primeiro_contato",
+            "celular_primeiro_contato",
+            "tipo_relacionamento_primeiro_contato",
+            "nome_segundo_contato",
+            "celular_segundo_contato",
+            "tipo_relacionamento_segundo_contato",
+            # Outros pessoais
+            "estado_civil",
+            "profissao",
+            "ativo",
+            # Médicos
+            "tipo_sanguineo",
+            "fator_rh",
+            "alergias",
+            "condicoes_medicas_gerais",
+            "convenio_medico",
+            "hospital",
         ]
         widgets = {
-            "data_nascimento": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
-            ),
-            "hora_nascimento": forms.TimeInput(
-                attrs={"type": "time", "class": "form-control"}
-            ),
-            "alergias": forms.Textarea(attrs={"rows": 3}),
-            "condicoes_medicas_gerais": forms.Textarea(attrs={"rows": 3}),
+            "data_nascimento": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "hora_nascimento": forms.TimeInput(attrs={"type": "time", "class": "form-control"}),
             "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "nome_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "grau_atual": forms.TextInput(attrs={"class": "form-control"}),
             "situacao_iniciatica": forms.Select(attrs={"class": "form-control"}),
+            "alergias": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "condicoes_medicas_gerais": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
     def _add_selecione_to_selects(self):
         # Adiciona a opção 'Selecione' a todos os campos Select
-        for name, field in self.fields.items():
-            if isinstance(field.widget, forms.Select) and not field.required:
-                field.choices = [("", "Selecione")] + list(field.choices)
-            elif isinstance(field.widget, forms.Select) and field.required:
-                # Se for required, ainda assim força 'Selecione' como primeira opção
-                field.choices = [("", "Selecione")] + [
-                    c for c in field.choices if c[0] != ""
-                ]
+        for field in self.fields.values():
+            if not isinstance(field.widget, forms.Select):
+                continue
+            base_choices = []
+            if hasattr(field, "choices"):
+                base_choices = list(field.choices)  # type: ignore[attr-defined]
+            if not base_choices and hasattr(field.widget, "choices"):
+                base_choices = list(field.widget.choices)
+            base_choices = [
+                c for c in base_choices
+                if not (
+                    isinstance(c, (list, tuple))
+                    and len(c) >= 2
+                    and c[0] == ""
+                    and str(c[1]).lower() == "selecione"
+                )
+            ]
+            nova_lista = [("", "Selecione")] + base_choices
+            field.widget.choices = nova_lista  # type: ignore[attr-defined]
+            if hasattr(field, "choices"):
+                field.choices = nova_lista  # type: ignore[attr-defined]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # ...existing code...
+        # Ajusta queryset dos widgets AJAX
+        if 'cidade_ref' in self.fields:
+            self.fields['cidade_ref'].queryset = self.fields['cidade_ref'].widget.model.objects.all()
+        if 'bairro_ref' in self.fields:
+            self.fields['bairro_ref'].queryset = self.fields['bairro_ref'].widget.model.objects.all()
+        # Datas
+        if self.instance and self.instance.pk and self.instance.data_nascimento:
+            self.initial["data_nascimento"] = self.instance.data_nascimento.strftime("%Y-%m-%d")
+        # Grau automático
+        self.fields["grau_atual_automatico"].initial = (
+            self.instance.grau_atual_automatico if self.instance and self.instance.pk else "Não informado"
+        )
+        # Placeholders
+        placeholders = {
+            "cpf": "___.___.___-__",
+            # Novo formato de CEP com ponto após 2 dígitos: 00.000-000
+            "cep": "__.___-___",
+            "celular_primeiro_contato": "(99) 99999-9999",
+            "celular_segundo_contato": "(99) 99999-9999",
+            "email": "usuario@exemplo.com",
+        }
+        for field_name, field in self.fields.items():  # field_name usado para placeholders
+            if not field.widget.attrs.get("class"):
+                field.widget.attrs["class"] = "form-control"
+            if field_name in placeholders:
+                field.widget.attrs.setdefault("placeholder", placeholders[field_name])
+        # CEP: permitir máscara com hífen (99999-999 -> 9 caracteres). O modelo armazena 8 dígitos limpos.
+        if "cep" in self.fields:
+            # Aumenta limite para incluir ponto e hífen (00.000-000 -> 10 chars visuais)
+            self.fields["cep"].max_length = 10  # somente apresentação; modelo continua 8 dígitos
+            self.fields["cep"].widget.attrs["maxlength"] = "10"
+        # Campos referência exibidos em modo avançado: usar css helper
+        for ref_field in ["cidade_ref", "bairro_ref"]:
+            if ref_field in self.fields:
+                self.fields[ref_field].widget.attrs.setdefault(
+                    "class", "form-select text-muted"
+                )
+                self.fields[ref_field].required = False
+        # Label
+        if "rua" in self.fields:
+            self.fields["rua"].label = "Endereço"
+        # Estado como select
+        # Otimização: só carrega estados se realmente houver campo e só busca os campos necessários
+        if "estado" in self.fields:
+            estados_qs = Estado.objects.only("id", "codigo", "nome").order_by("nome")
+            escolha_estado = [(e.codigo, f"{e.nome} ({e.codigo})") for e in estados_qs]
+            inicial = self.fields["estado"].initial
+            self.fields["estado"] = forms.ChoiceField(
+                choices=[("", "Selecione")] + escolha_estado,
+                required=False,
+                widget=forms.Select(attrs={"class": "form-select"}),
+                label=self.fields["estado"].label,
+                initial=inicial,
+            )
+            self.estado_codigo_to_id = {e.codigo: e.id for e in estados_qs}
+        # Email pattern
+        if "email" in self.fields:
+            self.fields["email"].widget.attrs.setdefault(
+                "pattern", r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+            )
+        # Selects adicionam 'Selecione'
         self._add_selecione_to_selects()
+        # Após adicionar selects, se campo estado existir, injeta data-id em cada option via atributo 'data-ids-json'
+        if 'estado' in self.fields:
+            # Serializa mapping para uso em template/JS
+            mapping = {e.codigo: e.id for e in Estado.objects.all()}
+            self.fields['estado'].widget.attrs['data-mapping-json'] = mapping
+
+    # Limpeza de campos com máscaras
+    def clean_cpf(self):
+        v = self.cleaned_data.get("cpf", "")
+        return v.replace(".", "").replace("-", "")
+
+    def clean_celular_primeiro_contato(self):
+        v = self.cleaned_data.get("celular_primeiro_contato", "")
+        return "".join(filter(str.isdigit, v))
+
+    def clean_celular_segundo_contato(self):
+        v = self.cleaned_data.get("celular_segundo_contato", "")
+        return "".join(filter(str.isdigit, v))
+
+    def clean_cep(self):
+        v = self.cleaned_data.get("cep", "")
+        return v.replace("-", "").replace(".", "")
 
 
 # Manter formulário original para compatibilidade durante migração
 class RegistroHistoricoForm(forms.ModelForm):
     """Formulário para registros históricos - mantido para compatibilidade."""
 
+    # Campo auxiliar (não pertence ao modelo) para o usuário filtrar códigos por tipo.
+    tipo_codigo = forms.ModelChoiceField(
+        queryset=TipoCodigo.objects.all(),
+        required=False,
+        label="Tipo",
+        widget=forms.Select(attrs={
+            "class": "form-control tipo-codigo-select",
+        }),
+        help_text="Selecione primeiro um tipo para filtrar os códigos",
+    )
+
     class Meta:
         model = RegistroHistorico
         fields = [
+            # Campo extra (UI) - inserido antes de 'codigo'
+            # será ordenado via order_fields no __init__
+            # 'tipo_codigo' não é campo de modelo
             "codigo",
             "data_os",
             "ordem_servico",
@@ -177,7 +304,12 @@ class RegistroHistoricoForm(forms.ModelForm):
             "observacoes",
         ]
         widgets = {
-            "codigo": forms.Select(attrs={"class": "form-control django-select2"}),
+            "codigo": forms.Select(
+                attrs={
+                    "class": "form-control codigo-select",
+                    # Será habilitado dinamicamente quando um tipo for escolhido (para novos forms)
+                }
+            ),
             "data_os": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "ordem_servico": forms.TextInput(attrs={"class": "form-control"}),
             "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
@@ -187,7 +319,28 @@ class RegistroHistoricoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["codigo"].queryset = Codigo.objects.order_by("tipo_codigo", "nome")
+        # Otimização: carrega apenas os campos necessários para o select
+        self.fields["tipo_codigo"].queryset = TipoCodigo.objects.all()
+        self.fields["codigo"].queryset = Codigo.objects.all()
+        # Widget simples, populado via JS customizado
+        self.fields["codigo"].widget = forms.Select(attrs={"class": "form-control codigo-select"})
+
+        # Se já houver um código selecionado (edição), preencher o tipo inicial
+        codigo_obj = self.instance.codigo if getattr(self.instance, "codigo_id", None) else None
+        if codigo_obj and codigo_obj.tipo_codigo_id:
+            self.fields["tipo_codigo"].initial = codigo_obj.tipo_codigo_id
+
+        # Ordem dos campos no form (inserir tipo antes de código)
+        desired = [
+            "tipo_codigo",
+            "codigo",
+            "ordem_servico",
+            "data_os",
+            "numero_iniciatico",
+            "nome_iniciatico",
+            "observacoes",
+        ]
+        self.order_fields(desired)
 
 
 # Manter formset para compatibilidade durante migração

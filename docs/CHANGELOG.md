@@ -12,6 +12,32 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Aplicativo mobile companion
 - Integração com sistemas acadêmicos externos
 
+### Adicionado
+- Campo `Aluno.historico_checksum` (SHA256) e lógica de cálculo incremental.
+- Serviço de verificação de integridade e reconciliação do histórico iniciático (`verificar_integridade_historico`, `reconciliar_historico_if_divergente`).
+- Comando de management `verificar_historicos` para auditoria em lote.
+- Índices otimizados em `presencas.PresencaDetalhada` (múltiplas combinações aluno/turma/atividade + período) via `AddIndex` seguro.
+- Reintrodução/normalização de índices em `alunos.RegistroHistorico` para consultas mais rápidas.
+- Marker pytest `require_cov` para permitir smoke tests rápidos sem cobertura total.
+
+### Alterado
+- Consolidação definitiva dos modelos iniciáticos (`TipoCodigo`, `Codigo`, `RegistroHistorico`) exclusivamente no app `alunos`.
+- Serviços de criação/sincronização de histórico migrados para `alunos.services` removendo fallbacks do app descontinuado.
+- Ajustes em `pytest.ini` para separar execução de smoke tests e cobertura completa.
+
+### Removido
+- App `iniciaticos` removido de `INSTALLED_APPS` (remoção lógica); mantidos apenas artefatos de documentação e reexports temporários para transição.
+
+### Corrigido
+- Migration problemática de presenças substituída (uso prévio de SQL bruto inválido) por implementação padrão `AddIndex` compatível cross-backend.
+- Eliminação de erros de system check (modelos duplicados E028) após unificação dos modelos.
+- Testes atualizados para refletir campos vigentes do modelo `Aluno` (ex.: `pais_nacionalidade`, `cidade_naturalidade`).
+
+### Interno / Manutenção
+- Documentação de depreciação atualizada (`iniciaticos/README_DEPRECATION.md`) com checklist concluído da fase de remoção lógica.
+- Scripts de suporte a smoke tests e monitoramento de formatação (watchers Ruff + Pytest) alinhados ao novo fluxo.
+- Melhor detalhamento de logs e material de auditoria em arquivos de DEBUG relacionados ao histórico iniciático.
+
 ## [2.0.0] - 2024-01-15
 
 ### Adicionado

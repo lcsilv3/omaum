@@ -1,15 +1,22 @@
 #!/usr/bin/env python
-"""Script para limpar e popular a tabela Codigo."""
+"""Script utilitário: limpa e repovoa a tabela Codigo a partir de codigos.csv."""
 
 import os
 import csv
 import django
+from typing import Dict, Any
 
 # Configurar Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omaum.settings')
 django.setup()
 
-from alunos.models import Codigo, TipoCodigo
+# Importações dependentes do Django após setup (suprimindo E402)
+from alunos.utils import get_codigo_model, get_tipo_codigo_model  # noqa: E402
+
+Codigo: Any = get_codigo_model()
+TipoCodigo: Any = get_tipo_codigo_model()
+if not (Codigo and TipoCodigo):
+    raise RuntimeError("Modelos iniciáticos (Codigo/TipoCodigo) indisponíveis.")
 
 
 def limpar_tabela():
@@ -25,10 +32,10 @@ def limpar_tabela():
         print("ℹ️  Tabela já estava vazia.")
 
 
-def obter_tipos_codigo():
+def obter_tipos_codigo() -> Dict[str, object]:
     """Obtém todos os tipos de código disponíveis."""
     print("\n🔍 Verificando tipos de código disponíveis...")
-    tipos = {}
+    tipos: Dict[str, object] = {}
     
     for tipo in TipoCodigo.objects.all():
         tipos[tipo.nome] = tipo
@@ -66,7 +73,7 @@ def importar_csv():
                         continue
                     
                     # Criar o código
-                    codigo = Codigo.objects.create(
+                    Codigo.objects.create(
                         nome=row['nome'],
                         tipo_codigo=tipos_codigo[tipo_nome],
                         descricao=row['descricao']
@@ -81,7 +88,7 @@ def importar_csv():
                     print(f"❌ Erro na linha {row_num}: {e}")
                     erros += 1
             
-            print(f"\n📊 Importação concluída:")
+            print("\n📊 Importação concluída:")
             print(f"  • Total de registros importados: {count}")
             print(f"  • Total de erros: {erros}")
             
@@ -124,11 +131,13 @@ def verificar_dados():
 def validar_integridade():
     """Valida a integridade dos dados."""
     print("\n🔍 Validando integridade dos dados...")
+    # Import local para evitar alerta de uso antes da definição em ferramentas estáticas
+    from django.db import models  # noqa: WPS433 (import interno intencional)
     
     # Verificar registros duplicados
-    codigos_duplicados = Codigo.objects.values('nome').annotate(
-        count=models.Count('nome')
-    ).filter(count__gt=1)
+    codigos_duplicados = (
+        Codigo.objects.values('nome').annotate(count=models.Count('nome')).filter(count__gt=1)
+    )
     
     if codigos_duplicados.exists():
         print("⚠️  Códigos duplicados encontrados:")
@@ -148,20 +157,16 @@ def validar_integridade():
 if __name__ == "__main__":
     print("🚀 Iniciando processo de limpeza e importação da tabela Codigo")
     print("=" * 70)
-    
+
     # Etapa 1: Limpar tabela
     limpar_tabela()
-    
+
     # Etapa 2: Importar CSV
     if importar_csv():
         # Etapa 3: Verificar dados
         verificar_dados()
-        
         # Etapa 4: Validar integridade
-        # Importar Count para validação
-        from django.db import models
         validar_integridade()
-        
         print("\n✅ Processo concluído com sucesso!")
     else:
         print("\n❌ Processo falhou durante a importação!")

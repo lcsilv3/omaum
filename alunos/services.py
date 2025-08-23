@@ -1,6 +1,6 @@
-"""
-Serviços para o aplicativo alunos.
-Contém a lógica de negócios complexa.
+"""Serviços para o aplicativo alunos.
+
+Contém a lógica de negócios complexa e utilitários relacionados ao histórico iniciático.
 """
 
 import logging
@@ -9,6 +9,8 @@ from django.core.files.base import ContentFile
 from django.utils import timezone
 from django.db.models import Q  # Adicionado para resolver erro de variável indefinida
 import requests  # Adicionado para resolver erro de variável indefinida
+import hashlib
+import json
 from alunos.utils import (
     get_aluno_model,
     get_turma_model,
@@ -18,7 +20,9 @@ from alunos.utils import (
 )
 from alunos.models import (
     RegistroHistorico,
-)  # Adicionando importação do modelo RegistroHistorico
+)  # Import base
+
+# Modelos unificados em 'alunos' (app iniciaticos apenas reexporta).
 
 # pylint: disable=redefined-outer-name
 
@@ -58,14 +62,12 @@ class InstrutorService:
 
         try:
             pode_ser_instrutor = aluno.pode_ser_instrutor
-
             if not pode_ser_instrutor:
                 matricula_model = get_matricula_model()
                 if matricula_model:
                     matriculas_pre_iniciatico = matricula_model.objects.filter(
                         aluno=aluno, turma__curso__nome__icontains="Pré-iniciático"
                     )
-
                     if matriculas_pre_iniciatico.exists():
                         cursos = ", ".join(
                             [f"{m.turma.curso.nome}" for m in matriculas_pre_iniciatico]
@@ -77,14 +79,11 @@ class InstrutorService:
                                 f"{cursos}"
                             ),
                         }
-
                 return {
                     "elegivel": False,
                     "motivo": "O aluno não atende aos requisitos para ser instrutor.",
                 }
-
             return {"elegivel": True}
-
         except Exception as exc:
             logger.error("Erro ao verificar elegibilidade do instrutor: %s", exc)
             return {
@@ -138,7 +137,11 @@ class InstrutorService:
             for turma in turmas_instrutor_auxiliar:
                 turma.instrutor_auxiliar = None
                 turma.alerta_instrutor = True
-                turma.alerta_mensagem = f"O instrutor auxiliar {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
+                turma.alerta_mensagem = (
+                    "O instrutor auxiliar "
+                    f"{aluno.nome} foi removido devido à mudança de situação para "
+                    f"'{aluno.get_situacao_display()}'."
+                )
                 turma.save()
 
                 if atribuicao_cargo_model:
@@ -154,7 +157,11 @@ class InstrutorService:
             for turma in turmas_auxiliar_instrucao:
                 turma.auxiliar_instrucao = None
                 turma.alerta_instrutor = True
-                turma.alerta_mensagem = f"O auxiliar de instrução {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
+                turma.alerta_mensagem = (
+                    "O auxiliar de instrução "
+                    f"{aluno.nome} foi removido devido à mudança de situação para "
+                    f"'{aluno.get_situacao_display()}'."
+                )
                 turma.save()
 
                 if atribuicao_cargo_model:
@@ -299,7 +306,11 @@ def remover_instrutor_de_turmas(aluno, nova_situacao):
         for turma in turmas_instrutor_auxiliar:
             turma.instrutor_auxiliar = None
             turma.alerta_instrutor = True
-            turma.alerta_mensagem = f"O instrutor auxiliar {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
+            turma.alerta_mensagem = (
+                "O instrutor auxiliar "
+                f"{aluno.nome} foi removido devido à mudança de situação para "
+                f"'{aluno.get_situacao_display()}'."
+            )
             turma.save()
 
             if atribuicao_cargo_model:
@@ -315,7 +326,11 @@ def remover_instrutor_de_turmas(aluno, nova_situacao):
         for turma in turmas_auxiliar_instrucao:
             turma.auxiliar_instrucao = None
             turma.alerta_instrutor = True
-            turma.alerta_mensagem = f"O auxiliar de instrução {aluno.nome} foi removido devido à mudança de situação para '{aluno.get_situacao_display()}'."
+            turma.alerta_mensagem = (
+                "O auxiliar de instrução "
+                f"{aluno.nome} foi removido devido à mudança de situação para "
+                f"'{aluno.get_situacao_display()}'."
+            )
             turma.save()
 
             if atribuicao_cargo_model:
@@ -529,3 +544,189 @@ def listar_alunos_com_cache(query=None, curso_id=None, cache_timeout=300):
     cache.set(cache_key, resultado, cache_timeout)
 
     return resultado
+
+# ==============================================================
+# Serviços de Histórico Iniciático (Fase 0 de refatoração)
+# Centralizam criação/listagem/sincronização entre RegistroHistorico
+# e o JSONField historico_iniciatico do Aluno.
+# ==============================================================
+from django.db import transaction, IntegrityError
+from datetime import date, datetime
+
+
+def _normalizar_data(valor):
+    """Converte string (YYYY-MM-DD) ou datetime/date em date."""
+    if isinstance(valor, date):
+        return valor
+    if isinstance(valor, datetime):
+        return valor.date()
+    if isinstance(valor, str) and valor.strip():
+        try:
+            return datetime.strptime(valor[:10], "%Y-%m-%d").date()
+        except ValueError:
+            raise ValueError(f"Data inválida: {valor}") from None
+    raise ValueError("Data não fornecida ou inválida")
+
+
+def listar_eventos_iniciaticos(aluno, limite=None):
+    """Retorna eventos do RegistroHistorico (ordenados) e aplica limite opcional."""
+    RegistroHistorico = get_registro_historico_model()  # noqa
+    qs = (
+        RegistroHistorico.objects.filter(aluno=aluno, ativo=True)
+        .select_related("codigo", "codigo__tipo_codigo")
+        .order_by("-data_os", "-created_at")
+    )
+    if limite:
+        return list(qs[:limite])
+    return list(qs)
+
+
+def _calcular_checksum(eventos):
+    """Calcula SHA256 determinístico de lista de eventos.
+
+    Serializa com sort_keys para estabilidade.
+    """
+    try:
+        payload = json.dumps(eventos or [], sort_keys=True, ensure_ascii=False).encode("utf-8")
+        return hashlib.sha256(payload).hexdigest()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def verificar_integridade_historico(aluno, reparar: bool = False):
+    """Verifica integridade do histórico iniciático de um aluno.
+
+    Args:
+        aluno: instância de Aluno
+        reparar: se True e divergente, recalcula sincronizando a partir de RegistroHistorico.
+
+    Returns:
+        dict com chaves:
+          integro (bool), checksum_atual, checksum_recomputado, reparado (bool)
+    """
+    eventos = aluno.historico_iniciatico if isinstance(aluno.historico_iniciatico, list) else []
+    recomputado = _calcular_checksum(eventos)
+    atual = aluno.historico_checksum
+    integro = (atual == recomputado) and (atual is not None)
+    reparado = False
+    if not integro and reparar:
+        sincronizar_historico_iniciatico(aluno)
+        aluno.refresh_from_db()
+        eventos = aluno.historico_iniciatico if isinstance(aluno.historico_iniciatico, list) else []
+        recomputado = _calcular_checksum(eventos)
+        atual = aluno.historico_checksum
+        integro = (atual == recomputado) and (atual is not None)
+        reparado = True
+    return {
+        "integro": integro,
+        "checksum_atual": atual,
+        "checksum_recomputado": recomputado,
+        "reparado": reparado,
+    }
+
+
+def sincronizar_historico_iniciatico(aluno):
+    """Recria o JSON historico_iniciatico a partir de RegistroHistorico."""
+    eventos = []
+    for reg in listar_eventos_iniciaticos(aluno):
+        eventos.append(
+            {
+                "tipo": reg.codigo.tipo_codigo.nome,
+                "descricao": reg.codigo.nome,
+                "data": reg.data_os.isoformat(),
+                "observacoes": reg.observacoes or "",
+                "ordem_servico": reg.ordem_servico or "",
+                "criado_em": reg.created_at.isoformat(),
+            }
+        )
+    aluno.historico_iniciatico = eventos
+    aluno.historico_checksum = _calcular_checksum(eventos)
+    aluno.save(update_fields=["historico_iniciatico", "historico_checksum"])
+    return eventos
+
+
+def criar_evento_iniciatico(
+    *,
+    aluno,
+    codigo,
+    tipo_evento: str,
+    data_os,
+    data_evento,
+    ordem_servico="",
+    observacoes="",
+    sincronizar_cache_incremental=True,
+):
+    """Cria um RegistroHistorico + insere evento no JSON.
+
+    Args:
+        aluno: instância de Aluno
+        codigo: instância de Codigo
+        tipo_evento: categoria textual (ex: CARGO, INICIAÇÃO)
+        data_os: data formal do documento (string YYYY-MM-DD ou date)
+        data_evento: data exibida no histórico (string YYYY-MM-DD ou date)
+        ordem_servico: identificador opcional
+        observacoes: texto opcional
+        sincronizar_cache_incremental: se True, faz append em vez de reconstruir tudo
+
+    Returns:
+        dict com chaves: registro, evento_json
+    """
+    RegistroHistorico = get_registro_historico_model()  # noqa
+    data_os_norm = _normalizar_data(data_os)
+    data_evt_norm = _normalizar_data(data_evento)
+
+    try:
+        with transaction.atomic():
+            registro = RegistroHistorico.objects.create(
+                aluno=aluno,
+                codigo=codigo,
+                ordem_servico=ordem_servico or None,
+                data_os=data_os_norm,
+                observacoes=observacoes or None,
+            )
+            # Append incremental ao JSON (mantendo método existente para consistência)
+            if sincronizar_cache_incremental:
+                aluno.adicionar_evento_historico(
+                    tipo=tipo_evento,
+                    descricao=f"{codigo.nome}{' - ' + codigo.descricao if codigo.descricao else ''}",
+                    data=data_evt_norm,
+                    observacoes=observacoes or "",
+                    ordem_servico=ordem_servico or "",
+                )
+                # Recarrega eventos para checksum coerente
+                eventos = aluno.historico_iniciatico if isinstance(aluno.historico_iniciatico, list) else []
+                aluno.historico_checksum = _calcular_checksum(eventos)
+                aluno.save(update_fields=["historico_iniciatico", "historico_checksum"])
+                evento_json = aluno.historico_iniciatico[-1]
+            else:
+                # Reconstrói tudo (fallback)
+                eventos = sincronizar_historico_iniciatico(aluno)
+                evento_json = eventos[-1] if eventos else None
+            return {"registro": registro, "evento_json": evento_json}
+    except IntegrityError as exc:
+        logger.warning("Violação de integridade ao criar evento iniciático: %s", exc)
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Erro inesperado ao criar evento iniciático: %s", exc)
+        raise
+
+
+def reconciliar_historico_if_divergente(aluno):
+    """Verifica contagem & datas para detectar divergência simples e reconcilia se necessário."""
+    try:
+        registros = listar_eventos_iniciaticos(aluno)
+        json_len = len(aluno.historico_iniciatico or []) if isinstance(
+            aluno.historico_iniciatico, list
+        ) else 0
+        if json_len != len(registros):
+            return sincronizar_historico_iniciatico(aluno)
+        # Checagem superficial: comparar datas do primeiro
+        if registros:
+            reg_top = registros[0].data_os.isoformat()
+            json_top = aluno.historico_iniciatico[0].get("data") if json_len else None
+            if reg_top != json_top:
+                return sincronizar_historico_iniciatico(aluno)
+        return aluno.historico_iniciatico
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Falha ao reconciliar histórico: %s", exc)
+        return aluno.historico_iniciatico

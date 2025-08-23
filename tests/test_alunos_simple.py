@@ -1,4 +1,9 @@
+import pytest
+from datetime import date
+from django.test import TestCase
 from django.urls import reverse
+from alunos.models import Aluno, Pais, Estado, Cidade
+from django.contrib.auth.models import User
 # Testes de integração para as views simplificadas do app alunos
 @pytest.mark.django_db
 class AlunoViewsIntegracaoTest(TestCase):
@@ -360,10 +365,10 @@ class AlunoCriticalSimpleTest(TestCase):
                 nome='João Silva',
                 data_nascimento=date(1990, 1, 1),
                 email='joao@teste.com',
-                usuario=self.user,
-                pais=self.pais,
-                estado=self.estado,
-                cidade=self.cidade
+                # Campos extras removidos: modelo não possui 'usuario', 'pais', 'estado', 'cidade'.
+                # Usamos novos campos relacionais opcionais se quisermos validar nacionalidade.
+                pais_nacionalidade=self.pais,
+                cidade_naturalidade=self.cidade,
             )
             aluno.full_clean()
             

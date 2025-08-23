@@ -1,6 +1,7 @@
 import pytest
 from django.urls import reverse
-from alunos.models import Aluno, Codigo
+from alunos.models import Aluno
+from alunos.utils import get_codigo_model, get_tipo_codigo_model
 from django.contrib.auth.models import User, Permission
 
 
@@ -17,8 +18,9 @@ def test_adicionar_registro_historico(client):
     client.login(username="testuser", password="testpass")
 
     # Cria um TipoCodigo válido e associa ao Codigo
-    from alunos.models import TipoCodigo
-
+    TipoCodigo = get_tipo_codigo_model()
+    Codigo = get_codigo_model()
+    assert TipoCodigo and Codigo, "Modelos iniciáticos indisponíveis"
     tipo_codigo = TipoCodigo.objects.create(nome="TESTE", descricao="Tipo de teste")
     codigo = Codigo.objects.create(tipo_codigo=tipo_codigo, nome="Código Teste")
 

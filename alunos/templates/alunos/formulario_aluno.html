@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{% if aluno and aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
 
+{# ---- CSS / media do form ---- #}
 {% block form_media_css %}
     {{ form.media.css }}
     {% if historico_formset %}
@@ -9,6 +11,7 @@
     {% endif %}
 {% endblock %}
 
+{# ---- CONTEÚDO PRINCIPAL ---- #}
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -20,27 +23,21 @@
     <form method="post" enctype="multipart/form-data" id="form-aluno" novalidate>
         {% csrf_token %}
         {% include 'includes/form_errors.html' %}
-        
-        <!-- DEBUG: Management form do formset de histórico SEMPRE no início do form -->
-        <!-- MANAGEMENT_FORM_START -->
         {% if historico_formset %}
-            <!-- DEBUG: Mostrando management form -->
             {{ historico_formset.management_form }}
-            <!-- DEBUG: Total de formulários: {{ historico_formset.total_form_count }} -->
         {% endif %}
-        <!-- MANAGEMENT_FORM_END -->
-        
+
         <div class="alert alert-info">
             <p><strong>Atenção:</strong> Preencha todos os campos obrigatórios e certifique-se de que a data de nascimento está preenchida.</p>
             <p>Os campos com formato específico (CPF, CEP, telefones) serão automaticamente ajustados ao salvar.</p>
         </div>
 
-        <!-- Seção: Dados Pessoais -->
+        <!-- Seção: Dados Iniciais Básicos -->
         <div class="card mb-4 border-primary">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
                     <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#dados-pessoais" role="button" aria-expanded="true" aria-controls="dados-pessoais">
-                        <span class="chevron">&#9654;</span> Dados Pessoais <small class="text-light">(clique para expandir/recolher)</small>
+                        <span class="chevron" style="transform: rotate(90deg)">▶</span> Dados Pessoais <small class="text-light">(clique para expandir/recolher)</small>
                     </a>
                 </h5>
             </div>
@@ -62,11 +59,9 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="border rounded p-3 mb-3 text-center" 
-                             style="border-style: dashed !important; border-color: #007bff !important; border-width: 2px !important; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto;">
-                            {% if aluno.foto %}
-                                <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" 
-                                     style="max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;">
+                        <div class="border rounded p-3 mb-3 text-center" style="border-style: dashed !important; border-color: #007bff !important; border-width: 2px !important; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto;">
+                            {% if aluno and aluno.foto %}
+                                <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" style="max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;">
                             {% else %}
                                 <div class="text-muted">Sem foto</div>
                             {% endif %}
@@ -84,8 +79,8 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Seção: Dados Iniciáticos -->
+
+        <!-- Seção: Dados Iniciáticos (Histórico) -->
         <div class="card mb-4 border-info">
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0">
@@ -95,73 +90,105 @@
                 </h5>
             </div>
             <div id="dados-iniciaticos" class="card-body collapse show">
-                <!-- DEBUG: Seção de Dados Iniciáticos -->
-                <!-- HISTORICO_SECTION_START -->
-                
-                <div id="historico-form-list">
-                    {% if historico_formset %}
-                        {% for form in historico_formset %}
+                <!-- Cabeçalho removido daqui, será inserido em cada .historico-form -->
+                        <div id="historico-form-list">
+                        {% for hform in historico_formset %}
                             <div class="historico-form mb-3 p-3 border rounded" data-form-index="{{ forloop.counter0 }}">
-                                {{ form.id|default_if_none:'' }}
-                                {% if form.non_field_errors %}
-                                    <div class="alert alert-danger">
-                                        {{ form.non_field_errors|default_if_none:'' }}
+                                <input type="hidden" name="{{ hform.prefix }}-id" id="id_{{ hform.prefix }}-id">
+                                <div class="row g-2 align-items-end historico-row">
+                                    <div class="col-md-3 tipo-wrapper">
+                                        <div class="mb-3">
+                                            <label for="{{ hform.tipo_codigo.id_for_label }}" class="form-label fw-semibold small">Tipo</label>
+                                            {{ hform.tipo_codigo }}
+                                            <small class="form-text text-muted">Selecione primeiro um tipo para filtrar os códigos</small>
+                                        </div>
                                     </div>
-                                {% endif %}
-                                <div class="row align-items-end">
-                                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.codigo %}</div>
-                                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.ordem_servico %}</div>
-                                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.data_os %}</div>
-                                    <div class="col-md-2 d-flex align-items-center">
-                                        {% if form.instance.pk %}
-                                            <div class="form-check">
-                                                {{ form.DELETE|default_if_none:'' }}
-                                                <label class="form-check-label" for="{{ form.DELETE.id_for_label|default_if_none:'' }}">Remover?</label>
-                                            </div>
-                                        {% else %}
-                                            <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
-                                                <i class="fas fa-trash"></i> Remover
-                                            </button>
-                                        {% endif %}
+                                    <div class="col-md-3 codigo-wrapper">
+                                        <div class="mb-3">
+                                            <label for="{{ hform.codigo.id_for_label }}" class="form-label fw-semibold small">Código</label>
+                                            {{ hform.codigo }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 ordem-wrapper">
+                                        <div class="mb-3">
+                                            <label for="{{ hform.ordem_servico.id_for_label }}" class="form-label fw-semibold small">Ordem de Serviço</label>
+                                            {{ hform.ordem_servico }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 data-wrapper">
+                                        <div class="mb-3">
+                                            <label for="{{ hform.data_os.id_for_label }}" class="form-label fw-semibold small">Data (O.S.)</label>
+                                            {{ hform.data_os }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end justify-content-start gap-2 action-wrapper">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold small">Ações</label><br>
+                                            {% if hform.instance.pk %}
+                                                <div class="form-check">
+                                                    {{ hform.DELETE|default_if_none:'' }}
+                                                    <label class="form-check-label" for="{{ hform.DELETE.id_for_label|default_if_none:'' }}">Remover?</label>
+                                                </div>
+                                            {% else %}
+                                                <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
+                                                    <i class="fas fa-trash"></i> Remover
+                                                </button>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-12">{% include 'includes/form_field.html' with field=form.observacoes %}</div>
+                                    <div class="col-md-12">
+                                        <div class="mb-3">
+                                            {{ hform.observacoes }}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}
-                    {% endif %}
-                </div>
+                        </div>
                 <button type="button" id="add-historico-form" class="btn btn-outline-primary btn-sm mt-2" data-debug-management-form="true">
                     <i class="fas fa-plus"></i> Adicionar Outro Registro
                 </button>
-                
-                <!-- Template para novos formulários -->
                 <div id="empty-historico-form" style="display:none">
                     <div class="historico-form mb-3 p-3 border rounded">
-                        <div class="row align-items-end">
-                            <div class="col-md-3">
+                        <div class="row g-2 align-items-end historico-row">
+                            <div class="col-md-3 tipo-wrapper">
                                 <div class="mb-3">
-                                    <label for="id_historico-__prefix__-codigo" class="form-label">Código</label>
-                                    <input type="text" name="historico-__prefix__-codigo" id="id_historico-__prefix__-codigo" class="form-control" />
+                                    <label for="id_historico-__prefix__-tipo_codigo" class="form-label fw-semibold small">Tipo</label>
+                                    <select name="historico-__prefix__-tipo_codigo" id="id_historico-__prefix__-tipo_codigo" class="form-control tipo-codigo-select" data-empty="1">
+                                        <option value="">---------</option>
+                                    </select>
+                                    <small class="form-text text-muted">Selecione primeiro um tipo para filtrar os códigos</small>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 codigo-wrapper">
                                 <div class="mb-3">
-                                    <label for="id_historico-__prefix__-ordem_servico" class="form-label">Ordem de Serviço</label>
-                                    <input type="text" name="historico-__prefix__-ordem_servico" id="id_historico-__prefix__-ordem_servico" class="form-control" />
+                                    <label for="id_historico-__prefix__-codigo" class="form-label fw-semibold small">Código</label>
+                                    <select name="historico-__prefix__-codigo" id="id_historico-__prefix__-codigo" class="form-control codigo-select" disabled>
+                                        <option value="">-- escolha o tipo primeiro --</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2 ordem-wrapper">
                                 <div class="mb-3">
-                                    <label for="id_historico-__prefix__-data_os" class="form-label">Data OS</label>
-                                    <input type="date" name="historico-__prefix__-data_os" id="id_historico-__prefix__-data_os" class="form-control" />
+                                    <label for="id_historico-__prefix__-ordem_servico" class="form-label fw-semibold small">Ordem de Serviço</label>
+                                    <input type="text" name="historico-__prefix__-ordem_servico" id="id_historico-__prefix__-ordem_servico" class="form-control">
                                 </div>
                             </div>
-                            <div class="col-md-3 d-flex align-items-center">
-                                <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
-                                    <i class="fas fa-trash"></i> Remover
-                                </button>
+                            <div class="col-md-2 data-wrapper">
+                                <div class="mb-3">
+                                    <label for="id_historico-__prefix__-data_os" class="form-label fw-semibold small">Data (O.S.)</label>
+                                    <input type="date" name="historico-__prefix__-data_os" id="id_historico-__prefix__-data_os" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold small">Ações</label><br>
+                                    <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
+                                        <i class="fas fa-trash"></i> Remover
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="row">
@@ -176,7 +203,6 @@
                 </div>
             </div>
         </div>
-        
         <!-- Seção: Nacionalidade e Naturalidade -->
         <div class="card mb-4 border-secondary">
             <div class="card-header bg-secondary text-white">
@@ -188,16 +214,12 @@
             </div>
             <div id="nacionalidade" class="card-body collapse">
                 <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.nacionalidade %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.naturalidade %}
-                    </div>
+                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.nacionalidade %}</div>
+                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.naturalidade %}</div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Seção: Endereço -->
         <div class="card mb-4 border-success">
             <div class="card-header bg-success text-white">
@@ -208,36 +230,30 @@
                 </h5>
             </div>
             <div id="endereco" class="card-body collapse">
-                <div class="row">
-                    <div class="col-md-8">
-                        {% include 'includes/form_field.html' with field=form.rua %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.numero_imovel %}
-                    </div>
+                <!-- Ordem solicitada: CEP, Endereço, Número, Complemento, Bairro, Estado, Cidade -->
+                <!-- Linha 1: CEP (isolado para destaque) -->
+                <div class="row mb-2">
+                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.cep %}</div>
+                    <div class="col-md-8"></div>
                 </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.complemento %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.bairro %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.cep %}
-                    </div>
+                <!-- Linha 2: Endereço + Número (mantém ordem Endereço depois Número na leitura esquerda->direita) -->
+                <div class="row mb-2">
+                    <div class="col-md-8">{% include 'includes/form_field.html' with field=form.rua %}</div>
+                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.numero_imovel %}</div>
                 </div>
-                <div class="row">
-                    <div class="col-md-8">
-                        {% include 'includes/form_field.html' with field=form.cidade %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.estado %}
-                    </div>
+                <!-- Linha 3: Complemento + Bairro -->
+                <div class="row mb-2">
+                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.complemento %}</div>
+                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.bairro %}</div>
+                </div>
+                <!-- Linha 4: Estado + Cidade (Estado antes de Cidade) -->
+                <div class="row mb-2">
+                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.estado %}</div>
+                    <div class="col-md-8">{% include 'includes/form_field.html' with field=form.cidade %}</div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Seção: Contatos de Emergência -->
         <div class="card mb-4 border-warning">
             <div class="card-header bg-warning text-dark">
@@ -250,32 +266,19 @@
             <div id="contatos" class="card-body collapse">
                 <h6>Primeiro Contato</h6>
                 <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.nome_primeiro_contato %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.celular_primeiro_contato %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.tipo_relacionamento_primeiro_contato %}
-                    </div>
+                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.nome_primeiro_contato %}</div>
+                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.celular_primeiro_contato %}</div>
+                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.tipo_relacionamento_primeiro_contato %}</div>
                 </div>
-                
                 <h6 class="mt-3">Segundo Contato</h6>
                 <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.nome_segundo_contato %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.celular_segundo_contato %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.tipo_relacionamento_segundo_contato %}
-                    </div>
+                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.nome_segundo_contato %}</div>
+                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.celular_segundo_contato %}</div>
+                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.tipo_relacionamento_segundo_contato %}</div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Seção: Informações Médicas -->
         <div class="card mb-4 border-danger">
             <div class="card-header bg-danger text-white">
@@ -287,43 +290,27 @@
             </div>
             <div id="medicas" class="card-body collapse">
                 <div class="row">
-                    <div class="col-md-3">
-                        {% include 'includes/form_field.html' with field=form.tipo_sanguineo %}
-                    </div>
-                    <div class="col-md-3">
-                        {% include 'includes/form_field.html' with field=form.fator_rh %}
-                    </div>
-                    <div class="col-md-3">
-                        {% include 'includes/form_field.html' with field=form.convenio_medico %}
-                    </div>
-                    <div class="col-md-3">
-                        {% include 'includes/form_field.html' with field=form.hospital %}
-                    </div>
+                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.tipo_sanguineo %}</div>
+                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.fator_rh %}</div>
+                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.convenio_medico %}</div>
+                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.hospital %}</div>
                 </div>
-                
                 <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.alergias %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.condicoes_medicas_gerais %}
-                    </div>
+                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.alergias %}</div>
+                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.condicoes_medicas_gerais %}</div>
                 </div>
             </div>
         </div>
-        
+
         <div class="d-flex justify-content-between mb-5">
-            <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Cancelar
-            </a>
-            <button type="submit" class="btn btn-primary" id="btn-salvar">
-                <i class="fas fa-save"></i> {% if aluno and aluno.cpf %}Atualizar{% else %}Cadastrar{% endif %} Aluno
-            </button>
+            <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
+            <button type="submit" class="btn btn-primary" id="btn-salvar"><i class="fas fa-save"></i> {% if aluno and aluno.cpf %}Atualizar{% else %}Cadastrar{% endif %} Aluno</button>
         </div>
     </form>
 </div>
 {% endblock %}
 
+{# ---- JS / media do form ---- #}
 {% block form_media_js %}
     {{ form.media.js }}
     {% if historico_formset %}
@@ -332,7 +319,155 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'alunos/masks.js' %}"></script>
 <script>
+// ================== ESTILIZAÇÃO CAMPOS HISTÓRICO (ALINHAMENTO) ==================
+const estiloHistorico = document.createElement('style');
+estiloHistorico.innerHTML = `
+    .historico-form .form-label { font-weight: 500; }
+    .historico-form .form-text { margin-top: 0.25rem; }
+    .historico-row { align-items: stretch !important; }
+    .historico-row > [class*='col-'] { position: relative; display: flex; flex-direction: column; }
+    .historico-row .mb-3 { flex:1 1 auto; display:flex; flex-direction:column; margin-bottom:.5rem !important; }
+    .historico-row select[disabled] { background: #e9ecef; }
+    .historico-row .action-wrapper { justify-content:flex-end; }
+    /* Oculta labels repetidos a partir da segunda linha em telas largas para compactar */
+    @media (min-width: 992px){
+        #historico-form-list .historico-form:not(:first-child) .historico-row .form-label { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+    }
+    @media (min-width: 992px){
+        .historico-row .tipo-wrapper { flex:0 0 23%; max-width:23%; }
+        .historico-row .codigo-wrapper { flex:0 0 23%; max-width:23%; }
+        .historico-row .ordem-wrapper { flex:0 0 14%; max-width:14%; }
+        .historico-row .data-wrapper { flex:0 0 14%; max-width:14%; }
+        .historico-row .action-wrapper { flex:0 0 13%; max-width:13%; }
+    }
+    /* Exibe cabeçalho apenas se houver pelo menos um form */
+    #historico-form-list:empty + #historico-header { display:none !important; }
+`;
+document.head.appendChild(estiloHistorico);
+
+// JS específico complementar (Fase 1-2 dinâmica endereço): tudo centralizado em masks.js; este bloco permanece para scripts auxiliares abaixo.
+
+// === INÍCIO: Dinâmica TipoCodigo -> Codigo ===
+document.addEventListener('DOMContentLoaded', function() {
+    const URL_TIPOS = '{% url "alunos:api_tipos_codigos" %}';
+    const URL_CODIGOS_POR_TIPO = '{% url "alunos:api_codigos_por_tipo" %}';
+
+    let cacheTipos = null; // [{id, nome, descricao}]
+    const cacheCodigosPorTipo = {}; // tipo_id -> [{id, nome, descricao}]
+
+    function fetchTipos() {
+        if (cacheTipos) return Promise.resolve(cacheTipos);
+        return fetch(URL_TIPOS).then(r => r.json()).then(data => {
+            if (data.status === 'success') {
+                cacheTipos = data.tipos;
+                return cacheTipos;
+            }
+            throw new Error(data.message || 'Erro ao carregar tipos');
+        });
+    }
+
+    function fetchCodigos(tipoId) {
+        if (cacheCodigosPorTipo[tipoId]) return Promise.resolve(cacheCodigosPorTipo[tipoId]);
+        const url = new URL(URL_CODIGOS_POR_TIPO, window.location.origin);
+        url.searchParams.set('tipo_id', tipoId);
+        return fetch(url).then(r => r.json()).then(data => {
+            if (data.status === 'success') {
+                cacheCodigosPorTipo[tipoId] = data.codigos;
+                return data.codigos;
+            }
+            throw new Error(data.message || 'Erro ao carregar códigos');
+        });
+    }
+
+    function popularTipos(selectEl, selectedValue) {
+        fetchTipos().then(tipos => {
+            // Limpa mantendo primeira option se existir
+            const firstText = '-- selecione --';
+            selectEl.innerHTML = `<option value="">${firstText}</option>`;
+            tipos.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = t.nome;
+                if (String(selectedValue) === String(t.id)) opt.selected = true;
+                selectEl.appendChild(opt);
+            });
+            selectEl.disabled = false;
+        }).catch(err => {
+            console.error('Falha ao popular tipos:', err);
+        });
+    }
+
+    function popularCodigos(selectEl, tipoId, selectedValue) {
+        if (!tipoId) {
+            selectEl.innerHTML = '<option value="">-- escolha o tipo primeiro --</option>';
+            selectEl.disabled = true;
+            return;
+        }
+        selectEl.disabled = true;
+        selectEl.innerHTML = '<option value="">Carregando...</option>';
+        fetchCodigos(tipoId).then(codigos => {
+            selectEl.innerHTML = '<option value="">-- selecione --</option>';
+            codigos.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.descricao && c.descricao.trim()
+                    ? `${c.nome} (${c.descricao})`
+                    : c.nome;
+                if (String(selectedValue) === String(c.id)) opt.selected = true;
+                selectEl.appendChild(opt);
+            });
+            selectEl.disabled = false;
+        }).catch(err => {
+            console.error('Falha ao popular códigos:', err);
+            selectEl.innerHTML = '<option value="">Erro ao carregar</option>';
+        });
+    }
+
+    function inicializarLinhaHistorico(container) {
+        const tipoSelect = container.querySelector('select.tipo-codigo-select');
+        const codigoSelect = container.querySelector('select.codigo-select');
+        if (!tipoSelect || !codigoSelect) return;
+
+        const tipoSelecionado = tipoSelect.getAttribute('data-initial');
+        const codigoSelecionado = codigoSelect.getAttribute('data-initial');
+
+        // Preenche tipos e depois (se houver) códigos
+        popularTipos(tipoSelect, tipoSelecionado);
+        if (tipoSelecionado) {
+            popularCodigos(codigoSelect, tipoSelecionado, codigoSelecionado);
+        } else {
+            codigoSelect.innerHTML = '<option value="">-- escolha o tipo primeiro --</option>';
+            codigoSelect.disabled = true;
+        }
+
+        tipoSelect.addEventListener('change', () => {
+            popularCodigos(codigoSelect, tipoSelect.value, null);
+        });
+    }
+
+    // Inicializar linhas existentes
+    document.querySelectorAll('#historico-form-list .historico-form').forEach(div => inicializarLinhaHistorico(div));
+
+    // Hook no botão que adiciona novo form
+    const addBtn = document.getElementById('add-historico-form');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            // A adição em si já acontece no outro script; usar MutationObserver simples
+            setTimeout(() => {
+                const forms = document.querySelectorAll('#historico-form-list .historico-form');
+                const last = forms[forms.length - 1];
+                if (last && !last.dataset.tipoCodigoInitialized) {
+                    inicializarLinhaHistorico(last);
+                    last.dataset.tipoCodigoInitialized = '1';
+                }
+            }, 50);
+        });
+    }
+});
+// === FIM: Dinâmica TipoCodigo -> Codigo ===
+
 // SCRIPT PARA GERENCIAR O FORMSET DE HISTÓRICO DINÂMICO
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== DEBUG FORMSET HISTÓRICO ===');
@@ -413,6 +548,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// ================== TIPOS & CÓDIGOS DINÂMICOS ==================
+// (Bloco duplicado de tipos & códigos removido - mantida apenas a primeira implementação)
 
 // Script para preview da imagem
 document.addEventListener('DOMContentLoaded', function() {

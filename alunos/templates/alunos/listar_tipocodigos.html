@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Tipos de Código</h2>
+<a href="{% url 'criar_tipocodigo' %}">Novo Tipo de Código</a>
+<table>
+    <tr><th>Nome</th><th>Descrição</th><th>Ações</th></tr>
+    {% for tipo in tipos %}
+    <tr>
+        <td>{{ tipo.nome }}</td>
+        <td>{{ tipo.descricao }}</td>
+        <td>
+            <a href="{% url 'editar_tipocodigo' tipo.pk %}">Editar</a> |
+            <a href="{% url 'excluir_tipocodigo' tipo.pk %}">Excluir</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

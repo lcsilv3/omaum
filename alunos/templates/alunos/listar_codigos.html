@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Códigos</h2>
+<a href="{% url 'criar_codigo' %}">Novo Código</a>
+<form method="get">
+    <label for="tipo_codigo">Filtrar por Tipo:</label>
+    <select name="tipo_codigo" id="tipo_codigo" onchange="this.form.submit()">
+        <option value="">Todos</option>
+        {% for tipo in tipos %}
+        <option value="{{ tipo.pk }}" {% if tipo.pk|stringformat:'s' == tipo_filtro %}selected{% endif %}>{{ tipo.nome }}</option>
+        {% endfor %}
+    </select>
+</form>
+<table>
+    <tr><th>Tipo</th><th>Número</th><th>Descrição</th><th>Ações</th></tr>
+    {% for codigo in codigos %}
+    <tr>
+        <td>{{ codigo.tipo_codigo.nome }}</td>
+        <td>{{ codigo.nome }}</td>
+        <td>{{ codigo.descricao }}</td>
+        <td>
+            <a href="{% url 'editar_codigo' codigo.pk %}">Editar</a> |
+            <a href="{% url 'excluir_codigo' codigo.pk %}">Excluir</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

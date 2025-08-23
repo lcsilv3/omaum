@@ -1,0 +1,22 @@
+<div class="mb-3">
+  {{ field }}
+  {% if field.help_text %}
+    <small class="form-text text-muted">{{ field.help_text }}</small>
+  {% endif %}
+  {% if field.errors %}
+    <div class="invalid-feedback d-block">
+      {% for error in field.errors %}
+        {{ error }}
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var erro = document.querySelector('.is-invalid');
+  if (erro) {
+    erro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    erro.focus();
+  }
+});
+</script>

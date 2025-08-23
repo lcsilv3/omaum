@@ -120,31 +120,33 @@
 
             <!-- Histórico de Registros -->
             <h6 class="mt-4">Histórico de Registros (Cargos, Punições, etc.)</h6>
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Tipo</th>
-                            <th>Código</th>
-                            <th>Data</th>
-                            <th>Observações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for registro in historico_list %}
-                        <tr>
-                            <td>{{ registro.codigo.tipo.nome }}</td>
-                            <td>{{ registro.codigo.descricao }}</td>
-                            <td>{{ registro.data_registro|date:"d/m/Y" }}</td>
-                            <td>{{ registro.observacoes|default:"-" }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center">Nenhum registro histórico encontrado.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div id="historico-iniciatico-wrapper" class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <button id="btn-carregar-historico" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-history"></i> Carregar Histórico
+                        </button>
+                        <button id="btn-carregar-mais-historico" class="btn btn-sm btn-outline-secondary d-none">
+                            <i class="fas fa-plus-circle"></i> Carregar Mais
+                        </button>
+                    </div>
+                    <small id="historico-status" class="text-muted"></small>
+                </div>
+                <div class="table-responsive d-none" id="historico-tabela-container">
+                    <table class="table table-striped table-bordered table-hover" id="historico-tabela">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Código</th>
+                                <th>Data OS</th>
+                                <th>Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historico-tbody">
+                            <tr id="historico-placeholder"><td colspan="4" class="text-center text-muted">Nenhum dado carregado.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Formulário para Adicionar Novo Registro -->
@@ -561,6 +563,82 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script>
     $(document).ready(function(){
+        // Histórico iniciático paginado
+        const btnCarregar = document.getElementById('btn-carregar-historico');
+        const btnCarregarMais = document.getElementById('btn-carregar-mais-historico');
+        const statusEl = document.getElementById('historico-status');
+        const tabelaContainer = document.getElementById('historico-tabela-container');
+        const tbody = document.getElementById('historico-tbody');
+        let pagina = 1;
+        const pageSize = 25;
+        let totalPages = 1;
+        let carregando = false;
+
+        function atualizarStatus() {
+            statusEl.textContent = `Página ${pagina - 1} de ${totalPages}`;
+        }
+
+        function toggleBotoes() {
+            if (pagina <= totalPages) {
+                btnCarregarMais.classList.remove('d-none');
+            } else {
+                btnCarregarMais.classList.add('d-none');
+            }
+        }
+
+        function renderRows(items) {
+            if (document.getElementById('historico-placeholder')) {
+                document.getElementById('historico-placeholder').remove();
+            }
+            for (const it of items) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${it.tipo_codigo}</td>
+                    <td title="${it.descricao}">${it.codigo}</td>
+                    <td>${new Date(it.data_os).toLocaleDateString('pt-BR')}</td>
+                    <td title="${it.observacoes}">${(it.observacoes || '-').substring(0,40)}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function carregarPagina() {
+            if (carregando) return;
+            carregando = true;
+            statusEl.textContent = 'Carregando...';
+            fetch(`/alunos/api/historico/${encodeURIComponent("{{ aluno.cpf }}")}/?page=${pagina}&page_size=${pageSize}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        totalPages = data.total_pages;
+                        renderRows(data.results);
+                        pagina += 1;
+                        atualizarStatus();
+                        toggleBotoes();
+                    } else {
+                        statusEl.textContent = 'Erro ao carregar.';
+                    }
+                })
+                .catch(() => { statusEl.textContent = 'Falha de rede.'; })
+                .finally(() => { carregando = false; });
+        }
+
+        if (btnCarregar) {
+            btnCarregar.addEventListener('click', function() {
+                tabelaContainer.classList.remove('d-none');
+                btnCarregar.classList.add('d-none');
+                pagina = 1;
+                tbody.innerHTML = '<tr id="historico-placeholder"><td colspan="4" class="text-center text-muted">Carregando...</td></tr>';
+                carregarPagina();
+            });
+        }
+
+        if (btnCarregarMais) {
+            btnCarregarMais.addEventListener('click', function() {
+                carregarPagina();
+            });
+        }
+        // Fim histórico paginado
         // Aplicar máscaras para exibição
         $('.cpf-mask').each(function(){
             var cpf = $(this).text().trim();

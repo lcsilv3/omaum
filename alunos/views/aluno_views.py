@@ -19,6 +19,10 @@ from alunos.services import remover_instrutor_de_turmas
 from django import forms
 from alunos.models import Aluno, RegistroHistorico
 from alunos.forms import RegistroHistoricoForm
+from alunos.services import criar_evento_iniciatico
+from alunos.utils import get_tipo_codigo_model, get_codigo_model
+from alunos.services import criar_evento_iniciatico
+from alunos.services import listar_eventos_iniciaticos
 
 logger = logging.getLogger(__name__)
 
@@ -117,9 +121,13 @@ def listar_alunos(request):
 def criar_aluno(request):
     """Cria um novo aluno."""
     import sys
+    import time
 
-    print("[DEBUG] View criar_aluno chamada", file=sys.stderr)
+    logger = logging.getLogger(__name__)
+    logger.info("[PERF] View criar_aluno chamada")
+    t0 = time.perf_counter()
     AlunoForm = get_aluno_form()
+    t1 = time.perf_counter()
     CustomFormSet = forms.inlineformset_factory(
         Aluno,
         RegistroHistorico,
@@ -131,14 +139,22 @@ def criar_aluno(request):
         validate_min=False,
         validate_max=True,
     )
+    t2 = time.perf_counter()
     if request.method == "POST":
+        t3 = time.perf_counter()
         form = AlunoForm(request.POST, request.FILES)
+        t4 = time.perf_counter()
         historico_formset = CustomFormSet(request.POST, prefix="historico")
+        t5 = time.perf_counter()
+        logger.info(f"[PERF] Tempo para instanciar AlunoForm: {t4-t3:.4f}s | Formset: {t5-t4:.4f}s")
         if form.is_valid() and historico_formset.is_valid():
             try:
+                t6 = time.perf_counter()
                 aluno = form.save()
                 historico_formset.instance = aluno
                 historico_formset.save()
+                t7 = time.perf_counter()
+                logger.info(f"[PERF] Tempo para salvar aluno e formset: {t7-t6:.4f}s")
                 messages.success(request, "Aluno cadastrado com sucesso!")
                 return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
             except ValidationError as e:
@@ -149,32 +165,49 @@ def criar_aluno(request):
             except Exception as e:
                 messages.error(request, f"Erro ao cadastrar aluno: {str(e)}")
             # Renderiza o formulário novamente após exceção
-            return render(
+            t8 = time.perf_counter()
+            response = render(
                 request,
                 "alunos/formulario_aluno.html",
                 {"form": form, "aluno": None, "historico_formset": historico_formset},
             )
+            t9 = time.perf_counter()
+            logger.info(f"[PERF] Tempo para renderizar template (erro): {t9-t8:.4f}s")
+            return response
         else:
             messages.error(request, "Por favor, corrija os erros abaixo.")
         # Renderiza o formulário novamente após erro de validação
-        return render(
+        t10 = time.perf_counter()
+        response = render(
             request,
             "alunos/formulario_aluno.html",
             {"form": form, "aluno": None, "historico_formset": historico_formset},
         )
+        t11 = time.perf_counter()
+        logger.info(f"[PERF] Tempo para renderizar template (validação): {t11-t10:.4f}s")
+        return response
     else:
         try:
+            t12 = time.perf_counter()
             form = AlunoForm()
+            t13 = time.perf_counter()
             historico_formset = CustomFormSet(
                 queryset=RegistroHistorico.objects.none(), prefix="historico"
             )
+            t14 = time.perf_counter()
             # Garante que o management_form SEMPRE seja gerado
             _ = historico_formset.management_form
-            return render(
+            t15 = time.perf_counter()
+            logger.info(f"[PERF] Tempo para instanciar AlunoForm: {t13-t12:.4f}s | Formset: {t14-t13:.4f}s | Management form: {t15-t14:.4f}s")
+            t16 = time.perf_counter()
+            response = render(
                 request,
                 "alunos/formulario_aluno.html",
                 {"form": form, "aluno": None, "historico_formset": historico_formset},
             )
+            t17 = time.perf_counter()
+            logger.info(f"[PERF] Tempo para renderizar template (GET): {t17-t16:.4f}s | Total: {t17-t0:.4f}s")
+            return response
         except Exception as e:
             from django.http import HttpResponse
 
@@ -378,8 +411,9 @@ def excluir_aluno(request, cpf):
 def listar_tipos_codigos_ajax(request):
     """Retorna lista de tipos de códigos via AJAX."""
     try:
-        from alunos.models import TipoCodigo
-
+        TipoCodigo = get_tipo_codigo_model()
+        if not TipoCodigo:
+            return JsonResponse({"status": "error", "message": "Modelo TipoCodigo indisponível"}, status=500)
         tipos = TipoCodigo.objects.all().values("id", "nome", "descricao")
         return JsonResponse({"status": "success", "tipos": list(tipos)})
     except Exception as e:
@@ -391,8 +425,9 @@ def listar_tipos_codigos_ajax(request):
 def listar_codigos_por_tipo_ajax(request):
     """Retorna códigos filtrados por tipo via AJAX."""
     try:
-        from alunos.models import Codigo
-
+        Codigo = get_codigo_model()
+        if not Codigo:
+            return JsonResponse({"status": "error", "message": "Modelo Codigo indisponível"}, status=500)
         tipo_id = request.GET.get("tipo_id")
         if not tipo_id:
             return JsonResponse(
@@ -434,29 +469,29 @@ def adicionar_evento_historico_ajax(request):
 
         # Obter objetos
         aluno = get_object_or_404(Aluno, id=aluno_id)
-        from alunos.models import Codigo
-
+        Codigo = get_codigo_model()
+        if not Codigo:
+            return JsonResponse({"status": "error", "message": "Modelo Codigo indisponível"}, status=500)
         codigo = get_object_or_404(Codigo, id=codigo_id)
 
-        # Criar registro histórico
-        from alunos.models import RegistroHistorico
-
-        registro = RegistroHistorico.objects.create(
-            aluno=aluno,
-            codigo=codigo,
-            ordem_servico=ordem_servico,
-            data_os=data_os,
-            observacoes=observacoes,
-        )
-
-        # Adicionar também ao histórico JSON do aluno
-        aluno.adicionar_evento_historico(
-            tipo=tipo_evento,
-            descricao=f"{codigo.nome} - {codigo.descricao}",
-            data=data_evento,
-            observacoes=observacoes,
-            ordem_servico=ordem_servico,
-        )
+        # Criar evento via serviço centralizado (garante sincronização JSON + relacional)
+        try:
+            resultado = criar_evento_iniciatico(
+                aluno=aluno,
+                codigo=codigo,
+                tipo_evento=tipo_evento,
+                data_os=data_os,
+                data_evento=data_evento,
+                ordem_servico=ordem_servico,
+                observacoes=observacoes,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return JsonResponse(
+                {"status": "error", "message": f"Falha ao criar evento: {exc}"},
+                status=500,
+            )
+        registro = resultado["registro"]
+        evento_json = resultado.get("evento_json") or {}
 
         return JsonResponse(
             {
@@ -467,9 +502,67 @@ def adicionar_evento_historico_ajax(request):
                     "codigo": codigo.nome,
                     "data_os": registro.data_os.strftime("%d/%m/%Y"),
                     "observacoes": registro.observacoes,
+                    "cache_evento": evento_json,
                 },
             }
         )
 
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def historico_iniciatico_paginado_ajax(request, cpf):
+    """Retorna histórico iniciático paginado (JSON) para consumo incremental.
+
+    Parâmetros query:
+      - page (int, opcional, default=1)
+      - page_size (int, opcional, default=20, max=200)
+    """
+    try:
+        Aluno = get_aluno_model()
+        aluno = get_object_or_404(Aluno, cpf=cpf)
+        page = int(request.GET.get("page", 1))
+        page_size = int(request.GET.get("page_size", 20))
+        if page_size > 200:
+            page_size = 200
+
+        registros = listar_eventos_iniciaticos(aluno)
+        total = len(registros)
+        start = (page - 1) * page_size
+        end = start + page_size
+        slice_regs = registros[start:end]
+
+        itens = []
+        for r in slice_regs:
+            itens.append(
+                {
+                    "id": r.id,
+                    "codigo_id": r.codigo_id,
+                    "codigo": r.codigo.nome,
+                    "tipo_codigo": r.codigo.tipo_codigo.nome,
+                    "descricao": r.codigo.descricao or "",
+                    "data_os": r.data_os.isoformat(),
+                    "created_at": r.created_at.isoformat(),
+                    "ordem_servico": r.ordem_servico or "",
+                    "observacoes": r.observacoes or "",
+                }
+            )
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+                "total_pages": (total + page_size - 1) // page_size if page_size else 1,
+                "results": itens,
+            }
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Falha ao paginar histórico: %s", exc)
+        return JsonResponse(
+            {"status": "error", "message": f"Falha ao obter histórico: {exc}"},
+            status=500,
+        )

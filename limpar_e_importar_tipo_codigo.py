@@ -4,12 +4,16 @@
 import os
 import csv
 import django
+from typing import Any
 
 # Configurar Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omaum.settings')
 django.setup()
 
-from alunos.models import TipoCodigo
+from alunos.utils import get_tipo_codigo_model  # noqa: E402
+TipoCodigo: Any = get_tipo_codigo_model()
+if not TipoCodigo:
+    raise RuntimeError("Modelo TipoCodigo indisponível.")
 
 
 def limpar_tabela():

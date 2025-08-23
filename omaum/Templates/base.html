@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+{% load static %}
+{% load perms_extras %}
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -6,51 +8,18 @@
     <title>{% block title %}SGI - OmAum{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    {# Bloco para CSS de formulários ou outras páginas específicas #}
     {% block form_media_css %}{% endblock %}
-
     {% block extra_css %}{% endblock %}
     <style>
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        main {
-            flex: 1;
-        }
-        .navbar-brand img {
-            width: 50px; /* Aumentando o tamanho do ícone */
-            height: auto;
-        }
-        .navbar-brand {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        .brand-text {
-            font-size: 0.8rem;
-            margin-top: 2px;
-        }
-        .footer {
-            background-color: #f8f9fa;
-            padding: 1rem 0;
-            margin-top: auto;
-        }
-        
-        /* Adicione estas regras para os links dourados na navbar */
-        .navbar-dark .navbar-nav .nav-link {
-            color: gold !important; /* Cor dourada para todos os links */
-        }
-        .navbar-dark .navbar-nav .nav-link:hover {
-            color: #FFD700 !important; /* Dourado mais brilhante no hover */
-            text-decoration: underline;
-        }
-        .navbar-dark .navbar-brand {
-            color: gold !important; /* Cor dourada para o logo/texto da marca */
-        }
+        body { min-height: 100vh; display: flex; flex-direction: column; }
+        main { flex: 1; }
+        .navbar-brand img { width: 50px; height: auto; }
+        .navbar-brand { display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .brand-text { font-size: 0.8rem; margin-top: 2px; }
+        .footer { background-color: #f8f9fa; padding: 1rem 0; margin-top: auto; }
+        .navbar-dark .navbar-nav .nav-link { color: gold !important; }
+        .navbar-dark .navbar-nav .nav-link:hover { color: #FFD700 !important; text-decoration: underline; }
+        .navbar-dark .navbar-brand { color: gold !important; }
         .navbar-dark .navbar-toggler-icon {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 215, 0, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
         }
@@ -70,116 +39,117 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         {% if user.is_authenticated %}
-                            <!-- Gestão Acadêmica -->
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="academicoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Gestão Acadêmica
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="academicoDropdown">
-                                    <li><a class="dropdown-item" href="{% url 'cursos:listar_cursos' %}">Cursos</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'alunos:listar_alunos' %}">Alunos</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'turmas:listar_turmas' %}">Turmas</a></li>
-                                </ul>
-                            </li>
-                            
-                            <!-- Frequência e Presença -->
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="frequenciaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Frequência e Presença
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="frequenciaDropdown">
-                                    <li><a class="dropdown-item" href="{% url 'atividades:listar_atividades' %}">Atividades</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'presencas:listar_presencas_academicas' %}">Presenças</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'frequencias:listar_frequencias' %}">Frequências</a></li>
+                        <!-- Gestão Acadêmica -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="academicoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Gestão Acadêmica
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="academicoDropdown">
+                                <li><a class="dropdown-item" href="{% url 'cursos:listar_cursos' %}">Cursos</a></li>
+                                <li><a class="dropdown-item" href="{% url 'alunos:listar_alunos' %}">Alunos</a></li>
+                                <li><a class="dropdown-item" href="{% url 'turmas:listar_turmas' %}">Turmas</a></li>
+                                {% if user|has_perm:"alunos.gerenciar_tipocodigo" or user|has_perm:"alunos.gerenciar_codigo" %}
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{% url 'presencas:painel_estatisticas' %}"><i class="fas fa-chart-line"></i> PAINEL de Estatísticas</a></li>
-                                </ul>
-                            </li>
-                            
-                            <!-- Avaliação e Financeiro -->
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="avaliacaoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Avaliação e Financeiro
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="avaliacaoDropdown">
-                                    <li><a class="dropdown-item" href="{% url 'notas:listar_notas' %}">Notas</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'pagamentos:listar_pagamentos' %}">Pagamentos</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'pagamentos:relatorio_pagamentos_turma' %}">Pagamentos por Turma</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'pagamentos:relatorio_financeiro' %}">Relatório Financeiro</a></li>
-                                </ul>
-                            </li>
-                            
-                            <!-- Relatórios e Análises -->
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="relatoriosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Relatórios e Análises
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="relatoriosDropdown">
-                                    <li><a class="dropdown-item" href="{% url 'relatorios:listar_relatorios' %}">Relatórios</a></li>
-                                </ul>
-                            </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'alunos:listar_tipocodigos' %}">
+                                            <i class="fas fa-key"></i> Tipos e Códigos
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </li>
+                        <!-- Frequência e Presença -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="frequenciaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Frequência e Presença
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="frequenciaDropdown">
+                                <li><a class="dropdown-item" href="{% url 'atividades:listar_atividades' %}">Atividades</a></li>
+                                <li><a class="dropdown-item" href="{% url 'presencas:listar_presencas_academicas' %}">Presenças</a></li>
+                                <li><a class="dropdown-item" href="{% url 'frequencias:listar_frequencias' %}">Frequências</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'presencas:painel_estatisticas' %}"><i class="fas fa-chart-line"></i> PAINEL de Estatísticas</a></li>
+                            </ul>
+                        </li>
+                        <!-- Avaliação e Financeiro -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="avaliacaoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Avaliação e Financeiro
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="avaliacaoDropdown">
+                                <li><a class="dropdown-item" href="{% url 'notas:listar_notas' %}">Notas</a></li>
+                                <li><a class="dropdown-item" href="{% url 'pagamentos:listar_pagamentos' %}">Pagamentos</a></li>
+                                <li><a class="dropdown-item" href="{% url 'pagamentos:relatorio_pagamentos_turma' %}">Pagamentos por Turma</a></li>
+                                <li><a class="dropdown-item" href="{% url 'pagamentos:relatorio_financeiro' %}">Relatório Financeiro</a></li>
+                            </ul>
+                        </li>
+                        <!-- Relatórios e Análises -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="relatoriosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Relatórios e Análises
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="relatoriosDropdown">
+                                <li><a class="dropdown-item" href="{% url 'relatorios:listar_relatorios' %}">Relatórios</a></li>
+                            </ul>
+                        </li>
                         {% endif %}
                     </ul>
                     <ul class="navbar-nav">
                         {% if user.is_authenticated %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="notificacoesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-bell"></i>
-                                    {% if pagamentos_atrasados_count|default:0 > 0 %}
-                                        <span class="badge bg-danger">{{ pagamentos_atrasados_count }}</span>
-                                    {% endif %}
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificacoesDropdown">
-                                    <li><h6 class="dropdown-header">Notificações</h6></li>
-                                    {% if pagamentos_atrasados %}
-                                        {% for pagamento in pagamentos_atrasados|slice:":5" %}
-                                            <li>
-                                                <a class="dropdown-item text-danger" href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}">
-                                                    <i class="fas fa-exclamation-circle"></i>
-                                                    Pagamento atrasado: {{ pagamento.aluno.nome }} - R$ {{ pagamento.valor|floatformat:2 }}
-                                                    <small class="d-block text-muted">Vencido há {{ pagamento.dias_atraso }} dias</small>
-                                                </a>
-                                            </li>
-                                        {% endfor %}
-                                        {% if pagamentos_atrasados_count > 5 %}
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <a class="dropdown-item text-center" href="{% url 'pagamentos:relatorio_financeiro' %}?filtro=atrasados">
-                                                    Ver todos os {{ pagamentos_atrasados_count }} pagamentos atrasados
-                                                </a>
-                                            </li>
-                                        {% endif %}
-                                    {% else %}
-                                        <li><a class="dropdown-item text-muted">Não há notificações</a></li>
-                                    {% endif %}
-                                </ul>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-user"></i> {{ user.username }}
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <!-- Removendo o link para o perfil que não existe -->
-                                    <li><a class="dropdown-item" href="{% url 'admin:index' %}">Administração</a></li>
-                                    <!-- Removendo o link para alterar senha que pode não existir -->
-                                    <li><hr class="dropdown-divider"></li>
-                                    
-                                    <li>
-                                        
-                                        <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                                            {% csrf_token %}
-                                            <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left;">Sair</button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="notificacoesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell"></i>
+                                {% if pagamentos_atrasados_count|default:0 > 0 %}
+                                <span class="badge bg-danger">{{ pagamentos_atrasados_count }}</span>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificacoesDropdown">
+                                <li><h6 class="dropdown-header">Notificações</h6></li>
+                                {% if pagamentos_atrasados %}
+                                {% for pagamento in pagamentos_atrasados|slice:":5" %}
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        Pagamento atrasado: {{ pagamento.aluno.nome }} - R$ {{ pagamento.valor|floatformat:2 }}
+                                        <small class="d-block text-muted">Vencido há {{ pagamento.dias_atraso }} dias</small>
+                                    </a>
+                                </li>
+                                {% endfor %}
+                                {% if pagamentos_atrasados_count > 5 %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-center" href="{% url 'pagamentos:relatorio_financeiro' %}?filtro=atrasados">
+                                        Ver todos os {{ pagamentos_atrasados_count }} pagamentos atrasados
+                                    </a>
+                                </li>
+                                {% endif %}
+                                {% else %}
+                                <li><a class="dropdown-item text-muted">Não há notificações</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user"></i> {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="{% url 'admin:index' %}">Administração</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left;">Sair</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
                         {% else %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'login' %}">Entrar</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'register' %}">Registrar</a>
-                            </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">Entrar</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">Registrar</a>
+                        </li>
                         {% endif %}
                     </ul>
                 </div>
@@ -195,17 +165,9 @@
             <p class="mb-0">&copy; {% now "Y" %} SGI - OmAum. Todos os direitos reservados.</p>
         </div>
     </footer>
-
-    {# 1. Bootstrap JS (não depende de jQuery) #}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
-    {# 2. jQuery (deve vir antes de qualquer script que o utilize) #}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    {# 3. Bloco para JS de formulários (como select2), que depende de jQuery #}
     {% block form_media_js %}{% endblock %}
-
-    {# 4. Bloco para scripts JS customizados da página #}
     {% block extra_js %}{% endblock %}
 </body>
 </html>

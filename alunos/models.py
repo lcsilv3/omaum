@@ -1,5 +1,3 @@
-from cursos.models import Curso
-
 """Modelos do aplicativo Alunos."""
 
 import datetime
@@ -116,6 +114,39 @@ class Cidade(models.Model):
     def nome_completo(self):
         """Retorna nome completo da cidade com estado."""
         return f"{self.nome}, {self.estado.nome}"
+
+
+class Bairro(models.Model):
+    """Modelo para bairros (associados a uma cidade). Simples para futura expansão.
+
+    Motivação: Normalizar endereço e permitir autocomplete/controlar consistência.
+    Não estamos vinculando ainda o campo Bairro do Aluno para manter compatibilidade.
+    """
+
+    nome = models.CharField(max_length=100, verbose_name=_("Nome do Bairro"))
+    cidade = models.ForeignKey(
+        Cidade,
+        on_delete=models.CASCADE,
+        related_name="bairros",
+        verbose_name=_("Cidade"),
+    )
+    # Campo opcional para referência externa futura (IBGE ou outro)
+    codigo_externo = models.CharField(
+        max_length=30, blank=True, null=True, verbose_name=_("Código Externo")
+    )
+
+    class Meta:
+        verbose_name = _("Bairro")
+        verbose_name_plural = _("Bairros")
+        ordering = ["nome"]
+        unique_together = ["nome", "cidade"]
+        indexes = [
+            models.Index(fields=["nome"]),
+            models.Index(fields=["cidade"]),
+        ]
+
+    def __str__(self):  # pragma: no cover
+        return f"{self.nome} - {self.cidade.nome}/{self.cidade.estado.codigo}"
 
 
 class Aluno(models.Model):
@@ -248,6 +279,25 @@ class Aluno(models.Model):
         max_length=2, verbose_name=_("Estado"), blank=True, null=True
     )
     cep = models.CharField(max_length=8, verbose_name=_("CEP"), blank=True, null=True)
+    # Novas referências normalizadas (opcionais) - coexistem com campos texto legados
+    cidade_ref = models.ForeignKey(
+        Cidade,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="alunos_cidade",
+        verbose_name=("Cidade (Ref)"),
+        help_text="Referência normalizada da cidade (mantém campo texto para compatibilidade)",
+    )
+    bairro_ref = models.ForeignKey(
+        Bairro,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="alunos_bairro",
+        verbose_name=("Bairro (Ref)"),
+        help_text="Referência normalizada do bairro (mantém campo texto para compatibilidade)",
+    )
 
     # Contatos
     nome_primeiro_contato = models.CharField(
@@ -344,6 +394,13 @@ class Aluno(models.Model):
         verbose_name=_("Histórico Iniciático"),
         help_text=_("Histórico de eventos, cargos e registros iniciáticos"),
     )
+    historico_checksum = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        verbose_name=_("Checksum Histórico"),
+        help_text=_("SHA256 do JSON normalizado do histórico iniciático para verificação de integridade."),
+    )
 
     # Metadados
     created_at = models.DateTimeField(default=timezone.now, verbose_name=_("Criado em"))
@@ -361,6 +418,8 @@ class Aluno(models.Model):
             models.Index(fields=["pais_nacionalidade"]),
             models.Index(fields=["cidade_naturalidade"]),
             models.Index(fields=["nome"]),
+            models.Index(fields=["cidade_ref"], name="aluno_cidade_ref_idx"),
+            models.Index(fields=["bairro_ref"], name="aluno_bairro_ref_idx"),
         ]
 
     def __str__(self):
@@ -370,8 +429,6 @@ class Aluno(models.Model):
         self, tipo, descricao, data, observacoes="", ordem_servico=""
     ):
         """Adiciona evento ao histórico iniciático."""
-        from django.utils import timezone
-
         evento = {
             "tipo": tipo,
             "descricao": descricao,
@@ -493,11 +550,38 @@ class Aluno(models.Model):
         if self.cidade_naturalidade and not self.naturalidade:
             self.naturalidade = self.cidade_naturalidade.nome_completo
 
+        # Sincronizar cidade/bairro normalizados -> texto
+        if self.cidade_ref and not self.cidade:
+            self.cidade = self.cidade_ref.nome
+            if self.cidade_ref.estado and not self.estado:
+                self.estado = self.cidade_ref.estado.codigo
+        if self.bairro_ref and not self.bairro:
+            self.bairro = self.bairro_ref.nome
+            # Se não houver cidade_ref tentar inferir
+            if not self.cidade_ref:
+                self.cidade_ref = self.bairro_ref.cidade
+                if not self.cidade:
+                    self.cidade = self.cidade_ref.nome
+                if self.cidade_ref.estado and not self.estado:
+                    self.estado = self.cidade_ref.estado.codigo
+
+        # Caso texto exista e ref vazia, tentar auto-vincular (best-effort)
+        if self.cidade and not self.cidade_ref:
+            try:
+                self.cidade_ref = Cidade.objects.filter(nome__iexact=self.cidade).first()
+            except Exception:
+                pass
+        if self.bairro and not self.bairro_ref and self.cidade_ref:
+            try:
+                self.bairro_ref = self.cidade_ref.bairros.filter(nome__iexact=self.bairro).first()
+            except Exception:
+                pass
+
         super().save(*args, **kwargs)
 
 
 class TipoCodigo(models.Model):
-    """Categoriza os códigos (ex: Cargo, Punição, Iniciação)."""
+    """Tipo de código iniciático (modelo concreto original)."""
 
     nome = models.CharField(max_length=50, unique=True, verbose_name=_("Nome"))
     descricao = models.TextField(blank=True, null=True, verbose_name=_("Descrição"))
@@ -507,15 +591,18 @@ class TipoCodigo(models.Model):
         verbose_name_plural = _("Tipos de Códigos")
         ordering = ["nome"]
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return str(self.nome)
 
 
 class Codigo(models.Model):
-    """Códigos específicos dentro de cada tipo (ex: Mestre, Aprendiz, Advertência)."""
+    """Código iniciático associado a um TipoCodigo."""
 
     tipo_codigo = models.ForeignKey(
-        TipoCodigo, on_delete=models.CASCADE, verbose_name=_("Tipo de Código")
+        TipoCodigo,
+        on_delete=models.CASCADE,
+        verbose_name=_("Tipo de Código"),
+        related_name="codigos",
     )
     nome = models.CharField(max_length=100, unique=True, verbose_name=_("Nome"))
     descricao = models.TextField(blank=True, null=True, verbose_name=_("Descrição"))
@@ -525,7 +612,9 @@ class Codigo(models.Model):
         verbose_name_plural = _("Códigos")
         ordering = ["tipo_codigo__nome", "nome"]
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
+        if self.descricao:
+            return f"{self.nome} - {self.descricao}"
         return str(self.nome)
 
 
@@ -565,6 +654,10 @@ class RegistroHistorico(models.Model):
         verbose_name_plural = _("Registros Históricos")
         ordering = ["-data_os", "-created_at"]
         unique_together = [["aluno", "codigo", "ordem_servico"]]
+        indexes = [
+            models.Index(fields=["aluno", "-data_os"], name="rh_aluno_dataos_desc"),
+            models.Index(fields=["codigo"], name="rh_codigo_idx"),
+        ]
 
     def __str__(self):
         return f"Registro de {self.aluno} - {self.codigo} em {self.data_os}"

@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import JsonResponse
+from django.template.loader import render_to_string
 from django.shortcuts import render, redirect
 
 from .forms import AlunoForm, RegistroHistoricoFormSet, RegistroHistoricoForm
@@ -374,24 +375,27 @@ def search_alunos(request):
         page_number = request.GET.get("page", 1)
         alunos = paginator.get_page(page_number)
 
-        # Se for uma requisição AJAX, retorna JSON
+        # Se for uma requisição AJAX, retorna HTML parcial (compatível com JS atual)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            alunos_data = [
-                {
-                    "cpf": aluno.cpf,
-                    "nome": aluno.nome,
-                    "email": aluno.email,
-                    "numero_iniciatico": aluno.numero_iniciatico,
-                    "foto": aluno.foto.url if aluno.foto else None,
-                }
-                for aluno in alunos
-            ]
+            context_partials = {
+                "alunos": alunos,  # page object
+                "page_obj": alunos,
+                "total_alunos": alunos.paginator.count if hasattr(alunos, "paginator") else 0,
+            }
+            tabela_html = render_to_string(
+                "alunos/_tabela_alunos_parcial.html", context_partials, request=request
+            )
+            paginacao_html = render_to_string(
+                "alunos/_paginacao_parcial.html", context_partials, request=request
+            )
             return JsonResponse(
                 {
                     "success": True,
-                    "alunos": alunos_data,
+                    "tabela_html": tabela_html,
+                    "paginacao_html": paginacao_html,
                     "page": alunos.number,
                     "num_pages": alunos.paginator.num_pages,
+                    "total_alunos": context_partials["total_alunos"],
                 }
             )
         # Renderização padrão
@@ -417,10 +421,3 @@ def search_alunos(request):
 
 # Alias para manter compatibilidade com URLs
 listar_alunos_url = listar_alunos_view
-
-# Importar views das APIs para filtros dinâmicos
-from .views.aluno_views import (
-    listar_tipos_codigos_ajax,
-    listar_codigos_por_tipo_ajax,
-    adicionar_evento_historico_ajax,
-)
