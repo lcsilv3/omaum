@@ -1,28 +1,47 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Códigos</h2>
-<a href="{% url 'criar_codigo' %}">Novo Código</a>
-<form method="get">
-    <label for="tipo_codigo">Filtrar por Tipo:</label>
-    <select name="tipo_codigo" id="tipo_codigo" onchange="this.form.submit()">
-        <option value="">Todos</option>
-        {% for tipo in tipos %}
-        <option value="{{ tipo.pk }}" {% if tipo.pk|stringformat:'s' == tipo_filtro %}selected{% endif %}>{{ tipo.nome }}</option>
-        {% endfor %}
-    </select>
-</form>
-<table>
-    <tr><th>Tipo</th><th>Número</th><th>Descrição</th><th>Ações</th></tr>
-    {% for codigo in codigos %}
-    <tr>
-        <td>{{ codigo.tipo_codigo.nome }}</td>
-        <td>{{ codigo.nome }}</td>
-        <td>{{ codigo.descricao }}</td>
-        <td>
-            <a href="{% url 'editar_codigo' codigo.pk %}">Editar</a> |
-            <a href="{% url 'excluir_codigo' codigo.pk %}">Excluir</a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fas fa-list-ol"></i> Códigos Iniciáticos</h2>
+        <div>
+            <a href="{% url 'alunos:listar_tipocodigos' %}" class="btn btn-outline-secondary me-2"><i class="fas fa-key"></i> Tipos de Código</a>
+            <a href="{% url 'alunos:criar_codigo' %}" class="btn btn-success"><i class="fas fa-plus"></i> Novo Código</a>
+        </div>
+    </div>
+    <form method="get" class="row g-2 mb-3 align-items-end">
+        <div class="col-auto">
+            <label for="tipo_codigo" class="form-label mb-0">Filtrar por Tipo:</label>
+        </div>
+        <div class="col-auto">
+            <select name="tipo_codigo" id="tipo_codigo" class="form-select" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                {% for tipo in tipos %}
+                <option value="{{ tipo.pk }}" {% if tipo.pk|stringformat:'s' == tipo_filtro %}selected{% endif %}>{{ tipo.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-light">
+                <tr><th>Tipo</th><th>Número</th><th>Descrição</th><th style="width:120px">Ações</th></tr>
+            </thead>
+            <tbody>
+                {% for codigo in codigos %}
+                <tr>
+                    <td>{{ codigo.tipo_codigo.nome }}</td>
+                    <td>{{ codigo.nome }}</td>
+                    <td>{{ codigo.descricao }}</td>
+                    <td>
+                        <a href="{% url 'alunos:editar_codigo' codigo.pk %}" class="btn btn-sm btn-primary" title="Editar"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'alunos:excluir_codigo' codigo.pk %}" class="btn btn-sm btn-danger ms-1" title="Excluir"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center">Nenhum código cadastrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

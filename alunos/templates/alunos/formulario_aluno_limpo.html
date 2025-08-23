@@ -76,43 +76,44 @@
                             {% endif %}
                             {% for error in form.foto.errors %}
                                 <div class="alert alert-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Seção: Dados Iniciáticos -->
-        <div class="card mb-4 border-info">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">
-                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="true" aria-controls="dados-iniciaticos">
-                        <span class="chevron" style="transform: rotate(90deg)">▶</span> Dados Iniciáticos (Cargos, Punições, etc.) <small class="text-light">(clique para expandir/recolher)</small>
-                    </a>
-                </h5>
-            </div>
-            <div id="dados-iniciaticos" class="card-body collapse show">
-                <!-- DEBUG: Seção de Dados Iniciáticos -->
-                <!-- HISTORICO_SECTION_START -->
-                
-                <div id="historico-form-list">
-                    {% if historico_formset %}
-                        {% for form in historico_formset %}
-                            <div class="historico-form mb-3 p-3 border rounded" data-form-index="{{ forloop.counter0 }}">
-                                {{ form.id|default_if_none:'' }}
-                                {% if form.non_field_errors %}
-                                    <div class="alert alert-danger">
-                                        {{ form.non_field_errors|default_if_none:'' }}
-                                    </div>
-                                {% endif %}
-                                <div class="row align-items-end">
-                                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.codigo %}</div>
-                                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.ordem_servico %}</div>
-                                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.data_os %}</div>
-                                    <div class="col-md-2 d-flex align-items-center">
-                                        {% if form.instance.pk %}
-                                            <div class="form-check">
+                            <script src="{% static 'alunos/masks.js' %}"></script>
+                            <script>
+                            // SCRIPT PARA GERENCIAR O FORMSET DE HISTÓRICO DINÂMICO
+                            document.addEventListener('DOMContentLoaded', function() {
+                                console.log('=== DEBUG FORMSET HISTÓRICO ===');
+                                // ...existing code...
+                            });
+                            // Script para preview da imagem
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const fotoInput = document.getElementById('id_foto');
+                                const fotoContainer = document.querySelector('.border.rounded.p-3.mb-3.text-center');
+                                if (fotoInput && fotoContainer) {
+                                    fotoInput.addEventListener('change', function() {
+                                        if (this.files && this.files[0]) {
+                                            fotoContainer.innerHTML = '';
+                                            const preview = document.createElement('img');
+                                            preview.style.cssText = 'max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;';
+                                            const reader = new FileReader();
+                                            reader.onload = function(e) { preview.src = e.target.result; }
+                                            reader.readAsDataURL(this.files[0]);
+                                            fotoContainer.appendChild(preview);
+                                        }
+                                    });
+                                }
+                            });
+                            // Script para remover máscaras antes do submit
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const form = document.getElementById('form-aluno');
+                                if (form) {
+                                    form.addEventListener('submit', function(e) {
+                                        ['id_cpf', 'id_cep', 'id_celular_primeiro_contato', 'id_celular_segundo_contato'].forEach(id => {
+                                            const field = document.getElementById(id);
+                                            if (field) field.value = field.value.replace(/\D/g, '');
+                                        });
+                                    });
+                                }
+                            });
+                            </script>
                                                 {{ form.DELETE|default_if_none:'' }}
                                                 <label class="form-check-label" for="{{ form.DELETE.id_for_label|default_if_none:'' }}">Remover?</label>
                                             </div>
@@ -147,7 +148,7 @@
                             <div class="col-md-3">
                                 <div class="mb-3">
                                     <label for="id_historico-__prefix__-ordem_servico" class="form-label">Ordem de Serviço</label>
-                                    <input type="text" name="historico-__prefix__-ordem_servico" id="id_historico-__prefix__-ordem_servico" class="form-control" />
+                                    <input type="text" name="historico-__prefix__-ordem_servico" id="id_historico-__prefix__-ordem_servico" class="form-control" placeholder="____/____" />
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -287,9 +288,6 @@
                 <div class="row">
                     <div class="col-md-3">
                         {% include 'includes/form_field.html' with field=form.tipo_sanguineo %}
-                    </div>
-                    <div class="col-md-3">
-                        {% include 'includes/form_field.html' with field=form.fator_rh %}
                     </div>
                     <div class="col-md-3">
                         {% include 'includes/form_field.html' with field=form.convenio_medico %}

@@ -146,7 +146,6 @@ class AlunoForm(forms.ModelForm):
             "ativo",
             # Médicos
             "tipo_sanguineo",
-            "fator_rh",
             "alergias",
             "condicoes_medicas_gerais",
             "convenio_medico",
@@ -159,6 +158,7 @@ class AlunoForm(forms.ModelForm):
             "nome_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "grau_atual": forms.TextInput(attrs={"class": "form-control"}),
             "situacao_iniciatica": forms.Select(attrs={"class": "form-control"}),
+            "tipo_sanguineo": forms.Select(attrs={"class": "form-control"}),
             "alergias": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "condicoes_medicas_gerais": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
@@ -277,6 +277,27 @@ class AlunoForm(forms.ModelForm):
 
 # Manter formulário original para compatibilidade durante migração
 class RegistroHistoricoForm(forms.ModelForm):
+    def clean_ordem_servico(self):
+        """Garante que o ano da ordem de serviço seja sempre salvo com 4 dígitos."""
+        valor = self.cleaned_data.get("ordem_servico", "")
+        if not valor:
+            return valor
+        import re
+        match = re.match(r"^(\S+)/(\d{2,4})$", valor)
+        if not match:
+            raise forms.ValidationError("Formato inválido. Use XXXX/AAAA, onde AAAA é o ano.")
+        prefixo, ano = match.groups()
+        if len(ano) == 2:
+            # Converte para 4 dígitos (ex: 25 -> 2025, 99 -> 1999, lógica pode ser ajustada)
+            ano_int = int(ano)
+            ano = f"20{ano}" if ano_int < 50 else f"19{ano}"
+        elif len(ano) == 4:
+            ano_int = int(ano)
+            if ano_int < 1900 or ano_int > 2100:
+                raise forms.ValidationError("Ano inválido na ordem de serviço.")
+        else:
+            raise forms.ValidationError("Ano inválido na ordem de serviço.")
+        return f"{prefixo}/{ano}"
     """Formulário para registros históricos - mantido para compatibilidade."""
 
     # Campo auxiliar (não pertence ao modelo) para o usuário filtrar códigos por tipo.
@@ -311,7 +332,7 @@ class RegistroHistoricoForm(forms.ModelForm):
                 }
             ),
             "data_os": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "ordem_servico": forms.TextInput(attrs={"class": "form-control"}),
+            "ordem_servico": forms.TextInput(attrs={"class": "form-control", "placeholder": "____/____"}),
             "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "nome_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "observacoes": forms.Textarea(attrs={"rows": 2, "class": "form-control"}),

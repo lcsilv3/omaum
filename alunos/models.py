@@ -158,9 +158,12 @@ class Aluno(models.Model):
         ("O", "Outro"),
     ]
 
-    FATOR_RH_CHOICES = [
-        ("+", "Positivo"),
-        ("-", "Negativo"),
+
+    TIPO_SANGUINEO_CHOICES = [
+        ("A+", "A+"), ("A-", "A-"),
+        ("B+", "B+"), ("B-", "B-"),
+        ("AB+", "AB+"), ("AB-", "AB-"),
+        ("O+", "O+"), ("O-", "O-")
     ]
 
     SITUACAO_CHOICES = [
@@ -350,14 +353,11 @@ class Aluno(models.Model):
 
     # Dados médicos
     tipo_sanguineo = models.CharField(
-        max_length=3, blank=True, null=True, verbose_name=_("Tipo Sanguíneo")
-    )
-    fator_rh = models.CharField(
-        max_length=1,
-        choices=FATOR_RH_CHOICES,
+        max_length=4,
+        choices=TIPO_SANGUINEO_CHOICES,
         blank=True,
         null=True,
-        verbose_name=_("Fator RH"),
+        verbose_name=_("Tipo Sanguíneo")
     )
     alergias = models.TextField(blank=True, null=True, verbose_name=_("Alergias"))
     condicoes_medicas_gerais = models.TextField(

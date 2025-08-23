@@ -146,7 +146,6 @@ class AlunoAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "tipo_sanguineo",
-                    "fator_rh",
                     "alergias",
                     "condicoes_medicas_gerais",
                     "convenio_medico",
@@ -277,7 +276,6 @@ class AlunoAdmin(admin.ModelAdmin):
             {
                 "fields": [
                     "tipo_sanguineo",
-                    "fator_rh",
                     "alergias",
                     "condicoes_medicas_gerais",
                     "convenio_medico",

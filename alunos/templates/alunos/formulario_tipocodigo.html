@@ -1,9 +1,18 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>{% if editar %}Editar{% else %}Novo{% endif %} Tipo de Código</h2>
-<form method="post">{% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Salvar</button>
-    <a href="{% url 'listar_tipocodigos' %}">Cancelar</a>
-</form>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-3">{% if editar %}<i class="fas fa-edit"></i> Editar{% else %}<i class="fas fa-plus"></i> Novo{% endif %} Tipo de Código</h2>
+            <form method="post" class="card p-4 shadow-sm">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div class="d-flex justify-content-between mt-3">
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Salvar</button>
+                      <a href="{% url 'alunos:listar_tipocodigos' %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

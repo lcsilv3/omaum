@@ -12,8 +12,59 @@
   } 
   function maskPhone(v){const n=v.replace(/\D/g,'').substring(0,11);if(n.length<=10){return n.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3').replace(/-$/,'');}return n.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3').replace(/-$/,'');}
   function cleanDigits(v){return v.replace(/\D/g,'');}
+  function maskOrdemServico(v) {
+    // Permite apenas números e barra, formato: 1234/2025
+    let val = v.replace(/[^\d]/g, '');
+    if (val.length > 8) val = val.substring(0, 8);
+    if (val.length > 4) {
+      return val.substring(0, 4) + '/' + val.substring(4, 8);
+    }
+    return val;
+  }
+
   function attach(){
     const cpf=document.getElementById('id_cpf'); if(cpf){cpf.addEventListener('input',e=>e.target.value=maskCPF(e.target.value));}
+
+    // Máscara Ordem de Serviço (____/9999)
+    function applyOrdemServicoMaskTo(el) {
+      if (!el) return;
+      el.addEventListener('input', e => {
+        e.target.value = maskOrdemServico(e.target.value);
+      });
+    }
+    // IDs e names possíveis
+    const ordemIds = [
+      'id_ordem_servico',
+      'ordem_servico',
+    ];
+    ordemIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) applyOrdemServicoMaskTo(el);
+    });
+    // Formsets dinâmicos (historico-__prefix__-ordem_servico)
+    function applyMaskToAllOrdemServico() {
+      const historicoInputs = document.querySelectorAll('input[id^="id_historico-"][id$="-ordem_servico"]');
+      historicoInputs.forEach(applyOrdemServicoMaskTo);
+    }
+    applyMaskToAllOrdemServico();
+
+    // MutationObserver para campos adicionados dinamicamente
+    const historicoFormList = document.getElementById('historico-form-list');
+    if (historicoFormList && window.MutationObserver) {
+      const observer = new MutationObserver((mutationsList) => {
+        for (const mutation of mutationsList) {
+          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            mutation.addedNodes.forEach(node => {
+              if (node.nodeType === 1) {
+                const input = node.querySelector('input[id^="id_historico-"][id$="-ordem_servico"]');
+                if (input) applyOrdemServicoMaskTo(input);
+              }
+            });
+          }
+        }
+      });
+      observer.observe(historicoFormList, { childList: true, subtree: true });
+    }
     const cep=document.getElementById('id_cep'); if(cep){
       cep.addEventListener('input',e=>e.target.value=maskCEP(e.target.value));
       cep.addEventListener('blur',()=>{
