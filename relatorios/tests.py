@@ -44,12 +44,11 @@ class RelatorioTestCase(TestCase):
             data_nascimento=date(1990, 1, 1)
         )
 
-        # Criar um relatório de teste
+        # Criar um relatório de teste (ajustado para campos válidos)
         self.relatorio = Relatorio.objects.create(
-            nome="Relatório Teste",
-            descricao="Descrição do relatório teste",
-            tipo="ALUNOS",
-            data_criacao=timezone.now().date()
+            titulo="Relatório Teste",
+            conteudo="Conteúdo do relatório teste",
+            data_criacao=timezone.now()
         )
 
     def test_listar_relatorios(self):
@@ -121,7 +120,7 @@ class RelatorioTestCase(TestCase):
 
     def test_str_relatorio(self):
         """Testar a representação string do relatório"""
-        expected_str = f"{self.relatorio.nome} - {self.relatorio.data_criacao}"
+        expected_str = f"{self.relatorio.titulo}"
         self.assertEqual(str(self.relatorio), expected_str)
 
     def test_relatorio_sem_permissao(self):

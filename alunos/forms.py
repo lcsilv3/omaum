@@ -263,15 +263,17 @@ class AlunoForm(forms.ModelForm):
         return v.replace(".", "").replace("-", "")
 
     def clean_celular_primeiro_contato(self):
-        v = self.cleaned_data.get("celular_primeiro_contato", "")
+        v = self.cleaned_data.get("celular_primeiro_contato") or ""
         return "".join(filter(str.isdigit, v))
 
     def clean_celular_segundo_contato(self):
-        v = self.cleaned_data.get("celular_segundo_contato", "")
+        v = self.cleaned_data.get("celular_segundo_contato") or ""
         return "".join(filter(str.isdigit, v))
 
     def clean_cep(self):
         v = self.cleaned_data.get("cep", "")
+        if not v:
+            return ""
         return v.replace("-", "").replace(".", "")
 
 

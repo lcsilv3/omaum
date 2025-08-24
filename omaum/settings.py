@@ -76,7 +76,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Aplicações do projeto
-    "omaum",
+    "omaum.apps.OmaumConfig",
     "core",
     "alunos",
     "atividades",
@@ -114,6 +114,7 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
+            os.path.join(BASE_DIR, "templates"),
             os.path.join(BASE_DIR, "omaum", "templates"),
             os.path.join(BASE_DIR, "matriculas", "templates"),
         ],

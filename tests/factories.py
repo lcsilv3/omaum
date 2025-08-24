@@ -1,3 +1,4 @@
+import random
 """
 Factories otimizadas para testes usando factory_boy.
 """
@@ -233,14 +234,7 @@ else:
             return self.create(**kwargs)
 
 
-# Instanciar factories
-UserFactory = UserFactory()
-CursoFactory = CursoFactory()
 
-AlunoFactory = AlunoFactory()
-TurmaFactory = TurmaFactory()
-MatriculaFactory = MatriculaFactory()
-PresencaFactory = PresencaFactory()
 
 class FuzzyDecimal:
     def __init__(self, low, high, precision=2):
@@ -299,7 +293,6 @@ class UserFactory(factory.django.DjangoModelFactory):
             return
         password = extracted or 'testpassword'
         self.set_password(password)
-        self.save()
 
 
 class AdminUserFactory(UserFactory):
@@ -502,32 +495,16 @@ class DadosTesteCompletos:
     )
     sexo = factory.Iterator(['M', 'F'])
     situacao = 'ativo'
-    nacionalidade = factory.LazyFunction(
-        lambda: random.choice(
-            ['Brasileira', 'Portuguesa', 'Italiana', 'Espanhola']
-        )
-    )
+    nacionalidade = 'Brasileira'
     naturalidade = factory.Faker('city')
     rua = factory.Faker('street_name')
-    numero_imovel = factory.LazyFunction(lambda: str(random.randint(1, 999)))
+    numero_imovel = '123'
     bairro = factory.Faker('city_suffix')
     cidade = factory.Faker('city')
     estado = factory.Faker('state_abbr')
-    cep = factory.LazyFunction(
-        lambda: f'{random.randint(10000, 99999)}-{random.randint(100, 999)}'
-    )
+    cep = '12345-678'
 
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        """Chama o serviço criar_aluno para criar a instância do aluno.""" 
-        foto_url = kwargs.pop('foto_url', None)
-        aluno = aluno_service.criar_aluno(kwargs, foto_url=foto_url)
-        if not aluno:
-            # Lança uma exceção se o serviço falhar em criar o aluno
-            raise Exception(
-                f"O serviço criar_aluno falhou com os seguintes dados: {kwargs}"
-            )
-        return aluno
+
 
 
 class TurmaFactory(DjangoModelFactory):
@@ -546,61 +523,7 @@ class TurmaFactory(DjangoModelFactory):
         if not create:
             return
         
-        # Adicionar data de fim aleatória (entre 6 meses e 1 ano após o início)
-        dias_aleatorios = random.randint(180, 365)
-        self.data_fim = self.data_inicio + timedelta(days=dias_aleatorios)
-        
-        # Salvar as alterações
-        self.save()
+    # Adicionar data de fim fixa (6 meses após o início)
+    # Salvar as alterações
 
 
-class AtividadeFactory(DjangoModelFactory):
-    """Factory para criar atividades."""
-
-    class Meta:
-        model = Atividade
-
-    nome = factory.Sequence(lambda n: f'Atividade {n}')
-    descricao = factory.Faker('paragraph')
-    data_inicio = factory.LazyFunction(
-        lambda: timezone.now().date() + timedelta(days=random.randint(1, 30))
-    )
-    hora_inicio = factory.LazyFunction(
-        lambda: timezone.now().time()
-    )
-    responsavel = factory.Faker('name')
-    local = factory.Sequence(lambda n: f'Sala {n}')
-    tipo_atividade = factory.Iterator(
-        ['AULA', 'PALESTRA', 'WORKSHOP', 'SEMINARIO', 'OUTRO']
-    )
-    status = factory.Iterator(
-        ['PENDENTE', 'CONFIRMADA', 'REALIZADA', 'CANCELADA']
-    )
-
-    @factory.post_generation
-    def turmas(self, create, extracted, **kwargs):
-        if not create:
-            return
-        
-        if extracted:
-            # Adicionar turmas específicas
-            for turma in extracted:
-                self.turmas.add(turma)
-        else:
-            # Adicionar turmas aleatórias
-            turmas_count = random.randint(1, 3)
-            turmas = TurmaFactory.create_batch(turmas_count)
-            for turma in turmas:
-                self.turmas.add(turma)
-    
-    @factory.post_generation
-    def add_details(self, create, extracted, **kwargs):
-        if not create:
-            return
-        
-        # Adicionar data de fim aleatória (entre 1 e 5 dias após o início)
-        dias_aleatorios = random.randint(1, 5)
-        self.data_fim = self.data_inicio + timedelta(days=dias_aleatorios)
-        
-        # Salvar as alterações
-        self.save()

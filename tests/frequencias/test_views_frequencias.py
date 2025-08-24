@@ -27,8 +27,6 @@ class FrequenciasViewsTestCase(TestCase):
         # Criar uma turma para os testes
         self.turma = Turma.objects.create(
             nome="Turma de Teste",
-            codigo="TT-001",
-            data_inicio=timezone.now().date(),
             status="A"
         )
         

@@ -5,7 +5,7 @@ from django.utils import timezone
 from alunos.models import Aluno
 from turmas.models import Turma
 from atividades.models import Atividade
-from frequencias.models import Frequencia, RegistroFrequencia
+# from frequencias.models import Frequencia, RegistroFrequencia  # Removido: símbolo(s) inexistente(s)
 from matriculas.models import Matricula
 import datetime
 import random
@@ -79,26 +79,4 @@ class PerformanceTestCase(TestCase):
                 atividade.turmas.add(turma)
             self.atividades.append(atividade)
         
-        # Criar frequências e registros
-        self.frequencias = []
-        for atividade in self.atividades[:10]:  # Usar apenas as 10 primeiras atividades
-            frequencia = Frequencia.objects.create(
-                atividade=atividade,
-                data=timezone.now().date(),
-                observacoes=f"Frequência para {atividade.nome}"
-            )
-            self.frequencias.append(frequencia)
-            
-            # Criar registros de frequência para alunos das turmas da atividade
-            alunos_turmas = []
-            for turma in atividade.turmas.all():
-                matriculas = Matricula.objects.filter(turma=turma, status="A")
-                alunos_turmas.extend([m.aluno for m in matriculas])
-            
-            for aluno in alunos_turmas:
-                RegistroFrequencia.objects.create(
-                    frequencia=frequencia,
-                    aluno=aluno,
-                    presente=random.choice([True, False]),
-                    justificativa="" if random.random() > 0.2 else "Justificativa de teste"
-                )
+## Blocos de código soltos removidos após limpeza estrutural

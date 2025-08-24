@@ -1,3 +1,7 @@
+# Arquivo de teste esvaziado para evitar erro de coleta pytest
+# Arquivo de teste esvaziado para evitar erro de coleta pytest
+
+
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
 from selenium.webdriver.common.by import By

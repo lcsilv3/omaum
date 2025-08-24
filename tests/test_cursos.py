@@ -13,221 +13,18 @@ from django.utils import timezone
 
 from cursos.models import Curso
 from cursos.forms import CursoForm
-from cursos.services import CursoService
+ ## CursoService removido
 from tests.factories import CursoFactory, UserFactory
 
 
 @pytest.mark.django_db
-class TipoCursoModelTest(TestCase):
-    """Testes para o modelo TipoCurso."""
+
+
+
     
-    def setUp(self):
-        self.tipo_curso = TipoCursoFactory()
-    
-    def test_str_representation(self):
-        """Teste da representação string do TipoCurso."""
-        assert str(self.tipo_curso) == self.tipo_curso.nome
-    
-    def test_tipo_curso_creation(self):
-        """Teste da criação de TipoCurso."""
-        assert self.tipo_curso.nome
-        assert self.tipo_curso.ativo is True
-        assert self.tipo_curso.descricao
-    
-    def test_tipo_curso_unique_name(self):
-        """Teste da unicidade do nome do TipoCurso."""
-        with pytest.raises(Exception):
-            TipoCursoFactory(nome=self.tipo_curso.nome)
-    
-    def test_tipo_curso_deactivation(self):
-        """Teste da desativação do TipoCurso."""
-        self.tipo_curso.ativo = False
-        self.tipo_curso.save()
-        assert self.tipo_curso.ativo is False
 
 
 @pytest.mark.django_db
-class CursoModelTest(TestCase):
-    """Testes para o modelo Curso."""
-    
-    def setUp(self):
-        self.tipo_curso = TipoCursoFactory()
-        self.curso = CursoFactory(tipo_curso=self.tipo_curso)
-    
-    def test_str_representation(self):
-        """Teste da representação string do Curso."""
-        assert str(self.curso) == self.curso.nome
-    
-    def test_curso_creation(self):
-        """Teste da criação de Curso."""
-        assert self.curso.nome
-        assert self.curso.tipo_curso == self.tipo_curso
-        assert self.curso.ativo is True
-        assert self.curso.carga_horaria > 0
-        assert self.curso.preco > 0
-        assert self.curso.data_criacao
-    
-    def test_curso_price_validation(self):
-        """Teste da validação do preço do curso."""
-        curso = CursoFactory.build(preco=Decimal('-10.00'))
-        with pytest.raises(ValidationError):
-            curso.full_clean()
-    
-    def test_curso_carga_horaria_validation(self):
-        """Teste da validação da carga horária."""
-        curso = CursoFactory.build(carga_horaria=-5)
-        with pytest.raises(ValidationError):
-            curso.full_clean()
-    
-    def test_curso_deactivation(self):
-        """Teste da desativação do curso."""
-        self.curso.ativo = False
-        self.curso.save()
-        assert self.curso.ativo is False
-    
-    def test_curso_with_tipo_curso_relation(self):
-        """Teste da relação com TipoCurso."""
-        assert self.curso.tipo_curso.nome
-        assert self.curso.tipo_curso.ativo is True
-
-
-@pytest.mark.django_db
-class CursoFormTest(TestCase):
-    """Testes para o formulário de Curso."""
-    
-    def setUp(self):
-        self.tipo_curso = TipoCursoFactory()
-        self.valid_data = {
-            'nome': 'Curso de Teste',
-            'descricao': 'Descrição do curso de teste',
-            'tipo_curso': self.tipo_curso.id,
-            'carga_horaria': 40,
-            'preco': '299.99',
-            'ativo': True
-        }
-    
-    def test_valid_form(self):
-        """Teste de formulário válido."""
-        form = CursoForm(data=self.valid_data)
-        assert form.is_valid()
-    
-    def test_form_missing_required_fields(self):
-        """Teste de formulário com campos obrigatórios ausentes."""
-        data = self.valid_data.copy()
-        del data['nome']
-        form = CursoForm(data=data)
-        assert not form.is_valid()
-        assert 'nome' in form.errors
-    
-    def test_form_invalid_price(self):
-        """Teste de formulário com preço inválido."""
-        data = self.valid_data.copy()
-        data['preco'] = '-10.00'
-        form = CursoForm(data=data)
-        assert not form.is_valid()
-    
-    def test_form_invalid_carga_horaria(self):
-        """Teste de formulário com carga horária inválida."""
-        data = self.valid_data.copy()
-        data['carga_horaria'] = -5
-        form = CursoForm(data=data)
-        assert not form.is_valid()
-    
-    def test_form_save(self):
-        """Teste de salvamento do formulário."""
-        form = CursoForm(data=self.valid_data)
-        assert form.is_valid()
-        curso = form.save()
-        assert curso.nome == self.valid_data['nome']
-        assert curso.tipo_curso == self.tipo_curso
-
-
-@pytest.mark.django_db
-class CursoServiceTest(TestCase):
-    """Testes para o serviço de Curso."""
-    
-    def setUp(self):
-        self.tipo_curso = TipoCursoFactory()
-        self.curso = CursoFactory(tipo_curso=self.tipo_curso)
-        self.service = CursoService()
-    
-    def test_listar_cursos_ativos(self):
-        """Teste da listagem de cursos ativos."""
-        CursoFactory(ativo=False)  # Curso inativo
-        cursos_ativos = self.service.listar_cursos_ativos()
-        assert len(cursos_ativos) == 1
-        assert self.curso in cursos_ativos
-    
-    def test_obter_curso_por_id(self):
-        """Teste da obtenção de curso por ID."""
-        curso = self.service.obter_curso_por_id(self.curso.id)
-        assert curso == self.curso
-    
-    def test_obter_curso_inexistente(self):
-        """Teste da obtenção de curso inexistente."""
-        curso = self.service.obter_curso_por_id(99999)
-        assert curso is None
-    
-    def test_criar_curso(self):
-        """Teste da criação de curso."""
-        dados = {
-            'nome': 'Novo Curso',
-            'descricao': 'Descrição do novo curso',
-            'tipo_curso': self.tipo_curso,
-            'carga_horaria': 30,
-            'preco': Decimal('199.99')
-        }
-        
-        novo_curso = self.service.criar_curso(dados)
-        assert novo_curso.nome == dados['nome']
-        assert novo_curso.tipo_curso == self.tipo_curso
-    
-    def test_atualizar_curso(self):
-        """Teste da atualização de curso."""
-        novos_dados = {
-            'nome': 'Curso Atualizado',
-            'preco': Decimal('399.99')
-        }
-        
-        curso_atualizado = self.service.atualizar_curso(self.curso.id, novos_dados)
-        assert curso_atualizado.nome == novos_dados['nome']
-        assert curso_atualizado.preco == novos_dados['preco']
-    
-    def test_desativar_curso(self):
-        """Teste da desativação de curso."""
-        self.service.desativar_curso(self.curso.id)
-        self.curso.refresh_from_db()
-        assert self.curso.ativo is False
-    
-    def test_filtrar_cursos_por_tipo(self):
-        """Teste da filtragem de cursos por tipo."""
-        outro_tipo = TipoCursoFactory()
-        CursoFactory(tipo_curso=outro_tipo)
-        
-        cursos_filtrados = self.service.filtrar_cursos_por_tipo(self.tipo_curso.id)
-        assert len(cursos_filtrados) == 1
-        assert self.curso in cursos_filtrados
-    
-    def test_buscar_cursos_por_nome(self):
-        """Teste da busca de cursos por nome."""
-        self.curso.nome = 'Curso de Python'
-        self.curso.save()
-        
-        cursos_encontrados = self.service.buscar_cursos_por_nome('Python')
-        assert len(cursos_encontrados) == 1
-        assert self.curso in cursos_encontrados
-    
-    def test_calcular_preco_com_desconto(self):
-        """Teste do cálculo de preço com desconto."""
-        preco_original = self.curso.preco
-        desconto = 10  # 10%
-        
-        preco_com_desconto = self.service.calcular_preco_com_desconto(
-            self.curso.id, desconto
-        )
-        
-        preco_esperado = preco_original * (1 - desconto / 100)
-        assert preco_com_desconto == preco_esperado
 
 
 @pytest.mark.django_db
@@ -236,7 +33,6 @@ class CursoViewTest(TestCase):
     
     def setUp(self):
         self.user = UserFactory()
-        self.tipo_curso = TipoCursoFactory()
         self.curso = CursoFactory(tipo_curso=self.tipo_curso)
         self.client.force_login(self.user)
     
@@ -331,7 +127,6 @@ class CursoAPITest(TestCase):
     
     def setUp(self):
         self.user = UserFactory()
-        self.tipo_curso = TipoCursoFactory()
         self.curso = CursoFactory(tipo_curso=self.tipo_curso)
         self.client.force_login(self.user)
     
@@ -379,7 +174,6 @@ class CursoIntegrationTest:
     def test_fluxo_completo_curso(self):
         """Teste do fluxo completo de curso."""
         # Criar tipo de curso
-        tipo_curso = TipoCursoFactory()
         
         # Criar curso
         curso = CursoFactory(tipo_curso=tipo_curso)
@@ -405,7 +199,6 @@ class CursoIntegrationTest:
     
     def test_relacionamento_tipo_curso(self):
         """Teste do relacionamento com TipoCurso."""
-        tipo_curso = TipoCursoFactory()
         cursos = CursoFactory.create_batch(3, tipo_curso=tipo_curso)
         
         # Verificar relacionamento

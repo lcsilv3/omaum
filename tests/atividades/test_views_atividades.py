@@ -21,7 +21,6 @@ class AtividadesAcademicasViewsTestCase(TestCase):
         # Criar uma turma para associar às atividades
         self.turma = Turma.objects.create(
             nome="Turma A",
-            codigo="TA-001",
             status="A"
         )
         
@@ -135,7 +134,6 @@ class AtividadesRitualisticasViewsTestCase(TestCase):
         # Criar uma turma para associar às atividades
         self.turma = Turma.objects.create(
             nome="Turma A",
-            codigo="TA-001",
             status="A"
         )
         
