@@ -1,0 +1,1 @@
+Esta pasta armazena arquivos de documentação antigos, históricos ou de referência que não são mais essenciais para o uso ou manutenção principal do projeto, mas podem ser úteis para consulta futura ou auditoria.
