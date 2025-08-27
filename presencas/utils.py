@@ -1,5 +1,3 @@
-
-
 def gerar_meses_anos(data_inicio, data_fim):
     """Gera lista de (ano, mes) entre duas datas."""
     meses_anos = []

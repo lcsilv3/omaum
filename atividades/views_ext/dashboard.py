@@ -6,6 +6,7 @@ from importlib import import_module
 
 from ..models import Atividade
 
+
 @login_required
 def dashboard_atividades(request):
     """
@@ -29,7 +30,9 @@ def dashboard_atividades(request):
     if turma_id:
         atividades = atividades.filter(turma_id=turma_id)
 
-    atividades = atividades.select_related("curso").prefetch_related("turmas").distinct()
+    atividades = (
+        atividades.select_related("curso").prefetch_related("turmas").distinct()
+    )
 
     # Exemplo de dados para cards
     total_atividades = atividades.count()
@@ -53,6 +56,7 @@ def dashboard_atividades(request):
 
     return render(request, "atividades/dashboard.html", context)
 
+
 @require_GET
 @login_required
 def ajax_turmas_por_curso_dashboard(request):
@@ -63,6 +67,7 @@ def ajax_turmas_por_curso_dashboard(request):
     Turma = import_module("turmas.models").Turma
     turmas = Turma.objects.filter(curso_id=curso_id).values("id", "nome")
     return JsonResponse(list(turmas), safe=False)
+
 
 @require_GET
 @login_required

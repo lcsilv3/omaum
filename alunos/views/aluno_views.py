@@ -146,7 +146,9 @@ def criar_aluno(request):
         t4 = time.perf_counter()
         historico_formset = CustomFormSet(request.POST, prefix="historico")
         t5 = time.perf_counter()
-        logger.info(f"[PERF] Tempo para instanciar AlunoForm: {t4-t3:.4f}s | Formset: {t5-t4:.4f}s")
+        logger.info(
+            f"[PERF] Tempo para instanciar AlunoForm: {t4-t3:.4f}s | Formset: {t5-t4:.4f}s"
+        )
         if form.is_valid() and historico_formset.is_valid():
             try:
                 t6 = time.perf_counter()
@@ -184,7 +186,9 @@ def criar_aluno(request):
             {"form": form, "aluno": None, "historico_formset": historico_formset},
         )
         t11 = time.perf_counter()
-        logger.info(f"[PERF] Tempo para renderizar template (validação): {t11-t10:.4f}s")
+        logger.info(
+            f"[PERF] Tempo para renderizar template (validação): {t11-t10:.4f}s"
+        )
         return response
     else:
         try:
@@ -198,7 +202,9 @@ def criar_aluno(request):
             # Garante que o management_form SEMPRE seja gerado
             _ = historico_formset.management_form
             t15 = time.perf_counter()
-            logger.info(f"[PERF] Tempo para instanciar AlunoForm: {t13-t12:.4f}s | Formset: {t14-t13:.4f}s | Management form: {t15-t14:.4f}s")
+            logger.info(
+                f"[PERF] Tempo para instanciar AlunoForm: {t13-t12:.4f}s | Formset: {t14-t13:.4f}s | Management form: {t15-t14:.4f}s"
+            )
             t16 = time.perf_counter()
             response = render(
                 request,
@@ -206,7 +212,9 @@ def criar_aluno(request):
                 {"form": form, "aluno": None, "historico_formset": historico_formset},
             )
             t17 = time.perf_counter()
-            logger.info(f"[PERF] Tempo para renderizar template (GET): {t17-t16:.4f}s | Total: {t17-t0:.4f}s")
+            logger.info(
+                f"[PERF] Tempo para renderizar template (GET): {t17-t16:.4f}s | Total: {t17-t0:.4f}s"
+            )
             return response
         except Exception as e:
             from django.http import HttpResponse
@@ -413,7 +421,10 @@ def listar_tipos_codigos_ajax(request):
     try:
         TipoCodigo = get_tipo_codigo_model()
         if not TipoCodigo:
-            return JsonResponse({"status": "error", "message": "Modelo TipoCodigo indisponível"}, status=500)
+            return JsonResponse(
+                {"status": "error", "message": "Modelo TipoCodigo indisponível"},
+                status=500,
+            )
         tipos = TipoCodigo.objects.all().values("id", "nome", "descricao")
         return JsonResponse({"status": "success", "tipos": list(tipos)})
     except Exception as e:
@@ -427,7 +438,9 @@ def listar_codigos_por_tipo_ajax(request):
     try:
         Codigo = get_codigo_model()
         if not Codigo:
-            return JsonResponse({"status": "error", "message": "Modelo Codigo indisponível"}, status=500)
+            return JsonResponse(
+                {"status": "error", "message": "Modelo Codigo indisponível"}, status=500
+            )
         tipo_id = request.GET.get("tipo_id")
         if not tipo_id:
             return JsonResponse(
@@ -471,7 +484,9 @@ def adicionar_evento_historico_ajax(request):
         aluno = get_object_or_404(Aluno, id=aluno_id)
         Codigo = get_codigo_model()
         if not Codigo:
-            return JsonResponse({"status": "error", "message": "Modelo Codigo indisponível"}, status=500)
+            return JsonResponse(
+                {"status": "error", "message": "Modelo Codigo indisponível"}, status=500
+            )
         codigo = get_object_or_404(Codigo, id=codigo_id)
 
         # Criar evento via serviço centralizado (garante sincronização JSON + relacional)

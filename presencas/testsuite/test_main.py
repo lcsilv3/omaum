@@ -6,11 +6,10 @@ from presencas.models import Presenca
 from alunos.models import Aluno
 from turmas.models import Turma
 
+
 class PresencaAcademicaTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="12345"
-        )
+        self.user = User.objects.create_user(username="testuser", password="12345")
         permissions = Permission.objects.filter(
             codename__in=[
                 "view_presencaacademica",
@@ -22,25 +21,24 @@ class PresencaAcademicaTestCase(TestCase):
         self.user.user_permissions.set(permissions)
         from datetime import date
         from importlib import import_module
+
         cursos_module = import_module("cursos.models")
         Curso = getattr(cursos_module, "Curso")
         self.curso = Curso.objects.create(
-            nome="Curso Teste",
-            descricao="Curso para testes",
-            ativo=True
+            nome="Curso Teste", descricao="Curso para testes", ativo=True
         )
         self.aluno = Aluno.objects.create(
-            nome="Aluno Teste", 
+            nome="Aluno Teste",
             cpf="12345678901",
             email="aluno@teste.com",
-            data_nascimento=date(1990, 1, 1)
+            data_nascimento=date(1990, 1, 1),
         )
         self.turma = Turma.objects.create(
             nome="Turma Teste",
             curso=self.curso,
             vagas=20,
             data_inicio_ativ=date(2024, 1, 15),
-            ativo=True
+            ativo=True,
         )
         self.presenca = Presenca.objects.create(
             aluno=self.aluno,
@@ -53,7 +51,9 @@ class PresencaAcademicaTestCase(TestCase):
         self.client.login(username="testuser", password="12345")
         response = self.client.get(reverse("presencas:listar_presencas"))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "presencas/academicas/listar_presencas_academicas.html")
+        self.assertTemplateUsed(
+            response, "presencas/academicas/listar_presencas_academicas.html"
+        )
         self.assertContains(response, self.aluno.nome)
 
     def test_registrar_presenca_view(self):
@@ -67,9 +67,7 @@ class PresencaAcademicaTestCase(TestCase):
             "data": timezone.now().date(),
             "presente": True,
         }
-        response = self.client.post(
-            reverse("presencas:registrar_presenca"), data
-        )
+        response = self.client.post(reverse("presencas:registrar_presenca"), data)
         self.assertRedirects(response, reverse("presencas:listar_presencas"))
         self.assertEqual(Presenca.objects.count(), 2)
 
@@ -110,9 +108,7 @@ class PresencaAcademicaTestCase(TestCase):
         self.assertContains(response, self.aluno.nome)
 
     def test_permissoes_required(self):
-        User.objects.create_user(
-            username="sempermissao", password="12345"
-        )
+        User.objects.create_user(username="sempermissao", password="12345")
         self.client.login(username="sempermissao", password="12345")
         urls = [
             reverse("presencas:listar_presencas"),

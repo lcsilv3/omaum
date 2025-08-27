@@ -15,22 +15,22 @@ class TurmaSerializer(serializers.ModelSerializer):
 
     curso = CursoSerializer(read_only=True)
     vagas_preenchidas = serializers.IntegerField(
-        source='matriculas.count', read_only=True
+        source="matriculas.count", read_only=True
     )
 
     class Meta:
         model = Turma
         fields = [
-            'id',
-            'nome',
-            'curso',
-            'data_inicio_ativ',
-            'data_termino_atividades',
-            'vagas',
-            'vagas_preenchidas',
-            'status',
+            "id",
+            "nome",
+            "curso",
+            "data_inicio_ativ",
+            "data_termino_atividades",
+            "vagas",
+            "vagas_preenchidas",
+            "status",
         ]
-        read_only_fields = ['status']
+        read_only_fields = ["status"]
 
 
 class MatriculaSerializer(serializers.ModelSerializer):
@@ -43,4 +43,4 @@ class MatriculaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Matricula
-        fields = ['id', 'aluno', 'turma', 'data_matricula']
+        fields = ["id", "aluno", "turma", "data_matricula"]

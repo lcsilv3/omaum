@@ -65,6 +65,7 @@ def get_tipo_codigo_model():
     # Modelos consolidados: retorno direto; manter função para compatibilidade.
     try:  # pragma: no cover - deve sempre existir
         from alunos.models import TipoCodigo  # type: ignore
+
         return TipoCodigo
     except Exception:  # noqa: BLE001
         return None
@@ -74,6 +75,7 @@ def get_codigo_model():
     # Consolidação: sempre em 'alunos'.
     try:  # pragma: no cover
         from alunos.models import Codigo  # type: ignore
+
         return Codigo
     except Exception:  # noqa: BLE001
         return None

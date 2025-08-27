@@ -18,9 +18,15 @@ class Command(BaseCommand):
         reparar = options["reparar"]
         divergencias = 0
         total = 0
-        for aluno in Aluno.objects.all().only("cpf", "historico_iniciatico", "historico_checksum"):
+        for aluno in Aluno.objects.all().only(
+            "cpf", "historico_iniciatico", "historico_checksum"
+        ):
             total += 1
-            eventos = aluno.historico_iniciatico if isinstance(aluno.historico_iniciatico, list) else []
+            eventos = (
+                aluno.historico_iniciatico
+                if isinstance(aluno.historico_iniciatico, list)
+                else []
+            )
             recomputado = _calcular_checksum(eventos)
             if recomputado != aluno.historico_checksum:
                 divergencias += 1

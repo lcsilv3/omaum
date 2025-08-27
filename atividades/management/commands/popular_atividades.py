@@ -7,8 +7,9 @@ from django.utils import timezone
 import random
 from datetime import timedelta, time
 
+
 class Command(BaseCommand):
-    help = 'Popula o banco de dados com atividades para todos os casos possíveis.'
+    help = "Popula o banco de dados com atividades para todos os casos possíveis."
 
     def handle(self, *args, **options):
         tipos = [c[0] for c in Atividade.TIPO_CHOICES]
@@ -30,10 +31,8 @@ class Command(BaseCommand):
                     )
                     data_fim = None
                     if i % 2 == 0:
-                        data_fim = data_inicio + timedelta(
-                            days=random.randint(1, 10)
-                        )
-                    
+                        data_fim = data_inicio + timedelta(days=random.randint(1, 10))
+
                     atividade = Atividade(
                         nome=f"{tipo.title()} {status.title()} {i+1}",
                         descricao=f"Descrição para {tipo} - {status} - {i+1}",
@@ -41,22 +40,21 @@ class Command(BaseCommand):
                         data_inicio=data_inicio,
                         data_fim=data_fim,
                         hora_inicio=time(hour=random.randint(8, 18), minute=0),
-                        hora_fim=time(hour=random.randint(19, 22), minute=0) 
-                               if i % 2 == 0 else None,
-                        local=f"Sala {random.randint(1, 10)}" 
-                              if i % 2 == 0 else "",
-                        responsavel=random.choice(alunos).nome 
-                                   if alunos and i % 2 == 0 else "",
+                        hora_fim=time(hour=random.randint(19, 22), minute=0)
+                        if i % 2 == 0
+                        else None,
+                        local=f"Sala {random.randint(1, 10)}" if i % 2 == 0 else "",
+                        responsavel=random.choice(alunos).nome
+                        if alunos and i % 2 == 0
+                        else "",
                         status=status,
-                        curso=random.choice(cursos) 
-                              if cursos and i % 2 == 0 else None,
+                        curso=random.choice(cursos) if cursos and i % 2 == 0 else None,
                     )
                     atividade.save()
                     # Turmas
                     if turmas and i % 2 == 0:
                         turmas_selecionadas = random.sample(
-                            turmas, 
-                            min(len(turmas), random.randint(1, 3))
+                            turmas, min(len(turmas), random.randint(1, 3))
                         )
                         atividade.turmas.set(turmas_selecionadas)
                     atividade.save()
@@ -68,9 +66,7 @@ class Command(BaseCommand):
             tipo_atividade="OUTRO",
             data_inicio=timezone.now().date(),
             hora_inicio=time(hour=10, minute=0),
-            status="PENDENTE"
+            status="PENDENTE",
         )
 
-        self.stdout.write(
-            self.style.SUCCESS('Atividades populadas com sucesso!')
-        )
+        self.stdout.write(self.style.SUCCESS("Atividades populadas com sucesso!"))

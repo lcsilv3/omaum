@@ -17,31 +17,23 @@ class Presenca(models.Model):
     """
     Modelo para presenças em atividades.
     """
+
     aluno = models.ForeignKey(
-        'alunos.Aluno',
-        on_delete=models.CASCADE,
-        verbose_name="Aluno"
+        "alunos.Aluno", on_delete=models.CASCADE, verbose_name="Aluno"
     )
     turma = models.ForeignKey(
-        'turmas.Turma',
-        on_delete=models.CASCADE,
-        verbose_name="Turma"
+        "turmas.Turma", on_delete=models.CASCADE, verbose_name="Turma"
     )
     atividade = models.ForeignKey(
-        'Atividade',
-        on_delete=models.CASCADE,
-        verbose_name="Atividade"
+        "Atividade", on_delete=models.CASCADE, verbose_name="Atividade"
     )
     data = models.DateField(verbose_name="Data")
     presente = models.BooleanField(default=True, verbose_name="Presente")
     registrado_por = models.CharField(
-        max_length=100,
-        default="Sistema",
-        verbose_name="Registrado por"
+        max_length=100, default="Sistema", verbose_name="Registrado por"
     )
     data_registro = models.DateTimeField(
-        default=timezone.now,
-        verbose_name="Data de registro"
+        default=timezone.now, verbose_name="Data de registro"
     )
 
     class Meta:
@@ -58,27 +50,26 @@ class Atividade(models.Model):
     """
     Modelo para atividades como aulas, palestras, workshops, etc.
     """
+
     TIPO_CHOICES = [
-        ('AULA', 'Aula'),
-        ('PALESTRA', 'Palestra'),
-        ('WORKSHOP', 'Workshop'),
-        ('SEMINARIO', 'Seminário'),
-        ('OUTRO', 'Outro'),
+        ("AULA", "Aula"),
+        ("PALESTRA", "Palestra"),
+        ("WORKSHOP", "Workshop"),
+        ("SEMINARIO", "Seminário"),
+        ("OUTRO", "Outro"),
     ]
 
     STATUS_CHOICES = [
-        ('PENDENTE', 'Pendente'),
-        ('CONFIRMADA', 'Confirmada'),
-        ('REALIZADA', 'Realizada'),
-        ('CANCELADA', 'Cancelada'),
+        ("PENDENTE", "Pendente"),
+        ("CONFIRMADA", "Confirmada"),
+        ("REALIZADA", "Realizada"),
+        ("CANCELADA", "Cancelada"),
     ]
 
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
     tipo_atividade = models.CharField(
-        max_length=20,
-        choices=TIPO_CHOICES,
-        default='AULA'
+        max_length=20, choices=TIPO_CHOICES, default="AULA"
     )
     data_inicio = models.DateField()
     data_fim = models.DateField(blank=True, null=True)
@@ -86,26 +77,20 @@ class Atividade(models.Model):
     hora_fim = models.TimeField(blank=True, null=True)
     local = models.CharField(max_length=100, blank=True, null=True)
     responsavel = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='PENDENTE'
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDENTE")
     ativo = models.BooleanField(default=True, verbose_name="Ativa")
     convocacao = models.BooleanField(default=False, verbose_name="Convocação")
 
     # Relacionamentos
     curso = models.ForeignKey(
-        'cursos.Curso',
+        "cursos.Curso",
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        related_name='atividades'
+        related_name="atividades",
     )
     turmas = models.ManyToManyField(
-        'turmas.Turma',
-        blank=True,
-        related_name='atividades'
+        "turmas.Turma", blank=True, related_name="atividades"
     )
 
     # Metadados
@@ -116,11 +101,10 @@ class Atividade(models.Model):
         return self.nome
 
     class Meta:
-        verbose_name = 'Atividade'
-        verbose_name_plural = 'Atividades'
-        ordering = ['-data_inicio', 'hora_inicio']
+        verbose_name = "Atividade"
+        verbose_name_plural = "Atividades"
+        ordering = ["-data_inicio", "hora_inicio"]
 
 
 # Alias para compatibilidade após refatoramento
 AtividadeAcademica = Atividade
-

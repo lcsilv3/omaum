@@ -64,10 +64,14 @@ urlpatterns = [
     path("legacy/", listar_alunos_simple, name="listar_alunos_legacy"),
     path("legacy/criar/", criar_aluno_simple, name="criar_aluno_legacy"),
     path(
-        "legacy/<str:cpf>/detalhes/", detalhar_aluno_simple, name="detalhar_aluno_legacy"
+        "legacy/<str:cpf>/detalhes/",
+        detalhar_aluno_simple,
+        name="detalhar_aluno_legacy",
     ),
     path("legacy/<str:cpf>/editar/", editar_aluno_simple, name="editar_aluno_legacy"),
-    path("legacy/<str:cpf>/excluir/", excluir_aluno_simple, name="excluir_aluno_legacy"),
+    path(
+        "legacy/<str:cpf>/excluir/", excluir_aluno_simple, name="excluir_aluno_legacy"
+    ),
     path("painel/", views.painel, name="painel"),
     path("exportar/", views.exportar_alunos, name="exportar_alunos"),
     path("importar/", views.importar_alunos, name="importar_alunos"),

@@ -3,10 +3,12 @@ from django.shortcuts import redirect, render
 from django.utils.translation import gettext_lazy as _
 from importlib import import_module
 
+
 def get_atividade_model():
     """Obtém o modelo Atividade."""
     atividades_module = import_module("atividades.models")
     return getattr(atividades_module, "Atividade")
+
 
 def get_matricula_model():
     """Obtém o modelo Matricula."""
@@ -54,14 +56,12 @@ def get_desativar_turmas_impacto_view(modeladmin):
             num_mat, num_ativ = 0, 0
             Matricula = get_matricula_model()
             Atividade = get_atividade_model()
-            
+
             for turma in turmas_a_desativar:
                 mat = Matricula.objects.filter(turma=turma, ativa=True)
                 num_mat += mat.update(ativa=False)
 
-                ativ = Atividade.objects.filter(
-                    turmas=turma, ativo=True
-                )
+                ativ = Atividade.objects.filter(turmas=turma, ativo=True)
                 num_ativ += ativ.update(ativo=False)
 
             num_turmas = turmas_a_desativar.update(ativo=False)
@@ -84,11 +84,9 @@ def get_desativar_turmas_impacto_view(modeladmin):
 
         Matricula = get_matricula_model()
         Atividade = get_atividade_model()
-        
+
         mat_afetadas = Matricula.objects.filter(turma__in=queryset, ativa=True)
-        atividades_afetadas = Atividade.objects.filter(
-            turmas__in=queryset, ativo=True
-        )
+        atividades_afetadas = Atividade.objects.filter(turmas__in=queryset, ativo=True)
 
         impacto = {
             "turmas": queryset,

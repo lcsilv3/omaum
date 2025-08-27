@@ -39,8 +39,8 @@ class FluxoCompletoSistemaTest(TransactionTestCase):
             'nome': 'João Silva',
             'cpf': '123.456.789-00',
             'email': 'joao@example.com',
-            'telefone': '(11) 99999-9999',
-            'endereco': 'Rua das Flores, 123',
+            # 'telefone' removido
+            # 'endereco' removido
             'data_nascimento': '1990-01-01',
             'ativo': True
         }
@@ -55,8 +55,8 @@ class FluxoCompletoSistemaTest(TransactionTestCase):
         
         aluno = Aluno.objects.get(cpf='123.456.789-00')
         
-        # 2. Criar curso
-        curso = CursoFactory(nome='Curso de Python', preco=Decimal('500.00'))
+    # 2. Criar curso
+    curso = CursoFactory(nome='Curso de Python')
         
         # 3. Matricular aluno no curso
         matricula_data = {
@@ -105,7 +105,7 @@ class FluxoCompletoSistemaTest(TransactionTestCase):
         
         # Verificar valores
         assert matricula.valor_pago == Decimal('300.00')
-        valor_pendente = curso.preco - matricula.valor_pago
+    # valor_pendente = curso.preco - matricula.valor_pago  # campo removido
         assert valor_pendente == Decimal('200.00')
     
     def test_fluxo_multiplos_alunos_mesma_turma(self):
@@ -237,8 +237,8 @@ class APIIntegrationTest(TestCase):
             'nome': 'Maria Santos',
             'cpf': '987.654.321-00',
             'email': 'maria@example.com',
-            'telefone': '(11) 88888-8888',
-            'endereco': 'Rua das Palmeiras, 456',
+            # 'telefone' removido
+            # 'endereco' removido
             'data_nascimento': '1985-05-15'
         }
         
@@ -474,59 +474,43 @@ class IntegrationWorkflowTest:
     
     def test_workflow_completo_escola(self):
         """Teste do workflow completo de uma escola."""
-        
         # Cenário: Nova escola começando operação
-        
         # 1. Criar tipos básicos
-        from alunos.models import TipoAluno
         from cursos.models import TipoCurso
         from matriculas.models import StatusMatricula
         from turmas.models import StatusTurma
         from presencas.models import StatusPresenca
-        
+
         # Criar tipos
-        tipo_aluno_regular = TipoAluno.objects.create(
-            nome='Regular',
-            descricao='Aluno regular'
-        )
-        
         tipo_curso_tecnico = TipoCurso.objects.create(
             nome='Técnico',
             descricao='Curso técnico'
         )
-        
         status_matricula_ativa = StatusMatricula.objects.create(
             nome='Ativa',
             descricao='Matrícula ativa'
         )
-        
         status_turma_andamento = StatusTurma.objects.create(
             nome='Em Andamento',
             descricao='Turma em andamento'
         )
-        
         status_presenca_presente = StatusPresenca.objects.create(
             nome='Presente',
             descricao='Aluno presente'
         )
-        
+
         # 2. Criar cursos
         curso_python = Curso.objects.create(
             nome='Python Básico',
             descricao='Curso de Python para iniciantes',
             tipo_curso=tipo_curso_tecnico,
-            carga_horaria=40,
-            preco=Decimal('500.00')
         )
-        
         curso_django = Curso.objects.create(
             nome='Django Avançado',
             descricao='Curso avançado de Django',
             tipo_curso=tipo_curso_tecnico,
-            carga_horaria=60,
-            preco=Decimal('800.00')
         )
-        
+
         # 3. Criar turmas
         turma_python = Turma.objects.create(
             nome='Python Básico - Turma A',
@@ -537,7 +521,6 @@ class IntegrationWorkflowTest:
             capacidade_maxima=20,
             professor='Prof. João'
         )
-        
         turma_django = Turma.objects.create(
             nome='Django Avançado - Turma B',
             curso=curso_django,
@@ -547,28 +530,21 @@ class IntegrationWorkflowTest:
             capacidade_maxima=15,
             professor='Prof. Maria'
         )
-        
+
         # 4. Criar alunos
         aluno1 = Aluno.objects.create(
             nome='João Silva',
             cpf='123.456.789-00',
             email='joao@example.com',
-            telefone='(11) 99999-9999',
-            endereco='Rua A, 123',
-            data_nascimento=date(1990, 1, 1),
-            tipo_aluno=tipo_aluno_regular
+            data_nascimento=date(1990, 1, 1)
         )
-        
         aluno2 = Aluno.objects.create(
             nome='Maria Santos',
             cpf='987.654.321-00',
             email='maria@example.com',
-            telefone='(11) 88888-8888',
-            endereco='Rua B, 456',
-            data_nascimento=date(1985, 5, 15),
-            tipo_aluno=tipo_aluno_regular
+            data_nascimento=date(1985, 5, 15)
         )
-        
+
         # 5. Criar matrículas
         matricula1 = Matricula.objects.create(
             aluno=aluno1,
@@ -576,25 +552,23 @@ class IntegrationWorkflowTest:
             status=status_matricula_ativa,
             valor_pago=Decimal('400.00')
         )
-        
         matricula2 = Matricula.objects.create(
             aluno=aluno2,
             curso=curso_python,
             status=status_matricula_ativa,
             valor_pago=Decimal('500.00')
         )
-        
         matricula3 = Matricula.objects.create(
             aluno=aluno1,
             curso=curso_django,
             status=status_matricula_ativa,
             valor_pago=Decimal('600.00')
         )
-        
+
         # 6. Adicionar alunos às turmas
         turma_python.alunos.add(aluno1, aluno2)
         turma_django.alunos.add(aluno1)
-        
+
         # 7. Registrar presenças
         presenca1 = Presenca.objects.create(
             aluno=aluno1,
@@ -602,37 +576,34 @@ class IntegrationWorkflowTest:
             status=status_presenca_presente,
             data_aula=date.today()
         )
-        
         presenca2 = Presenca.objects.create(
             aluno=aluno2,
             turma=turma_python,
             status=status_presenca_presente,
             data_aula=date.today()
         )
-        
+
         # Verificações finais
         assert Aluno.objects.count() == 2
         assert Curso.objects.count() == 2
         assert Turma.objects.count() == 2
         assert Matricula.objects.count() == 3
         assert Presenca.objects.count() == 2
-        
+
         # Verificar relacionamentos
         assert aluno1.matricula_set.count() == 2
         assert aluno2.matricula_set.count() == 1
         assert turma_python.alunos.count() == 2
         assert turma_django.alunos.count() == 1
-        
+
         # Verificar valores
         assert matricula1.valor_pago == Decimal('400.00')
         assert matricula2.valor_pago == Decimal('500.00')
         assert matricula3.valor_pago == Decimal('600.00')
-        
+
         # Verificar valores pendentes
-        assert curso_python.preco - matricula1.valor_pago == Decimal('100.00')
-        assert curso_python.preco - matricula2.valor_pago == Decimal('0.00')
-        assert curso_django.preco - matricula3.valor_pago == Decimal('200.00')
-        
+        # asserts de preco removidos
+
         print("✓ Workflow completo da escola executado com sucesso!")
         print(f"✓ {Aluno.objects.count()} alunos criados")
         print(f"✓ {Curso.objects.count()} cursos criados")

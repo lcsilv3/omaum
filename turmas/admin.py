@@ -17,18 +17,30 @@ Turma = get_turma_model()
 @admin.register(Turma)
 class TurmaAdmin(admin.ModelAdmin):
     fieldsets = (
-        ("Informações Básicas", {
-            "fields": ("nome", "curso", "descricao", "data_inicio_ativ", "data_termino_atividades")
-        }),
-        ("Dados Iniciáticos", {
-            "fields": (
-                "num_livro",
-                "perc_carencia",
-                "data_iniciacao",
-                "data_prim_aula",
-                "ativo",
-            )
-        }),
+        (
+            "Informações Básicas",
+            {
+                "fields": (
+                    "nome",
+                    "curso",
+                    "descricao",
+                    "data_inicio_ativ",
+                    "data_termino_atividades",
+                )
+            },
+        ),
+        (
+            "Dados Iniciáticos",
+            {
+                "fields": (
+                    "num_livro",
+                    "perc_carencia",
+                    "data_iniciacao",
+                    "data_prim_aula",
+                    "ativo",
+                )
+            },
+        ),
     )
     list_display = (
         "nome",
@@ -49,11 +61,9 @@ class TurmaAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path(
-                'desativar-impacto/',
-                self.admin_site.admin_view(
-                    get_desativar_turmas_impacto_view(self)
-                ),
-                name='desativar_turmas_impacto',
+                "desativar-impacto/",
+                self.admin_site.admin_view(get_desativar_turmas_impacto_view(self)),
+                name="desativar_turmas_impacto",
             ),
         ]
         return custom_urls + urls

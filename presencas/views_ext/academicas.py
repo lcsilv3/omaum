@@ -6,51 +6,65 @@ from atividades.models import Atividade, AtividadeAcademica
 from alunos.models import Aluno
 from presencas.models import Presenca
 
+
 def listar_presencas_academicas(request):
     # Auto-correção de dados inconsistentes (executa uma vez por carregamento)
-    if not request.GET.get('corrected'):
+    if not request.GET.get("corrected"):
         try:
             from django.db import transaction
+
             with transaction.atomic():
                 # Corrigir presenças sem turma quando há atividade
                 presencas_sem_turma = Presenca.objects.filter(
-                    turma__isnull=True, 
-                    atividade__isnull=False
-                ).select_related('atividade')
-                
+                    turma__isnull=True, atividade__isnull=False
+                ).select_related("atividade")
+
                 corrigidas = 0
-                for presenca in presencas_sem_turma[:50]:  # Limitar para não sobrecarregar
-                    if hasattr(presenca.atividade, 'turmas') and presenca.atividade.turmas.exists():
+                for presenca in presencas_sem_turma[
+                    :50
+                ]:  # Limitar para não sobrecarregar
+                    if (
+                        hasattr(presenca.atividade, "turmas")
+                        and presenca.atividade.turmas.exists()
+                    ):
                         presenca.turma = presenca.atividade.turmas.first()
                         presenca.save()
                         corrigidas += 1
-                
+
                 if corrigidas > 0:
                     import logging
+
                     logger = logging.getLogger(__name__)
-                    logger.info(f"Auto-correção: {corrigidas} presenças receberam turmas automaticamente")
+                    logger.info(
+                        f"Auto-correção: {corrigidas} presenças receberam turmas automaticamente"
+                    )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Erro na auto-correção de presenças: {str(e)}")
 
     # Otimização de queries com relacionamentos
     cursos = Curso.objects.all()
-    turmas = Turma.objects.select_related('curso').all()
-    atividades = AtividadeAcademica.objects.select_related('curso').prefetch_related('turmas').all()
+    turmas = Turma.objects.select_related("curso").all()
+    atividades = (
+        AtividadeAcademica.objects.select_related("curso")
+        .prefetch_related("turmas")
+        .all()
+    )
     alunos = Aluno.objects.all()
 
     # Filtros
-    curso_id = request.GET.get('curso')
-    turma_id = request.GET.get('turma')
-    atividade_id = request.GET.get('atividade')
-    aluno_id = request.GET.get('aluno')
-    data_inicio = request.GET.get('data_inicio')
-    data_fim = request.GET.get('data_fim')
+    curso_id = request.GET.get("curso")
+    turma_id = request.GET.get("turma")
+    atividade_id = request.GET.get("atividade")
+    aluno_id = request.GET.get("aluno")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
 
     # Query otimizada para presenças com relacionamentos
     presencas = Presenca.objects.select_related(
-        'aluno', 'turma__curso', 'atividade'
+        "aluno", "turma__curso", "atividade"
     ).all()
 
     if curso_id:
@@ -69,14 +83,18 @@ def listar_presencas_academicas(request):
         presencas = presencas.filter(data__lte=data_fim)
 
     # Ordenação para melhor apresentação
-    presencas = presencas.order_by('-data', 'aluno__nome')
+    presencas = presencas.order_by("-data", "aluno__nome")
 
     context = {
-        'presencas': presencas,
-        'cursos': cursos,
-        'turmas': turmas,
-        'atividades': atividades,
-        'alunos': alunos,
+        "presencas": presencas,
+        "cursos": cursos,
+        "turmas": turmas,
+        "atividades": atividades,
+        "alunos": alunos,
     }
-    return render(request, 'presencas/academicas/listar_presencas_academicas.html', context)
+    return render(
+        request, "presencas/academicas/listar_presencas_academicas.html", context
+    )
+
+
 # ...código existente...

@@ -158,12 +158,15 @@ class Aluno(models.Model):
         ("O", "Outro"),
     ]
 
-
     TIPO_SANGUINEO_CHOICES = [
-        ("A+", "A+"), ("A-", "A-"),
-        ("B+", "B+"), ("B-", "B-"),
-        ("AB+", "AB+"), ("AB-", "AB-"),
-        ("O+", "O+"), ("O-", "O-")
+        ("A+", "A+"),
+        ("A-", "A-"),
+        ("B+", "B+"),
+        ("B-", "B-"),
+        ("AB+", "AB+"),
+        ("AB-", "AB-"),
+        ("O+", "O+"),
+        ("O-", "O-"),
     ]
 
     SITUACAO_CHOICES = [
@@ -357,7 +360,7 @@ class Aluno(models.Model):
         choices=TIPO_SANGUINEO_CHOICES,
         blank=True,
         null=True,
-        verbose_name=_("Tipo Sanguíneo")
+        verbose_name=_("Tipo Sanguíneo"),
     )
     alergias = models.TextField(blank=True, null=True, verbose_name=_("Alergias"))
     condicoes_medicas_gerais = models.TextField(
@@ -399,7 +402,9 @@ class Aluno(models.Model):
         blank=True,
         null=True,
         verbose_name=_("Checksum Histórico"),
-        help_text=_("SHA256 do JSON normalizado do histórico iniciático para verificação de integridade."),
+        help_text=_(
+            "SHA256 do JSON normalizado do histórico iniciático para verificação de integridade."
+        ),
     )
 
     # Metadados
@@ -568,12 +573,16 @@ class Aluno(models.Model):
         # Caso texto exista e ref vazia, tentar auto-vincular (best-effort)
         if self.cidade and not self.cidade_ref:
             try:
-                self.cidade_ref = Cidade.objects.filter(nome__iexact=self.cidade).first()
+                self.cidade_ref = Cidade.objects.filter(
+                    nome__iexact=self.cidade
+                ).first()
             except Exception:
                 pass
         if self.bairro and not self.bairro_ref and self.cidade_ref:
             try:
-                self.bairro_ref = self.cidade_ref.bairros.filter(nome__iexact=self.bairro).first()
+                self.bairro_ref = self.cidade_ref.bairros.filter(
+                    nome__iexact=self.bairro
+                ).first()
             except Exception:
                 pass
 

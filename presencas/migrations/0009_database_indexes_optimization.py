@@ -18,23 +18,17 @@ class Migration(migrations.Migration):
         # Índice para buscas por aluno no período
         migrations.AddIndex(
             model_name="presencadetalhada",
-            index=models.Index(
-                fields=["aluno", "-periodo"], name="pd_aluno_periodo"
-            ),
+            index=models.Index(fields=["aluno", "-periodo"], name="pd_aluno_periodo"),
         ),
         # Índice por turma e período
         migrations.AddIndex(
             model_name="presencadetalhada",
-            index=models.Index(
-                fields=["turma", "periodo"], name="pd_turma_periodo"
-            ),
+            index=models.Index(fields=["turma", "periodo"], name="pd_turma_periodo"),
         ),
         # Índice por atividade e período
         migrations.AddIndex(
             model_name="presencadetalhada",
-            index=models.Index(
-                fields=["atividade", "periodo"], name="pd_ativ_periodo"
-            ),
+            index=models.Index(fields=["atividade", "periodo"], name="pd_ativ_periodo"),
         ),
         # Índice composto mais seletivo para relatórios específicos
         migrations.AddIndex(

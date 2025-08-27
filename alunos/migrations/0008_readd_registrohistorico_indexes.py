@@ -4,18 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0007_remove_registrohistorico_rh_aluno_dataos_desc_and_more'),
+        ("alunos", "0007_remove_registrohistorico_rh_aluno_dataos_desc_and_more"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='registrohistorico',
-            index=models.Index(fields=['aluno', '-data_os'], name='rh_aluno_dataos_desc'),
+            model_name="registrohistorico",
+            index=models.Index(
+                fields=["aluno", "-data_os"], name="rh_aluno_dataos_desc"
+            ),
         ),
         migrations.AddIndex(
-            model_name='registrohistorico',
-            index=models.Index(fields=['codigo'], name='rh_codigo_idx'),
+            model_name="registrohistorico",
+            index=models.Index(fields=["codigo"], name="rh_codigo_idx"),
         ),
     ]

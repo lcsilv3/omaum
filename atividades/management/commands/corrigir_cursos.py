@@ -6,18 +6,18 @@ from atividades.models import Atividade
 
 class Command(BaseCommand):
     """Comando para corrigir atividades que têm turmas mas não têm curso."""
-    
-    help = 'Corrige atividades que têm turmas mas não têm curso definido'
+
+    help = "Corrige atividades que têm turmas mas não têm curso definido"
 
     def handle(self, *args, **options):
         """Executa a correção."""
-        self.stdout.write('Verificando atividades que precisam de correção...')
-        
+        self.stdout.write("Verificando atividades que precisam de correção...")
+
         # Buscar atividades sem curso mas com turmas
         atividades_sem_curso = Atividade.objects.filter(
             curso__isnull=True
-        ).prefetch_related('turmas__curso')
-        
+        ).prefetch_related("turmas__curso")
+
         corrigidas = 0
         for atividade in atividades_sem_curso:
             if atividade.turmas.exists():
@@ -33,18 +33,17 @@ class Command(BaseCommand):
                             f"curso: {primeira_turma.curso.nome}"
                         )
                     )
-        
+
         self.stdout.write(
             self.style.SUCCESS(f"{corrigidas} atividades foram corrigidas.")
         )
-        
+
         # Verificar se ainda há inconsistências
         inconsistencias = 0
-        for atividade in Atividade.objects.all().prefetch_related('turmas__curso'):
+        for atividade in Atividade.objects.all().prefetch_related("turmas__curso"):
             if atividade.turmas.exists():
                 cursos_das_turmas = set(
-                    turma.curso_id for turma in atividade.turmas.all() 
-                    if turma.curso
+                    turma.curso_id for turma in atividade.turmas.all() if turma.curso
                 )
                 if atividade.curso and len(cursos_das_turmas) > 0:
                     if atividade.curso.id not in cursos_das_turmas:
@@ -56,7 +55,7 @@ class Command(BaseCommand):
                             )
                         )
                         inconsistencias += 1
-        
+
         if inconsistencias == 0:
             self.stdout.write(
                 self.style.SUCCESS("✓ Nenhuma inconsistência encontrada!")

@@ -7,260 +7,259 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0001_initial'),
-        ('atividades', '0001_initial'),
-        ('presencas', '0001_initial'),
-        ('turmas', '0001_initial'),
+        ("alunos", "0001_initial"),
+        ("atividades", "0001_initial"),
+        ("presencas", "0001_initial"),
+        ("turmas", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ConfiguracaoPresenca',
+            name="ConfiguracaoPresenca",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
                 (
-                    'limite_carencia_0_25',
+                    "limite_carencia_0_25",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='Número máximo de carências para presença entre 0-25%',
-                        verbose_name='Limite Carência 0-25%',
+                        help_text="Número máximo de carências para presença entre 0-25%",
+                        verbose_name="Limite Carência 0-25%",
                     ),
                 ),
                 (
-                    'limite_carencia_26_50',
+                    "limite_carencia_26_50",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='Número máximo de carências para presença entre 26-50%',
-                        verbose_name='Limite Carência 26-50%',
+                        help_text="Número máximo de carências para presença entre 26-50%",
+                        verbose_name="Limite Carência 26-50%",
                     ),
                 ),
                 (
-                    'limite_carencia_51_75',
+                    "limite_carencia_51_75",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='Número máximo de carências para presença entre 51-75%',
-                        verbose_name='Limite Carência 51-75%',
+                        help_text="Número máximo de carências para presença entre 51-75%",
+                        verbose_name="Limite Carência 51-75%",
                     ),
                 ),
                 (
-                    'limite_carencia_76_100',
+                    "limite_carencia_76_100",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='Número máximo de carências para presença entre 76-100%',
-                        verbose_name='Limite Carência 76-100%',
+                        help_text="Número máximo de carências para presença entre 76-100%",
+                        verbose_name="Limite Carência 76-100%",
                     ),
                 ),
                 (
-                    'obrigatoria',
+                    "obrigatoria",
                     models.BooleanField(
                         default=True,
-                        help_text='Define se a atividade é obrigatória para a turma',
-                        verbose_name='Obrigatória',
+                        help_text="Define se a atividade é obrigatória para a turma",
+                        verbose_name="Obrigatória",
                     ),
                 ),
                 (
-                    'peso_calculo',
+                    "peso_calculo",
                     models.DecimalField(
                         decimal_places=2,
-                        default=Decimal('1.00'),
-                        help_text='Peso da atividade no cálculo geral de carências',
+                        default=Decimal("1.00"),
+                        help_text="Peso da atividade no cálculo geral de carências",
                         max_digits=5,
-                        verbose_name='Peso no Cálculo',
+                        verbose_name="Peso no Cálculo",
                     ),
                 ),
-                ('ativo', models.BooleanField(default=True, verbose_name='Ativo')),
+                ("ativo", models.BooleanField(default=True, verbose_name="Ativo")),
                 (
-                    'registrado_por',
+                    "registrado_por",
                     models.CharField(
-                        default='Sistema', max_length=100, verbose_name='Registrado por'
+                        default="Sistema", max_length=100, verbose_name="Registrado por"
                     ),
                 ),
                 (
-                    'data_registro',
+                    "data_registro",
                     models.DateTimeField(
                         default=django.utils.timezone.now,
-                        verbose_name='Data de registro',
+                        verbose_name="Data de registro",
                     ),
                 ),
                 (
-                    'data_atualizacao',
+                    "data_atualizacao",
                     models.DateTimeField(
-                        auto_now=True, verbose_name='Data de atualização'
+                        auto_now=True, verbose_name="Data de atualização"
                     ),
                 ),
                 (
-                    'atividade',
+                    "atividade",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='configuracoes_presenca',
-                        to='atividades.atividade',
-                        verbose_name='Atividade',
+                        related_name="configuracoes_presenca",
+                        to="atividades.atividade",
+                        verbose_name="Atividade",
                     ),
                 ),
                 (
-                    'turma',
+                    "turma",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='configuracoes_presenca',
-                        to='turmas.turma',
-                        verbose_name='Turma',
+                        related_name="configuracoes_presenca",
+                        to="turmas.turma",
+                        verbose_name="Turma",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Configuração de Presença',
-                'verbose_name_plural': 'Configurações de Presença',
-                'ordering': ['turma__nome', 'atividade__nome'],
-                'unique_together': {('turma', 'atividade')},
+                "verbose_name": "Configuração de Presença",
+                "verbose_name_plural": "Configurações de Presença",
+                "ordering": ["turma__nome", "atividade__nome"],
+                "unique_together": {("turma", "atividade")},
             },
         ),
         migrations.CreateModel(
-            name='PresencaDetalhada',
+            name="PresencaDetalhada",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
                 (
-                    'periodo',
+                    "periodo",
                     models.DateField(
-                        help_text='Data representando o mês/ano (usar primeiro dia do mês)',
-                        verbose_name='Período (Mês/Ano)',
+                        help_text="Data representando o mês/ano (usar primeiro dia do mês)",
+                        verbose_name="Período (Mês/Ano)",
                     ),
                 ),
                 (
-                    'convocacoes',
+                    "convocacoes",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='Número de convocações no período',
-                        verbose_name='Convocações (C)',
+                        help_text="Número de convocações no período",
+                        verbose_name="Convocações (C)",
                     ),
                 ),
                 (
-                    'presencas',
+                    "presencas",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='Número de presenças no período',
-                        verbose_name='Presenças (P)',
+                        help_text="Número de presenças no período",
+                        verbose_name="Presenças (P)",
                     ),
                 ),
                 (
-                    'faltas',
+                    "faltas",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='Número de faltas no período',
-                        verbose_name='Faltas (F)',
+                        help_text="Número de faltas no período",
+                        verbose_name="Faltas (F)",
                     ),
                 ),
                 (
-                    'voluntario_extra',
+                    "voluntario_extra",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='Atividades voluntárias extras',
-                        verbose_name='Voluntário Extra (V1)',
+                        help_text="Atividades voluntárias extras",
+                        verbose_name="Voluntário Extra (V1)",
                     ),
                 ),
                 (
-                    'voluntario_simples',
+                    "voluntario_simples",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='Atividades voluntárias simples',
-                        verbose_name='Voluntário Simples (V2)',
+                        help_text="Atividades voluntárias simples",
+                        verbose_name="Voluntário Simples (V2)",
                     ),
                 ),
                 (
-                    'percentual_presenca',
+                    "percentual_presenca",
                     models.DecimalField(
                         decimal_places=2,
-                        default=Decimal('0.00'),
-                        help_text='Calculado automaticamente',
+                        default=Decimal("0.00"),
+                        help_text="Calculado automaticamente",
                         max_digits=5,
-                        verbose_name='Percentual de Presença (%)',
+                        verbose_name="Percentual de Presença (%)",
                     ),
                 ),
                 (
-                    'total_voluntarios',
+                    "total_voluntarios",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='V1 + V2',
-                        verbose_name='Total de Voluntários',
+                        help_text="V1 + V2",
+                        verbose_name="Total de Voluntários",
                     ),
                 ),
                 (
-                    'carencias',
+                    "carencias",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text='Número de carências baseado no percentual da turma',
-                        verbose_name='Carências',
+                        help_text="Número de carências baseado no percentual da turma",
+                        verbose_name="Carências",
                     ),
                 ),
                 (
-                    'registrado_por',
+                    "registrado_por",
                     models.CharField(
-                        default='Sistema', max_length=100, verbose_name='Registrado por'
+                        default="Sistema", max_length=100, verbose_name="Registrado por"
                     ),
                 ),
                 (
-                    'data_registro',
+                    "data_registro",
                     models.DateTimeField(
                         default=django.utils.timezone.now,
-                        verbose_name='Data de registro',
+                        verbose_name="Data de registro",
                     ),
                 ),
                 (
-                    'data_atualizacao',
+                    "data_atualizacao",
                     models.DateTimeField(
-                        auto_now=True, verbose_name='Data de atualização'
+                        auto_now=True, verbose_name="Data de atualização"
                     ),
                 ),
                 (
-                    'aluno',
+                    "aluno",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='presencas_detalhadas_expandidas',
-                        to='alunos.aluno',
-                        verbose_name='Aluno',
+                        related_name="presencas_detalhadas_expandidas",
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
                     ),
                 ),
                 (
-                    'atividade',
+                    "atividade",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='presencas_detalhadas_expandidas',
-                        to='atividades.atividade',
-                        verbose_name='Atividade',
+                        related_name="presencas_detalhadas_expandidas",
+                        to="atividades.atividade",
+                        verbose_name="Atividade",
                     ),
                 ),
                 (
-                    'turma',
+                    "turma",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='presencas_detalhadas_expandidas',
-                        to='turmas.turma',
-                        verbose_name='Turma',
+                        related_name="presencas_detalhadas_expandidas",
+                        to="turmas.turma",
+                        verbose_name="Turma",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Presença Detalhada',
-                'verbose_name_plural': 'Presenças Detalhadas',
-                'ordering': ['-periodo', 'aluno__nome'],
-                'unique_together': {('aluno', 'turma', 'atividade', 'periodo')},
+                "verbose_name": "Presença Detalhada",
+                "verbose_name_plural": "Presenças Detalhadas",
+                "ordering": ["-periodo", "aluno__nome"],
+                "unique_together": {("aluno", "turma", "atividade", "periodo")},
             },
         ),
     ]

@@ -1,20 +1,24 @@
 from django import forms
 from importlib import import_module
 
+
 # Adicionar esta função para obter o modelo Aluno dinamicamente
 def get_aluno_model():
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
+
 
 # Adicionar esta função para obter o modelo Turma dinamicamente
 def get_turma_model():
     turmas_module = import_module("turmas.models")
     return getattr(turmas_module, "Turma")
 
+
 # Adicionar esta função para obter o modelo Curso dinamicamente
 def get_curso_model():
     cursos_module = import_module("cursos.models")
     return getattr(cursos_module, "Curso")
+
 
 class TurmaForm(forms.ModelForm):
     class Meta:
@@ -59,22 +63,27 @@ class TurmaForm(forms.ModelForm):
             "data_termino_atividades": forms.DateInput(attrs={"type": "date"}),
             "data_iniciacao": forms.DateInput(attrs={"type": "date"}),
             "data_prim_aula": forms.DateInput(attrs={"type": "date"}),
-            "curso": forms.Select(attrs={"class": "curso-select", "placeholder": "Selecione o Curso desejado"}),
+            "curso": forms.Select(
+                attrs={
+                    "class": "curso-select",
+                    "placeholder": "Selecione o Curso desejado",
+                }
+            ),
             "horario": forms.TextInput(attrs={"placeholder": "13:30 às 15:30"}),
             "num_livro": forms.NumberInput(attrs={"placeholder": "999"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
         # Filtrar apenas alunos ativos para os campos de instrutor
         aluno_model = get_aluno_model()
         alunos_ativos = aluno_model.objects.filter(situacao="ATIVO")
-        
+
         self.fields["instrutor"].queryset = alunos_ativos
         self.fields["instrutor_auxiliar"].queryset = alunos_ativos
         self.fields["auxiliar_instrucao"].queryset = alunos_ativos
-        
+
         # Tornar os campos de instrutor auxiliar e auxiliar de instrução opcionais
         self.fields["instrutor_auxiliar"].required = False
         self.fields["auxiliar_instrucao"].required = False
@@ -85,7 +94,9 @@ class TurmaForm(forms.ModelForm):
         self.fields["data_iniciacao"].required = True
         self.fields["data_inicio_ativ"].required = True
         self.fields["data_prim_aula"].required = True
-        self.fields["data_termino_atividades"].required = False  # Alterado para não ser obrigatório
+        self.fields[
+            "data_termino_atividades"
+        ].required = False  # Alterado para não ser obrigatório
 
         # Troca o texto do option vazio para "Selecione"
         for field_name, field in self.fields.items():
@@ -97,24 +108,34 @@ class TurmaForm(forms.ModelForm):
         cleaned_data = super().clean()
         instrutor_auxiliar = cleaned_data.get("instrutor_auxiliar")
         auxiliar_instrucao = cleaned_data.get("auxiliar_instrucao")
-        
+
         # Validar que instrutor auxiliar e auxiliar de instrução não sejam a mesma pessoa
-        if instrutor_auxiliar and auxiliar_instrucao and instrutor_auxiliar == auxiliar_instrucao:
+        if (
+            instrutor_auxiliar
+            and auxiliar_instrucao
+            and instrutor_auxiliar == auxiliar_instrucao
+        ):
             self.add_error(
-                "auxiliar_instrucao", 
-                "O auxiliar de instrução não pode ser o mesmo que o instrutor auxiliar."
+                "auxiliar_instrucao",
+                "O auxiliar de instrução não pode ser o mesmo que o instrutor auxiliar.",
             )
-        
+
         # Verificar se há vagas e se o número é positivo
         vagas = cleaned_data.get("vagas")
         if vagas is not None and vagas <= 0:
             self.add_error("vagas", "O número de vagas deve ser maior que zero.")
-        
+
         # Validação extra para garantir que os campos obrigatórios não estejam vazios
-        for field in ["num_livro", "perc_carencia", "data_iniciacao", "data_inicio_ativ", "data_prim_aula"]:
+        for field in [
+            "num_livro",
+            "perc_carencia",
+            "data_iniciacao",
+            "data_inicio_ativ",
+            "data_prim_aula",
+        ]:
             if not cleaned_data.get(field):
                 self.add_error(field, "Este campo é obrigatório.")
-        
+
         # Validar que a data de término das atividades não seja anterior à de início
         data_inicio_ativ = cleaned_data.get("data_inicio_ativ")
         data_termino_atividades = cleaned_data.get("data_termino_atividades")
@@ -122,7 +143,7 @@ class TurmaForm(forms.ModelForm):
             if data_termino_atividades < data_inicio_ativ:
                 self.add_error(
                     "data_termino_atividades",
-                    "A data de término das atividades não pode ser anterior à data de início das atividades."
+                    "A data de término das atividades não pode ser anterior à data de início das atividades.",
                 )
-        
+
         return cleaned_data

@@ -19,9 +19,7 @@ class Command(BaseCommand):
                 duplicados[nome] = 1
 
         # Filtrar apenas os nomes que aparecem mais de uma vez
-        nomes_duplicados = [
-            nome for nome, count in duplicados.items() if count > 1
-        ]
+        nomes_duplicados = [nome for nome, count in duplicados.items() if count > 1]
 
         self.stdout.write(
             f"Encontradas {len(nomes_duplicados)} turmas com nomes duplicados."
@@ -29,9 +27,7 @@ class Command(BaseCommand):
 
         # Para cada nome duplicado, manter apenas uma turma e excluir as outras
         for nome_lower in nomes_duplicados:
-            turmas = Turma.objects.filter(nome__iexact=nome_lower).order_by(
-                "id"
-            )
+            turmas = Turma.objects.filter(nome__iexact=nome_lower).order_by("id")
 
             if turmas.count() > 1:
                 # Manter a primeira turma (geralmente a mais antiga)
@@ -48,7 +44,5 @@ class Command(BaseCommand):
                     turma.delete()
 
         self.stdout.write(
-            self.style.SUCCESS(
-                "Correção de turmas duplicadas concluída com sucesso!"
-            )
+            self.style.SUCCESS("Correção de turmas duplicadas concluída com sucesso!")
         )

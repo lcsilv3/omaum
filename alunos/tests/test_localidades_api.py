@@ -3,6 +3,7 @@ from django.urls import reverse
 
 pytestmark = pytest.mark.django_db
 
+
 def test_search_estados(user, localidades, client):
     # usa minusculo sem acento para validar fallback acento-insensível
     url = reverse("alunos:api_search_estados") + "?q=paulo"
@@ -13,7 +14,11 @@ def test_search_estados(user, localidades, client):
 
 
 def test_search_cidades(user, localidades, client):
-    url = reverse("alunos:api_search_cidades") + "?q=paulo&estado_id=" + str(localidades["estado"].id)
+    url = (
+        reverse("alunos:api_search_cidades")
+        + "?q=paulo&estado_id="
+        + str(localidades["estado"].id)
+    )
     resp = client.get(url)
     assert resp.status_code == 200
     data = resp.json()
@@ -29,7 +34,11 @@ def test_get_cidades_por_estado(user, localidades, client):
 
 
 def test_search_bairros(user, localidades, client):
-    url = reverse("alunos:api_search_bairros") + "?q=cent&cidade_id=" + str(localidades["cidade"].id)
+    url = (
+        reverse("alunos:api_search_bairros")
+        + "?q=cent&cidade_id="
+        + str(localidades["cidade"].id)
+    )
     resp = client.get(url)
     assert resp.status_code == 200
     data = resp.json()

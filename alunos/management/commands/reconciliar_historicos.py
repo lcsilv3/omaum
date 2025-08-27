@@ -25,7 +25,11 @@ class Command(BaseCommand):
         corrigidos = 0
         self.stdout.write(f"Processando {total} alunos (dry-run={dry})...")
         for aluno in qs.iterator():
-            historico_antes = list(aluno.historico_iniciatico) if isinstance(aluno.historico_iniciatico, list) else []
+            historico_antes = (
+                list(aluno.historico_iniciatico)
+                if isinstance(aluno.historico_iniciatico, list)
+                else []
+            )
             with transaction.atomic():
                 novo = reconciliar_historico_if_divergente(aluno)
                 if novo != historico_antes:

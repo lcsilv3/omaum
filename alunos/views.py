@@ -380,7 +380,9 @@ def search_alunos(request):
             context_partials = {
                 "alunos": alunos,  # page object
                 "page_obj": alunos,
-                "total_alunos": alunos.paginator.count if hasattr(alunos, "paginator") else 0,
+                "total_alunos": alunos.paginator.count
+                if hasattr(alunos, "paginator")
+                else 0,
             }
             tabela_html = render_to_string(
                 "alunos/_tabela_alunos_parcial.html", context_partials, request=request

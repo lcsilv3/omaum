@@ -4,34 +4,33 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0013_backfill_cidade_bairro_refs'),
+        ("alunos", "0013_backfill_cidade_bairro_refs"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='aluno',
-            name='fator_rh',
+            model_name="aluno",
+            name="fator_rh",
         ),
         migrations.AlterField(
-            model_name='aluno',
-            name='tipo_sanguineo',
+            model_name="aluno",
+            name="tipo_sanguineo",
             field=models.CharField(
                 blank=True,
                 choices=[
-                    ('A+', 'A+'),
-                    ('A-', 'A-'),
-                    ('B+', 'B+'),
-                    ('B-', 'B-'),
-                    ('AB+', 'AB+'),
-                    ('AB-', 'AB-'),
-                    ('O+', 'O+'),
-                    ('O-', 'O-'),
+                    ("A+", "A+"),
+                    ("A-", "A-"),
+                    ("B+", "B+"),
+                    ("B-", "B-"),
+                    ("AB+", "AB+"),
+                    ("AB-", "AB-"),
+                    ("O+", "O+"),
+                    ("O-", "O-"),
                 ],
                 max_length=4,
                 null=True,
-                verbose_name='Tipo Sanguíneo',
+                verbose_name="Tipo Sanguíneo",
             ),
         ),
     ]

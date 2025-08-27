@@ -1,6 +1,7 @@
 """
 Template tags para o consolidado de presenças.
 """
+
 from django import template
 
 register = template.Library()
@@ -10,7 +11,7 @@ register = template.Library()
 def get_item(dictionary, key):
     """
     Obtém um item de um dicionário usando uma chave.
-    
+
     Usage: {{ dict|get_item:key }}
     """
     if isinstance(dictionary, dict):
@@ -22,7 +23,7 @@ def get_item(dictionary, key):
 def multiply(value, arg):
     """
     Multiplica um valor por outro.
-    
+
     Usage: {{ value|multiply:arg }}
     """
     try:
@@ -35,7 +36,7 @@ def multiply(value, arg):
 def percentage(value, total):
     """
     Calcula percentual de um valor em relação ao total.
-    
+
     Usage: {{ value|percentage:total }}
     """
     try:
@@ -50,7 +51,7 @@ def percentage(value, total):
 def format_percentage(value):
     """
     Formata um valor como percentual.
-    
+
     Usage: {{ value|format_percentage }}
     """
     try:
@@ -63,7 +64,7 @@ def format_percentage(value):
 def url_replace(request, field, value):
     """
     Substitui um parâmetro na URL mantendo os outros.
-    
+
     Usage: {% url_replace request 'page' 2 %}
     """
     dict_ = request.GET.copy()
@@ -75,7 +76,7 @@ def url_replace(request, field, value):
 def url_remove(request, field):
     """
     Remove um parâmetro da URL mantendo os outros.
-    
+
     Usage: {% url_remove request 'page' %}
     """
     dict_ = request.GET.copy()
@@ -84,50 +85,50 @@ def url_remove(request, field):
     return dict_.urlencode()
 
 
-@register.inclusion_tag('presencas/consolidado/partials/pagination.html')
+@register.inclusion_tag("presencas/consolidado/partials/pagination.html")
 def pagination_atividades(page_obj, request):
     """
     Renderiza paginação para atividades.
-    
+
     Usage: {% pagination_atividades page_obj request %}
     """
     return {
-        'page_obj': page_obj,
-        'request': request,
+        "page_obj": page_obj,
+        "request": request,
     }
 
 
-@register.inclusion_tag('presencas/consolidado/partials/celula_editavel.html')
+@register.inclusion_tag("presencas/consolidado/partials/celula_editavel.html")
 def celula_editavel(presenca_id, campo, valor, pode_editar=True):
     """
     Renderiza célula editável.
-    
+
     Usage: {% celula_editavel presenca.id 'convocacoes' presenca.convocacoes %}
     """
     return {
-        'presenca_id': presenca_id,
-        'campo': campo,
-        'valor': valor,
-        'pode_editar': pode_editar,
+        "presenca_id": presenca_id,
+        "campo": campo,
+        "valor": valor,
+        "pode_editar": pode_editar,
     }
 
 
-@register.inclusion_tag('presencas/consolidado/partials/percentual_cell.html')
+@register.inclusion_tag("presencas/consolidado/partials/percentual_cell.html")
 def percentual_cell(percentual):
     """
     Renderiza célula de percentual com cores.
-    
+
     Usage: {% percentual_cell presenca.percentual_presenca %}
     """
-    css_class = 'percentual-alto'
+    css_class = "percentual-alto"
     if percentual < 50:
-        css_class = 'percentual-baixo'
+        css_class = "percentual-baixo"
     elif percentual < 75:
-        css_class = 'percentual-medio'
-    
+        css_class = "percentual-medio"
+
     return {
-        'percentual': percentual,
-        'css_class': css_class,
+        "percentual": percentual,
+        "css_class": css_class,
     }
 
 
@@ -135,7 +136,7 @@ def percentual_cell(percentual):
 def is_baixo_percentual(percentual):
     """
     Verifica se percentual é baixo (< 50%).
-    
+
     Usage: {{ percentual|is_baixo_percentual }}
     """
     try:
@@ -148,7 +149,7 @@ def is_baixo_percentual(percentual):
 def is_medio_percentual(percentual):
     """
     Verifica se percentual é médio (50% <= x < 75%).
-    
+
     Usage: {{ percentual|is_medio_percentual }}
     """
     try:
@@ -162,7 +163,7 @@ def is_medio_percentual(percentual):
 def is_alto_percentual(percentual):
     """
     Verifica se percentual é alto (>= 75%).
-    
+
     Usage: {{ percentual|is_alto_percentual }}
     """
     try:
@@ -175,26 +176,26 @@ def is_alto_percentual(percentual):
 def get_percentual_class(percentual):
     """
     Retorna classe CSS baseada no percentual.
-    
+
     Usage: {% get_percentual_class percentual %}
     """
     try:
         valor = float(percentual)
         if valor < 50:
-            return 'percentual-baixo'
+            return "percentual-baixo"
         elif valor < 75:
-            return 'percentual-medio'
+            return "percentual-medio"
         else:
-            return 'percentual-alto'
+            return "percentual-alto"
     except (ValueError, TypeError):
-        return 'percentual-baixo'
+        return "percentual-baixo"
 
 
 @register.simple_tag
 def build_filter_url(request, **kwargs):
     """
     Constrói URL com filtros.
-    
+
     Usage: {% build_filter_url request turma_id=1 curso_id=2 %}
     """
     dict_ = request.GET.copy()

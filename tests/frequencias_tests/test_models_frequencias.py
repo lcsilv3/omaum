@@ -10,18 +10,16 @@ from atividades.models import Atividade
 @pytest.mark.django_db
 class FrequenciaMensalModelTestCase(TestCase):
     """Testes unitários para o modelo FrequenciaMensal."""
+
     def setUp(self):
+        from cursos.models import Curso
+
+        self.curso = Curso.objects.create(nome="Curso Teste")
         self.turma = Turma.objects.create(
-            nome="Turma Teste",
-            codigo="TT-001",
-            data_inicio=timezone.now().date(),
-            status="A"
+            nome="Turma Teste", curso=self.curso, status="A"
         )
         self.frequencia_mensal = FrequenciaMensal.objects.create(
-            turma=self.turma,
-            mes=1,
-            ano=2024,
-            percentual_minimo=75
+            turma=self.turma, mes=1, ano=2024, percentual_minimo=75
         )
 
     def test_criacao_frequencia_mensal(self):
@@ -40,25 +38,25 @@ class FrequenciaMensalModelTestCase(TestCase):
 @pytest.mark.django_db
 class CarenciaModelTestCase(TestCase):
     """Testes unitários para o modelo Carencia."""
+
     def setUp(self):
+        from cursos.models import Curso
+
+        self.curso = Curso.objects.create(nome="Curso Teste")
         self.turma = Turma.objects.create(
-            nome="Turma Teste",
-            codigo="TT-002",
-            data_inicio=timezone.now().date(),
-            status="A"
+            nome="Turma Teste", curso=self.curso, status="A"
         )
         self.frequencia_mensal = FrequenciaMensal.objects.create(
-            turma=self.turma,
-            mes=2,
-            ano=2024,
-            percentual_minimo=80
+            turma=self.turma, mes=2, ano=2024, percentual_minimo=80
         )
-        self.aluno = criar_aluno({
-            "cpf": "98765432100",
-            "nome": "Aluno Carencia",
-            "email": "carencia@teste.com",
-            "data_nascimento": "1995-05-05"
-        })
+        self.aluno = criar_aluno(
+            {
+                "cpf": "98765432100",
+                "nome": "Aluno Carencia",
+                "email": "carencia@teste.com",
+                "data_nascimento": "1995-05-05",
+            }
+        )
         self.carencia = Carencia.objects.create(
             frequencia_mensal=self.frequencia_mensal,
             aluno=self.aluno,
@@ -67,8 +65,8 @@ class CarenciaModelTestCase(TestCase):
             percentual_presenca=80.0,
             numero_carencias=2,
             liberado=True,
-            status='RESOLVIDO',
-            observacoes="Aluno liberado por bom desempenho."
+            status="RESOLVIDO",
+            observacoes="Aluno liberado por bom desempenho.",
         )
 
     def test_criacao_carencia(self):
@@ -79,8 +77,10 @@ class CarenciaModelTestCase(TestCase):
         self.assertEqual(float(self.carencia.percentual_presenca), 80.0)
         self.assertEqual(self.carencia.numero_carencias, 2)
         self.assertTrue(self.carencia.liberado)
-        self.assertEqual(self.carencia.status, 'RESOLVIDO')
-        self.assertEqual(self.carencia.observacoes, "Aluno liberado por bom desempenho.")
+        self.assertEqual(self.carencia.status, "RESOLVIDO")
+        self.assertEqual(
+            self.carencia.observacoes, "Aluno liberado por bom desempenho."
+        )
 
     def test_str(self):
         representacao = str(self.carencia)

@@ -27,6 +27,5 @@ class AlunoModelTest(TestCase):
             celular_segundo_contato="11988888888",
             tipo_relacionamento_segundo_contato="Pai",
             tipo_sanguineo="A",
-            fator_rh="+",
         )
         self.assertEqual(aluno.nome, "João Test")

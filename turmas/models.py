@@ -5,10 +5,12 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django import forms
 
+
 class Turma(models.Model):
     """
     Modelo para representar uma turma no sistema OMAUM.
     """
+
     STATUS_CHOICES = [
         ("A", "Ativa"),
         ("I", "Inativa"),
@@ -24,15 +26,11 @@ class Turma(models.Model):
         verbose_name="Curso",
         related_name="turmas",
     )
-    descricao = models.TextField(
-        blank=True, null=True, verbose_name="Descrição"
-    )
+    descricao = models.TextField(blank=True, null=True, verbose_name="Descrição")
 
     # Novos campos solicitados
     num_livro = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        verbose_name="Nº do Livro de Presenças"
+        blank=True, null=True, verbose_name="Nº do Livro de Presenças"
     )
     perc_carencia = models.DecimalField(
         max_digits=5,
@@ -40,33 +38,31 @@ class Turma(models.Model):
         blank=True,
         null=True,
         verbose_name="Percentual de Carência (%)",
-        help_text="Percentual mínimo de faltas permitido para a turma."
+        help_text="Percentual mínimo de faltas permitido para a turma.",
     )
     data_iniciacao = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name="Data de Iniciação"
+        blank=True, null=True, verbose_name="Data de Iniciação"
     )
     data_inicio_ativ = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name="Data de Início das Atividades"
+        blank=True, null=True, verbose_name="Data de Início das Atividades"
     )
     data_prim_aula = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name="Data da Primeira Aula"
+        blank=True, null=True, verbose_name="Data da Primeira Aula"
     )
     data_termino_atividades = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name="Data de Término das Atividades"
+        blank=True, null=True, verbose_name="Data de Término das Atividades"
     )
 
     # Informações de agendamento
-    dias_semana = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dias da Semana")
-    horario = models.CharField(max_length=100, blank=True, null=True, verbose_name="Horário")
-    local = models.CharField(max_length=200, blank=True, null=True, verbose_name="Local")
+    dias_semana = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Dias da Semana"
+    )
+    horario = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Horário"
+    )
+    local = models.CharField(
+        max_length=200, blank=True, null=True, verbose_name="Local"
+    )
 
     # Capacidade e status
     vagas = models.PositiveIntegerField(
@@ -118,9 +114,7 @@ class Turma(models.Model):
     )
 
     # Metadados
-    created_at = models.DateTimeField(
-        default=timezone.now, verbose_name="Criado em"
-    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Criado em")
     updated_at = models.DateTimeField(
         default=timezone.now, verbose_name="Atualizado em"
     )
@@ -177,7 +171,9 @@ class Turma(models.Model):
         if self.data_inicio_ativ and self.data_termino_atividades:
             if self.data_termino_atividades < self.data_inicio_ativ:
                 raise ValidationError(
-                    _("A data de término das atividades não pode ser anterior à data de início das atividades.")
+                    _(
+                        "A data de término das atividades não pode ser anterior à data de início das atividades."
+                    )
                 )
 
     @classmethod
@@ -186,7 +182,7 @@ class Turma(models.Model):
         try:
             # Use o campo id em vez de codigo
             return Turma.objects.get(id=codigo_turma)
-            
+
             # Ou use o campo nome
             # return Turma.objects.get(nome=codigo_turma)
         except Turma.DoesNotExist:

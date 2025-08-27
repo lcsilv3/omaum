@@ -17,8 +17,7 @@ class TurmaTestCase(TestCase):
 
         # Criar objetos relacionados
         self.curso = Curso.objects.create(
-            nome="Curso Teste",
-            descricao="Curso de teste"
+            nome="Curso Teste", descricao="Curso de teste"
         )
 
         # Criar uma turma de teste
@@ -27,7 +26,7 @@ class TurmaTestCase(TestCase):
             curso=self.curso,
             status="A",  # Ativa
             data_inicio_ativ=timezone.now().date(),
-            vagas=30
+            vagas=30,
         )
 
     def test_listar_turmas(self):
@@ -42,7 +41,7 @@ class TurmaTestCase(TestCase):
             "curso": self.curso.id,
             "status": "A",
             "data_inicio_ativ": timezone.now().date(),
-            "vagas": 25
+            "vagas": 25,
         }
         response = self.client.post(reverse("turmas:criar_turma"), data)
         self.assertEqual(response.status_code, 302)  # Redirecionamento após sucesso
@@ -73,7 +72,7 @@ class TurmaTestCase(TestCase):
     def test_turma_status(self):
         """Testar o status da turma"""
         self.assertEqual(self.turma.status, "A")
-        
+
         # Alterar status
         self.turma.status = "I"  # Inativa
         self.turma.save()
@@ -93,10 +92,7 @@ class TurmaTestCase(TestCase):
         """Testar validação da turma"""
         # Teste simples de criação de turma
         turma_invalida = Turma(
-            nome="Turma Inválida",
-            curso=self.curso,
-            status="A",
-            vagas=10
+            nome="Turma Inválida", curso=self.curso, status="A", vagas=10
         )
         # Para testes simples, vamos apenas verificar que pode ser criada
         turma_invalida.save()
@@ -108,7 +104,7 @@ class TurmaTestCase(TestCase):
             nome="Turma Inativa",
             curso=self.curso,
             status="I",  # Inativa
-            vagas=20
+            vagas=20,
         )
         self.assertEqual(turma_inativa.status, "I")
 
@@ -119,7 +115,7 @@ class TurmaTestCase(TestCase):
             "nome": "Turma Redirecionamento",
             "curso": self.curso.id,
             "status": "A",
-            "vagas": 15
+            "vagas": 15,
         }
         response = self.client.post(reverse("turmas:criar_turma"), data)
         self.assertRedirects(response, reverse("turmas:listar_turmas"))
@@ -128,7 +124,7 @@ class TurmaTestCase(TestCase):
         """Testar permissões das views"""
         # Logout para testar acesso sem autenticação
         self.client.logout()
-        
+
         # Tentar acessar listagem sem login
         response = self.client.get(reverse("turmas:listar_turmas"))
         # Deve redirecionar para login ou dar erro 403

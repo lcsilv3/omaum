@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 def _strip_accents(s: str) -> str:
     if not isinstance(s, str):
         return s
-    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn").lower()
+    return "".join(
+        c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
+    ).lower()
 
 
 @require_GET
@@ -25,12 +27,9 @@ def search_paises(request):
     if len(query) < 2:
         return JsonResponse([], safe=False)
     try:
-        paises = (
-            Pais.objects.filter(
-                Q(nome__icontains=query) | Q(nacionalidade__icontains=query), ativo=True
-            )
-            .order_by("nome")[:10]
-        )
+        paises = Pais.objects.filter(
+            Q(nome__icontains=query) | Q(nacionalidade__icontains=query), ativo=True
+        ).order_by("nome")[:10]
     except DatabaseError as e:  # pragma: no cover
         logger.error(f"Erro DB países: {e}")
         return JsonResponse({"error": "Erro de banco."}, status=500)
@@ -58,11 +57,9 @@ def search_estados(request):
     if len(query) < 1:
         return JsonResponse([], safe=False)
     try:
-        estados = (
-            Estado.objects.filter(
-                Q(nome__icontains=query) | Q(codigo__icontains=query)
-            ).order_by("nome")[:10]
-        )
+        estados = Estado.objects.filter(
+            Q(nome__icontains=query) | Q(codigo__icontains=query)
+        ).order_by("nome")[:10]
     except DatabaseError as e:  # pragma: no cover
         logger.error(f"Erro DB estados: {e}")
         return JsonResponse({"error": "Erro de banco."}, status=500)
@@ -98,7 +95,9 @@ def search_cidades(request):
     if len(query) < 2:
         return JsonResponse([], safe=False)
     try:
-        cidades_qs = Cidade.objects.select_related("estado").filter(nome__icontains=query)
+        cidades_qs = Cidade.objects.select_related("estado").filter(
+            nome__icontains=query
+        )
         if estado_id:
             cidades_qs = cidades_qs.filter(estado_id=estado_id)
         cidades = list(cidades_qs.order_by("nome")[:15])
@@ -162,7 +161,9 @@ def search_bairros(request):
     if len(query) < 2:
         return JsonResponse([], safe=False)
     try:
-        bairros = Bairro.objects.select_related("cidade", "cidade__estado").filter(nome__icontains=query)
+        bairros = Bairro.objects.select_related("cidade", "cidade__estado").filter(
+            nome__icontains=query
+        )
         if cidade_id:
             bairros = bairros.filter(cidade_id=cidade_id)
         bairros = bairros.order_by("nome")[:15]
@@ -201,7 +202,5 @@ def get_bairros_por_cidade(request, cidade_id):
     except DatabaseError as e:  # pragma: no cover
         logger.error(f"Erro DB bairros por cidade: {e}")
         return JsonResponse({"error": "Erro de banco."}, status=500)
-    results = [
-        {"id": b.id, "nome": b.nome, "display": b.nome} for b in bairros
-    ]
+    results = [{"id": b.id, "nome": b.nome, "display": b.nome} for b in bairros]
     return JsonResponse(results, safe=False)

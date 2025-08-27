@@ -32,9 +32,7 @@ class AtividadeAcademicaModelTest(TestCase):
         )
 
         self.assertEqual(atividade.nome, "Aula de Matemática")
-        self.assertEqual(
-            atividade.descricao, "Aula introdutória sobre álgebra."
-        )
+        self.assertEqual(atividade.descricao, "Aula introdutória sobre álgebra.")
         self.assertEqual(atividade.data_inicio, data_inicio)
         self.assertEqual(atividade.data_fim, data_fim)
         self.assertEqual(atividade.turma, self.turma)
@@ -52,18 +50,22 @@ class AtividadeRitualisticaModelTest(TestCase):
             data_inicio=date(2023, 1, 1),
             data_fim=date(2023, 12, 31),
         )
-        self.aluno1 = criar_aluno({
-            "nome": "Aluno 1", 
-            "email": "aluno1@teste.com",
-            "cpf": "11111111111",
-            "data_nascimento": "2000-01-01"
-        })
-        self.aluno2 = criar_aluno({
-            "nome": "Aluno 2", 
-            "email": "aluno2@teste.com",
-            "cpf": "22222222222",
-            "data_nascimento": "2000-01-02"
-        })
+        self.aluno1 = criar_aluno(
+            {
+                "nome": "Aluno 1",
+                "email": "aluno1@teste.com",
+                "cpf": "11111111111",
+                "data_nascimento": "2000-01-01",
+            }
+        )
+        self.aluno2 = criar_aluno(
+            {
+                "nome": "Aluno 2",
+                "email": "aluno2@teste.com",
+                "cpf": "22222222222",
+                "data_nascimento": "2000-01-02",
+            }
+        )
 
     def test_criar_atividade_ritualistica(self):
         data_inicio = timezone.now()

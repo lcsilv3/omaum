@@ -4,15 +4,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0008_readd_registrohistorico_indexes'),
+        ("alunos", "0008_readd_registrohistorico_indexes"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='aluno',
-            name='historico_checksum',
-            field=models.CharField(blank=True, help_text='SHA256 do JSON normalizado do histórico iniciático para verificação de integridade.', max_length=64, null=True, verbose_name='Checksum Histórico'),
+            model_name="aluno",
+            name="historico_checksum",
+            field=models.CharField(
+                blank=True,
+                help_text="SHA256 do JSON normalizado do histórico iniciático para verificação de integridade.",
+                max_length=64,
+                null=True,
+                verbose_name="Checksum Histórico",
+            ),
         ),
     ]

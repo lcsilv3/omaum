@@ -5,10 +5,11 @@ from ..views_ext.utils import get_model_class, get_turma_model
 
 logger = logging.getLogger(__name__)
 
+
 @login_required
 def relatorio_atividades_ritualisticas(request):
     Turma = get_turma_model()
-    turmas = Turma.objects.filter(status='A')
+    turmas = Turma.objects.filter(status="A")
     turma_id = request.GET.get("turma")
     data = request.GET.get("data")
 
@@ -28,5 +29,5 @@ def relatorio_atividades_ritualisticas(request):
     return render(
         request,
         "atividades/ritualisticas/relatorio_atividades_ritualisticas.html",
-        context
+        context,
     )

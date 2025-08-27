@@ -55,11 +55,16 @@ BAIRROS_EXEMPLO = {
     "Salvador": ["Centro", "Barra"],
 }
 
+
 class Command(BaseCommand):
     help = "Popula tabelas de País, Estado, Cidade e opcionalmente Bairro com dados básicos do Brasil."
 
     def add_arguments(self, parser):
-        parser.add_argument("--with-bairros", action="store_true", help="Também criar registros de bairros de exemplo")
+        parser.add_argument(
+            "--with-bairros",
+            action="store_true",
+            help="Também criar registros de bairros de exemplo",
+        )
         parser.add_argument(
             "--replace",
             action="store_true",
@@ -81,32 +86,56 @@ class Command(BaseCommand):
         for p in BRASIL_PAISES:
             pais, created = Pais.objects.get_or_create(
                 codigo=p["codigo"],
-                defaults={"nome": p["nome"], "nacionalidade": p["nacionalidade"], "ativo": True},
+                defaults={
+                    "nome": p["nome"],
+                    "nacionalidade": p["nacionalidade"],
+                    "ativo": True,
+                },
             )
-            self.stdout.write(self.style.SUCCESS(f"País {'criado' if created else 'existente'}: {pais.nome}"))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"País {'criado' if created else 'existente'}: {pais.nome}"
+                )
+            )
 
         estados_cache = {}
         for sigla, nome, regiao in ESTADOS_BR:
-            estado, created = Estado.objects.get_or_create(codigo=sigla, defaults={"nome": nome, "regiao": regiao})
+            estado, created = Estado.objects.get_or_create(
+                codigo=sigla, defaults={"nome": nome, "regiao": regiao}
+            )
             estados_cache[sigla] = estado
             if created:
-                self.stdout.write(self.style.SUCCESS(f"Estado criado: {nome} ({sigla})"))
+                self.stdout.write(
+                    self.style.SUCCESS(f"Estado criado: {nome} ({sigla})")
+                )
 
         for sigla, lista in CIDADES_MINIMAS.items():
             estado = estados_cache.get(sigla)
             if not estado:
                 continue
             for nome_cidade in lista:
-                cidade, created = Cidade.objects.get_or_create(nome=nome_cidade, estado=estado)
+                cidade, created = Cidade.objects.get_or_create(
+                    nome=nome_cidade, estado=estado
+                )
                 if created:
-                    self.stdout.write(self.style.SUCCESS(f"Cidade criada: {nome_cidade} - {estado.codigo}"))
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Cidade criada: {nome_cidade} - {estado.codigo}"
+                        )
+                    )
 
         if with_bairros:
             for cidade_nome, bairros in BAIRROS_EXEMPLO.items():
                 for cidade in Cidade.objects.filter(nome=cidade_nome):
                     for bairro_nome in bairros:
-                        bairro, created = Bairro.objects.get_or_create(nome=bairro_nome, cidade=cidade)
+                        bairro, created = Bairro.objects.get_or_create(
+                            nome=bairro_nome, cidade=cidade
+                        )
                         if created:
-                            self.stdout.write(self.style.SUCCESS(f"Bairro criado: {bairro_nome} ({cidade_nome})"))
+                            self.stdout.write(
+                                self.style.SUCCESS(
+                                    f"Bairro criado: {bairro_nome} ({cidade_nome})"
+                                )
+                            )
 
         self.stdout.write(self.style.SUCCESS("População de localidades concluída."))

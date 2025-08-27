@@ -55,10 +55,10 @@ class AtividadeService:
     def criar_atividade(dados: dict) -> Atividade:
         """Cria uma nova atividade."""
         # Validações básicas
-        if not dados.get('nome'):
+        if not dados.get("nome"):
             raise ValidationError("Nome da atividade é obrigatório.")
 
-        if not dados.get('data_inicio'):
+        if not dados.get("data_inicio"):
             raise ValidationError("Data de início é obrigatória.")
 
         # Criar a atividade
@@ -67,8 +67,7 @@ class AtividadeService:
 
     @staticmethod
     @transaction.atomic
-    def atualizar_atividade(atividade_id: int,
-                           dados: dict) -> Optional[Atividade]:
+    def atualizar_atividade(atividade_id: int, dados: dict) -> Optional[Atividade]:
         """Atualiza uma atividade existente."""
         atividade = AtividadeRepository.get_by_id_or_none(atividade_id)
         if not atividade:
@@ -96,9 +95,13 @@ class PresencaService:
     """Serviços para gerenciamento de presenças."""
 
     @staticmethod
-    def registrar_presenca(aluno_id: int, atividade_id: int, turma_id: int,
-                          presente: bool = True,
-                          registrado_por: str = "Sistema") -> Presenca:
+    def registrar_presenca(
+        aluno_id: int,
+        atividade_id: int,
+        turma_id: int,
+        presente: bool = True,
+        registrado_por: str = "Sistema",
+    ) -> Presenca:
         """Registra presença em uma atividade."""
         atividade = AtividadeRepository.get_by_id(atividade_id)
 
@@ -107,10 +110,7 @@ class PresencaService:
             atividade=atividade,
             turma_id=turma_id,
             data=atividade.data_inicio,
-            defaults={
-                'presente': presente,
-                'registrado_por': registrado_por
-            }
+            defaults={"presente": presente, "registrado_por": registrado_por},
         )
 
         if not created:
@@ -136,8 +136,7 @@ class PresencaService:
         return PresencaRepository.get_by_turma(turma_id)
 
     @staticmethod
-    def calcular_frequencia_aluno(aluno_id: int,
-                                 atividade_id: int = None) -> dict:
+    def calcular_frequencia_aluno(aluno_id: int, atividade_id: int = None) -> dict:
         """Calcula a frequência de um aluno."""
         if atividade_id:
             presencas = PresencaRepository.get_by_aluno_e_atividade(
@@ -150,14 +149,14 @@ class PresencaService:
         presentes = presencas.filter(presente=True).count()
 
         if total == 0:
-            return {'total': 0, 'presentes': 0, 'percentual': 0.0}
+            return {"total": 0, "presentes": 0, "percentual": 0.0}
 
         percentual = (presentes / total) * 100
 
         return {
-            'total': total,
-            'presentes': presentes,
-            'percentual': round(percentual, 2)
+            "total": total,
+            "presentes": presentes,
+            "percentual": round(percentual, 2),
         }
 
     @staticmethod

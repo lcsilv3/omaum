@@ -4,25 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0010_bairro_model'),
+        ("alunos", "0010_bairro_model"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='bairro',
-            new_name='alunos_bair_nome_3317e8_idx',
-            old_name='alunos_bairr_nome_idx',
+            model_name="bairro",
+            new_name="alunos_bair_nome_3317e8_idx",
+            old_name="alunos_bairr_nome_idx",
         ),
         migrations.RenameIndex(
-            model_name='bairro',
-            new_name='alunos_bair_cidade__57f68d_idx',
-            old_name='alunos_bairr_cidade_idx',
+            model_name="bairro",
+            new_name="alunos_bair_cidade__57f68d_idx",
+            old_name="alunos_bairr_cidade_idx",
         ),
         migrations.AlterField(
-            model_name='bairro',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
+            model_name="bairro",
+            name="id",
+            field=models.BigAutoField(
+                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+            ),
         ),
     ]

@@ -643,7 +643,7 @@ def editar_lote_dias_atividades_ajax(request):
                             presenca_existente.justificativa = dados_presenca.get(
                                 "justificativa", ""
                             )
-                            presenca_existente.registrado_por = f"{presenca_existente.registrado_por} (editado por {request.user.username})"
+                            presenca_existente.registrado_por = request.user.username
                             presenca_existente.save()
                         else:
                             # CREATE

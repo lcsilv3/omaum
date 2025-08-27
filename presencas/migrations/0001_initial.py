@@ -6,198 +6,197 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
-        ('atividades', '0001_initial'),
-        ('turmas', '0001_initial'),
+        ("alunos", "0001_initial"),
+        ("atividades", "0001_initial"),
+        ("turmas", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ObservacaoPresenca',
+            name="ObservacaoPresenca",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
-                ('data', models.DateField(verbose_name='Data')),
+                ("data", models.DateField(verbose_name="Data")),
                 (
-                    'texto',
-                    models.TextField(blank=True, null=True, verbose_name='Observação'),
+                    "texto",
+                    models.TextField(blank=True, null=True, verbose_name="Observação"),
                 ),
                 (
-                    'registrado_por',
+                    "registrado_por",
                     models.CharField(
-                        default='Sistema', max_length=100, verbose_name='Registrado por'
+                        default="Sistema", max_length=100, verbose_name="Registrado por"
                     ),
                 ),
                 (
-                    'data_registro',
+                    "data_registro",
                     models.DateTimeField(
                         default=django.utils.timezone.now,
-                        verbose_name='Data de registro',
+                        verbose_name="Data de registro",
                     ),
                 ),
                 (
-                    'aluno',
+                    "aluno",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='observacoes_presenca_presencas',
-                        to='alunos.aluno',
-                        verbose_name='Aluno',
+                        related_name="observacoes_presenca_presencas",
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
                     ),
                 ),
                 (
-                    'atividade',
+                    "atividade",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='observacoes_presenca',
-                        to='atividades.atividade',
-                        verbose_name='Atividade',
+                        related_name="observacoes_presenca",
+                        to="atividades.atividade",
+                        verbose_name="Atividade",
                     ),
                 ),
                 (
-                    'turma',
+                    "turma",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='observacoes_presenca_presencas',
-                        to='turmas.turma',
-                        verbose_name='Turma',
+                        related_name="observacoes_presenca_presencas",
+                        to="turmas.turma",
+                        verbose_name="Turma",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Observação de Presença',
-                'verbose_name_plural': 'Observações de Presença',
-                'ordering': ['-data'],
+                "verbose_name": "Observação de Presença",
+                "verbose_name_plural": "Observações de Presença",
+                "ordering": ["-data"],
             },
         ),
         migrations.CreateModel(
-            name='Presenca',
+            name="Presenca",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
-                ('data', models.DateField(verbose_name='Data')),
+                ("data", models.DateField(verbose_name="Data")),
                 (
-                    'presente',
-                    models.BooleanField(default=True, verbose_name='Presente'),
+                    "presente",
+                    models.BooleanField(default=True, verbose_name="Presente"),
                 ),
                 (
-                    'justificativa',
+                    "justificativa",
                     models.TextField(
-                        blank=True, null=True, verbose_name='Justificativa'
+                        blank=True, null=True, verbose_name="Justificativa"
                     ),
                 ),
                 (
-                    'registrado_por',
+                    "registrado_por",
                     models.CharField(
-                        default='Sistema', max_length=100, verbose_name='Registrado por'
+                        default="Sistema", max_length=100, verbose_name="Registrado por"
                     ),
                 ),
                 (
-                    'data_registro',
+                    "data_registro",
                     models.DateTimeField(
                         default=django.utils.timezone.now,
-                        verbose_name='Data de registro',
+                        verbose_name="Data de registro",
                     ),
                 ),
                 (
-                    'aluno',
+                    "aluno",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='presencas_detalhadas',
-                        to='alunos.aluno',
-                        verbose_name='Aluno',
+                        related_name="presencas_detalhadas",
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
                     ),
                 ),
                 (
-                    'atividade',
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name='presencas_detalhadas',
-                        to='atividades.atividade',
-                        verbose_name='Atividade',
-                    ),
-                ),
-                (
-                    'turma',
+                    "atividade",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='presencas_detalhadas',
-                        to='turmas.turma',
-                        verbose_name='Turma',
+                        related_name="presencas_detalhadas",
+                        to="atividades.atividade",
+                        verbose_name="Atividade",
+                    ),
+                ),
+                (
+                    "turma",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="presencas_detalhadas",
+                        to="turmas.turma",
+                        verbose_name="Turma",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Presença',
-                'verbose_name_plural': 'Presenças',
-                'ordering': ['-data', 'aluno__nome'],
-                'unique_together': {('aluno', 'turma', 'data')},
+                "verbose_name": "Presença",
+                "verbose_name_plural": "Presenças",
+                "ordering": ["-data", "aluno__nome"],
+                "unique_together": {("aluno", "turma", "data")},
             },
         ),
         migrations.CreateModel(
-            name='TotalAtividadeMes',
+            name="TotalAtividadeMes",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
-                ('ano', models.IntegerField()),
-                ('mes', models.IntegerField()),
-                ('qtd_ativ_mes', models.PositiveIntegerField(default=0)),
-                ('registrado_por', models.CharField(default='Sistema', max_length=100)),
+                ("ano", models.IntegerField()),
+                ("mes", models.IntegerField()),
+                ("qtd_ativ_mes", models.PositiveIntegerField(default=0)),
+                ("registrado_por", models.CharField(default="Sistema", max_length=100)),
                 (
-                    'data_registro',
+                    "data_registro",
                     models.DateTimeField(default=django.utils.timezone.now),
                 ),
                 (
-                    'atividade',
+                    "atividade",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='totais_atividade_mes',
-                        to='atividades.atividade',
+                        related_name="totais_atividade_mes",
+                        to="atividades.atividade",
                     ),
                 ),
                 (
-                    'turma',
+                    "turma",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to='turmas.turma'
+                        on_delete=django.db.models.deletion.CASCADE, to="turmas.turma"
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Total de Atividade no Mês',
-                'verbose_name_plural': 'Totais de Atividades no Mês',
-                'unique_together': {('atividade', 'turma', 'ano', 'mes')},
+                "verbose_name": "Total de Atividade no Mês",
+                "verbose_name_plural": "Totais de Atividades no Mês",
+                "unique_together": {("atividade", "turma", "ano", "mes")},
             },
         ),
     ]

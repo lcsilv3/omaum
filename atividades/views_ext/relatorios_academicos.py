@@ -5,6 +5,7 @@ from ..views_ext.utils import get_cursos, get_atividades_academicas
 
 logger = logging.getLogger(__name__)
 
+
 @login_required
 def relatorio_atividades_academicas(request):
     cursos = get_cursos()
@@ -12,7 +13,9 @@ def relatorio_atividades_academicas(request):
     turma_id = request.GET.get("turma")
     query = request.GET.get("q", "")
 
-    atividades = get_atividades_academicas(curso_id=curso_id, turma_id=turma_id, query=query)
+    atividades = get_atividades_academicas(
+        curso_id=curso_id, turma_id=turma_id, query=query
+    )
 
     # Organiza atividades por curso
     cursos_dict = {}
@@ -25,4 +28,6 @@ def relatorio_atividades_academicas(request):
         "curso_id": curso_id,
         "cursos_dict": cursos_dict,
     }
-    return render(request, "atividades/academicas/relatorio_atividades_academicas.html", context)
+    return render(
+        request, "atividades/academicas/relatorio_atividades_academicas.html", context
+    )

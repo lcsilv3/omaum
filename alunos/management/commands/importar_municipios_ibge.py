@@ -96,14 +96,20 @@ class Command(BaseCommand):
             if not row:
                 continue
             normed = [norm(c) for c in row]
-            if any("MUNICIPIO" in c for c in normed) and any("UF" == c or c.endswith(" UF") or c == "UF" for c in normed):
+            if any("MUNICIPIO" in c for c in normed) and any(
+                "UF" == c or c.endswith(" UF") or c == "UF" for c in normed
+            ):
                 # Heurística: linha com 'MUNICIPIO' e 'UF' e algum 'CODIGO' possivelmente
-                if any("CODIGO" in c and "MUNICIPIO" in c for c in normed) or any("CD MUN" in c for c in normed):
+                if any("CODIGO" in c and "MUNICIPIO" in c for c in normed) or any(
+                    "CD MUN" in c for c in normed
+                ):
                     header_raw = row
                     header_idx = i
                     break
         if header_raw is None:
-            raise CommandError("Cabeçalho de municípios não encontrado (verifique se o arquivo é o correto da DTB).")
+            raise CommandError(
+                "Cabeçalho de municípios não encontrado (verifique se o arquivo é o correto da DTB)."
+            )
 
         header_norm = [norm(h) for h in header_raw]
 
@@ -178,7 +184,12 @@ class Command(BaseCommand):
 
         @transaction.atomic
         def processar():
-            nonlocal total_linhas, criadas_cidades, atualizadas_codigo, renomeadas, ignoradas_uf
+            nonlocal \
+                total_linhas, \
+                criadas_cidades, \
+                atualizadas_codigo, \
+                renomeadas, \
+                ignoradas_uf
             for row in linhas[header_idx + 1 :]:
                 if not row or len(row) <= idx_sigla_uf:
                     continue
@@ -199,9 +210,13 @@ class Command(BaseCommand):
                     estado = estados_cache.get(sigla)
                     if not estado:
                         regiao = REGIOES_UF.get(sigla, "Sudeste")
-                        estado = Estado.objects.create(codigo=sigla, nome=sigla, regiao=regiao)
+                        estado = Estado.objects.create(
+                            codigo=sigla, nome=sigla, regiao=regiao
+                        )
                         estados_cache[sigla] = estado
-                    existente_por_codigo = Cidade.objects.filter(codigo_ibge=cod_mun).first()
+                    existente_por_codigo = Cidade.objects.filter(
+                        codigo_ibge=cod_mun
+                    ).first()
                     if existente_por_codigo:
                         if (
                             replace_names

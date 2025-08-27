@@ -545,6 +545,7 @@ def listar_alunos_com_cache(query=None, curso_id=None, cache_timeout=300):
 
     return resultado
 
+
 # ==============================================================
 # Serviços de Histórico Iniciático (Fase 0 de refatoração)
 # Centralizam criação/listagem/sincronização entre RegistroHistorico
@@ -587,7 +588,9 @@ def _calcular_checksum(eventos):
     Serializa com sort_keys para estabilidade.
     """
     try:
-        payload = json.dumps(eventos or [], sort_keys=True, ensure_ascii=False).encode("utf-8")
+        payload = json.dumps(eventos or [], sort_keys=True, ensure_ascii=False).encode(
+            "utf-8"
+        )
         return hashlib.sha256(payload).hexdigest()
     except Exception:  # noqa: BLE001
         return None
@@ -604,7 +607,11 @@ def verificar_integridade_historico(aluno, reparar: bool = False):
         dict com chaves:
           integro (bool), checksum_atual, checksum_recomputado, reparado (bool)
     """
-    eventos = aluno.historico_iniciatico if isinstance(aluno.historico_iniciatico, list) else []
+    eventos = (
+        aluno.historico_iniciatico
+        if isinstance(aluno.historico_iniciatico, list)
+        else []
+    )
     recomputado = _calcular_checksum(eventos)
     atual = aluno.historico_checksum
     integro = (atual == recomputado) and (atual is not None)
@@ -612,7 +619,11 @@ def verificar_integridade_historico(aluno, reparar: bool = False):
     if not integro and reparar:
         sincronizar_historico_iniciatico(aluno)
         aluno.refresh_from_db()
-        eventos = aluno.historico_iniciatico if isinstance(aluno.historico_iniciatico, list) else []
+        eventos = (
+            aluno.historico_iniciatico
+            if isinstance(aluno.historico_iniciatico, list)
+            else []
+        )
         recomputado = _calcular_checksum(eventos)
         atual = aluno.historico_checksum
         integro = (atual == recomputado) and (atual is not None)
@@ -694,7 +705,11 @@ def criar_evento_iniciatico(
                     ordem_servico=ordem_servico or "",
                 )
                 # Recarrega eventos para checksum coerente
-                eventos = aluno.historico_iniciatico if isinstance(aluno.historico_iniciatico, list) else []
+                eventos = (
+                    aluno.historico_iniciatico
+                    if isinstance(aluno.historico_iniciatico, list)
+                    else []
+                )
                 aluno.historico_checksum = _calcular_checksum(eventos)
                 aluno.save(update_fields=["historico_iniciatico", "historico_checksum"])
                 evento_json = aluno.historico_iniciatico[-1]
@@ -715,9 +730,11 @@ def reconciliar_historico_if_divergente(aluno):
     """Verifica contagem & datas para detectar divergência simples e reconcilia se necessário."""
     try:
         registros = listar_eventos_iniciaticos(aluno)
-        json_len = len(aluno.historico_iniciatico or []) if isinstance(
-            aluno.historico_iniciatico, list
-        ) else 0
+        json_len = (
+            len(aluno.historico_iniciatico or [])
+            if isinstance(aluno.historico_iniciatico, list)
+            else 0
+        )
         if json_len != len(registros):
             return sincronizar_historico_iniciatico(aluno)
         # Checagem superficial: comparar datas do primeiro

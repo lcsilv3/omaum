@@ -31,7 +31,9 @@ class Command(BaseCommand):
                 TipoCodigo = get_tipo_codigo_model()
                 Codigo = get_codigo_model()
                 if not (TipoCodigo and Codigo):
-                    self.stdout.write(self.style.ERROR("Modelos iniciáticos indisponíveis."))
+                    self.stdout.write(
+                        self.style.ERROR("Modelos iniciáticos indisponíveis.")
+                    )
                     return
 
                 with transaction.atomic():

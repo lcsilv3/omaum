@@ -7,195 +7,194 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
-        ('cursos', '0001_initial'),
+        ("alunos", "0001_initial"),
+        ("cursos", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Turma',
+            name="Turma",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
                 (
-                    'nome',
-                    models.CharField(max_length=100, verbose_name='Nome da Turma'),
+                    "nome",
+                    models.CharField(max_length=100, verbose_name="Nome da Turma"),
                 ),
                 (
-                    'descricao',
-                    models.TextField(blank=True, null=True, verbose_name='Descrição'),
+                    "descricao",
+                    models.TextField(blank=True, null=True, verbose_name="Descrição"),
                 ),
                 (
-                    'num_livro',
+                    "num_livro",
                     models.PositiveIntegerField(
-                        blank=True, null=True, verbose_name='Nº do Livro de Presenças'
+                        blank=True, null=True, verbose_name="Nº do Livro de Presenças"
                     ),
                 ),
                 (
-                    'perc_carencia',
+                    "perc_carencia",
                     models.DecimalField(
                         blank=True,
                         decimal_places=2,
-                        help_text='Percentual mínimo de faltas permitido para a turma.',
+                        help_text="Percentual mínimo de faltas permitido para a turma.",
                         max_digits=5,
                         null=True,
-                        verbose_name='Percentual de Carência (%)',
+                        verbose_name="Percentual de Carência (%)",
                     ),
                 ),
                 (
-                    'data_iniciacao',
+                    "data_iniciacao",
                     models.DateField(
-                        blank=True, null=True, verbose_name='Data de Iniciação'
+                        blank=True, null=True, verbose_name="Data de Iniciação"
                     ),
                 ),
                 (
-                    'data_inicio_ativ',
-                    models.DateField(
-                        blank=True,
-                        null=True,
-                        verbose_name='Data de Início das Atividades',
-                    ),
-                ),
-                (
-                    'data_prim_aula',
-                    models.DateField(
-                        blank=True, null=True, verbose_name='Data da Primeira Aula'
-                    ),
-                ),
-                (
-                    'data_termino_atividades',
+                    "data_inicio_ativ",
                     models.DateField(
                         blank=True,
                         null=True,
-                        verbose_name='Data de Término das Atividades',
+                        verbose_name="Data de Início das Atividades",
                     ),
                 ),
                 (
-                    'dias_semana',
+                    "data_prim_aula",
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Data da Primeira Aula"
+                    ),
+                ),
+                (
+                    "data_termino_atividades",
+                    models.DateField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Data de Término das Atividades",
+                    ),
+                ),
+                (
+                    "dias_semana",
                     models.CharField(
                         blank=True,
                         max_length=100,
                         null=True,
-                        verbose_name='Dias da Semana',
+                        verbose_name="Dias da Semana",
                     ),
                 ),
                 (
-                    'horario',
+                    "horario",
                     models.CharField(
-                        blank=True, max_length=100, null=True, verbose_name='Horário'
+                        blank=True, max_length=100, null=True, verbose_name="Horário"
                     ),
                 ),
                 (
-                    'local',
+                    "local",
                     models.CharField(
-                        blank=True, max_length=200, null=True, verbose_name='Local'
+                        blank=True, max_length=200, null=True, verbose_name="Local"
                     ),
                 ),
                 (
-                    'vagas',
+                    "vagas",
                     models.PositiveIntegerField(
                         default=20,
                         validators=[django.core.validators.MinValueValidator(1)],
-                        verbose_name='Número de Vagas',
+                        verbose_name="Número de Vagas",
                     ),
                 ),
                 (
-                    'status',
+                    "status",
                     models.CharField(
                         choices=[
-                            ('A', 'Ativa'),
-                            ('I', 'Inativa'),
-                            ('C', 'Cancelada'),
-                            ('F', 'Finalizada'),
+                            ("A", "Ativa"),
+                            ("I", "Inativa"),
+                            ("C", "Cancelada"),
+                            ("F", "Finalizada"),
                         ],
-                        default='A',
+                        default="A",
                         max_length=1,
-                        verbose_name='Status',
+                        verbose_name="Status",
                     ),
                 ),
-                ('ativo', models.BooleanField(default=True, verbose_name='Ativo')),
+                ("ativo", models.BooleanField(default=True, verbose_name="Ativo")),
                 (
-                    'alerta_instrutor',
+                    "alerta_instrutor",
                     models.BooleanField(
-                        default=False, verbose_name='Alerta de Instrutor'
+                        default=False, verbose_name="Alerta de Instrutor"
                     ),
                 ),
                 (
-                    'alerta_mensagem',
+                    "alerta_mensagem",
                     models.TextField(
-                        blank=True, null=True, verbose_name='Mensagem de Alerta'
+                        blank=True, null=True, verbose_name="Mensagem de Alerta"
                     ),
                 ),
                 (
-                    'created_at',
+                    "created_at",
                     models.DateTimeField(
-                        default=django.utils.timezone.now, verbose_name='Criado em'
+                        default=django.utils.timezone.now, verbose_name="Criado em"
                     ),
                 ),
                 (
-                    'updated_at',
+                    "updated_at",
                     models.DateTimeField(
-                        default=django.utils.timezone.now, verbose_name='Atualizado em'
+                        default=django.utils.timezone.now, verbose_name="Atualizado em"
                     ),
                 ),
                 (
-                    'auxiliar_instrucao',
+                    "auxiliar_instrucao",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        related_name='turmas_como_auxiliar_instrucao',
-                        to='alunos.aluno',
-                        verbose_name='Auxiliar de Instrução',
+                        related_name="turmas_como_auxiliar_instrucao",
+                        to="alunos.aluno",
+                        verbose_name="Auxiliar de Instrução",
                     ),
                 ),
                 (
-                    'curso',
+                    "curso",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='turmas',
-                        to='cursos.curso',
-                        verbose_name='Curso',
+                        related_name="turmas",
+                        to="cursos.curso",
+                        verbose_name="Curso",
                     ),
                 ),
                 (
-                    'instrutor',
+                    "instrutor",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        related_name='turmas_como_instrutor',
-                        to='alunos.aluno',
-                        verbose_name='Instrutor Principal',
+                        related_name="turmas_como_instrutor",
+                        to="alunos.aluno",
+                        verbose_name="Instrutor Principal",
                     ),
                 ),
                 (
-                    'instrutor_auxiliar',
+                    "instrutor_auxiliar",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        related_name='turmas_como_instrutor_auxiliar',
-                        to='alunos.aluno',
-                        verbose_name='Instrutor Auxiliar',
+                        related_name="turmas_como_instrutor_auxiliar",
+                        to="alunos.aluno",
+                        verbose_name="Instrutor Auxiliar",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Turma',
-                'verbose_name_plural': 'Turmas',
-                'ordering': ['-data_inicio_ativ'],
+                "verbose_name": "Turma",
+                "verbose_name_plural": "Turmas",
+                "ordering": ["-data_inicio_ativ"],
             },
         ),
     ]

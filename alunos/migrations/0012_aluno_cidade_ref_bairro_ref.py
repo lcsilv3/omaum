@@ -4,7 +4,10 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("alunos", "0011_rename_alunos_bairr_nome_idx_alunos_bair_nome_3317e8_idx_and_more"),
+        (
+            "alunos",
+            "0011_rename_alunos_bairr_nome_idx_alunos_bair_nome_3317e8_idx_and_more",
+        ),
     ]
 
     operations = [

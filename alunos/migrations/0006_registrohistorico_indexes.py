@@ -2,7 +2,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("alunos", "0005_alter_aluno_situacao_iniciatica"),
     ]
@@ -18,7 +17,9 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="registrohistorico",
-            index=models.Index(fields=["aluno", "-data_os"], name="rh_aluno_dataos_desc"),
+            index=models.Index(
+                fields=["aluno", "-data_os"], name="rh_aluno_dataos_desc"
+            ),
         ),
         migrations.AddIndex(
             model_name="registrohistorico",

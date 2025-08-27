@@ -8,37 +8,40 @@ import datetime
 from atividades.models import Atividade
 from turmas.models import Turma
 
+
 def parse_date(date_str):
     """Converte uma string de data para um objeto date."""
     if not date_str:
         return None
-    
+
     # Tentar diferentes formatos
     formats = ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"]
-    
+
     for fmt in formats:
         try:
             return datetime.datetime.strptime(date_str, fmt).date()
         except ValueError:
             continue
-    
+
     raise ValueError(f"Formato de data inválido: {date_str}")
+
 
 def parse_time(time_str):
     """Converte uma string de hora para um objeto time."""
     if not time_str:
         return None
-    
+
     # Tentar diferentes formatos
     formats = ["%H:%M", "%H:%M:%S"]
-    
+
     for fmt in formats:
         try:
             return datetime.datetime.strptime(time_str, fmt).time()
         except ValueError:
             continue
-    
+
     raise ValueError(f"Formato de hora inválido: {time_str}")
+
 
 @login_required
 def importar_atividades_academicas(request):
@@ -73,18 +76,23 @@ def importar_atividades_academicas(request):
                             turma = Turma.objects.get(id=turma_id)
                             atividade.turmas.add(turma)
                         except Turma.DoesNotExist:
-                            errors.append(f"Turma com ID {turma_id} não encontrada para '{atividade.nome}'")
+                            errors.append(
+                                f"Turma com ID {turma_id} não encontrada para '{atividade.nome}'"
+                            )
                 count += 1
             except Exception as e:
                 errors.append(f"Erro na linha {count+1}: {str(e)}")
         if errors:
-            messages.warning(request, f"{count} atividades importadas com {len(errors)} erros.")
+            messages.warning(
+                request, f"{count} atividades importadas com {len(errors)} erros."
+            )
             for error in errors[:5]:
                 messages.error(request, error)
         else:
             messages.success(request, f"{count} atividades importadas com sucesso!")
         return redirect("atividades:listar_atividades")
     return render(request, "atividades/importar_atividades_academicas.html")
+
 
 @login_required
 def importar_atividades_ritualisticas(request):
@@ -100,7 +108,9 @@ def importar_atividades_ritualisticas(request):
                     nome=row.get("Nome", "").strip(),
                     descricao=row.get("Descricao", "").strip(),
                     data_inicio=parse_date(row.get("Data", "")),
-                    data_fim=parse_date(row.get("Data", "")),  # Usar a mesma data para inicio e fim
+                    data_fim=parse_date(
+                        row.get("Data", "")
+                    ),  # Usar a mesma data para inicio e fim
                     hora_inicio=parse_time(row.get("Hora_Inicio", "")),
                     hora_fim=parse_time(row.get("Hora_Fim", "")),
                     local=row.get("Local", "").strip(),
@@ -113,7 +123,9 @@ def importar_atividades_ritualisticas(request):
             except Exception as e:
                 errors.append(f"Erro na linha {count+1}: {str(e)}")
         if errors:
-            messages.warning(request, f"{count} atividades importadas com {len(errors)} erros.")
+            messages.warning(
+                request, f"{count} atividades importadas com {len(errors)} erros."
+            )
             for error in errors[:5]:
                 messages.error(request, error)
         else:

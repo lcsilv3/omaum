@@ -44,25 +44,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="atividaderitualistica",
             name="hora_fim",
-            field=models.TimeField(
-                default="12:00", verbose_name="Hora de Término"
-            ),
+            field=models.TimeField(default="12:00", verbose_name="Hora de Término"),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name="atividaderitualistica",
             name="hora_inicio",
-            field=models.TimeField(
-                default="10:00", verbose_name="Hora de Início"
-            ),
+            field=models.TimeField(default="10:00", verbose_name="Hora de Início"),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name="atividaderitualistica",
             name="local",
-            field=models.CharField(
-                default=1, max_length=100, verbose_name="Local"
-            ),
+            field=models.CharField(default=1, max_length=100, verbose_name="Local"),
             preserve_default=False,
         ),
         migrations.AddField(
@@ -78,9 +72,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="atividaderitualistica",
             name="descricao",
-            field=models.TextField(
-                blank=True, null=True, verbose_name="Descrição"
-            ),
+            field=models.TextField(blank=True, null=True, verbose_name="Descrição"),
         ),
         migrations.AlterField(
             model_name="atividaderitualistica",

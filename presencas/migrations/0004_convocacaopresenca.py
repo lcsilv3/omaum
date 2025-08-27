@@ -6,78 +6,77 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0005_alter_aluno_situacao_iniciatica'),
-        ('atividades', '0001_initial'),
-        ('presencas', '0003_add_agendamento_relatorio'),
-        ('turmas', '0001_initial'),
+        ("alunos", "0005_alter_aluno_situacao_iniciatica"),
+        ("atividades", "0001_initial"),
+        ("presencas", "0003_add_agendamento_relatorio"),
+        ("turmas", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ConvocacaoPresenca',
+            name="ConvocacaoPresenca",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
-                ('data', models.DateField(verbose_name='Data da Atividade')),
+                ("data", models.DateField(verbose_name="Data da Atividade")),
                 (
-                    'convocado',
-                    models.BooleanField(default=True, verbose_name='Convocado'),
+                    "convocado",
+                    models.BooleanField(default=True, verbose_name="Convocado"),
                 ),
                 (
-                    'registrado_por',
+                    "registrado_por",
                     models.CharField(
-                        default='Sistema', max_length=100, verbose_name='Registrado por'
+                        default="Sistema", max_length=100, verbose_name="Registrado por"
                     ),
                 ),
                 (
-                    'data_registro',
+                    "data_registro",
                     models.DateTimeField(
                         default=django.utils.timezone.now,
-                        verbose_name='Data de registro',
+                        verbose_name="Data de registro",
                     ),
                 ),
                 (
-                    'aluno',
+                    "aluno",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='convocacoes_presenca',
-                        to='alunos.aluno',
-                        verbose_name='Aluno',
+                        related_name="convocacoes_presenca",
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
                     ),
                 ),
                 (
-                    'atividade',
+                    "atividade",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='convocacoes_presenca',
-                        to='atividades.atividade',
-                        verbose_name='Atividade',
+                        related_name="convocacoes_presenca",
+                        to="atividades.atividade",
+                        verbose_name="Atividade",
                     ),
                 ),
                 (
-                    'turma',
+                    "turma",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='convocacoes_presenca',
-                        to='turmas.turma',
-                        verbose_name='Turma',
+                        related_name="convocacoes_presenca",
+                        to="turmas.turma",
+                        verbose_name="Turma",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Convocação de Presença',
-                'verbose_name_plural': 'Convocações de Presença',
-                'ordering': ['-data', 'aluno__nome'],
-                'unique_together': {('aluno', 'turma', 'atividade', 'data')},
+                "verbose_name": "Convocação de Presença",
+                "verbose_name_plural": "Convocações de Presença",
+                "ordering": ["-data", "aluno__nome"],
+                "unique_together": {("aluno", "turma", "atividade", "data")},
             },
         ),
     ]

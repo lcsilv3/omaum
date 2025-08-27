@@ -12,11 +12,15 @@ def backfill_cidade_bairro_refs(apps, schema_editor):
     Bairro = apps.get_model("alunos", "Bairro")
 
     BATCH = 200
-    qs = Aluno.objects.filter(cidade_ref__isnull=True).exclude(cidade__isnull=True).exclude(cidade__exact="")
+    qs = (
+        Aluno.objects.filter(cidade_ref__isnull=True)
+        .exclude(cidade__isnull=True)
+        .exclude(cidade__exact="")
+    )
     total = qs.count()
     offset = 0
     while offset < total:
-        for aluno in qs[offset: offset + BATCH]:
+        for aluno in qs[offset : offset + BATCH]:
             changed = False
             if not aluno.cidade_ref and aluno.cidade:
                 cidade = Cidade.objects.filter(nome__iexact=aluno.cidade).first()
@@ -26,7 +30,9 @@ def backfill_cidade_bairro_refs(apps, schema_editor):
                     if not aluno.estado:
                         aluno.estado = cidade.estado.codigo
             if aluno.cidade_ref and not aluno.bairro_ref and aluno.bairro:
-                bairro = Bairro.objects.filter(nome__iexact=aluno.bairro, cidade=aluno.cidade_ref).first()
+                bairro = Bairro.objects.filter(
+                    nome__iexact=aluno.bairro, cidade=aluno.cidade_ref
+                ).first()
                 if bairro:
                     aluno.bairro_ref = bairro
                     changed = True

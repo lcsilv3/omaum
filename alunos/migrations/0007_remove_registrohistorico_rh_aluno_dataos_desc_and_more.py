@@ -5,23 +5,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0006_registrohistorico_indexes'),
+        ("alunos", "0006_registrohistorico_indexes"),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='registrohistorico',
-            name='rh_aluno_dataos_desc',
+            model_name="registrohistorico",
+            name="rh_aluno_dataos_desc",
         ),
         migrations.RemoveIndex(
-            model_name='registrohistorico',
-            name='rh_codigo_idx',
+            model_name="registrohistorico",
+            name="rh_codigo_idx",
         ),
         migrations.AlterField(
-            model_name='codigo',
-            name='tipo_codigo',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='codigos', to='alunos.tipocodigo', verbose_name='Tipo de Código'),
+            model_name="codigo",
+            name="tipo_codigo",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="codigos",
+                to="alunos.tipocodigo",
+                verbose_name="Tipo de Código",
+            ),
         ),
     ]
