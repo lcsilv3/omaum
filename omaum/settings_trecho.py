@@ -8,18 +8,20 @@ print(f"BASE_DIR: {BASE_DIR}")
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            os.path.join(BASE_DIR, 'omaum', 'templates'),
-            os.path.join(BASE_DIR, 'templates'),  # Mantido para compatibilidade, caso necess�rio
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [
+            os.path.join(BASE_DIR, "omaum", "templates"),
+            os.path.join(
+                BASE_DIR, "templates"
+            ),  # Mantido para compatibilidade, caso necess�rio
         ],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        # 'APP_DIRS': True,  # REMOVIDO: loaders pode ser definido em OPTIONS
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },

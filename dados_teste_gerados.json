@@ -1,0 +1,1008 @@
+[
+  {
+    "aluno": "174.908.617-32",
+    "matriculas": [
+      2,
+      1
+    ],
+    "presencas": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "pagamentos": [
+      1,
+      2
+    ],
+    "notas": [
+      1,
+      2
+    ]
+  },
+  {
+    "aluno": "840.748.813-20",
+    "matriculas": [
+      1,
+      3
+    ],
+    "presencas": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "pagamentos": [
+      3
+    ],
+    "notas": [
+      3
+    ]
+  },
+  {
+    "aluno": "666.182.694-49",
+    "matriculas": [
+      2,
+      1
+    ],
+    "presencas": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "pagamentos": [
+      4
+    ],
+    "notas": [
+      4,
+      5
+    ]
+  },
+  {
+    "aluno": "314.432.564-43",
+    "matriculas": [
+      2,
+      1
+    ],
+    "presencas": [
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "pagamentos": [
+      5
+    ],
+    "notas": [
+      6,
+      7
+    ]
+  },
+  {
+    "aluno": "329.338.920-97",
+    "matriculas": [
+      3,
+      2
+    ],
+    "presencas": [
+      22,
+      23,
+      24,
+      25,
+      26,
+      27
+    ],
+    "pagamentos": [
+      6,
+      7
+    ],
+    "notas": [
+      8,
+      9
+    ]
+  },
+  {
+    "aluno": "565.212.797-69",
+    "matriculas": [
+      1,
+      3
+    ],
+    "presencas": [
+      28,
+      29,
+      30,
+      31,
+      32,
+      33
+    ],
+    "pagamentos": [
+      8
+    ],
+    "notas": [
+      10,
+      11
+    ]
+  },
+  {
+    "aluno": "989.536.107-38",
+    "matriculas": [
+      2,
+      1
+    ],
+    "presencas": [
+      34,
+      35,
+      36,
+      37
+    ],
+    "pagamentos": [
+      9
+    ],
+    "notas": [
+      12,
+      13
+    ]
+  },
+  {
+    "aluno": "320.996.607-69",
+    "matriculas": [
+      3,
+      2
+    ],
+    "presencas": [
+      38,
+      39,
+      40,
+      41
+    ],
+    "pagamentos": [
+      10,
+      11
+    ],
+    "notas": [
+      14
+    ]
+  },
+  {
+    "aluno": "739.783.879-10",
+    "matriculas": [
+      2
+    ],
+    "presencas": [
+      42,
+      43,
+      44,
+      45
+    ],
+    "pagamentos": [
+      12
+    ],
+    "notas": [
+      15,
+      16
+    ]
+  },
+  {
+    "aluno": "336.967.282-60",
+    "matriculas": [],
+    "presencas": [
+      46,
+      47,
+      48,
+      49
+    ],
+    "pagamentos": [
+      13,
+      14
+    ],
+    "notas": [
+      17
+    ]
+  },
+  {
+    "aluno": "637.745.367-92",
+    "matriculas": [
+      1
+    ],
+    "presencas": [
+      50,
+      51,
+      52,
+      53,
+      54
+    ],
+    "pagamentos": [
+      15,
+      16
+    ],
+    "notas": [
+      18,
+      19
+    ]
+  },
+  {
+    "aluno": "870.752.808-47",
+    "matriculas": [
+      2,
+      3
+    ],
+    "presencas": [
+      55,
+      56,
+      57,
+      58,
+      59
+    ],
+    "pagamentos": [
+      17
+    ],
+    "notas": [
+      20
+    ]
+  },
+  {
+    "aluno": "533.802.648-83",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      60,
+      61,
+      62,
+      63,
+      64
+    ],
+    "pagamentos": [
+      18,
+      19
+    ],
+    "notas": [
+      21,
+      22
+    ]
+  },
+  {
+    "aluno": "778.922.647-34",
+    "matriculas": [
+      3,
+      2
+    ],
+    "presencas": [
+      65,
+      66,
+      67,
+      68,
+      69,
+      70
+    ],
+    "pagamentos": [
+      20
+    ],
+    "notas": [
+      23,
+      24
+    ]
+  },
+  {
+    "aluno": "173.558.200-57",
+    "matriculas": [
+      2,
+      3
+    ],
+    "presencas": [
+      71,
+      72,
+      73,
+      74,
+      75
+    ],
+    "pagamentos": [
+      21,
+      22
+    ],
+    "notas": [
+      25,
+      26
+    ]
+  },
+  {
+    "aluno": "752.647.732-33",
+    "matriculas": [
+      2,
+      1
+    ],
+    "presencas": [
+      76,
+      77,
+      78,
+      79,
+      80
+    ],
+    "pagamentos": [
+      23,
+      24
+    ],
+    "notas": [
+      27,
+      28
+    ]
+  },
+  {
+    "aluno": "138.141.219-98",
+    "matriculas": [
+      1
+    ],
+    "presencas": [
+      81,
+      82,
+      83
+    ],
+    "pagamentos": [
+      25
+    ],
+    "notas": [
+      29,
+      30
+    ]
+  },
+  {
+    "aluno": "977.724.920-14",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      84,
+      85,
+      86,
+      87,
+      88,
+      89
+    ],
+    "pagamentos": [
+      26
+    ],
+    "notas": [
+      31,
+      32
+    ]
+  },
+  {
+    "aluno": "867.223.588-36",
+    "matriculas": [
+      2,
+      3
+    ],
+    "presencas": [
+      90,
+      91,
+      92,
+      93,
+      94,
+      95
+    ],
+    "pagamentos": [
+      27
+    ],
+    "notas": [
+      33
+    ]
+  },
+  {
+    "aluno": "469.741.751-59",
+    "matriculas": [
+      3,
+      1
+    ],
+    "presencas": [
+      96,
+      97,
+      98,
+      99
+    ],
+    "pagamentos": [
+      28
+    ],
+    "notas": [
+      34,
+      35
+    ]
+  },
+  {
+    "aluno": "861.447.940-95",
+    "matriculas": [
+      1,
+      2
+    ],
+    "presencas": [
+      100,
+      101,
+      102,
+      103,
+      104
+    ],
+    "pagamentos": [
+      29
+    ],
+    "notas": [
+      36,
+      37
+    ]
+  },
+  {
+    "aluno": "538.667.926-48",
+    "matriculas": [
+      3,
+      2
+    ],
+    "presencas": [
+      105,
+      106,
+      107,
+      108,
+      109
+    ],
+    "pagamentos": [
+      30
+    ],
+    "notas": [
+      38
+    ]
+  },
+  {
+    "aluno": "355.678.104-16",
+    "matriculas": [
+      1,
+      2
+    ],
+    "presencas": [
+      110,
+      111,
+      112,
+      113,
+      114
+    ],
+    "pagamentos": [
+      31,
+      32
+    ],
+    "notas": [
+      39
+    ]
+  },
+  {
+    "aluno": "499.352.370-22",
+    "matriculas": [
+      2
+    ],
+    "presencas": [
+      115,
+      116,
+      117
+    ],
+    "pagamentos": [
+      33,
+      34
+    ],
+    "notas": [
+      40
+    ]
+  },
+  {
+    "aluno": "201.532.562-19",
+    "matriculas": [
+      1,
+      3
+    ],
+    "presencas": [
+      118,
+      119,
+      120,
+      121,
+      122
+    ],
+    "pagamentos": [
+      35,
+      36
+    ],
+    "notas": [
+      41,
+      42
+    ]
+  },
+  {
+    "aluno": "658.833.809-81",
+    "matriculas": [
+      2,
+      1
+    ],
+    "presencas": [
+      123,
+      124,
+      125,
+      126
+    ],
+    "pagamentos": [
+      37,
+      38
+    ],
+    "notas": [
+      43
+    ]
+  },
+  {
+    "aluno": "633.949.243-94",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      127,
+      128,
+      129,
+      130
+    ],
+    "pagamentos": [
+      39,
+      40
+    ],
+    "notas": [
+      44,
+      45
+    ]
+  },
+  {
+    "aluno": "569.705.711-25",
+    "matriculas": [
+      1
+    ],
+    "presencas": [
+      131,
+      132,
+      133,
+      134,
+      135,
+      136
+    ],
+    "pagamentos": [
+      41
+    ],
+    "notas": [
+      46
+    ]
+  },
+  {
+    "aluno": "457.661.552-80",
+    "matriculas": [
+      2,
+      1
+    ],
+    "presencas": [
+      137,
+      138,
+      139
+    ],
+    "pagamentos": [
+      42
+    ],
+    "notas": [
+      47
+    ]
+  },
+  {
+    "aluno": "654.558.308-56",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      140,
+      141,
+      142,
+      143,
+      144
+    ],
+    "pagamentos": [
+      43
+    ],
+    "notas": [
+      48
+    ]
+  },
+  {
+    "aluno": "358.175.136-39",
+    "matriculas": [],
+    "presencas": [
+      145,
+      146,
+      147,
+      148
+    ],
+    "pagamentos": [
+      44
+    ],
+    "notas": [
+      49,
+      50
+    ]
+  },
+  {
+    "aluno": "586.355.638-34",
+    "matriculas": [
+      1
+    ],
+    "presencas": [
+      149,
+      150,
+      151
+    ],
+    "pagamentos": [
+      45,
+      46
+    ],
+    "notas": [
+      51
+    ]
+  },
+  {
+    "aluno": "210.800.791-36",
+    "matriculas": [
+      3,
+      1
+    ],
+    "presencas": [
+      152,
+      153,
+      154,
+      155,
+      156
+    ],
+    "pagamentos": [
+      47,
+      48
+    ],
+    "notas": [
+      52
+    ]
+  },
+  {
+    "aluno": "393.525.179-27",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      157,
+      158,
+      159
+    ],
+    "pagamentos": [
+      49
+    ],
+    "notas": [
+      53
+    ]
+  },
+  {
+    "aluno": "326.783.260-59",
+    "matriculas": [
+      1
+    ],
+    "presencas": [
+      160,
+      161,
+      162,
+      163,
+      164
+    ],
+    "pagamentos": [
+      50,
+      51
+    ],
+    "notas": [
+      54,
+      55
+    ]
+  },
+  {
+    "aluno": "682.335.318-40",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      165,
+      166,
+      167,
+      168
+    ],
+    "pagamentos": [
+      52
+    ],
+    "notas": [
+      56,
+      57
+    ]
+  },
+  {
+    "aluno": "367.158.372-21",
+    "matriculas": [
+      2
+    ],
+    "presencas": [
+      169,
+      170,
+      171,
+      172
+    ],
+    "pagamentos": [
+      53,
+      54
+    ],
+    "notas": [
+      58
+    ]
+  },
+  {
+    "aluno": "205.604.506-20",
+    "matriculas": [
+      2,
+      1
+    ],
+    "presencas": [
+      173,
+      174,
+      175,
+      176,
+      177
+    ],
+    "pagamentos": [
+      55
+    ],
+    "notas": [
+      59,
+      60
+    ]
+  },
+  {
+    "aluno": "702.877.900-63",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      178,
+      179,
+      180,
+      181
+    ],
+    "pagamentos": [
+      56
+    ],
+    "notas": [
+      61
+    ]
+  },
+  {
+    "aluno": "482.102.281-27",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      182,
+      183,
+      184,
+      185,
+      186,
+      187
+    ],
+    "pagamentos": [
+      57
+    ],
+    "notas": [
+      62,
+      63
+    ]
+  },
+  {
+    "aluno": "197.460.420-83",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      188,
+      189,
+      190,
+      191,
+      192
+    ],
+    "pagamentos": [
+      58
+    ],
+    "notas": [
+      64
+    ]
+  },
+  {
+    "aluno": "813.569.375-60",
+    "matriculas": [
+      1
+    ],
+    "presencas": [
+      193,
+      194,
+      195
+    ],
+    "pagamentos": [
+      59
+    ],
+    "notas": [
+      65
+    ]
+  },
+  {
+    "aluno": "217.806.208-22",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      196,
+      197,
+      198,
+      199,
+      200,
+      201
+    ],
+    "pagamentos": [
+      60,
+      61
+    ],
+    "notas": [
+      66
+    ]
+  },
+  {
+    "aluno": "561.440.407-60",
+    "matriculas": [],
+    "presencas": [
+      202,
+      203,
+      204,
+      205
+    ],
+    "pagamentos": [
+      62
+    ],
+    "notas": [
+      67
+    ]
+  },
+  {
+    "aluno": "113.890.755-72",
+    "matriculas": [
+      2,
+      1
+    ],
+    "presencas": [
+      206,
+      207,
+      208,
+      209,
+      210,
+      211
+    ],
+    "pagamentos": [
+      63,
+      64
+    ],
+    "notas": [
+      68,
+      69
+    ]
+  },
+  {
+    "aluno": "988.119.693-45",
+    "matriculas": [
+      3
+    ],
+    "presencas": [
+      212,
+      213,
+      214,
+      215,
+      216
+    ],
+    "pagamentos": [
+      65,
+      66
+    ],
+    "notas": [
+      70
+    ]
+  },
+  {
+    "aluno": "331.130.256-23",
+    "matriculas": [
+      1,
+      2
+    ],
+    "presencas": [
+      217,
+      218,
+      219,
+      220,
+      221
+    ],
+    "pagamentos": [
+      67,
+      68
+    ],
+    "notas": [
+      71,
+      72
+    ]
+  },
+  {
+    "aluno": "130.439.736-52",
+    "matriculas": [
+      2,
+      3
+    ],
+    "presencas": [
+      222,
+      223,
+      224,
+      225,
+      226,
+      227
+    ],
+    "pagamentos": [
+      69,
+      70
+    ],
+    "notas": [
+      73,
+      74
+    ]
+  },
+  {
+    "aluno": "343.944.465-53",
+    "matriculas": [
+      3,
+      1
+    ],
+    "presencas": [
+      228,
+      229,
+      230,
+      231,
+      232,
+      233
+    ],
+    "pagamentos": [
+      71
+    ],
+    "notas": [
+      75,
+      76
+    ]
+  },
+  {
+    "aluno": "518.299.767-76",
+    "matriculas": [
+      2
+    ],
+    "presencas": [
+      234,
+      235,
+      236
+    ],
+    "pagamentos": [
+      72,
+      73
+    ],
+    "notas": [
+      77
+    ]
+  }
+]

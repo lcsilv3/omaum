@@ -4,219 +4,224 @@
 {% block title %}SGI - Sistema de Gestão Integrada da OmAum{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="jumbotron bg-light p-4 rounded">
-        <h1 class="display-4">Bem-vindo ao SGI - OmAum</h1>
-        <p class="lead">Sistema de Gestão Integrada da OmAum - Gerenciamento completo de alunos, cursos, turmas e atividades.</p>
-        <hr class="my-4">
-        <p>Selecione um dos módulos abaixo para começar.</p>
-        <div class="alert alert-info text-center">
-            <i class="fas fa-arrow-down"></i> Role a página para ver todos os módulos disponíveis <i class="fas fa-arrow-down"></i>
-        </div>
-    </div>
-
-    {% if user.is_authenticated %}
-        <!-- Seção: Gestão Acadêmica -->
-        <div class="mt-4 mb-3">
-            <h3 class="border-bottom pb-2">Gestão Acadêmica</h3>
-            <div class="row">
-                <!-- Módulo de Cursos -->
-                <div class="col-md-3 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-book text-success"></i> Cursos
-                            </h5>
-                            <p class="card-text">Cadastro e gerenciamento de cursos oferecidos pela instituição.</p>
-                            <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-success">
-                                <i class="fas fa-book-open"></i> Acessar Cursos
-                            </a>
+<div class="container-fluid mt-2">
+    <div class="jumbotron bg-light p-2 rounded" style="font-size:1.1rem;">
+        <h1 class="display-6" style="font-size:2rem;">Bem-vindo ao SGI - OmAum</h1>
+        <p class="lead" style="font-size:1.1rem;">Sistema de Gestão Integrada da OmAum - Gerenciamento completo de Alunos, Cursos, Turmas e Atividades.</p>
+        <hr class="my-2">
+        {% if user.is_authenticated %}
+            <p style="font-size:1rem;">Selecione um dos módulos abaixo para começar.</p>
+        {% else %}
+            <p style="font-size:1rem;">
+                <i class="fas fa-sign-in-alt text-primary"></i> 
+                Faça login para acessar os módulos do sistema.
+            </p>
+            
+            <!-- Formulário de Login Incorporado -->
+            <div class="row justify-content-center mt-3">
+                <div class="col-md-6 col-lg-5">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-lock"></i> Acesso Rápido</h6>
                         </div>
-                    </div>
-                </div>
-                <!-- Módulo de Alunos -->
-                <div class="col-md-3 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-user-graduate text-primary"></i> Alunos
-                            </h5>
-                            <p class="card-text">Gerenciamento completo de alunos, incluindo cadastro, edição e consulta.</p>
-                            <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-primary">
-                                <i class="fas fa-users"></i> Acessar Alunos
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <!-- Módulo de Turmas -->
-                <div class="col-md-3 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-users text-info"></i> Turmas
-                            </h5>
-                            <p class="card-text">Gerenciamento de turmas, incluindo horários, instrutores e alunos.</p>
-                            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-info">
-                                <i class="fas fa-chalkboard-teacher"></i> Acessar Turmas
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <!-- Tipos de Código -->
-                <div class="col-md-3 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-key text-purple"></i> Tipos de Código
-                            </h5>
-                            <p class="card-text">Gerencie os tipos de código iniciático disponíveis no sistema.</p>
-                            <a href="{% url 'alunos:listar_tipocodigos' %}" class="btn btn-purple">
-                                <i class="fas fa-key"></i> Tipos de Código
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <!-- Códigos Iniciáticos -->
-                <div class="col-md-3 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-list-ol text-secondary"></i> Códigos Iniciáticos
-                            </h5>
-                            <p class="card-text">Cadastro, edição e consulta dos códigos iniciáticos.</p>
-                            <a href="{% url 'alunos:listar_codigos' %}" class="btn btn-secondary">
-                                <i class="fas fa-list-ol"></i> Códigos Iniciáticos
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Seção: Frequência e Presença -->
-        <div class="mt-4 mb-3">
-            <h3 class="border-bottom pb-2">Acompanhamento</h3>
-            <div class="row">
-                <!-- Módulo de Atividades -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-calendar-alt text-pink"></i> Atividades
-                            </h5>
-                            <p class="card-text">Gerenciamento de atividades do sistema.</p>
-                            <div class="d-flex flex-column">
-                                <a href="{% url 'atividades:listar_atividades' %}" class="btn btn-pink">
-                                    <i class="fas fa-calendar-alt"></i> Atividades
-                                </a>
+                        <div class="card-body py-3">
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show py-2" role="alert">
+                                        <small>{{ message }}</small>
+                                        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            
+                            <form method="post" action="{% url 'login' %}" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                
+                                <div class="mb-2">
+                                    <label for="id_username_home" class="form-label small">Nome de usuário</label>
+                                    <input type="text" name="username" id="id_username_home" class="form-control form-control-sm" required>
+                                    <div class="invalid-feedback">
+                                        Por favor, informe seu nome de usuário.
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="id_password_home" class="form-label small">Senha</label>
+                                    <input type="password" name="password" id="id_password_home" class="form-control form-control-sm" required>
+                                    <div class="invalid-feedback">
+                                        Por favor, informe sua senha.
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-sign-in-alt"></i> Entrar
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <div class="text-center mt-2">
+                                <small class="text-muted">
+                                    Ou <a href="{% url 'login' %}" class="text-decoration-none">acesse a página de login completa</a>
+                                </small>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- Módulo de Presenças -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-clipboard-check text-secondary"></i> Presenças
-                            </h5>
-                            <p class="card-text">Controle de presenças em atividades e aulas.</p>
-                            <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary">
-                                <i class="fas fa-clipboard-check"></i> Presenças
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <!-- Módulo de Relatórios -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-chart-bar text-warning"></i> Relatórios
-                            </h5>
-                            <p class="card-text">Gere relatórios detalhados sobre alunos, presenças e histórico.</p>
-                            <a href="{% url 'relatorios:listar_relatorios' %}" class="btn btn-warning">
-                                <i class="fas fa-file-alt"></i> Acessar Relatórios
-                            </a>
-                        </div>
-                    </div>
+            </div>
+        {% endif %}
+    </div>
+    {% if user.is_authenticated %}
+    <!-- INÍCIO: BLOCO COMPACTO DE MÓDULOS (padrão reversível) -->
+    <div class="row row-cols-xxl-6 row-cols-xl-5 row-cols-lg-4 row-cols-md-3 row-cols-sm-2 g-2 mt-2">
+        <!-- Cursos -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-book text-success"></i> Cursos</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Gerencie Cursos.</p>
+                    <a href="{% url 'cursos:listar_cursos' %}" class="btn btn-success btn-sm w-100"><i class="fas fa-book-open"></i> Cursos</a>
                 </div>
             </div>
         </div>
-
-        <!-- Seção: Avaliação e Financeiro -->
-        <div class="mt-4 mb-3">
-            <h3 class="border-bottom pb-2">Avaliação e Financeiro</h3>
-            <div class="row">
-                <!-- Módulo de Notas -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-star text-warning"></i> Notas
-                            </h5>
-                            <p class="card-text">Gerenciamento de notas dos alunos nos cursos.</p>
-                            <a href="{% url 'notas:listar_notas' %}" class="btn btn-warning">
-                                <i class="fas fa-star"></i> Acessar Notas
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <!-- Módulo de Pagamentos -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-dollar-sign text-success"></i> Pagamentos
-                            </h5>
-                            <p class="card-text">Controle de mensalidades e outras transações financeiras.</p>
-                            <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-success">
-                                <i class="fas fa-money-bill-wave"></i> Acessar Pagamentos
-                            </a>
-                        </div>
-                    </div>
+        <!-- Alunos -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-user-graduate text-primary"></i> Alunos</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Gerencie Alunos.</p>
+                    <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-primary btn-sm w-100"><i class="fas fa-users"></i> Alunos</a>
                 </div>
             </div>
         </div>
-    {% else %}
-        <div class="col-12 text-center mt-4">
-            <div class="alert alert-info">
-                <h4>Bem-vindo ao Sistema de Gestão Integrada da OmAum</h4>
-                <p>Por favor, faça login para acessar o sistema.</p>
-                <a href="{% url 'login' %}" class="btn btn-primary">
-                    <i class="fas fa-sign-in-alt"></i> Entrar
-                </a>
+        <!-- Turmas -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-users text-info"></i> Turmas</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Gerencie Turmas.</p>
+                    <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-info btn-sm w-100"><i class="fas fa-chalkboard-teacher"></i> Turmas</a>
+                </div>
             </div>
         </div>
+        <!-- Atividades -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-calendar-alt text-pink"></i> Atividades</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Gerencie Atividades.</p>
+                    <a href="{% url 'atividades:listar_atividades' %}" class="btn btn-pink btn-sm w-100"><i class="fas fa-calendar-alt"></i> Atividades</a>
+                </div>
+            </div>
+        </div>
+        <!-- Presenças -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-clipboard-check text-secondary"></i> Presenças</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Controle de Presenças.</p>
+                    <a href="{% url 'presencas:listar_presencas' %}" class="btn btn-secondary btn-sm w-100"><i class="fas fa-clipboard-check"></i> Presenças</a>
+                </div>
+            </div>
+        </div>
+        <!-- Frequências -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-check-square text-primary"></i> Frequências</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Registro de Frequências.</p>
+                    <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-primary btn-sm w-100"><i class="fas fa-check-square"></i> Frequências</a>
+                </div>
+            </div>
+        </div>
+        <!-- Notas -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-star text-warning"></i> Notas</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Notas dos Alunos.</p>
+                    <a href="{% url 'notas:listar_notas' %}" class="btn btn-warning btn-sm w-100"><i class="fas fa-star"></i> Notas</a>
+                </div>
+            </div>
+        </div>
+        <!-- Pagamentos -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-money-bill-wave text-success"></i> Pagamentos</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Pagamentos dos Alunos.</p>
+                    <a href="{% url 'pagamentos:listar_pagamentos' %}" class="btn btn-success btn-sm w-100"><i class="fas fa-money-bill-wave"></i> Pagamentos</a>
+                </div>
+            </div>
+        </div>
+        <!-- Relatórios -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-chart-bar text-secondary"></i> Relatórios</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Relatórios e Análises.</p>
+                    <a href="{% url 'relatorios:listar_relatorios' %}" class="btn btn-secondary btn-sm w-100"><i class="fas fa-chart-bar"></i> Relatórios</a>
+                </div>
+            </div>
+        </div>
+        <!-- Tipos de Código -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-key text-purple"></i> Tipos de Código</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Gerencie os tipos de código iniciático disponíveis no sistema.</p>
+                    <a href="{% url 'alunos:listar_tipocodigos' %}" class="btn btn-purple btn-sm w-100"><i class="fas fa-key"></i> Tipos de Código</a>
+                </div>
+            </div>
+        </div>
+        <!-- Códigos Iniciáticos -->
+        <div class="col">
+            <div class="card h-100 p-1">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1" style="font-size:1rem;"><i class="fas fa-list-ol text-secondary"></i> Códigos Iniciáticos</h6>
+                    <p class="card-text" style="font-size:0.95rem;">Cadastro, edição e consulta dos códigos iniciáticos.</p>
+                    <a href="{% url 'alunos:listar_codigos' %}" class="btn btn-secondary btn-sm w-100"><i class="fas fa-list-ol"></i> Códigos Iniciáticos</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FIM: BLOCO COMPACTO DE MÓDULOS -->
     {% endif %}
 </div>
-
 <style>
-    /* Cores personalizadas mais suaves para substituir o vermelho */
-    .text-pink {
-        color: #e83e8c !important;
-    }
-    .btn-pink {
-        background-color: #e83e8c !important;
-        border-color: #e83e8c !important;
-        color: white !important;
-    }
-    .btn-outline-pink {
-        color: #e83e8c !important;
-        border-color: #e83e8c !important;
-    }
-    .btn-outline-pink:hover {
-        background-color: #e83e8c !important;
-        color: white !important;
-    }
-    
-    .text-purple {
-        color: #6f42c1 !important;
-    }
-    .btn-purple {
-        background-color: #6f42c1 !important;
-        border-color: #6f42c1 !important;
-        color: white !important;
+    .btn-pink { background-color: #e83e8c !important; border-color: #e83e8c !important; color: white !important; }
+    .btn-outline-pink { color: #e83e8c !important; border-color: #e83e8c !important; }
+    .btn-outline-pink:hover { background-color: #e83e8c !important; color: white !important; }
+    .text-pink { color: #e83e8c !important; }
+    .btn-purple { background-color: #6f42c1 !important; border-color: #6f42c1 !important; color: white !important; }
+    .text-purple { color: #6f42c1 !important; }
+    .card { min-width: 0; }
+    .card-title, .card-text { margin-bottom: 0.3rem; }
+    .card-body { padding: 0.5rem !important; }
+    .card { font-size: 0.98rem; }
+    @media (max-width: 991px) {
+        .row-cols-xxl-6, .row-cols-xl-5 { grid-template-columns: repeat(2, 1fr); }
     }
 </style>
+
+{% if not user.is_authenticated %}
+<script>
+// Validação do formulário de login da home
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+{% endif %}
 {% endblock %}

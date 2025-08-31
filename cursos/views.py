@@ -17,7 +17,15 @@ import openpyxl
 def listar_cursos(request):
     """Lista todos os cursos cadastrados."""
     cursos = services.listar_cursos()
-    return render(request, "cursos/listar_cursos.html", {"cursos": cursos})
+    return render(
+        request,
+        "cursos/listar_cursos.html",
+        {
+            "cursos": cursos,
+            "pagamentos_atrasados": [],
+            "pagamentos_atrasados_count": 0,
+        },
+    )
 
 
 @login_required

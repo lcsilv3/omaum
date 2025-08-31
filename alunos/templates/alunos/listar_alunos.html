@@ -74,13 +74,20 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => {
+            .then(async response => {
+                if (response.status === 401 || response.redirected) {
+                    tabelaContainer.innerHTML = '<p class="text-danger">Sua sessão expirou. Faça login novamente para continuar.</p>';
+                    spinner.style.display = 'none';
+                    tabelaContainer.style.display = 'block';
+                    return null;
+                }
                 if (!response.ok) {
                     throw new Error(`Erro na requisição: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
+                if (!data) return;
                 if (data.tabela_html && data.paginacao_html) {
                     tabelaContainer.innerHTML = data.tabela_html;
                     document.querySelector('.card-footer').innerHTML = data.paginacao_html;
@@ -103,23 +110,37 @@
             if (e.target.classList.contains('page-link')) {
                 e.preventDefault();
                 const url = e.target.getAttribute('href');
-
                 if (url) {
+                    // Mantém os filtros atuais ao paginar
+                    const params = new URLSearchParams(url.split('?')[1] || '');
+                    // Adiciona filtros do formulário se existirem
+                    const formData = new FormData(form);
+                    for (const [key, value] of formData.entries()) {
+                        if (value && key !== 'csrfmiddlewaretoken') {
+                            params.set(key, value);
+                        }
+                    }
                     spinner.style.display = 'block';
                     tabelaContainer.style.display = 'none';
-
-                    fetch(url, {
+                    fetch(`/alunos/search/?${params.toString()}`, {
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest'
                         }
                     })
-                    .then(response => {
+                    .then(async response => {
+                        if (response.status === 401 || response.redirected) {
+                            tabelaContainer.innerHTML = '<p class="text-danger">Sua sessão expirou. Faça login novamente para continuar.</p>';
+                            spinner.style.display = 'none';
+                            tabelaContainer.style.display = 'block';
+                            return null;
+                        }
                         if (!response.ok) {
                             throw new Error('Erro na requisição');
                         }
                         return response.json();
                     })
                     .then(data => {
+                        if (!data) return;
                         if (data.tabela_html && data.paginacao_html) {
                             tabelaContainer.innerHTML = data.tabela_html;
                             document.querySelector('.card-footer').innerHTML = data.paginacao_html;

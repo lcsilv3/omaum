@@ -34,7 +34,7 @@ def get_forms():
 
 
 def pagina_inicial(request):
-    """Exibe a página inicial do sistema (versão compacta). Para voltar ao layout antigo, altere para 'home.html'."""
+    """Exibe a página inicial do sistema (dashboard)."""
     try:
         # Obter estatísticas para o dashboard
         Aluno = get_models()
@@ -55,15 +55,14 @@ def pagina_inicial(request):
             "alunos_ativos": alunos_ativos,
             "total_cursos": total_cursos,
             "atividades_recentes": atividades_recentes,
+            "pagamentos_atrasados": [],
+            "pagamentos_atrasados_count": 0,
         }
-        # NOVO: renderizar home_compact.html
-        return render(request, "home_compact.html", context)
+        return render(request, "home.html", context)
     except Exception as e:
         logger.error(f"Erro na página inicial: {str(e)}", exc_info=True)
-        messages.error(
-            request, f"Ocorreu um erro ao carregar a página inicial: {str(e)}"
-        )
-        return render(request, "home_compact.html", {"error": str(e)})
+        messages.error(request, f"Ocorreu um erro ao carregar a página inicial: {str(e)}")
+        return render(request, "home.html", {"error": str(e)})
 
 
 def registro_usuario(request):

@@ -92,7 +92,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "widget_tweaks",
     "django_select2",
-    "debug_toolbar",
     "django_extensions",
 ]
 
@@ -101,10 +100,10 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "core.middleware.ajax_authentication_middleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     # Verifique por middlewares personalizados aqui
 ]
 
@@ -114,11 +113,11 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
-            os.path.join(BASE_DIR, "templates"),
             os.path.join(BASE_DIR, "omaum", "templates"),
             os.path.join(BASE_DIR, "matriculas", "templates"),
+            os.path.join(BASE_DIR, "cursos", "templates"),
         ],
-        "APP_DIRS": True,
+    "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -268,14 +267,3 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 }
 
-# Remover Debug Toolbar temporariamente
-if "debug_toolbar" in INSTALLED_APPS:
-    INSTALLED_APPS.remove("debug_toolbar")
-
-if "debug_toolbar.middleware.DebugToolbarMiddleware" in MIDDLEWARE:
-    MIDDLEWARE.remove("debug_toolbar.middleware.DebugToolbarMiddleware")
-
-# Configuração para evitar interferência do Debug Toolbar em requisições AJAX
-DEBUG_TOOLBAR_CONFIG = {
-    "SHOW_TOOLBAR_CALLBACK": (lambda request: False if request.is_ajax() else True),
-}

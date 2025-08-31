@@ -10,7 +10,7 @@ class AlunoUITest(LiveServerTestCase):
         from django.contrib.auth.models import User
 
         User.objects.create_superuser(
-            username="admin", password="admin123", email="admin@example.com"
+            username="lcsilv3", password="iG356900", email="lcsilv3@example.com"
         )
         Aluno.objects.create(
             cpf="12345678901",
@@ -27,10 +27,25 @@ class AlunoUITest(LiveServerTestCase):
 
     def test_listar_alunos(self):
         # Realizar login antes de acessar a página de alunos
-        self.browser.get(f"{self.live_server_url}/admin/login/")
-        self.browser.find_element(By.NAME, "username").send_keys("admin")
-        self.browser.find_element(By.NAME, "password").send_keys("admin123")
-        self.browser.find_element(By.XPATH, "//input[@type='submit']").click()
+        login_urls = ["/accounts/login/"]
+        logged_in = False
+        for url in login_urls:
+            self.browser.get(f"{self.live_server_url}{url}")
+            try:
+                self.browser.find_element(By.NAME, "username").send_keys("lcsilv3")
+                self.browser.find_element(By.NAME, "password").send_keys("iG356900")
+                self.browser.find_element(By.XPATH, "//input[@type='submit']").click()
+                logged_in = True
+                break
+            except Exception:
+                # Captura HTML para debug
+                with open("saida_login_debug.html", "w", encoding="utf-8") as f:
+                    f.write(self.browser.page_source)
+        if not logged_in:
+            raise AssertionError(
+                "Não foi possível encontrar o formulário de login. "
+                "Veja saida_login_debug.html para depuração."
+            )
 
         # Abrir a página de listagem de alunos
         self.browser.get(f"{self.live_server_url}/alunos/")

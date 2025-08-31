@@ -56,12 +56,10 @@ class TurmasUITest(StaticLiveServerTestCase):
         # Verificação explícita de login bem-sucedido
         body = self.driver.find_element(By.TAG_NAME, "body").text
         print(f"[DEBUG] Body após login: {body}")
-        assert (
-            "Sair" in body
-            or "Administração" in body
-            or "Logout" in body
-            or "Turmas" in body
-        ), f"Login falhou: usuário não autenticado. Body: {body}"
+        self.assertTrue(
+            any(txt in body for txt in ["Sair", "Administração", "Logout", "Turmas"]),
+            f"Login falhou: usuário não autenticado. Body: {body}",
+        )
 
         # 2. Ir para a página de turmas
         self.driver.get(f"{self.live_server_url}/turmas/")
@@ -79,9 +77,9 @@ class TurmasUITest(StaticLiveServerTestCase):
                 )
             except Exception:
                 body = self.driver.find_element(By.TAG_NAME, "body").text
-                assert "Turma" in body
+                self.assertIn("Turma", body)
         if header:
-            assert "Turma" in header.text
+            self.assertIn("Turma", header.text)
 
         # 3. Clicar em "Criar Turma"
         if self.driver.find_elements(By.LINK_TEXT, "Criar Turma"):
@@ -89,8 +87,8 @@ class TurmasUITest(StaticLiveServerTestCase):
         else:
             self.driver.get(f"{self.live_server_url}/turmas/criar/")
         time.sleep(1)
+
         # 4. Expandir todas as abas/campos colapsados antes de preencher
-        # Corrigir XPath inválido: buscar explicitamente botões/links de expansão
         textos_expansao = [
             "expandir",
             "Expandir",
@@ -100,8 +98,6 @@ class TurmasUITest(StaticLiveServerTestCase):
             "Informações Básicas",
             "Clique para expandir",
             "clique para expandir/recolher",
-            "clique para expandir/recolher",
-            "clique para expandir",
             "expandir/recolher",
         ]
         abas = []
@@ -136,7 +132,6 @@ class TurmasUITest(StaticLiveServerTestCase):
             print(
                 f"  name={campo.get_attribute('name')} type={campo.get_attribute('type')} value={campo.get_attribute('value')} required={campo.get_attribute('required')}"
             )
-        # Preencher campos obrigatórios
         from datetime import date
 
         # nome
@@ -158,7 +153,6 @@ class TurmasUITest(StaticLiveServerTestCase):
                 "arguments[0].value = 'Turma Selenium'", campo_nome
             )
             print("[DEBUG] Valor de 'nome' setado via JS.")
-
         # descricao
         campo_desc = self.driver.find_element(By.NAME, "descricao")
         if campo_desc.is_displayed() and campo_desc.is_enabled():
@@ -264,7 +258,6 @@ class TurmasUITest(StaticLiveServerTestCase):
                 print(f"  class={campo.get_attribute('class')}")
                 self.driver.execute_script(f"arguments[0].value = '{hoje}'", campo)
                 print(f"[DEBUG] Valor de '{campo_data}' setado via JS.")
-        # Se houver outros campos obrigatórios, adicionar aqui
         # Debug: listar todos os botões do formulário
         botoes = self.driver.find_elements(By.XPATH, "//form//button")
         print(f"[DEBUG] Botões encontrados no formulário de criação:")
@@ -313,9 +306,11 @@ class TurmasUITest(StaticLiveServerTestCase):
         self.driver.get(f"{self.live_server_url}/turmas/")
         body = self.driver.find_element(By.TAG_NAME, "body").text
         print(f"[DEBUG] Body após criação da turma: {body}")
-        assert (
-            "Turma Selenium" in body
-        ), "Turma Selenium não encontrada na listagem após criação."
+        self.assertIn(
+            "Turma Selenium",
+            body,
+            "Turma Selenium não encontrada na listagem após criação.",
+        )
 
         # 6. Acessar detalhes da turma
         linhas = self.driver.find_elements(By.XPATH, "//tr")
@@ -339,7 +334,7 @@ class TurmasUITest(StaticLiveServerTestCase):
                 "Não foi possível encontrar o link de detalhes da turma na linha de 'Turma Selenium'!"
             )
         time.sleep(1)
-        assert "Turma Selenium" in self.driver.page_source
+        self.assertIn("Turma Selenium", self.driver.page_source)
 
         # 7. Editar turma
         if self.driver.find_elements(By.LINK_TEXT, "Editar"):
@@ -433,4 +428,4 @@ class TurmasUITest(StaticLiveServerTestCase):
         # 9. Verificar se turma não está mais na listagem
         self.driver.get(f"{self.live_server_url}/turmas/")
         body = self.driver.find_element(By.TAG_NAME, "body").text
-        assert "Turma Selenium Editada" not in body
+        self.assertNotIn("Turma Selenium Editada", body)

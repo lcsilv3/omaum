@@ -17,18 +17,19 @@ def pagamentos_context(request):
     """
     Pagamento = get_pagamento_model()  # noqa: E1101
 
-    pagamentos_atrasados_count = (
-        Pagamento.objects.filter(status="ATRASADO").count()
-        if request.user.is_authenticated
-        else 0
-    )
+    if request.user.is_authenticated:
+        pagamentos_atrasados_qs = Pagamento.objects.filter(status="ATRASADO")
+        pagamentos_atrasados = list(pagamentos_atrasados_qs)
+        pagamentos_atrasados_count = pagamentos_atrasados_qs.count()
+    else:
+        pagamentos_atrasados = []
+        pagamentos_atrasados_count = 0
 
     logger.debug(
         "Context processor executado: pagamentos_atrasados_count=%d",
         pagamentos_atrasados_count,
     )
-
     return {
         "pagamentos_atrasados_count": pagamentos_atrasados_count,
-        "pagamentos_atrasados": pagamentos_atrasados_count,  # Alias compatível
+        "pagamentos_atrasados": pagamentos_atrasados,
     }

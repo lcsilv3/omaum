@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 
 {% block title %}Lista de Cursos{% endblock %}
@@ -43,7 +44,7 @@
       <div class="card-header">
           <form method="get" class="row g-3">
               <div class="col-md-6">
-                  <input type="text" name="q" class="form-control" placeholder="Buscar por nome..." value="{{ query }}">
+                  <input type="text" name="q" class="form-control" placeholder="Buscar por nome..." value="{{ query|default:'' }}">
               </div>
               <div class="col-md-2">
                   <button type="submit" class="btn btn-primary w-100">Filtrar</button>

@@ -1,15 +1,11 @@
-<!DOCTYPE html>
-{% load static %}
-{% load perms_extras %}
-<html lang="pt-br">
-<head>
+<html lang="pt-br"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SGI - OmAum{% endblock %}</title>
+    <title>500 Erro Interno do Servidor</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    {% block form_media_css %}{% endblock %}
-    {% block extra_css %}{% endblock %}
+    
+    
     <style>
         body { min-height: 100vh; display: flex; flex-direction: column; }
         main { flex: 1; }
@@ -45,14 +41,30 @@
         </nav>
     </header>
     <main class="container mt-4">
-        {% block content %}{% endblock %}
+        
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h1 class="display-1">500</h1>
+                    <h2 class="mb-4">Erro Interno do Servidor</h2>
+                    <p class="lead">Desculpe, ocorreu um erro interno no servidor. Nossa equipe técnica foi notificada e está trabalhando para resolver o problema.</p>
+                    <a href="/home/" class="btn btn-primary mt-3">Tentar Novamente</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
     </main>
     <footer class="footer mt-auto py-3 bg-light">
         <div class="container text-center">
-            <span class="text-muted">&copy; 2025 OmAum</span>
+            <span class="text-muted">© 2025 OmAum</span>
         </div>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    {% block extra_js %}{% endblock %}
-</body>
-</html>
+    
+
+
+</body></html>

@@ -81,3 +81,26 @@ def renovacao_sessao_middleware(get_response):
         return response
 
     return middleware
+
+
+def ajax_authentication_middleware(get_response):
+    """
+    Middleware para tratar requisições AJAX não autenticadas.
+    Retorna JSON 401 em vez de redirecionar para página de login.
+    """
+
+    def middleware(request):
+        # Verifica se é uma requisição AJAX não autenticada
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            # Verifica se o usuário não está autenticado
+            if not hasattr(request, 'user') or not request.user.is_authenticated:
+                from django.http import JsonResponse
+                return JsonResponse({
+                    "success": False, 
+                    "error": "Sessão expirada. Faça login novamente."
+                }, status=401)
+
+        response = get_response(request)
+        return response
+
+    return middleware

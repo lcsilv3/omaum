@@ -347,6 +347,8 @@ def excluir_aluno(request, cpf):
     return render(request, "alunos/excluir_aluno.html", context)
 
 
+from django.contrib.auth.decorators import login_required
+
 @login_required
 def search_alunos(request):
     """
@@ -354,22 +356,18 @@ def search_alunos(request):
     Retorna os resultados em formato JSON para requisições AJAX.
     Para requisições normais, renderiza a página de listagem de alunos.
     """
+    # Tratamento especial para AJAX não autenticado (deve ser redundante, mas cobre edge cases de sessão expirada)
+    if not request.user.is_authenticated and request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"success": False, "error": "Não autenticado"}, status=401)
+
     query = request.GET.get("q", "").strip()
     curso_id = request.GET.get("curso", None)
 
-    logger.debug(
-        "Requisição recebida para busca dinâmica. Query: %s, Curso ID: %s",
-        query,
-        curso_id,
-    )
+    logger.debug("[search_alunos] Requisição recebida. Query: '%s', Curso ID: '%s', Params: %s", query, curso_id, dict(request.GET))
 
     try:
         alunos_queryset = listar_alunos(query=query, curso_id=curso_id)
-        logger.debug(
-            "Query executada: %s, Resultados encontrados: %d",
-            query,
-            alunos_queryset.count(),
-        )
+        logger.debug("[search_alunos] Query executada. Resultados encontrados: %d", alunos_queryset.count())
 
         paginator = Paginator(alunos_queryset, 10)
         page_number = request.GET.get("page", 1)
@@ -380,16 +378,27 @@ def search_alunos(request):
             context_partials = {
                 "alunos": alunos,  # page object
                 "page_obj": alunos,
-                "total_alunos": alunos.paginator.count
-                if hasattr(alunos, "paginator")
-                else 0,
+                "total_alunos": alunos.paginator.count if hasattr(alunos, "paginator") else 0,
+                "query": query,
+                "cursos": [],
+                "curso_selecionado": curso_id or "",
             }
-            tabela_html = render_to_string(
-                "alunos/_tabela_alunos_parcial.html", context_partials, request=request
-            )
-            paginacao_html = render_to_string(
-                "alunos/_paginacao_parcial.html", context_partials, request=request
-            )
+            logger.debug("[search_alunos] Contexto enviado para templates parciais: %s", context_partials)
+            try:
+                tabela_html = render_to_string(
+                    "alunos/_tabela_alunos_parcial.html", context_partials, request=request
+                )
+                paginacao_html = render_to_string(
+                    "alunos/_paginacao_parcial.html", context_partials, request=request
+                )
+                logger.debug("[search_alunos] Templates parciais renderizados com sucesso.")
+            except Exception as exc:
+                import traceback
+                logger.error("Erro ao renderizar templates parciais AJAX: %s\n%s", exc, traceback.format_exc())
+                return JsonResponse({
+                    "success": False,
+                    "error": f"Erro ao renderizar templates parciais: {exc}"
+                }, status=500)
             return JsonResponse(
                 {
                     "success": True,
@@ -402,16 +411,18 @@ def search_alunos(request):
             )
         # Renderização padrão
         context = {"alunos": alunos}
+        logger.debug("[search_alunos] Renderização padrão. Contexto: %s", context)
         return render(request, "alunos/listar_alunos.html", context)
     except ValueError as exc:
-        logger.error("Erro de valor: %s", exc)
+        logger.error("[search_alunos] Erro de valor: %s", exc, exc_info=True)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse({"success": False, "error": str(exc)}, status=400)
         else:
             messages.error(request, f"Erro na busca: {str(exc)}")
             return redirect("alunos:listar_alunos")
     except Exception as exc:
-        logger.error("Erro inesperado na busca de alunos: %s", exc)
+        import traceback
+        logger.error("[search_alunos] Erro inesperado: %s\n%s", exc, traceback.format_exc())
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse(
                 {"success": False, "error": "Erro interno do servidor."}, status=500

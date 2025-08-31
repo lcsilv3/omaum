@@ -168,7 +168,7 @@ class ViewsTests(TestCase):
         """Testa a página inicial"""
         response = self.client.get(reverse("core:pagina_inicial"))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "home_compact.html")
+    self.assertTemplateUsed(response, "home.html")
 
     def test_entrar_get(self):
         """Testa a página de login (GET)"""

@@ -76,7 +76,7 @@ TEMPLATES = [
             str(BASE_DIR / "matriculas" / "templates"),
             str(BASE_DIR / "tests" / "templates"),
         ],
-        "APP_DIRS": True,
+        # "APP_DIRS": True,  # REMOVIDO: loaders está definido em OPTIONS
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
