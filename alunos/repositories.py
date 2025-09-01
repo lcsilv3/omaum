@@ -32,6 +32,26 @@ class AlunoRepository:
             return None
 
     @staticmethod
+    def buscar_por_email(email):
+        """Busca aluno por email."""
+        try:
+            Aluno = AlunoRepository.get_model()
+            return Aluno.objects.get(email=email)
+        except ObjectDoesNotExist:
+            logger.warning(f"Aluno com email {email} não encontrado")
+            return None
+        except Exception as e:
+            logger.error(f"Erro ao buscar aluno por email {email}: {e}")
+            return None
+
+    @staticmethod
+    def buscar_por_nome_ou_cpf(query):
+        """Busca alunos por nome ou CPF."""
+        Aluno = AlunoRepository.get_model()
+        cpf_query = "".join(filter(str.isdigit, query))
+        return Aluno.objects.filter(Q(nome__icontains=query) | Q(cpf__icontains=cpf_query))
+
+    @staticmethod
     def buscar_instrutores_ativos():
         """Busca alunos que podem ser instrutores."""
         try:
@@ -49,7 +69,7 @@ class AlunoRepository:
             queryset = (
                 Aluno.objects.filter(ativo=ativo)
                 .select_related()
-                .prefetch_related("matriculas__turma__curso")
+                .prefetch_related("matricula_set__turma__curso")
                 .order_by("nome")
             )
 
@@ -80,14 +100,15 @@ class AlunoRepository:
             return Aluno.objects.none()
 
     @staticmethod
-    def buscar_por_email(email):
-        """Busca aluno por email."""
-        try:
-            Aluno = AlunoRepository.get_model()
-            return Aluno.objects.get(email=email)
-        except ObjectDoesNotExist:
-            logger.warning(f"Aluno com email {email} não encontrado")
-            return None
-        except Exception as e:
-            logger.error(f"Erro ao buscar aluno por email {email}: {e}")
-            return None
+    def criar(aluno_data):
+        """Cria um novo aluno com os dados fornecidos."""
+        Aluno = AlunoRepository.get_model()
+        return Aluno.objects.create(**aluno_data)
+
+    @staticmethod
+    def atualizar(aluno, dados):
+        """Atualiza os dados de um aluno existente."""
+        for campo, valor in dados.items():
+            setattr(aluno, campo, valor)
+        aluno.save()
+        return aluno

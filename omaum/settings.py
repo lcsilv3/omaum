@@ -100,8 +100,8 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "core.middleware.ajax_authentication_middleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "core.middleware.ajax_authentication_middleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Verifique por middlewares personalizados aqui
@@ -113,6 +113,7 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
+            os.path.join(BASE_DIR, "templates"),
             os.path.join(BASE_DIR, "omaum", "templates"),
             os.path.join(BASE_DIR, "matriculas", "templates"),
             os.path.join(BASE_DIR, "cursos", "templates"),
@@ -222,6 +223,16 @@ LOGGING = {
         "django": {
             "handlers": ["file"],
             "level": "DEBUG",
+            "propagate": True,
+        },
+        "alunos.views": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "core.middleware": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
             "propagate": True,
         },
         "presencas.views_ext.registro_presenca": {

@@ -6,15 +6,14 @@ import logging
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import Paginator
-from django.db import transaction
+from django import forms
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.shortcuts import render, redirect
 
-from .forms import AlunoForm, RegistroHistoricoFormSet, RegistroHistoricoForm
-from .models import Aluno, RegistroHistorico
-from django import forms
-from .services import listar_alunos, buscar_aluno_por_cpf
+from alunos.forms import AlunoForm, RegistroHistoricoFormSet, RegistroHistoricoForm
+from alunos.models import Aluno, RegistroHistorico
+from alunos.services import listar_alunos, buscar_aluno_por_cpf
 
 logger = logging.getLogger(__name__)
 
@@ -34,62 +33,49 @@ def listar_alunos_view(request):
         paginator = Paginator(alunos_list, 10)
         page_obj = paginator.get_page(page_number)
 
-        from .utils import get_curso_model
+        from ..utils import get_curso_model
 
         Curso = get_curso_model()
         cursos_para_filtro = Curso.objects.all().order_by("nome") if Curso else []
 
+        context = {
+            "alunos": page_obj,
+            "page_obj": page_obj,
+            "query": query,
+            "cursos": cursos_para_filtro,
+            "curso_selecionado": curso_id,
+            "total_alunos": total_alunos,
+        }
+
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            alunos_data = [
-                {
-                    "id": aluno.id,
-                    "nome": aluno.nome,
-                    "email": aluno.email,
-                    "cpf": aluno.cpf,
-                    "foto": aluno.foto.url if aluno.foto else None,
-                    "cursos": [
-                        matricula.turma.curso.nome
-                        for matricula in aluno.matriculas.select_related("turma__curso")
-                    ]
-                    if aluno.matriculas.exists()
-                    else ["Sem curso associado"],
-                }
-                for aluno in page_obj
-            ]
-            return JsonResponse(
-                {
-                    "alunos": alunos_data,
-                    "page": page_obj.number,
-                    "num_pages": paginator.num_pages,
-                }
+            tabela_html = render_to_string(
+                "alunos/_tabela_alunos_parcial.html", context, request=request
             )
+            paginacao_html = render_to_string(
+                "alunos/_paginacao_parcial.html", context, request=request
+            )
+            return JsonResponse({"tabela_html": tabela_html, "paginacao_html": paginacao_html})
 
         return render(
             request,
             "alunos/listar_alunos.html",
-            {
-                "alunos": page_obj,
-                "page_obj": page_obj,
-                "query": query,
-                "cursos": cursos_para_filtro,
-                "curso_selecionado": curso_id,
-                "total_alunos": total_alunos,
-            },
+            context,
         )
     except Exception as exc:
         logger.error("Erro ao listar alunos: %s", exc)
+        context = {
+            "alunos": [],
+            "page_obj": None,
+            "query": "",
+            "cursos": [],
+            "curso_selecionado": "",
+            "total_alunos": 0,
+            "error_message": f"Erro ao listar alunos: {exc}",
+        }
         return render(
             request,
             "alunos/listar_alunos.html",
-            {
-                "alunos": [],
-                "page_obj": None,
-                "query": "",
-                "cursos": [],
-                "curso_selecionado": "",
-                "total_alunos": 0,
-                "error_message": f"Erro ao listar alunos: {exc}",
-            },
+            context,
         )
 
 

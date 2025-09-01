@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Diagnóstico de Elegibilidade de Instrutores{% endblock %}
 
@@ -86,34 +87,8 @@
         </a>
     </div>
 </div>
+{% endblock %}
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const mostrarElegiveisCheckbox = document.getElementById('mostrar-elegiveis');
-        const mostrarInelegiveisCheckbox = document.getElementById('mostrar-inelegiveis');
-        const tabela = document.getElementById('tabela-diagnostico');
-        
-        function atualizarVisibilidade() {
-            const mostrarElegiveis = mostrarElegiveisCheckbox.checked;
-            const mostrarInelegiveis = mostrarInelegiveisCheckbox.checked;
-            
-            const linhasElegiveis = tabela.querySelectorAll('tbody tr.elegivel');
-            const linhasInelegiveis = tabela.querySelectorAll('tbody tr.inelegivel');
-            
-            linhasElegiveis.forEach(linha => {
-                linha.style.display = mostrarElegiveis ? '' : 'none';
-            });
-            
-            linhasInelegiveis.forEach(linha => {
-                linha.style.display = mostrarInelegiveis ? '' : 'none';
-            });
-        }
-        
-        mostrarElegiveisCheckbox.addEventListener('change', atualizarVisibilidade);
-        mostrarInelegiveisCheckbox.addEventListener('change', atualizarVisibilidade);
-        
-        // Inicializar
-        atualizarVisibilidade();
-    });
-</script>
+{% block extra_js %}
+<script src="{% static 'alunos/js/diagnostico_instrutores.js' %}"></script>
 {% endblock %}

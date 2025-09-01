@@ -1,6 +1,8 @@
 from django.test import LiveServerTestCase
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from alunos.models import Aluno
 from datetime import date
 
@@ -34,7 +36,7 @@ class AlunoUITest(LiveServerTestCase):
             try:
                 self.browser.find_element(By.NAME, "username").send_keys("lcsilv3")
                 self.browser.find_element(By.NAME, "password").send_keys("iG356900")
-                self.browser.find_element(By.XPATH, "//input[@type='submit']").click()
+                self.browser.find_element(By.XPATH, "//button[@type='submit']").click()
                 logged_in = True
                 break
             except Exception:
@@ -68,7 +70,8 @@ class AlunoUITest(LiveServerTestCase):
             self.assertIn("Aluno", header.text)
 
         # Check if test student is listed
-        student_element = self.browser.find_element(
-            By.XPATH, "//*[text()='Maria Test']"
+        wait = WebDriverWait(self.browser, 10)  # Espera até 10 segundos
+        student_element = wait.until(
+            EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Maria Test')]"))
         )
-        self.assertEqual(student_element.text, "Maria Test")
+        self.assertIn("Maria Test", student_element.text)

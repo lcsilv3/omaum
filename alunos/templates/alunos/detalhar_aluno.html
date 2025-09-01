@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load alunos_extras %}
 
 {% block title %}Detalhes do Aluno: {{ aluno.nome }}{% endblock %}
@@ -34,7 +35,7 @@
             </h5>
         </div>
         <div id="dados-pessoais" class="card-body collapse">
-            <!-- ...existing code da seção Dados Pessoais... -->
+            <!-- ...código existente da seção Dados Pessoais... -->
             <div class="row">
                 <div class="col-md-8">
                     <div class="row">
@@ -393,270 +394,17 @@
 {% endblock %}
 
 {% block extra_js %}
+{# Passando URLs do Django para o JavaScript via atributos data-* no body #}
 <script>
-    // Ícone de chevron rotaciona ao expandir/recolher
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
-            toggle.addEventListener('click', function() {
-                var chevron = this.querySelector('.chevron');
-                setTimeout(function() {
-                    if (toggle.classList.contains('collapsed')) {
-                        chevron.style.transform = 'rotate(0deg)';
-                    } else {
-                        chevron.style.transform = 'rotate(90deg)';
-                    }
-                }, 150);
-            });
-        });
-        
-        // Carregar tipos de códigos
-        carregarTiposCodigos();
-        
-        // Event listeners para filtros dinâmicos
-        document.getElementById('tipo_evento').addEventListener('change', function() {
-            const tipoId = this.value;
-            const codigoSelect = document.getElementById('codigo_evento');
-            const tooltipCodigo = document.getElementById('tooltip-codigo-evento');
-            
-            if (tipoId) {
-                carregarCodigosPorTipo(tipoId);
-                codigoSelect.disabled = false;
-                
-                // Mostrar descrição do tipo selecionado
-                const selectedOption = this.options[this.selectedIndex];
-                const descricao = selectedOption.getAttribute('data-descricao');
-                document.getElementById('tooltip-tipo-evento').textContent = descricao || 'Descrição não disponível';
-            } else {
-                codigoSelect.innerHTML = '<option value="">Selecione</option>';
-                codigoSelect.disabled = true;
-                tooltipCodigo.textContent = 'Selecione primeiro o tipo de evento';
-            }
-        });
-        
-        document.getElementById('codigo_evento').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const descricao = selectedOption.getAttribute('data-descricao');
-            document.getElementById('tooltip-codigo-evento').textContent = descricao || 'Descrição não disponível';
-        });
-        
-        // Submissão do formulário via AJAX
-        document.getElementById('form-adicionar-evento').addEventListener('submit', function(e) {
-            e.preventDefault();
-            adicionarEventoHistorico();
-        });
-    });
-    
-    function carregarTiposCodigos() {
-        fetch('{% url "alunos:api_tipos_codigos" %}')
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const select = document.getElementById('tipo_evento');
-                    select.innerHTML = '<option value="">Selecione</option>';
-                    
-                    data.tipos.forEach(tipo => {
-                        const option = document.createElement('option');
-                        option.value = tipo.id;
-                        option.textContent = tipo.nome;
-                        option.setAttribute('data-descricao', tipo.descricao || '');
-                        select.appendChild(option);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Erro ao carregar tipos de códigos:', error);
-            });
-    }
-    
-    function carregarCodigosPorTipo(tipoId) {
-        fetch(`{% url "alunos:api_codigos_por_tipo" %}?tipo_id=${tipoId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const select = document.getElementById('codigo_evento');
-                    select.innerHTML = '<option value="">Selecione</option>';
-                    
-                    data.codigos.forEach(codigo => {
-                        const option = document.createElement('option');
-                        option.value = codigo.id;
-                        option.textContent = codigo.nome;
-                        option.setAttribute('data-descricao', codigo.descricao || '');
-                        select.appendChild(option);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Erro ao carregar códigos:', error);
-            });
-    }
-    
-    function adicionarEventoHistorico() {
-        const formData = new FormData(document.getElementById('form-adicionar-evento'));
-        const data = {
-            aluno_id: formData.get('aluno_id'),
-            tipo_evento: document.getElementById('tipo_evento').options[document.getElementById('tipo_evento').selectedIndex].text,
-            codigo_id: formData.get('codigo_evento'),
-            ordem_servico: formData.get('ordem_servico'),
-            data_os: formData.get('data_os'),
-            data_evento: formData.get('data_evento'),
-            observacoes: formData.get('observacoes')
-        };
-        
-        fetch('{% url "alunos:api_adicionar_evento_historico" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // Mostrar mensagem de sucesso
-                mostrarMensagem('Evento adicionado com sucesso!', 'success');
-                
-                // Limpar formulário
-                document.getElementById('form-adicionar-evento').reset();
-                document.getElementById('codigo_evento').disabled = true;
-                document.getElementById('tooltip-tipo-evento').textContent = 'Selecione o tipo de evento para ver a descrição';
-                document.getElementById('tooltip-codigo-evento').textContent = 'Selecione primeiro o tipo de evento';
-                
-                // Atualizar lista de eventos recentes (reload da página)
-                location.reload();
-            } else {
-                mostrarMensagem('Erro ao adicionar evento: ' + data.message, 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            mostrarMensagem('Erro ao adicionar evento', 'error');
-        });
-    }
-    
-    function mostrarMensagem(mensagem, tipo) {
-        const alertClass = tipo === 'success' ? 'alert-success' : 'alert-danger';
-        const alertHtml = `
-            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                ${mensagem}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        
-        // Inserir antes do formulário
-        const form = document.getElementById('form-adicionar-evento');
-        form.insertAdjacentHTML('beforebegin', alertHtml);
-        
-        // Remover após 5 segundos
-        setTimeout(() => {
-            const alert = document.querySelector('.alert');
-            if (alert) {
-                alert.remove();
-            }
-        }, 5000);
-    }
+    document.body.dataset.historicoApiUrl = `{% url "alunos:api_historico" aluno_cpf=aluno.cpf %}`;
+    document.body.dataset.addEventoApiUrl = `{% url "alunos:api_adicionar_evento_historico" %}`;
+    document.body.dataset.tiposCodigosApiUrl = `{% url "alunos:api_tipos_codigos" %}`;
+    document.body.dataset.codigosPorTipoApiUrl = `{% url "alunos:api_codigos_por_tipo" %}`;
 </script>
+
+{# Carregando dependências (jQuery para máscaras) e o script principal da página #}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-<script>
-    $(document).ready(function(){
-        // Histórico iniciático paginado
-        const btnCarregar = document.getElementById('btn-carregar-historico');
-        const btnCarregarMais = document.getElementById('btn-carregar-mais-historico');
-        const statusEl = document.getElementById('historico-status');
-        const tabelaContainer = document.getElementById('historico-tabela-container');
-        const tbody = document.getElementById('historico-tbody');
-        let pagina = 1;
-        const pageSize = 25;
-        let totalPages = 1;
-        let carregando = false;
-
-        function atualizarStatus() {
-            statusEl.textContent = `Página ${pagina - 1} de ${totalPages}`;
-        }
-
-        function toggleBotoes() {
-            if (pagina <= totalPages) {
-                btnCarregarMais.classList.remove('d-none');
-            } else {
-                btnCarregarMais.classList.add('d-none');
-            }
-        }
-
-        function renderRows(items) {
-            if (document.getElementById('historico-placeholder')) {
-                document.getElementById('historico-placeholder').remove();
-            }
-            for (const it of items) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${it.tipo_codigo}</td>
-                    <td title="${it.descricao}">${it.codigo}</td>
-                    <td>${new Date(it.data_os).toLocaleDateString('pt-BR')}</td>
-                    <td title="${it.observacoes}">${(it.observacoes || '-').substring(0,40)}</td>
-                `;
-                tbody.appendChild(tr);
-            }
-        }
-
-        function carregarPagina() {
-            if (carregando) return;
-            carregando = true;
-            statusEl.textContent = 'Carregando...';
-            fetch(`/alunos/api/historico/${encodeURIComponent("{{ aluno.cpf }}")}/?page=${pagina}&page_size=${pageSize}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        totalPages = data.total_pages;
-                        renderRows(data.results);
-                        pagina += 1;
-                        atualizarStatus();
-                        toggleBotoes();
-                    } else {
-                        statusEl.textContent = 'Erro ao carregar.';
-                    }
-                })
-                .catch(() => { statusEl.textContent = 'Falha de rede.'; })
-                .finally(() => { carregando = false; });
-        }
-
-        if (btnCarregar) {
-            btnCarregar.addEventListener('click', function() {
-                tabelaContainer.classList.remove('d-none');
-                btnCarregar.classList.add('d-none');
-                pagina = 1;
-                tbody.innerHTML = '<tr id="historico-placeholder"><td colspan="4" class="text-center text-muted">Carregando...</td></tr>';
-                carregarPagina();
-            });
-        }
-
-        if (btnCarregarMais) {
-            btnCarregarMais.addEventListener('click', function() {
-                carregarPagina();
-            });
-        }
-        // Fim histórico paginado
-        // Aplicar máscaras para exibição
-        $('.cpf-mask').each(function(){
-            var cpf = $(this).text().trim();
-            if(cpf.length === 11) {
-                $(this).text(cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4"));
-            }
-        });
-        $('.cep-mask').each(function(){
-            var cep = $(this).text().trim();
-            if(cep.length === 8) {
-                $(this).text(cep.replace(/(\d{5})(\d{3})/, "$1-$2"));
-            }
-        });
-        $('.celular-mask').each(function(){
-            var celular = $(this).text().trim();
-            if(celular.length === 11) {
-                $(this).text(celular.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3"));
-            } else if(celular.length === 10) {
-                $(this).text(celular.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3"));
-            }
-        });
-    });
-</script>
+<script src="{% static 'alunos/masks.js' %}"></script>
+<script src="{% static 'alunos/js/detalhar_aluno.js' %}"></script>
 {% endblock %}

@@ -9,10 +9,7 @@ import logging
 from importlib import import_module
 
 from alunos.utils import get_aluno_model
-from alunos.services import (
-    remover_instrutor_de_turmas,
-    verificar_elegibilidade_instrutor,
-)
+from alunos.services import InstrutorService
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +53,7 @@ def confirmar_remocao_instrutoria(request, cpf, nova_situacao):
             aluno.save()
 
             # Remover o aluno das turmas como instrutor
-            resultado = remover_instrutor_de_turmas(aluno, nova_situacao)
+            resultado = InstrutorService.remover_de_turmas(aluno, nova_situacao)
             if resultado["sucesso"]:
                 messages.success(
                     request,
@@ -101,7 +98,7 @@ def diagnostico_instrutores(request):
     alunos_elegiveis = 0
 
     for aluno in alunos_ativos:
-        resultado = verificar_elegibilidade_instrutor(aluno)
+        resultado = InstrutorService.verificar_elegibilidade_completa(aluno)
         alunos_diagnostico.append(
             {
                 "aluno": aluno,

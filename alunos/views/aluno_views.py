@@ -14,15 +14,12 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from alunos.utils import get_aluno_model, get_aluno_form
-from alunos.services import remover_instrutor_de_turmas
+from alunos.services import InstrutorService
 
 from django import forms
 from alunos.models import Aluno, RegistroHistorico
 from alunos.forms import RegistroHistoricoForm
-from alunos.services import criar_evento_iniciatico
 from alunos.utils import get_tipo_codigo_model, get_codigo_model
-from alunos.services import criar_evento_iniciatico
-from alunos.services import listar_eventos_iniciaticos
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +27,6 @@ logger = logging.getLogger(__name__)
 @login_required
 def listar_alunos(request):
     """Lista todos os alunos cadastrados."""
-    # Tratamento especial para AJAX não autenticado (deve ser redundante, mas cobre edge cases de sessão expirada)
-    if not request.user.is_authenticated and request.headers.get("x-requested-with") == "XMLHttpRequest":
-        from django.http import JsonResponse
-        return JsonResponse({"success": False, "error": "Sessão expirada. Faça login novamente."}, status=401)
-
     try:
         Aluno = get_aluno_model()
         # Obter parâmetros de busca e filtro
@@ -125,11 +117,6 @@ def listar_alunos(request):
 @login_required
 def criar_aluno(request):
     """Cria um novo aluno."""
-    # Tratamento especial para AJAX não autenticado
-    if not request.user.is_authenticated and request.headers.get("x-requested-with") == "XMLHttpRequest":
-        from django.http import JsonResponse
-        return JsonResponse({"success": False, "error": "Sessão expirada. Faça login novamente."}, status=401)
-
     import sys
     import time
 
@@ -238,11 +225,6 @@ def criar_aluno(request):
 @login_required
 def detalhar_aluno(request, cpf):
     """Exibe os detalhes de um aluno."""
-    # Tratamento especial para AJAX não autenticado
-    if not request.user.is_authenticated and request.headers.get("x-requested-with") == "XMLHttpRequest":
-        from django.http import JsonResponse
-        return JsonResponse({"success": False, "error": "Sessão expirada. Faça login novamente."}, status=401)
-
     Aluno = get_aluno_model()
     aluno = get_object_or_404(Aluno, cpf=cpf)
 
@@ -342,11 +324,6 @@ def detalhar_aluno(request, cpf):
 @login_required
 def editar_aluno(request, cpf):
     """Edita um aluno existente."""
-    # Tratamento especial para AJAX não autenticado
-    if not request.user.is_authenticated and request.headers.get("x-requested-with") == "XMLHttpRequest":
-        from django.http import JsonResponse
-        return JsonResponse({"success": False, "error": "Sessão expirada. Faça login novamente."}, status=401)
-
     Aluno = get_aluno_model()
     AlunoForm = get_aluno_form()
     aluno = get_object_or_404(Aluno, cpf=cpf)
@@ -374,7 +351,7 @@ def editar_aluno(request, cpf):
                             nova_situacao=nova_situacao,
                         )
                     # Se confirmou, atualizar as turmas
-                    resultado = remover_instrutor_de_turmas(aluno, nova_situacao)
+                    resultado = InstrutorService.remover_de_turmas(aluno, nova_situacao)
                     if not resultado["sucesso"]:
                         messages.error(request, resultado["mensagem"])
 
@@ -419,11 +396,6 @@ def editar_aluno(request, cpf):
 @login_required
 def excluir_aluno(request, cpf):
     """Exclui um aluno."""
-    # Tratamento especial para AJAX não autenticado
-    if not request.user.is_authenticated and request.headers.get("x-requested-with") == "XMLHttpRequest":
-        from django.http import JsonResponse
-        return JsonResponse({"success": False, "error": "Sessão expirada. Faça login novamente."}, status=401)
-
     Aluno = get_aluno_model()
     aluno = get_object_or_404(Aluno, cpf=cpf)
 

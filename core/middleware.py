@@ -92,11 +92,15 @@ def ajax_authentication_middleware(get_response):
     def middleware(request):
         # Verifica se é uma requisição AJAX não autenticada
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"[DEBUG] AJAX Middleware - User: {getattr(request, 'user', 'No user attr')}, Auth: {getattr(getattr(request, 'user', None), 'is_authenticated', 'No auth attr')}, Path: {request.path}")
             # Verifica se o usuário não está autenticado
             if not hasattr(request, 'user') or not request.user.is_authenticated:
                 from django.http import JsonResponse
+                logger.info(f"[DEBUG] AJAX Middleware - Retornando 401 para {request.path}")
                 return JsonResponse({
-                    "success": False, 
+                    "success": False,
                     "error": "Sessão expirada. Faça login novamente."
                 }, status=401)
 

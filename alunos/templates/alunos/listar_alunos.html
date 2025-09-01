@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Lista de Alunos{% endblock %}
 
@@ -15,8 +16,7 @@
 
     <div class="card">
         <div class="card-header">
-            <form id="filtro-form" method="get" action="/alunos/search/" class="row g-3">
-                {% csrf_token %}
+            <form id="filtro-form" method="get" action="{% url 'alunos:search_alunos' %}" class="row g-3">
                 <div class="col-md-6">
                     <input type="text" id="search-aluno" name="q" class="form-control" placeholder="Buscar por nome, CPF, email...">
                 </div>
@@ -51,114 +51,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('filtro-form');
-        const tabelaContainer = document.getElementById('tabela-container');
-        const spinner = document.getElementById('loading-spinner');
-
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            fetchAlunos();
-        });
-
-        function fetchAlunos() {
-            spinner.style.display = 'block';
-            tabelaContainer.style.display = 'none';
-
-            const formData = new FormData(form);
-            const params = new URLSearchParams(formData);
-
-            fetch(`/alunos/search/?${params.toString()}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(async response => {
-                if (response.status === 401 || response.redirected) {
-                    tabelaContainer.innerHTML = '<p class="text-danger">Sua sessão expirou. Faça login novamente para continuar.</p>';
-                    spinner.style.display = 'none';
-                    tabelaContainer.style.display = 'block';
-                    return null;
-                }
-                if (!response.ok) {
-                    throw new Error(`Erro na requisição: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (!data) return;
-                if (data.tabela_html && data.paginacao_html) {
-                    tabelaContainer.innerHTML = data.tabela_html;
-                    document.querySelector('.card-footer').innerHTML = data.paginacao_html;
-                } else {
-                    tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados. Resposta inválida do servidor.</p>';
-                }
-            })
-            .catch(error => {
-                console.error('Erro ao buscar alunos:', error);
-                tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados. Verifique sua conexão ou tente novamente mais tarde.</p>';
-            })
-            .finally(() => {
-                spinner.style.display = 'none';
-                tabelaContainer.style.display = 'block';
-            });
-        }
-
-        // Adiciona evento de clique para links de paginação
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('page-link')) {
-                e.preventDefault();
-                const url = e.target.getAttribute('href');
-                if (url) {
-                    // Mantém os filtros atuais ao paginar
-                    const params = new URLSearchParams(url.split('?')[1] || '');
-                    // Adiciona filtros do formulário se existirem
-                    const formData = new FormData(form);
-                    for (const [key, value] of formData.entries()) {
-                        if (value && key !== 'csrfmiddlewaretoken') {
-                            params.set(key, value);
-                        }
-                    }
-                    spinner.style.display = 'block';
-                    tabelaContainer.style.display = 'none';
-                    fetch(`/alunos/search/?${params.toString()}`, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(async response => {
-                        if (response.status === 401 || response.redirected) {
-                            tabelaContainer.innerHTML = '<p class="text-danger">Sua sessão expirou. Faça login novamente para continuar.</p>';
-                            spinner.style.display = 'none';
-                            tabelaContainer.style.display = 'block';
-                            return null;
-                        }
-                        if (!response.ok) {
-                            throw new Error('Erro na requisição');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (!data) return;
-                        if (data.tabela_html && data.paginacao_html) {
-                            tabelaContainer.innerHTML = data.tabela_html;
-                            document.querySelector('.card-footer').innerHTML = data.paginacao_html;
-                        } else {
-                            tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados.</p>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erro ao buscar alunos:', error);
-                        tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados.</p>';
-                    })
-                    .finally(() => {
-                        spinner.style.display = 'none';
-                        tabelaContainer.style.display = 'block';
-                    });
-                }
-            }
-        });
-    });
-</script>
+<script src="{% static 'alunos/js/listar_alunos.js' %}"></script>
 {% endblock %}

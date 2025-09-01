@@ -39,67 +39,6 @@ class AlunoForm(forms.ModelForm):
     )
     """Formulário simplificado para criação e edição de alunos."""
 
-    # Campos para adicionar novo evento ao histórico
-    novo_evento_tipo = forms.CharField(
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-control",
-                "placeholder": "Ex: CARGO, INICIAÇÃO, PUNIÇÃO",
-            }
-        ),
-        label="Tipo do Evento",
-    )
-    novo_evento_descricao = forms.CharField(
-        max_length=200,
-        required=False,
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Descrição do evento"}
-        ),
-        label="Descrição do Evento",
-    )
-    novo_evento_data = forms.DateField(
-        required=False,
-        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-        label="Data do Evento",
-    )
-    novo_evento_observacoes = forms.CharField(
-        max_length=500,
-        required=False,
-        widget=forms.Textarea(
-            attrs={
-                "class": "form-control",
-                "rows": 2,
-                "placeholder": "Observações (opcional)",
-            }
-        ),
-        label="Observações",
-    )
-
-    def save(self, commit=True):
-        """Salva o aluno e adiciona evento ao histórico se preenchido."""
-        instance = super().save(commit=False)
-
-        # Adicionar novo evento se todos os campos obrigatórios estiverem preenchidos
-        if (
-            self.cleaned_data.get("novo_evento_tipo")
-            and self.cleaned_data.get("novo_evento_descricao")
-            and self.cleaned_data.get("novo_evento_data")
-        ):
-            if commit:
-                instance.save()  # Salva primeiro para garantir que tem ID
-                instance.adicionar_evento_historico(
-                    tipo=self.cleaned_data["novo_evento_tipo"],
-                    descricao=self.cleaned_data["novo_evento_descricao"],
-                    data=self.cleaned_data["novo_evento_data"],
-                    observacoes=self.cleaned_data.get("novo_evento_observacoes", ""),
-                )
-        elif commit:
-            instance.save()
-
-        return instance
-
     class Meta:
         model = Aluno
         fields = [

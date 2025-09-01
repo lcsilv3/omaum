@@ -430,25 +430,6 @@ class Aluno(models.Model):
     def __str__(self):
         return str(self.nome)
 
-    def adicionar_evento_historico(
-        self, tipo, descricao, data, observacoes="", ordem_servico=""
-    ):
-        """Adiciona evento ao histórico iniciático."""
-        evento = {
-            "tipo": tipo,
-            "descricao": descricao,
-            "data": data.isoformat() if hasattr(data, "isoformat") else str(data),
-            "observacoes": observacoes,
-            "ordem_servico": ordem_servico,
-            "criado_em": timezone.now().isoformat(),
-        }
-
-        if not isinstance(self.historico_iniciatico, list):
-            self.historico_iniciatico = []
-
-        self.historico_iniciatico.append(evento)
-        self.save(update_fields=["historico_iniciatico"])
-
     def obter_historico_ordenado(self):
         """Retorna histórico ordenado por data (mais recente primeiro)."""
         if not isinstance(self.historico_iniciatico, list):
