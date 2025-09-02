@@ -49,7 +49,9 @@ class AlunoRepository:
         """Busca alunos por nome ou CPF."""
         Aluno = AlunoRepository.get_model()
         cpf_query = "".join(filter(str.isdigit, query))
-        return Aluno.objects.filter(Q(nome__icontains=query) | Q(cpf__icontains=cpf_query))
+        return Aluno.objects.filter(
+            Q(nome__icontains=query) | Q(cpf__icontains=cpf_query)
+        )
 
     @staticmethod
     def buscar_instrutores_ativos():

@@ -230,7 +230,7 @@ class Aluno(models.Model):
         verbose_name=_("Nome Iniciático"),
     )
 
-    # Campos de nacionalidade e naturalidade - NOVOS CAMPOS
+    # Campos de nacionalidade e naturalidade
     pais_nacionalidade = models.ForeignKey(
         Pais,
         on_delete=models.SET_NULL,
@@ -250,23 +250,6 @@ class Aluno(models.Model):
         help_text="Cidade onde o aluno nasceu",
     )
 
-    # Campos de nacionalidade e naturalidade antigos - MANTIDOS PARA COMPATIBILIDADE
-    nacionalidade = models.CharField(
-        max_length=50,
-        default="Brasileira",
-        verbose_name=_("Nacionalidade (Texto)"),
-        help_text="Campo de texto livre - será substituído pelo campo País de Nacionalidade",
-        blank=True,
-        null=True,
-    )
-    naturalidade = models.CharField(
-        max_length=50,
-        verbose_name=_("Naturalidade (Texto)"),
-        help_text="Campo de texto livre - será substituído pelo campo Cidade de Naturalidade",
-        blank=True,
-        null=True,
-    )
-
     # Endereço
     rua = models.CharField(max_length=150, verbose_name=_("Rua"), blank=True, null=True)
     numero_imovel = models.CharField(
@@ -274,15 +257,6 @@ class Aluno(models.Model):
     )
     complemento = models.CharField(
         max_length=50, blank=True, null=True, verbose_name=_("Complemento")
-    )
-    bairro = models.CharField(
-        max_length=50, verbose_name=_("Bairro"), blank=True, null=True
-    )
-    cidade = models.CharField(
-        max_length=50, verbose_name=_("Cidade"), blank=True, null=True
-    )
-    estado = models.CharField(
-        max_length=2, verbose_name=_("Estado"), blank=True, null=True
     )
     cep = models.CharField(max_length=8, verbose_name=_("CEP"), blank=True, null=True)
     # Novas referências normalizadas (opcionais) - coexistem com campos texto legados
@@ -466,14 +440,14 @@ class Aluno(models.Model):
         """Retorna a nacionalidade para exibição, priorizando o novo campo."""
         if self.pais_nacionalidade:
             return self.pais_nacionalidade.nacionalidade
-        return self.nacionalidade or "Não informada"
+        return "Não informada"
 
     @property
     def naturalidade_display(self):
         """Retorna a naturalidade para exibição, priorizando o novo campo."""
         if self.cidade_naturalidade:
             return self.cidade_naturalidade.nome_completo
-        return self.naturalidade or "Não informada"
+        return "Não informada"
 
     @property
     def ultimo_curso_matriculado(self):
@@ -511,61 +485,67 @@ class Aluno(models.Model):
                 {"data_nascimento": _("A data de nascimento não pode ser no futuro.")}
             )
 
-        # Validação de consistência entre campos novos e antigos
-        if self.pais_nacionalidade and self.nacionalidade:
-            # Se ambos estão preenchidos, verificar se são consistentes
-            if (
-                self.nacionalidade.lower()
-                != self.pais_nacionalidade.nacionalidade.lower()
-            ):
-                raise ValidationError(
-                    {
-                        "nacionalidade": _(
-                            "A nacionalidade em texto deve ser consistente com o país selecionado."
-                        )
-                    }
-                )
+        # A lógica de validação de consistência foi removida após a migração dos dados.
+        # O código foi mantido comentado para referência futura, se necessário.
+        #
+        # if self.pais_nacionalidade and self.nacionalidade:
+        #     # Se ambos estão preenchidos, verificar se são consistentes
+        #     if (
+        #         self.nacionalidade.lower()
+        #         != self.pais_nacionalidade.nacionalidade.lower()
+        #     ):
+        #         raise ValidationError(
+        #             {
+        #                 "nacionalidade": _(
+        #                     "A nacionalidade em texto deve ser consistente com o país selecionado."
+        #                 )
+        #             }
+        #         )
 
     def save(self, *args, **kwargs):
-        """Override do save para manter sincronização entre campos novos e antigos."""
-        # Sincronizar nacionalidade
-        if self.pais_nacionalidade and not self.nacionalidade:
-            self.nacionalidade = self.pais_nacionalidade.nacionalidade
+        """Override do save para lógicas automáticas."""
 
-        # Sincronizar naturalidade
-        if self.cidade_naturalidade and not self.naturalidade:
-            self.naturalidade = self.cidade_naturalidade.nome_completo
+        # Lógica de sincronização removida após a migração dos dados.
+        # O código foi mantido comentado para referência futura, se necessário.
 
-        # Sincronizar cidade/bairro normalizados -> texto
-        if self.cidade_ref and not self.cidade:
-            self.cidade = self.cidade_ref.nome
-            if self.cidade_ref.estado and not self.estado:
-                self.estado = self.cidade_ref.estado.codigo
-        if self.bairro_ref and not self.bairro:
-            self.bairro = self.bairro_ref.nome
-            # Se não houver cidade_ref tentar inferir
-            if not self.cidade_ref:
-                self.cidade_ref = self.bairro_ref.cidade
-                if not self.cidade:
-                    self.cidade = self.cidade_ref.nome
-                if self.cidade_ref.estado and not self.estado:
-                    self.estado = self.cidade_ref.estado.codigo
-
-        # Caso texto exista e ref vazia, tentar auto-vincular (best-effort)
-        if self.cidade and not self.cidade_ref:
-            try:
-                self.cidade_ref = Cidade.objects.filter(
-                    nome__iexact=self.cidade
-                ).first()
-            except Exception:
-                pass
-        if self.bairro and not self.bairro_ref and self.cidade_ref:
-            try:
-                self.bairro_ref = self.cidade_ref.bairros.filter(
-                    nome__iexact=self.bairro
-                ).first()
-            except Exception:
-                pass
+        # # Sincronizar nacionalidade
+        # if self.pais_nacionalidade and not self.nacionalidade:
+        #     self.nacionalidade = self.pais_nacionalidade.nacionalidade
+        #
+        # # Sincronizar naturalidade
+        # if self.cidade_naturalidade and not self.naturalidade:
+        #     self.naturalidade = self.cidade_naturalidade.nome_completo
+        #
+        # # Sincronizar cidade/bairro normalizados -> texto
+        # if self.cidade_ref and not self.cidade:
+        #     self.cidade = self.cidade_ref.nome
+        #     if self.cidade_ref.estado and not self.estado:
+        #         self.estado = self.cidade_ref.estado.codigo
+        # if self.bairro_ref and not self.bairro:
+        #     self.bairro = self.bairro_ref.nome
+        #     # Se não houver cidade_ref tentar inferir
+        #     if not self.cidade_ref:
+        #         self.cidade_ref = self.bairro_ref.cidade
+        #         if not self.cidade:
+        #             self.cidade = self.cidade_ref.nome
+        #         if self.cidade_ref.estado and not self.estado:
+        #             self.estado = self.cidade_ref.estado.codigo
+        #
+        # # Caso texto exista e ref vazia, tentar auto-vincular (best-effort)
+        # if self.cidade and not self.cidade_ref:
+        #     try:
+        #         self.cidade_ref = Cidade.objects.filter(
+        #             nome__iexact=self.cidade
+        #         ).first()
+        #     except Exception:
+        #         pass
+        # if self.bairro and not self.bairro_ref and self.cidade_ref:
+        #     try:
+        #         self.bairro_ref = self.cidade_ref.bairros.filter(
+        #             nome__iexact=self.bairro
+        #         ).first()
+        #     except Exception:
+        #         pass
 
         super().save(*args, **kwargs)
 

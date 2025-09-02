@@ -1,9 +1,25 @@
 from django.test import TestCase
-from alunos.models import Aluno
+from alunos.models import Aluno, Pais, Estado, Cidade, Bairro
 from datetime import date, time
 
 
 class AlunoModelTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        # Usar get_or_create para evitar erros de constraint em execuções de teste repetidas
+        cls.pais, _ = Pais.objects.get_or_create(
+            nome="Brasil", defaults={"nacionalidade": "Brasileira"}
+        )
+        cls.estado, _ = Estado.objects.get_or_create(
+            nome="São Paulo", defaults={"codigo": "SP"}
+        )
+        cls.cidade, _ = Cidade.objects.get_or_create(
+            nome="São Paulo", defaults={"estado": cls.estado}
+        )
+        cls.bairro, _ = Bairro.objects.get_or_create(
+            nome="Centro", defaults={"cidade": cls.cidade}
+        )
+
     def test_criar_aluno(self):
         aluno = Aluno.objects.create(
             cpf="12345678901",
@@ -12,20 +28,28 @@ class AlunoModelTest(TestCase):
             hora_nascimento=time(14, 30),
             email="joao@test.com",
             sexo="M",
-            nacionalidade="Brasileira",
-            naturalidade="São Paulo",
+            pais_nacionalidade=self.pais,
+            cidade_naturalidade=self.cidade,
             rua="Rua Test",
             numero_imovel="123",
-            cidade="São Paulo",
-            estado="SP",
-            bairro="Centro",
-            cep="01234567",
-            nome_primeiro_contato="Maria Test",
-            celular_primeiro_contato="11999999999",
-            tipo_relacionamento_primeiro_contato="Mãe",
-            nome_segundo_contato="José Test",
-            celular_segundo_contato="11988888888",
-            tipo_relacionamento_segundo_contato="Pai",
-            tipo_sanguineo="A",
+            cidade_ref=self.cidade,
+            bairro_ref=self.bairro,
+            cep="12345678",
         )
         self.assertEqual(aluno.nome, "João Test")
+        self.assertEqual(aluno.nacionalidade_display, "Brasileira")
+        # Acessar o estado através da cidade para a asserção
+        self.assertEqual(
+            aluno.naturalidade_display, "São Paulo, São Paulo"
+        )  # Ajustado para não incluir país
+        self.assertEqual(aluno.cidade_ref.nome, "São Paulo")
+        self.assertEqual(aluno.bairro_ref.nome, "Centro")
+
+    def test_aluno_str(self):
+        aluno = Aluno.objects.create(
+            nome="Maria Silva",
+            cpf="98765432109",
+            data_nascimento=date(1990, 1, 1),  # Campo obrigatório
+            sexo="F",  # Campo obrigatório
+        )
+        self.assertEqual(str(aluno), "Maria Silva")

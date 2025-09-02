@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 def listar_alunos_view(request):
     """Lista todos os alunos, com suporte a busca dinâmica (AJAX)."""
     try:
-        logger.info(f"[DEBUG] listar_alunos_view chamada - User: {request.user}, Auth: {request.user.is_authenticated}")
+        logger.info(
+            f"[DEBUG] listar_alunos_view chamada - User: {request.user}, Auth: {request.user.is_authenticated}"
+        )
         query = request.GET.get("q", "")
         curso_id = request.GET.get("curso", "")
         page_number = request.GET.get("page")
@@ -54,7 +56,9 @@ def listar_alunos_view(request):
             paginacao_html = render_to_string(
                 "alunos/_paginacao_parcial.html", context, request=request
             )
-            return JsonResponse({"tabela_html": tabela_html, "paginacao_html": paginacao_html})
+            return JsonResponse(
+                {"tabela_html": tabela_html, "paginacao_html": paginacao_html}
+            )
 
         return render(
             request,
@@ -336,6 +340,7 @@ def excluir_aluno(request, cpf):
 
 from django.contrib.auth.decorators import login_required
 
+
 @login_required
 def search_alunos(request):
     """
@@ -343,19 +348,32 @@ def search_alunos(request):
     Retorna os resultados em formato JSON para requisições AJAX.
     Para requisições normais, renderiza a página de listagem de alunos.
     """
-    logger.info(f"[DEBUG] search_alunos chamada - User: {request.user}, Auth: {request.user.is_authenticated}, Headers: {dict(request.headers)}")
+    logger.info(
+        f"[DEBUG] search_alunos chamada - User: {request.user}, Auth: {request.user.is_authenticated}, Headers: {dict(request.headers)}"
+    )
     # Tratamento especial para AJAX não autenticado (deve ser redundante, mas cobre edge cases de sessão expirada)
-    if not request.user.is_authenticated and request.headers.get("x-requested-with") == "XMLHttpRequest":
+    if (
+        not request.user.is_authenticated
+        and request.headers.get("x-requested-with") == "XMLHttpRequest"
+    ):
         return JsonResponse({"success": False, "error": "Não autenticado"}, status=401)
 
     query = request.GET.get("q", "").strip()
     curso_id = request.GET.get("curso", None)
 
-    logger.debug("[search_alunos] Requisição recebida. Query: '%s', Curso ID: '%s', Params: %s", query, curso_id, dict(request.GET))
+    logger.debug(
+        "[search_alunos] Requisição recebida. Query: '%s', Curso ID: '%s', Params: %s",
+        query,
+        curso_id,
+        dict(request.GET),
+    )
 
     try:
         alunos_queryset = listar_alunos(query=query, curso_id=curso_id)
-        logger.debug("[search_alunos] Query executada. Resultados encontrados: %d", alunos_queryset.count())
+        logger.debug(
+            "[search_alunos] Query executada. Resultados encontrados: %d",
+            alunos_queryset.count(),
+        )
 
         paginator = Paginator(alunos_queryset, 10)
         page_number = request.GET.get("page", 1)
@@ -366,27 +384,44 @@ def search_alunos(request):
             context_partials = {
                 "alunos": alunos,  # page object
                 "page_obj": alunos,
-                "total_alunos": alunos.paginator.count if hasattr(alunos, "paginator") else 0,
+                "total_alunos": alunos.paginator.count
+                if hasattr(alunos, "paginator")
+                else 0,
                 "query": query,
                 "cursos": [],
                 "curso_selecionado": curso_id or "",
             }
-            logger.debug("[search_alunos] Contexto enviado para templates parciais: %s", context_partials)
+            logger.debug(
+                "[search_alunos] Contexto enviado para templates parciais: %s",
+                context_partials,
+            )
             try:
                 tabela_html = render_to_string(
-                    "alunos/_tabela_alunos_parcial.html", context_partials, request=request
+                    "alunos/_tabela_alunos_parcial.html",
+                    context_partials,
+                    request=request,
                 )
                 paginacao_html = render_to_string(
                     "alunos/_paginacao_parcial.html", context_partials, request=request
                 )
-                logger.debug("[search_alunos] Templates parciais renderizados com sucesso.")
+                logger.debug(
+                    "[search_alunos] Templates parciais renderizados com sucesso."
+                )
             except Exception as exc:
                 import traceback
-                logger.error("Erro ao renderizar templates parciais AJAX: %s\n%s", exc, traceback.format_exc())
-                return JsonResponse({
-                    "success": False,
-                    "error": f"Erro ao renderizar templates parciais: {exc}"
-                }, status=500)
+
+                logger.error(
+                    "Erro ao renderizar templates parciais AJAX: %s\n%s",
+                    exc,
+                    traceback.format_exc(),
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"Erro ao renderizar templates parciais: {exc}",
+                    },
+                    status=500,
+                )
             return JsonResponse(
                 {
                     "success": True,
@@ -410,7 +445,10 @@ def search_alunos(request):
             return redirect("alunos:listar_alunos")
     except Exception as exc:
         import traceback
-        logger.error("[search_alunos] Erro inesperado: %s\n%s", exc, traceback.format_exc())
+
+        logger.error(
+            "[search_alunos] Erro inesperado: %s\n%s", exc, traceback.format_exc()
+        )
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse(
                 {"success": False, "error": "Erro interno do servidor."}, status=500

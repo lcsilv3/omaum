@@ -1,10 +1,25 @@
 from django.test import TestCase
-from alunos.models import Aluno
+from alunos.models import Aluno, Pais, Estado, Cidade, Bairro
 from datetime import date, time, timedelta
 from django.core.exceptions import ValidationError
 
 
 class AlunoTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.pais, _ = Pais.objects.get_or_create(
+            nome="Brasil", defaults={"nacionalidade": "Brasileira"}
+        )
+        cls.estado, _ = Estado.objects.get_or_create(
+            nome="São Paulo", defaults={"codigo": "SP"}
+        )
+        cls.cidade, _ = Cidade.objects.get_or_create(
+            nome="São Paulo", defaults={"estado": cls.estado}
+        )
+        cls.bairro, _ = Bairro.objects.get_or_create(
+            nome="Centro", defaults={"cidade": cls.cidade}
+        )
+
     def test_criar_aluno(self):
         aluno = Aluno.objects.create(
             cpf="12345678901",
@@ -13,13 +28,12 @@ class AlunoTest(TestCase):
             hora_nascimento=time(14, 30),
             email="joao@test.com",
             sexo="M",
-            nacionalidade="Brasileira",
-            naturalidade="São Paulo",
+            pais_nacionalidade=self.pais,
+            cidade_naturalidade=self.cidade,
             rua="Rua Test",
             numero_imovel="123",
-            cidade="São Paulo",
-            estado="SP",
-            bairro="Centro",
+            cidade_ref=self.cidade,
+            bairro_ref=self.bairro,
             cep="01234567",
             nome_primeiro_contato="Maria Test",
             celular_primeiro_contato="11999999999",
@@ -30,9 +44,25 @@ class AlunoTest(TestCase):
             tipo_sanguineo="A",
         )
         self.assertEqual(aluno.nome, "João Test")
+        self.assertEqual(aluno.cidade_ref, self.cidade)
 
 
 class AlunoValidationTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.pais, _ = Pais.objects.get_or_create(
+            nome="Brasil", defaults={"nacionalidade": "Brasileira"}
+        )
+        cls.estado, _ = Estado.objects.get_or_create(
+            nome="São Paulo", defaults={"codigo": "SP"}
+        )
+        cls.cidade, _ = Cidade.objects.get_or_create(
+            nome="São Paulo", defaults={"estado": cls.estado}
+        )
+        cls.bairro, _ = Bairro.objects.get_or_create(
+            nome="Consolação", defaults={"cidade": cls.cidade}
+        )
+
     def setUp(self):
         self.valid_data = {
             "cpf": "12345678901",
@@ -41,13 +71,12 @@ class AlunoValidationTest(TestCase):
             "hora_nascimento": time(8, 30),
             "email": "carlos@example.com",
             "sexo": "M",
-            "nacionalidade": "Brasileira",
-            "naturalidade": "São Paulo",
+            "pais_nacionalidade": self.pais,
+            "cidade_naturalidade": self.cidade,
             "rua": "Rua Augusta",
             "numero_imovel": "789",
-            "cidade": "São Paulo",
-            "estado": "SP",
-            "bairro": "Consolação",
+            "cidade_ref": self.cidade,
+            "bairro_ref": self.bairro,
             "cep": "01234567",
             "nome_primeiro_contato": "Pedro Souza",
             "celular_primeiro_contato": "11999999999",

@@ -1,11 +1,13 @@
 """
 Repositórios para os modelos dos aplicativos Turmas e Cargos.
 """
+
 import logging
 from django.utils import timezone
 from alunos.utils import get_turma_model, get_atribuicao_cargo_model
 
 logger = logging.getLogger(__name__)
+
 
 class TurmaRepository:
     """Repository para operações com o modelo Turma."""

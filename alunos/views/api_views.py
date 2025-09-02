@@ -58,11 +58,19 @@ def search_instrutores(request):
                 {
                     "cpf": aluno.cpf,
                     "nome": aluno.nome,
-                    "foto": aluno.foto.url if hasattr(aluno, "foto") and aluno.foto else None,
-                    "situacao": aluno.get_situacao_display() if hasattr(aluno, "get_situacao_display") else "",
+                    "foto": aluno.foto.url
+                    if hasattr(aluno, "foto") and aluno.foto
+                    else None,
+                    "situacao": aluno.get_situacao_display()
+                    if hasattr(aluno, "get_situacao_display")
+                    else "",
                     "situacao_codigo": aluno.situacao,
-                    "esta_ativo": aluno.esta_ativo if hasattr(aluno, "esta_ativo") else False,
-                    "elegivel": aluno.pode_ser_instrutor if hasattr(aluno, "pode_ser_instrutor") else True,
+                    "esta_ativo": aluno.esta_ativo
+                    if hasattr(aluno, "esta_ativo")
+                    else False,
+                    "elegivel": aluno.pode_ser_instrutor
+                    if hasattr(aluno, "pode_ser_instrutor")
+                    else True,
                 }
             )
 
@@ -130,6 +138,7 @@ def get_aluno_detalhes(request, cpf):
         turmas_como_instrutor = False
         try:
             from django.db.models import Q
+
             Turma = import_module("turmas.models").Turma
             turmas_como_instrutor = Turma.objects.filter(
                 Q(instrutor=aluno)

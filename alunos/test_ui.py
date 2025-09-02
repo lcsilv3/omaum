@@ -2,28 +2,63 @@ from django.test import LiveServerTestCase
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from django.contrib.auth.models import User
-from alunos.models import Aluno
+from alunos.models import Aluno, Pais, Estado, Cidade, Bairro
 from datetime import date
 
 class AlunoUITest(LiveServerTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.browser = webdriver.Chrome()
+        try:
+            cls.admin_user = User.objects.get(username="testadmin")
+        except User.DoesNotExist:
+            cls.admin_user = User.objects.create_superuser(
+                username="testadmin", password="password123", email="admin@test.com"
+            )
+        # Criar dados de localização
+        pais, _ = Pais.objects.get_or_create(
+            nome="Brasil", defaults={"nacionalidade": "Brasileira"}
+        )
+        estado, _ = Estado.objects.get_or_create(
+            nome="Rio de Janeiro", defaults={"codigo": "RJ"}
+        )
+        cidade, _ = Cidade.objects.get_or_create(
+            nome="Rio de Janeiro", defaults={"estado": estado}
+        )
+        bairro, _ = Bairro.objects.get_or_create(
+            nome="Copacabana", defaults={"cidade": cidade}
+        )
+
+        cls.aluno, _ = Aluno.objects.get_or_create(
+            cpf="11122233344",
+            defaults={
+                "nome": "Maria Test",
+                "data_nascimento": date(2000, 1, 1),
+                "email": "maria@test.com",
+                "sexo": "F",
+                "situacao": "ATIVO",
+                "pais_nacionalidade": pais,
+                "cidade_naturalidade": cidade,
+                "cidade_ref": cidade,
+                "bairro_ref": bairro,
+            },
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.quit()
+        super().tearDownClass()
+
     def setUp(self):
         """Configura o ambiente de teste, criando um superusuário e um aluno."""
-        self.browser = webdriver.Chrome()
-        self.admin_user = User.objects.create_superuser(
-            username="testadmin", password="password123", email="admin@test.com"
-        )
-        self.aluno = Aluno.objects.create(
-            cpf="11122233344",
-            nome="Maria Test",
-            data_nascimento=date(2000, 1, 1),
-            email="maria@test.com",
-            sexo="F",
-            situacao="ATIVO",
-        )
+        # O setup do navegador e dos dados agora é feito no setUpClass
+        pass
 
     def tearDown(self):
         """Finaliza o teste fechando o navegador."""
-        self.browser.quit()
+        # O tearDown do navegador agora é feito no tearDownClass
+        pass
 
     def _login(self):
         """Realiza o login no sistema."""

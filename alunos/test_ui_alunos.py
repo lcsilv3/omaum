@@ -3,26 +3,58 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from alunos.models import Aluno
+from alunos.models import Aluno, Pais, Estado, Cidade, Bairro
+from django.contrib.auth.models import User
 from datetime import date
 
 
 class AlunoUITest(LiveServerTestCase):
-    def setUp(self):
-        from django.contrib.auth.models import User
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.browser = webdriver.Chrome()
+        try:
+            User.objects.get(username="lcsilv3")
+        except User.DoesNotExist:
+            User.objects.create_superuser(
+                username="lcsilv3", password="iG356900", email="lcsilv3@example.com"
+            )
+        # Criar dados de localização
+        pais, _ = Pais.objects.get_or_create(
+            nome="Brasil", defaults={"nacionalidade": "Brasileira"}
+        )
+        estado, _ = Estado.objects.get_or_create(
+            nome="Bahia", defaults={"codigo": "BA"}
+        )
+        cidade, _ = Cidade.objects.get_or_create(
+            nome="Salvador", defaults={"estado": estado}
+        )
+        bairro, _ = Bairro.objects.get_or_create(
+            nome="Barra", defaults={"cidade": cidade}
+        )
 
-        User.objects.create_superuser(
-            username="lcsilv3", password="iG356900", email="lcsilv3@example.com"
-        )
-        Aluno.objects.create(
+        Aluno.objects.get_or_create(
             cpf="12345678901",
-            nome="Maria Test",
-            data_nascimento=date(2000, 1, 1),
-            email="maria@test.com",
-            sexo="F",
-            situacao="ATIVO",
+            defaults={
+                "nome": "Maria Test",
+                "data_nascimento": date(2000, 1, 1),
+                "email": "maria@test.com",
+                "sexo": "F",
+                "situacao": "ATIVO",
+                "pais_nacionalidade": pais,
+                "cidade_naturalidade": cidade,
+                "cidade_ref": cidade,
+                "bairro_ref": bairro,
+            },
         )
-        self.browser = webdriver.Chrome()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.quit()
+        super().tearDownClass()
+
+    def setUp(self):
+        pass
 
     def tearDown(self):
         pass

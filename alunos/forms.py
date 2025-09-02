@@ -1,5 +1,5 @@
 from django import forms
-from alunos.models import Aluno, RegistroHistorico, Estado, Codigo, TipoCodigo
+from alunos.models import Aluno, RegistroHistorico, Codigo, TipoCodigo
 from django_select2.forms import ModelSelect2Widget
 
 
@@ -57,18 +57,13 @@ class AlunoForm(forms.ModelForm):
             "grau_atual_automatico",
             "grau_atual",
             "situacao_iniciatica",
-            # Nacionalidade / Naturalidade (novos + legacy)
+            # Nacionalidade / Naturalidade
             "pais_nacionalidade",
             "cidade_naturalidade",
-            "nacionalidade",
-            "naturalidade",
             # Endereço
             "rua",
             "numero_imovel",
             "complemento",
-            "bairro",
-            "cidade",
-            "estado",
             "cep",
             "cidade_ref",
             "bairro_ref",
@@ -189,20 +184,6 @@ class AlunoForm(forms.ModelForm):
         # Label
         if "rua" in self.fields:
             self.fields["rua"].label = "Endereço"
-        # Estado como select
-        # Otimização: só carrega estados se realmente houver campo e só busca os campos necessários
-        if "estado" in self.fields:
-            estados_qs = Estado.objects.only("id", "codigo", "nome").order_by("nome")
-            escolha_estado = [(e.codigo, f"{e.nome} ({e.codigo})") for e in estados_qs]
-            inicial = self.fields["estado"].initial
-            self.fields["estado"] = forms.ChoiceField(
-                choices=[("", "Selecione")] + escolha_estado,
-                required=False,
-                widget=forms.Select(attrs={"class": "form-select"}),
-                label=self.fields["estado"].label,
-                initial=inicial,
-            )
-            self.estado_codigo_to_id = {e.codigo: e.id for e in estados_qs}
         # Email pattern
         if "email" in self.fields:
             self.fields["email"].widget.attrs.setdefault(
@@ -210,11 +191,6 @@ class AlunoForm(forms.ModelForm):
             )
         # Selects adicionam 'Selecione'
         self._add_selecione_to_selects()
-        # Após adicionar selects, se campo estado existir, injeta data-id em cada option via atributo 'data-ids-json'
-        if "estado" in self.fields:
-            # Serializa mapping para uso em template/JS
-            mapping = {e.codigo: e.id for e in Estado.objects.all()}
-            self.fields["estado"].widget.attrs["data-mapping-json"] = mapping
 
     # Limpeza de campos com máscaras
     def clean_cpf(self):
