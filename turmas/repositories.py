@@ -40,9 +40,7 @@ class TurmaRepository:
         """Remove o instrutor principal de uma turma."""
         turma.instrutor = None
         turma.alerta_instrutor = True
-        turma.alerta_mensagem = (
-            f"O instrutor foi removido devido à mudança de situação."
-        )
+        turma.alerta_mensagem = "O instrutor foi removido devido à mudança de situação."
         turma.save()
 
     @staticmethod

@@ -6,7 +6,7 @@ import logging
 import re
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from alunos.models import Aluno, Pais, Cidade, Bairro, Estado
+from alunos.models import Aluno, Pais, Cidade, Bairro
 
 # Configuração do logger para este comando
 logger = logging.getLogger("migracao_alunos")

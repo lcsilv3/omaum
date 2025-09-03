@@ -8,7 +8,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from alunos.models import Aluno
 from turmas.models import Turma
 from atividades.models import Atividade
-from frequencias.models import FrequenciaMensal, Carencia
 from matriculas.models import Matricula
 
 

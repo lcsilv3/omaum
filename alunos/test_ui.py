@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from alunos.models import Aluno, Pais, Estado, Cidade, Bairro
 from datetime import date
 
+
 class AlunoUITest(LiveServerTestCase):
     @classmethod
     def setUpClass(cls):
@@ -91,7 +92,9 @@ class AlunoUITest(LiveServerTestCase):
 
         # Verifica se o nome do aluno de teste está presente na página
         try:
-            student_element = self.browser.find_element(By.XPATH, f"//*[contains(text(), '{self.aluno.nome}')]")
+            student_element = self.browser.find_element(
+                By.XPATH, f"//*[contains(text(), '{self.aluno.nome}')]"
+            )
             self.assertEqual(student_element.text, self.aluno.nome)
         except Exception as e:
             # Salva o HTML da página para depuração se o aluno não for encontrado

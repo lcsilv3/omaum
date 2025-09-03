@@ -484,7 +484,6 @@ def editar_lote_dias_atividades(request):
         atividades_com_stats.append(atividade)
 
     # Obter alunos através das matrículas ativas
-    Matricula = get_model_class("Matricula")
     alunos = (
         Aluno.objects.filter(
             matricula__turma=turma, matricula__ativa=True, situacao="ATIVO"

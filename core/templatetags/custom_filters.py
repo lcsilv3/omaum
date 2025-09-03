@@ -74,4 +74,4 @@ def truncate_middle(value, arg):
     if half_length < 1:
         half_length = 1
 
-    return value[:half_length] + '...' + value[-half_length:]
+    return value[:half_length] + "..." + value[-half_length:]

@@ -19,7 +19,5 @@ class Command(BaseCommand):
         #     teachers_group.permissions.add(permission)
 
         self.stdout.write(
-            self.style.SUCCESS(
-                "Successfully set up permissions for the presencas app"
-            )
+            self.style.SUCCESS("Successfully set up permissions for the presencas app")
         )

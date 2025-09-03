@@ -13,7 +13,7 @@ def criar_aluno_basico():
         cpf="12345678901",
         email="t@example.com",
         situacao_iniciatica="ATIVO",
-    data_nascimento=date(2000, 1, 1),
+        data_nascimento=date(2000, 1, 1),
     )
 
 
@@ -66,7 +66,9 @@ def test_sincronizar_reconstroi_json():
     aluno.save(update_fields=["historico_iniciatico"])
     eventos = sincronizar_historico_iniciatico(aluno)
     assert len(eventos) == 2
-    assert aluno.historico_iniciatico[0]["data"] >= aluno.historico_iniciatico[-1]["data"]
+    assert (
+        aluno.historico_iniciatico[0]["data"] >= aluno.historico_iniciatico[-1]["data"]
+    )
 
 
 def test_reconciliar_detecta_divergencia(monkeypatch):
@@ -91,10 +93,10 @@ def test_reconciliar_detecta_divergencia(monkeypatch):
 
 def test_checksum_atualizado_incremental():
     """Verifica que o checksum é calculado e muda após novo evento."""
-    from alunos.models import Aluno
     from alunos.utils import get_tipo_codigo_model, get_codigo_model
     from alunos.services import criar_evento_iniciatico
-    import hashlib, json
+    import hashlib
+    import json
     from datetime import date
 
     aluno = criar_aluno_basico()
@@ -113,7 +115,11 @@ def test_checksum_atualizado_incremental():
     assert aluno.historico_checksum is not None
     checksum1 = aluno.historico_checksum
     # Recalcula manualmente
-    manual1 = hashlib.sha256(json.dumps(aluno.historico_iniciatico, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+    manual1 = hashlib.sha256(
+        json.dumps(
+            aluno.historico_iniciatico, sort_keys=True, ensure_ascii=False
+        ).encode("utf-8")
+    ).hexdigest()
     assert checksum1 == manual1
 
     # Segundo evento
@@ -129,13 +135,18 @@ def test_checksum_atualizado_incremental():
     assert aluno.historico_checksum is not None
     checksum2 = aluno.historico_checksum
     assert checksum2 != checksum1
-    manual2 = hashlib.sha256(json.dumps(aluno.historico_iniciatico, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+    manual2 = hashlib.sha256(
+        json.dumps(
+            aluno.historico_iniciatico, sort_keys=True, ensure_ascii=False
+        ).encode("utf-8")
+    ).hexdigest()
     assert checksum2 == manual2
 
 
 def test_checksum_reconstruido_em_sincronizar():
     from alunos.services import sincronizar_historico_iniciatico
-    import hashlib, json
+    import hashlib
+    import json
     from datetime import date
 
     aluno = criar_aluno_basico()
@@ -150,18 +161,25 @@ def test_checksum_reconstruido_em_sincronizar():
     )
     checksum_original = aluno.historico_checksum
     # corrompe JSON
-    aluno.historico_iniciatico.append({"tipo": "X", "descricao": "Y", "data": "1900-01-01"})
+    aluno.historico_iniciatico.append(
+        {"tipo": "X", "descricao": "Y", "data": "1900-01-01"}
+    )
     aluno.save(update_fields=["historico_iniciatico"])
     sincronizar_historico_iniciatico(aluno)
     aluno.refresh_from_db()
     # Deve recomputar e diferente do corrompido, mas possivelmente igual ao original se reconstrução fiel
-    manual = hashlib.sha256(json.dumps(aluno.historico_iniciatico, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+    manual = hashlib.sha256(
+        json.dumps(
+            aluno.historico_iniciatico, sort_keys=True, ensure_ascii=False
+        ).encode("utf-8")
+    ).hexdigest()
     assert aluno.historico_checksum == manual
 
 
 def test_verificar_integridade_historico_sem_divergencia():
     from alunos.services import verificar_integridade_historico
     from datetime import date
+
     aluno = criar_aluno_basico()
     codigo = criar_codigo_basico()
     criar_evento_iniciatico(
@@ -180,6 +198,7 @@ def test_verificar_integridade_historico_sem_divergencia():
 def test_verificar_integridade_historico_com_reparo():
     from alunos.services import verificar_integridade_historico
     from datetime import date
+
     aluno = criar_aluno_basico()
     codigo = criar_codigo_basico()
     criar_evento_iniciatico(
@@ -201,5 +220,6 @@ def test_verificar_integridade_historico_com_reparo():
 def test_get_codigo_model_prioriza_alunos():
     from alunos.utils import get_codigo_model
     from alunos.models import Codigo as CodigoAlunos
+
     CodigoResolved = get_codigo_model()
     assert CodigoResolved is CodigoAlunos

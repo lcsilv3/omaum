@@ -1,18 +1,19 @@
-from django.http import HttpResponse
+import logging
+from importlib import import_module
 
-def home(request):
-    return HttpResponse('Página inicial mínima para testes.')
-from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView
-from django.http import JsonResponse
-from django.db.models import Q
-from importlib import import_module
-import logging
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.views import LoginView
+from django.db.models import Q
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
 
 logger = logging.getLogger(__name__)
+
+
+def home(request):
+    return HttpResponse("Página inicial mínima para testes.")
 
 
 def get_models():
@@ -61,7 +62,9 @@ def pagina_inicial(request):
         return render(request, "home.html", context)
     except Exception as e:
         logger.error(f"Erro na página inicial: {str(e)}", exc_info=True)
-        messages.error(request, f"Ocorreu um erro ao carregar a página inicial: {str(e)}")
+        messages.error(
+            request, f"Ocorreu um erro ao carregar a página inicial: {str(e)}"
+        )
         return render(request, "home.html", {"error": str(e)})
 
 

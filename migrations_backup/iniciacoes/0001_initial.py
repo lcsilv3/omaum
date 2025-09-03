@@ -32,9 +32,7 @@ class Migration(migrations.Migration):
                 ("grau", models.CharField(max_length=50, verbose_name="Grau")),
                 (
                     "observacoes",
-                    models.TextField(
-                        blank=True, null=True, verbose_name="Observações"
-                    ),
+                    models.TextField(blank=True, null=True, verbose_name="Observações"),
                 ),
                 (
                     "aluno",

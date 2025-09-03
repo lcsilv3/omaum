@@ -1,10 +1,6 @@
 # Movido para scripts/legacy em 24/08/2025
 # Script utilitário para limpeza de migrações e backup do banco
 
-import os
-import shutil
-import datetime
-
 
 def backup_database():
     pass

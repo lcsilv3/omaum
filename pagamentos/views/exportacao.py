@@ -8,15 +8,19 @@ import csv
 
 logger = logging.getLogger(__name__)
 
+
 def get_models():
     """Obtém os modelos dinamicamente."""
     try:
         pagamentos_module = import_module("pagamentos.models")
         AtividadeAcademica = getattr(pagamentos_module, "AtividadeAcademica", None)
-        AtividadeRitualistica = getattr(pagamentos_module, "AtividadeRitualistica", None)
+        AtividadeRitualistica = getattr(
+            pagamentos_module, "AtividadeRitualistica", None
+        )
         return AtividadeAcademica, AtividadeRitualistica
     except ImportError:
         return None, None
+
 
 @login_required
 def exportar_atividades(request, formato):
@@ -34,14 +38,18 @@ def exportar_atividades(request, formato):
     if status:
         atividades_academicas = atividades_academicas.filter(status=status)
     if data_inicio:
-        atividades_academicas = atividades_academicas.filter(data_inicio__gte=data_inicio)
+        atividades_academicas = atividades_academicas.filter(
+            data_inicio__gte=data_inicio
+        )
     if data_fim:
         atividades_academicas = atividades_academicas.filter(data_inicio__lte=data_fim)
 
     # Filtrar atividades ritualísticas
     atividades_ritualisticas = AtividadeRitualistica.objects.all()
     if data_inicio:
-        atividades_ritualisticas = atividades_ritualisticas.filter(data__gte=data_inicio)
+        atividades_ritualisticas = atividades_ritualisticas.filter(
+            data__gte=data_inicio
+        )
     if data_fim:
         atividades_ritualisticas = atividades_ritualisticas.filter(data__lte=data_fim)
 
@@ -57,34 +65,38 @@ def exportar_atividades(request, formato):
         response["Content-Disposition"] = 'attachment; filename="atividades.csv"'
 
         writer = csv.writer(response)
-        writer.writerow([
-            "Tipo", "Nome", "Descrição", "Data", "Local", "Status", "Turma(s)"
-        ])
+        writer.writerow(
+            ["Tipo", "Nome", "Descrição", "Data", "Local", "Status", "Turma(s)"]
+        )
 
         # Adicionar atividades acadêmicas
         for atividade in atividades_academicas:
             turmas = ", ".join([t.nome for t in atividade.turmas.all()])
-            writer.writerow([
-                "Acadêmica",
-                atividade.nome,
-                atividade.descricao,
-                atividade.data_inicio.strftime("%d/%m/%Y"),
-                atividade.local,
-                atividade.get_status_display(),
-                turmas
-            ])
+            writer.writerow(
+                [
+                    "Acadêmica",
+                    atividade.nome,
+                    atividade.descricao,
+                    atividade.data_inicio.strftime("%d/%m/%Y"),
+                    atividade.local,
+                    atividade.get_status_display(),
+                    turmas,
+                ]
+            )
 
         # Adicionar atividades ritualísticas
         for atividade in atividades_ritualisticas:
-            writer.writerow([
-                "Ritualística",
-                atividade.nome,
-                atividade.descricao,
-                atividade.data.strftime("%d/%m/%Y"),
-                atividade.local,
-                "N/A",  # Atividades ritualísticas não têm status
-                atividade.turma.nome
-            ])
+            writer.writerow(
+                [
+                    "Ritualística",
+                    atividade.nome,
+                    atividade.descricao,
+                    atividade.data.strftime("%d/%m/%Y"),
+                    atividade.local,
+                    "N/A",  # Atividades ritualísticas não têm status
+                    atividade.turma.nome,
+                ]
+            )
 
         return response
 
@@ -100,13 +112,23 @@ def exportar_atividades(request, formato):
             ws = wb.add_sheet("Atividades")
 
             # Estilos
-            header_style = xlwt.easyxf("font: bold on; align: wrap on, vert centre, horiz center")
-            date_style = xlwt.easyxf("align: wrap on, vert centre, horiz left", num_format_str="DD/MM/YYYY")
+            header_style = xlwt.easyxf(
+                "font: bold on; align: wrap on, vert centre, horiz center"
+            )
+            date_style = xlwt.easyxf(
+                "align: wrap on, vert centre, horiz left", num_format_str="DD/MM/YYYY"
+            )
 
             # Cabeçalho
             row_num = 0
             columns = [
-                "Tipo", "Nome", "Descrição", "Data", "Local", "Status", "Turma(s)"
+                "Tipo",
+                "Nome",
+                "Descrição",
+                "Data",
+                "Local",
+                "Status",
+                "Turma(s)",
             ]
 
             for col_num, column_title in enumerate(columns):
@@ -140,7 +162,10 @@ def exportar_atividades(request, formato):
             wb.save(response)
             return response
         except ImportError:
-            messages.error(request, "A biblioteca xlwt não está instalada. Instale-a para exportar para Excel.")
+            messages.error(
+                request,
+                "A biblioteca xlwt não está instalada. Instale-a para exportar para Excel.",
+            )
             return redirect("atividades:relatorio_atividades")
 
     # Exportar para PDF
@@ -148,7 +173,12 @@ def exportar_atividades(request, formato):
         try:
             from reportlab.lib import colors
             from reportlab.lib.pagesizes import letter, landscape
-            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+            from reportlab.platypus import (
+                SimpleDocTemplate,
+                Table,
+                TableStyle,
+                Paragraph,
+            )
             from reportlab.lib.styles import getSampleStyleSheet
             from io import BytesIO
 
@@ -164,45 +194,55 @@ def exportar_atividades(request, formato):
             elements.append(Paragraph("Relatório de Atividades", title_style))
 
             # Dados da tabela
-            data = [["Tipo", "Nome", "Descrição", "Data", "Local", "Status", "Turma(s)"]]
+            data = [
+                ["Tipo", "Nome", "Descrição", "Data", "Local", "Status", "Turma(s)"]
+            ]
 
             # Adicionar atividades acadêmicas
             for atividade in atividades_academicas:
                 turmas = ", ".join([t.nome for t in atividade.turmas.all()])
-                data.append([
-                    "Acadêmica",
-                    atividade.nome,
-                    atividade.descricao,
-                    atividade.data_inicio.strftime("%d/%m/%Y"),
-                    atividade.local,
-                    atividade.get_status_display(),
-                    turmas
-                ])
+                data.append(
+                    [
+                        "Acadêmica",
+                        atividade.nome,
+                        atividade.descricao,
+                        atividade.data_inicio.strftime("%d/%m/%Y"),
+                        atividade.local,
+                        atividade.get_status_display(),
+                        turmas,
+                    ]
+                )
 
             # Adicionar atividades ritualísticas
             for atividade in atividades_ritualisticas:
-                data.append([
-                    "Ritualística",
-                    atividade.nome,
-                    atividade.descricao,
-                    atividade.data.strftime("%d/%m/%Y"),
-                    atividade.local,
-                    "N/A",  # Atividades ritualísticas não têm status
-                    atividade.turma.nome
-                ])
+                data.append(
+                    [
+                        "Ritualística",
+                        atividade.nome,
+                        atividade.descricao,
+                        atividade.data.strftime("%d/%m/%Y"),
+                        atividade.local,
+                        "N/A",  # Atividades ritualísticas não têm status
+                        atividade.turma.nome,
+                    ]
+                )
 
             # Criar tabela
             table = Table(data)
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 12),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ]))
+            table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, 0), 12),
+                        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                        ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                    ]
+                )
+            )
 
             elements.append(table)
 
@@ -216,7 +256,10 @@ def exportar_atividades(request, formato):
 
             return response
         except ImportError:
-            messages.error(request, "As bibliotecas necessárias para gerar PDF não estão instaladas.")
+            messages.error(
+                request,
+                "As bibliotecas necessárias para gerar PDF não estão instaladas.",
+            )
             return redirect("atividades:relatorio_atividades")
 
     # Formato não suportado

@@ -69,7 +69,8 @@ class AlunoRepository:
         try:
             Aluno = AlunoRepository.get_model()
             queryset = (
-                Aluno.objects.filter(ativo=ativo)
+                Aluno.objects.filter(ativo=ativo, cpf__isnull=False)
+                .exclude(cpf__exact="")
                 .select_related()
                 .prefetch_related("matricula_set__turma__curso")
                 .order_by("nome")

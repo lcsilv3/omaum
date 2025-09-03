@@ -64,12 +64,8 @@ class CursoForm(forms.ModelForm):
                 attrs={"class": "form-control", "min": "1"}
             ),
             "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
-            "duracao": forms.NumberInput(
-                attrs={"class": "form-control", "min": "1"}
-            ),
+            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "duracao": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
         }
 
 
@@ -94,9 +90,7 @@ class TurmaForm(forms.ModelForm):
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
             "curso": forms.Select(attrs={"class": "form-select"}),
-            "vagas": forms.NumberInput(
-                attrs={"class": "form-control", "min": "1"}
-            ),
+            "vagas": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
             "status": forms.Select(attrs={"class": "form-select"}),
             "data_inicio": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
@@ -105,18 +99,12 @@ class TurmaForm(forms.ModelForm):
                 attrs={"class": "form-control", "type": "date"}
             ),
             "instrutor": forms.Select(attrs={"class": "form-control"}),
-            "instrutor_auxiliar": forms.Select(
-                attrs={"class": "form-control"}
-            ),
-            "auxiliar_instrucao": forms.Select(
-                attrs={"class": "form-control"}
-            ),
+            "instrutor_auxiliar": forms.Select(attrs={"class": "form-control"}),
+            "auxiliar_instrucao": forms.Select(attrs={"class": "form-control"}),
             "dias_semana": forms.TextInput(attrs={"class": "form-control"}),
             "local": forms.TextInput(attrs={"class": "form-control"}),
             "horario": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
+            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
 
@@ -136,9 +124,7 @@ class AtividadeAcademicaForm(forms.ModelForm):
         ]
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
+            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "data_inicio": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),
@@ -172,12 +158,8 @@ class AtividadeRitualisticaForm(forms.ModelForm):
         ]
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
-            "data": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
-            ),
+            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "data": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "hora_inicio": forms.TimeInput(
                 attrs={"class": "form-control", "type": "time"}
             ),
@@ -186,9 +168,7 @@ class AtividadeRitualisticaForm(forms.ModelForm):
             ),
             "local": forms.TextInput(attrs={"class": "form-control"}),
             "turma": forms.Select(attrs={"class": "form-control"}),
-            "participantes": forms.SelectMultiple(
-                attrs={"class": "form-control"}
-            ),
+            "participantes": forms.SelectMultiple(attrs={"class": "form-control"}),
         }
 
 
@@ -197,9 +177,7 @@ class PresencaForm(forms.ModelForm):
         model = get_model("presencas", "Presenca")
         fields = ["aluno", "turma", "data", "status"]
         widgets = {
-            "data": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
-            ),
+            "data": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "status": forms.Select(attrs={"class": "form-control"}),
         }
 
@@ -211,15 +189,9 @@ class FrequenciaForm(forms.ModelForm):
         widgets = {
             "aluno": forms.Select(attrs={"class": "form-select"}),
             "atividade": forms.Select(attrs={"class": "form-select"}),
-            "data": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
-            ),
-            "presente": forms.CheckboxInput(
-                attrs={"class": "form-check-input"}
-            ),
-            "justificativa": forms.Textarea(
-                attrs={"rows": 3, "class": "form-control"}
-            ),
+            "data": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "presente": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "justificativa": forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
         }
 
 
@@ -234,9 +206,7 @@ class IniciacaoForm(forms.ModelForm):
             "aluno": forms.Select(attrs={"class": "form-control"}),
             "curso": forms.Select(attrs={"class": "form-control"}),
             "grau": forms.TextInput(attrs={"class": "form-control"}),
-            "observacoes": forms.Textarea(
-                attrs={"class": "form-control", "rows": 4}
-            ),
+            "observacoes": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
         }
 
 
@@ -256,12 +226,8 @@ class PunicaoForm(forms.ModelForm):
             "data_aplicacao": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),
-            "motivo": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
-            "observacoes": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
+            "motivo": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "observacoes": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
 
@@ -272,9 +238,7 @@ class CargoAdministrativoForm(forms.ModelForm):
         widgets = {
             "codigo_cargo": forms.TextInput(attrs={"class": "form-control"}),
             "nome": forms.TextInput(attrs={"class": "form-control"}),
-            "descricao": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
+            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
 

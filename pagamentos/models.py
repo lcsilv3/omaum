@@ -18,10 +18,12 @@ class Pagamento(models.Model):
     def dias_atraso(self):
         """Retorna o número de dias de atraso do pagamento, ou 0 se não estiver atrasado."""
         from django.utils import timezone
+
         if self.status == "ATRASADO" and self.data_vencimento:
             hoje = timezone.now().date()
             return max((hoje - self.data_vencimento).days, 0)
         return 0
+
     """
     Modelo para armazenar informações de pagamentos dos alunos.
     """

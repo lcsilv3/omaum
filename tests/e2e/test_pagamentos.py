@@ -108,15 +108,19 @@ class PagamentosE2ETestCase(StaticLiveServerTestCase):
         # Verificação robusta de header
         header = None
         try:
-            header = self.selenium.find_element(By.XPATH, "//h1[contains(text(), 'Pagamento')]")
+            header = self.selenium.find_element(
+                By.XPATH, "//h1[contains(text(), 'Pagamento')]"
+            )
         except Exception:
             try:
-                header = self.selenium.find_element(By.XPATH, "//*[self::h2 or self::h3][contains(text(), 'Pagamento')]")
+                header = self.selenium.find_element(
+                    By.XPATH, "//*[self::h2 or self::h3][contains(text(), 'Pagamento')]"
+                )
             except Exception:
                 body = self.selenium.find_element(By.TAG_NAME, "body").text
-                assert 'Pagamento' in body
+                assert "Pagamento" in body
         if header:
-            assert 'Pagamento' in header.text
+            assert "Pagamento" in header.text
 
         # Verificar se o pagamento está na lista
         self.assertIn("Mensalidade de junho", self.selenium.page_source)

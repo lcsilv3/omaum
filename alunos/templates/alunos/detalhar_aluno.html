@@ -396,8 +396,8 @@
 {% block extra_js %}
 {# Passando URLs do Django para o JavaScript via atributos data-* no body #}
 <script>
-    document.body.dataset.historicoApiUrl = `{% url "alunos:api_historico" aluno_cpf=aluno.cpf %}`;
-    document.body.dataset.addEventoApiUrl = `{% url "alunos:api_adicionar_evento_historico" %}`;
+    document.body.dataset.historicoApiUrl = `{% url "alunos:aluno-detail" pk=aluno.id %}`;
+    {# document.body.dataset.addEventoApiUrl = `{% url "alunos:api_adicionar_evento_historico" %}`; #}
     document.body.dataset.tiposCodigosApiUrl = `{% url "alunos:api_tipos_codigos" %}`;
     document.body.dataset.codigosPorTipoApiUrl = `{% url "alunos:api_codigos_por_tipo" %}`;
 </script>

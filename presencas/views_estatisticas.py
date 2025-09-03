@@ -7,12 +7,10 @@ from datetime import datetime
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.cache import cache_page
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.cache import cache
 from django.utils import timezone
-from django.db.models import Count, Q, F, Avg, Max, Min
 
 from .services.calculadora_estatisticas import CalculadoraEstatisticas
 from .models import PresencaDetalhada, ConfiguracaoPresenca

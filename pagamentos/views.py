@@ -1,7 +1,3 @@
-
-
-
-
 # Função duplicada - removida para evitar F811
 # def editar_pagamento(request, id):
 #     pagamento = get_object_or_404(Pagamento, id=id)

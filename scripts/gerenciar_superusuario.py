@@ -33,6 +33,7 @@ Saídas (exit codes):
 
 ATENÇÃO: Nunca faça commit de senhas reais. Use senhas temporárias e troque depois.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -45,8 +46,8 @@ from typing import Any, Dict
 
 # Configuração do Django -----------------------------------------------------
 # Adicionar o diretório do projeto ao sys.path para permitir importação do módulo omaum
-import sys
 from pathlib import Path
+
 project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
@@ -67,6 +68,7 @@ from django.db.migrations.executor import MigrationExecutor  # noqa: E402
 from django.core.management import call_command  # noqa: E402
 
 # ---------------------------------------------------------------------------
+
 
 def _tem_migracoes_pendentes() -> bool:
     """Verifica se há migrações pendentes na base padrão."""
@@ -91,14 +93,47 @@ def obter_args() -> argparse.Namespace:
         description="Gerencia (cria/atualiza) superusuário de forma idempotente.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--username", dest="username", default=os.getenv("SUPERUSER_USERNAME", "admin"), help="Username (ou campo USERNAME_FIELD se customizado)")
-    parser.add_argument("--email", dest="email", default=os.getenv("SUPERUSER_EMAIL", "admin@example.com"), help="Email do superusuário")
-    parser.add_argument("--password", dest="password", default=os.getenv("SUPERUSER_PASSWORD"), help="Senha (se omitida e necessário, será solicitada interativamente)")
-    parser.add_argument("--migrar", action="store_true", help="Aplicar migrações pendentes automaticamente")
-    parser.add_argument("--forcar-troca-senha", action="store_true", help="Reaplicar senha mesmo que o usuário já exista")
-    parser.add_argument("--apenas-exibir", action="store_true", help="Somente listar superusuários existentes e sair")
-    parser.add_argument("--inativar", action="store_true", help="Marcar usuário como inativo (para reversões)")
-    parser.add_argument("--silencioso", action="store_true", help="Reduz logs (adequado a CI)")
+    parser.add_argument(
+        "--username",
+        dest="username",
+        default=os.getenv("SUPERUSER_USERNAME", "admin"),
+        help="Username (ou campo USERNAME_FIELD se customizado)",
+    )
+    parser.add_argument(
+        "--email",
+        dest="email",
+        default=os.getenv("SUPERUSER_EMAIL", "admin@example.com"),
+        help="Email do superusuário",
+    )
+    parser.add_argument(
+        "--password",
+        dest="password",
+        default=os.getenv("SUPERUSER_PASSWORD"),
+        help="Senha (se omitida e necessário, será solicitada interativamente)",
+    )
+    parser.add_argument(
+        "--migrar",
+        action="store_true",
+        help="Aplicar migrações pendentes automaticamente",
+    )
+    parser.add_argument(
+        "--forcar-troca-senha",
+        action="store_true",
+        help="Reaplicar senha mesmo que o usuário já exista",
+    )
+    parser.add_argument(
+        "--apenas-exibir",
+        action="store_true",
+        help="Somente listar superusuários existentes e sair",
+    )
+    parser.add_argument(
+        "--inativar",
+        action="store_true",
+        help="Marcar usuário como inativo (para reversões)",
+    )
+    parser.add_argument(
+        "--silencioso", action="store_true", help="Reduz logs (adequado a CI)"
+    )
     return parser.parse_args()
 
 
@@ -119,13 +154,18 @@ def log(msg: str, *, silencioso: bool = False) -> None:
 def listar_superusuarios(silencioso: bool = False) -> None:
     User = get_user_model()
     campo = User.USERNAME_FIELD
-    dados = list(User.objects.filter(is_superuser=True).values(campo, "email", "is_active"))
+    dados = list(
+        User.objects.filter(is_superuser=True).values(campo, "email", "is_active")
+    )
     if not dados:
         log("[INFO] Nenhum superusuário encontrado.", silencioso=silencioso)
     else:
         log("[INFO] Superusuários:", silencioso=silencioso)
         for d in dados:
-            log(f"  - {campo}={d[campo]!r} email={d.get('email')} ativo={d.get('is_active')}", silencioso=silencioso)
+            log(
+                f"  - {campo}={d[campo]!r} email={d.get('email')} ativo={d.get('is_active')}",
+                silencioso=silencioso,
+            )
 
 
 def obter_senha_interativa(args: argparse.Namespace, created: bool) -> str:
@@ -208,7 +248,9 @@ def main():  # pragma: no cover - execução de script
         if executar_migrate:
             _aplicar_migracoes_silencioso()
         else:
-            print("[AVISO] Há migrações pendentes. Use --migrar ou SUPERUSER_AUTO_MIGRATE=1 se necessário.")
+            print(
+                "[AVISO] Há migrações pendentes. Use --migrar ou SUPERUSER_AUTO_MIGRATE=1 se necessário."
+            )
 
     if args.apenas_exibir:
         listar_superusuarios(silencioso=args.silencioso)
@@ -233,7 +275,10 @@ def main():  # pragma: no cover - execução de script
     )
 
     if resultado["created"] and not args.password and not args.forcar_troca_senha:
-        log("[INFO] Usuário criado sem senha definida (ou senha não alterada). Execute changepassword depois.", silencioso=args.silencioso)
+        log(
+            "[INFO] Usuário criado sem senha definida (ou senha não alterada). Execute changepassword depois.",
+            silencioso=args.silencioso,
+        )
 
     # Mostrar lista final (se não silencioso)
     if not args.silencioso:

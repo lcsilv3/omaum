@@ -4,12 +4,11 @@
 from django.test import LiveServerTestCase
 from django.urls import reverse
 
-# from selenium import webdriver  # Removido: possível dependência inválida
+from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
-import time
 
 
 class AlunoUITest(LiveServerTestCase):

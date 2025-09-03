@@ -2,11 +2,12 @@
 """
 Script para simular o problema da view de totais de atividades
 """
+
 import os
 import django
 
 # Configurar Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omaum.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
 django.setup()
 
 from datetime import date
@@ -14,7 +15,7 @@ from calendar import monthrange
 from django.db.models import Q
 from atividades.models import Atividade
 from turmas.models import Turma
-from cursos.models import Curso
+
 
 def get_model_class(model_name):
     """Obtém classe de modelo dinamicamente para evitar imports circulares."""
@@ -22,11 +23,12 @@ def get_model_class(model_name):
         return Atividade
     return None
 
+
 print("=== SIMULAÇÃO COMPLETA DA VIEW ===")
 
 # Simular dados da sessão (primeira chamada, sem totais_atividades ainda)
 turma_id = 1
-ano = 2025 
+ano = 2025
 mes = 5
 
 turma = Turma.objects.get(id=turma_id)
@@ -42,7 +44,11 @@ totais_atividades = {}  # Primeira vez, sessão vazia
 if turma and curso and ano and mes:
     if totais_atividades:
         print("Caminho 1: Usando atividades da sessão")
-        atividades_ids = [int(key.replace('qtd_ativ_', '')) for key in totais_atividades.keys() if int(totais_atividades[key]) > 0]
+        atividades_ids = [
+            int(key.replace("qtd_ativ_", ""))
+            for key in totais_atividades.keys()
+            if int(totais_atividades[key]) > 0
+        ]
         Atividade_Model = get_model_class("Atividade")
         atividades = Atividade_Model.objects.filter(
             id__in=atividades_ids,
@@ -53,15 +59,16 @@ if turma and curso and ano and mes:
         primeiro_dia = date(int(ano), int(mes), 1)
         ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
         print(f"Período de filtro: {primeiro_dia} a {ultimo_dia}")
-        
+
         Atividade_Model = get_model_class("Atividade")
-        atividades = Atividade_Model.objects.filter(
-            turmas__id=turma.id,
-            curso=curso
-        ).filter(
-            Q(data_inicio__lte=ultimo_dia) &
-            (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
-        ).distinct()
+        atividades = (
+            Atividade_Model.objects.filter(turmas__id=turma.id, curso=curso)
+            .filter(
+                Q(data_inicio__lte=ultimo_dia)
+                & (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
+            )
+            .distinct()
+        )
 
 print(f"\nQuantidade de atividades encontradas: {len(atividades)}")
 print("IDs das atividades:")

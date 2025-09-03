@@ -4,30 +4,29 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0014_remove_aluno_fator_rh_alter_aluno_tipo_sanguineo'),
+        ("alunos", "0014_remove_aluno_fator_rh_alter_aluno_tipo_sanguineo"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='aluno',
-            name='bairro',
+            model_name="aluno",
+            name="bairro",
         ),
         migrations.RemoveField(
-            model_name='aluno',
-            name='cidade',
+            model_name="aluno",
+            name="cidade",
         ),
         migrations.RemoveField(
-            model_name='aluno',
-            name='estado',
+            model_name="aluno",
+            name="estado",
         ),
         migrations.RemoveField(
-            model_name='aluno',
-            name='nacionalidade',
+            model_name="aluno",
+            name="nacionalidade",
         ),
         migrations.RemoveField(
-            model_name='aluno',
-            name='naturalidade',
+            model_name="aluno",
+            name="naturalidade",
         ),
     ]

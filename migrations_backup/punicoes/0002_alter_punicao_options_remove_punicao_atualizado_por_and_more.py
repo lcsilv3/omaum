@@ -83,9 +83,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="punicao",
             name="updated_at",
-            field=models.DateTimeField(
-                auto_now=True, verbose_name="Atualizado em"
-            ),
+            field=models.DateTimeField(auto_now=True, verbose_name="Atualizado em"),
         ),
         migrations.AlterField(
             model_name="punicao",
@@ -104,9 +102,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="punicao",
             name="observacoes",
-            field=models.TextField(
-                blank=True, null=True, verbose_name="Observações"
-            ),
+            field=models.TextField(blank=True, null=True, verbose_name="Observações"),
         ),
         migrations.AlterField(
             model_name="punicao",
@@ -120,9 +116,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="tipopunicao",
             name="descricao",
-            field=models.TextField(
-                blank=True, null=True, verbose_name="Descrição"
-            ),
+            field=models.TextField(blank=True, null=True, verbose_name="Descrição"),
         ),
         migrations.AlterField(
             model_name="tipopunicao",

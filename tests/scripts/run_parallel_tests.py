@@ -100,13 +100,13 @@ def generate_coverage_report():
 
         total_coverage = coverage_data.get("totals", {}).get("percent_covered", 0)
 
-        print(f"\n📊 RELATÓRIO DE COBERTURA")
+        print("\n📊 RELATÓRIO DE COBERTURA")
         print(f"{'='*50}")
         print(f"Cobertura total: {total_coverage:.2f}%")
 
         files_data = coverage_data.get("files", {})
 
-        print(f"\n📁 Cobertura por arquivo:")
+        print("\n📁 Cobertura por arquivo:")
         for file_path, file_data in files_data.items():
             if any(
                 app in file_path

@@ -5,83 +5,82 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
-        ('cursos', '0001_initial'),
-        ('turmas', '0001_initial'),
+        ("alunos", "0001_initial"),
+        ("cursos", "0001_initial"),
+        ("turmas", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Nota',
+            name="Nota",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
                 (
-                    'tipo_avaliacao',
+                    "tipo_avaliacao",
                     models.CharField(
                         choices=[
-                            ('prova', 'Prova'),
-                            ('trabalho', 'Trabalho'),
-                            ('apresentacao', 'Apresentação'),
-                            ('participacao', 'Participação'),
-                            ('atividade', 'Atividade'),
-                            ('exame', 'Exame Final'),
-                            ('outro', 'Outro'),
+                            ("prova", "Prova"),
+                            ("trabalho", "Trabalho"),
+                            ("apresentacao", "Apresentação"),
+                            ("participacao", "Participação"),
+                            ("atividade", "Atividade"),
+                            ("exame", "Exame Final"),
+                            ("outro", "Outro"),
                         ],
                         max_length=20,
                     ),
                 ),
-                ('valor', models.DecimalField(decimal_places=2, max_digits=5)),
+                ("valor", models.DecimalField(decimal_places=2, max_digits=5)),
                 (
-                    'peso',
+                    "peso",
                     models.DecimalField(decimal_places=1, default=1.0, max_digits=3),
                 ),
-                ('data', models.DateField()),
-                ('observacao', models.TextField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                ("data", models.DateField()),
+                ("observacao", models.TextField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
                 (
-                    'aluno',
+                    "aluno",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='notas',
-                        to='alunos.aluno',
+                        related_name="notas",
+                        to="alunos.aluno",
                     ),
                 ),
                 (
-                    'curso',
+                    "curso",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='notas',
-                        to='cursos.curso',
+                        related_name="notas",
+                        to="cursos.curso",
                     ),
                 ),
                 (
-                    'turma',
+                    "turma",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='notas',
-                        to='turmas.turma',
+                        related_name="notas",
+                        to="turmas.turma",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Nota',
-                'verbose_name_plural': 'Notas',
-                'ordering': ['-data', 'aluno__nome'],
-                'unique_together': {
-                    ('aluno', 'curso', 'turma', 'tipo_avaliacao', 'data')
+                "verbose_name": "Nota",
+                "verbose_name_plural": "Notas",
+                "ordering": ["-data", "aluno__nome"],
+                "unique_together": {
+                    ("aluno", "curso", "turma", "tipo_avaliacao", "data")
                 },
             },
         ),

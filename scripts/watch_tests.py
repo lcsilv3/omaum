@@ -3,6 +3,7 @@
 Requisitos: watchdog, pytest
 Executar via venv do projeto para usar dependências corretas.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -53,6 +54,8 @@ class DebouncedRunner(FileSystemEventHandler):
                 "-m",
                 "pytest",
                 "-q",
+                "-n",  # Desativa o pytest-xdist para evitar erros de concorrência no watcher
+                "0",
                 "presencas/tests",
                 "-k",
                 "presencas or edicao_lote or ajax",
@@ -68,7 +71,9 @@ def main():
     handler = DebouncedRunner(delay=0.6)
     observer.schedule(handler, str(WATCH_DIR), recursive=True)
     observer.start()
-    print("✅ Watch de testes iniciado. Salve um arquivo em 'presencas/' para disparar.")
+    print(
+        "✅ Watch de testes iniciado. Salve um arquivo em 'presencas/' para disparar."
+    )
     try:
         while True:
             time.sleep(1)

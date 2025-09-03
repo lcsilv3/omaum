@@ -6,7 +6,7 @@ Implementa bulk operations para melhor performance.
 import logging
 from datetime import date
 from typing import List, Dict, Any
-from django.db import transaction, connection
+from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 

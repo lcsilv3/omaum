@@ -35,14 +35,10 @@ def check_views(root_dir):
                 content = read_file_content(filepath)
 
                 # Procurar por render() com caminhos de template explícitos
-                matches = re.findall(
-                    r'render\([^)]*,\s*[\'"]([^\'"]+)[\'"]', content
-                )
+                matches = re.findall(r'render\([^)]*,\s*[\'"]([^\'"]+)[\'"]', content)
                 for match in matches:
                     if "/" in match or "\\" in match:
-                        print(
-                            f"Possible template path to update in {filepath}:"
-                        )
+                        print(f"Possible template path to update in {filepath}:")
                         print(f"  {match}")
 
 

@@ -31,9 +31,7 @@ class LogAtividade(models.Model):
 
     usuario = models.CharField(max_length=100)
     acao = models.CharField(max_length=255)
-    tipo = models.CharField(
-        max_length=10, choices=TIPO_CHOICES, default="INFO"
-    )
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default="INFO")
     data = models.DateTimeField(default=timezone.now)
     detalhes = models.TextField(blank=True, null=True)
 
@@ -43,6 +41,4 @@ class LogAtividade(models.Model):
     class Meta:
         verbose_name = "Log de Atividade"
         verbose_name_plural = "Logs de Atividades"
-        ordering = [
-            "-data"
-        ]  # Garante que os logs mais recentes apareçam primeiro
+        ordering = ["-data"]  # Garante que os logs mais recentes apareçam primeiro

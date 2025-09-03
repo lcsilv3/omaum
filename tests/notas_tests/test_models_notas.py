@@ -4,10 +4,12 @@ from django.utils import timezone
 from notas.models import Nota
 from alunos.services import criar_aluno
 from turmas.models import Turma
+
+
 @pytest.mark.django_db
 class NotaModelTestCase(TestCase):
     """Testes unitários para o modelo Nota."""
-    
+
     def setUp(self):
         """Configuração inicial para os testes."""
         # Criar uma turma para os testes
@@ -15,9 +17,9 @@ class NotaModelTestCase(TestCase):
             nome="Turma de Teste",
             codigo="TT-001",
             data_inicio=timezone.now().date(),
-            status="A"
+            status="A",
         )
-        
+
         # Criar uma atividade para os testes
         self.atividade = Atividade.objects.create(
             nome="Atividade de Teste",
@@ -25,27 +27,29 @@ class NotaModelTestCase(TestCase):
             data_inicio=timezone.now(),
             responsavel="Professor Teste",
             tipo_atividade="aula",
-            status="agendada"
+            status="agendada",
         )
         self.atividade.turmas.add(self.turma)
-        
+
         # Criar um aluno para os testes usando o serviço
-        self.aluno = criar_aluno({
-            "cpf": "12345678900",
-            "nome": "Aluno Teste",
-            "email": "aluno@teste.com",
-            "data_nascimento": "1990-01-01"
-        })
-        
+        self.aluno = criar_aluno(
+            {
+                "cpf": "12345678900",
+                "nome": "Aluno Teste",
+                "email": "aluno@teste.com",
+                "data_nascimento": "1990-01-01",
+            }
+        )
+
         # Criar nota para os testes
         self.nota = Nota.objects.create(
             aluno=self.aluno,
             curso=None,
             turma=self.turma,
-            tipo_avaliacao='prova',
+            tipo_avaliacao="prova",
             valor=8.5,
             peso=2.0,
-            data=timezone.now().date()
+            data=timezone.now().date(),
         )
 
     def test_valor_ponderado(self):
@@ -53,33 +57,34 @@ class NotaModelTestCase(TestCase):
 
     def test_situacao_aprovado(self):
         self.nota.valor = 8.0
-        self.assertEqual(self.nota.situacao, 'Aprovado')
+        self.assertEqual(self.nota.situacao, "Aprovado")
 
     def test_situacao_recuperacao(self):
         self.nota.valor = 5.5
-        self.assertEqual(self.nota.situacao, 'Em Recuperação')
+        self.assertEqual(self.nota.situacao, "Em Recuperação")
 
     def test_situacao_reprovado(self):
         self.nota.valor = 4.0
-        self.assertEqual(self.nota.situacao, 'Reprovado')
-    
-    # def test_criacao_avaliacao(self):
+        self.assertEqual(self.nota.situacao, "Reprovado")
+
+        # def test_criacao_avaliacao(self):
         """Testa a criação de uma avaliação."""
-    # self.assertEqual(self.avaliacao.nome, "Prova Final")
-    # self.assertEqual(self.avaliacao.descricao, "Avaliação final do curso")
-    # self.assertEqual(self.avaliacao.peso, 2.0)
-    # self.assertEqual(self.avaliacao.turma, self.turma)
+        # self.assertEqual(self.avaliacao.nome, "Prova Final")
+        # self.assertEqual(self.avaliacao.descricao, "Avaliação final do curso")
+        # self.assertEqual(self.avaliacao.peso, 2.0)
+        # self.assertEqual(self.avaliacao.turma, self.turma)
         self.assertEqual(self.avaliacao.atividade, self.atividade)
-    
+
     def test_representacao_string(self):
         """Testa a representação em string do modelo."""
         representacao_esperada = f"Prova Final - {self.turma.nome}"
         self.assertEqual(str(self.avaliacao), representacao_esperada)
 
+
 @pytest.mark.django_db
 class NotaModelTestCase(TestCase):
     """Testes unitários para o modelo Nota."""
-    
+
     def setUp(self):
         """Configuração inicial para os testes."""
         # Criar uma turma para os testes
@@ -87,9 +92,9 @@ class NotaModelTestCase(TestCase):
             nome="Turma de Teste",
             codigo="TT-001",
             data_inicio=timezone.now().date(),
-            status="A"
+            status="A",
         )
-        
+
         # Criar uma atividade para os testes
         self.atividade = Atividade.objects.create(
             nome="Atividade de Teste",
@@ -97,18 +102,20 @@ class NotaModelTestCase(TestCase):
             data_inicio=timezone.now(),
             responsavel="Professor Teste",
             tipo_atividade="aula",
-            status="agendada"
+            status="agendada",
         )
         self.atividade.turmas.add(self.turma)
-        
+
         # Criar um aluno para os testes usando o serviço
-        self.aluno = criar_aluno({
-            "cpf": "12345678900",
-            "nome": "Aluno Teste",
-            "email": "aluno@teste.com",
-            "data_nascimento": "1990-01-01"
-        })
-        
+        self.aluno = criar_aluno(
+            {
+                "cpf": "12345678900",
+                "nome": "Aluno Teste",
+                "email": "aluno@teste.com",
+                "data_nascimento": "1990-01-01",
+            }
+        )
+
         # Criar avaliação para os testes
         self.avaliacao = Avaliacao.objects.create(
             nome="Prova Final",
@@ -116,29 +123,29 @@ class NotaModelTestCase(TestCase):
             data=timezone.now().date(),
             peso=2.0,
             turma=self.turma,
-            atividade=self.atividade
+            atividade=self.atividade,
         )
-        
+
         # Criar nota para os testes
         self.nota = Nota.objects.create(
             avaliacao=self.avaliacao,
             aluno=self.aluno,
             valor=8.5,
-            observacao="Bom desempenho"
+            observacao="Bom desempenho",
         )
-    
+
     def test_criacao_nota(self):
         """Testa a criação de uma nota."""
         self.assertEqual(self.nota.avaliacao, self.avaliacao)
         self.assertEqual(self.nota.aluno, self.aluno)
         self.assertEqual(self.nota.valor, 8.5)
         self.assertEqual(self.nota.observacao, "Bom desempenho")
-    
+
     def test_representacao_string(self):
         """Testa a representação em string do modelo."""
         representacao_esperada = f"{self.aluno.nome} - {self.avaliacao.nome}: 8.5"
         self.assertEqual(str(self.nota), representacao_esperada)
-    
+
     def test_validacao_nota(self):
         """Testa a validação do valor da nota."""
         # Nota com valor negativo
@@ -147,14 +154,14 @@ class NotaModelTestCase(TestCase):
                 avaliacao=self.avaliacao,
                 aluno=self.aluno,
                 valor=-1.0,
-                observacao="Nota inválida"
+                observacao="Nota inválida",
             )
-        
+
         # Nota com valor acima de 10
         with self.assertRaises(Exception):
             Nota.objects.create(
                 avaliacao=self.avaliacao,
                 aluno=self.aluno,
                 valor=11.0,
-                observacao="Nota inválida"
+                observacao="Nota inválida",
             )

@@ -1,7 +1,5 @@
 import pytest
 from turmas.models import Turma
-from django.utils import timezone
-from django.core.exceptions import ValidationError
 
 
 @pytest.mark.django_db

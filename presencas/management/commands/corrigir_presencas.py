@@ -3,7 +3,6 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from presencas.models import Presenca, PresencaAcademica
-import logging
 
 
 class Command(BaseCommand):
@@ -97,7 +96,7 @@ class Command(BaseCommand):
                 f"\n✅ {'Simulação concluída' if dry_run else 'Correção concluída'}!"
             )
         )
-        self.stdout.write(f"📊 Estatísticas:")
+        self.stdout.write("📊 Estatísticas:")
         self.stdout.write(f"   • Total de presenças: {total_presencas}")
         self.stdout.write(f"   • Total de presenças acadêmicas: {total_academicas}")
         self.stdout.write(f"   • Presenças corrigidas (turmas): {corrigidas_turma}")

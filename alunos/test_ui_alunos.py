@@ -104,6 +104,8 @@ class AlunoUITest(LiveServerTestCase):
         # Check if test student is listed
         wait = WebDriverWait(self.browser, 10)  # Espera até 10 segundos
         student_element = wait.until(
-            EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Maria Test')]"))
+            EC.presence_of_element_located(
+                (By.XPATH, "//*[contains(text(), 'Maria Test')]")
+            )
         )
         self.assertIn("Maria Test", student_element.text)

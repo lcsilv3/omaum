@@ -9,23 +9,27 @@ try:
     if not cursos.exists():
         print("Nenhum curso encontrado.")
     for curso in cursos:
-        print(f'Curso: {curso.nome} (ID: {curso.id})')
+        print(f"Curso: {curso.nome} (ID: {curso.id})")
         turmas = Turma.objects.filter(curso=curso)
         if not turmas.exists():
-            print('  Nenhuma turma para este curso.')
+            print("  Nenhuma turma para este curso.")
         else:
             for turma in turmas:
-                print(f'  Turma: {turma.nome} (ID: {turma.id})')
+                print(f"  Turma: {turma.nome} (ID: {turma.id})")
                 try:
                     atividades = Atividade.objects.filter(turmas=turma)
                     if atividades.exists():
                         for atividade in atividades:
-                            print(f'    Atividade: {atividade.nome} '
-                                  f'(ID: {atividade.id})')
+                            print(
+                                f"    Atividade: {atividade.nome} "
+                                f"(ID: {atividade.id})"
+                            )
                     else:
-                        print('    Nenhuma atividade para esta turma.')
+                        print("    Nenhuma atividade para esta turma.")
                 except Exception as e:
-                    print(f'    Erro ao buscar atividades para a turma '
-                          f'{turma.nome}: {e}')
+                    print(
+                        f"    Erro ao buscar atividades para a turma "
+                        f"{turma.nome}: {e}"
+                    )
 except Exception as e:
-    print(f'Erro geral ao buscar cursos/turmas/atividades: {e}')
+    print(f"Erro geral ao buscar cursos/turmas/atividades: {e}")

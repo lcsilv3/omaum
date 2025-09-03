@@ -32,10 +32,14 @@ def get_model_class(model_name, app_name="atividades"):
     except (ImportError, AttributeError) as e:
         logger.error("Erro ao obter modelo %s: %s", model_name, str(e))
         raise
+
+
 def get_messages():
     """Importa o módulo messages do Django."""
     from django.contrib import messages
+
     return messages
+
 
 def get_models():
     """Obtém os modelos necessários dinamicamente."""
@@ -43,15 +47,16 @@ def get_models():
         atividades_module = import_module("atividades.models")
         cursos_module = import_module("cursos.models")
         turmas_module = import_module("turmas.models")
-        
+
         return {
-            'AtividadeAcademica': getattr(atividades_module, "AtividadeAcademica"),
-            'Curso': getattr(cursos_module, "Curso"),
-            'Turma': getattr(turmas_module, "Turma"),
+            "AtividadeAcademica": getattr(atividades_module, "AtividadeAcademica"),
+            "Curso": getattr(cursos_module, "Curso"),
+            "Turma": getattr(turmas_module, "Turma"),
         }
     except (ImportError, AttributeError) as e:
         logger.error("Erro ao obter modelos: %s", str(e), exc_info=True)
         raise
+
 
 def get_forms():
     """Obtém os formulários AtividadeAcademicaForm e AtividadeRitualisticaForm."""
@@ -77,14 +82,17 @@ def get_cursos():
     Curso = import_module("cursos.models").Curso
     return Curso.objects.all()
 
+
 def get_turmas(curso_id=None):
     Turma = import_module("turmas.models").Turma
     if curso_id:
         return Turma.objects.filter(curso_id=curso_id)
     return Turma.objects.all()
 
+
 def get_atividades_academicas(curso_id=None, turma_id=None, query=None):
     from ..models import AtividadeAcademica
+
     atividades = AtividadeAcademica.objects.all()
     if curso_id:
         atividades = atividades.filter(curso_id=curso_id)
@@ -92,6 +100,7 @@ def get_atividades_academicas(curso_id=None, turma_id=None, query=None):
         atividades = atividades.filter(turmas__id=turma_id)
     if query:
         from django.db.models import Q
+
         atividades = atividades.filter(
             Q(nome__icontains=query) | Q(descricao__icontains=query)
         )

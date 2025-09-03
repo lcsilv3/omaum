@@ -3,16 +3,17 @@
 Analisar o HTML salvo
 """
 
+
 def analyze_saved_html():
     """Analisa o HTML salvo"""
     try:
         with open("html_dump_formset_get.html", "r", encoding="utf-8") as f:
             html = f.read()
-        
+
         # Contar TOTAL_FORMS
         count = html.count('name="historico-TOTAL_FORMS"')
         print(f"📊 Contagem no HTML salvo: {count}")
-        
+
         # Encontrar todas as posições
         pos = 0
         positions = []
@@ -22,9 +23,9 @@ def analyze_saved_html():
                 break
             positions.append(pos)
             pos += 1
-        
+
         print(f"📍 Posições: {positions}")
-        
+
         # Mostrar contexto de cada posição
         for i, pos in enumerate(positions):
             start = max(0, pos - 150)
@@ -33,9 +34,10 @@ def analyze_saved_html():
             print(f"\n--- CONTEXTO {i+1} (pos {pos}) ---")
             print(repr(context))  # usar repr para ver caracteres especiais
             print("--- FIM CONTEXTO ---")
-            
+
     except FileNotFoundError:
         print("❌ Arquivo não encontrado")
+
 
 if __name__ == "__main__":
     analyze_saved_html()

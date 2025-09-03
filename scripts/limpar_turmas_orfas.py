@@ -5,6 +5,7 @@ Script para remover turmas órfãs (sem curso válido) e todos os registros rela
 - Seguro para rodar via shell Django: python manage.py shell < scripts/limpar_turmas_orfas.py
 - Agora trata FK, M2M e ausência de campo de forma robusta.
 """
+
 from core.utils import get_model_dynamically
 from django.db import transaction
 from django.db.models.fields.related import ManyToManyField
@@ -23,6 +24,7 @@ relacionamentos = [
 removidas = []
 erros = []
 
+
 def remover_dependencias(model, turma, campos):
     for campo in campos:
         # Verifica se o campo existe no modelo
@@ -37,7 +39,10 @@ def remover_dependencias(model, turma, campos):
                     # Para FK, deleta os objetos relacionados
                     model.objects.filter(**{campo: turma}).delete()
             except Exception as e:
-                erros.append(f"Erro ao remover dependências em {model.__name__}.{campo}: {e}")
+                erros.append(
+                    f"Erro ao remover dependências em {model.__name__}.{campo}: {e}"
+                )
+
 
 with transaction.atomic():
     for turma in Turma.objects.all():

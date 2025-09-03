@@ -35,9 +35,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "descricao",
-                    models.TextField(
-                        blank=True, null=True, verbose_name="Descrição"
-                    ),
+                    models.TextField(blank=True, null=True, verbose_name="Descrição"),
                 ),
             ],
             options={

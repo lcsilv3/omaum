@@ -11,9 +11,7 @@ def backup_database():
             os.makedirs(backup_dir)
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_file = os.path.join(
-            backup_dir, f"db_backup_{timestamp}.sqlite3"
-        )
+        backup_file = os.path.join(backup_dir, f"db_backup_{timestamp}.sqlite3")
 
         shutil.copy2("db.sqlite3", backup_file)
         print(f"Database backed up to {backup_file}")
@@ -27,10 +25,7 @@ def delete_migrations():
     dirs = [
         d
         for d in os.listdir(".")
-        if os.path.isdir(d)
-        and not d.startswith(".")
-        and d != "venv"
-        and d != "backups"
+        if os.path.isdir(d) and not d.startswith(".") and d != "venv" and d != "backups"
     ]
 
     migration_files_deleted = 0

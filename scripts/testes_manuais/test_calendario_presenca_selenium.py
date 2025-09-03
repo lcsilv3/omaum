@@ -5,6 +5,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 import time
 
+
 class TestCalendarioPresenca(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -45,17 +46,24 @@ class TestCalendarioPresenca(unittest.TestCase):
         time.sleep(1)
         # Verifica se o calendário apareceu
         calendario = driver.find_element(By.CLASS_NAME, "flatpickr-calendar")
-        self.assertTrue(calendario.is_displayed(), "Calendário não abriu ao clicar no input.")
+        self.assertTrue(
+            calendario.is_displayed(), "Calendário não abriu ao clicar no input."
+        )
         # Fecha o calendário
         driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
         time.sleep(1)
         # Clica no ícone do calendário
-        calendar_icon = input_box.find_element(By.XPATH, "../../span[contains(@class, 'calendar-icon')]")
+        calendar_icon = input_box.find_element(
+            By.XPATH, "../../span[contains(@class, 'calendar-icon')]"
+        )
         ActionChains(driver).move_to_element(calendar_icon).click().perform()
         time.sleep(1)
         # Verifica se o calendário apareceu novamente
         calendario = driver.find_element(By.CLASS_NAME, "flatpickr-calendar")
-        self.assertTrue(calendario.is_displayed(), "Calendário não abriu ao clicar no ícone.")
+        self.assertTrue(
+            calendario.is_displayed(), "Calendário não abriu ao clicar no ícone."
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

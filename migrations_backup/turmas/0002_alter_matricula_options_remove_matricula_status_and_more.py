@@ -26,9 +26,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="matricula",
             name="ativa",
-            field=models.BooleanField(
-                default=True, verbose_name="Matrícula Ativa"
-            ),
+            field=models.BooleanField(default=True, verbose_name="Matrícula Ativa"),
         ),
         migrations.AlterField(
             model_name="matricula",

@@ -14,3 +14,22 @@ from .aluno_views import (
     adicionar_evento_historico_ajax,
     historico_iniciatico_paginado_ajax,
 )
+
+__all__ = [
+    "listar_alunos_view",
+    "criar_aluno",
+    "detalhar_aluno",
+    "editar_aluno",
+    "excluir_aluno",
+    "search_alunos",
+    "painel",
+    "exportar_alunos",
+    "importar_alunos",
+    "relatorio_alunos",
+    "confirmar_remocao_instrutoria",
+    "diagnostico_instrutores",
+    "listar_tipos_codigos_ajax",
+    "listar_codigos_por_tipo_ajax",
+    "adicionar_evento_historico_ajax",
+    "historico_iniciatico_paginado_ajax",
+]

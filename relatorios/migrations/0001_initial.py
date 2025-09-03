@@ -4,27 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Relatorio',
+            name="Relatorio",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
-                ('titulo', models.CharField(max_length=255)),
-                ('conteudo', models.TextField()),
-                ('data_criacao', models.DateTimeField(auto_now_add=True)),
+                ("titulo", models.CharField(max_length=255)),
+                ("conteudo", models.TextField()),
+                ("data_criacao", models.DateTimeField(auto_now_add=True)),
             ],
         ),
     ]

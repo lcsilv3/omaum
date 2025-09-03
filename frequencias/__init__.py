@@ -2,4 +2,4 @@
 Aplicativo de frequências para o sistema OMAUM.
 """
 
-default_app_config = 'frequencias.apps.FrequenciasConfig'
+default_app_config = "frequencias.apps.FrequenciasConfig"

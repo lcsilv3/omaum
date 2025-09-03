@@ -5,4 +5,4 @@ from .models import Nota
 class NotaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nota
-        fields = '__all__'
+        fields = "__all__"

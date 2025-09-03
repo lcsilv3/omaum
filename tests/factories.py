@@ -1,5 +1,3 @@
-import random
-
 """
 Factories otimizadas para testes usando factory_boy.
 """
@@ -233,8 +231,7 @@ class FuzzyDecimal:
 
 from django.contrib.auth.models import User
 from django.utils import timezone
-from decimal import Decimal
-from datetime import date, timedelta
+from datetime import timedelta
 
 # Importar modelos principais
 try:

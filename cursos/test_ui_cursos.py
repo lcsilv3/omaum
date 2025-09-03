@@ -3,7 +3,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-from django.urls import reverse
 import time
 
 
@@ -109,7 +108,7 @@ class CursoUITest(StaticLiveServerTestCase):
         )
         # Debug: listar todos os botões do formulário
         botoes = self.driver.find_elements(By.XPATH, "//form//button")
-        print(f"[DEBUG] Botões encontrados no formulário de criação:")
+        print("[DEBUG] Botões encontrados no formulário de criação:")
         for i, botao in enumerate(botoes):
             print(
                 f"  [{i}] text='{botao.text}' enabled={botao.is_enabled()} displayed={botao.is_displayed()} type={botao.get_attribute('type')}"
@@ -174,7 +173,7 @@ class CursoUITest(StaticLiveServerTestCase):
         campo_nome.send_keys("Curso Selenium Editado")
         # Debug: listar todos os botões do formulário de edição
         botoes = self.driver.find_elements(By.XPATH, "//form//button")
-        print(f"[DEBUG] Botões encontrados no formulário de edição:")
+        print("[DEBUG] Botões encontrados no formulário de edição:")
         for i, botao in enumerate(botoes):
             print(
                 f"  [{i}] text='{botao.text}' enabled={botao.is_enabled()} displayed={botao.is_displayed()} type={botao.get_attribute('type')}"
@@ -214,18 +213,16 @@ class CursoUITest(StaticLiveServerTestCase):
         print(f"[DEBUG] Body na tela de exclusão:\n{body_exclusao}")
         links = self.driver.find_elements(By.TAG_NAME, "a")
         print(
-            f"[DEBUG] Links encontrados na tela de exclusão: {[l.get_attribute('href') for l in links]}"
+            f"[DEBUG] Links encontrados na tela de exclusão: {[link.get_attribute('href') for link in links]}"
         )
         # Se não está na tela de confirmação, pular teste de exclusão
         if not url_exclusao.rstrip("/").endswith("excluir"):
-            import unittest
-
             self.skipTest(
                 f"Redirecionado para {url_exclusao} ao tentar excluir. O sistema não permite exclusão deste curso ou há proteção de integridade. Veja o body e os links acima para diagnóstico."
             )
         # Caso esteja na tela de confirmação, seguir normalmente
         botoes = self.driver.find_elements(By.XPATH, "//form//button")
-        print(f"[DEBUG] Botões encontrados no formulário de exclusão:")
+        print("[DEBUG] Botões encontrados no formulário de exclusão:")
         for i, botao in enumerate(botoes):
             print(
                 f"  [{i}] text='{botao.text}' enabled={botao.is_enabled()} displayed={botao.is_displayed()} type={botao.get_attribute('type')}"

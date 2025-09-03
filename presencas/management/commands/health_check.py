@@ -4,12 +4,12 @@ FASE 3C: Management command para monitoramento de saúde do sistema.
 
 import time
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from datetime import datetime
+from typing import Dict, Any
 
 from django.core.management.base import BaseCommand
 from django.core.cache import cache
-from django.db import connection, transaction
+from django.db import connection
 from django.conf import settings
 from django.contrib.auth.models import User
 
@@ -452,7 +452,7 @@ class Command(BaseCommand):
             1 for r in self.results.values() if r.get("status") == "error"
         )
 
-        self.stdout.write(f"\n📊 Resumo:")
+        self.stdout.write("\n📊 Resumo:")
         self.stdout.write(f"  ✅ Saudável: {healthy_count}")
         self.stdout.write(f"  ⚠️  Avisos: {warning_count}")
         self.stdout.write(f"  ❌ Erros: {error_count}")

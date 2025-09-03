@@ -8,7 +8,7 @@ import django
 from datetime import date
 
 # Configurar Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omaum.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
 django.setup()
 
 from alunos.models import Aluno
@@ -21,7 +21,7 @@ def criar_aluno_teste():
         if Aluno.objects.filter(cpf="12345678900").exists():
             print("Aluno já existe!")
             return
-        
+
         # Criar aluno
         aluno = Aluno.objects.create(
             nome="João da Silva",
@@ -35,11 +35,11 @@ def criar_aluno_teste():
             nome_iniciatico="João dos Santos",
             grau_atual="Aprendiz",
             situacao_iniciatica="INICIADO",
-            historico_iniciatico=[]
+            historico_iniciatico=[],
         )
-        
+
         print(f"Aluno criado com sucesso: {aluno.nome} - CPF: {aluno.cpf}")
-        
+
     except Exception as e:
         print(f"Erro ao criar aluno: {e}")
 

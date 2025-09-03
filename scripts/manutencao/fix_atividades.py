@@ -2,7 +2,7 @@ import os
 import django
 
 # Configurar Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omaum.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
 django.setup()
 
 from atividades.models import Atividade
@@ -17,7 +17,7 @@ print(f"📊 Encontradas {atividades_sem_curso.count()} atividades sem curso")
 corrigidas = 0
 for atividade in atividades_sem_curso:
     print(f"📝 Processando atividade: {atividade.nome}")
-    
+
     turmas = atividade.turmas.all()
     if turmas.exists():
         primeira_turma = turmas.first()
@@ -29,7 +29,7 @@ for atividade in atividades_sem_curso:
         else:
             print(f"   ❌ Turma sem curso: {primeira_turma}")
     else:
-        print(f"   ❌ Atividade sem turmas")
+        print("   ❌ Atividade sem turmas")
 
 print(f"✅ Correção concluída! {corrigidas} atividades foram corrigidas.")
 

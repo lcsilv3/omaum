@@ -3,7 +3,6 @@ FASE 3C: Tasks assíncronas para o sistema de presenças.
 """
 
 import logging
-import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 
@@ -11,7 +10,6 @@ from celery import shared_task
 from django.core.cache import cache
 from django.core.mail import EmailMessage
 from django.conf import settings
-from django.db import transaction
 from django.utils import timezone
 
 from .models import PresencaDetalhada, AgendamentoRelatorio
@@ -124,7 +122,7 @@ def recalcular_estatisticas(
 
         # Invalidar cache relacionado
         cache_patterns = [
-            f"presencas_filtros_*",
+            "presencas_filtros_*",
             f"estatisticas_turma_{turma_id}*" if turma_id else "estatisticas_turma_*",
             "turmas_listagem",
             "atividades_listagem",

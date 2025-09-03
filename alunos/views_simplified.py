@@ -4,18 +4,17 @@ Views simplificadas para gerenciamento de alunos - Sistema Dados Iniciáticos v2
 
 import logging
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 from django.views.decorators.http import require_http_methods
-from django.utils import timezone
 import json
 
-from .forms import AlunoForm, RegistroHistoricoFormSet, RegistroHistoricoForm
-from .models import Aluno, RegistroHistorico
+from .forms import AlunoForm
+from .models import Aluno
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +156,10 @@ def detalhar_aluno_simple(request, aluno_id):
         )
         if ultima_matricula:
             ultimo_curso = ultima_matricula.turma.curso.nome
-    except:
+    except Exception as e:
+        logger.warning(
+            f"Não foi possível buscar o último curso para o aluno {aluno.cpf}: {e}"
+        )
         pass
 
     context = {

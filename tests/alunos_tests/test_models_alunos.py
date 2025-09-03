@@ -1,6 +1,7 @@
 import pytest
 from alunos.services import criar_aluno
 
+
 @pytest.mark.django_db
 class TestAlunoModel:
     """Testes para o modelo Aluno, utilizando a camada de serviço."""
@@ -13,7 +14,7 @@ class TestAlunoModel:
             "email": "joao@exemplo.com",
             "data_nascimento": "1990-01-01",
             "sexo": "M",
-            "situacao": "ATIVO"
+            "situacao": "ATIVO",
         }
         aluno = criar_aluno(aluno_data)
         assert aluno is not None
@@ -27,7 +28,7 @@ class TestAlunoModel:
             "cpf": "12345678900",
             "nome": "João da Silva",
             "email": "joao@exemplo.com",
-            "data_nascimento": "1990-01-01"
+            "data_nascimento": "1990-01-01",
         }
         criar_aluno(aluno_data_1)
 
@@ -35,7 +36,7 @@ class TestAlunoModel:
             "cpf": "12345678900",  # CPF duplicado
             "nome": "Maria Souza",
             "email": "maria@exemplo.com",
-            "data_nascimento": "1992-05-15"
+            "data_nascimento": "1992-05-15",
         }
         # O serviço deve retornar None ao falhar por violação de unicidade
         aluno_duplicado = criar_aluno(aluno_data_2)
@@ -47,7 +48,7 @@ class TestAlunoModel:
             "cpf": "12345678900",
             "nome": "João da Silva",
             "email": "joao@exemplo.com",
-            "data_nascimento": "1990-01-01"
+            "data_nascimento": "1990-01-01",
         }
         aluno = criar_aluno(aluno_data)
         assert str(aluno) == "João da Silva"

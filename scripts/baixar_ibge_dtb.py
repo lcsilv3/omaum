@@ -8,6 +8,7 @@ Uso rápido:
 Requisitos: somente biblioteca padrão + chardet (já no requirements.txt).
 Fonte oficial: https://geoftp.ibge.gov.br/organizacao_do_territorio/estrutura_territorial/divisao_territorial/{ANO}/DTB_{ANO}.zip
 """
+
 from __future__ import annotations
 
 import argparse
@@ -39,7 +40,9 @@ def baixar_zip(ano: int) -> bytes:
     except HTTPError as e:  # pragma: no cover - fluxo de erro simples
         raise SystemExit(f"Falha HTTP {e.code} ao baixar ZIP: {e.reason}")
     except URLError as e:  # pragma: no cover
-        raise SystemExit(f"Erro de rede ao baixar ZIP: {e.reason}\nVerifique conexão ou se o ano {ano} já está disponível.")
+        raise SystemExit(
+            f"Erro de rede ao baixar ZIP: {e.reason}\nVerifique conexão ou se o ano {ano} já está disponível."
+        )
 
 
 def _converter_xls_para_csv(xls_bytes: bytes) -> str:
@@ -160,11 +163,15 @@ def extrair_csv_municipios(zip_bytes: bytes, listar: bool = False) -> tuple[str,
             texto = df.to_csv(index=False)
             return alvo, texto
 
-        print("Nenhum arquivo de municípios encontrado em formatos suportados (CSV/XLS/ODS).")
+        print(
+            "Nenhum arquivo de municípios encontrado em formatos suportados (CSV/XLS/ODS)."
+        )
         print("Arquivos no ZIP:")
         for n in nomes:
             print(" -", n)
-        raise SystemExit("Falha na extração: padrões MUNICIPIO/MUNICIPIOS não localizaram CSV/XLS/ODS compatível.")
+        raise SystemExit(
+            "Falha na extração: padrões MUNICIPIO/MUNICIPIOS não localizaram CSV/XLS/ODS compatível."
+        )
 
 
 def salvar_conteudo(dest: Path, conteudo: str, force: bool) -> None:
@@ -177,8 +184,12 @@ def salvar_conteudo(dest: Path, conteudo: str, force: bool) -> None:
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Baixa e extrai CSV de municípios IBGE (DTB)")
-    parser.add_argument("--ano", type=int, default=2024, help="Ano da DTB (padrão: 2024)")
+    parser = argparse.ArgumentParser(
+        description="Baixa e extrai CSV de municípios IBGE (DTB)"
+    )
+    parser.add_argument(
+        "--ano", type=int, default=2024, help="Ano da DTB (padrão: 2024)"
+    )
     parser.add_argument(
         "--dest",
         default="docs/ibge_municipios.csv",

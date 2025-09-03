@@ -1,4 +1,3 @@
-import json
 import logging
 from datetime import date
 from calendar import monthrange
@@ -487,7 +486,6 @@ def registrar_presenca_alunos(request):
     logger.debug(f"Dias atividades da sessão: {dias_atividades}")
 
     turma = Turma.objects.get(id=turma_id)
-    convocados_dict = request.session.get("presenca_convocados", {})
 
     from presencas.models import ConvocacaoPresenca
 
@@ -1030,8 +1028,8 @@ def registrar_presenca_dias_atividades_ajax(request):
                 logger.info(
                     f"   [TARGET] {key} (parsed): {json.dumps(parsed, indent=2)}"
                 )
-            except:
-                logger.error(f"   [ERROR] {key} - ERRO AO PARSEAR JSON")
+            except json.JSONDecodeError as e:
+                logger.error(f"   [ERROR] {key} - ERRO AO PARSEAR JSON: {e}")
         else:
             logger.info(f"   [OTHER] {key}: {value}")
 

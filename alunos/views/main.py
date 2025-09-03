@@ -6,6 +6,7 @@ import logging
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import Paginator
+from django.db import transaction
 from django import forms
 from django.http import JsonResponse
 from django.template.loader import render_to_string
@@ -144,7 +145,7 @@ def detalhar_aluno(request, cpf):
         messages.error(request, "Aluno não encontrado.")
         return redirect("alunos:listar_alunos")
 
-    historico_list = aluno.historico_set.all()
+    historico_list = aluno.historico.all()
 
     context = {
         "aluno": aluno,

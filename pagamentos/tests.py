@@ -41,7 +41,7 @@ class PagamentoTestCase(TestCase):
         # Criar um pagamento de teste
         self.pagamento = Pagamento()
         self.pagamento.aluno = self.aluno
-        self.pagamento.valor = Decimal('100.00')
+        self.pagamento.valor = Decimal("100.00")
         self.pagamento.data_vencimento = timezone.now().date()
         self.pagamento.status = "PENDENTE"
         self.pagamento.save()
@@ -55,12 +55,15 @@ class PagamentoTestCase(TestCase):
         """Testar a criação de um novo pagamento"""
         data = {
             "aluno": self.aluno.pk,  # Usar chave primária correta (cpf)
-            "valor": Decimal('150.00'),
+            "valor": Decimal("150.00"),
             "data_vencimento": timezone.now().date(),
-            "status": "PENDENTE"
+            "status": "PENDENTE",
         }
         response = self.client.post(reverse("pagamentos:criar_pagamento"), data)
-    self.assertIn(response.status_code, [200, 302])  # Aceita sucesso ou redirecionamento
+
+    self.assertIn(
+        response.status_code, [200, 302]
+    )  # Aceita sucesso ou redirecionamento
 
     def test_editar_pagamento(self):
         """Testar a edição de um pagamento existente"""
@@ -72,7 +75,10 @@ class PagamentoTestCase(TestCase):
         """Testar a exclusão de um pagamento"""
         url = reverse("pagamentos:excluir_pagamento", args=[self.pagamento.pk])
         response = self.client.post(url)
-    self.assertIn(response.status_code, [200, 302])  # Aceita sucesso ou redirecionamento
+
+    self.assertIn(
+        response.status_code, [200, 302]
+    )  # Aceita sucesso ou redirecionamento
 
     def test_detalhar_pagamento(self):
         """Testar a visualização de detalhes de um pagamento"""
@@ -91,7 +97,7 @@ class PagamentoTestCase(TestCase):
     def test_pagamento_status(self):
         """Testar o status do pagamento"""
         self.assertEqual(self.pagamento.status, "PENDENTE")
-        
+
         # Alterar status
         self.pagamento.status = "PAGO"
         self.pagamento.save()
@@ -99,12 +105,12 @@ class PagamentoTestCase(TestCase):
 
     def test_pagamento_valor(self):
         """Testar o valor do pagamento"""
-        self.assertEqual(self.pagamento.valor, Decimal('100.00'))
-        
+        self.assertEqual(self.pagamento.valor, Decimal("100.00"))
+
         # Alterar valor
-        self.pagamento.valor = Decimal('200.00')
+        self.pagamento.valor = Decimal("200.00")
         self.pagamento.save()
-        self.assertEqual(self.pagamento.valor, Decimal('200.00'))
+        self.assertEqual(self.pagamento.valor, Decimal("200.00"))
 
     def test_relacionamentos(self):
         """Testar os relacionamentos do pagamento"""
@@ -113,10 +119,10 @@ class PagamentoTestCase(TestCase):
     def test_pagamento_validacao(self):
         """Testar validação do pagamento"""
         # Valor deve ser positivo
-    with self.assertRaises(Exception):
+        with self.assertRaises(Exception):
             pagamento = Pagamento()
             pagamento.aluno = self.aluno
-            pagamento.valor = Decimal('-50.00')  # Valor negativo
+            pagamento.valor = Decimal("-50.00")  # Valor negativo
             pagamento.data_vencimento = timezone.now().date()
             pagamento.status = "PENDENTE"
             pagamento.save()

@@ -127,7 +127,7 @@ class TurmasUITest(StaticLiveServerTestCase):
         campos = self.driver.find_elements(
             By.XPATH, "//form//input | //form//select | //form//textarea"
         )
-        print(f"[DEBUG] Campos do formulário de criação:")
+        print("[DEBUG] Campos do formulário de criação:")
         for campo in campos:
             print(
                 f"  name={campo.get_attribute('name')} type={campo.get_attribute('type')} value={campo.get_attribute('value')} required={campo.get_attribute('required')}"
@@ -260,7 +260,7 @@ class TurmasUITest(StaticLiveServerTestCase):
                 print(f"[DEBUG] Valor de '{campo_data}' setado via JS.")
         # Debug: listar todos os botões do formulário
         botoes = self.driver.find_elements(By.XPATH, "//form//button")
-        print(f"[DEBUG] Botões encontrados no formulário de criação:")
+        print("[DEBUG] Botões encontrados no formulário de criação:")
         for i, botao in enumerate(botoes):
             print(
                 f"  [{i}] text='{botao.text}' enabled={botao.is_enabled()} displayed={botao.is_displayed()} type={botao.get_attribute('type')}"
@@ -319,7 +319,7 @@ class TurmasUITest(StaticLiveServerTestCase):
             if "Turma Selenium" in linha.text:
                 links = linha.find_elements(By.TAG_NAME, "a")
                 print(
-                    f"[DEBUG] Links na linha da turma: {[l.get_attribute('href') for l in links]}"
+                    f"[DEBUG] Links na linha da turma: {[link.get_attribute('href') for link in links]}"
                 )
                 if links:
                     self.driver.execute_script(
@@ -347,7 +347,7 @@ class TurmasUITest(StaticLiveServerTestCase):
         campo_nome.send_keys("Turma Selenium Editada")
         # Debug: listar todos os botões do formulário de edição
         botoes = self.driver.find_elements(By.XPATH, "//form//button")
-        print(f"[DEBUG] Botões encontrados no formulário de edição:")
+        print("[DEBUG] Botões encontrados no formulário de edição:")
         for i, botao in enumerate(botoes):
             print(
                 f"  [{i}] text='{botao.text}' enabled={botao.is_enabled()} displayed={botao.is_displayed()} type={botao.get_attribute('type')}"
@@ -387,18 +387,16 @@ class TurmasUITest(StaticLiveServerTestCase):
         print(f"[DEBUG] Body na tela de exclusão:\n{body_exclusao}")
         links = self.driver.find_elements(By.TAG_NAME, "a")
         print(
-            f"[DEBUG] Links encontrados na tela de exclusão: {[l.get_attribute('href') for l in links]}"
+            f"[DEBUG] Links encontrados na tela de exclusão: {[link.get_attribute('href') for link in links]}"
         )
         # Se não está na tela de confirmação, pular teste de exclusão
         if not url_exclusao.rstrip("/").endswith("excluir"):
-            import unittest
-
             self.skipTest(
                 f"Redirecionado para {url_exclusao} ao tentar excluir. O sistema não permite exclusão desta turma ou há proteção de integridade. Veja o body e os links acima para diagnóstico."
             )
         # Caso esteja na tela de confirmação, seguir normalmente
         botoes = self.driver.find_elements(By.XPATH, "//form//button")
-        print(f"[DEBUG] Botões encontrados no formulário de exclusão:")
+        print("[DEBUG] Botões encontrados no formulário de exclusão:")
         for i, botao in enumerate(botoes):
             print(
                 f"  [{i}] text='{botao.text}' enabled={botao.is_enabled()} displayed={botao.is_displayed()} type={botao.get_attribute('type')}"

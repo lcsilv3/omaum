@@ -40,6 +40,8 @@ class CodeFormatter(FileSystemEventHandler):
                 [sys.executable, "-m", "ruff", "format", file_path],
                 check=True,
                 capture_output=True,
+                text=True,
+                encoding="utf-8",
             )
             print("✅ Ruff: Formatação aplicada")
             # Verifica problemas de lint com Ruff
@@ -47,13 +49,19 @@ class CodeFormatter(FileSystemEventHandler):
                 [sys.executable, "-m", "ruff", "check", file_path],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
             )
             if result.returncode == 0:
                 print("✅ Ruff: Nenhum problema de lint encontrado")
             else:
                 print("⚠️ Ruff encontrou problemas:")
-                for line in result.stdout.splitlines():
-                    print(f"  {line}")
+                if result.stdout:
+                    for line in result.stdout.splitlines():
+                        print(f"  {line}")
+                else:
+                    print(
+                        "⚠️ Ruff não retornou saída padrão (stdout). Verifique possíveis problemas de encoding ou execução."
+                    )
             print("✨ Verificação concluída!")
         except subprocess.CalledProcessError as e:
             print(f"❌ Erro ao rodar Ruff: {e}")

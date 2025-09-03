@@ -1,10 +1,8 @@
 import pytest
 from django.test import TestCase
-from django.utils import timezone
 from frequencias.models import FrequenciaMensal, Carencia
 from alunos.services import criar_aluno
 from turmas.models import Turma
-from atividades.models import Atividade
 
 
 @pytest.mark.django_db

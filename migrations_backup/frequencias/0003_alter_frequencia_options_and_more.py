@@ -52,9 +52,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="frequencia",
             name="justificativa",
-            field=models.TextField(
-                blank=True, null=True, verbose_name="Justificativa"
-            ),
+            field=models.TextField(blank=True, null=True, verbose_name="Justificativa"),
         ),
         migrations.AlterField(
             model_name="frequencia",

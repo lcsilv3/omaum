@@ -27,9 +27,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="iniciacao",
             name="grau",
-            field=models.CharField(
-                default=1, max_length=50, verbose_name="Grau"
-            ),
+            field=models.CharField(default=1, max_length=50, verbose_name="Grau"),
             preserve_default=False,
         ),
         # Then set up the unique constraint
@@ -55,9 +53,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="iniciacao",
             name="observacoes",
-            field=models.TextField(
-                blank=True, null=True, verbose_name="ObservaÃ§Ãµes"
-            ),
+            field=models.TextField(blank=True, null=True, verbose_name="ObservaÃ§Ãµes"),
         ),
         migrations.RemoveField(
             model_name="iniciacao",

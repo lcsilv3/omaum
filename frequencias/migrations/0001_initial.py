@@ -6,164 +6,163 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
-        ('turmas', '0001_initial'),
+        ("alunos", "0001_initial"),
+        ("turmas", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='FrequenciaMensal',
+            name="FrequenciaMensal",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
                 (
-                    'mes',
+                    "mes",
                     models.IntegerField(
                         choices=[
-                            (1, 'Janeiro'),
-                            (2, 'Fevereiro'),
-                            (3, 'Março'),
-                            (4, 'Abril'),
-                            (5, 'Maio'),
-                            (6, 'Junho'),
-                            (7, 'Julho'),
-                            (8, 'Agosto'),
-                            (9, 'Setembro'),
-                            (10, 'Outubro'),
-                            (11, 'Novembro'),
-                            (12, 'Dezembro'),
+                            (1, "Janeiro"),
+                            (2, "Fevereiro"),
+                            (3, "Março"),
+                            (4, "Abril"),
+                            (5, "Maio"),
+                            (6, "Junho"),
+                            (7, "Julho"),
+                            (8, "Agosto"),
+                            (9, "Setembro"),
+                            (10, "Outubro"),
+                            (11, "Novembro"),
+                            (12, "Dezembro"),
                         ],
-                        verbose_name='Mês',
+                        verbose_name="Mês",
                     ),
                 ),
-                ('ano', models.IntegerField(verbose_name='Ano')),
+                ("ano", models.IntegerField(verbose_name="Ano")),
                 (
-                    'percentual_minimo',
+                    "percentual_minimo",
                     models.IntegerField(
-                        default=75, verbose_name='Percentual Mínimo (%)'
+                        default=75, verbose_name="Percentual Mínimo (%)"
                     ),
                 ),
                 (
-                    'created_at',
-                    models.DateTimeField(auto_now_add=True, verbose_name='Criado em'),
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Criado em"),
                 ),
                 (
-                    'updated_at',
-                    models.DateTimeField(auto_now=True, verbose_name='Atualizado em'),
+                    "updated_at",
+                    models.DateTimeField(auto_now=True, verbose_name="Atualizado em"),
                 ),
                 (
-                    'turma',
+                    "turma",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to='turmas.turma',
-                        verbose_name='Turma',
+                        to="turmas.turma",
+                        verbose_name="Turma",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Frequência Mensal',
-                'verbose_name_plural': 'Frequências Mensais',
-                'ordering': ['-ano', '-mes', 'turma__nome'],
-                'unique_together': {('turma', 'mes', 'ano')},
+                "verbose_name": "Frequência Mensal",
+                "verbose_name_plural": "Frequências Mensais",
+                "ordering": ["-ano", "-mes", "turma__nome"],
+                "unique_together": {("turma", "mes", "ano")},
             },
         ),
         migrations.CreateModel(
-            name='Carencia',
+            name="Carencia",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
                 (
-                    'total_presencas',
-                    models.IntegerField(default=0, verbose_name='Total de Presenças'),
+                    "total_presencas",
+                    models.IntegerField(default=0, verbose_name="Total de Presenças"),
                 ),
                 (
-                    'total_atividades',
-                    models.IntegerField(default=0, verbose_name='Total de Atividades'),
+                    "total_atividades",
+                    models.IntegerField(default=0, verbose_name="Total de Atividades"),
                 ),
                 (
-                    'percentual_presenca',
+                    "percentual_presenca",
                     models.DecimalField(
                         decimal_places=2,
-                        default=Decimal('0.00'),
+                        default=Decimal("0.00"),
                         max_digits=5,
-                        verbose_name='Percentual de Presença',
+                        verbose_name="Percentual de Presença",
                     ),
                 ),
                 (
-                    'numero_carencias',
-                    models.IntegerField(default=0, verbose_name='Número de Carências'),
+                    "numero_carencias",
+                    models.IntegerField(default=0, verbose_name="Número de Carências"),
                 ),
                 (
-                    'liberado',
-                    models.BooleanField(default=False, verbose_name='Liberado'),
+                    "liberado",
+                    models.BooleanField(default=False, verbose_name="Liberado"),
                 ),
                 (
-                    'status',
+                    "status",
                     models.CharField(
                         blank=True,
                         choices=[
-                            ('PENDENTE', 'Pendente'),
-                            ('EM_ACOMPANHAMENTO', 'Em Acompanhamento'),
-                            ('RESOLVIDO', 'Resolvido'),
+                            ("PENDENTE", "Pendente"),
+                            ("EM_ACOMPANHAMENTO", "Em Acompanhamento"),
+                            ("RESOLVIDO", "Resolvido"),
                         ],
-                        default='PENDENTE',
+                        default="PENDENTE",
                         max_length=20,
                         null=True,
-                        verbose_name='Status',
+                        verbose_name="Status",
                     ),
                 ),
                 (
-                    'observacoes',
-                    models.TextField(blank=True, null=True, verbose_name='Observações'),
+                    "observacoes",
+                    models.TextField(blank=True, null=True, verbose_name="Observações"),
                 ),
                 (
-                    'created_at',
-                    models.DateTimeField(auto_now_add=True, verbose_name='Criado em'),
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Criado em"),
                 ),
                 (
-                    'updated_at',
-                    models.DateTimeField(auto_now=True, verbose_name='Atualizado em'),
+                    "updated_at",
+                    models.DateTimeField(auto_now=True, verbose_name="Atualizado em"),
                 ),
                 (
-                    'aluno',
+                    "aluno",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to='alunos.aluno',
-                        verbose_name='Aluno',
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
                     ),
                 ),
                 (
-                    'frequencia_mensal',
+                    "frequencia_mensal",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to='frequencias.frequenciamensal',
-                        verbose_name='Frequência Mensal',
+                        to="frequencias.frequenciamensal",
+                        verbose_name="Frequência Mensal",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Carência',
-                'verbose_name_plural': 'Carências',
-                'ordering': ['frequencia_mensal', 'aluno__nome'],
-                'unique_together': {('frequencia_mensal', 'aluno')},
+                "verbose_name": "Carência",
+                "verbose_name_plural": "Carências",
+                "ordering": ["frequencia_mensal", "aluno__nome"],
+                "unique_together": {("frequencia_mensal", "aluno")},
             },
         ),
     ]

@@ -10,9 +10,7 @@ def manutencao_middleware(get_response):
 
     def middleware(request):
         # Importa o modelo aqui para evitar importação circular
-        ConfiguracaoSistema = importlib.import_module(
-            "core.models"
-        ).ConfiguracaoSistema
+        ConfiguracaoSistema = importlib.import_module("core.models").ConfiguracaoSistema
 
         # Verifica se o sistema está em manutenção
         try:
@@ -53,9 +51,7 @@ def renovacao_sessao_middleware(get_response):
             # Se houver um registro de última atividade e for mais antigo que o limite de aviso
             if ultima_atividade:
                 try:
-                    ultima_atividade = timezone.datetime.fromisoformat(
-                        ultima_atividade
-                    )
+                    ultima_atividade = timezone.datetime.fromisoformat(ultima_atividade)
                     tempo_desde_ultima_atividade = agora - ultima_atividade
 
                     # Se o usuário estiver inativo por muito tempo
@@ -93,16 +89,25 @@ def ajax_authentication_middleware(get_response):
         # Verifica se é uma requisição AJAX não autenticada
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"[DEBUG] AJAX Middleware - User: {getattr(request, 'user', 'No user attr')}, Auth: {getattr(getattr(request, 'user', None), 'is_authenticated', 'No auth attr')}, Path: {request.path}")
+            logger.info(
+                f"[DEBUG] AJAX Middleware - User: {getattr(request, 'user', 'No user attr')}, Auth: {getattr(getattr(request, 'user', None), 'is_authenticated', 'No auth attr')}, Path: {request.path}"
+            )
             # Verifica se o usuário não está autenticado
-            if not hasattr(request, 'user') or not request.user.is_authenticated:
+            if not hasattr(request, "user") or not request.user.is_authenticated:
                 from django.http import JsonResponse
-                logger.info(f"[DEBUG] AJAX Middleware - Retornando 401 para {request.path}")
-                return JsonResponse({
-                    "success": False,
-                    "error": "Sessão expirada. Faça login novamente."
-                }, status=401)
+
+                logger.info(
+                    f"[DEBUG] AJAX Middleware - Retornando 401 para {request.path}"
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Sessão expirada. Faça login novamente.",
+                    },
+                    status=401,
+                )
 
         response = get_response(request)
         return response

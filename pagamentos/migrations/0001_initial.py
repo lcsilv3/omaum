@@ -5,109 +5,108 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('alunos', '0001_initial'),
+        ("alunos", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Pagamento',
+            name="Pagamento",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name='ID',
+                        verbose_name="ID",
                     ),
                 ),
                 (
-                    'valor',
+                    "valor",
                     models.DecimalField(
-                        decimal_places=2, max_digits=10, verbose_name='Valor'
+                        decimal_places=2, max_digits=10, verbose_name="Valor"
                     ),
                 ),
                 (
-                    'data_vencimento',
-                    models.DateField(verbose_name='Data de Vencimento'),
+                    "data_vencimento",
+                    models.DateField(verbose_name="Data de Vencimento"),
                 ),
                 (
-                    'status',
+                    "status",
                     models.CharField(
                         choices=[
-                            ('PENDENTE', 'Pendente'),
-                            ('PAGO', 'Pago'),
-                            ('ATRASADO', 'Atrasado'),
-                            ('CANCELADO', 'Cancelado'),
+                            ("PENDENTE", "Pendente"),
+                            ("PAGO", "Pago"),
+                            ("ATRASADO", "Atrasado"),
+                            ("CANCELADO", "Cancelado"),
                         ],
-                        default='PENDENTE',
+                        default="PENDENTE",
                         max_length=10,
-                        verbose_name='Status',
+                        verbose_name="Status",
                     ),
                 ),
                 (
-                    'data_pagamento',
+                    "data_pagamento",
                     models.DateField(
-                        blank=True, null=True, verbose_name='Data de Pagamento'
+                        blank=True, null=True, verbose_name="Data de Pagamento"
                     ),
                 ),
                 (
-                    'valor_pago',
+                    "valor_pago",
                     models.DecimalField(
                         blank=True,
                         decimal_places=2,
                         max_digits=10,
                         null=True,
-                        verbose_name='Valor Pago',
+                        verbose_name="Valor Pago",
                     ),
                 ),
                 (
-                    'metodo_pagamento',
+                    "metodo_pagamento",
                     models.CharField(
                         blank=True,
                         choices=[
-                            ('DINHEIRO', 'Dinheiro'),
-                            ('PIX', 'PIX'),
-                            ('CARTAO_CREDITO', 'Cartão de Crédito'),
-                            ('CARTAO_DEBITO', 'Cartão de Débito'),
-                            ('TRANSFERENCIA', 'Transferência Bancária'),
-                            ('BOLETO', 'Boleto'),
-                            ('OUTRO', 'Outro'),
+                            ("DINHEIRO", "Dinheiro"),
+                            ("PIX", "PIX"),
+                            ("CARTAO_CREDITO", "Cartão de Crédito"),
+                            ("CARTAO_DEBITO", "Cartão de Débito"),
+                            ("TRANSFERENCIA", "Transferência Bancária"),
+                            ("BOLETO", "Boleto"),
+                            ("OUTRO", "Outro"),
                         ],
                         max_length=20,
                         null=True,
-                        verbose_name='Método de Pagamento',
+                        verbose_name="Método de Pagamento",
                     ),
                 ),
                 (
-                    'observacoes',
-                    models.TextField(blank=True, null=True, verbose_name='Observações'),
+                    "observacoes",
+                    models.TextField(blank=True, null=True, verbose_name="Observações"),
                 ),
                 (
-                    'created_at',
-                    models.DateTimeField(auto_now_add=True, verbose_name='Criado em'),
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Criado em"),
                 ),
                 (
-                    'updated_at',
-                    models.DateTimeField(auto_now=True, verbose_name='Atualizado em'),
+                    "updated_at",
+                    models.DateTimeField(auto_now=True, verbose_name="Atualizado em"),
                 ),
                 (
-                    'aluno',
+                    "aluno",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to='alunos.aluno',
-                        verbose_name='Aluno',
+                        to="alunos.aluno",
+                        verbose_name="Aluno",
                     ),
                 ),
             ],
             options={
-                'verbose_name': 'Pagamento',
-                'verbose_name_plural': 'Pagamentos',
-                'ordering': ['-data_vencimento'],
+                "verbose_name": "Pagamento",
+                "verbose_name_plural": "Pagamentos",
+                "ordering": ["-data_vencimento"],
             },
         ),
     ]

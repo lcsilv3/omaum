@@ -131,7 +131,7 @@ def migrar_dados_iniciaticos():
             erros += 1
             print(f"✗ Erro ao migrar {aluno.nome}: {str(e)}")
 
-    print(f"\n=== RESUMO DA MIGRAÇÃO ===")
+    print("\n=== RESUMO DA MIGRAÇÃO ===")
     print(f"Total de alunos: {total_alunos}")
     print(f"Migrados com sucesso: {migrados}")
     print(f"Erros: {erros}")
@@ -269,7 +269,7 @@ def main():
     # Verificar integridade
     verificar_integridade_migracao()
 
-    print(f"\n=== MIGRAÇÃO CONCLUÍDA ===")
+    print("\n=== MIGRAÇÃO CONCLUÍDA ===")
     print(f"Backup salvo em: {backup_filename}")
     print(f"Alunos migrados: {migrados}")
     print(f"Erros encontrados: {erros}")

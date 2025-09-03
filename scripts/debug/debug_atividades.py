@@ -2,11 +2,12 @@
 """
 Script para debug das atividades
 """
+
 import os
 import django
 
 # Configurar Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omaum.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
 django.setup()
 
 from datetime import date
@@ -14,7 +15,6 @@ from calendar import monthrange
 from django.db.models import Q
 from atividades.models import Atividade
 from turmas.models import Turma
-from cursos.models import Curso
 
 print("=== DEBUG ATIVIDADES ===")
 
@@ -38,36 +38,47 @@ print(f"Curso: {curso}")
 print("\n=== TODAS AS ATIVIDADES DA TURMA ===")
 todas_atividades = Atividade.objects.filter(turmas__id=turma.id)
 for ativ in todas_atividades:
-    print(f"ID: {ativ.id}, Nome: {ativ.nome}, Data início: {ativ.data_inicio}, Data fim: {ativ.data_fim}, Curso: {ativ.curso}")
+    print(
+        f"ID: {ativ.id}, Nome: {ativ.nome}, Data início: {ativ.data_inicio}, Data fim: {ativ.data_fim}, Curso: {ativ.curso}"
+    )
 
 # Aplicar o filtro atual (problemático)
 print("\n=== FILTRO ATUAL ===")
-atividades_filtro_atual = Atividade.objects.filter(
-    turmas__id=turma.id,
-    curso=curso
-).filter(
-    Q(data_inicio__lte=ultimo_dia) &
-    (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
-).distinct()
+atividades_filtro_atual = (
+    Atividade.objects.filter(turmas__id=turma.id, curso=curso)
+    .filter(
+        Q(data_inicio__lte=ultimo_dia)
+        & (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
+    )
+    .distinct()
+)
 
 print(f"Query: {atividades_filtro_atual.query}")
 for ativ in atividades_filtro_atual:
-    print(f"ID: {ativ.id}, Nome: {ativ.nome}, Data início: {ativ.data_inicio}, Data fim: {ativ.data_fim}")
+    print(
+        f"ID: {ativ.id}, Nome: {ativ.nome}, Data início: {ativ.data_inicio}, Data fim: {ativ.data_fim}"
+    )
 
 # Testar filtro sem curso
 print("\n=== FILTRO SEM CURSO ===")
-atividades_sem_curso = Atividade.objects.filter(
-    turmas__id=turma.id
-).filter(
-    Q(data_inicio__lte=ultimo_dia) &
-    (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
-).distinct()
+atividades_sem_curso = (
+    Atividade.objects.filter(turmas__id=turma.id)
+    .filter(
+        Q(data_inicio__lte=ultimo_dia)
+        & (Q(data_fim__isnull=True) | Q(data_fim__gte=primeiro_dia))
+    )
+    .distinct()
+)
 
 for ativ in atividades_sem_curso:
-    print(f"ID: {ativ.id}, Nome: {ativ.nome}, Data início: {ativ.data_inicio}, Data fim: {ativ.data_fim}")
+    print(
+        f"ID: {ativ.id}, Nome: {ativ.nome}, Data início: {ativ.data_inicio}, Data fim: {ativ.data_fim}"
+    )
 
 # Verificar se curso está correto
-print(f"\n=== VERIFICAÇÃO CURSO ===")
+print("\n=== VERIFICAÇÃO CURSO ===")
 print(f"Curso da turma: {turma.curso} (ID: {turma.curso.id})")
 for ativ in todas_atividades:
-    print(f"Atividade {ativ.nome} - Curso: {ativ.curso} (ID: {ativ.curso.id if ativ.curso else 'None'})")
+    print(
+        f"Atividade {ativ.nome} - Curso: {ativ.curso} (ID: {ativ.curso.id if ativ.curso else 'None'})"
+    )

@@ -1,6 +1,7 @@
 """
 Módulo base com funções e classes utilitárias compartilhadas entre as views.
 """
+
 import logging
 from importlib import import_module
 from django.contrib.auth.decorators import login_required
@@ -28,17 +29,11 @@ def get_pagamento_or_404(pagamento_id):
 
 
 # Verificar disponibilidade de bibliotecas para exportação
-try:
-    import xlsxwriter
-    EXCEL_AVAILABLE = True
-except ImportError:
-    EXCEL_AVAILABLE = False
+import importlib.util
 
-try:
-    from weasyprint import HTML
-    PDF_AVAILABLE = True
-except ImportError:
-    PDF_AVAILABLE = False
+EXCEL_AVAILABLE = importlib.util.find_spec("xlsxwriter") is not None
+PDF_AVAILABLE = importlib.util.find_spec("weasyprint") is not None
+
 
 # Decorator composto para views que precisam de autenticação e modelo de pagamento
 def pagamento_view(view_func):
@@ -46,6 +41,7 @@ def pagamento_view(view_func):
     Decorator que combina login_required e fornece o modelo Pagamento.
     Também captura exceções comuns.
     """
+
     @login_required
     def wrapped_view(request, *args, **kwargs):
         try:
@@ -53,8 +49,10 @@ def pagamento_view(view_func):
         except Exception as e:
             logger.error(f"Erro na view {view_func.__name__}: {str(e)}", exc_info=True)
             from django.contrib import messages
+
             messages.error(request, f"Erro: {str(e)}")
             from django.shortcuts import redirect
-            return redirect('pagamentos:listar_pagamentos')
-    
+
+            return redirect("pagamentos:listar_pagamentos")
+
     return wrapped_view

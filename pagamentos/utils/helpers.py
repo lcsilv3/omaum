@@ -1,18 +1,20 @@
 """
 Funções auxiliares para o aplicativo de pagamentos.
 """
+
 import datetime
 import locale
 from decimal import Decimal
 
 # Configurar locale para formatação de moeda
 try:
-    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+    locale.setlocale(locale.LC_ALL, "pt_BR.UTF-8")
 except locale.Error:
     try:
-        locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
+        locale.setlocale(locale.LC_ALL, "Portuguese_Brazil.1252")
     except locale.Error:
         pass  # Fallback para o locale padrão
+
 
 def format_currency(value):
     """
@@ -26,6 +28,7 @@ def format_currency(value):
         value = Decimal(str(value))
         return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
+
 def parse_date(date_str, formats=None):
     """
     Converte uma string de data para um objeto datetime.date.
@@ -33,13 +36,14 @@ def parse_date(date_str, formats=None):
     if not date_str:
         return None
     if formats is None:
-        formats = ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y']
+        formats = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
     for fmt in formats:
         try:
             return datetime.datetime.strptime(date_str, fmt).date()
         except ValueError:
             continue
     return None
+
 
 def calculate_late_days(due_date, reference_date=None):
     """

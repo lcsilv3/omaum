@@ -5,6 +5,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 import time
 
+
 class FrequenciasUITest(StaticLiveServerTestCase):
     """Testes de UI automatizados para o app frequencias usando Selenium."""
 
@@ -12,9 +13,9 @@ class FrequenciasUITest(StaticLiveServerTestCase):
     def setUpClass(cls):
         super().setUpClass()
         chrome_options = Options()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
         cls.driver = webdriver.Chrome(options=chrome_options)
         cls.driver.implicitly_wait(10)
 
@@ -24,61 +25,74 @@ class FrequenciasUITest(StaticLiveServerTestCase):
         super().tearDownClass()
 
     def test_fluxo_completo_usuario(self):
-        self.driver.get(f'{self.live_server_url}/admin/login/')
-        usuario = self.driver.find_element(By.NAME, 'username')
-        senha = self.driver.find_element(By.NAME, 'password')
-        usuario.send_keys('lcsilv3')
-        senha.send_keys('iG356900')
+        self.driver.get(f"{self.live_server_url}/admin/login/")
+        usuario = self.driver.find_element(By.NAME, "username")
+        senha = self.driver.find_element(By.NAME, "password")
+        usuario.send_keys("lcsilv3")
+        senha.send_keys("iG356900")
         senha.send_keys(Keys.RETURN)
         time.sleep(1)
-        self.driver.get(f'{self.live_server_url}/frequencias/')
+        self.driver.get(f"{self.live_server_url}/frequencias/")
         time.sleep(1)
         # Verificação robusta de header
         header = None
         try:
-            header = self.driver.find_element(By.XPATH, "//h1[contains(text(), 'Frequência')]")
+            header = self.driver.find_element(
+                By.XPATH, "//h1[contains(text(), 'Frequência')]"
+            )
         except Exception:
             try:
-                header = self.driver.find_element(By.XPATH, "//*[self::h2 or self::h3][contains(text(), 'Frequência')]")
+                header = self.driver.find_element(
+                    By.XPATH,
+                    "//*[self::h2 or self::h3][contains(text(), 'Frequência')]",
+                )
             except Exception:
                 body = self.driver.find_element(By.TAG_NAME, "body").text
-                assert 'Frequência' in body
+                assert "Frequência" in body
         if header:
-            assert 'Frequência' in header.text
-        if self.driver.find_elements(By.LINK_TEXT, 'Criar Frequência'):
-            self.driver.find_element(By.LINK_TEXT, 'Criar Frequência').click()
+            assert "Frequência" in header.text
+        if self.driver.find_elements(By.LINK_TEXT, "Criar Frequência"):
+            self.driver.find_element(By.LINK_TEXT, "Criar Frequência").click()
         else:
-            self.driver.get(f'{self.live_server_url}/frequencias/criar/')
+            self.driver.get(f"{self.live_server_url}/frequencias/criar/")
         time.sleep(1)
-        self.driver.find_element(By.NAME, 'nome').send_keys('Frequência Selenium')
-        self.driver.find_element(By.NAME, 'descricao').send_keys('Frequência criada via Selenium')
-        self.driver.find_element(By.XPATH, '//form//button[@type="submit" or @type="button" and (text()="Salvar" or text()="Criar")]').click()
+        self.driver.find_element(By.NAME, "nome").send_keys("Frequência Selenium")
+        self.driver.find_element(By.NAME, "descricao").send_keys(
+            "Frequência criada via Selenium"
+        )
+        self.driver.find_element(
+            By.XPATH,
+            '//form//button[@type="submit" or @type="button" and (text()="Salvar" or text()="Criar")]',
+        ).click()
         time.sleep(1)
-        self.driver.get(f'{self.live_server_url}/frequencias/')
-        body = self.driver.find_element(By.TAG_NAME, 'body').text
-        assert 'Frequência Selenium' in body
-        self.driver.find_element(By.LINK_TEXT, 'Frequência Selenium').click()
+        self.driver.get(f"{self.live_server_url}/frequencias/")
+        body = self.driver.find_element(By.TAG_NAME, "body").text
+        assert "Frequência Selenium" in body
+        self.driver.find_element(By.LINK_TEXT, "Frequência Selenium").click()
         time.sleep(1)
-        assert 'Frequência Selenium' in self.driver.page_source
-        if self.driver.find_elements(By.LINK_TEXT, 'Editar'):
-            self.driver.find_element(By.LINK_TEXT, 'Editar').click()
+        assert "Frequência Selenium" in self.driver.page_source
+        if self.driver.find_elements(By.LINK_TEXT, "Editar"):
+            self.driver.find_element(By.LINK_TEXT, "Editar").click()
         else:
-            self.driver.get(self.driver.current_url + 'editar/')
+            self.driver.get(self.driver.current_url + "editar/")
         time.sleep(1)
-        campo_nome = self.driver.find_element(By.NAME, 'nome')
+        campo_nome = self.driver.find_element(By.NAME, "nome")
         campo_nome.clear()
-        campo_nome.send_keys('Frequência Selenium Editada')
-        self.driver.find_element(By.XPATH, '//form//button[@type="submit" or @type="button" and (text()="Salvar" or text()="Atualizar")]').click()
+        campo_nome.send_keys("Frequência Selenium Editada")
+        self.driver.find_element(
+            By.XPATH,
+            '//form//button[@type="submit" or @type="button" and (text()="Salvar" or text()="Atualizar")]',
+        ).click()
         time.sleep(1)
-        if self.driver.find_elements(By.LINK_TEXT, 'Excluir'):
-            self.driver.find_element(By.LINK_TEXT, 'Excluir').click()
+        if self.driver.find_elements(By.LINK_TEXT, "Excluir"):
+            self.driver.find_element(By.LINK_TEXT, "Excluir").click()
         else:
-            self.driver.get(self.driver.current_url.replace('editar/', 'excluir/'))
+            self.driver.get(self.driver.current_url.replace("editar/", "excluir/"))
         time.sleep(1)
-        botoes = self.driver.find_elements(By.XPATH, '//form//button')
+        botoes = self.driver.find_elements(By.XPATH, "//form//button")
         if botoes:
             botoes[0].click()
         time.sleep(1)
-        self.driver.get(f'{self.live_server_url}/frequencias/')
-        body = self.driver.find_element(By.TAG_NAME, 'body').text
-        assert 'Frequência Selenium Editada' not in body
+        self.driver.get(f"{self.live_server_url}/frequencias/")
+        body = self.driver.find_element(By.TAG_NAME, "body").text
+        assert "Frequência Selenium Editada" not in body

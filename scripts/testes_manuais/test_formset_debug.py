@@ -45,6 +45,7 @@ def test_formset_html():
     # Verificar se o management form está presente (ignorando referências JavaScript)
     # Contar apenas campos input reais, não referências em JavaScript
     import re
+
     input_pattern = r'<input[^>]*name="historico-TOTAL_FORMS"[^>]*>'
     management_forms_count = len(re.findall(input_pattern, html))
     print(f"📊 Campos TOTAL_FORMS encontrados: {management_forms_count}")

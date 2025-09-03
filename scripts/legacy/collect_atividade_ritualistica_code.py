@@ -1,7 +1,6 @@
 # Movido para scripts/legacy em 24/08/2025
 # Script utilitário para revisão de código de atividades ritualísticas
 
-import os
 
 root_dir = "C:\\projetos\\omaum\\punicoes"
 

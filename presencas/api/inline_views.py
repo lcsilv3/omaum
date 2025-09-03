@@ -5,7 +5,7 @@ Fase 1: PATCH e DELETE.
 import json
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -37,7 +37,7 @@ def presenca_patch(request, pk: int):
             {"success": False, "error": "PERMISSAO_NEGADA", "motivo": str(e)},
             status=403,
         )
-    except Exception as e:
+    except Exception:
         return JsonResponse({"success": False, "error": "ERRO_INTERNO"}, status=500)
 
 
@@ -61,5 +61,5 @@ def presenca_delete(request, pk: int):
             {"success": False, "error": "PERMISSAO_NEGADA", "motivo": str(e)},
             status=403,
         )
-    except Exception as e:
+    except Exception:
         return JsonResponse({"success": False, "error": "ERRO_INTERNO"}, status=500)

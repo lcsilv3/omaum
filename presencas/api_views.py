@@ -14,7 +14,7 @@ from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Q, F, Count, Prefetch
+from django.db.models import Q, Prefetch
 import json
 import logging
 from alunos.models import Aluno

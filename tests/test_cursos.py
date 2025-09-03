@@ -1,7 +1,7 @@
 import pytest
 from django.test import TestCase
 from cursos.models import Curso
-from tests.factories import CursoFactory, UserFactory
+from tests.factories import CursoFactory
 
 
 @pytest.mark.django_db

@@ -2,11 +2,12 @@
 """
 Script para verificar estado atual do banco e possíveis interferências
 """
+
 import os
 import django
 
 # Configurar Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omaum.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
 django.setup()
 
 from presencas.models import TotalAtividadeMes
@@ -46,27 +47,33 @@ for ativ in atividades_turma:
     print(f"     Ativo: {ativ.ativo}")
 
 # 3. Verificar atividades ativas da turma
-print(f"\n3. Atividades ATIVAS da turma:")
+print("\n3. Atividades ATIVAS da turma:")
 atividades_ativas = Atividade.objects.filter(turmas__id=turma_id, ativo=True)
 print(f"   Total ativas: {atividades_ativas.count()}")
 
 # 4. Verificar atividades com status específico
-print(f"\n4. Status das atividades:")
+print("\n4. Status das atividades:")
 for status_choice in Atividade.STATUS_CHOICES:
-    count = Atividade.objects.filter(turmas__id=turma_id, status=status_choice[0]).count()
+    count = Atividade.objects.filter(
+        turmas__id=turma_id, status=status_choice[0]
+    ).count()
     if count > 0:
         print(f"   - {status_choice[1]}: {count}")
 
 # 5. Verificar logs recentes de TotalAtividadeMes
-print(f"\n5. Logs recentes de TotalAtividadeMes (últimos 10):")
-recentes = TotalAtividadeMes.objects.order_by('-data_registro')[:10]
+print("\n5. Logs recentes de TotalAtividadeMes (últimos 10):")
+recentes = TotalAtividadeMes.objects.order_by("-data_registro")[:10]
 for total in recentes:
-    print(f"   - {total.data_registro.strftime('%Y-%m-%d %H:%M:%S')}: Turma {total.turma.nome}, Atividade {total.atividade.nome}, Ano {total.ano}, Mês {total.mes}")
+    print(
+        f"   - {total.data_registro.strftime('%Y-%m-%d %H:%M:%S')}: Turma {total.turma.nome}, Atividade {total.atividade.nome}, Ano {total.ano}, Mês {total.mes}"
+    )
 
 # 6. Buscar possível inconsistência na relação many-to-many
-print(f"\n6. Verificação relação Atividade-Turma:")
+print("\n6. Verificação relação Atividade-Turma:")
 for ativ in atividades_turma:
     turmas_relacionadas = ativ.turmas.all()
-    print(f"   - Atividade {ativ.nome} está relacionada a {turmas_relacionadas.count()} turma(s):")
+    print(
+        f"   - Atividade {ativ.nome} está relacionada a {turmas_relacionadas.count()} turma(s):"
+    )
     for t in turmas_relacionadas:
         print(f"     > {t.nome} (ID: {t.id})")

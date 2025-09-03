@@ -19,17 +19,13 @@ class Migration(migrations.Migration):
                         help_text="Digite um número inteiro positivo",
                         primary_key=True,
                         serialize=False,
-                        validators=[
-                            django.core.validators.MinValueValidator(1)
-                        ],
+                        validators=[django.core.validators.MinValueValidator(1)],
                         verbose_name="Código do Curso",
                     ),
                 ),
                 (
                     "nome",
-                    models.CharField(
-                        max_length=100, verbose_name="Nome do Curso"
-                    ),
+                    models.CharField(max_length=100, verbose_name="Nome do Curso"),
                 ),
                 (
                     "descricao",

@@ -127,14 +127,14 @@ def main():
     # Definir o caminho para o arquivo de plano de testes
     project_root = Path(__file__).parent.parent
     test_plan_path = project_root / "docs" / "PLANO_DE_TESTES.md"
-    
+
     # Criar o diretório docs se não existir
     docs_dir = project_root / "docs"
     docs_dir.mkdir(exist_ok=True)
-    
+
     # Escrever o conteúdo atualizado
     try:
-        with open(test_plan_path, 'w', encoding='utf-8') as file:
+        with open(test_plan_path, "w", encoding="utf-8") as file:
             file.write(updated_content)
         print(f"Plano de testes atualizado com sucesso: {test_plan_path}")
     except Exception as e:

@@ -2,6 +2,7 @@
 """
 Script para executar linters e formatadores no código do projeto OMAUM.
 """
+
 import subprocess
 from pathlib import Path
 
@@ -10,22 +11,21 @@ ROOT_DIR = Path(__file__).parent.parent
 
 # Diretórios a serem verificados
 DIRS_TO_CHECK = [
-    
     "omaum",
-    'core',
-    'alunos',
-    'atividades',
-    'cargos',
-    'cursos',
-    'frequencias',
-    'iniciacoes',
-    'matriculas',
-    'notas',
-    'pagamentos',
-    'presencas',
-    'punicoes',
-    'relatorios',
-    'turmas',
+    "core",
+    "alunos",
+    "atividades",
+    "cargos",
+    "cursos",
+    "frequencias",
+    "iniciacoes",
+    "matriculas",
+    "notas",
+    "pagamentos",
+    "presencas",
+    "punicoes",
+    "relatorios",
+    "turmas",
 ]
 
 

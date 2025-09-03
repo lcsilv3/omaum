@@ -39,9 +39,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "nome",
-                    models.CharField(
-                        max_length=100, verbose_name="Nome Completo"
-                    ),
+                    models.CharField(max_length=100, verbose_name="Nome Completo"),
                 ),
                 (
                     "data_nascimento",
@@ -112,9 +110,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "naturalidade",
-                    models.CharField(
-                        max_length=50, verbose_name="Naturalidade"
-                    ),
+                    models.CharField(max_length=50, verbose_name="Naturalidade"),
                 ),
                 ("rua", models.CharField(max_length=100, verbose_name="Rua")),
                 (
@@ -204,9 +200,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "tipo_sanguineo",
-                    models.CharField(
-                        max_length=3, verbose_name="Tipo Sanguíneo"
-                    ),
+                    models.CharField(max_length=3, verbose_name="Tipo Sanguíneo"),
                 ),
                 (
                     "fator_rh",
@@ -218,9 +212,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "alergias",
-                    models.TextField(
-                        blank=True, null=True, verbose_name="Alergias"
-                    ),
+                    models.TextField(blank=True, null=True, verbose_name="Alergias"),
                 ),
                 (
                     "condicoes_medicas_gerais",
@@ -257,9 +249,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "updated_at",
-                    models.DateTimeField(
-                        auto_now=True, verbose_name="Atualizado em"
-                    ),
+                    models.DateTimeField(auto_now=True, verbose_name="Atualizado em"),
                 ),
             ],
             options={
