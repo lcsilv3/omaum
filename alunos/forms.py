@@ -1,6 +1,7 @@
 from django import forms
 from alunos.models import Aluno, RegistroHistorico, Codigo, TipoCodigo
 from django_select2.forms import ModelSelect2Widget
+from .utils import clean_cpf
 
 
 class AlunoForm(forms.ModelForm):
@@ -194,8 +195,23 @@ class AlunoForm(forms.ModelForm):
 
     # Limpeza de campos com máscaras
     def clean_cpf(self):
-        v = self.cleaned_data.get("cpf", "")
-        return v.replace(".", "").replace("-", "")
+        cpf = self.cleaned_data.get("cpf", "")
+        # Validação para garantir que o CPF não está em uso por outro aluno
+        if self.instance and self.instance.pk:
+            # Edição: checar se o CPF mudou e se o novo já existe
+            if (
+                Aluno.objects.filter(cpf=clean_cpf(cpf))
+                .exclude(pk=self.instance.pk)
+                .exists()
+            ):
+                raise forms.ValidationError("Este CPF já está em uso por outro aluno.")
+        else:
+            # Criação: checar se o CPF já existe
+            if Aluno.objects.filter(cpf=clean_cpf(cpf)).exists():
+                raise forms.ValidationError(
+                    "Este CPF já pertence a um aluno cadastrado."
+                )
+        return clean_cpf(cpf)
 
     def clean_celular_primeiro_contato(self):
         v = self.cleaned_data.get("celular_primeiro_contato") or ""

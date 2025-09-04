@@ -189,7 +189,8 @@ class Aluno(models.Model):
     # Campos básicos
     cpf = models.CharField(
         max_length=11,
-        primary_key=True,
+        unique=True,
+        db_index=True,
         validators=[cpf_validator],
         verbose_name=_("CPF"),
     )
