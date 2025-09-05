@@ -14,7 +14,7 @@ from django.shortcuts import render, redirect
 from .forms import AlunoForm, RegistroHistoricoFormSet, RegistroHistoricoForm
 from .models import Aluno, RegistroHistorico
 from django import forms
-from .services import listar_alunos, buscar_aluno_por_cpf
+from .services import listar_alunos, buscar_aluno_por_cpf, buscar_aluno_por_id
 
 logger = logging.getLogger(__name__)
 
@@ -149,9 +149,9 @@ def criar_aluno(request):
 
 
 @login_required
-def detalhar_aluno(request, cpf):
+def detalhar_aluno(request, aluno_id):
     """Exibe os detalhes de um aluno e seu histórico de registros."""
-    aluno = buscar_aluno_por_cpf(cpf)
+    aluno = buscar_aluno_por_id(aluno_id)
     if not aluno:
         messages.error(request, "Aluno não encontrado.")
         return redirect("alunos:listar_alunos")
@@ -167,7 +167,7 @@ def detalhar_aluno(request, cpf):
 
 @login_required
 @permission_required("alunos.change_aluno", raise_exception=True)
-def editar_aluno(request, cpf):
+def editar_aluno(request, aluno_id):
     """
     Edita um aluno existente e seu histórico de registros.
     """
@@ -203,7 +203,7 @@ def editar_aluno(request, cpf):
             "debug": True,
         }
 
-    aluno = buscar_aluno_por_cpf(cpf)
+    aluno = buscar_aluno_por_id(aluno_id)
     form = None
     historico_formset = None
     try:
@@ -242,7 +242,7 @@ def editar_aluno(request, cpf):
                         messages.success(request, "Aluno atualizado com sucesso!")
                         return redirect("alunos:listar_alunos")
                     except Exception as exc:
-                        logger.error("Erro ao editar aluno %s: %s", cpf, exc)
+                        logger.error("Erro ao editar aluno %s: %s", aluno_id, exc)
                         messages.error(
                             request, f"Ocorreu um erro ao atualizar o aluno: {exc}"
                         )
@@ -328,9 +328,9 @@ def editar_aluno(request, cpf):
 
 @login_required
 @permission_required("alunos.delete_aluno", raise_exception=True)
-def excluir_aluno(request, cpf):
+def excluir_aluno(request, aluno_id):
     """Exclui um aluno utilizando a camada de serviço."""
-    aluno = buscar_aluno_por_cpf(cpf)
+    aluno = buscar_aluno_por_id(aluno_id)
     if not aluno:
         messages.error(request, "Aluno não encontrado.")
         return redirect("alunos:listar_alunos")
@@ -342,7 +342,7 @@ def excluir_aluno(request, cpf):
             return redirect("alunos:listar_alunos")
         except Exception as exc:
             messages.error(request, f"Não foi possível excluir o aluno. Erro: {exc}")
-            return redirect("alunos:detalhar_aluno", cpf=cpf)
+            return redirect("alunos:detalhar_aluno", aluno_id=aluno_id)
 
     context = {
         "aluno": aluno,

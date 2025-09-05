@@ -14,7 +14,7 @@ from django.shortcuts import render, redirect
 
 from alunos.forms import AlunoForm, RegistroHistoricoFormSet, RegistroHistoricoForm
 from alunos.models import Aluno, RegistroHistorico
-from alunos.services import listar_alunos, buscar_aluno_por_cpf
+from alunos.services import listar_alunos, buscar_aluno_por_id, buscar_aluno_por_cpf
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def listar_alunos_view(request):
         paginator = Paginator(alunos_list, 10)
         page_obj = paginator.get_page(page_number)
 
-        from ..utils import get_curso_model
+        from alunos.utils import get_curso_model
 
         Curso = get_curso_model()
         cursos_para_filtro = Curso.objects.all().order_by("nome") if Curso else []
@@ -108,10 +108,18 @@ def criar_aluno(request):
                     historico_formset.save()
 
                 messages.success(request, "Aluno criado com sucesso!")
-                return redirect("alunos:listar_alunos")
+                return redirect("alunos:detalhar_aluno", aluno_id=aluno.id)
             except Exception as exc:
                 logger.error("Erro ao criar aluno: %s", exc)
                 messages.error(request, f"Ocorreu um erro ao salvar o aluno: {exc}")
+        else:
+            # Adiciona logs para depurar erros de formulário
+            logger.warning("Formulário de aluno inválido: %s", form.errors)
+            logger.warning(
+                "Formset de histórico inválido: %s", historico_formset.errors
+            )
+            messages.error(request, "Por favor, corrija os erros abaixo.")
+
         # Se não for válido, sempre garante pelo menos 1 extra
         if historico_formset.total_form_count() == 0:
             historico_formset.extra_forms.append(historico_formset.empty_form)
@@ -138,9 +146,9 @@ def criar_aluno(request):
 
 
 @login_required
-def detalhar_aluno(request, cpf):
+def detalhar_aluno(request, aluno_id):
     """Exibe os detalhes de um aluno e seu histórico de registros."""
-    aluno = buscar_aluno_por_cpf(cpf)
+    aluno = buscar_aluno_por_id(aluno_id)
     if not aluno:
         messages.error(request, "Aluno não encontrado.")
         return redirect("alunos:listar_alunos")
@@ -156,7 +164,7 @@ def detalhar_aluno(request, cpf):
 
 @login_required
 @permission_required("alunos.change_aluno", raise_exception=True)
-def editar_aluno(request, cpf):
+def editar_aluno(request, aluno_id):
     """
     Edita um aluno existente e seu histórico de registros.
     """
@@ -192,7 +200,7 @@ def editar_aluno(request, cpf):
             "debug": True,
         }
 
-    aluno = buscar_aluno_por_cpf(cpf)
+    aluno = buscar_aluno_por_id(aluno_id)
     form = None
     historico_formset = None
     try:
@@ -229,12 +237,19 @@ def editar_aluno(request, cpf):
                             form.save()
                             historico_formset.save()
                         messages.success(request, "Aluno atualizado com sucesso!")
-                        return redirect("alunos:listar_alunos")
+                        return redirect("alunos:detalhar_aluno", aluno_id=aluno.id)
                     except Exception as exc:
-                        logger.error("Erro ao editar aluno %s: %s", cpf, exc)
+                        logger.error("Erro ao editar aluno %s: %s", aluno_id, exc)
                         messages.error(
                             request, f"Ocorreu um erro ao atualizar o aluno: {exc}"
                         )
+                else:
+                    # Adiciona logs para depurar erros de formulário
+                    logger.warning("Formulário de aluno inválido: %s", form.errors)
+                    logger.warning(
+                        "Formset de histórico inválido: %s", historico_formset.errors
+                    )
+                    messages.error(request, "Por favor, corrija os erros abaixo.")
                 # Sempre retorna contexto robusto
                 return render(
                     request,
@@ -317,9 +332,9 @@ def editar_aluno(request, cpf):
 
 @login_required
 @permission_required("alunos.delete_aluno", raise_exception=True)
-def excluir_aluno(request, cpf):
+def excluir_aluno(request, aluno_id):
     """Exclui um aluno utilizando a camada de serviço."""
-    aluno = buscar_aluno_por_cpf(cpf)
+    aluno = buscar_aluno_por_id(aluno_id)
     if not aluno:
         messages.error(request, "Aluno não encontrado.")
         return redirect("alunos:listar_alunos")
@@ -331,7 +346,7 @@ def excluir_aluno(request, cpf):
             return redirect("alunos:listar_alunos")
         except Exception as exc:
             messages.error(request, f"Não foi possível excluir o aluno. Erro: {exc}")
-            return redirect("alunos:detalhar_aluno", cpf=cpf)
+            return redirect("alunos:detalhar_aluno", aluno_id=aluno_id)
 
     context = {
         "aluno": aluno,

@@ -1,8 +1,10 @@
 import pytest
 from django.test import TestCase, Client
 from django.urls import reverse
-from django.contrib.auth.models import User
-from alunos.services import criar_aluno, buscar_aluno_por_cpf
+from django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
+from alunos.models import Aluno
+from alunos.services import criar_aluno, buscar_aluno_por_id
 
 
 @pytest.mark.django_db
@@ -15,6 +17,14 @@ class AlunosViewsTestCase(TestCase):
         self.user = User.objects.create_user(
             username="testuser", password="testpassword"
         )
+
+        # Adicionar permissões ao usuário de teste
+        content_type = ContentType.objects.get_for_model(Aluno)
+        permissions = Permission.objects.filter(content_type=content_type)
+        self.user.user_permissions.set(permissions)
+        self.user = User.objects.get(
+            pk=self.user.pk
+        )  # Recarregar o usuário com as permissões
 
         # Criar alguns alunos para testes usando o serviço
         self.aluno1 = criar_aluno(
@@ -72,7 +82,7 @@ class AlunosViewsTestCase(TestCase):
 
         # Acessar a página de detalhes do aluno
         response = self.client.get(
-            reverse("alunos:detalhar_aluno", args=[self.aluno1.cpf])
+            reverse("alunos:detalhar_aluno", args=[self.aluno1.id])
         )
 
         # Verificar se a resposta foi bem-sucedida
@@ -80,7 +90,7 @@ class AlunosViewsTestCase(TestCase):
 
         # Verificar se o aluno está no contexto
         self.assertIn("aluno", response.context)
-        self.assertEqual(response.context["aluno"].cpf, self.aluno1.cpf)
+        self.assertEqual(response.context["aluno"].id, self.aluno1.id)
 
         # Verificar se os dados do aluno estão na página
         self.assertContains(response, self.aluno1.nome)
@@ -107,7 +117,7 @@ class AlunosViewsTestCase(TestCase):
 
         # Acessar a página de edição do aluno
         response = self.client.get(
-            reverse("alunos:editar_aluno", args=[self.aluno1.cpf])
+            reverse("alunos:editar_aluno", args=[self.aluno1.id])
         )
 
         # Verificar se a resposta foi bem-sucedida
@@ -117,7 +127,7 @@ class AlunosViewsTestCase(TestCase):
         self.assertIn("form", response.context)
 
         # Verificar se os dados do aluno estão preenchidos no formulário
-        self.assertEqual(response.context["form"].instance.cpf, self.aluno1.cpf)
+        self.assertEqual(response.context["form"].instance.id, self.aluno1.id)
 
         # Dados atualizados para o aluno
         dados_atualizados = {
@@ -126,11 +136,13 @@ class AlunosViewsTestCase(TestCase):
             "email": "joao.atualizado@exemplo.com",
             "data_nascimento": "1990-01-01",
             "sexo": "M",
+            "situacao": "ATIVO",
+            "situacao_iniciatica": "ATIVO",
         }
 
         # Enviar o formulário para atualizar o aluno
         response = self.client.post(
-            reverse("alunos:editar_aluno", args=[self.aluno1.cpf]),
+            reverse("alunos:editar_aluno", args=[self.aluno1.id]),
             data=dados_atualizados,
             follow=True,
         )
@@ -139,7 +151,7 @@ class AlunosViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
         # Verificar se o aluno foi atualizado no banco de dados
-        aluno_atualizado = buscar_aluno_por_cpf(self.aluno1.cpf)
+        aluno_atualizado = buscar_aluno_por_id(self.aluno1.id)
         self.assertEqual(aluno_atualizado.nome, "João Silva Atualizado")
         self.assertEqual(aluno_atualizado.email, "joao.atualizado@exemplo.com")
 
@@ -153,7 +165,7 @@ class AlunosViewsTestCase(TestCase):
 
         # Acessar a página de confirmação de exclusão
         response = self.client.get(
-            reverse("alunos:excluir_aluno", args=[self.aluno1.cpf])
+            reverse("alunos:excluir_aluno", args=[self.aluno1.id])
         )
 
         # Verificar se a resposta foi bem-sucedida
@@ -164,14 +176,15 @@ class AlunosViewsTestCase(TestCase):
 
         # Enviar a confirmação de exclusão
         response = self.client.post(
-            reverse("alunos:excluir_aluno", args=[self.aluno1.cpf]), follow=True
+            reverse("alunos:excluir_aluno", args=[self.aluno1.id]), follow=True
         )
 
         # Verificar se o redirecionamento foi bem-sucedido
         self.assertEqual(response.status_code, 200)
 
         # Verificar se o aluno foi excluído do banco de dados
-        self.assertIsNone(buscar_aluno_por_cpf(self.aluno1.cpf))
+        with self.assertRaises(Aluno.DoesNotExist):
+            buscar_aluno_por_id(self.aluno1.id)
 
         # Verificar se a mensagem de sucesso está na página
         self.assertContains(response, "Aluno excluído com sucesso")
@@ -188,6 +201,8 @@ class AlunosViewsTestCase(TestCase):
             "email": "pedro@exemplo.com",
             "data_nascimento": "1995-10-20",
             "sexo": "M",
+            "situacao": "ATIVO",
+            "situacao_iniciatica": "ATIVO",
         }
 
         # Enviar o formulário para criar um novo aluno
@@ -199,7 +214,8 @@ class AlunosViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
         # Verificar se o aluno foi criado no banco de dados
-        self.assertIsNotNone(buscar_aluno_por_cpf("11122233344"))
+        aluno_criado = Aluno.objects.get(cpf="11122233344")
+        self.assertIsNotNone(aluno_criado)
 
         # Verificar se a mensagem de sucesso está na página
         self.assertContains(response, "Aluno cadastrado com sucesso")

@@ -5,8 +5,8 @@ Configurações de teste otimizadas para máxima velocidade.
 import sys
 from pathlib import Path
 
-# Adicionar o diretório pai ao path
-sys.path.append(str(Path(__file__).parent.parent))
+# Adicionar o diretório raiz do projeto ao path
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Settings de teste mínimos (evita wildcard import para lint limpo)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "omaum",
     "core",
     "atividades",
     "frequencias",
@@ -63,37 +64,18 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "omaum.urls"
 
-from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [
-            str(BASE_DIR / "omaum" / "templates"),
-            str(BASE_DIR / "omaum" / "templates" / "registration"),
-            str(BASE_DIR / "matriculas" / "templates"),
-            str(BASE_DIR / "tests" / "templates"),
-        ],
-        # "APP_DIRS": True,  # REMOVIDO: loaders está definido em OPTIONS
+        "DIRS": [BASE_DIR / "omaum" / "templates"],
+        "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-            ],
-            "string_if_invalid": "",
-            "builtins": [],
-            "loaders": [
-                (
-                    "django.template.loaders.filesystem.Loader",
-                    [
-                        str(BASE_DIR / "omaum" / "templates"),
-                        str(BASE_DIR / "omaum" / "templates" / "base copy.html"),
-                    ],
-                ),
-                "django.template.loaders.app_directories.Loader",
             ],
         },
     },

@@ -109,8 +109,8 @@ class FrequenciaMensal(models.Model):
         Atividade = get_model_dynamically("atividades", "AtividadeAcademica")
         atividades = Atividade.objects.filter(
             turmas=self.turma,
-            data_inicio__date__gte=data_inicio,
-            data_inicio__date__lte=data_fim,
+            data_inicio__gte=data_inicio,
+            data_inicio__lte=data_fim,
         )
 
         total_atividades = atividades.count()

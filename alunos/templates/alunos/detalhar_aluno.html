@@ -12,12 +12,8 @@
             <a href="javascript:history.back()" class="btn btn-secondary me-2">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-warning me-2">
-                <i class="fas fa-edit"></i> Editar
-            </a>
-            <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Excluir
-            </a>
+            <a href="{% url 'alunos:editar_aluno' aluno.id %}" class="btn btn-warning me-2">
+            <a href="{% url 'alunos:excluir_aluno' aluno.id %}" class="btn btn-danger">
         </div>
     </div>
     {% if aluno.alerta_mensagem %}
@@ -125,8 +121,6 @@
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <div>
                         <button id="btn-carregar-historico" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-history"></i> Carregar Histórico
-                        </button>
                         <button id="btn-carregar-mais-historico" class="btn btn-sm btn-outline-secondary d-none">
                             <i class="fas fa-plus-circle"></i> Carregar Mais
                         </button>
@@ -153,7 +147,7 @@
             <!-- Formulário para Adicionar Novo Registro -->
             <div class="mt-4">
                 <h6>Adicionar Novo Registro</h6>
-                <form method="post" action="{% url 'alunos:detalhar_aluno' aluno.cpf %}">
+                <form method="post" action="{% url 'alunos:detalhar_aluno' aluno.id %}">
                     {% csrf_token %}
                     <div class="row">
                         <div class="col-md-4 mb-3">
@@ -382,12 +376,8 @@
             <i class="fas fa-list"></i> Voltar para a lista
         </a>
         <div>
-            <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-warning me-2">
-                <i class="fas fa-edit"></i> Editar
-            </a>
-            <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Excluir
-            </a>
+            <a href="{% url 'alunos:editar_aluno' aluno.id %}" class="btn btn-warning me-2">
+            <a href="{% url 'alunos:excluir_aluno' aluno.id %}" class="btn btn-danger">
         </div>
     </div>
 </div>
@@ -396,7 +386,7 @@
 {% block extra_js %}
 {# Passando URLs do Django para o JavaScript via atributos data-* no body #}
 <script>
-    document.body.dataset.historicoApiUrl = `{% url "alunos:aluno-detail" pk=aluno.id %}`;
+    document.body.dataset.historicoApiUrl = `{% url "alunos:api_historico_aluno" aluno.id %}`;
     {# document.body.dataset.addEventoApiUrl = `{% url "alunos:api_adicionar_evento_historico" %}`; #}
     document.body.dataset.tiposCodigosApiUrl = `{% url "alunos:api_tipos_codigos" %}`;
     document.body.dataset.codigosPorTipoApiUrl = `{% url "alunos:api_codigos_por_tipo" %}`;

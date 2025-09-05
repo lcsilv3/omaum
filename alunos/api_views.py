@@ -4,9 +4,11 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 from importlib import import_module
 from rest_framework import viewsets
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from .models import Aluno
 from .serializers import AlunoSerializer
+from .services import listar_historico_aluno
 
 logger = logging.getLogger(__name__)
 
@@ -73,3 +75,58 @@ class AlunoViewSet(viewsets.ModelViewSet):
 
     queryset = Aluno.objects.all().order_by("nome")
     serializer_class = AlunoSerializer
+
+
+@login_required
+@permission_required("alunos.view_aluno", raise_exception=True)
+def listar_historico_aluno_api(request, aluno_id):
+    """
+    API endpoint para listar o histórico de registros de um aluno, com paginação.
+    """
+    try:
+        aluno = get_object_or_404(Aluno, pk=aluno_id)
+        historico_list = listar_historico_aluno(aluno)  # Usa a função de serviço
+
+        page = request.GET.get("page", 1)
+        # Garante que page_size seja inteiro
+        page_size = int(request.GET.get("page_size", 25))
+
+        paginator = Paginator(historico_list, page_size)
+        try:
+            historico_page = paginator.page(page)
+        except PageNotAnInteger:
+            historico_page = paginator.page(1)
+        except EmptyPage:
+            historico_page = paginator.page(paginator.num_pages)
+
+        results = []
+        for item in historico_page:
+            results.append(
+                {
+                    "id": item.id,
+                    "tipo_codigo": item.codigo.tipo.nome
+                    if item.codigo and item.codigo.tipo
+                    else "N/A",
+                    "codigo": item.codigo.nome if item.codigo else "N/A",
+                    "descricao": item.codigo.descricao if item.codigo else "N/A",
+                    "data_os": item.data_os.isoformat() if item.data_os else None,
+                    "observacoes": item.observacoes,
+                }
+            )
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "results": results,
+                "page": historico_page.number,
+                "total_pages": paginator.num_pages,
+                "count": paginator.count,
+            }
+        )
+    except Exception as e:
+        logger.error(
+            f"Erro ao listar histórico do aluno {aluno_id}: {e}", exc_info=True
+        )
+        return JsonResponse(
+            {"status": "error", "message": "Erro interno do servidor."}, status=500
+        )

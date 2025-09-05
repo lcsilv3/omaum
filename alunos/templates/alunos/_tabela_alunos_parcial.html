@@ -27,13 +27,13 @@
             <td>{{ aluno.email }}</td>
             <td class="text-center">
                 <div class="btn-group btn-group-sm" role="group">
-                    <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-info" title="Ver detalhes" data-bs-toggle="tooltip">
+                    <a href="{% url 'alunos:detalhar_aluno' aluno.id %}" class="btn btn-info" title="Ver detalhes" data-bs-toggle="tooltip">
                         <i class="fas fa-eye"></i>
                     </a>
-                    <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-warning" title="Editar aluno" data-bs-toggle="tooltip">
+                    <a href="{% url 'alunos:editar_aluno' aluno.id %}" class="btn btn-warning" title="Editar aluno" data-bs-toggle="tooltip">
                         <i class="fas fa-edit"></i>
                     </a>
-                    <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-danger" title="Excluir aluno" data-bs-toggle="tooltip">
+                    <a href="{% url 'alunos:excluir_aluno' aluno.id %}" class="btn btn-danger" title="Excluir aluno" data-bs-toggle="tooltip">
                         <i class="fas fa-trash"></i>
                     </a>
                 </div>

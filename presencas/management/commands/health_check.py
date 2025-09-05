@@ -6,6 +6,7 @@ import time
 import logging
 from datetime import datetime
 from typing import Dict, Any
+import importlib.util  # Adicionado import aqui
 
 from django.core.management.base import BaseCommand
 from django.core.cache import cache
@@ -136,7 +137,7 @@ class Command(BaseCommand):
 
             # Query de estatísticas
             query_start = time.time()
-            stats = BulkPresencaOperations.otimizar_queries_estatisticas()
+            BulkPresencaOperations.otimizar_queries_estatisticas()  # Chamada mantida, atribuição removida
             query_time = time.time() - query_start
 
             if query_time > options["threshold"]:
@@ -392,10 +393,9 @@ class Command(BaseCommand):
                 warnings.append("SECURE_SSL_REDIRECT não está ativado")
 
             # Verificar rate limiting
-            try:
-                from omaum.middleware.rate_limiting import RateLimitMiddleware
-                # Se chegou até aqui, middleware está configurado
-            except ImportError:
+            import importlib.util  # Adicionado import aqui
+
+            if importlib.util.find_spec("omaum.middleware.rate_limiting") is None:
                 warnings.append("Middleware de rate limiting não encontrado")
 
             # Verificar usuários com senhas fracas
@@ -413,7 +413,7 @@ class Command(BaseCommand):
 
             duration = time.time() - start_time
 
-            all_issues = issues + warnings
+            # all_issues = issues + warnings # Linha removida
 
             return {
                 "status": "healthy" if not issues else "warning",
@@ -451,7 +451,6 @@ class Command(BaseCommand):
         error_count = sum(
             1 for r in self.results.values() if r.get("status") == "error"
         )
-
         self.stdout.write("\n📊 Resumo:")
         self.stdout.write(f"  ✅ Saudável: {healthy_count}")
         self.stdout.write(f"  ⚠️  Avisos: {warning_count}")

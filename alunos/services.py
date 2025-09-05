@@ -218,6 +218,12 @@ def listar_alunos(query=None, curso_id=None):
     return queryset
 
 
+def buscar_aluno_por_id(aluno_id):
+    """
+    Busca um aluno pelo ID usando o repositório."""
+    return AlunoRepository.buscar_por_id(aluno_id)
+
+
 def buscar_aluno_por_cpf(cpf):
     """
     Busca um aluno pelo CPF usando o repositório."""

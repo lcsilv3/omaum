@@ -79,3 +79,15 @@ def get_codigo_model():
         return Codigo
     except Exception:  # noqa: BLE001
         return None
+
+
+def clean_cpf(cpf):
+    """Remove a máscara do CPF, retornando apenas os dígitos."""
+    return "".join(filter(str.isdigit, cpf))
+
+
+def mask_cpf(cpf):
+    """Aplica a máscara a um CPF de 11 dígitos."""
+    if len(cpf) == 11:
+        return f"{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}"
+    return cpf

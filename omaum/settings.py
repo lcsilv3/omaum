@@ -77,7 +77,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Aplicações do projeto
     "omaum.apps.OmaumConfig",
-    "core",
+    "core.apps.CoreConfig",
     "alunos",
     "atividades",
     "cursos",

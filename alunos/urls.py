@@ -24,9 +24,9 @@ urlpatterns = [
     # Autocomplete AJAX (django-select2)
     path("autocomplete/", include("alunos.urls_autocomplete")),
     # URLs principais - sistema completo (ATIVO)
-    path("<str:cpf>/detalhes/", views.detalhar_aluno, name="detalhar_aluno"),
-    path("<str:cpf>/editar/", views.editar_aluno, name="editar_aluno"),
-    path("<str:cpf>/excluir/", views.excluir_aluno, name="excluir_aluno"),
+    path("<int:aluno_id>/detalhes/", views.detalhar_aluno, name="detalhar_aluno"),
+    path("<int:aluno_id>/editar/", views.editar_aluno, name="editar_aluno"),
+    path("<int:aluno_id>/excluir/", views.excluir_aluno, name="excluir_aluno"),
     path("painel/", views.painel, name="painel"),
     path("exportar/", views.exportar_alunos, name="exportar_alunos"),
     path("importar/", views.importar_alunos, name="importar_alunos"),
@@ -70,6 +70,11 @@ urlpatterns = [
         "api/codigos-por-tipo/",
         views.listar_codigos_por_tipo_ajax,
         name="api_codigos_por_tipo",
+    ),
+    path(
+        "api/<int:aluno_id>/historico/",
+        api_views.listar_historico_aluno_api,
+        name="api_historico_aluno",
     ),
     # Rotas da API base (ViewSet Aluno) - manter após endpoints específicos
     path("api/", include(router.urls)),

@@ -136,6 +136,9 @@ function initializeHistoricoPaginado(apiUrl) {
     btnCarregarMais.addEventListener('click', function() {
         carregarPagina();
     });
+
+    // Trigger initial load
+    carregarPagina();
 }
 
 

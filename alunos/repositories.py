@@ -19,6 +19,19 @@ class AlunoRepository:
         return get_aluno_model()
 
     @staticmethod
+    def buscar_por_id(aluno_id):
+        """Busca aluno por ID."""
+        try:
+            Aluno = AlunoRepository.get_model()
+            return Aluno.objects.get(id=aluno_id)
+        except ObjectDoesNotExist:
+            logger.warning(f"Aluno com ID {aluno_id} não encontrado")
+            return None
+        except Exception as e:
+            logger.error(f"Erro ao buscar aluno por ID {aluno_id}: {e}")
+            return None
+
+    @staticmethod
     def buscar_por_cpf(cpf):
         """Busca aluno por CPF."""
         try:
