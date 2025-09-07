@@ -1,0 +1,137 @@
+{% if sucesso and alunos %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Aluno</th>
+                <th>Turma</th>
+                <th class="text-center">Score de Risco</th>
+                <th class="text-center">Nível</th>
+                <th class="text-center">% Presença</th>
+                <th class="text-center">Tendência</th>
+                <th class="text-center">Carências</th>
+                <th>Recomendações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aluno in alunos %}
+            <tr class="{% if aluno.nivel_risco == 'CRITICO' %}table-danger{% elif aluno.nivel_risco == 'ALTO' %}table-warning{% endif %}">
+                <td>
+                    <strong>{{ aluno.nome }}</strong>
+                    <br>
+                    <small class="text-muted">ID: {{ aluno.aluno_id }}</small>
+                </td>
+                <td>{{ aluno.turma }}</td>
+                <td class="text-center">
+                    <span class="score-badge badge bg-{{ aluno.cor_risco }}">
+                        {{ aluno.score_risco }}
+                    </span>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-{{ aluno.cor_risco }}">
+                        {{ aluno.nivel_risco }}
+                    </span>
+                </td>
+                <td class="text-center">
+                    <span class="{% if aluno.percentual_medio < 60 %}text-danger{% elif aluno.percentual_medio < 75 %}text-warning{% else %}text-success{% endif %}">
+                        {{ aluno.percentual_medio }}%
+                    </span>
+                </td>
+                <td class="text-center">
+                    {% if aluno.tendencia > 0.1 %}
+                        <i class="fas fa-arrow-up tendencia-positiva" title="Tendência crescente"></i>
+                        <span class="tendencia-positiva">+{{ aluno.tendencia|floatformat:2 }}</span>
+                    {% elif aluno.tendencia < -0.1 %}
+                        <i class="fas fa-arrow-down tendencia-negativa" title="Tendência decrescente"></i>
+                        <span class="tendencia-negativa">{{ aluno.tendencia|floatformat:2 }}</span>
+                    {% else %}
+                        <i class="fas fa-minus tendencia-neutra" title="Tendência estável"></i>
+                        <span class="tendencia-neutra">{{ aluno.tendencia|floatformat:2 }}</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-secondary">{{ aluno.carencias_total }}</span>
+                    {% if aluno.faltas_consecutivas > 0 %}
+                        <br><small class="text-danger">{{ aluno.faltas_consecutivas }} faltas seguidas</small>
+                    {% endif %}
+                </td>
+                <td>
+                    {% for recomendacao in aluno.recomendacoes %}
+                        <div class="recomendacao-item">
+                            <small>{{ recomendacao }}</small>
+                        </div>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Resumo Estatístico -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Resumo da Análise Preditiva</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="card border-danger">
+                            <div class="card-body">
+                                <h5 class="text-danger">{{ alunos|length|default:0 }}</h5>
+                                <small>Alunos em Risco</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body">
+                                <h5 class="text-warning">
+                                    {% widthratio alunos|length 1 estatisticas.total_analisados %}%
+                                </h5>
+                                <small>Taxa de Risco</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <h5 class="text-info">
+                                    {% for aluno in alunos %}
+                                        {% if aluno.tendencia < -0.2 %}{{ forloop.counter0|add:1 }}{% endif %}
+                                    {% endfor %}
+                                </h5>
+                                <small>Tendência Negativa</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h5 class="text-success">{{ estatisticas.periodo_analise }}</h5>
+                                <small>Período Analisado</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% elif not sucesso %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <strong>Erro na análise preditiva:</strong>
+    {{ estatisticas.erro|default:"Erro desconhecido no processamento dos dados." }}
+</div>
+{% else %}
+<div class="alert alert-info text-center">
+    <i class="fas fa-info-circle"></i>
+    <strong>Nenhum aluno em risco identificado</strong>
+    <br>
+    <small>O algoritmo de machine learning não identificou alunos com risco significativo de evasão nos critérios atuais.</small>
+</div>
+{% endif %}

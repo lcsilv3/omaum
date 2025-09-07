@@ -1,0 +1,87 @@
+{% if intervencoes %}
+    {% for categoria, lista in intervencoes.items %}
+    <div class="card mb-4 intervencao-card">
+        <div class="card-header bg-{% if categoria == 'urgente' %}danger{% elif categoria == 'importante' %}warning{% elif categoria == 'moderada' %}info{% else %}success{% endif %} text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-{% if categoria == 'urgente' %}exclamation-triangle{% elif categoria == 'importante' %}exclamation-circle{% elif categoria == 'moderada' %}info-circle{% else %}check-circle{% endif %}"></i>
+                Intervenções {{ categoria|title }} ({{ lista|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if lista %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Turma</th>
+                            <th>Score Risco</th>
+                            <th>Ação Sugerida</th>
+                            <th>Prazo</th>
+                            <th>Responsável</th>
+                            <th>Prioridade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in lista %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.nome }}</strong><br>
+                                <small class="text-muted">{{ item.email|default:"Sem email" }}</small>
+                            </td>
+                            <td>{{ item.turma }}</td>
+                            <td>
+                                <span class="badge bg-{% if item.score_risco >= 80 %}danger{% elif item.score_risco >= 60 %}warning text-dark{% elif item.score_risco >= 40 %}info{% else %}success{% endif %}">
+                                    {{ item.score_risco|floatformat:1 }}%
+                                </span>
+                            </td>
+                            <td>
+                                <strong>{{ item.acao_sugerida }}</strong><br>
+                                <small class="text-muted">{{ item.justificativa|default:"Baseado em padrões de comportamento" }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if item.prazo_dias <= 3 %}danger{% elif item.prazo_dias <= 7 %}warning text-dark{% else %}info{% endif %}">
+                                    {{ item.prazo }}
+                                </span>
+                            </td>
+                            <td>{{ item.responsavel }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-{% if item.prioridade >= 8 %}danger{% elif item.prioridade >= 6 %}warning{% elif item.prioridade >= 4 %}info{% else %}success{% endif %}" 
+                                         style="width: {{ item.prioridade }}0%">
+                                        {{ item.prioridade }}/10
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center">Nenhuma intervenção {{ categoria }} encontrada.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-robot fa-3x text-muted mb-3"></i>
+    <h5>Nenhuma intervenção sugerida</h5>
+    <p class="text-muted">
+        O sistema de IA não identificou necessidade de intervenções com os filtros atuais.<br>
+        Isso pode indicar que os alunos estão com boa performance ou que há dados insuficientes.
+    </p>
+</div>
+{% endif %}
+
+{% if estatisticas.total_analisados %}
+<div class="mt-3">
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> 
+        <strong>Análise Inteligente:</strong> 
+        {{ estatisticas.total_analisados }} alunos analisados pelo sistema de IA.
+        Algoritmo considera: padrões de presença, tendências comportamentais, histórico acadêmico e fatores de risco.
+    </div>
+</div>
+{% endif %}

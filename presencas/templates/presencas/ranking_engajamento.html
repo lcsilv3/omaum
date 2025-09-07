@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Ranking de Engajamento - Presenças{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-trophy text-warning"></i> Ranking de Engajamento</h2>
+                <div>
+                    <button id="exportar-csv" class="btn btn-success">
+                        <i class="fas fa-download"></i> Exportar CSV
+                    </button>
+                    <a href="{% url 'presencas:lista_relatorios' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Formulário de Filtros -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-filter"></i> Filtros</h5>
+                </div>
+                <div class="card-body">
+                    <form id="form-filtros" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="id_turma" class="form-label">Turma:</label>
+                            <select name="turma" id="id_turma" class="form-select">
+                                <option value="">Todas as turmas</option>
+                                <!-- Preenchido via AJAX -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="id_mes" class="form-label">Mês:</label>
+                            <select name="mes" id="id_mes" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="1">Janeiro</option>
+                                <option value="2">Fevereiro</option>
+                                <option value="3">Março</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Maio</option>
+                                <option value="6">Junho</option>
+                                <option value="7">Julho</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="id_ano" class="form-label">Ano:</label>
+                            <select name="ano" id="id_ano" class="form-select">
+                                <option value="">Todos</option>
+                                <!-- Preenchido via AJAX -->
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                            <button type="button" id="limpar-filtros" class="btn btn-outline-secondary">
+                                <i class="fas fa-eraser"></i> Limpar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Área de Resultados -->
+            <div id="area-resultados">
+                {% include "presencas/partials/ranking_engajamento_partial.html" %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loading-overlay" class="d-none">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'presencas/js/filtros_dinamicos.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuração para ranking de engajamento
+    window.FiltrosDinamicos.init({
+        formId: 'form-filtros',
+        areaResultadosId: 'area-resultados',
+        loadingOverlayId: 'loading-overlay',
+        urlFiltrar: '{% url "presencas:filtrar_ranking_engajamento" %}',
+        urlTurmas: '{% url "presencas:ajax_turmas" %}',
+        urlAnos: '{% url "presencas:ajax_anos" %}',
+        urlExportar: '{% url "presencas:listar_ranking_engajamento" %}',
+        exportarBtnId: 'exportar-csv',
+        limparFiltrosId: 'limpar-filtros'
+    });
+});
+</script>
+{% endblock %}

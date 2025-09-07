@@ -50,7 +50,7 @@ def dashboard(request):
         turma_id = request.GET.get("turma")
 
         # Construir query base
-        frequencias = FrequenciaMensal.objects.all().prefetch_related("turmas")
+        frequencias = FrequenciaMensal.objects.all().select_related("turma")
         carencias = Carencia.objects.all().select_related("frequencia_mensal", "aluno")
 
         # Aplicar filtros

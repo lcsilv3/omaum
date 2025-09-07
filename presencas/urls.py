@@ -292,6 +292,9 @@ urlpatterns = [
         ExportarConsolidadoView.as_view(),
         name="exportar_consolidado",
     ),
+    # ===== NOVOS RELATÓRIOS DE FREQUÊNCIA =====
+    # Incluir rotas de relatórios específicos
+    path("relatorios/", include("presencas.urls_reports")),
     # Painel de Estatísticas
     path("painel/", PainelEstatisticasView.as_view(), name="painel_estatisticas"),
     path("painel/dados-ajax/", PainelDadosAjaxView.as_view(), name="painel_dados_ajax"),

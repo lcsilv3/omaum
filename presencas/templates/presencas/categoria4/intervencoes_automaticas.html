@@ -1,0 +1,256 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }} - Sistema OMAUM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .intervencao-critica { 
+            border-left: 5px solid #dc3545; 
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        .intervencao-alta { 
+            border-left: 5px solid #fd7e14; 
+            background-color: rgba(253, 126, 20, 0.1);
+        }
+        .intervencao-media { 
+            border-left: 5px solid #ffc107; 
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+        .intervencao-preventiva { 
+            border-left: 5px solid #20c997; 
+            background-color: rgba(32, 201, 151, 0.1);
+        }
+        
+        .prazo-urgente { color: #dc3545; font-weight: bold; }
+        .prazo-medio { color: #fd7e14; font-weight: bold; }
+        .prazo-normal { color: #28a745; font-weight: bold; }
+        
+        .ai-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+        
+        .recomendacao-geral {
+            background: #e9ecef;
+            border-left: 4px solid #007bff;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="ai-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2><i class="fas fa-robot"></i> {{ titulo }}</h2>
+                            <p class="mb-0">{{ subtitulo }}</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-light" onclick="exportarCSV()">
+                                <i class="fas fa-download"></i> Exportar CSV
+                            </button>
+                            <button class="btn btn-outline-light" onclick="atualizarDados()">
+                                <i class="fas fa-sync-alt"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-filter"></i> Filtros de Intervenção</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="filtrosForm" class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Turma</label>
+                                <select name="turma" class="form-select" id="filtroTurma">
+                                    <option value="">Todas as turmas</option>
+                                    <!-- Opções serão carregadas via AJAX -->
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Categoria de Urgência</label>
+                                <select name="categoria" class="form-select" id="filtroCategoria">
+                                    <option value="">Todas as categorias</option>
+                                    <option value="criticas">Críticas</option>
+                                    <option value="altas">Altas</option>
+                                    <option value="medias">Médias</option>
+                                    <option value="preventivas">Preventivas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if erro %}
+        <!-- Erro -->
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> {{ erro }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+
+        <!-- Dashboard de Estatísticas -->
+        {% if estatisticas %}
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-danger">
+                    <div class="card-body text-center">
+                        <h3>{{ estatisticas.criticas }}</h3>
+                        <small>Intervenções Críticas</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body text-center">
+                        <h3>{{ estatisticas.altas }}</h3>
+                        <small>Intervenções Altas</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body text-center">
+                        <h3>{{ estatisticas.medias }}</h3>
+                        <small>Intervenções Médias</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body text-center">
+                        <h3>{{ estatisticas.preventivas }}</h3>
+                        <small>Ações Preventivas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recomendações Gerais -->
+        {% if recomendacoes_gerais %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-lightbulb text-warning"></i> Recomendações Gerais da IA</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for recomendacao in recomendacoes_gerais %}
+                            <div class="recomendacao-geral">{{ recomendacao }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Lista de Intervenções -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks text-primary"></i> 
+                            Intervenções Automáticas Sugeridas
+                        </h5>
+                    </div>
+                    <div class="card-body" id="listaResultados">
+                        {% include 'presencas/categoria4/partials/lista_intervencoes.html' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'presencas/js/filtros_dinamicos.js' %}"></script>
+    
+    <script>
+        // Configuração específica para intervenções automáticas
+        const CONFIG_INTERVENCOES = {
+            endpoints: {
+                filtrar: "{% url 'filtrar_intervencoes_automaticas' %}",
+                exportar: "{% url 'exportar_csv_intervencoes_automaticas' %}",
+                ajax_turmas: "{% url 'ajax_turmas' %}",
+            },
+            containerId: 'listaResultados',
+            formId: 'filtrosForm'
+        };
+
+        // Inicializar quando página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carregar opções de turmas
+            carregarTurmas();
+            
+            // Configurar filtros dinâmicos
+            configurarFiltrosDinamicos(CONFIG_INTERVENCOES);
+        });
+
+        function exportarCSV() {
+            const form = document.getElementById(CONFIG_INTERVENCOES.formId);
+            const params = new URLSearchParams(new FormData(form));
+            window.open(`${CONFIG_INTERVENCOES.endpoints.exportar}?${params}`, '_blank');
+        }
+
+        function atualizarDados() {
+            const form = document.getElementById(CONFIG_INTERVENCOES.formId);
+            form.dispatchEvent(new Event('submit'));
+        }
+
+        // Função para carregar turmas via AJAX
+        function carregarTurmas() {
+            fetch(CONFIG_INTERVENCOES.endpoints.ajax_turmas)
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('filtroTurma');
+                    select.innerHTML = '<option value="">Todas as turmas</option>';
+                    
+                    data.turmas.forEach(turma => {
+                        const option = document.createElement('option');
+                        option.value = turma.id;
+                        option.textContent = turma.nome;
+                        if (turma.id == {{ filtro_turma|default:'null' }}) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar turmas:', error);
+                });
+        }
+    </script>
+</body>
+</html>

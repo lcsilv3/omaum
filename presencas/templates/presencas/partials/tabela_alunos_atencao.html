@@ -1,0 +1,80 @@
+{% if alunos_atencao %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Aluno</th>
+                <th>Turma</th>
+                <th>Total Carências</th>
+                <th>% Presença</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aluno in alunos_atencao %}
+            <tr class="{% if aluno.total_carencias >= 10 %}table-danger{% elif aluno.total_carencias >= 7 %}table-warning{% else %}table-info{% endif %}">
+                <td>
+                    <strong>{{ aluno.aluno__nome }}</strong><br>
+                    <small class="text-muted">ID: {{ aluno.aluno_id|default:"N/A" }}</small>
+                </td>
+                <td>{{ aluno.turma__nome }}</td>
+                <td>
+                    <span class="badge bg-{% if aluno.total_carencias >= 10 %}danger{% elif aluno.total_carencias >= 7 %}warning text-dark{% else %}info{% endif %}">
+                        {{ aluno.total_carencias }}
+                    </span>
+                </td>
+                <td>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-{% if aluno.percentual_presenca >= 75 %}success{% elif aluno.percentual_presenca >= 60 %}warning{% else %}danger{% endif %}" 
+                             style="width: {{ aluno.percentual_presenca|default:0 }}%">
+                            {{ aluno.percentual_presenca|floatformat:1 }}%
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    {% if aluno.total_carencias >= 10 %}
+                        <span class="badge bg-danger">Crítico</span>
+                    {% elif aluno.total_carencias >= 7 %}
+                        <span class="badge bg-warning text-dark">Atenção</span>
+                    {% else %}
+                        <span class="badge bg-info">Acompanhar</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary" title="Contatar">
+                            <i class="fas fa-phone"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" title="Agendar reunião">
+                            <i class="fas fa-calendar"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-info" title="Ver histórico">
+                            <i class="fas fa-history"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-3">
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> 
+        <strong>Atenção da Coordenação:</strong> 
+        {{ alunos_atencao|length }} aluno{{ alunos_atencao|length|pluralize }} necessita{{ alunos_atencao|length|pluralize:"m," }} acompanhamento especial.
+        Considere intervenções pedagógicas ou contato direto com os responsáveis.
+    </div>
+</div>
+{% else %}
+<div class="text-center py-4">
+    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+    <h5>Excelente trabalho!</h5>
+    <p class="text-muted">
+        Nenhum aluno requer atenção especial no momento.<br>
+        Todos estão dentro dos parâmetros aceitáveis de carências.
+    </p>
+</div>
+{% endif %}

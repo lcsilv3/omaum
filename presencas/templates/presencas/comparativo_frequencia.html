@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Comparativo de Frequência - Presenças{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-line text-info"></i> Comparativo de Frequência</h2>
+                <div>
+                    <button id="exportar-csv" class="btn btn-success">
+                        <i class="fas fa-download"></i> Exportar CSV
+                    </button>
+                    <a href="{% url 'presencas:lista_relatorios' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Formulário de Filtros -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-filter"></i> Filtros - Selecione 2 Períodos</h5>
+                </div>
+                <div class="card-body">
+                    <form id="form-filtros" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="id_turma" class="form-label">Turma:</label>
+                            <select name="turma" id="id_turma" class="form-select">
+                                <option value="">Todas as turmas</option>
+                                <!-- Preenchido via AJAX -->
+                            </select>
+                        </div>
+                        
+                        <!-- Período 1 -->
+                        <div class="col-md-4">
+                            <label class="form-label"><strong>Período 1:</strong></label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <select name="mes1" id="id_mes1" class="form-select" required>
+                                        <option value="">Mês</option>
+                                        <option value="1">Janeiro</option>
+                                        <option value="2">Fevereiro</option>
+                                        <option value="3">Março</option>
+                                        <option value="4">Abril</option>
+                                        <option value="5">Maio</option>
+                                        <option value="6">Junho</option>
+                                        <option value="7">Julho</option>
+                                        <option value="8">Agosto</option>
+                                        <option value="9">Setembro</option>
+                                        <option value="10">Outubro</option>
+                                        <option value="11">Novembro</option>
+                                        <option value="12">Dezembro</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <select name="ano1" id="id_ano1" class="form-select" required>
+                                        <option value="">Ano</option>
+                                        <!-- Preenchido via AJAX -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Período 2 -->
+                        <div class="col-md-4">
+                            <label class="form-label"><strong>Período 2:</strong></label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <select name="mes2" id="id_mes2" class="form-select" required>
+                                        <option value="">Mês</option>
+                                        <option value="1">Janeiro</option>
+                                        <option value="2">Fevereiro</option>
+                                        <option value="3">Março</option>
+                                        <option value="4">Abril</option>
+                                        <option value="5">Maio</option>
+                                        <option value="6">Junho</option>
+                                        <option value="7">Julho</option>
+                                        <option value="8">Agosto</option>
+                                        <option value="9">Setembro</option>
+                                        <option value="10">Outubro</option>
+                                        <option value="11">Novembro</option>
+                                        <option value="12">Dezembro</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <select name="ano2" id="id_ano2" class="form-select" required>
+                                        <option value="">Ano</option>
+                                        <!-- Preenchido via AJAX -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Comparar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Área de Resultados -->
+            <div id="area-resultados">
+                {% include "presencas/partials/comparativo_frequencia_partial.html" %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loading-overlay" class="d-none">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'presencas/js/filtros_dinamicos.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuração para comparativo de frequência
+    window.FiltrosDinamicos.init({
+        formId: 'form-filtros',
+        areaResultadosId: 'area-resultados',
+        loadingOverlayId: 'loading-overlay',
+        urlFiltrar: '{% url "presencas:filtrar_comparativo_frequencia" %}',
+        urlTurmas: '{% url "presencas:ajax_turmas" %}',
+        urlAnos: '{% url "presencas:ajax_anos" %}',
+        urlExportar: '{% url "presencas:listar_comparativo_frequencia" %}',
+        exportarBtnId: 'exportar-csv',
+        limparFiltrosId: 'limpar-filtros'
+    });
+
+    // Sincronizar dropdowns de ano
+    const ano1Select = document.getElementById('id_ano1');
+    const ano2Select = document.getElementById('id_ano2');
+    
+    // Quando ano1 mudar, atualizar ano2 com as mesmas opções
+    ano1Select.addEventListener('change', function() {
+        if (this.value && ano2Select.children.length <= 1) {
+            // Copiar opções do ano1 para ano2
+            for (let i = 1; i < this.children.length; i++) {
+                const option = this.children[i].cloneNode(true);
+                ano2Select.appendChild(option);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

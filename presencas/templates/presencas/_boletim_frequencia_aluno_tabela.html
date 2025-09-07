@@ -1,0 +1,35 @@
+<!-- c:/omaum/presencas/templates/presencas/_boletim_frequencia_aluno_tabela.html -->
+<table class="table table-sm">
+  <thead>
+    <tr>
+      <th>Convocações</th>
+      <th>Presenças</th>
+      <th>Faltas</th>
+      <th>%</th>
+      <th>V1</th>
+      <th>V2</th>
+      <th>Vol</th>
+      <th>Car</th>
+      <th>Limite%</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if dados %}
+    <tr>
+      <td>{{ dados.convocacoes }}</td>
+      <td>{{ dados.presencas }}</td>
+      <td>{{ dados.faltas }}</td>
+      <td>{{ dados.percentual }}%</td>
+      <td>{{ dados.v1 }}</td>
+      <td>{{ dados.v2 }}</td>
+      <td>{{ dados.vol }}</td>
+      <td>{{ dados.carencias }}</td>
+      <td>{{ dados.limite_percentual }}%</td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="9">Selecione os filtros para visualizar os dados.</td>
+    </tr>
+    {% endif %}
+  </tbody>
+</table>

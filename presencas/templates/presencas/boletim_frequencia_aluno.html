@@ -1,0 +1,52 @@
+<!-- c:/omaum/presencas/templates/presencas/boletim_frequencia_aluno.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>Boletim de Frequência Mensal por Aluno</h2>
+
+<form id="filtros-boletim" autocomplete="off">
+  <label>Turma:
+    <select name="turma_id" id="turma_id"></select>
+  </label>
+  <label>Aluno:
+    <select name="aluno_id" id="aluno_id"></select>
+  </label>
+  <label>Mês:
+    <input type="number" min="1" max="12" name="mes" id="mes" value="{{ mes|default:'' }}">
+  </label>
+  <label>Ano:
+    <input type="number" name="ano" id="ano" value="{{ ano|default:'' }}">
+  </label>
+  <button type="button" id="btn-exportar">Exportar CSV</button>
+</form>
+
+<div id="tabela-boletim">
+  {% include "presencas/_boletim_frequencia_aluno_tabela.html" %}
+</div>
+
+<script src="{% static 'presencas/js/filtros_dinamicos.js' %}"></script>
+<script>
+  PresencasFiltros.iniciar({
+    urls: {
+      turmas: "/presencas/relatorios/filtros/turmas/",
+      alunos: "/presencas/relatorios/filtros/alunos/",
+      dados: "/presencas/relatorios/frequencias/boletim/",
+    },
+    elementos: {
+      turma: document.getElementById('turma_id'),
+      aluno: document.getElementById('aluno_id'),
+      mes: document.getElementById('mes'),
+      ano: document.getElementById('ano'),
+      alvo: document.getElementById('tabela-boletim'),
+    },
+    onExportar: function(params) {
+      const url = new URL("/presencas/relatorios/frequencias/boletim/", window.location.origin);
+      for (const [k, v] of Object.entries(params)) { if (v) url.searchParams.set(k, v); }
+      url.searchParams.set('formato', 'csv');
+      window.location.href = url.toString();
+    },
+    botaoExportar: document.getElementById('btn-exportar'),
+  });
+</script>
+{% endblock %}

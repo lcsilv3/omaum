@@ -1,0 +1,48 @@
+<!-- c:/omaum/presencas/templates/presencas/consolidado_frequencia_turma.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>Consolidado de Frequência da Turma</h2>
+
+<form id="filtros-consolidado" autocomplete="off">
+  <label>Turma:
+    <select name="turma_id" id="turma_id_c"></select>
+  </label>
+  <label>Mês:
+    <input type="number" min="1" max="12" name="mes" id="mes_c" value="{{ mes|default:'' }}">
+  </label>
+  <label>Ano:
+    <input type="number" name="ano" id="ano_c" value="{{ ano|default:'' }}">
+  </label>
+  <button type="button" id="btn-exportar-c">Exportar CSV</button>
+</form>
+
+<div id="tabela-consolidado">
+  {% include "presencas/_consolidado_frequencia_turma_tabela.html" %}
+</div>
+
+<script src="{% static 'presencas/js/filtros_dinamicos.js' %}"></script>
+<script>
+  PresencasFiltros.iniciar({
+    urls: {
+      turmas: "/presencas/relatorios/filtros/turmas/",
+      alunos: "/presencas/relatorios/filtros/alunos/",
+      dados: "/presencas/relatorios/frequencias/turma/",
+    },
+    elementos: {
+      turma: document.getElementById('turma_id_c'),
+      mes: document.getElementById('mes_c'),
+      ano: document.getElementById('ano_c'),
+      alvo: document.getElementById('tabela-consolidado'),
+    },
+    onExportar: function(params) {
+      const url = new URL("/presencas/relatorios/frequencias/turma/", window.location.origin);
+      for (const [k, v] of Object.entries(params)) { if (v) url.searchParams.set(k, v); }
+      url.searchParams.set('formato', 'csv');
+      window.location.href = url.toString();
+    },
+    botaoExportar: document.getElementById('btn-exportar-c'),
+  });
+</script>
+{% endblock %}

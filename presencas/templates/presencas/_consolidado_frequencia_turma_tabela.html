@@ -1,0 +1,33 @@
+<!-- c:/omaum/presencas/templates/presencas/_consolidado_frequencia_turma_tabela.html -->
+<table class="table table-sm">
+  <thead>
+    <tr>
+      <th>Aluno</th>
+      <th>%</th>
+      <th>Faltas</th>
+      <th>Car</th>
+      <th>Vol</th>
+      <th>V1</th>
+      <th>V2</th>
+      <th>Conv.</th>
+      <th>Pres.</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in linhas %}
+    <tr>
+      <td>{{ r.aluno_nome }}</td>
+      <td>{{ r.percentual }}%</td>
+      <td>{{ r.faltas }}</td>
+      <td>{{ r.carencias }}</td>
+      <td>{{ r.vol }}</td>
+      <td>{{ r.v1 }}</td>
+      <td>{{ r.v2 }}</td>
+      <td>{{ r.convocacoes }}</td>
+      <td>{{ r.presencas }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="9">Sem dados para os filtros informados.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

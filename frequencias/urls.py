@@ -34,20 +34,22 @@ app_name = "frequencias"
 urlpatterns = [
     # Views principais seguindo o padrão do contrato
     path("", listar_frequencias, name="listar_frequencias"),
-    path("criar/", criar_frequencia_mensal, name="criar_frequencia"),
-    path("criar-mensal/", criar_frequencia_mensal, name="criar_frequencia_mensal"),
+    path("criar/", criar_frequencia_mensal, name="criar_frequencia_mensal"),
+    path("criar-mensal/", criar_frequencia_mensal, name="criar_frequencia"),
     path(
         "<int:frequencia_id>/editar/",
         editar_frequencia_mensal,
-        name="editar_frequencia",
+        name="editar_frequencia_mensal",
     ),
     path(
         "<int:frequencia_id>/excluir/",
         excluir_frequencia_mensal,
-        name="excluir_frequencia",
+        name="excluir_frequencia_mensal",
     ),
     path(
-        "<int:frequencia_id>/", detalhar_frequencia_mensal, name="detalhar_frequencia"
+        "<int:frequencia_id>/",
+        detalhar_frequencia_mensal,
+        name="detalhar_frequencia_mensal",
     ),
     path(
         "<int:frequencia_id>/recalcular/",

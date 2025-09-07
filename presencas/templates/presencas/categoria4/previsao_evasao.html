@@ -1,0 +1,231 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }} - Sistema OMAUM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .card-risco-critico { border-left: 5px solid #dc3545; }
+        .card-risco-alto { border-left: 5px solid #fd7e14; }
+        .card-risco-medio { border-left: 5px solid #ffc107; }
+        .card-risco-baixo { border-left: 5px solid #20c997; }
+        
+        .score-badge {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+        }
+        
+        .tendencia-positiva { color: #28a745; }
+        .tendencia-negativa { color: #dc3545; }
+        .tendencia-neutra { color: #6c757d; }
+        
+        .recomendacao-item {
+            background: #f8f9fa;
+            border-left: 3px solid #007bff;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .ml-metrics {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-brain text-primary"></i> {{ titulo }}</h2>
+                        <p class="text-muted mb-0">{{ subtitulo }}</p>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary" onclick="exportarCSV()">
+                            <i class="fas fa-download"></i> Exportar CSV
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="atualizarDados()">
+                            <i class="fas fa-sync-alt"></i> Atualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-filter"></i> Filtros de Análise Preditiva</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="filtrosForm" class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Turma</label>
+                                <select name="turma" class="form-select" id="filtroTurma">
+                                    <option value="">Todas as turmas</option>
+                                    <!-- Opções serão carregadas via AJAX -->
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Limite de Resultados</label>
+                                <select name="limite" class="form-select" id="filtroLimite">
+                                    <option value="25">25 resultados</option>
+                                    <option value="50" selected>50 resultados</option>
+                                    <option value="100">100 resultados</option>
+                                    <option value="200">200 resultados</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Nível de Risco</label>
+                                <select name="nivel_risco" class="form-select" id="filtroNivel">
+                                    <option value="">Todos os níveis</option>
+                                    <option value="CRITICO">Crítico</option>
+                                    <option value="ALTO">Alto</option>
+                                    <option value="MEDIO">Médio</option>
+                                    <option value="BAIXO">Baixo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if erro %}
+        <!-- Erro -->
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> {{ erro }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+
+        <!-- Estatísticas ML -->
+        {% if estatisticas %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="ml-metrics">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h3 class="mb-1">{{ estatisticas.total_analisados }}</h3>
+                            <small>Alunos Analisados</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="mb-1">{{ estatisticas.total_em_risco }}</h3>
+                            <small>Em Risco de Evasão</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="mb-1">{{ estatisticas.taxa_risco }}%</h3>
+                            <small>Taxa de Risco</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="mb-1"><i class="fas fa-robot"></i></h3>
+                            <small>Powered by ML</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Lista de Resultados -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle text-warning"></i> 
+                            Alunos com Risco de Evasão Identificado
+                        </h5>
+                    </div>
+                    <div class="card-body" id="listaResultados">
+                        {% include 'presencas/categoria4/partials/lista_previsao_evasao.html' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'presencas/js/filtros_dinamicos.js' %}"></script>
+    
+    <script>
+        // Configuração específica para previsão de evasão
+        const CONFIG_PREDITIVOS = {
+            endpoints: {
+                filtrar: "{% url 'filtrar_previsao_evasao' %}",
+                exportar: "{% url 'exportar_csv_previsao_evasao' %}",
+                ajax_turmas: "{% url 'ajax_turmas' %}",
+            },
+            containerId: 'listaResultados',
+            formId: 'filtrosForm'
+        };
+
+        // Inicializar quando página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carregar opções de turmas
+            carregarTurmas();
+            
+            // Configurar filtros dinâmicos
+            configurarFiltrosDinamicos(CONFIG_PREDITIVOS);
+        });
+
+        function exportarCSV() {
+            const form = document.getElementById(CONFIG_PREDITIVOS.formId);
+            const params = new URLSearchParams(new FormData(form));
+            window.open(`${CONFIG_PREDITIVOS.endpoints.exportar}?${params}`, '_blank');
+        }
+
+        function atualizarDados() {
+            const form = document.getElementById(CONFIG_PREDITIVOS.formId);
+            form.dispatchEvent(new Event('submit'));
+        }
+
+        // Função para carregar turmas via AJAX
+        function carregarTurmas() {
+            fetch(CONFIG_PREDITIVOS.endpoints.ajax_turmas)
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('filtroTurma');
+                    select.innerHTML = '<option value="">Todas as turmas</option>';
+                    
+                    data.turmas.forEach(turma => {
+                        const option = document.createElement('option');
+                        option.value = turma.id;
+                        option.textContent = turma.nome;
+                        if (turma.id == {{ filtro_turma|default:'null' }}) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar turmas:', error);
+                });
+        }
+    </script>
+</body>
+</html>

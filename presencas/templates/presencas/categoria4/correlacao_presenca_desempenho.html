@@ -1,0 +1,360 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }} - Sistema OMAUM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .correlacao-forte { background-color: rgba(40, 167, 69, 0.1); border-left: 4px solid #28a745; }
+        .correlacao-moderada { background-color: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; }
+        .correlacao-fraca { background-color: rgba(220, 53, 69, 0.1); border-left: 4px solid #dc3545; }
+        
+        .performance-alta { color: #28a745; font-weight: bold; }
+        .performance-boa { color: #20c997; font-weight: bold; }
+        .performance-regular { color: #ffc107; font-weight: bold; }
+        .performance-baixa { color: #dc3545; font-weight: bold; }
+        .performance-divergente { color: #6f42c1; font-weight: bold; }
+        
+        .estatisticas-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+        
+        .coeficiente-display {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+        
+        .grafico-container {
+            height: 400px;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="estatisticas-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2><i class="fas fa-chart-line"></i> {{ titulo }}</h2>
+                            <p class="mb-0">{{ subtitulo }}</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-light" onclick="exportarCSV()">
+                                <i class="fas fa-download"></i> Exportar CSV
+                            </button>
+                            <button class="btn btn-outline-light" onclick="atualizarDados()">
+                                <i class="fas fa-sync-alt"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-filter"></i> Filtros de Análise</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="filtrosForm" class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Turma</label>
+                                <select name="turma" class="form-select" id="filtroTurma">
+                                    <option value="">Todas as turmas</option>
+                                    <!-- Opções serão carregadas via AJAX -->
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tipo de Correlação</label>
+                                <select name="tipo" class="form-select" id="filtroTipo">
+                                    <option value="">Todas as correlações</option>
+                                    <option value="forte">Correlação Forte (r ≥ 0.6)</option>
+                                    <option value="moderada">Correlação Moderada (0.4 ≤ r < 0.6)</option>
+                                    <option value="fraca">Correlação Fraca (r < 0.4)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search"></i> Analisar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if erro %}
+        <!-- Erro -->
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> {{ erro }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+
+        <!-- Estatísticas da Correlação -->
+        {% if estatisticas %}
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="coeficiente-display 
+                            {% if estatisticas.coeficiente_correlacao >= 0.6 %}text-success
+                            {% elif estatisticas.coeficiente_correlacao >= 0.4 %}text-warning
+                            {% else %}text-danger{% endif %}">
+                            {{ estatisticas.coeficiente_correlacao }}
+                        </div>
+                        <h6>Coeficiente de Correlação</h6>
+                        <small class="text-muted">{{ estatisticas.interpretacao }}</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-primary">{{ estatisticas.total_analisados }}</h3>
+                        <h6>Alunos Analisados</h6>
+                        <small class="text-muted">Base da análise</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-info">{{ estatisticas.media_presenca }}%</h3>
+                        <h6>Média de Presença</h6>
+                        <small class="text-muted">Frequência geral</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-success">{{ estatisticas.media_desempenho }}</h3>
+                        <h6>Média de Desempenho</h6>
+                        <small class="text-muted">Nota estimada</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Gráfico de Dispersão -->
+        {% if correlacoes %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-scatter"></i> Gráfico de Dispersão - Presença vs Desempenho</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="grafico-container">
+                            <canvas id="graficoCorrelacao"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recomendações -->
+        {% if recomendacoes %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-lightbulb text-warning"></i> Recomendações Baseadas na Análise</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for recomendacao in recomendacoes %}
+                            <div class="alert alert-info">{{ recomendacao }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Lista de Correlações -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-table text-primary"></i> 
+                            Análise Individual - Presença vs Desempenho
+                        </h5>
+                    </div>
+                    <div class="card-body" id="listaResultados">
+                        {% include 'presencas/categoria4/partials/lista_correlacao.html' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'presencas/js/filtros_dinamicos.js' %}"></script>
+    
+    <script>
+        // Configuração específica para correlação
+        const CONFIG_CORRELACAO = {
+            endpoints: {
+                filtrar: "{% url 'filtrar_correlacao_presenca_desempenho' %}",
+                exportar: "{% url 'exportar_csv_correlacao_presenca_desempenho' %}",
+                ajax_turmas: "{% url 'ajax_turmas' %}",
+            },
+            containerId: 'listaResultados',
+            formId: 'filtrosForm'
+        };
+
+        // Dados para o gráfico de dispersão
+        const dadosGrafico = [
+            {% for item in correlacoes %}
+            {
+                x: {{ item.percentual_presenca }},
+                y: {{ item.nota_estimada }},
+                label: "{{ item.aluno_nome }}",
+                classificacao: "{{ item.classificacao }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        // Inicializar quando página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carregar opções de turmas
+            carregarTurmas();
+            
+            // Configurar filtros dinâmicos
+            configurarFiltrosDinamicos(CONFIG_CORRELACAO);
+            
+            // Criar gráfico de dispersão
+            if (dadosGrafico.length > 0) {
+                criarGraficoCorrelacao();
+            }
+        });
+
+        function exportarCSV() {
+            const form = document.getElementById(CONFIG_CORRELACAO.formId);
+            const params = new URLSearchParams(new FormData(form));
+            window.open(`${CONFIG_CORRELACAO.endpoints.exportar}?${params}`, '_blank');
+        }
+
+        function atualizarDados() {
+            const form = document.getElementById(CONFIG_CORRELACAO.formId);
+            form.dispatchEvent(new Event('submit'));
+        }
+
+        // Função para carregar turmas via AJAX
+        function carregarTurmas() {
+            fetch(CONFIG_CORRELACAO.endpoints.ajax_turmas)
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('filtroTurma');
+                    select.innerHTML = '<option value="">Todas as turmas</option>';
+                    
+                    data.turmas.forEach(turma => {
+                        const option = document.createElement('option');
+                        option.value = turma.id;
+                        option.textContent = turma.nome;
+                        if (turma.id == {{ filtro_turma|default:'null' }}) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar turmas:', error);
+                });
+        }
+
+        function criarGraficoCorrelacao() {
+            const ctx = document.getElementById('graficoCorrelacao').getContext('2d');
+            
+            // Cores baseadas na classificação
+            const cores = {
+                'ALTA_PERFORMANCE': '#28a745',
+                'BOA_PERFORMANCE': '#20c997',
+                'PERFORMANCE_REGULAR': '#ffc107',
+                'BAIXA_PERFORMANCE': '#dc3545',
+                'DIVERGENTE_ALTA_PRESENCA': '#6f42c1',
+                'DIVERGENTE_BAIXA_PRESENCA': '#fd7e14',
+                'INDEFINIDA': '#6c757d'
+            };
+
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Correlação Presença vs Desempenho',
+                        data: dadosGrafico.map(item => ({
+                            x: item.x,
+                            y: item.y,
+                            backgroundColor: cores[item.classificacao] || '#6c757d'
+                        })),
+                        backgroundColor: dadosGrafico.map(item => cores[item.classificacao] || '#6c757d'),
+                        borderColor: dadosGrafico.map(item => cores[item.classificacao] || '#6c757d'),
+                        borderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Percentual de Presença (%)'
+                            },
+                            min: 0,
+                            max: 100
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Nota Estimada'
+                            },
+                            min: 0,
+                            max: 10
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const item = dadosGrafico[context.dataIndex];
+                                    return `${item.label}: ${item.x}% presença, Nota ${item.y}`;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

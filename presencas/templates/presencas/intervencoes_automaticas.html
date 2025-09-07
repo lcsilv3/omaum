@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block head %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .urgente { background-color: #ffebee; border-left: 4px solid #f44336; }
+        .importante { background-color: #fff3e0; border-left: 4px solid #ff9800; }
+        .moderada { background-color: #e3f2fd; border-left: 4px solid #2196f3; }
+        .preventiva { background-color: #e8f5e8; border-left: 4px solid #4caf50; }
+        .ai-info { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .intervencao-card { transition: all 0.3s ease; }
+        .intervencao-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho com informações de IA -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card ai-info">
+                <div class="card-body">
+                    <h4><i class="fas fa-robot"></i> {{ titulo }}</h4>
+                    <p class="mb-0">Sistema inteligente de sugestões de intervenção baseado em análise comportamental e Machine Learning</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Dinâmicos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-filter"></i> Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form id="filtroForm" class="row g-3">
+                <div class="col-md-4">
+                    <label for="ano" class="form-label">Ano:</label>
+                    <select id="ano" name="ano" class="form-select">
+                        <option value="">Todos os anos</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="turma_id" class="form-label">Turma:</label>
+                    <select id="turma_id" name="turma_id" class="form-select">
+                        <option value="">Todas as turmas</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="urgencia" class="form-label">Nível de Urgência:</label>
+                    <select id="urgencia" name="urgencia" class="form-select">
+                        <option value="">Todas as urgências</option>
+                        <option value="urgente">Urgente</option>
+                        <option value="importante">Importante</option>
+                        <option value="moderada">Moderada</option>
+                        <option value="preventiva">Preventiva</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="button" id="btnFiltrar" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Aplicar Filtros
+                    </button>
+                    <a href="{% url 'exportar_csv_intervencoes_automaticas' %}" class="btn btn-success" id="btnExportar">
+                        <i class="fas fa-download"></i> Exportar CSV
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if erro %}
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i> {{ erro }}
+        </div>
+    {% else %}
+        <!-- Estatísticas de Intervenções -->
+        {% if estatisticas %}
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center urgente">
+                    <div class="card-body">
+                        <h3>{{ estatisticas.total_urgente|default:0 }}</h3>
+                        <p class="mb-0">Urgentes</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center importante">
+                    <div class="card-body">
+                        <h3>{{ estatisticas.total_importante|default:0 }}</h3>
+                        <p class="mb-0">Importantes</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center moderada">
+                    <div class="card-body">
+                        <h3>{{ estatisticas.total_moderada|default:0 }}</h3>
+                        <p class="mb-0">Moderadas</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center preventiva">
+                    <div class="card-body">
+                        <h3>{{ estatisticas.total_preventiva|default:0 }}</h3>
+                        <p class="mb-0">Preventivas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Intervenções por Categoria -->
+        <div id="conteudoIntervencoes">
+            {% include "presencas/partials/intervencoes_automaticas.html" %}
+        </div>
+    {% endif %}
+</div>
+
+<script src="{% static 'presencas/js/filtros_dinamicos.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar filtros
+    configurarFiltros({
+        endpointTurmas: '{% url "ajax_turmas" %}',
+        endpointAnos: '{% url "ajax_anos" %}',
+        endpointFiltro: '{% url "filtrar_intervencoes_automaticas" %}',
+        templateTabela: 'presencas/partials/intervencoes_automaticas.html'
+    });
+});
+</script>
+{% endblock %}

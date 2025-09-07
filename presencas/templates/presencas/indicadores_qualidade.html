@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block head %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .qualidade-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .indicador-excelente { border-left: 4px solid #4caf50; background-color: #e8f5e8; }
+        .indicador-bom { border-left: 4px solid #2196f3; background-color: #e3f2fd; }
+        .indicador-regular { border-left: 4px solid #ff9800; background-color: #fff3e0; }
+        .indicador-critico { border-left: 4px solid #f44336; background-color: #ffebee; }
+        .meta-card { transition: all 0.3s ease; }
+        .meta-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .evolucao-positiva { color: #4caf50; }
+        .evolucao-negativa { color: #f44336; }
+        .evolucao-estavel { color: #2196f3; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho dos Indicadores -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card qualidade-header">
+                <div class="card-body">
+                    <h4><i class="fas fa-medal"></i> {{ titulo }}</h4>
+                    <p class="mb-0">Métricas institucionais de qualidade e excelência educacional</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros dos Indicadores -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-filter"></i> Filtros de Análise</h5>
+        </div>
+        <div class="card-body">
+            <form id="filtroForm" class="row g-3">
+                <div class="col-md-3">
+                    <label for="nivel" class="form-label">Nível:</label>
+                    <select id="nivel" name="nivel" class="form-select">
+                        <option value="institucional" selected>Institucional</option>
+                        <option value="curso">Por Curso</option>
+                        <option value="turma">Por Turma</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="curso_id" class="form-label">Curso:</label>
+                    <select id="curso_id" name="curso_id" class="form-select">
+                        <option value="">Todos os cursos</option>
+                        <option value="1">Ensino Médio</option>
+                        <option value="2">Ensino Fundamental</option>
+                        <option value="3">EJA</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="periodo" class="form-label">Período:</label>
+                    <select id="periodo" name="periodo" class="form-select">
+                        <option value="trimestre" selected>Trimestre</option>
+                        <option value="semestre">Semestre</option>
+                        <option value="ano">Ano</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" id="btnFiltrar" class="btn btn-primary" style="margin-top: 32px;">
+                        <i class="fas fa-search"></i> Aplicar Filtros
+                    </button>
+                    <a href="{% url 'exportar_csv_indicadores_qualidade' %}" class="btn btn-success" id="btnExportar" style="margin-top: 32px;">
+                        <i class="fas fa-download"></i> CSV
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if erro %}
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i> {{ erro }}
+        </div>
+    {% else %}
+        <!-- Índice de Qualidade Geral -->
+        {% if indice_qualidade_geral %}
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card text-center {% if indice_qualidade_geral.indice >= 85 %}indicador-excelente{% elif indice_qualidade_geral.indice >= 70 %}indicador-bom{% elif indice_qualidade_geral.indice >= 50 %}indicador-regular{% else %}indicador-critico{% endif %}">
+                    <div class="card-body">
+                        <h2 class="display-4">{{ indice_qualidade_geral.indice|default:0 }}</h2>
+                        <h5>Índice de Qualidade Institucional</h5>
+                        <p class="mb-0">
+                            {% if indice_qualidade_geral.indice >= 85 %}
+                                <span class="badge bg-success fs-6">Excelente</span>
+                            {% elif indice_qualidade_geral.indice >= 70 %}
+                                <span class="badge bg-primary fs-6">Bom</span>
+                            {% elif indice_qualidade_geral.indice >= 50 %}
+                                <span class="badge bg-warning text-dark fs-6">Regular</span>
+                            {% else %}
+                                <span class="badge bg-danger fs-6">Crítico</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-chart-pie"></i> Composição do Índice</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chartComposicao" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Indicadores Principais -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-graduation-cap fa-2x text-success mb-2"></i>
+                        <h3>{{ indicadores.taxa_aprovacao|default:0 }}%</h3>
+                        <p class="mb-0">Taxa de Aprovação</p>
+                        <small class="{% if indicadores.evolucao_aprovacao > 0 %}evolucao-positiva{% elif indicadores.evolucao_aprovacao < 0 %}evolucao-negativa{% else %}evolucao-estavel{% endif %}">
+                            {% if indicadores.evolucao_aprovacao > 0 %}↗{% elif indicadores.evolucao_aprovacao < 0 %}↘{% else %}→{% endif %} {{ indicadores.evolucao_aprovacao|default:0 }}%
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-clock fa-2x text-primary mb-2"></i>
+                        <h3>{{ indicadores.taxa_presenca|default:0 }}%</h3>
+                        <p class="mb-0">Taxa de Presença</p>
+                        <small class="{% if indicadores.evolucao_presenca > 0 %}evolucao-positiva{% elif indicadores.evolucao_presenca < 0 %}evolucao-negativa{% else %}evolucao-estavel{% endif %}">
+                            {% if indicadores.evolucao_presenca > 0 %}↗{% elif indicadores.evolucao_presenca < 0 %}↘{% else %}→{% endif %} {{ indicadores.evolucao_presenca|default:0 }}%
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-user-times fa-2x text-warning mb-2"></i>
+                        <h3>{{ indicadores.taxa_evasao|default:0 }}%</h3>
+                        <p class="mb-0">Taxa de Evasão</p>
+                        <small class="{% if indicadores.evolucao_evasao < 0 %}evolucao-positiva{% elif indicadores.evolucao_evasao > 0 %}evolucao-negativa{% else %}evolucao-estavel{% endif %}">
+                            {% if indicadores.evolucao_evasao < 0 %}↗{% elif indicadores.evolucao_evasao > 0 %}↘{% else %}→{% endif %} {{ indicadores.evolucao_evasao|default:0 }}%
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-trophy fa-2x text-info mb-2"></i>
+                        <h3>{{ indicadores.satisfacao_estudantil|default:0 }}</h3>
+                        <p class="mb-0">Satisfação Estudantil</p>
+                        <small class="{% if indicadores.evolucao_satisfacao > 0 %}evolucao-positiva{% elif indicadores.evolucao_satisfacao < 0 %}evolucao-negativa{% else %}evolucao-estavel{% endif %}">
+                            {% if indicadores.evolucao_satisfacao > 0 %}↗{% elif indicadores.evolucao_satisfacao < 0 %}↘{% else %}→{% endif %} {{ indicadores.evolucao_satisfacao|default:0 }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evolução Temporal -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Evolução dos Indicadores</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartEvolucao" width="400" height="150"></canvas>
+            </div>
+        </div>
+
+        <!-- Metas e Objetivos -->
+        {% if metas %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-bullseye"></i> Metas e Objetivos</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for meta in metas %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card meta-card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-target"></i> {{ meta.nome }}
+                                </h6>
+                                <div class="progress mb-2" style="height: 25px;">
+                                    <div class="progress-bar {% if meta.progresso >= 90 %}bg-success{% elif meta.progresso >= 70 %}bg-info{% elif meta.progresso >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ meta.progresso }}%;"
+                                         aria-valuenow="{{ meta.progresso }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ meta.progresso }}%
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span><strong>Atual:</strong> {{ meta.valor_atual }}</span>
+                                    <span><strong>Meta:</strong> {{ meta.valor_meta }}</span>
+                                </div>
+                                <small class="text-muted">{{ meta.prazo }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Ranking por Cursos -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-award"></i> Ranking de Qualidade por Curso</h5>
+            </div>
+            <div class="card-body">
+                <div id="conteudoRanking">
+                    {% include "presencas/partials/ranking_qualidade_cursos.html" %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertas e Recomendações -->
+        {% if alertas %}
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-exclamation-triangle"></i> Alertas e Recomendações</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for alerta in alertas %}
+                    <div class="col-md-4 mb-3">
+                        <div class="alert alert-{% if alerta.tipo == 'critico' %}danger{% elif alerta.tipo == 'atencao' %}warning{% else %}info{% endif %}" role="alert">
+                            <i class="fas fa-{% if alerta.tipo == 'critico' %}times-circle{% elif alerta.tipo == 'atencao' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                            <strong>{{ alerta.titulo }}</strong><br>
+                            {{ alerta.descricao }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<script src="{% static 'presencas/js/filtros_dinamicos.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar filtros
+    configurarFiltros({
+        endpointTurmas: '{% url "ajax_turmas" %}',
+        endpointAnos: '{% url "ajax_anos" %}',
+        endpointFiltro: '{% url "filtrar_indicadores_qualidade" %}',
+        templateRanking: 'presencas/partials/ranking_qualidade_cursos.html'
+    });
+
+    // Gráfico de composição do índice
+    {% if indice_qualidade_geral %}
+    const ctxComposicao = document.getElementById('chartComposicao').getContext('2d');
+    
+    new Chart(ctxComposicao, {
+        type: 'doughnut',
+        data: {
+            labels: ['Aprovação', 'Presença', 'Satisfação', 'Outros'],
+            datasets: [{
+                data: [
+                    {{ indice_qualidade_geral.componente_aprovacao|default:0 }},
+                    {{ indice_qualidade_geral.componente_presenca|default:0 }},
+                    {{ indice_qualidade_geral.componente_satisfacao|default:0 }},
+                    {{ indice_qualidade_geral.componente_outros|default:0 }}
+                ],
+                backgroundColor: [
+                    '#4caf50',
+                    '#2196f3',
+                    '#ff9800',
+                    '#9c27b0'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Gráfico de evolução temporal
+    {% if evolucao_temporal %}
+    const ctxEvolucao = document.getElementById('chartEvolucao').getContext('2d');
+    
+    const dadosEvolucao = [
+        {% for periodo in evolucao_temporal %}
+        {
+            periodo: '{{ periodo.periodo|escapejs }}',
+            aprovacao: {{ periodo.taxa_aprovacao|default:0 }},
+            presenca: {{ periodo.taxa_presenca|default:0 }},
+            evasao: {{ periodo.taxa_evasao|default:0 }},
+            satisfacao: {{ periodo.satisfacao_estudantil|default:0 }}
+        },
+        {% endfor %}
+    ];
+
+    new Chart(ctxEvolucao, {
+        type: 'line',
+        data: {
+            labels: dadosEvolucao.map(d => d.periodo),
+            datasets: [{
+                label: 'Taxa de Aprovação (%)',
+                data: dadosEvolucao.map(d => d.aprovacao),
+                borderColor: '#4caf50',
+                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Taxa de Presença (%)',
+                data: dadosEvolucao.map(d => d.presenca),
+                borderColor: '#2196f3',
+                backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Taxa de Evasão (%)',
+                data: dadosEvolucao.map(d => d.evasao),
+                borderColor: '#f44336',
+                backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Satisfação (0-10)',
+                data: dadosEvolucao.map(d => d.satisfacao * 10), // Converter para percentual
+                borderColor: '#ff9800',
+                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                tension: 0.4,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                x: {
+                    display: true,
+                    title: { display: true, text: 'Período' }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: { display: true, text: 'Percentual (%)' },
+                    min: 0,
+                    max: 100
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: { display: true, text: 'Satisfação (0-100)' },
+                    min: 0,
+                    max: 100,
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

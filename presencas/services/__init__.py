@@ -59,6 +59,5 @@ Contém a lógica de negócios complexa separada das views.
 """
 
 
-from .calculadora_estatisticas import CalculadoraEstatisticas
-
-__all__ = ["CalculadoraEstatisticas"]
+# Este arquivo é mantido vazio para evitar imports circulares
+# Importe os módulos diretamente quando necessário

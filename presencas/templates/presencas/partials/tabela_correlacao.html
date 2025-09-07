@@ -1,0 +1,124 @@
+{% if correlacoes %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Aluno</th>
+                <th>Turma</th>
+                <th>% Presença</th>
+                <th>Nota Estimada</th>
+                <th>Carências</th>
+                <th>Classificação</th>
+                <th>Status Correlação</th>
+                <th>Observações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in correlacoes %}
+            <tr class="{% if item.percentual_presenca >= 85 and item.nota_estimada >= 7 %}correlacao-forte{% elif item.percentual_presenca >= 70 and item.nota_estimada >= 6 %}correlacao-media{% else %}correlacao-fraca{% endif %}">
+                <td>
+                    <strong>{{ item.aluno_nome }}</strong><br>
+                    <small class="text-muted">{{ item.aluno_id }}</small>
+                </td>
+                <td>{{ item.turma|default:"N/A" }}</td>
+                <td>
+                    <span class="badge bg-{% if item.percentual_presenca >= 85 %}success{% elif item.percentual_presenca >= 70 %}warning text-dark{% else %}danger{% endif %}">
+                        {{ item.percentual_presenca|floatformat:1 }}%
+                    </span>
+                </td>
+                <td>
+                    <span class="{% if item.nota_estimada >= 7 %}nota-alta{% elif item.nota_estimada >= 6 %}nota-media{% else %}nota-baixa{% endif %}">
+                        {{ item.nota_estimada|floatformat:1 }}
+                    </span>
+                </td>
+                <td>
+                    {% if item.carencias > 0 %}
+                        <span class="badge bg-danger">{{ item.carencias }}</span>
+                    {% else %}
+                        <span class="badge bg-success">0</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.classificacao == "excelente" %}
+                        <span class="badge bg-success">Excelente</span>
+                    {% elif item.classificacao == "bom" %}
+                        <span class="badge bg-info">Bom</span>
+                    {% elif item.classificacao == "regular" %}
+                        <span class="badge bg-warning text-dark">Regular</span>
+                    {% elif item.classificacao == "preocupante" %}
+                        <span class="badge bg-danger">Preocupante</span>
+                    {% else %}
+                        <span class="badge bg-secondary">N/A</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.percentual_presenca >= 85 and item.nota_estimada >= 7 %}
+                        <i class="fas fa-thumbs-up text-success"></i> Correlação Positiva
+                    {% elif item.percentual_presenca >= 70 and item.nota_estimada >= 6 %}
+                        <i class="fas fa-minus text-warning"></i> Correlação Média
+                    {% elif item.percentual_presenca < 70 and item.nota_estimada < 6 %}
+                        <i class="fas fa-exclamation-triangle text-danger"></i> Correlação Negativa
+                    {% else %}
+                        <i class="fas fa-question text-info"></i> Atípico
+                    {% endif %}
+                </td>
+                <td>
+                    <small class="text-muted">
+                        {% if item.percentual_presenca >= 85 and item.nota_estimada < 6 %}
+                            Alta presença, baixo desempenho - Investigar
+                        {% elif item.percentual_presenca < 70 and item.nota_estimada >= 7 %}
+                            Baixa presença, alto desempenho - Analisar
+                        {% elif item.carencias > 5 %}
+                            Muitas carências - Atenção especial
+                        {% else %}
+                            Comportamento normal
+                        {% endif %}
+                    </small>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-3">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="alert alert-info">
+                <h6><i class="fas fa-chart-line"></i> Análise de Correlação:</h6>
+                <ul class="mb-0">
+                    <li><strong>Correlação Forte:</strong> Presença ≥85% e Nota ≥7.0</li>
+                    <li><strong>Correlação Média:</strong> Presença ≥70% e Nota ≥6.0</li>
+                    <li><strong>Correlação Fraca:</strong> Outros casos</li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="alert alert-warning">
+                <h6><i class="fas fa-exclamation-triangle"></i> Casos Atípicos:</h6>
+                <p class="mb-0">
+                    Alunos com alta presença e baixo desempenho (ou vice-versa) 
+                    podem indicar outros fatores influenciando o aprendizado.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <p class="text-muted">
+        <i class="fas fa-info-circle"></i> 
+        Analisados {{ correlacoes|length }} aluno{{ correlacoes|length|pluralize }}.
+        Correlação calculada usando algoritmos estatísticos e Machine Learning.
+    </p>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+    <h5>Nenhum dado encontrado</h5>
+    <p class="text-muted">
+        Não há dados suficientes para análise de correlação com os filtros selecionados.<br>
+        Tente ajustar os critérios ou aguarde mais dados históricos.
+    </p>
+</div>
+{% endif %}

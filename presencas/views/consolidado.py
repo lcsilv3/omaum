@@ -15,14 +15,15 @@ from django.views.generic import View
 from django.db import transaction
 
 from ..models import PresencaDetalhada
-from presencas.services import CalculadoraEstatisticas
+
+# from presencas.services import CalculadoraEstatisticas  # Temporariamente comentado
 from cursos.models import Curso
 from turmas.models import Turma
 from atividades.models import AtividadeAcademica
 
 try:
     # Assumir que CalculadoraEstatisticas será criado pelo Agente 4
-    from ..services import CalculadoraEstatisticas
+    from ..services.calculadora_estatisticas import CalculadoraEstatisticas
 except ImportError:
     # Fallback se não existir ainda
     class CalculadoraEstatisticas:

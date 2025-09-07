@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block head %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .risco-critico { background-color: #ffebee; border-left: 4px solid #f44336; }
+        .risco-alto { background-color: #fff3e0; border-left: 4px solid #ff9800; }
+        .risco-medio { background-color: #f3e5f5; border-left: 4px solid #9c27b0; }
+        .risco-baixo { background-color: #e8f5e8; border-left: 4px solid #4caf50; }
+        .score-badge { font-weight: bold; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
+        .ml-info { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho com informações de ML -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card ml-info">
+                <div class="card-body">
+                    <h4><i class="fas fa-brain"></i> {{ titulo }}</h4>
+                    <p class="mb-0">Análise preditiva baseada em Machine Learning para identificar alunos com risco de evasão</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Dinâmicos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-filter"></i> Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form id="filtroForm" class="row g-3">
+                <div class="col-md-4">
+                    <label for="ano" class="form-label">Ano:</label>
+                    <select id="ano" name="ano" class="form-select">
+                        <option value="">Todos os anos</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="turma_id" class="form-label">Turma:</label>
+                    <select id="turma_id" name="turma_id" class="form-select">
+                        <option value="">Todas as turmas</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="limite_risco" class="form-label">Limite de Risco (%):</label>
+                    <select id="limite_risco" name="limite_risco" class="form-select">
+                        <option value="60">60% - Padrão</option>
+                        <option value="50">50% - Restritivo</option>
+                        <option value="70">70% - Flexível</option>
+                        <option value="80">80% - Muito flexível</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="button" id="btnFiltrar" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Aplicar Filtros
+                    </button>
+                    <a href="{% url 'exportar_csv_previsao_evasao' %}" class="btn btn-success" id="btnExportar">
+                        <i class="fas fa-download"></i> Exportar CSV
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if erro %}
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i> {{ erro }}
+        </div>
+    {% else %}
+        <!-- Estatísticas de ML -->
+        {% if estatisticas %}
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center risco-critico">
+                    <div class="card-body">
+                        <h3>{{ estatisticas.total_critico|default:0 }}</h3>
+                        <p class="mb-0">Risco Crítico</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center risco-alto">
+                    <div class="card-body">
+                        <h3>{{ estatisticas.total_alto|default:0 }}</h3>
+                        <p class="mb-0">Risco Alto</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center risco-medio">
+                    <div class="card-body">
+                        <h3>{{ estatisticas.total_medio|default:0 }}</h3>
+                        <p class="mb-0">Risco Médio</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center risco-baixo">
+                    <div class="card-body">
+                        <h3>{{ estatisticas.total_baixo|default:0 }}</h3>
+                        <p class="mb-0">Risco Baixo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Gráfico de Distribuição de Riscos -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Distribuição de Riscos de Evasão</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartRiscos" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Lista de Alunos -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-users"></i> Alunos Analisados</h5>
+            </div>
+            <div class="card-body">
+                <div id="conteudoTabela">
+                    {% include "presencas/partials/tabela_previsao_evasao.html" %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script src="{% static 'presencas/js/filtros_dinamicos.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar filtros
+    configurarFiltros({
+        endpointTurmas: '{% url "ajax_turmas" %}',
+        endpointAnos: '{% url "ajax_anos" %}',
+        endpointFiltro: '{% url "filtrar_previsao_evasao" %}',
+        templateTabela: 'presencas/partials/tabela_previsao_evasao.html'
+    });
+
+    // Gráfico de riscos
+    {% if estatisticas %}
+    const ctx = document.getElementById('chartRiscos').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Risco Crítico', 'Risco Alto', 'Risco Médio', 'Risco Baixo'],
+            datasets: [{
+                data: [
+                    {{ estatisticas.total_critico|default:0 }},
+                    {{ estatisticas.total_alto|default:0 }},
+                    {{ estatisticas.total_medio|default:0 }},
+                    {{ estatisticas.total_baixo|default:0 }}
+                ],
+                backgroundColor: ['#f44336', '#ff9800', '#9c27b0', '#4caf50']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

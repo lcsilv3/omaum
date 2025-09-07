@@ -22,7 +22,7 @@ def listar_frequencias(request):
         FrequenciaMensal, _ = get_models()
 
         # Aplicar filtros
-        frequencias = FrequenciaMensal.objects.all().prefetch_related("turmas")
+        frequencias = FrequenciaMensal.objects.all().select_related("turma")
 
         # Filtrar por turma
         turma_id = request.GET.get("turma")
@@ -67,7 +67,7 @@ def listar_frequencias(request):
     except Exception as e:
         logger.error(f"Erro ao listar frequências: {str(e)}", exc_info=True)
         messages.error(request, f"Erro ao listar frequências: {str(e)}")
-        return redirect("home")
+        return redirect("core:home")
 
 
 @login_required
