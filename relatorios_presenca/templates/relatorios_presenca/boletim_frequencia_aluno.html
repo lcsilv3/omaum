@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Boletim de Frequência do Aluno{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Boletim de Frequência do Aluno</h2>
+    <hr>
+    <form id="boletimForm" method="get">
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="curso_id">Curso</label>
+                <select id="curso_id" name="curso_id" class="form-control">
+                    <option value="">Selecione um Curso</option>
+                    {% for curso in cursos %}
+                        <option value="{{ curso.id }}">{{ curso.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>.
+            <div class="form-group col-md-4">
+                <label for="turma_id">Turma</label>
+                <select id="turma_id" name="turma_id" class="form-control" disabled>
+                    <option value="">Selecione uma Turma</option>
+                </select>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="aluno_id">Aluno</label>
+                <select id="aluno_id" name="aluno_id" class="form-control" disabled>
+                    <option value="">Selecione um Aluno</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="mes">Mês</label>
+                <input type="number" min="1" max="12" class="form-control" id="mes" name="mes" required>
+            </div>
+            <div class="form-group col-md-3">
+                <label for="ano">Ano</label>
+                <input type="number" class="form-control" id="ano" name="ano" required>
+            </div>
+            <div class="form-group col-md-3 align-self-end">
+                <button type="button" id="btnBuscar" class="btn btn-primary">Buscar</button>
+            </div>
+            <div class="form-group col-md-3 align-self-end">
+                <button type="button" id="btnExportarCSV" class="btn btn-success">Exportar CSV</button>
+                <button type="button" id="btnExportarPDF" class="btn btn-danger">Exportar PDF</button>
+            </div>
+        </div>
+    </form>
+    <div id="tabela-boletim">
+        {% include 'relatorios_presenca/_boletim_frequencia_aluno_tabela.html' %}
+    </div>
+</div>
+<script src="{% static 'relatorios_presenca/js/filtros_dinamicos.js' %}"></script>
+<script>
+// TODO: JS para buscar e exportar boletim via AJAX
+</script>
+{% endblock %}

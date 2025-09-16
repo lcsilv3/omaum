@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.apps import apps
 
-from presencas.models import Presenca, ConvocacaoPresenca
+from presencas.models import RegistroPresenca
 from presencas.repositories.presenca_repo import (
     mapa_presencas_periodo,
     mapa_convocacoes_periodo,
@@ -55,7 +55,7 @@ def editar_presencas_lote(request):
     Curso = get_model_class("Curso")
 
     # Obter anos e meses únicos onde há presenças registradas
-    anos_disponiveis = Presenca.objects.dates("data", "year").distinct()
+    anos_disponiveis = RegistroPresenca.objects.dates("data", "year").distinct()
     anos = [ano.year for ano in anos_disponiveis]
     anos.sort(reverse=True)
 
@@ -90,7 +90,7 @@ def editar_presencas_lote(request):
         primeiro_dia = date(int(ano), int(mes), 1)
         ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
 
-        presencas_existentes = Presenca.objects.filter(
+    presencas_existentes = RegistroPresenca.objects.filter(
             turma_id=turma_id, data__range=[primeiro_dia, ultimo_dia]
         ).count()
 

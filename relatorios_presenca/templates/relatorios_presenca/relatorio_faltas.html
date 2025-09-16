@@ -1,0 +1,101 @@
+
+{% extends 'base.html' %}
+{% block title %}Relatório de Faltas{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Relatório de Faltas</h2>
+  <hr>
+  <form id="filtroFaltasForm" method="get" class="mb-4">
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="turma_id">Turma</label>
+        <select id="turma_id" name="turma_id" class="form-control">
+          <option value="">Todas</option>
+          {% for turma in turmas %}
+            <option value="{{ turma.id }}" {% if turma.id|stringformat:'s' == request.GET.turma_id %}selected{% endif %}>{{ turma.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group col-md-3">
+        <label for="data_inicio">Data Início</label>
+        <input type="date" id="data_inicio" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
+      </div>
+      <div class="form-group col-md-3">
+        <label for="data_fim">Data Fim</label>
+        <input type="date" id="data_fim" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
+      </div>
+      <div class="form-group col-md-2 align-self-end d-flex flex-column">
+        <button type="button" id="btnBuscarFaltas" class="btn btn-primary mb-2" aria-label="Buscar">Buscar</button>
+        <button type="button" id="btnExportarCSVFaltas" class="btn btn-success mb-2" aria-label="Exportar CSV">Exportar CSV</button>
+        <button type="button" id="btnExportarPDFFaltas" class="btn btn-danger" aria-label="Exportar PDF">Exportar PDF</button>
+      </div>
+    </div>
+  </form>
+
+  <div id="tabela-faltas">
+    {% if resultados %}
+    <div class="table-responsive">
+      <table class="table table-striped table-bordered table-hover table-sm" aria-label="Tabela de alunos com mais faltas">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col">Aluno</th>
+            <th scope="col">Turma</th>
+            <th scope="col">Faltas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in resultados %}
+          <tr>
+            <td>{{ r.aluno.nome }}</td>
+            <td>{{ r.turma.nome }}</td>
+            <td>{{ r.faltas }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% elif request.GET %}
+      <div class="alert alert-warning">Nenhum resultado encontrado para os filtros selecionados.</div>
+    {% endif %}
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('filtroFaltasForm');
+  const btnBuscar = document.getElementById('btnBuscarFaltas');
+  const btnExportarCSV = document.getElementById('btnExportarCSVFaltas');
+  const btnExportarPDF = document.getElementById('btnExportarPDFFaltas');
+  const tabela = document.getElementById('tabela-faltas');
+
+  function montarQueryString() {
+    const params = new URLSearchParams(new FormData(form));
+    return params.toString();
+  }
+
+  btnBuscar.addEventListener('click', function() {
+    tabela.innerHTML = '<div class="text-center my-3"><div class="spinner-border text-primary" role="status"><span class="sr-only">Carregando...</span></div><div>Carregando...</div></div>';
+    fetch(window.location.pathname + '?' + montarQueryString(), { credentials: 'same-origin' })
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const novaTabela = doc.getElementById('tabela-faltas');
+        tabela.innerHTML = novaTabela ? novaTabela.innerHTML : '<div class="alert alert-danger">Erro ao carregar resultados.</div>';
+      })
+      .catch(() => {
+        tabela.innerHTML = '<div class="alert alert-danger">Erro ao buscar resultados.</div>';
+      });
+  });
+
+  btnExportarCSV.addEventListener('click', function() {
+    const url = window.location.pathname + '?' + montarQueryString() + '&formato=csv';
+    window.open(url, '_blank');
+  });
+  btnExportarPDF.addEventListener('click', function() {
+    const url = window.location.pathname + '?' + montarQueryString() + '&formato=pdf';
+    window.open(url, '_blank');
+  });
+});
+</script>
+</div>
+{% endblock %}

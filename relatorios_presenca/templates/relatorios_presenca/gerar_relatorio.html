@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gerar Relatório de Presença{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Gerar Relatório Consolidado de Presença</h2>
+    <hr>
+    <form id="relatorioForm" action="{% url 'relatorios_presenca:exportar_relatorio_consolidado' %}" method="post">
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="curso_id">Curso</label>
+                <select id="curso_id" name="curso_id" class="form-control">
+                    <option value="">Selecione um Curso</option>
+                    {% for curso in cursos %}
+                        <option value="{{ curso.id }}">{{ curso.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="turma_id">Turma</label>
+                <select id="turma_id" name="turma_id" class="form-control" disabled>
+                    <option value="">Selecione uma Turma</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="aluno_id">Aluno (Opcional)</label>
+                <select id="aluno_id" name="aluno_id" class="form-control" disabled>
+                    <option value="">Selecione um Aluno</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="data_inicio">Data de Início</label>
+                <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="data_fim">Data de Fim</label>
+                <input type="date" class="form-control" id="data_fim" name="data_fim" required>
+            </div>
+        </div>
+        <input type="hidden" id="formato_exportacao" name="formato" value="excel">
+        <button type="button" id="gerarRelatorioBtn" class="btn btn-info mt-3">Gerar Relatório</button>
+        <button type="button" id="exportarExcelBtn" class="btn btn-primary mt-3">Exportar Excel</button>
+        <button type="button" id="exportarCsvBtn" class="btn btn-secondary mt-3">Exportar CSV</button>
+    </form>
+
+    <div id="relatorio-tabela-container" class="mt-4">
+        <!-- A tabela será carregada aqui via AJAX -->
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'relatorios_presenca/js/filtros_dinamicos.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const gerarRelatorioBtn = document.getElementById('gerarRelatorioBtn');
+        const exportarExcelBtn = document.getElementById('exportarExcelBtn');
+        const exportarCsvBtn = document.getElementById('exportarCsvBtn');
+        const relatorioForm = document.getElementById('relatorioForm');
+        const relatorioTabelaContainer = document.getElementById('relatorio-tabela-container');
+        const formatoExportacaoInput = document.getElementById('formato_exportacao');
+
+        function validarCampos() {
+            const turmaId = document.getElementById('turma_id').value;
+            const dataInicio = document.getElementById('data_inicio').value;
+            const dataFim = document.getElementById('data_fim').value;
+
+            if (!turmaId || !dataInicio || !dataFim) {
+                alert('Por favor, preencha todos os campos obrigatórios (Turma, Data de Início, Data de Fim).');
+                return false;
+            }
+            return true;
+        }
+
+        if (gerarRelatorioBtn) {
+            gerarRelatorioBtn.addEventListener('click', function() {
+                if (!validarCampos()) return;
+
+                const turmaId = document.getElementById('turma_id').value;
+                const dataInicio = document.getElementById('data_inicio').value;
+                const dataFim = document.getElementById('data_fim').value;
+
+                const url = `/relatorios-presenca/ajax/consolidado-tabela/?turma_id=${turmaId}&data_inicio=${dataInicio}&data_fim=${dataFim}`;
+                
+                fetch(url)
+                    .then(response => response.text())
+                    .then(html => {
+                        relatorioTabelaContainer.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar a tabela:', error);
+                        relatorioTabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar o relatório. Tente novamente.</p>';
+                    });
+            });
+        }
+
+        if (exportarExcelBtn) {
+            exportarExcelBtn.addEventListener('click', function() {
+                if (!validarCampos()) return;
+                formatoExportacaoInput.value = 'excel';
+                relatorioForm.submit();
+            });
+        }
+
+        if (exportarCsvBtn) {
+            exportarCsvBtn.addEventListener('click', function() {
+                if (!validarCampos()) return;
+                formatoExportacaoInput.value = 'csv';
+                relatorioForm.submit();
+            });
+        }
+    });
+</script>
+{% endblock %}

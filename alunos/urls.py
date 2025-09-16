@@ -1,6 +1,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views, api_views
+from .views_simple import (
+    listar_alunos_simple,
+    criar_aluno_simple,
+    detalhar_aluno_simple,
+    editar_aluno_simple,
+    excluir_aluno_simple,
+)
 from .views.localidade_api import (
     search_paises,
     search_estados,
@@ -18,6 +25,14 @@ router.register(r"", api_views.AlunoViewSet, basename="aluno")
 urlpatterns = [
     # Sistema completo como padrão
     path("", views.listar_alunos_view, name="listar_alunos"),
+    # CRUD simplificado para testes automatizados (compatível com test_alunos_simple.py)
+    path("simple/", listar_alunos_simple, name="listar_alunos_simple"),
+    path("simple/criar/", criar_aluno_simple, name="criar_aluno_simple"),
+    path("simple/<str:cpf>/", detalhar_aluno_simple, name="detalhar_aluno_simple"),
+    path("simple/<str:cpf>/editar/", editar_aluno_simple, name="editar_aluno_simple"),
+    path(
+        "simple/<str:cpf>/excluir/", excluir_aluno_simple, name="excluir_aluno_simple"
+    ),
     # CRUD de Tipos e Códigos
     path("tipos-codigos/", include("alunos.urls_codigos")),
     path("criar/", views.criar_aluno, name="criar_aluno"),

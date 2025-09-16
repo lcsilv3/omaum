@@ -20,7 +20,7 @@ from presencas.forms import (
 )
 from django.apps import apps
 from turmas.models import Turma
-from presencas.models import TotalAtividadeMes, ObservacaoPresenca, Presenca
+from presencas.models import TotalAtividadeMes, ObservacaoPresenca
 from alunos.models import Aluno
 
 
@@ -30,7 +30,7 @@ from alunos.models import Aluno
 @csrf_exempt
 def toggle_convocacao_ajax(request):
     import json
-    from presencas.models import ConvocacaoPresenca
+    # from presencas.models import ConvocacaoPresenca  # Modelo removido
 
     try:
         data = json.loads(request.body)
@@ -1210,7 +1210,7 @@ def editar_presenca_dados_basicos(request, pk):
     from presencas.forms import EditarPresencaIndividualForm
     from presencas.permissions import PresencaPermissionEngine
 
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
     # Verificar permissões usando o engine
     pode_editar, motivo_edicao = PresencaPermissionEngine.pode_alterar_presenca(
@@ -1250,7 +1250,7 @@ def editar_presenca_totais_atividades(request, pk):
     from presencas.models import Presenca
     from presencas.permissions import PresencaPermissionEngine
 
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
     # Verificar permissões
     pode_editar, motivo_edicao = PresencaPermissionEngine.pode_alterar_presenca(
@@ -1273,7 +1273,7 @@ def editar_presenca_dias_atividades(request, pk):
     from presencas.forms import EditarPresencaIndividualForm
     from presencas.permissions import PresencaPermissionEngine
 
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
     # Verificar permissões
     pode_editar, motivo_edicao = PresencaPermissionEngine.pode_alterar_presenca(
@@ -1323,7 +1323,7 @@ def detalhar_presenca_dados_basicos(request, pk):
     from presencas.models import Presenca
     from presencas.permissions import PresencaPermissionEngine
 
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
     pode_editar, motivo_edicao = PresencaPermissionEngine.pode_alterar_presenca(
         presenca, request.user
     )

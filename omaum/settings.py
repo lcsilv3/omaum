@@ -86,7 +86,7 @@ INSTALLED_APPS = [
     "notas",
     "pagamentos",
     "presencas",
-    "relatorios",
+    "relatorios_presenca.apps.RelatoriosPresencaConfig",
     "turmas",
     # Third party apps
     "rest_framework",

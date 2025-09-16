@@ -31,13 +31,13 @@ class Turma(models.Model):
     num_livro = models.PositiveIntegerField(
         blank=True, null=True, verbose_name="Nº do Livro de Presenças"
     )
-    perc_carencia = models.DecimalField(
+    perc_presenca_minima = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         blank=True,
         null=True,
-        verbose_name="Percentual de Carência (%)",
-        help_text="Percentual mínimo de faltas permitido para a turma.",
+        verbose_name="Percentual Mínimo de Presença (%)",
+        help_text="Percentual mínimo de presenças permitido para a turma",
     )
     data_iniciacao = models.DateField(
         blank=True, null=True, verbose_name="Data de Iniciação"

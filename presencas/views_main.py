@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.db.models import F
 
 from atividades.models import Atividade
-from presencas.models import ObservacaoPresenca, Presenca
+from presencas.models import RegistroPresenca
 from alunos.services import (
     listar_alunos as listar_alunos_service,
     buscar_aluno_por_cpf as buscar_aluno_por_cpf_service,
@@ -42,7 +42,9 @@ def listar_presencas_academicas(request):
     else:
         # Query otimizada com relacionamentos e agregações
         presencas_qs = (
-            Presenca.objects.select_related("aluno", "turma__curso", "atividade")
+            RegistroPresenca.objects.select_related(
+                "aluno", "turma__curso", "atividade"
+            )
             .prefetch_related(
                 "aluno__historicos"  # Se necessário para dados relacionados
             )
@@ -139,7 +141,7 @@ def registrar_presenca_academica(request):
                 messages.error(request, f"Aluno com CPF {aluno_id} não encontrado.")
                 return redirect("presencas:listar_presencas_academicas")
 
-            presenca, created = Presenca.objects.get_or_create(
+            presenca, created = RegistroPresenca.objects.get_or_create(
                 aluno=aluno,
                 turma=turma,
                 atividade=atividade,
@@ -156,15 +158,7 @@ def registrar_presenca_academica(request):
                 presenca.data_registro = timezone.now()
             presenca.save()
             if observacao:
-                ObservacaoPresenca.objects.create(
-                    aluno=aluno,
-                    turma=turma,
-                    data=data,
-                    atividade=atividade,
-                    texto=observacao,
-                    registrado_por=request.user.username,
-                    data_registro=timezone.now(),
-                )
+                pass  # Observação: funcionalidade de observação desativada, modelo removido
             messages.success(request, "Presença registrada com sucesso!")
             return redirect("presencas:listar_presencas_academicas")
         except (Turma.DoesNotExist, Atividade.DoesNotExist) as e:
@@ -200,7 +194,7 @@ def registrar_presenca_academica(request):
 
 @login_required
 def editar_presenca_academica(request, pk):
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
     if request.method == "POST":
         # Lógica de edição
@@ -221,7 +215,7 @@ def editar_presenca_academica(request, pk):
 
 @login_required
 def excluir_presenca_academica(request, pk):
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
     if request.method == "POST":
         presenca.delete()
@@ -236,7 +230,7 @@ def excluir_presenca_academica(request, pk):
 
 @login_required
 def detalhar_presenca_academica(request, pk):
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
     context = {"presenca": presenca}
     return render(
         request, "presencas/academicas/detalhar_presenca_academica.html", context
@@ -247,13 +241,6 @@ def detalhar_presenca_academica(request, pk):
 
 
 @login_required
-def listar_observacoes_presenca(request):
-    """Lista todas as observações de presença."""
-    observacoes = ObservacaoPresenca.objects.all().order_by("-data_registro")
-    context = {"observacoes": observacoes}
-    return render(request, "presencas/listar_observacoes_presenca.html", context)
-
-
 # ===== FUNÇÕES PLACEHOLDER - IMPLEMENTAÇÃO FUTURA =====
 
 

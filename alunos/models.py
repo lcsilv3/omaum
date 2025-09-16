@@ -130,7 +130,6 @@ class Bairro(models.Model):
         related_name="bairros",
         verbose_name=_("Cidade"),
     )
-    # Campo opcional para referência externa futura (IBGE ou outro)
     codigo_externo = models.CharField(
         max_length=30, blank=True, null=True, verbose_name=_("Código Externo")
     )
@@ -145,8 +144,8 @@ class Bairro(models.Model):
             models.Index(fields=["cidade"]),
         ]
 
-    def __str__(self):  # pragma: no cover
-        return f"{self.nome} - {self.cidade.nome}/{self.cidade.estado.codigo}"
+    def __str__(self):
+        return f"{self.nome} - {self.cidade.nome}/{self.cidade.estado.codigo}"  # pragma: no cover
 
 
 class Aluno(models.Model):
@@ -170,20 +169,18 @@ class Aluno(models.Model):
     ]
 
     SITUACAO_CHOICES = [
-        ("ATIVO", "Ativo"),
-        ("AFASTADO", "Afastado"),
-        ("ESPECIAIS", "Especiais"),
-        ("EXCLUIDO", "Excluído"),
-        ("FALECIDO", "Falecido"),
-        ("LOI", "LOI"),
+        ("a", "Ativo"),
+        ("d", "Desligado"),
+        ("f", "Falecido"),
+        ("e", "Excluído"),
     ]
 
     cpf_validator = RegexValidator(
-        regex=r"^\d{11}$", message=_("CPF deve conter 11 dígitos numéricos")
+        regex=r"^\\d{11}$", message=_("CPF deve conter 11 dígitos numéricos")
     )
 
     celular_validator = RegexValidator(
-        regex=r"^\d{10,11}$", message=_("Número de celular inválido")
+        regex=r"^\\d{10,11}$", message=_("Número de celular inválido")
     )
 
     # Campos básicos
@@ -210,19 +207,18 @@ class Aluno(models.Model):
         max_length=1, choices=SEXO_CHOICES, default="M", verbose_name=_("Sexo")
     )
     situacao = models.CharField(
-        max_length=10,
+        max_length=1,
         choices=SITUACAO_CHOICES,
-        default="ATIVO",
-        verbose_name=_("Situação"),
+        default="a",
+        verbose_name="Situação do Aluno",
     )
 
     # Campos iniciáticos
     numero_iniciatico = models.CharField(
-        max_length=10,
+        max_length=20,
         unique=True,
-        null=True,
-        blank=True,
-        verbose_name=_("Número Iniciático"),
+        verbose_name="Número Iniciático",
+        help_text="Número único de identificação iniciática",
     )
     nome_iniciatico = models.CharField(
         max_length=100,
@@ -260,7 +256,6 @@ class Aluno(models.Model):
         max_length=50, blank=True, null=True, verbose_name=_("Complemento")
     )
     cep = models.CharField(max_length=8, verbose_name=_("CEP"), blank=True, null=True)
-    # Novas referências normalizadas (opcionais) - coexistem com campos texto legados
     cidade_ref = models.ForeignKey(
         Cidade,
         on_delete=models.SET_NULL,
@@ -360,7 +355,7 @@ class Aluno(models.Model):
     )
     situacao_iniciatica = models.CharField(
         max_length=20,
-        default="ATIVO",
+        default="a",
         choices=SITUACAO_CHOICES,
         verbose_name=_("Situação Iniciática"),
     )
@@ -425,7 +420,7 @@ class Aluno(models.Model):
     @property
     def esta_ativo(self):
         """Verifica se o aluno está ativo."""
-        return self.situacao == "ATIVO"
+        return self.situacao == "a"
 
     @property
     def pode_ser_instrutor(self):
@@ -486,68 +481,8 @@ class Aluno(models.Model):
                 {"data_nascimento": _("A data de nascimento não pode ser no futuro.")}
             )
 
-        # A lógica de validação de consistência foi removida após a migração dos dados.
-        # O código foi mantido comentado para referência futura, se necessário.
-        #
-        # if self.pais_nacionalidade and self.nacionalidade:
-        #     # Se ambos estão preenchidos, verificar se são consistentes
-        #     if (
-        #         self.nacionalidade.lower()
-        #         != self.pais_nacionalidade.nacionalidade.lower()
-        #     ):
-        #         raise ValidationError(
-        #             {
-        #                 "nacionalidade": _(
-        #                     "A nacionalidade em texto deve ser consistente com o país selecionado."
-        #                 )
-        #             }
-        #         )
-
     def save(self, *args, **kwargs):
         """Override do save para lógicas automáticas."""
-
-        # Lógica de sincronização removida após a migração dos dados.
-        # O código foi mantido comentado para referência futura, se necessário.
-
-        # # Sincronizar nacionalidade
-        # if self.pais_nacionalidade and not self.nacionalidade:
-        #     self.nacionalidade = self.pais_nacionalidade.nacionalidade
-        #
-        # # Sincronizar naturalidade
-        # if self.cidade_naturalidade and not self.naturalidade:
-        #     self.naturalidade = self.cidade_naturalidade.nome_completo
-        #
-        # # Sincronizar cidade/bairro normalizados -> texto
-        # if self.cidade_ref and not self.cidade:
-        #     self.cidade = self.cidade_ref.nome
-        #     if self.cidade_ref.estado and not self.estado:
-        #         self.estado = self.cidade_ref.estado.codigo
-        # if self.bairro_ref and not self.bairro:
-        #     self.bairro = self.bairro_ref.nome
-        #     # Se não houver cidade_ref tentar inferir
-        #     if not self.cidade_ref:
-        #         self.cidade_ref = self.bairro_ref.cidade
-        #         if not self.cidade:
-        #             self.cidade = self.cidade_ref.nome
-        #         if self.cidade_ref.estado and not self.estado:
-        #             self.estado = self.cidade_ref.estado.codigo
-        #
-        # # Caso texto exista e ref vazia, tentar auto-vincular (best-effort)
-        # if self.cidade and not self.cidade_ref:
-        #     try:
-        #         self.cidade_ref = Cidade.objects.filter(
-        #             nome__iexact=self.cidade
-        #         ).first()
-        #     except Exception:
-        #         pass
-        # if self.bairro and not self.bairro_ref and self.cidade_ref:
-        #     try:
-        #         self.bairro_ref = self.cidade_ref.bairros.filter(
-        #             nome__iexact=self.bairro
-        #         ).first()
-        #     except Exception:
-        #         pass
-
         super().save(*args, **kwargs)
 
 
@@ -562,8 +497,8 @@ class TipoCodigo(models.Model):
         verbose_name_plural = _("Tipos de Códigos")
         ordering = ["nome"]
 
-    def __str__(self):  # pragma: no cover
-        return str(self.nome)
+    def __str__(self):
+        return str(self.nome)  # pragma: no cover
 
 
 class Codigo(models.Model):
@@ -583,10 +518,10 @@ class Codigo(models.Model):
         verbose_name_plural = _("Códigos")
         ordering = ["tipo_codigo__nome", "nome"]
 
-    def __str__(self):  # pragma: no cover
+    def __str__(self):
         if self.descricao:
             return f"{self.nome} - {self.descricao}"
-        return str(self.nome)
+        return str(self.nome)  # pragma: no cover
 
 
 class RegistroHistorico(models.Model):

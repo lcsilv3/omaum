@@ -4,7 +4,7 @@ from cursos.models import Curso
 from turmas.models import Turma
 from atividades.models import AtividadeAcademica
 from alunos.models import Aluno
-from presencas.models import Presenca
+from presencas.models import RegistroPresenca
 
 
 def listar_presencas_academicas(request):
@@ -15,7 +15,7 @@ def listar_presencas_academicas(request):
 
             with transaction.atomic():
                 # Corrigir presenças sem turma quando há atividade
-                presencas_sem_turma = Presenca.objects.filter(
+                presencas_sem_turma = RegistroPresenca.objects.filter(
                     turma__isnull=True, atividade__isnull=False
                 ).select_related("atividade")
 
@@ -63,7 +63,7 @@ def listar_presencas_academicas(request):
     data_fim = request.GET.get("data_fim")
 
     # Query otimizada para presenças com relacionamentos
-    presencas = Presenca.objects.select_related(
+    presencas = RegistroPresenca.objects.select_related(
         "aluno", "turma__curso", "atividade"
     ).all()
 

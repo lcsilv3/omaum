@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 {% load static %}
 {% load perms_extras %}
@@ -71,10 +70,7 @@
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="frequenciaDropdown">
                                 <li><a class="dropdown-item" href="{% url 'atividades:listar_atividades' %}">Atividades</a></li>
-                                <li><a class="dropdown-item" href="{% url 'presencas:listar_presencas_academicas' %}">Presenças</a></li>
-                                <li><a class="dropdown-item" href="{% url 'frequencias:listar_frequencias' %}">Frequências</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'presencas:painel_estatisticas' %}"><i class="fas fa-chart-line"></i> PAINEL de Estatísticas</a></li>
+                                <li><a class="dropdown-item" href="{% url 'relatorios_presenca:relatorio_form' %}">Relatórios de Presença</a></li>
                             </ul>
                         </li>
                         <!-- Avaliação e Financeiro -->
@@ -89,16 +85,34 @@
                                 <li><a class="dropdown-item" href="{% url 'pagamentos:relatorio_financeiro' %}">Relatório Financeiro</a></li>
                             </ul>
                         </li>
-                        <!-- Relatórios e Análises -->
+                        {% endif %}
+                    </ul>
+                    <!-- Menu Relatórios Centralizado -->
+                    {% load relatorios_menu %}
+                    <ul class="navbar-nav">
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="relatoriosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Relatórios e Análises
+                                <i class="fas fa-chart-bar"></i> Relatórios
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="relatoriosDropdown">
-                                <li><a class="dropdown-item" href="{% url 'relatorios:listar_relatorios' %}">Relatórios</a></li>
+                                {% for relatorio in listar_relatorios %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url relatorio.url %}">
+                                            {{ relatorio.nome }}
+                                        </a>
+                                        <small class="text-muted ms-2">{{ relatorio.descricao }}</small>
+                                        {% if relatorio.exportacoes %}
+                                            <div class="ms-3">
+                                                {% for tipo in relatorio.exportacoes %}
+                                                    <a href="{% url relatorio.url %}?export={{ tipo }}" class="badge bg-secondary text-light ms-1">{{ tipo|upper }}</a>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                {% endfor %}
                             </ul>
                         </li>
-                        {% endif %}
                     </ul>
                     <ul class="navbar-nav">
                         {% if user.is_authenticated %}

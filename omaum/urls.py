@@ -20,7 +20,10 @@ urlpatterns = [
     path("frequencias/", include("frequencias.urls", namespace="frequencias")),
     path("atividades/", include("atividades.urls", namespace="atividades")),
     path("presencas/", include("presencas.urls", namespace="presencas")),
-    path("relatorios/", include("relatorios.urls", namespace="relatorios")),
+    path(
+        "relatorios-presenca/",
+        include("relatorios_presenca.urls", namespace="relatorios_presenca"),
+    ),
     path("notas/", include("notas.urls", namespace="notas")),
     path("pagamentos/", include("pagamentos.urls", namespace="pagamentos")),
     # URLs de autenticação do Django
