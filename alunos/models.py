@@ -543,12 +543,7 @@ class RegistroHistorico(models.Model):
         max_length=50, blank=True, null=True, verbose_name=_("Ordem de Serviço")
     )
     data_os = models.DateField(verbose_name=_("Data da Ordem de Serviço"))
-    numero_iniciatico = models.CharField(
-        max_length=10, null=True, blank=True, verbose_name=_("Número Iniciático")
-    )
-    nome_iniciatico = models.CharField(
-        max_length=100, null=True, blank=True, verbose_name=_("Nome Iniciático")
-    )
+    # Removido: numero_iniciatico e nome_iniciatico (agora apenas no modelo Aluno)
     observacoes = models.TextField(blank=True, null=True, verbose_name=_("Observações"))
     created_at = models.DateTimeField(
         auto_now_add=True, verbose_name=_("Data do Registro")

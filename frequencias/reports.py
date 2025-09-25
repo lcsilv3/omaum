@@ -3,7 +3,7 @@ RELATORIOS = [
     {
         "nome": "Frequência Mensal",
         "descricao": "Relatório de frequência mensal",
-        "url": "frequencias:relatorio_mensal",
+        "url": "frequencias:relatorio_frequencias",
         "exportacoes": ["csv", "pdf"],
     },
 ]

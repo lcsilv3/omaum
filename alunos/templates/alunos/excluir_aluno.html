@@ -48,7 +48,7 @@
   <form method="post">
       {% csrf_token %}
       <div class="d-flex justify-content-between">
-          <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary">
+          <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary">Cancelar (CPF: {{ aluno.cpf|mask_cpf }})
               <i class="fas fa-times"></i> Cancelar
           </a>
           <button type="submit" class="btn btn-danger" {% if dependencias.matriculas|length > 0 or dependencias.notas|length > 0 or dependencias.presencas|length > 0 or dependencias.pagamentos|length > 0 or dependencias.punicoes|length > 0 %}disabled{% endif %}>

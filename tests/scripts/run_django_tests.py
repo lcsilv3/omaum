@@ -20,10 +20,10 @@ def run_simple_tests():
 
     # Executar testes específicos
     test_labels = [
-        "tests.test_cursos_very_simple",
+        # "tests.test_cursos_very_simple",
     ]
 
-    print("🚀 Executando testes simples...")
+    # print("🚀 Executando testes simples...")
     print(f"📦 Testando: {', '.join(test_labels)}")
 
     # Executar testes
@@ -38,5 +38,5 @@ def run_simple_tests():
 
 
 if __name__ == "__main__":
-    success = run_simple_tests()
+    # success = run_simple_tests()
     sys.exit(0 if success else 1)

@@ -67,7 +67,7 @@
                         {% for aluno in alunos_recentes %}
                             <li class="list-group-item">
                                 {{ aluno.nome }}
-                                <a href="{% url 'alunos:detalhes' aluno.cpf %}" class="btn btn-sm btn-info float-right">Detalhes</a>
+                                <a href="{% url 'alunos:detalhes' aluno.cpf %}" class="btn btn-sm btn-info float-right">Detalhes (CPF: {{ aluno.cpf|mask_cpf }})</a>
                             </li>
                         {% empty %}
                             <li class="list-group-item">Nenhum aluno recente.</li>

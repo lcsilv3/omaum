@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{% if aluno and aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
+{% block title %}{% if aluno and aluno.cpf %}Editar (CPF: {{ aluno.cpf|mask_cpf }}){% else %}Novo{% endif %} Aluno{% endblock %}
 
 {# ---- CSS / media do form ---- #}
 {% block form_media_css %}
@@ -15,7 +15,7 @@
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{% if aluno and aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno</h1>
+    <h1>{% if aluno and aluno.cpf %}Editar (CPF: {{ aluno.cpf|mask_cpf }}){% else %}Novo{% endif %} Aluno</h1>
         <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Voltar para a lista
         </a>
@@ -80,6 +80,38 @@
             </div>
         </div>
 
+        <!-- Seção: Dados Iniciáticos Principais -->
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-dark text-decoration-none" data-bs-toggle="collapse" href="#dados-iniciaticos-principais" role="button" aria-expanded="true" aria-controls="dados-iniciaticos-principais">
+                        <span class="chevron" style="transform: rotate(90deg)">▶</span> Dados Iniciáticos Principais <small class="text-muted">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="dados-iniciaticos-principais" class="card-body collapse show">
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.numero_iniciatico %}
+                    </div>
+                    <div class="col-md-8">
+                        {% include 'includes/form_field.html' with field=form.nome_iniciatico %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.grau_atual %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.situacao_iniciatica %}
+                    </div>
+                    <div class="col-md-4">
+                        {% include 'includes/form_field.html' with field=form.grau_atual_automatico %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Seção: Dados Iniciáticos (Histórico) -->
         <div class="card mb-4 border-info">
             <div class="card-header bg-info text-white">
@@ -103,39 +135,39 @@
                                             <small class="form-text text-muted">Selecione primeiro um tipo para filtrar os códigos</small>
                                         </div>
                                     </div>
-                                    <div class="col-md-3 codigo-wrapper">
-                                        <div class="mb-3">
-                                            <label for="{{ hform.codigo.id_for_label }}" class="form-label fw-semibold small">Código</label>
-                                            {{ hform.codigo }}
+                                        <div class="col-md-3 codigo-wrapper">
+                                            <div class="mb-3">
+                                                <label for="{{ hform.codigo.id_for_label }}" class="form-label fw-semibold small">Código</label>
+                                                {{ hform.codigo }}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-2 ordem-wrapper">
-                                        <div class="mb-3">
-                                            <label for="{{ hform.ordem_servico.id_for_label }}" class="form-label fw-semibold small">Ordem de Serviço</label>
-                                            {{ hform.ordem_servico }}
+                                        <div class="col-md-2 ordem-wrapper">
+                                            <div class="mb-3">
+                                                <label for="{{ hform.ordem_servico.id_for_label }}" class="form-label fw-semibold small">Ordem de Serviço</label>
+                                                {{ hform.ordem_servico }}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-2 data-wrapper">
-                                        <div class="mb-3">
-                                            <label for="{{ hform.data_os.id_for_label }}" class="form-label fw-semibold small">Data (O.S.)</label>
-                                            {{ hform.data_os }}
+                                        <div class="col-md-2 data-wrapper">
+                                            <div class="mb-3">
+                                                <label for="{{ hform.data_os.id_for_label }}" class="form-label fw-semibold small">Data (O.S.)</label>
+                                                {{ hform.data_os }}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-2 d-flex align-items-end justify-content-start gap-2 action-wrapper">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold small">Ações</label><br>
-                                            {% if hform.instance.pk %}
-                                                <div class="form-check">
-                                                    {{ hform.DELETE|default_if_none:'' }}
-                                                    <label class="form-check-label" for="{{ hform.DELETE.id_for_label|default_if_none:'' }}">Remover?</label>
-                                                </div>
-                                            {% else %}
-                                                <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
-                                                    <i class="fas fa-trash"></i> Remover
-                                                </button>
-                                            {% endif %}
+                                        <div class="col-md-2 d-flex align-items-end justify-content-start gap-2 action-wrapper">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Ações</label><br>
+                                                {% if hform.instance.pk %}
+                                                    <div class="form-check">
+                                                        {{ hform.DELETE|default_if_none:'' }}
+                                                        <label class="form-check-label" for="{{ hform.DELETE.id_for_label|default_if_none:'' }}">Remover?</label>
+                                                    </div>
+                                                {% else %}
+                                                    <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
+                                                        <i class="fas fa-trash"></i> Remover
+                                                    </button>
+                                                {% endif %}
+                                            </div>
                                         </div>
-                                    </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-12">
@@ -303,7 +335,7 @@
 
         <div class="d-flex justify-content-between mb-5">
             <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
-            <button type="submit" class="btn btn-primary" id="btn-salvar"><i class="fas fa-save"></i> {% if aluno and aluno.cpf %}Atualizar{% else %}Cadastrar{% endif %} Aluno</button>
+            <button type="submit" class="btn btn-primary" id="btn-salvar"><i class="fas fa-save"></i> {% if aluno and aluno.cpf %}Atualizar (CPF: {{ aluno.cpf|mask_cpf }}){% else %}Cadastrar{% endif %} Aluno</button>
         </div>
     </form>
 </div>

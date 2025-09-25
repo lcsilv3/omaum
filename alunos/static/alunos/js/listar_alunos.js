@@ -1,4 +1,22 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Função para buscar e atualizar os cards de relatórios no modal
+    function atualizarCardsRelatorios() {
+        fetch('/alunos/search/?ajax_relatorios=1', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.cards_relatorios_html) {
+                var modalBody = document.querySelector('#modalRelatoriosAlunos .modal-body');
+                if (modalBody) {
+                    modalBody.innerHTML = data.cards_relatorios_html;
+                }
+            }
+        });
+    }
+
     const form = document.getElementById('filtro-form');
     const tabelaContainer = document.getElementById('tabela-container');
     const spinner = document.getElementById('loading-spinner');
@@ -7,6 +25,14 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         fetchAlunos();
     });
+
+    // Dispara AJAX ao abrir o modal de relatórios
+    var modalRelatorios = document.getElementById('modalRelatoriosAlunos');
+    if (modalRelatorios) {
+        modalRelatorios.addEventListener('show.bs.modal', function () {
+            atualizarCardsRelatorios();
+        });
+    }
 
     function fetchAlunos() {
         spinner.style.display = 'block';
@@ -37,6 +63,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.tabela_html && data.paginacao_html) {
                 tabelaContainer.innerHTML = data.tabela_html;
                 document.querySelector('.card-footer').innerHTML = data.paginacao_html;
+                // Atualiza dinamicamente o conteúdo do modal de relatórios, se presente
+                if (data.cards_relatorios_html) {
+                    var modalBody = document.querySelector('#modalRelatoriosAlunos .modal-body');
+                    if (modalBody) {
+                        modalBody.innerHTML = data.cards_relatorios_html;
+                    }
+                }
             } else {
                 tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados. Resposta inválida do servidor.</p>';
             }
@@ -90,6 +123,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.tabela_html && data.paginacao_html) {
                         tabelaContainer.innerHTML = data.tabela_html;
                         document.querySelector('.card-footer').innerHTML = data.paginacao_html;
+                        // Atualiza dinamicamente o conteúdo do modal de relatórios, se presente
+                        if (data.cards_relatorios_html) {
+                            var modalBody = document.querySelector('#modalRelatoriosAlunos .modal-body');
+                            if (modalBody) {
+                                modalBody.innerHTML = data.cards_relatorios_html;
+                            }
+                        }
                     } else {
                         tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados.</p>';
                     }

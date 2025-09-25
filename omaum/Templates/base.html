@@ -95,22 +95,7 @@
                                 <i class="fas fa-chart-bar"></i> Relatórios
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="relatoriosDropdown">
-                                {% for relatorio in listar_relatorios %}
-                                    <li>
-                                        <a class="dropdown-item" href="{% url relatorio.url %}">
-                                            {{ relatorio.nome }}
-                                        </a>
-                                        <small class="text-muted ms-2">{{ relatorio.descricao }}</small>
-                                        {% if relatorio.exportacoes %}
-                                            <div class="ms-3">
-                                                {% for tipo in relatorio.exportacoes %}
-                                                    <a href="{% url relatorio.url %}?export={{ tipo }}" class="badge bg-secondary text-light ms-1">{{ tipo|upper }}</a>
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                {% endfor %}
+                                {% render_relatorios_menu %}
                             </ul>
                         </li>
                     </ul>

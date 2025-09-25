@@ -1,13 +1,26 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from . import views, api_views
-from .views_simple import (
-    listar_alunos_simple,
-    criar_aluno_simple,
-    detalhar_aluno_simple,
-    editar_aluno_simple,
-    excluir_aluno_simple,
+from alunos.views import (
+    listar_alunos_view,
+    criar_aluno,
+    detalhar_aluno,
+    editar_aluno,
+    excluir_aluno,
+    search_alunos,
+    painel,
+    exportar_alunos,
+    importar_alunos,
+    relatorio_alunos,
+    confirmar_remocao_instrutoria,
+    diagnostico_instrutores,
+    listar_tipos_codigos_ajax,
+    listar_codigos_por_tipo_ajax,
 )
+from . import api_views
+from . import views_novo
+
+app_name = "alunos"
+
 from .views.localidade_api import (
     search_paises,
     search_estados,
@@ -17,39 +30,68 @@ from .views.localidade_api import (
     get_bairros_por_cidade,
 )
 
-app_name = "alunos"
-
+# Rotas simples removidas definitivamente
 router = DefaultRouter()
-router.register(r"", api_views.AlunoViewSet, basename="aluno")
 
 urlpatterns = [
-    # Sistema completo como padrão
-    path("", views.listar_alunos_view, name="listar_alunos"),
-    # CRUD simplificado para testes automatizados (compatível com test_alunos_simple.py)
-    path("simple/", listar_alunos_simple, name="listar_alunos_simple"),
-    path("simple/criar/", criar_aluno_simple, name="criar_aluno_simple"),
-    path("simple/<str:cpf>/", detalhar_aluno_simple, name="detalhar_aluno_simple"),
-    path("simple/<str:cpf>/editar/", editar_aluno_simple, name="editar_aluno_simple"),
-    path(
-        "simple/<str:cpf>/excluir/", excluir_aluno_simple, name="excluir_aluno_simple"
-    ),
-    # CRUD de Tipos e Códigos
-    path("tipos-codigos/", include("alunos.urls_codigos")),
-    path("criar/", views.criar_aluno, name="criar_aluno"),
+    path("criar/", criar_aluno, name="criar_aluno"),
+    path("listar/", listar_alunos_view, name="listar_alunos"),
+    # Alias global para compatibilidade com {% url 'listar_alunos' %}
+    path("listar/", listar_alunos_view, name="listar_alunos"),
     # Autocomplete AJAX (django-select2)
     path("autocomplete/", include("alunos.urls_autocomplete")),
+    # Rotas de tipos/códigos iniciáticos
+    path("codigos/", include("alunos.urls_codigos")),
     # URLs principais - sistema completo (ATIVO)
-    path("<int:aluno_id>/detalhes/", views.detalhar_aluno, name="detalhar_aluno"),
-    path("<int:aluno_id>/editar/", views.editar_aluno, name="editar_aluno"),
-    path("<int:aluno_id>/excluir/", views.excluir_aluno, name="excluir_aluno"),
-    path("painel/", views.painel, name="painel"),
-    path("exportar/", views.exportar_alunos, name="exportar_alunos"),
-    path("importar/", views.importar_alunos, name="importar_alunos"),
-    path("relatorio/", views.relatorio_alunos, name="relatorio_alunos"),
-    path("search/", views.search_alunos, name="search_alunos"),
+    path("<int:aluno_id>/detalhes/", detalhar_aluno, name="detalhar_aluno"),
+    path("<int:aluno_id>/editar/", editar_aluno, name="editar_aluno"),
+    path("<int:aluno_id>/excluir/", excluir_aluno, name="excluir_aluno"),
+    path("painel/", painel, name="painel"),
+    # APIs do painel (corrigido para views_novo)
+    path("api/painel/kpis/", views_novo.painel_kpis_api, name="painel_kpis_api"),
+    path(
+        "api/painel/graficos/",
+        views_novo.painel_graficos_api,
+        name="painel_graficos_api",
+    ),
+    path("api/painel/tabela/", views_novo.painel_tabela_api, name="painel_tabela_api"),
+    path("exportar/", exportar_alunos, name="exportar_alunos"),
+    path("importar/", importar_alunos, name="importar_alunos"),
+    path("relatorio/", relatorio_alunos, name="relatorio_alunos"),
+    path(
+        "relatorio/ficha-cadastral/",
+        views_novo.relatorio_ficha_cadastral,
+        name="relatorio_ficha_cadastral",
+    ),
+    path(
+        "relatorio/dados-iniciaticos/",
+        views_novo.relatorio_dados_iniciaticos,
+        name="relatorio_dados_iniciaticos",
+    ),
+    path(
+        "relatorio/historico/",
+        views_novo.relatorio_historico_aluno,
+        name="relatorio_historico_aluno",
+    ),
+    path(
+        "relatorio/auditoria/",
+        views_novo.relatorio_auditoria_dados,
+        name="relatorio_auditoria_dados",
+    ),
+    path(
+        "relatorio/demografico/",
+        views_novo.relatorio_demografico,
+        name="relatorio_demografico",
+    ),
+    path(
+        "relatorio/aniversariantes/",
+        views_novo.relatorio_aniversariantes,
+        name="relatorio_aniversariantes",
+    ),
+    path("search/", search_alunos, name="search_alunos"),
     path(
         "<str:cpf>/confirmar-remocao-instrutoria/<str:nova_situacao>/",
-        views.confirmar_remocao_instrutoria,
+        confirmar_remocao_instrutoria,
         name="confirmar_remocao_instrutoria",
     ),
     path(
@@ -59,7 +101,7 @@ urlpatterns = [
     ),
     path(
         "diagnostico-instrutores/",
-        views.diagnostico_instrutores,
+        diagnostico_instrutores,
         name="diagnostico_instrutores",
     ),
     # APIs de localidade (devem vir antes do include do router para evitar shadowing)
@@ -78,12 +120,10 @@ urlpatterns = [
         name="api_bairros_por_cidade",
     ),
     # APIs para filtros dinâmicos - Dados Iniciáticos (devem vir antes do include(router.urls))
-    path(
-        "api/tipos-codigos/", views.listar_tipos_codigos_ajax, name="api_tipos_codigos"
-    ),
+    path("api/tipos-codigos/", listar_tipos_codigos_ajax, name="api_tipos_codigos"),
     path(
         "api/codigos-por-tipo/",
-        views.listar_codigos_por_tipo_ajax,
+        listar_codigos_por_tipo_ajax,
         name="api_codigos_por_tipo",
     ),
     path(

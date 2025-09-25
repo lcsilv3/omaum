@@ -1,0 +1,20 @@
+{% for relatorio in relatorios %}
+    <li>
+        <a class="dropdown-item" href="{% url relatorio.url %}">
+            {{ relatorio.nome }}
+        </a>
+        <small class="text-muted ms-2">{{ relatorio.descricao }}</small>
+        {% if relatorio.exportacoes %}
+            <div class="ms-3">
+                {% for tipo in relatorio.exportacoes %}
+                    <a href="{% url relatorio.url %}?export={{ tipo }}" class="badge bg-secondary text-light ms-1">{{ tipo|upper }}</a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </li>
+    {% if not forloop.last %}
+        <li><hr class="dropdown-divider"></li>
+    {% endif %}
+{% empty %}
+    <li><a class="dropdown-item text-muted" href="#">Nenhum relatório disponível</a></li>
+{% endfor %}

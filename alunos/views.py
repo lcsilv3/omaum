@@ -1,29 +1,57 @@
-"""
-Views relacionadas ao gerenciamento de alunos no sistema.
-"""
+from datetime import datetime, timedelta, date
+from django.db.models import Count, Q, Avg
+from django.http import JsonResponse, HttpResponse
+from django.template.loader import render_to_string
+from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 
+from .models import Aluno
+
+# Imports necessários para views CRUD e relatórios
 import logging
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import permission_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.http import JsonResponse
-from django.template.loader import render_to_string
-from django.shortcuts import render, redirect
-
+from django.views.decorators.csrf import csrf_exempt
+from django.http import Http404
 from .forms import AlunoForm, RegistroHistoricoFormSet, RegistroHistoricoForm
-from .models import Aluno, RegistroHistorico
+from .models import RegistroHistorico
+from .services import listar_alunos, buscar_aluno_por_id
 from django import forms
-from .services import listar_alunos, buscar_aluno_por_cpf, buscar_aluno_por_id
 
 logger = logging.getLogger(__name__)
 
-# Views CRUD simplificadas para testes automatizados (test_alunos_simple.py)
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, Http404
-from django.urls import reverse
-from django.shortcuts import get_object_or_404
-from datetime import date
+
+@login_required
+def painel(request):
+    """Renderiza o template base do painel de alunos."""
+    return render(request, "alunos/painel.html")
+
+
+# --- API Painel de Alunos ---
+@login_required
+@require_GET
+def painel_kpis_api(request):
+    from .models import Aluno
+
+    total_alunos = Aluno.objects.count()
+    alunos_ativos = Aluno.objects.filter(situacao="a").count()
+    media_idade = Aluno.objects.filter(situacao="a").aggregate(
+        m=Avg("data_nascimento")
+    )["m"]
+
+
+@login_required
+@require_GET
+def painel_tabela_api(request):
+    from .models import Aluno
+
+    alunos = Aluno.objects.all().order_by("-id")[:50]
+    html = render_to_string("alunos/_tabela_alunos_parcial.html", {"alunos": alunos})
+    return HttpResponse(html)
 
 
 @login_required
@@ -118,6 +146,8 @@ def listar_alunos_view(request):
                 }
             )
 
+        from alunos.reports import RELATORIOS
+
         return render(
             request,
             "alunos/listar_alunos.html",
@@ -128,10 +158,13 @@ def listar_alunos_view(request):
                 "cursos": cursos_para_filtro,
                 "curso_selecionado": curso_id,
                 "total_alunos": total_alunos,
+                "relatorios_alunos": RELATORIOS,
             },
         )
     except Exception as exc:
         logger.error("Erro ao listar alunos: %s", exc)
+        from alunos.reports import RELATORIOS
+
         return render(
             request,
             "alunos/listar_alunos.html",
@@ -143,31 +176,32 @@ def listar_alunos_view(request):
                 "curso_selecionado": "",
                 "total_alunos": 0,
                 "error_message": f"Erro ao listar alunos: {exc}",
+                "relatorios_alunos": RELATORIOS,
             },
         )
 
 
 @login_required
 @permission_required("alunos.add_aluno", raise_exception=True)
-def criar_aluno(request):
-    """
-    Cria um novo aluno e gerencia seu histórico de registros.
-    """
-    if request.method == "POST":
-        form = AlunoForm(request.POST, request.FILES)
-        historico_formset = RegistroHistoricoFormSet(request.POST, prefix="historico")
-        # Garante pelo menos 1 formulário extra
-        if historico_formset.total_form_count() == 0:
-            historico_formset.extra_forms.append(historico_formset.empty_form)
-
-        if form.is_valid() and historico_formset.is_valid():
-            try:
-                with transaction.atomic():
-                    aluno = form.save(commit=False)
-                    aluno.cpf = "".join(filter(str.isdigit, str(aluno.cpf)))
-                    aluno.save()
 
                     historico_formset.instance = aluno
+    if (
+        request.headers.get("x-requested-with") == "XMLHttpRequest"
+        and request.GET.get("ajax_relatorios") == "1"
+    ):
+        import json
+        from alunos.reports import RELATORIOS
+        context_cards = {
+            "relatorios_alunos": RELATORIOS,
+            "relatorios_alunos_json": json.dumps(RELATORIOS, ensure_ascii=False, indent=2)
+        }
+        print("DEBUG CONTEXTO CARDS RELATORIOS (REAL):", context_cards)
+        cards_relatorios_html = render_to_string(
+            "alunos/cards_relatorios_alunos.html",
+            context_cards,
+            request=request,
+        )
+        return JsonResponse({"cards_relatorios_html": cards_relatorios_html})
                     historico_formset.save()
 
                 messages.success(request, "Aluno criado com sucesso!")
@@ -404,119 +438,112 @@ def excluir_aluno(request, aluno_id):
 
 @login_required
 def search_alunos(request):
-    """
-    Endpoint para busca dinâmica de alunos.
-    Retorna os resultados em formato JSON para requisições AJAX.
-    Para requisições normais, renderiza a página de listagem de alunos.
-    """
-    logger.info(
-        f"[DEBUG] search_alunos chamada - User: {request.user}, Auth: {request.user.is_authenticated}, Headers: {dict(request.headers)}"
-    )
-    # Tratamento especial para AJAX não autenticado (deve ser redundante, mas cobre edge cases de sessão expirada)
-    if (
-        not request.user.is_authenticated
-        and request.headers.get("x-requested-with") == "XMLHttpRequest"
-    ):
-        return JsonResponse({"success": False, "error": "Não autenticado"}, status=401)
+        if (
+            request.headers.get("x-requested-with") == "XMLHttpRequest"
+            and request.GET.get("ajax_relatorios") == "1"
+        ):
+            import json
+            from alunos.reports import RELATORIOS
+            context_cards = {
+                "relatorios_alunos": RELATORIOS,
+                "relatorios_alunos_json": json.dumps(RELATORIOS, ensure_ascii=False, indent=2)
+            }
+            print("DEBUG CONTEXTO CARDS RELATORIOS (REAL):", context_cards)
+            cards_relatorios_html = render_to_string(
+                "alunos/cards_relatorios_alunos.html",
+                context_cards,
+                request=request,
+            )
+            return JsonResponse({"cards_relatorios_html": cards_relatorios_html})
 
     query = request.GET.get("q", "").strip()
     curso_id = request.GET.get("curso", None)
 
-    logger.debug(
-        "[search_alunos] Requisição recebida. Query: '%s', Curso ID: '%s', Params: %s",
-        query,
-        curso_id,
-        dict(request.GET),
-    )
-
     try:
         alunos_queryset = listar_alunos(query=query, curso_id=curso_id)
-        logger.debug(
-            "[search_alunos] Query executada. Resultados encontrados: %d",
-            alunos_queryset.count(),
-        )
-
         paginator = Paginator(alunos_queryset, 10)
         page_number = request.GET.get("page", 1)
         alunos = paginator.get_page(page_number)
 
-        # Se for uma requisição AJAX, retorna HTML parcial (compatível com JS atual)
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            context_partials = {
-                "alunos": alunos,  # page object
-                "page_obj": alunos,
-                "total_alunos": alunos.paginator.count
-                if hasattr(alunos, "paginator")
-                else 0,
-                "query": query,
-                "cursos": [],
-                "curso_selecionado": curso_id or "",
-            }
-            logger.debug(
-                "[search_alunos] Contexto enviado para templates parciais: %s",
-                context_partials,
-            )
-            try:
-                tabela_html = render_to_string(
-                    "alunos/_tabela_alunos_parcial.html",
-                    context_partials,
-                    request=request,
-                )
-                paginacao_html = render_to_string(
-                    "alunos/_paginacao_parcial.html", context_partials, request=request
-                )
-                logger.debug(
-                    "[search_alunos] Templates parciais renderizados com sucesso."
-                )
-            except Exception as exc:
-                import traceback
+        # Se for requisição AJAX só para os cards de relatórios
+        if (
+            request.headers.get("x-requested-with") == "XMLHttpRequest"
+            and request.GET.get("ajax_relatorios") == "1"
+        ):
+            from alunos.reports import RELATORIOS
 
-                logger.error(
-                    "Erro ao renderizar templates parciais AJAX: %s\n%s",
-                    exc,
-                    traceback.format_exc(),
-                )
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": f"Erro ao renderizar templates parciais: {exc}",
-                    },
-                    status=500,
-                )
+            context_cards = {"relatorios_alunos": RELATORIOS}
+            print("DEBUG CONTEXTO CARDS RELATORIOS (REAL):", context_cards)
+            cards_relatorios_html = render_to_string(
+                "alunos/cards_relatorios_alunos.html",
+                context_cards,
+                request=request,
+            )
+            return JsonResponse({"cards_relatorios_html": cards_relatorios_html})
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            from alunos.reports import RELATORIOS
+
+            print("DEBUG RELATORIOS (AJAX):", RELATORIOS)
+
+            tabela_html = render_to_string(
+                "alunos/_tabela_alunos_parcial.html",
+                {"alunos": alunos, "page_obj": alunos, "relatorios_alunos": RELATORIOS},
+                request=request,
+            )
+            paginacao_html = render_to_string(
+                "alunos/_paginacao_parcial.html", {"page_obj": alunos}, request=request
+            )
+            context_cards = {"relatorios_alunos": RELATORIOS}
+            print("DEBUG CONTEXTO CARDS RELATORIOS:", context_cards)
+            cards_relatorios_html = render_to_string(
+                "alunos/cards_relatorios_alunos.html",
+                context_cards,
+                request=request,
+            )
             return JsonResponse(
                 {
                     "success": True,
                     "tabela_html": tabela_html,
                     "paginacao_html": paginacao_html,
-                    "page": alunos.number,
-                    "num_pages": alunos.paginator.num_pages,
-                    "total_alunos": context_partials["total_alunos"],
+                    "cards_relatorios_html": cards_relatorios_html,
+                    "total_alunos": paginator.count,
                 }
             )
-        # Renderização padrão
-        context = {"alunos": alunos}
-        logger.debug("[search_alunos] Renderização padrão. Contexto: %s", context)
-        return render(request, "alunos/listar_alunos.html", context)
-    except ValueError as exc:
-        logger.error("[search_alunos] Erro de valor: %s", exc, exc_info=True)
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse({"success": False, "error": str(exc)}, status=400)
-        else:
-            messages.error(request, f"Erro na busca: {str(exc)}")
-            return redirect("alunos:listar_alunos")
-    except Exception as exc:
-        import traceback
 
-        logger.error(
-            "[search_alunos] Erro inesperado: %s\n%s", exc, traceback.format_exc()
-        )
+        from .utils import get_curso_model
+
+        Curso = get_curso_model()
+        cursos_para_filtro = Curso.objects.all().order_by("nome") if Curso else []
+        from alunos.reports import RELATORIOS
+
+        print("DEBUG RELATORIOS (RENDER):", RELATORIOS)
+        context = {
+            "alunos": alunos,
+            "page_obj": alunos,
+            "query": query,
+            "cursos": cursos_para_filtro,
+            "curso_selecionado": curso_id,
+            "total_alunos": paginator.count,
+            "relatorios_alunos": RELATORIOS,
+        }
+        return render(request, "alunos/listar_alunos.html", context)
+    except Exception as exc:
+        logger.error("[search_alunos] Erro inesperado: %s", exc, exc_info=True)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse(
-                {"success": False, "error": "Erro interno do servidor."}, status=500
+                {"success": False, "error": "Erro interno do servidor."},
+                status=500,
             )
         else:
-            messages.error(request, "Erro interno do servidor.")
-            return redirect("alunos:listar_alunos")
+            messages.error(request, "Ocorreu um erro inesperado ao buscar alunos.")
+            from alunos.reports import RELATORIOS
+
+            return render(
+                request,
+                "alunos/listar_alunos.html",
+                {"alunos": [], "relatorios_alunos": RELATORIOS},
+            )
 
 
 # Alias para manter compatibilidade com URLs

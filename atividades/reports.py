@@ -3,7 +3,7 @@ RELATORIOS = [
     {
         "nome": "Relatório por Curso/Turma",
         "descricao": "Relatório de atividades por curso/turma",
-        "url": "atividades:relatorio_curso_turma",
+        "url": "atividades:relatorio_atividades",
         "exportacoes": ["csv", "excel", "pdf"],
     },
 ]

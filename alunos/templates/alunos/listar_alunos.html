@@ -10,7 +10,23 @@
         <div class="btn-group">
             <a href="{% url 'core:pagina_inicial' %}" class="btn btn-secondary">Voltar</a>
             <a href="{% url 'alunos:criar_aluno' %}" class="btn btn-success">Novo Aluno</a>
-            <a href="{% url 'alunos:relatorio_alunos' %}" class="btn btn-primary">Relatórios</a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosAlunos">
+                <i class="fas fa-chart-bar"></i> Relatórios
+            </button>
+<!-- Modal de Relatórios de Alunos -->
+<div class="modal fade" id="modalRelatoriosAlunos" tabindex="-1" aria-labelledby="modalRelatoriosAlunosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRelatoriosAlunosLabel">Relatórios de Alunos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                {% include 'alunos/cards_relatorios_alunos.html' %}
+            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 
@@ -40,7 +56,13 @@
                 </div>
             </div>
             <div id="tabela-container">
-                {% include 'alunos/_tabela_alunos_parcial.html' with alunos=page_obj total_alunos=total_alunos %}
+                {% include 'alunos/_tabela_alunos_parcial.html' with alunos=alunos total_alunos=total_alunos %}
+                <div class="alert alert-info mt-3" style="font-size:0.9em;">
+                  <strong>DEBUG:</strong> page_obj={{ page_obj }}<br>
+                  alunos={{ alunos }}<br>
+                  total_alunos={{ total_alunos }}<br>
+                  query='{{ query }}' | curso_selecionado='{{ curso_selecionado }}'
+                </div>
             </div>
         </div>
         <div class="card-footer">
@@ -48,6 +70,18 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Para todos os links que levam à listagem de alunos
+        document.querySelectorAll('a[href^="/alunos/listar/"], a[href^="/alunos/search/"]').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                // Força recarregamento completo da página
+                window.location = link.href;
+                e.preventDefault();
+            });
+        });
+    });
+</script>
 {% endblock %}
 
 {% block extra_js %}

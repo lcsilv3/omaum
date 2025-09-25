@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+  <h2 class="mt-3 mb-4">Relatório: Demográfico dos Alunos</h2>
+  <form method="get" class="row g-2 mb-4 align-items-end" id="filtros-demografico">
+    <div class="col-md-3">
+      <label for="filtro-faixa" class="form-label">Faixa Etária</label>
+      <select name="faixa" id="filtro-faixa" class="form-select">
+        <option value="">Todas</option>
+        {% for val, label in faixas %}
+          <option value="{{ val }}" {% if filtros.faixa == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="filtro-cidade" class="form-label">Cidade</label>
+      <select name="cidade" id="filtro-cidade" class="form-select">
+        <option value="">Todas</option>
+        {% for id, nome in cidades %}
+          <option value="{{ id }}" {% if filtros.cidade == id|stringformat:'s' %}selected{% endif %}>{{ nome }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="filtro-sexo" class="form-label">Sexo</label>
+      <select name="sexo" id="filtro-sexo" class="form-select">
+        <option value="">Todos</option>
+        {% for val, label in sexo_choices %}
+          <option value="{{ val }}" {% if filtros.sexo == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2 align-items-end">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+      <a href="?export=csv{% if filtros.faixa %}&faixa={{ filtros.faixa }}{% endif %}{% if filtros.cidade %}&cidade={{ filtros.cidade }}{% endif %}{% if filtros.sexo %}&sexo={{ filtros.sexo }}{% endif %}" class="btn btn-outline-secondary" title="Exportar CSV"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</a>
+      <a href="?export=xls{% if filtros.faixa %}&faixa={{ filtros.faixa }}{% endif %}{% if filtros.cidade %}&cidade={{ filtros.cidade }}{% endif %}{% if filtros.sexo %}&sexo={{ filtros.sexo }}{% endif %}" class="btn btn-outline-secondary" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    </div>
+  </form>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <canvas id="grafico-sexo"></canvas>
+    </div>
+    <div class="col-md-6">
+      <canvas id="grafico-faixa"></canvas>
+    </div>
+  </div>
+
+  <div class="table-responsive" style="overflow-x:auto;">
+    <table class="table table-bordered table-hover align-middle small w-100" id="tabela-demografico" style="min-width:900px;">
+      <thead class="table-light">
+        <tr>
+          <th>Nome</th>
+          <th>CPF</th>
+          <th>Sexo</th>
+          <th>Data Nasc.</th>
+          <th>Cidade</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for aluno in alunos %}
+        <tr>
+          <td>{{ aluno.nome }}</td>
+          <td>{{ aluno.cpf }}</td>
+          <td>{{ aluno.get_sexo_display }}</td>
+          <td>{{ aluno.data_nascimento|date:'d/m/Y' }}</td>
+          <td>{{ aluno.cidade_ref.nome if aluno.cidade_ref else '-' }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center">Nenhum aluno encontrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Gráfico de Sexo
+  const sexoData = JSON.parse('{{ sexo_data|escapejs }}');
+  const sexoLabels = sexoData.map(x => x.sexo || 'Não informado');
+  const sexoValues = sexoData.map(x => x.qtd);
+  new Chart(document.getElementById('grafico-sexo'), {
+    type: 'pie',
+    data: {
+      labels: sexoLabels,
+      datasets: [{ data: sexoValues, backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'] }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } }, responsive: true }
+  });
+  // Gráfico de Faixa Etária
+  const faixaCounts = JSON.parse('{{ faixa_counts|escapejs }}');
+  const faixaLabels = Object.keys(faixaCounts);
+  const faixaValues = Object.values(faixaCounts);
+  new Chart(document.getElementById('grafico-faixa'), {
+    type: 'bar',
+    data: {
+      labels: faixaLabels,
+      datasets: [{ label: 'Qtd', data: faixaValues, backgroundColor: '#36A2EB' }]
+    },
+    options: { plugins: { legend: { display: false } }, responsive: true }
+  });
+</script>
+{% endblock %}

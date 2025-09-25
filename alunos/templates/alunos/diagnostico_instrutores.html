@@ -59,7 +59,7 @@
                 {% for item in alunos_diagnostico %}
                 <tr class="{% if item.elegivel %}elegivel{% else %}inelegivel{% endif %}">
                     <td>{{ item.aluno.nome }}</td>
-                    <td>{{ item.aluno.cpf }}</td>
+                    <td>{{ item.aluno.cpf|mask_cpf }}</td>
                     <td>{{ item.aluno.numero_iniciatico|default:"N/A" }}</td>
                     <td>{{ item.aluno.get_situacao_display }}</td>
                     <td>

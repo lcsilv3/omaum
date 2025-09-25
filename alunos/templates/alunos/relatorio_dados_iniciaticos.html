@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+  <h2 class="mt-3 mb-4">Relatório: Dados Iniciáticos</h2>
+  <form method="get" class="row g-2 mb-4 align-items-end" id="filtros-dados-iniciaticos">
+    <div class="col-md-3">
+      <label for="filtro-grau" class="form-label">Grau Atual</label>
+      <select name="grau" id="filtro-grau" class="form-select">
+        <option value="">Todos</option>
+        {% for grau in graus %}
+          <option value="{{ grau }}" {% if filtros.grau == grau %}selected{% endif %}>{{ grau }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="filtro-situacao" class="form-label">Situação</label>
+      <select name="situacao" id="filtro-situacao" class="form-select">
+        <option value="">Todas</option>
+        {% for val, label in situacoes %}
+          <option value="{{ val }}" {% if filtros.situacao == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="filtro-tempo-casa" class="form-label">Tempo de Casa (anos)</label>
+      <input type="number" min="0" name="tempo_casa" id="filtro-tempo-casa" class="form-control" value="{{ filtros.tempo_casa }}">
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+      <a href="?export=csv{% if filtros.grau %}&grau={{ filtros.grau }}{% endif %}{% if filtros.situacao %}&situacao={{ filtros.situacao }}{% endif %}{% if filtros.tempo_casa %}&tempo_casa={{ filtros.tempo_casa }}{% endif %}" class="btn btn-outline-secondary" title="Exportar CSV"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</a>
+      <a href="?export=xls{% if filtros.grau %}&grau={{ filtros.grau }}{% endif %}{% if filtros.situacao %}&situacao={{ filtros.situacao }}{% endif %}{% if filtros.tempo_casa %}&tempo_casa={{ filtros.tempo_casa }}{% endif %}" class="btn btn-outline-secondary" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    </div>
+  </form>
+
+  <div class="table-responsive" style="overflow-x:auto;">
+    <table class="table table-bordered table-hover align-middle small w-100" id="tabela-dados-iniciaticos" style="min-width:900px;">
+      <thead class="table-light">
+        <tr>
+          <th>Nome</th>
+          <th>CPF</th>
+          <th>Grau Atual</th>
+          <th>Situação</th>
+          <th>Tempo de Casa (anos)</th>
+          <th>Data de Ingresso</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for aluno in alunos %}
+        <tr>
+          <td>{{ aluno.nome }}</td>
+          <td>{{ aluno.cpf }}</td>
+          <td>{{ aluno.grau_atual }}</td>
+          <td>
+            <span class="badge bg-{{ aluno.situacao|yesno:'success,secondary,danger,warning' }}">
+              {{ aluno.get_situacao_display }}
+            </span>
+          </td>
+          <td>{% if aluno.created_at %}{{ ((today|default:now) - aluno.created_at.date).days // 365 }}{% else %}-{% endif %}</td>
+          <td>{% if aluno.created_at %}{{ aluno.created_at|date:'d/m/Y' }}{% else %}-{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center">Nenhum aluno encontrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

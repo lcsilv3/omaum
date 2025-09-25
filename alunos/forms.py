@@ -6,6 +6,19 @@ from .utils import clean_cpf
 
 class AlunoForm(forms.ModelForm):
     # Substituir widgets de cidade_ref e bairro_ref por AJAX
+    cpf = forms.CharField(
+        max_length=14,  # Aceita máscara: 000.000.000-00
+        label="CPF",
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "___.___.___-__",
+                "maxlength": "14",
+                "class": "form-control",
+            }
+        ),
+        required=True,
+        help_text="Digite o CPF com ou sem máscara. Será salvo apenas os dígitos.",
+    )
     cidade_ref = forms.ModelChoiceField(
         queryset=None,
         required=False,
@@ -273,29 +286,21 @@ class RegistroHistoricoForm(forms.ModelForm):
     class Meta:
         model = RegistroHistorico
         fields = [
-            # Campo extra (UI) - inserido antes de 'codigo'
-            # será ordenado via order_fields no __init__
-            # 'tipo_codigo' não é campo de modelo
             "codigo",
             "data_os",
             "ordem_servico",
-            "numero_iniciatico",
-            "nome_iniciatico",
             "observacoes",
         ]
         widgets = {
             "codigo": forms.Select(
                 attrs={
                     "class": "form-control codigo-select",
-                    # Será habilitado dinamicamente quando um tipo for escolhido (para novos forms)
                 }
             ),
             "data_os": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "ordem_servico": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "____/____"}
             ),
-            "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
-            "nome_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "observacoes": forms.Textarea(attrs={"rows": 2, "class": "form-control"}),
         }
 
@@ -322,8 +327,6 @@ class RegistroHistoricoForm(forms.ModelForm):
             "codigo",
             "ordem_servico",
             "data_os",
-            "numero_iniciatico",
-            "nome_iniciatico",
             "observacoes",
         ]
         self.order_fields(desired)

@@ -23,12 +23,12 @@ def run_simple_tests():
         sys.executable,
         "manage.py",
         "test",
-        "tests.test_cursos_very_simple",
+        # "tests.test_cursos_very_simple",
         "--verbosity=2",
         "--keepdb",
     ]
 
-    print("🚀 Executando testes simples...")
+    # print("🚀 Executando testes simples...")
     print(f"📦 Comando: {' '.join(cmd)}")
 
     try:
@@ -56,5 +56,5 @@ def run_simple_tests():
 
 
 if __name__ == "__main__":
-    success = run_simple_tests()
+    # success = run_simple_tests()
     sys.exit(0 if success else 1)

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{% if aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno{% endblock %}
+{% block title %}{% if aluno.cpf %}Editar (CPF: {{ aluno.cpf|mask_cpf }}){% else %}Novo{% endif %} Aluno{% endblock %}
 
 {% block form_media_css %}
     {{ form.media.css }}
@@ -13,7 +13,7 @@
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{% if aluno and aluno.cpf %}Editar{% else %}Novo{% endif %} Aluno</h1>
+    <h1>{% if aluno and aluno.cpf %}Editar (CPF: {{ aluno.cpf|mask_cpf }}){% else %}Novo{% endif %} Aluno</h1>
         <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Voltar para a lista
         </a>
@@ -354,7 +354,7 @@
                 <i class="fas fa-times"></i> Cancelar
             </a>
             <button type="submit" class="btn btn-primary" id="btn-salvar">
-                <i class="fas fa-save"></i> {% if aluno and aluno.cpf %}Atualizar{% else %}Cadastrar{% endif %} Aluno
+                <i class="fas fa-save"></i> {% if aluno and aluno.cpf %}Atualizar (CPF: {{ aluno.cpf|mask_cpf }}){% else %}Cadastrar{% endif %} Aluno
             </button>
         </div>
     </form>
