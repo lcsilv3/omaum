@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load alunos_extras %}
 
 {% block content %}
 <div class="container-fluid">
@@ -57,7 +58,7 @@
               {{ aluno.get_situacao_display }}
             </span>
           </td>
-          <td>{% if aluno.created_at %}{{ ((today|default:now) - aluno.created_at.date).days // 365 }}{% else %}-{% endif %}</td>
+          <td>{{ aluno.created_at|anos_desde }}</td>
           <td>{% if aluno.created_at %}{{ aluno.created_at|date:'d/m/Y' }}{% else %}-{% endif %}</td>
         </tr>
         {% empty %}

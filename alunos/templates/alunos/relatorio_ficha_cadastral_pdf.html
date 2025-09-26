@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Ficha Cadastral de Alunos</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 1.5cm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9pt;
+                color: #555;
+            }
+        }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 9pt; color: #333; }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 0.5cm; /* Espaço reduzido */
+            position: relative;
+        }
+        .report-header .org-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin: 0;
+        }
+        .report-header .org-title small {
+            font-size: 9pt;
+            font-weight: normal;
+        }
+        .report-header .emission-datetime {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-size: 9pt;
+            margin: 0;
+            text-align: right;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 16pt;
+            margin-top: 0; /* Espaço reduzido */
+            margin-bottom: 1cm;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+        th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; word-wrap: break-word; }
+        thead { background-color: #f2f2f2; display: table-header-group; }
+        th { font-weight: bold; }
+        tr { page-break-inside: avoid; page-break-after: auto; }
+        tbody tr:nth-child(even) { background-color: #f9f9f9; }
+        .badge { display: inline-block; padding: .25em .6em; font-size: 75%; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25rem; color: #fff; }
+        .bg-success { background-color: #198754; }
+        .bg-secondary { background-color: #6c757d; }
+        .bg-warning { background-color: #ffc107; color: #000; }
+        .bg-danger { background-color: #dc3545; }
+        .bg-light { background-color: #f8f9fa; color: #000; }
+    </style>
+</head>
+<body>
+
+    <div class="report-header">
+        <p class="emission-datetime">
+            Emitido em: {% now "d/m/Y" %} às {% now "H:i" %}
+        </p>
+        <p class="org-title">
+            OM-AUM<br>
+            <small>(Ordem Mística de Aspiração Universal ao Mestrado)</small>
+        </p>
+    </div>
+
+    <h1>Relatório: Ficha Cadastral de Alunos</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Data Nasc.</th>
+                <th>Turma</th>
+                <th>Curso</th>
+                <th>Email</th>
+                <th>Situação</th>
+                <th>Endereço</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aluno in alunos %}
+            {% with matricula=aluno.matricula_set.first %}
+            <tr>
+                <td>{{ aluno.nome|default:"" }}</td>
+                <td>{{ aluno.cpf|default:"" }}</td>
+                <td>{{ aluno.data_nascimento|date:'d/m/Y'|default:"" }}</td>
+                <td>{{ matricula.turma.nome|default:"-" }}</td>
+                <td>{{ matricula.turma.curso.nome|default:"-" }}</td>
+                <td>{{ aluno.email|default:"" }}</td>
+                <td>
+                    <span class="badge {% if aluno.situacao == 'a' %}bg-success{% elif aluno.situacao == 'i' %}bg-secondary{% elif aluno.situacao == 't' %}bg-warning{% elif aluno.situacao == 'd' %}bg-danger{% else %}bg-light{% endif %}">
+                        {{ aluno.get_situacao_display|default:"" }}
+                    </span>
+                </td>
+                <td>
+                    {% if aluno.rua %}{{ aluno.rua }}{% if aluno.numero_imovel %}, {{ aluno.numero_imovel }}{% endif %}<br>{% endif %}
+                    {% if aluno.bairro_ref %}{{ aluno.bairro_ref.nome }}{% endif %}{% if aluno.bairro_ref and aluno.cidade_ref %} - {% endif %}{% if aluno.cidade_ref %}{{ aluno.cidade_ref.nome }}{% endif %}
+                    {% if aluno.cep %}<br>CEP: {{ aluno.cep }}{% endif %}
+                </td>
+            </tr>
+            {% endwith %}
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center;">Nenhum aluno encontrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>

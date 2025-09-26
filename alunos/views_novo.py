@@ -775,12 +775,23 @@ from django.views.decorators.http import require_http_methods
 @login_required
 @require_http_methods(["GET"])
 def relatorio_ficha_cadastral(request):
+    # Parâmetros
+    aluno_id = request.GET.get("aluno", "").strip()
     turma_id = request.GET.get("turma", "").strip()
     curso_id = request.GET.get("curso", "").strip()
     situacao = request.GET.get("situacao", "").strip()
     export = request.GET.get("export", "").strip()
 
-    alunos_qs = Aluno.objects.all()
+    # Dados para filtros
+    todos_alunos_list = Aluno.objects.all().order_by("nome")
+    turmas = Turma.objects.all().order_by("nome")
+    cursos = Curso.objects.all().order_by("nome")
+    situacoes = Aluno.SITUACAO_CHOICES
+
+    # Queryset base
+    alunos_qs = Aluno.objects.select_related("cidade_ref", "bairro_ref").all()
+    if aluno_id:
+        alunos_qs = alunos_qs.filter(id=aluno_id)
     if turma_id:
         alunos_qs = alunos_qs.filter(matricula__turma_id=turma_id)
     if curso_id:
@@ -789,127 +800,86 @@ def relatorio_ficha_cadastral(request):
         alunos_qs = alunos_qs.filter(situacao=situacao)
     alunos_qs = alunos_qs.distinct().order_by("nome")
 
-    # Exportação CSV/Excel/PDF
-    if export in ["csv", "xls"]:
+    # Lógica de exportação
+    if export in ["csv", "xls", "pdf"]:
+        # Nova ordem de cabeçalhos
+        headers = [
+            "Nome", "CPF", "Data Nascimento", "Turma", "Curso",
+            "Email", "Situação", "Endereço",
+        ]
+
         if export == "csv":
             response = HttpResponse(content_type="text/csv")
-            response["Content-Disposition"] = (
-                'attachment; filename="ficha_cadastral.csv"'
-            )
+            response["Content-Disposition"] = 'attachment; filename="ficha_cadastral.csv"'
             writer = csv.writer(response)
-            writer.writerow(
-                [
-                    "Nome",
-                    "CPF",
-                    "Data Nascimento",
-                    "Email",
-                    "Situação",
-                    "Endereço",
-                    "Turma",
-                    "Curso",
-                ]
-            )
+            writer.writerow(headers)
             for aluno in alunos_qs:
-                endereco = f"{aluno.rua or ''}, {aluno.numero_imovel or ''}, {aluno.bairro_ref or ''}, {aluno.cidade_ref or ''}, {aluno.cep or ''}"
-                turma_nome = getattr(
-                    getattr(aluno, "matricula_set", None).first(), "turma", None
-                )
+                matricula = getattr(aluno, "matricula_set", None).first()
+                turma_nome = getattr(matricula, "turma", None)
                 curso_nome = getattr(turma_nome, "curso", None)
-                writer.writerow(
-                    [
-                        smart_str(aluno.nome),
-                        smart_str(aluno.cpf),
-                        smart_str(aluno.data_nascimento),
-                        smart_str(aluno.email),
-                        dict(Aluno.SITUACAO_CHOICES).get(aluno.situacao, "-"),
-                        smart_str(endereco),
-                        smart_str(turma_nome.nome if turma_nome else "-"),
-                        smart_str(curso_nome.nome if curso_nome else "-"),
-                    ]
-                )
+                endereco = f"{aluno.rua or ''}, {aluno.numero_imovel or ''}, {aluno.bairro_ref or ''}, {aluno.cidade_ref or ''}, {aluno.cep or ''}"
+                writer.writerow([
+                    smart_str(aluno.nome),
+                    smart_str(aluno.cpf),
+                    smart_str(aluno.data_nascimento),
+                    smart_str(turma_nome.nome if turma_nome else "-"),
+                    smart_str(curso_nome.nome if curso_nome else "-"),
+                    smart_str(aluno.email),
+                    dict(Aluno.SITUACAO_CHOICES).get(aluno.situacao, "-"),
+                    smart_str(endereco),
+                ])
             return response
+
         elif export == "xls":
             if not xlwt:
                 return HttpResponse("Pacote xlwt não instalado.", status=500)
             wb = xlwt.Workbook()
             ws = wb.add_sheet("Ficha Cadastral")
-            headers = [
-                "Nome",
-                "CPF",
-                "Data Nascimento",
-                "Email",
-                "Situação",
-                "Endereço",
-                "Turma",
-                "Curso",
-            ]
             for col, h in enumerate(headers):
                 ws.write(0, col, h)
             for row, aluno in enumerate(alunos_qs, start=1):
-                endereco = f"{aluno.rua or ''}, {aluno.numero_imovel or ''}, {aluno.bairro_ref or ''}, {aluno.cidade_ref or ''}, {aluno.cep or ''}"
-                turma_nome = getattr(
-                    getattr(aluno, "matricula_set", None).first(), "turma", None
-                )
+                matricula = getattr(aluno, "matricula_set", None).first()
+                turma_nome = getattr(matricula, "turma", None)
                 curso_nome = getattr(turma_nome, "curso", None)
+                endereco = f"{aluno.rua or ''}, {aluno.numero_imovel or ''}, {aluno.bairro_ref or ''}, {aluno.cidade_ref or ''}, {aluno.cep or ''}"
                 ws.write(row, 0, smart_str(aluno.nome))
                 ws.write(row, 1, smart_str(aluno.cpf))
                 ws.write(row, 2, smart_str(aluno.data_nascimento))
-                ws.write(row, 3, smart_str(aluno.email))
-                ws.write(row, 4, dict(Aluno.SITUACAO_CHOICES).get(aluno.situacao, "-"))
-                ws.write(row, 5, smart_str(endereco))
-                ws.write(row, 6, smart_str(turma_nome.nome if turma_nome else "-"))
-                ws.write(row, 7, smart_str(curso_nome.nome if curso_nome else "-"))
+                ws.write(row, 3, smart_str(turma_nome.nome if turma_nome else "-"))
+                ws.write(row, 4, smart_str(curso_nome.nome if curso_nome else "-"))
+                ws.write(row, 5, smart_str(aluno.email))
+                ws.write(row, 6, dict(Aluno.SITUACAO_CHOICES).get(aluno.situacao, "-"))
+                ws.write(row, 7, smart_str(endereco))
             output = BytesIO()
             wb.save(output)
             output.seek(0)
-            response = HttpResponse(
-                output.getvalue(), content_type="application/vnd.ms-excel"
-            )
-            response["Content-Disposition"] = (
-                'attachment; filename="ficha_cadastral.xls"'
-            )
+            response = HttpResponse(output.getvalue(), content_type="application/vnd.ms-excel")
+            response["Content-Disposition"] = 'attachment; filename="ficha_cadastral.xls"'
             return response
+
         elif export == "pdf":
             from django.template.loader import get_template
             from weasyprint import HTML
-
-            template = get_template("alunos/relatorio_ficha_cadastral.html")
-            html_string = template.render(
-                {
-                    "alunos": alunos_qs,
-                    "turmas": turmas,
-                    "cursos": cursos,
-                    "situacoes": situacoes,
-                    "filtros": {
-                        "turma": turma_id,
-                        "curso": curso_id,
-                        "situacao": situacao,
-                    },
-                    "is_export_pdf": True,
-                }
-            )
-            pdf_file = HTML(
-                string=html_string, base_url=request.build_absolute_uri()
-            ).write_pdf()
+            template = get_template("alunos/relatorio_ficha_cadastral_pdf.html")
+            context = {
+                "alunos": alunos_qs,
+            }
+            html_string = template.render(context, request)
+            pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
             response = HttpResponse(pdf_file, content_type="application/pdf")
-            response["Content-Disposition"] = (
-                'attachment; filename="ficha_cadastral.pdf"'
-            )
+            response["Content-Disposition"] = 'attachment; filename="ficha_cadastral.pdf"'
             return response
 
-    # Filtros para o template
-    turmas = Turma.objects.all().order_by("nome")
-    cursos = Curso.objects.all().order_by("nome")
-    situacoes = Aluno.SITUACAO_CHOICES
-
-    return render(
-        request,
-        "alunos/relatorio_ficha_cadastral.html",
-        {
-            "alunos": alunos_qs,
-            "turmas": turmas,
-            "cursos": cursos,
-            "situacoes": situacoes,
-            "filtros": {"turma": turma_id, "curso": curso_id, "situacao": situacao},
+    # Contexto para o template HTML
+    context = {
+        "alunos": alunos_qs,
+        "todos_alunos": todos_alunos_list,
+        "turmas": turmas,
+        "cursos": cursos,
+        "situacoes": situacoes,
+        "filtros": {
+            "aluno": aluno_id, "turma": turma_id,
+            "curso": curso_id, "situacao": situacao,
         },
-    )
+    }
+    return render(request, "alunos/relatorio_ficha_cadastral.html", context)
