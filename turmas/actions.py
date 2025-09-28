@@ -1,19 +1,7 @@
 from django.contrib import admin, messages
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext_lazy as _
-from importlib import import_module
-
-
-def get_atividade_model():
-    """Obtém o modelo Atividade."""
-    atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "Atividade")
-
-
-def get_matricula_model():
-    """Obtém o modelo Matricula."""
-    matriculas_module = import_module("matriculas.models")
-    return getattr(matriculas_module, "Matricula")
+from core.utils import get_model_dynamically
 
 
 def desativar_turmas_action(modeladmin, request, queryset):
@@ -54,8 +42,8 @@ def get_desativar_turmas_impacto_view(modeladmin):
                 return redirect("admin:turmas_turma_changelist")
 
             num_mat, num_ativ = 0, 0
-            Matricula = get_matricula_model()
-            Atividade = get_atividade_model()
+            Matricula = get_model_dynamically("matriculas", "Matricula")
+            Atividade = get_model_dynamically("atividades", "Atividade")
 
             for turma in turmas_a_desativar:
                 mat = Matricula.objects.filter(turma=turma, ativa=True)
@@ -82,8 +70,8 @@ def get_desativar_turmas_impacto_view(modeladmin):
 
             return redirect("admin:turmas_turma_changelist")
 
-        Matricula = get_matricula_model()
-        Atividade = get_atividade_model()
+        Matricula = get_model_dynamically("matriculas", "Matricula")
+        Atividade = get_model_dynamically("atividades", "Atividade")
 
         mat_afetadas = Matricula.objects.filter(turma__in=queryset, ativa=True)
         atividades_afetadas = Atividade.objects.filter(turmas__in=queryset, ativo=True)

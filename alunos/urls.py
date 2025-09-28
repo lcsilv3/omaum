@@ -17,7 +17,7 @@ from alunos.views import (
     listar_codigos_por_tipo_ajax,
 )
 from . import api_views
-from . import views_novo
+from . import views_novo_temp as views_novo
 
 app_name = "alunos"
 

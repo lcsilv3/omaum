@@ -252,7 +252,7 @@ def listar_historico_aluno(aluno):
 def criar_registro_historico(data, aluno):
     """
     Cria um registro histórico para o aluno."""
-    from alunos.models import RegistroHistorico
+    RegistroHistorico = get_registro_historico_model()
 
     data["aluno"] = aluno
     return RegistroHistorico.objects.create(**data)

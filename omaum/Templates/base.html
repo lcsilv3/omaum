@@ -85,11 +85,8 @@
                                 <li><a class="dropdown-item" href="{% url 'pagamentos:relatorio_financeiro' %}">Relatório Financeiro</a></li>
                             </ul>
                         </li>
-                        {% endif %}
-                    </ul>
-                    <!-- Menu Relatórios Centralizado -->
-                    {% load relatorios_menu %}
-                    <ul class="navbar-nav">
+                        <!-- Relatórios -->
+                        {% load relatorios_menu %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="relatoriosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-chart-bar"></i> Relatórios
@@ -98,6 +95,7 @@
                                 {% render_relatorios_menu %}
                             </ul>
                         </li>
+                        {% endif %}
                     </ul>
                     <ul class="navbar-nav">
                         {% if user.is_authenticated %}

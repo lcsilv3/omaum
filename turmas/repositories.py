@@ -1,10 +1,9 @@
 """
-Repositórios para os modelos dos aplicativos Turmas e Cargos.
+Repositórios para os modelos do aplicativo Turmas.
 """
 
 import logging
-from django.utils import timezone
-from alunos.utils import get_turma_model, get_atribuicao_cargo_model
+from .utils import get_turma_model
 
 logger = logging.getLogger(__name__)
 
@@ -62,28 +61,3 @@ class TurmaRepository:
             "O auxiliar de instrução foi removido devido à mudança de situação."
         )
         turma.save()
-
-
-class AtribuicaoCargoRepository:
-    """Repository para operações com o modelo AtribuicaoCargo."""
-
-    @staticmethod
-    def get_model():
-        """Obtém o modelo AtribuicaoCargo dinamicamente."""
-        return get_atribuicao_cargo_model()
-
-    @staticmethod
-    def buscar_atribuicoes_ativas_por_aluno_e_cargo(aluno, nome_cargo):
-        """Busca atribuições de cargo ativas para um aluno com um cargo específico."""
-        AtribuicaoCargo = AtribuicaoCargoRepository.get_model()
-        if not AtribuicaoCargo:
-            return []
-        return AtribuicaoCargo.objects.filter(
-            aluno=aluno, cargo__nome__icontains=nome_cargo, data_fim__isnull=True
-        )
-
-    @staticmethod
-    def finalizar_atribuicao(atribuicao):
-        """Finaliza uma atribuição de cargo definindo a data de fim."""
-        atribuicao.data_fim = timezone.now().date()
-        atribuicao.save()

@@ -1,18 +1,22 @@
 # cursos/actions.py
-
+from importlib import import_module
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 
-from turmas.models import Turma
 from .models import Curso
+
+
+def get_turma_model():
+    """Obtém o modelo Turma dinamicamente para evitar importação circular."""
+    return import_module("turmas.models").Turma
 
 
 def desativar_cursos_action(modeladmin, request, queryset):
     selected = queryset.values_list("pk", flat=True)
     url = reverse("admin:desativar_cursos_impacto")
-    return HttpResponseRedirect(f"{url}?ids={', '.join(map(str, selected))}")
+    return HttpResponseRedirect(f"{url}?ids={','.join(map(str, selected))}")
 
 
 desativar_cursos_action.short_description = "Desativar Cursos Selecionados"
@@ -27,6 +31,8 @@ def get_desativar_cursos_impacto_view(modeladmin):
 
         curso_ids = [int(pk) for pk in curso_ids_str.split(",")]
         cursos = Curso.objects.filter(pk__in=curso_ids)
+
+        Turma = get_turma_model()
         turmas_afetadas = Turma.objects.filter(curso__in=cursos, ativo=True)
 
         if request.method == "POST":

@@ -1,8 +1,6 @@
 # c:/projetos/omaum/turmas/services.py
 from django.core.exceptions import ValidationError
-from alunos.models import Aluno
-from cursos.models import Curso
-from matriculas.models import Matricula
+from core.utils import get_model_dynamically
 from .models import Turma
 
 
@@ -11,6 +9,7 @@ def criar_turma(dados_turma: dict) -> Turma:
     Cria uma nova turma com base nos dados fornecidos em um dicionário.
     Valida a existência do curso e a unicidade do nome da turma para o curso.
     """
+    Curso = get_model_dynamically("cursos", "Curso")
     curso_id = dados_turma.get("curso_id")
     if not curso_id:
         raise ValidationError("O ID do curso é obrigatório.")
@@ -47,10 +46,13 @@ def criar_turma(dados_turma: dict) -> Turma:
     return nova_turma
 
 
-def matricular_aluno_em_turma(aluno_id: int, turma_id: int) -> Matricula:
+def matricular_aluno_em_turma(aluno_id: int, turma_id: int):
     """
     Matricula um aluno em uma turma, realizando todas as validações necessárias.
     """
+    Aluno = get_model_dynamically("alunos", "Aluno")
+    Matricula = get_model_dynamically("matriculas", "Matricula")
+
     try:
         aluno = Aluno.objects.get(pk=aluno_id)
         turma = Turma.objects.get(pk=turma_id)

@@ -20,26 +20,12 @@ def get_aluno_form():
     return getattr(alunos_forms, "AlunoForm")
 
 
-def get_turma_model():
-    turmas_module = import_module("turmas.models")
-    return getattr(turmas_module, "Turma")
-
-
 def get_matricula_model():
     try:
         matriculas_module = import_module("matriculas.models")
         return getattr(matriculas_module, "Matricula")
     except (ImportError, AttributeError) as exc:
         logger.debug("Matricula model não disponível: %s", exc)
-        return None
-
-
-def get_atribuicao_cargo_model():
-    try:
-        cargos_module = import_module("cargos.models")
-        return getattr(cargos_module, "AtribuicaoCargo")
-    except (ImportError, AttributeError) as exc:
-        logger.debug("AtribuicaoCargo model não disponível: %s", exc)
         return None
 
 
@@ -78,6 +64,24 @@ def get_codigo_model():
 
         return Codigo
     except Exception:  # noqa: BLE001
+        return None
+
+
+def get_turma_model():
+    try:
+        turmas_module = import_module("turmas.models")
+        return getattr(turmas_module, "Turma")
+    except (ImportError, AttributeError) as exc:
+        logger.debug("Turma model não disponível: %s", exc)
+        return None
+
+
+def get_atribuicao_cargo_model():
+    try:
+        cargos_module = import_module("cargos.models")
+        return getattr(cargos_module, "AtribuicaoCargo")
+    except (ImportError, AttributeError) as exc:
+        logger.debug("AtribuicaoCargo model não disponível: %s", exc)
         return None
 
 

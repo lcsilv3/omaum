@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Auditoria de Dados</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 1.5cm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9pt;
+                color: #555;
+            }
+        }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 9pt; color: #333; }
+        .report-header { text-align: center; margin-bottom: 0.5cm; position: relative; }
+        .report-header .org-title { font-size: 12pt; font-weight: bold; margin: 0; }
+        .report-header .org-title small { font-size: 9pt; font-weight: normal; }
+        .report-header .emission-datetime { position: absolute; top: 0; right: 0; font-size: 9pt; margin: 0; text-align: right; }
+        h1 { text-align: center; font-size: 16pt; margin-top: 0; margin-bottom: 1cm; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+        th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; word-wrap: break-word; }
+        thead { background-color: #f2f2f2; display: table-header-group; }
+        th { font-weight: bold; }
+        tr { page-break-inside: avoid; page-break-after: auto; }
+        tbody tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <p class="emission-datetime">
+            Emitido em: {% now "d/m/Y" %} às {% now "H:i" %}
+        </p>
+        <p class="org-title">
+            OM-AUM<br>
+            <small>(Ordem Mística de Aspiração Universal ao Mestrado)</small>
+        </p>
+    </div>
+    <h1>Relatório de Auditoria de Dados</h1>
+    <table>
+        <thead>
+            <tr>
+                {% for header in headers %}
+                <th>{{ header }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                {% for cell in row %}
+                <td>{{ cell }}</td>
+                {% endfor %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{{ headers|length }}" style="text-align: center;">Nenhum aluno encontrado para os filtros selecionados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

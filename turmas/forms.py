@@ -1,28 +1,10 @@
 from django import forms
-from importlib import import_module
-
-
-# Adicionar esta função para obter o modelo Aluno dinamicamente
-def get_aluno_model():
-    alunos_module = import_module("alunos.models")
-    return getattr(alunos_module, "Aluno")
-
-
-# Adicionar esta função para obter o modelo Turma dinamicamente
-def get_turma_model():
-    turmas_module = import_module("turmas.models")
-    return getattr(turmas_module, "Turma")
-
-
-# Adicionar esta função para obter o modelo Curso dinamicamente
-def get_curso_model():
-    cursos_module = import_module("cursos.models")
-    return getattr(cursos_module, "Curso")
+from core.utils import get_model_dynamically
 
 
 class TurmaForm(forms.ModelForm):
     class Meta:
-        model = get_turma_model()
+        model = get_model_dynamically("turmas", "Turma")
         fields = [
             "curso",
             "nome",
@@ -77,8 +59,8 @@ class TurmaForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # Filtrar apenas alunos ativos para os campos de instrutor
-        aluno_model = get_aluno_model()
-        alunos_ativos = aluno_model.objects.filter(situacao="ATIVO")
+        Aluno = get_model_dynamically("alunos", "Aluno")
+        alunos_ativos = Aluno.objects.filter(situacao="ATIVO")
 
         self.fields["instrutor"].queryset = alunos_ativos
         self.fields["instrutor_auxiliar"].queryset = alunos_ativos

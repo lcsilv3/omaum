@@ -1,21 +1,25 @@
 """Serializers para o aplicativo Matriculas."""
 
 from rest_framework import serializers
-from matriculas.models import Matricula
+from .models import Matricula
 
 
 class MatriculaSerializer(serializers.ModelSerializer):
     """Serializer para o modelo Matricula."""
 
+    aluno = serializers.SerializerMethodField()
+    turma = serializers.SerializerMethodField()
+
     class Meta:
-        """
-        Classe Meta para definir o modelo e os campos a serem serializados.
-
-        Atributos:
-            model: Define o modelo associado ao serializer.
-            fields: Especifica que todos os campos do modelo
-                serão serializados.
-        """
-
         model = Matricula
-        fields = "__all__"
+        fields = ["id", "aluno", "turma", "data_matricula"]
+
+    def get_aluno(self, obj):
+        """Carrega dinamicamente o AlunoSerializer para evitar importação circular."""
+        from alunos.serializers import AlunoSerializer
+        return AlunoSerializer(obj.aluno).data
+
+    def get_turma(self, obj):
+        """Carrega dinamicamente o TurmaSerializer para evitar importação circular."""
+        from turmas.serializers import TurmaSerializer
+        return TurmaSerializer(obj.turma).data
