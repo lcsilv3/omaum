@@ -1,0 +1,20 @@
+{% for curso in cursos %}
+    <tr>
+        <td>{{ curso.nome }}</td>
+        <td class="text-center">
+            <div class="btn-group btn-group-sm" role="group">
+                <a href="{% url 'cursos:detalhar_curso' curso.id %}" class="btn btn-info" title="Detalhar curso" data-bs-toggle="tooltip">
+                    <i class="fas fa-eye"></i>
+                </a>
+                <a href="{% url 'cursos:editar_curso' curso.id %}" class="btn btn-warning" title="Editar curso" data-bs-toggle="tooltip">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'cursos:excluir_curso' curso.id %}" class="btn btn-danger" title="Excluir curso" data-bs-toggle="tooltip">
+                    <i class="fas fa-trash"></i>
+                </a>
+            </div>
+        </td>
+    </tr>
+{% empty %}
+    <tr><td colspan="2" class="text-center">Nenhum curso encontrado.</td></tr>
+{% endfor %}

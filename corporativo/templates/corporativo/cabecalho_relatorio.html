@@ -1,0 +1,15 @@
+<div class="cabecalho-corporativo">
+    <div class="linha-principal">
+        <div class="nome-organizacao">
+            {{ config.nome_organizacao }}
+        </div>
+        {% if config.mostrar_data_hora_cabecalho %}
+        <div class="data-hora">
+            {{ data_hora_atual|date:config.formato_data_hora }}
+        </div>
+        {% endif %}
+    </div>
+    <div class="linha-titulo">
+        <h2>{{ titulo_relatorio }}</h2>
+    </div>
+</div>

@@ -20,7 +20,16 @@
     </div>
 
     <div class="d-flex justify-content-end mb-3">
-        <a href="{% url 'cursos:gerar_relatorio_pdf' %}" class="btn btn-primary" target="_blank">Gerar Relatório em PDF</a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-file-export"></i> Exportar Relatório
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="?formato=csv">Exportar para CSV</a></li>
+                <li><a class="dropdown-item" href="?formato=excel">Exportar para Excel</a></li>
+                <li><a class="dropdown-item" href="?formato=pdf" target="_blank">Visualizar em PDF</a></li>
+            </ul>
+        </div>
     </div>
 
     <table class="table table-bordered table-striped">

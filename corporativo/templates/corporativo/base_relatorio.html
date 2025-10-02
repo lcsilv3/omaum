@@ -1,0 +1,21 @@
+{% load static %}
+{% load corporativo_tags %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% nome_organizacao %}{% endblock %}</title>
+    <link href="{% static 'corporativo/css/relatorios.css' %}" rel="stylesheet">
+    <link href="{% static 'corporativo/css/print.css' %}" rel="stylesheet" media="print">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="relatorio-corporativo">
+    {% cabecalho_relatorio titulo_relatorio %}
+    <main class="conteudo-relatorio">
+        {% block content %}{% endblock %}
+    </main>
+    {% rodape_relatorio %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

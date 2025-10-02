@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  omaum-db:
+    image: postgres:15-alpine
+    container_name: omaum-db-prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - omaum_db_data:/var/lib/postgresql/data
+    networks:
+      - omaum-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  omaum-redis:
+    image: redis:7-alpine
+    container_name: omaum-redis-prod
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - omaum_redis_data:/data
+    networks:
+      - omaum-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  omaum-web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: omaum-web-prod
+    environment:
+      - DJANGO_SETTINGS_MODULE=omaum.settings.production
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@omaum-db:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@omaum-redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    volumes:
+      - omaum_static:/app/static
+      - omaum_media:/app/media
+      - omaum_logs:/app/logs
+    depends_on:
+      omaum-db:
+        condition: service_healthy
+      omaum-redis:
+        condition: service_healthy
+    networks:
+      - omaum-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  omaum-nginx:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.nginx
+    container_name: omaum-nginx-prod
+    volumes:
+      - omaum_static:/var/www/static:ro
+      - omaum_media:/var/www/media:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      omaum-web:
+        condition: service_healthy
+    networks:
+      - omaum-network
+    restart: unless-stopped
+
+  omaum-celery:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: omaum-celery-prod
+    environment:
+      - DJANGO_SETTINGS_MODULE=omaum.settings.production
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@omaum-db:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@omaum-redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - omaum_media:/app/media
+      - omaum_logs:/app/logs
+    depends_on:
+      omaum-db:
+        condition: service_healthy
+      omaum-redis:
+        condition: service_healthy
+    networks:
+      - omaum-network
+    restart: unless-stopped
+    command: celery -A omaum worker -l info
+
+  omaum-celery-beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: omaum-celery-beat-prod
+    environment:
+      - DJANGO_SETTINGS_MODULE=omaum.settings.production
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@omaum-db:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@omaum-redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - omaum_logs:/app/logs
+    depends_on:
+      omaum-db:
+        condition: service_healthy
+      omaum-redis:
+        condition: service_healthy
+    networks:
+      - omaum-network
+    restart: unless-stopped
+    command: celery -A omaum beat -l info
+
+volumes:
+  omaum_db_data:
+  omaum_redis_data:
+  omaum_static:
+  omaum_media:
+  omaum_logs:
+
+networks:
+  omaum-network:
+    driver: bridge

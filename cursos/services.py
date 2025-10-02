@@ -36,9 +36,12 @@ def get_pagamento_model():
 # --- Funções de Leitura (Read) ---
 
 
-def listar_cursos():
-    """Retorna uma queryset com todos os cursos, ordenados por id."""
-    return Curso.objects.all().order_by("id")
+def listar_cursos(query=None):
+    """Retorna uma queryset com todos os cursos, opcionalmente filtrados por nome."""
+    cursos = Curso.objects.all()
+    if query:
+        cursos = cursos.filter(nome__icontains=query)
+    return cursos.order_by("id")
 
 
 def obter_curso_por_id(curso_id):

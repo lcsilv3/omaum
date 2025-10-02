@@ -1,0 +1,42 @@
+# Exemplo de docker-compose.override.yml para produção
+# Use junto com docker-compose.yml para customizar variáveis e serviços em produção
+version: '3.8'
+
+services:
+  omaum-web:
+    env_file:
+      - ./docker/.env.production
+    environment:
+      - DJANGO_SETTINGS_MODULE=omaum.settings.production
+    restart: always
+    depends_on:
+      - db
+      - redis
+    # Exemplo de volumes para persistência
+    volumes:
+      - staticfiles:/app/static
+      - media:/app/media
+      - logs:/app/logs
+
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: omaum
+      POSTGRES_USER: usuario
+      POSTGRES_PASSWORD: senha
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    restart: always
+    volumes:
+      - redis_data:/data
+
+volumes:
+  staticfiles:
+  media:
+  logs:
+  db_data:
+  redis_data:

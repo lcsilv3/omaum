@@ -1,0 +1,12 @@
+<div class="rodape-corporativo">
+    {% if config.mostrar_numeracao_pagina %}
+    <div class="numeracao-pagina">
+        Página {% if numero_pagina %}{{ numero_pagina }}{% else %}1{% endif %}
+    </div>
+    {% endif %}
+    {% if config.texto_rodape_personalizado %}
+    <div class="texto-personalizado">
+        {{ config.texto_rodape_personalizado }}
+    </div>
+    {% endif %}
+</div>
