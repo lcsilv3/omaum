@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static alunos_extras custom_filters %}
 
 {% block content %}
 <div class="container-fluid">
@@ -66,7 +66,7 @@
           <td>{{ aluno.cpf }}</td>
           <td>{{ aluno.get_sexo_display }}</td>
           <td>{{ aluno.data_nascimento|date:'d/m/Y' }}</td>
-          <td>{{ aluno.cidade_ref.nome if aluno.cidade_ref else '-' }}</td>
+          <td>{% if aluno.cidade_ref %}{{ aluno.cidade_ref.nome }}{% else %}-{% endif %}</td>
         </tr>
         {% empty %}
         <tr><td colspan="5" class="text-center">Nenhum aluno encontrado.</td></tr>

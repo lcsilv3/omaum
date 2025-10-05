@@ -26,6 +26,11 @@ urlpatterns = [
         name="editar_matricula",
     ),
     path(
+        "<int:matricula_id>/cancelar/",
+        views_tradicionais.cancelar_matricula,
+        name="cancelar_matricula",
+    ),
+    path(
         "<int:matricula_id>/excluir/",
         views_tradicionais.excluir_matricula,
         name="excluir_matricula",

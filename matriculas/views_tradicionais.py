@@ -165,6 +165,41 @@ def excluir_matricula(request, matricula_id):
     return render(request, "matriculas/confirmar_exclusao_matricula.html", context)
 
 
+@login_required
+def cancelar_matricula(request, matricula_id):
+    """Cancela uma matrícula ativa."""
+    matricula = get_object_or_404(Matricula, id=matricula_id)
+
+    if matricula.status != "A":
+        messages.info(
+            request,
+            "Apenas matrículas ativas podem ser canceladas.",
+        )
+        return redirect("matriculas:detalhar_matricula", matricula_id=matricula.id)
+
+    if request.method == "POST":
+        try:
+            matricula.status = "C"
+            matricula.ativa = False
+            matricula.save(update_fields=["status", "ativa"])
+            messages.success(request, "Matrícula cancelada com sucesso!")
+        except Exception as e:
+            messages.error(request, f"Erro ao cancelar matrícula: {str(e)}")
+
+        return redirect("matriculas:detalhar_matricula", matricula_id=matricula.id)
+
+    context = {
+        "matricula": matricula,
+        "titulo": f"Cancelar Matrícula #{matricula.id}",
+    }
+
+    return render(
+        request,
+        "matriculas/confirmar_cancelamento_matricula.html",
+        context,
+    )
+
+
 # Views AJAX
 @login_required
 def buscar_turmas(request):

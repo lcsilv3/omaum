@@ -75,3 +75,28 @@ def truncate_middle(value, arg):
         half_length = 1
 
     return value[:half_length] + "..." + value[-half_length:]
+
+
+@register.filter
+def attr(value, arg):
+    """Obtém um atributo (aninhado) de um objeto ou dicionário."""
+    if value is None or not arg:
+        return ""
+
+    current = value
+    for part in str(arg).split("."):
+        if current is None:
+            return ""
+
+        if isinstance(current, dict):
+            current = current.get(part)
+        else:
+            current = getattr(current, part, "")
+
+    if callable(current):  # evita retornar métodos
+        try:
+            current = current()
+        except TypeError:
+            return ""
+
+    return "" if current is None else current

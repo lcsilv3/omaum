@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static alunos_extras %}
 
 {% block title %}{% if aluno and aluno.cpf %}Editar (CPF: {{ aluno.cpf|mask_cpf }}){% else %}Novo{% endif %} Aluno{% endblock %}
 

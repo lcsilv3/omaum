@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from ..models import Aluno
-from .serializers import AlunoSerializer
+from alunos.serializers import AlunoSerializer
 
 
 class AlunoViewSet(viewsets.ModelViewSet):

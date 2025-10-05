@@ -161,9 +161,9 @@
         <div class="card-body">
             <div class="d-flex flex-wrap gap-2">
                 {% if matricula.status == 'A' %}
-                    <a href="{% url 'matriculas:cancelar_matricula' matricula.id %}" class="btn btn-danger">
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalCancelarMatricula">
                         <i class="fas fa-times-circle"></i> Cancelar Matrícula
-                    </a>
+                    </button>
                 {% endif %}
                 
                 <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.cpf %}" class="btn btn-primary">
@@ -183,4 +183,27 @@
         </div>
     </div>
 </div>
+{% if matricula.status == 'A' %}
+<div class="modal fade" id="modalCancelarMatricula" tabindex="-1" aria-labelledby="modalCancelarMatriculaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'matriculas:cancelar_matricula' matricula.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalCancelarMatriculaLabel">Confirmar cancelamento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Tem certeza de que deseja cancelar a matrícula de <strong>{{ matricula.aluno.nome }}</strong> na turma <strong>{{ matricula.turma.nome }}</strong>?</p>
+                    <p class="mb-0 text-muted">Essa ação desativará a matrícula e poderá impactar relatórios e presença associada.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Manter matrícula</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-times-circle"></i> Cancelar matrícula</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static alunos_extras custom_filters %}
 
 {% block content %}
 <div class="container-fluid">
@@ -30,7 +30,7 @@
           <th>Nome</th>
           <th>CPF</th>
           {% for campo in campos_filtros %}
-            <th>{{ auditaveis[campo] }}</th>
+            <th>{{ auditaveis|get_item:campo }}</th>
           {% endfor %}
         </tr>
       </thead>
@@ -44,7 +44,7 @@
           {% endfor %}
         </tr>
         {% empty %}
-        <tr><td colspan="{{ 2|add:campos_filtros|length }}" class="text-center">Nenhum aluno encontrado com os campos selecionados ausentes.</td></tr>
+        <tr><td colspan="{{ campos_filtros|length|add:2 }}" class="text-center">Nenhum aluno encontrado com os campos selecionados ausentes.</td></tr>
         {% endfor %}
       </tbody>
     </table>

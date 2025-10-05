@@ -1,120 +1,80 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends 'alunos/base_relatorio.html' %}
 
-{% block content %}
-<div class="container-fluid">
-  <h2 class="mt-3 mb-4">Relatório: Ficha Cadastral de Alunos</h2>
-  {% if not is_export_pdf %}
-  <form method="get" class="row g-3 mb-4 align-items-end" id="filtros-ficha-cadastral">
-    <div class="col-md-3">
-      <label for="filtro-aluno" class="form-label">Aluno</label>
-      <select name="aluno" id="filtro-aluno" class="form-select">
-        <option value="">Todos</option>
-        {% for aluno_filtro in todos_alunos %}
-          <option value="{{ aluno_filtro.id }}" {% if filtros.aluno == aluno_filtro.id|stringformat:'s' %}selected{% endif %}>{{ aluno_filtro.nome }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-2">
-      <label for="filtro-turma" class="form-label">Turma</label>
-      <select name="turma" id="filtro-turma" class="form-select">
-        <option value="">Todas</option>
-        {% for turma in turmas %}
-          <option value="{{ turma.id }}" {% if filtros.turma == turma.id|stringformat:'s' %}selected{% endif %}>{{ turma.nome }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-2">
-      <label for="filtro-curso" class="form-label">Curso</label>
-      <select name="curso" id="filtro-curso" class="form-select">
-        <option value="">Todos</option>
-        {% for curso in cursos %}
-          <option value="{{ curso.id }}" {% if filtros.curso == curso.id|stringformat:'s' %}selected{% endif %}>{{ curso.nome }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-2">
-      <label for="filtro-situacao" class="form-label">Situação</label>
-      <select name="situacao" id="filtro-situacao" class="form-select">
-        <option value="">Todas</option>
-        {% for val, label in situacoes %}
-          <option value="{{ val }}" {% if filtros.situacao == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-3 d-flex align-items-end gap-2">
-      <button type="submit" class="btn btn-primary">Filtrar</button>
-      {% url 'alunos:relatorio_ficha_cadastral' as base_url %}
-      <a href="{{ base_url }}?export=csv&aluno={{ filtros.aluno }}&turma={{ filtros.turma }}&curso={{ filtros.curso }}&situacao={{ filtros.situacao }}" class="btn btn-outline-secondary" title="Exportar CSV"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</a>
-      <a href="{{ base_url }}?export=xls&aluno={{ filtros.aluno }}&turma={{ filtros.turma }}&curso={{ filtros.curso }}&situacao={{ filtros.situacao }}" class="btn btn-outline-secondary" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
-      <a href="{{ base_url }}?export=pdf&aluno={{ filtros.aluno }}&turma={{ filtros.turma }}&curso={{ filtros.curso }}&situacao={{ filtros.situacao }}" class="btn btn-outline-secondary" title="Exportar PDF"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
-    </div>
-  </form>
-  {% endif %}
+{% block title %}{{ titulo }}{% endblock %}
 
-  <div class="table-responsive" style="overflow-x:auto;">
-    <table class="table table-bordered table-hover align-middle small w-100" id="tabela-ficha-cadastral" style="min-width:1000px;">
-      <thead class="table-light">
-        <tr>
-          <th>Nome</th>
-          <th>CPF</th>
-          <th>Data Nasc.</th>
-          <th>Turma</th>
-          <th>Curso</th>
-          <th>Email</th>
-          <th>Situação</th>
-          <th>Endereço <i class="bi bi-info-circle" data-bs-toggle="tooltip" title="Passe o mouse para ver detalhes do endereço."></i></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for aluno in alunos %}
-        {% with matricula=aluno.matricula_set.first %}
-        <tr>
-          <td>{{ aluno.nome }}</td>
-          <td>{{ aluno.cpf }}</td>
-          <td>{{ aluno.data_nascimento|date:'d/m/Y' }}</td>
-          <td>{{ matricula.turma.nome|default:"-" }}</td>
-          <td>{{ matricula.turma.curso.nome|default:"-" }}</td>
-          <td>{{ aluno.email }}</td>
-          <td>
-            <span class="badge {% if aluno.situacao == 'a' %}bg-success{% elif aluno.situacao == 'i' %}bg-secondary{% elif aluno.situacao == 't' %}bg-warning{% elif aluno.situacao == 'd' %}bg-danger{% else %}bg-light text-dark{% endif %}">
-              {{ aluno.get_situacao_display }}
-            </span>
-          </td>
-          <td>
-            <span data-bs-toggle="tooltip" data-bs-title="{{ aluno.rua }}, {{ aluno.numero_imovel }}, {{ aluno.bairro_ref }}, {{ aluno.cidade_ref }}, {{ aluno.cep }}">
-              {{ aluno.rua }}, {{ aluno.numero_imovel }}<br>
-              {{ aluno.bairro_ref }}, {{ aluno.cidade_ref }}<br>
-              {{ aluno.cep }}
-            </span>
-          </td>
-        </tr>
-        {% endwith %}
-        {% empty %}
-        <tr><td colspan="8" class="text-center">Nenhum aluno encontrado.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{% block filtros %}
+<form method="get" class="row g-3 mb-4 align-items-end" id="filtros-ficha-cadastral">
+  <div class="col-md-3">
+    <label for="filtro-aluno" class="form-label">Aluno</label>
+    <select name="aluno" id="filtro-aluno" class="form-select">
+      <option value="">Todos</option>
+      {% for aluno_filtro in todos_alunos %}
+        <option value="{{ aluno_filtro.id }}" {% if filtros.aluno_id == aluno_filtro.id|stringformat:'s' %}selected{% endif %}>{{ aluno_filtro.nome }}</option>
+      {% endfor %}
+    </select>
   </div>
+  <div class="col-md-2">
+    <label for="filtro-turma" class="form-label">Turma</label>
+    <select name="turma" id="filtro-turma" class="form-select">
+      <option value="">Todas</option>
+      {% for turma in turmas %}
+        <option value="{{ turma.id }}" {% if filtros.turma_id == turma.id|stringformat:'s' %}selected{% endif %}>{{ turma.nome }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label for="filtro-curso" class="form-label">Curso</label>
+    <select name="curso" id="filtro-curso" class="form-select">
+      <option value="">Todos</option>
+      {% for curso in cursos %}
+        <option value="{{ curso.id }}" {% if filtros.curso_id == curso.id|stringformat:'s' %}selected{% endif %}>{{ curso.nome }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label for="filtro-situacao" class="form-label">Situação</label>
+    <select name="situacao" id="filtro-situacao" class="form-select">
+      <option value="">Todas</option>
+      {% for val, label in situacoes %}
+        <option value="{{ val }}" {% if filtros.situacao == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3 d-flex align-items-end gap-2">
+    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+  </div>
+</form>
+{% endblock filtros %}
+
+{% block relatorio_content %}
+<div class="table-responsive">
+  <table class="table table-bordered table-hover align-middle small w-100">
+    <thead class="table-light">
+      <tr>
+        <th>Nome</th>
+        <th>CPF</th>
+        <th>Data Nasc.</th>
+        <th>Email</th>
+        <th>Situação</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for aluno in alunos %}
+      <tr>
+        <td>{{ aluno.nome }}</td>
+        <td>{{ aluno.cpf }}</td>
+        <td>{{ aluno.data_nascimento|date:'d/m/Y' }}</td>
+        <td>{{ aluno.email }}</td>
+        <td>
+          <span class="badge {% if aluno.situacao == 'a' %}bg-success{% else %}bg-secondary{% endif %}">
+            {{ aluno.get_situacao_display }}
+          </span>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center">Nenhum aluno encontrado com os filtros aplicados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
-
-{% if not is_export_pdf %}
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    // Inicializa tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-      new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Lógica para Select2 (se disponível)
-    // if (typeof $ !== 'undefined' && $.fn.select2) {
-    //   $('#filtro-aluno').select2({
-    //     placeholder: 'Selecione um aluno',
-    //     allowClear: true
-    //   });
-    // }
-  });
-</script>
-{% endif %}
-{% endblock %}
+{% endblock relatorio_content %}

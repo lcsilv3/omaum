@@ -14,7 +14,7 @@ from django.shortcuts import render, redirect
 
 from alunos.forms import AlunoForm, RegistroHistoricoFormSet, RegistroHistoricoForm
 from alunos.models import Aluno, RegistroHistorico
-from alunos.services import listar_alunos, buscar_aluno_por_id, buscar_aluno_por_cpf
+from alunos.services import listar_alunos, buscar_aluno_por_id
 
 logger = logging.getLogger(__name__)
 

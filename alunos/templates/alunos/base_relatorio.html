@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    {# Cabeçalho Padrão do Relatório #}
+    <div class="header-container mb-4 text-center">
+        <h2 class="h4">{{ nome_organizacao|default:"OMAUM" }}</h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="flex-grow-1 text-center">
+                <span class="h5 mb-0">{{ nome_sistema|default:"Sistema de Gestão" }}</span>
+            </div>
+            <span class="text-muted" style="font-size: 0.8rem; white-space: nowrap;">Data de Emissão: {{ data_emissao }}</span>
+        </div>
+        <h1 class="mb-4 mt-2">{{ titulo|default:"Relatório" }}</h1>
+    </div>
+
+    {# Bloco para Filtros - a ser sobrescrito por templates filhos #}
+    {% block filtros %}{% endblock filtros %}
+
+    {# Bloco para o Conteúdo Principal do Relatório - a ser sobrescrito #}
+    {% block relatorio_content %}
+        <p class="text-center">O conteúdo deste relatório ainda não foi definido.</p>
+    {% endblock relatorio_content %}
+
+    {# Rodapé Padrão com Botões #}
+    <div class="mt-4 d-flex justify-content-between">
+        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para a Lista
+        </a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-file-export"></i> Exportar Relatório
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                {% block opcoes_exportacao %}
+                    <li><a class="dropdown-item" href="?{{ request.GET.urlencode }}&export=csv">Exportar para CSV</a></li>
+                    <li><a class="dropdown-item" href="?{{ request.GET.urlencode }}&export=excel">Exportar para Excel</a></li>
+                    <li><a class="dropdown-item" href="?{{ request.GET.urlencode }}&export=pdf" target="_blank">Visualizar em PDF</a></li>
+                {% endblock opcoes_exportacao %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {# Bloco para JS específico de cada relatório #}
+    {% block relatorio_js %}{% endblock relatorio_js %}
+{% endblock extra_js %}
