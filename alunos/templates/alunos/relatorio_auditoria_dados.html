@@ -1,9 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'alunos/base_relatorio.html' %}
 {% load static alunos_extras custom_filters %}
 
-{% block content %}
-<div class="container-fluid">
-  <h2 class="mt-3 mb-4">Relatório: Auditoria de Dados dos Alunos</h2>
+{% block filtros %}
   <form method="get" class="row g-2 mb-4 align-items-end" id="filtros-auditoria-dados">
     <div class="col-md-8">
       <label class="form-label">Campos a auditar (faltantes):</label>
@@ -18,11 +16,16 @@
     </div>
     <div class="col-md-4 d-flex gap-2 align-items-end">
       <button type="submit" class="btn btn-primary">Filtrar</button>
-      <a href="?export=csv{% for campo in campos_filtros %}&campo={{ campo }}{% endfor %}" class="btn btn-outline-secondary" title="Exportar CSV"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</a>
-      <a href="?export=xls{% for campo in campos_filtros %}&campo={{ campo }}{% endfor %}" class="btn btn-outline-secondary" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
     </div>
   </form>
+{% endblock filtros %}
 
+{% block opcoes_exportacao %}
+  <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv">Exportar para CSV</a></li>
+  <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=xls">Exportar para Excel</a></li>
+{% endblock opcoes_exportacao %}
+
+{% block relatorio_content %}
   <div class="table-responsive" style="overflow-x:auto;">
     <table class="table table-bordered table-hover align-middle small w-100" id="tabela-auditoria-dados" style="min-width:900px;">
       <thead class="table-light">
@@ -49,11 +52,13 @@
       </tbody>
     </table>
   </div>
-</div>
-<script>
-  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-    new bootstrap.Tooltip(tooltipTriggerEl);
-  });
-</script>
-{% endblock %}
+{% endblock relatorio_content %}
+
+{% block relatorio_js %}
+  <script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  </script>
+{% endblock relatorio_js %}

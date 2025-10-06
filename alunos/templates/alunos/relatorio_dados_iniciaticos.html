@@ -1,10 +1,8 @@
-{% extends 'base.html' %}
+{% extends 'alunos/base_relatorio.html' %}
 {% load static %}
 {% load alunos_extras %}
 
-{% block content %}
-<div class="container-fluid">
-  <h2 class="mt-3 mb-4">Relatório: Dados Iniciáticos</h2>
+{% block filtros %}
   <form method="get" class="row g-2 mb-4 align-items-end" id="filtros-dados-iniciaticos">
     <div class="col-md-3">
       <label for="filtro-grau" class="form-label">Grau Atual</label>
@@ -30,11 +28,16 @@
     </div>
     <div class="col-md-3 d-flex gap-2">
       <button type="submit" class="btn btn-primary">Filtrar</button>
-      <a href="?export=csv{% if filtros.grau %}&grau={{ filtros.grau }}{% endif %}{% if filtros.situacao %}&situacao={{ filtros.situacao }}{% endif %}{% if filtros.tempo_casa %}&tempo_casa={{ filtros.tempo_casa }}{% endif %}" class="btn btn-outline-secondary" title="Exportar CSV"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</a>
-      <a href="?export=xls{% if filtros.grau %}&grau={{ filtros.grau }}{% endif %}{% if filtros.situacao %}&situacao={{ filtros.situacao }}{% endif %}{% if filtros.tempo_casa %}&tempo_casa={{ filtros.tempo_casa }}{% endif %}" class="btn btn-outline-secondary" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
     </div>
   </form>
+{% endblock filtros %}
 
+{% block opcoes_exportacao %}
+  <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv">Exportar para CSV</a></li>
+  <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=xls">Exportar para Excel</a></li>
+{% endblock opcoes_exportacao %}
+
+{% block relatorio_content %}
   <div class="table-responsive" style="overflow-x:auto;">
     <table class="table table-bordered table-hover align-middle small w-100" id="tabela-dados-iniciaticos" style="min-width:900px;">
       <thead class="table-light">
@@ -67,5 +70,4 @@
       </tbody>
     </table>
   </div>
-</div>
-{% endblock %}
+{% endblock relatorio_content %}

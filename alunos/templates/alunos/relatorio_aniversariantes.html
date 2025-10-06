@@ -1,9 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'alunos/base_relatorio.html' %}
 {% load static %}
 
-{% block content %}
-<div class="container-fluid">
-  <h2 class="mt-3 mb-4">Relatório: Aniversariantes</h2>
+{% block filtros %}
   <form method="get" class="row g-2 mb-4 align-items-end" id="filtros-aniversariantes">
     <div class="col-md-4">
       <label for="filtro-mes" class="form-label">Mês</label>
@@ -16,12 +14,18 @@
     </div>
     <div class="col-md-8 d-flex gap-2 align-items-end">
       <button type="submit" class="btn btn-primary">Filtrar</button>
-      <a href="?export=csv{% if mes_filtro %}&mes={{ mes_filtro }}{% endif %}" class="btn btn-outline-secondary" title="Exportar CSV"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</a>
-      <a href="?export=xls{% if mes_filtro %}&mes={{ mes_filtro }}{% endif %}" class="btn btn-outline-secondary" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
       <!-- Espaço reservado para integração futura (ex: envio de e-mail) -->
     </div>
   </form>
+{% endblock filtros %}
 
+{% block opcoes_exportacao %}
+  <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv">Exportar para CSV</a></li>
+  <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=xls">Exportar para Excel</a></li>
+  <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=pdf" target="_blank">Visualizar em PDF</a></li>
+{% endblock opcoes_exportacao %}
+
+{% block relatorio_content %}
   <div class="table-responsive" style="overflow-x:auto;">
     <table class="table table-bordered table-hover align-middle small w-100" id="tabela-aniversariantes" style="min-width:900px;">
       <thead class="table-light">
@@ -48,5 +52,4 @@
       </tbody>
     </table>
   </div>
-</div>
-{% endblock %}
+{% endblock relatorio_content %}

@@ -13,23 +13,27 @@ from reportlab.lib.units import inch
 from datetime import datetime
 import openpyxl
 
+
 @login_required
 def listar_cursos(request):
     """Lista todos os cursos cadastrados, com filtro de busca e suporte a AJAX."""
-    query = request.GET.get('q', '')
+    query = request.GET.get("q", "")
     cursos = services.listar_cursos(query=query)
     context = {"cursos": cursos, "query": query}
 
     # Se for uma requisição HTMX/AJAX, retorna apenas o fragmento da tabela
-    if request.headers.get('HX-Request') == 'true':
+    if request.headers.get("HX-Request") == "true":
         return render(request, "cursos/partials/tabela_cursos.html", context)
 
     # Caso contrário, renderiza a página completa
-    context.update({
-        "pagamentos_atrasados": [],
-        "pagamentos_atrasados_count": 0,
-    })
+    context.update(
+        {
+            "pagamentos_atrasados": [],
+            "pagamentos_atrasados_count": 0,
+        }
+    )
     return render(request, "cursos/listar_cursos.html", context)
+
 
 @login_required
 def relatorio_cursos(request):
@@ -67,11 +71,19 @@ def relatorio_cursos(request):
         width, height = letter
         data_emissao = datetime.now().strftime("%d/%m/%Y %H:%M")
         p.setFont("Helvetica-Bold", 12)
-        p.drawCentredString(width / 2.0, height - inch, "OMAUM - Ordem Mística de Aspiração Universal ao Mestrado")
+        p.drawCentredString(
+            width / 2.0,
+            height - inch,
+            "OMAUM - Ordem Mística de Aspiração Universal ao Mestrado",
+        )
         p.setFont("Helvetica", 10)
-        p.drawCentredString(width / 2.0, height - 1.2 * inch, "Sistema de Gestão Integrada")
+        p.drawCentredString(
+            width / 2.0, height - 1.2 * inch, "Sistema de Gestão Integrada"
+        )
         p.setFont("Helvetica", 8)
-        p.drawRightString(width - inch, height - 1.2 * inch, f"Data de Emissão: {data_emissao}")
+        p.drawRightString(
+            width - inch, height - 1.2 * inch, f"Data de Emissão: {data_emissao}"
+        )
         p.setFont("Helvetica-Bold", 16)
         p.drawCentredString(width / 2.0, height - 1.5 * inch, "Relatório de Cursos")
         y = height - 1.9 * inch
@@ -86,7 +98,9 @@ def relatorio_cursos(request):
             if y < inch:
                 p.showPage()
                 p.setFont("Helvetica-Bold", 12)
-                p.drawCentredString(width / 2.0, height - inch, "Relatório de Cursos (Continuação)")
+                p.drawCentredString(
+                    width / 2.0, height - inch, "Relatório de Cursos (Continuação)"
+                )
                 y = height - 1.5 * inch
                 p.setFont("Helvetica-Bold", 12)
                 p.drawString(inch, y, "ID")
@@ -100,7 +114,9 @@ def relatorio_cursos(request):
             descricao_text = curso.descricao if curso.descricao else ""
             text_object = p.beginText(4 * inch, y)
             text_object.setFont("Helvetica", 10)
-            wrapped_text = [descricao_text[i : i + 50] for i in range(0, len(descricao_text), 50)]
+            wrapped_text = [
+                descricao_text[i : i + 50] for i in range(0, len(descricao_text), 50)
+            ]
             for line in wrapped_text:
                 text_object.textLine(line)
             p.drawText(text_object)
@@ -119,6 +135,7 @@ def relatorio_cursos(request):
         "nome_sistema": "Sistema de Gestão Integrada",
     }
     return render(request, "cursos/relatorio_cursos.html", context)
+
 
 @login_required
 def criar_curso(request):
@@ -202,6 +219,7 @@ def excluir_curso(request, id):
         "cursos/excluir_curso.html",
         {"curso": curso, "dependencias": dependencias},
     )
+
 
 @login_required
 def importar_cursos(request):

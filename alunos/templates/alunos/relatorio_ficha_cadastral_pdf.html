@@ -25,9 +25,9 @@
             font-weight: bold;
             margin: 0;
         }
-        .report-header .org-title small {
-            font-size: 9pt;
-            font-weight: normal;
+        .report-header .org-subtitle {
+            font-size: 10pt;
+            margin: 2px 0 0;
         }
         .report-header .emission-datetime {
             position: absolute;
@@ -64,15 +64,13 @@
 
     <div class="report-header">
         <p class="emission-datetime">
-            Emitido em: {% now "d/m/Y" %} às {% now "H:i" %}
+            Data de Emissão: {% now "d/m/Y H:i" %}
         </p>
-        <p class="org-title">
-            OM-AUM<br>
-            <small>(Ordem Mística de Aspiração Universal ao Mestrado)</small>
-        </p>
+        <p class="org-title">OMAUM - Ordem Mística de Aspiração Universal ao Mestrado</p>
+        <p class="org-subtitle">Sistema de Gestão Integrada</p>
     </div>
 
-    <h1>Relatório: Ficha Cadastral de Alunos</h1>
+    <h1>Relatório de Ficha Cadastral</h1>
 
     <table>
         <thead>

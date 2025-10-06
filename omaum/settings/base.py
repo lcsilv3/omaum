@@ -1,6 +1,7 @@
 """
 Configurações base do projeto OMAUM.
 """
+
 import os
 from pathlib import Path
 from decouple import config, Csv
@@ -82,16 +83,14 @@ WSGI_APPLICATION = "omaum.wsgi.application"
 
 # Database
 # A URL do banco de dados é lida do arquivo .env
-DATABASES = {
-    "default": dj_database_url.config(
-        default=config("DATABASE_URL")
-    )
-}
+DATABASES = {"default": dj_database_url.config(default=config("DATABASE_URL"))}
 
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -132,7 +131,11 @@ LOGGING = {
         "simple": {"format": "{levelname} {message}", "style": "{"},
     },
     "handlers": {
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simple"},
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
         "file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
@@ -142,9 +145,21 @@ LOGGING = {
     },
     "loggers": {
         "django": {"handlers": ["file"], "level": "DEBUG", "propagate": True},
-        "alunos.views": {"handlers": ["console", "file"], "level": "INFO", "propagate": True},
-        "core.middleware": {"handlers": ["console", "file"], "level": "INFO", "propagate": True},
-        "presencas.views_ext.registro_presenca": {"handlers": ["console", "file"], "level": "DEBUG", "propagate": True},
+        "alunos.views": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "core.middleware": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "presencas.views_ext.registro_presenca": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
         "alunos.services": {"handlers": ["file"], "level": "DEBUG", "propagate": True},
         "presencas.api": {"handlers": ["file"], "level": "DEBUG", "propagate": True},
     },
@@ -152,7 +167,9 @@ LOGGING = {
 
 # Configurações do Django REST Framework
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication"
+    ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",

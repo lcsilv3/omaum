@@ -30,4 +30,5 @@ class TurmaSerializer(serializers.ModelSerializer):
     def get_curso(self, obj):
         """Carrega dinamicamente o CursoSerializer para evitar importação circular."""
         from cursos.serializers import CursoSerializer
+
         return CursoSerializer(obj.curso).data

@@ -154,10 +154,12 @@ def detalhar_aluno(request, aluno_id):
         return redirect("alunos:listar_alunos")
 
     historico_list = aluno.historico.all()
+    form_historico = RegistroHistoricoForm()
 
     context = {
         "aluno": aluno,
         "historico_list": historico_list,
+        "form_historico": form_historico,
     }
     return render(request, "alunos/detalhar_aluno.html", context)
 

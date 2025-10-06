@@ -22,12 +22,14 @@ urlpatterns = [
     path("<int:aluno_id>/editar/", main_views.editar_aluno, name="editar_aluno"),
     path("<int:aluno_id>/excluir/", main_views.excluir_aluno, name="excluir_aluno"),
     path("search/", main_views.search_alunos, name="search_alunos"),
-
     # Painel e Relatórios
     path("painel/", relatorio_views.painel, name="painel"),
-    path("relatorios/ficha-cadastral/", relatorio_views.relatorio_ficha_cadastral, name="relatorio_ficha_cadastral"),
+    path(
+        "relatorios/ficha-cadastral/",
+        relatorio_views.relatorio_ficha_cadastral,
+        name="relatorio_ficha_cadastral",
+    ),
     # Adicionar outras URLs de relatório aqui quando forem implementadas
-
     # Relatórios complementares
     path(
         "relatorios/dados-iniciaticos/",
@@ -54,13 +56,13 @@ urlpatterns = [
         relatorio_views.relatorio_aniversariantes,
         name="relatorio_aniversariantes",
     ),
-
     # Tipos e Códigos Iniciáticos
     path("", include("alunos.urls_codigos")),
-
     # API
     path("api/search/", api_views.search_alunos, name="api_search_alunos"),
-    path("api/instrutores/", api_views.search_instrutores, name="api_search_instrutores"),
+    path(
+        "api/instrutores/", api_views.search_instrutores, name="api_search_instrutores"
+    ),
     path("api/alunos/<str:cpf>/", api_views.get_aluno, name="api_get_aluno"),
     path(
         "api/alunos/<str:cpf>/elegibilidade/",
@@ -76,6 +78,21 @@ urlpatterns = [
         "api/alunos/<int:aluno_id>/historico/",
         api_views.listar_historico_aluno_api,
         name="api_historico_aluno",
+    ),
+    path(
+        "api/alunos/<int:aluno_id>/historico/criar/",
+        api_views.criar_historico_aluno_api,
+        name="api_criar_historico_aluno",
+    ),
+    path(
+        "api/alunos/<int:aluno_id>/historico/<int:registro_id>/desativar/",
+        api_views.desativar_historico_aluno_api,
+        name="api_desativar_historico_aluno",
+    ),
+    path(
+        "api/alunos/<int:aluno_id>/historico/<int:registro_id>/reativar/",
+        api_views.reativar_historico_aluno_api,
+        name="api_reativar_historico_aluno",
     ),
     path(
         "api/tipos-codigos/",

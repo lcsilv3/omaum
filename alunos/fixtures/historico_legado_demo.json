@@ -1,0 +1,53 @@
+[
+    {
+        "model": "alunos.tipocodigo",
+        "pk": 9001,
+        "fields": {
+            "nome": "Demo Legado",
+            "descricao": "Tipo de código utilizado na fixture de migração de histórico."
+        }
+    },
+    {
+        "model": "alunos.codigo",
+        "pk": 9002,
+        "fields": {
+            "tipo_codigo": 9001,
+            "nome": "Evento Iniciático Demo",
+            "descricao": "Código de teste para validar migração do histórico."
+        }
+    },
+    {
+        "model": "alunos.aluno",
+        "pk": 9003,
+        "fields": {
+            "cpf": "99988877766",
+            "nome": "Aluno Legado Demo",
+            "data_nascimento": "1990-05-20",
+            "email": "aluno.legado.demo@example.com",
+            "sexo": "M",
+            "numero_iniciatico": "DEM0001",
+            "created_at": "2017-01-01T09:00:00Z",
+            "updated_at": "2019-08-04T15:00:00Z",
+            "historico_iniciatico": [
+                {
+                    "codigo_id": 9002,
+                    "descricao": "Evento Iniciático Demo",
+                    "data": "2018-03-12",
+                    "ordem_servico": "DEM/2018",
+                    "observacoes": "Registro legado importado via fixture.",
+                    "registrado_em": "2018-03-12T10:00:00"
+                },
+                {
+                    "codigo_id": 9002,
+                    "descricao": "Evento Iniciático Demo",
+                    "data": "2019-08-04",
+                    "ordem_servico": "DEM/2019",
+                    "observacoes": "Outro evento de demonstração.",
+                    "registrado_em": "2019-08-04T14:30:00"
+                }
+            ],
+            "historico_checksum": "",
+            "ativo": true
+        }
+    }
+]

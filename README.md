@@ -185,6 +185,7 @@ omaum/
 - **🔌 [Documentação da API](docs/API_DOCUMENTATION.md)**: Endpoints REST documentados
 - **👨‍💻 [Guia do Desenvolvedor](docs/GUIA_DESENVOLVEDOR.md)**: Padrões e convenções
 - **📝 [Changelog](docs/CHANGELOG.md)**: Histórico de versões e mudanças
+- **📊 [Status da Refatoração do Histórico](docs/historico_refatoracao_status.md)**: acompanhamento das etapas e QA contínuo
 
 
 
@@ -197,6 +198,9 @@ omaum/
 
 
 ```bash
+
+# Checklist rápido do histórico
+python scripts/run_historico_qa.py
 
 # Todos os testes
 python manage.py test

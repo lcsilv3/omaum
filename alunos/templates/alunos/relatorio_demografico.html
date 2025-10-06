@@ -1,9 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'alunos/base_relatorio.html' %}
 {% load static alunos_extras custom_filters %}
 
-{% block content %}
-<div class="container-fluid">
-  <h2 class="mt-3 mb-4">Relatório: Demográfico dos Alunos</h2>
+{% block filtros %}
   <form method="get" class="row g-2 mb-4 align-items-end" id="filtros-demografico">
     <div class="col-md-3">
       <label for="filtro-faixa" class="form-label">Faixa Etária</label>
@@ -34,11 +32,16 @@
     </div>
     <div class="col-md-3 d-flex gap-2 align-items-end">
       <button type="submit" class="btn btn-primary">Filtrar</button>
-      <a href="?export=csv{% if filtros.faixa %}&faixa={{ filtros.faixa }}{% endif %}{% if filtros.cidade %}&cidade={{ filtros.cidade }}{% endif %}{% if filtros.sexo %}&sexo={{ filtros.sexo }}{% endif %}" class="btn btn-outline-secondary" title="Exportar CSV"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</a>
-      <a href="?export=xls{% if filtros.faixa %}&faixa={{ filtros.faixa }}{% endif %}{% if filtros.cidade %}&cidade={{ filtros.cidade }}{% endif %}{% if filtros.sexo %}&sexo={{ filtros.sexo }}{% endif %}" class="btn btn-outline-secondary" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
     </div>
   </form>
+{% endblock filtros %}
 
+{% block opcoes_exportacao %}
+  <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv">Exportar para CSV</a></li>
+  <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=xls">Exportar para Excel</a></li>
+{% endblock opcoes_exportacao %}
+
+{% block relatorio_content %}
   <div class="row mb-4">
     <div class="col-md-6">
       <canvas id="grafico-sexo"></canvas>
@@ -74,32 +77,33 @@
       </tbody>
     </table>
   </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  // Gráfico de Sexo
-  const sexoData = JSON.parse('{{ sexo_data|escapejs }}');
-  const sexoLabels = sexoData.map(x => x.sexo || 'Não informado');
-  const sexoValues = sexoData.map(x => x.qtd);
-  new Chart(document.getElementById('grafico-sexo'), {
-    type: 'pie',
-    data: {
-      labels: sexoLabels,
-      datasets: [{ data: sexoValues, backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'] }]
-    },
-    options: { plugins: { legend: { position: 'bottom' } }, responsive: true }
-  });
-  // Gráfico de Faixa Etária
-  const faixaCounts = JSON.parse('{{ faixa_counts|escapejs }}');
-  const faixaLabels = Object.keys(faixaCounts);
-  const faixaValues = Object.values(faixaCounts);
-  new Chart(document.getElementById('grafico-faixa'), {
-    type: 'bar',
-    data: {
-      labels: faixaLabels,
-      datasets: [{ label: 'Qtd', data: faixaValues, backgroundColor: '#36A2EB' }]
-    },
-    options: { plugins: { legend: { display: false } }, responsive: true }
-  });
-</script>
-{% endblock %}
+{% endblock relatorio_content %}
+
+{% block relatorio_js %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const sexoData = JSON.parse('{{ sexo_data|escapejs }}');
+    const sexoLabels = sexoData.map(x => x.sexo || 'Não informado');
+    const sexoValues = sexoData.map(x => x.qtd);
+    new Chart(document.getElementById('grafico-sexo'), {
+      type: 'pie',
+      data: {
+        labels: sexoLabels,
+        datasets: [{ data: sexoValues, backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'] }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } }, responsive: true }
+    });
+
+    const faixaCounts = JSON.parse('{{ faixa_counts|escapejs }}');
+    const faixaLabels = Object.keys(faixaCounts);
+    const faixaValues = Object.values(faixaCounts);
+    new Chart(document.getElementById('grafico-faixa'), {
+      type: 'bar',
+      data: {
+        labels: faixaLabels,
+        datasets: [{ label: 'Qtd', data: faixaValues, backgroundColor: '#36A2EB' }]
+      },
+      options: { plugins: { legend: { display: false } }, responsive: true }
+    });
+  </script>
+{% endblock relatorio_js %}

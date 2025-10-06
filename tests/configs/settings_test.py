@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     "frequencias",
     "notas",
     "pagamentos",
-    "relatorios",
+    "relatorios_presenca",
     "alunos",
     "cursos",
     "matriculas",
@@ -104,7 +104,7 @@ MIGRATION_MODULES = {
     "frequencias": None,
     "notas": None,
     "pagamentos": None,
-    "relatorios": None,
+    "relatorios_presenca": None,
 }
 
 # TODO: Avaliar remoção deste bloqueio parcial de migrações após estabilização

@@ -1,9 +1,10 @@
 """Views dedicadas a endpoints de API do aplicativo Alunos."""
 
 import csv
+import json
 import logging
 import traceback
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from io import BytesIO
 
 from django.contrib.auth.decorators import login_required, permission_required
@@ -13,13 +14,13 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils.encoding import smart_str
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
 from importlib import import_module
 from rest_framework import viewsets
 
-from .models import Aluno
+from .models import Aluno, RegistroHistorico
 from .serializers import AlunoSerializer
-from .services import InstrutorService, listar_historico_aluno
+from .services import HistoricoService, HistoricoValidationError, InstrutorService
 
 try:
     import xlwt
@@ -80,9 +81,7 @@ def search_instrutores(request):
                 {
                     "cpf": aluno.cpf,
                     "nome": aluno.nome,
-                    "foto": aluno.foto.url
-                    if getattr(aluno, "foto", None)
-                    else None,
+                    "foto": aluno.foto.url if getattr(aluno, "foto", None) else None,
                     "situacao": aluno.get_situacao_display()
                     if hasattr(aluno, "get_situacao_display")
                     else "",
@@ -92,7 +91,11 @@ def search_instrutores(request):
                 }
             )
 
-        logger.info("Busca de instrutores por '%s' retornou %s resultados", query, len(resultados))
+        logger.info(
+            "Busca de instrutores por '%s' retornou %s resultados",
+            query,
+            len(resultados),
+        )
         return JsonResponse(resultados, safe=False)
     except Exception as exc:  # pragma: no cover - proteção adicional
         logger.error("Erro em search_instrutores: %s", exc)
@@ -112,9 +115,7 @@ def get_aluno(request, cpf):
                 "aluno": {
                     "cpf": aluno.cpf,
                     "nome": aluno.nome,
-                    "foto": aluno.foto.url
-                    if getattr(aluno, "foto", None)
-                    else None,
+                    "foto": aluno.foto.url if getattr(aluno, "foto", None) else None,
                 },
             }
         )
@@ -169,7 +170,9 @@ def get_aluno_detalhes(request, cpf):
         )
         return resposta
     except AlunoModel.DoesNotExist:
-        return JsonResponse({"success": False, "error": "Aluno não encontrado"}, status=404)
+        return JsonResponse(
+            {"success": False, "error": "Aluno não encontrado"}, status=404
+        )
     except Exception as exc:  # pragma: no cover - caminho excepcional
         logger.error("Erro ao obter detalhes do aluno: %s", exc, exc_info=True)
         return JsonResponse({"success": False, "error": str(exc)}, status=500)
@@ -244,7 +247,7 @@ def listar_historico_aluno_api(request, aluno_id):
     """
     try:
         aluno = get_object_or_404(Aluno, pk=aluno_id)
-        historico_list = listar_historico_aluno(aluno)  # Usa a função de serviço
+        historico_list = HistoricoService.listar(aluno)
 
         page = request.GET.get("page", 1)
         # Garante que page_size seja inteiro
@@ -260,16 +263,23 @@ def listar_historico_aluno_api(request, aluno_id):
 
         results = []
         for item in historico_page:
+            codigo = getattr(item, "codigo", None)
+            tipo_codigo = getattr(codigo, "tipo_codigo", None)
+
             results.append(
                 {
                     "id": item.id,
-                    "tipo_codigo": item.codigo.tipo.nome
-                    if item.codigo and item.codigo.tipo
-                    else "N/A",
-                    "codigo": item.codigo.nome if item.codigo else "N/A",
-                    "descricao": item.codigo.descricao if item.codigo else "N/A",
+                    "codigo_id": codigo.id if codigo else None,
+                    "tipo_codigo": getattr(tipo_codigo, "nome", "N/A") or "N/A",
+                    "codigo": getattr(codigo, "nome", None) or "N/A",
+                    "descricao": getattr(codigo, "descricao", None) or "",
                     "data_os": item.data_os.isoformat() if item.data_os else None,
-                    "observacoes": item.observacoes,
+                    "ordem_servico": item.ordem_servico or "",
+                    "observacoes": item.observacoes or "",
+                    "ativo": item.ativo,
+                    "created_at": item.created_at.isoformat()
+                    if item.created_at
+                    else None,
                 }
             )
 
@@ -292,6 +302,191 @@ def listar_historico_aluno_api(request, aluno_id):
 
 
 @login_required
+@permission_required("alunos.add_registrohistorico", raise_exception=True)
+@require_http_methods(["POST"])
+def criar_historico_aluno_api(request, aluno_id):
+    """Cria um novo registro histórico para o aluno informado."""
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "Payload inválido. Envie JSON bem formatado.",
+            },
+            status=400,
+        )
+
+    data_os_valor = payload.get("data_os")
+    data_os = None
+    if data_os_valor:
+        try:
+            data_os = datetime.fromisoformat(str(data_os_valor)).date()
+        except ValueError:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "errors": {
+                        "data_os": ["Data inválida. Utilize o formato ISO YYYY-MM-DD."]
+                    },
+                },
+                status=400,
+            )
+
+    try:
+        registro = HistoricoService.criar_evento(
+            aluno,
+            {
+                "codigo_id": payload.get("codigo_id"),
+                "data_os": data_os,
+                "ordem_servico": payload.get("ordem_servico"),
+                "observacoes": payload.get("observacoes"),
+            },
+        )
+    except HistoricoValidationError as exc:
+        # HistoricoValidationError pode expor message_dict ou messages
+        erros = getattr(exc, "message_dict", None) or {"erros": exc.messages}
+        return JsonResponse({"status": "error", "errors": erros}, status=400)
+    except Exception as exc:  # pragma: no cover - falhas inesperadas
+        logger.error(
+            "Erro ao criar registro histórico para aluno %s: %s",
+            aluno_id,
+            exc,
+            exc_info=True,
+        )
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "Erro interno ao criar registro histórico.",
+            },
+            status=500,
+        )
+
+    codigo = getattr(registro, "codigo", None)
+    tipo_codigo = getattr(codigo, "tipo_codigo", None)
+
+    return JsonResponse(
+        {
+            "status": "success",
+            "tipo_evento": getattr(tipo_codigo, "nome", None),
+            "registro": {
+                "id": registro.id,
+                "codigo_id": codigo.id if codigo else None,
+                "codigo_nome": getattr(codigo, "nome", None),
+                "descricao": getattr(codigo, "descricao", None),
+                "ordem_servico": registro.ordem_servico,
+                "data_os": registro.data_os.isoformat() if registro.data_os else None,
+                "observacoes": registro.observacoes,
+            },
+        },
+        status=201,
+    )
+
+
+@login_required
+@permission_required("alunos.change_registrohistorico", raise_exception=True)
+@require_http_methods(["POST"])
+def desativar_historico_aluno_api(request, aluno_id, registro_id):
+    """Realiza o soft delete de um registro histórico do aluno."""
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    registro = get_object_or_404(RegistroHistorico, pk=registro_id, aluno=aluno)
+
+    motivo = None
+    if request.body:
+        try:
+            payload = json.loads(request.body.decode("utf-8") or "{}")
+            motivo = payload.get("motivo")
+        except json.JSONDecodeError:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Payload inválido. Envie JSON bem formatado.",
+                },
+                status=400,
+            )
+
+    try:
+        HistoricoService.desativar_evento(registro, motivo=motivo, atualizar_cache=True)
+    except HistoricoValidationError as exc:
+        erros = getattr(exc, "message_dict", None) or {"erros": exc.messages}
+        return JsonResponse({"status": "error", "errors": erros}, status=400)
+    except Exception as exc:  # pragma: no cover - falhas inesperadas
+        logger.error(
+            "Erro ao desativar registro histórico %s do aluno %s: %s",
+            registro_id,
+            aluno_id,
+            exc,
+            exc_info=True,
+        )
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "Erro interno ao desativar registro histórico.",
+            },
+            status=500,
+        )
+
+    registro.refresh_from_db()
+    return JsonResponse(
+        {
+            "status": "success",
+            "registro": {
+                "id": registro.id,
+                "ativo": registro.ativo,
+                "observacoes": registro.observacoes,
+            },
+        }
+    )
+
+
+@login_required
+@permission_required("alunos.change_registrohistorico", raise_exception=True)
+@require_http_methods(["POST"])
+def reativar_historico_aluno_api(request, aluno_id, registro_id):
+    """Reativa um registro histórico previamente desativado."""
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    registro = get_object_or_404(RegistroHistorico, pk=registro_id, aluno=aluno)
+
+    try:
+        HistoricoService.reativar_evento(registro, atualizar_cache=True)
+    except HistoricoValidationError as exc:
+        erros = getattr(exc, "message_dict", None) or {"erros": exc.messages}
+        return JsonResponse({"status": "error", "errors": erros}, status=400)
+    except Exception as exc:  # pragma: no cover - falhas inesperadas
+        logger.error(
+            "Erro ao reativar registro histórico %s do aluno %s: %s",
+            registro_id,
+            aluno_id,
+            exc,
+            exc_info=True,
+        )
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "Erro interno ao reativar registro histórico.",
+            },
+            status=500,
+        )
+
+    registro.refresh_from_db()
+    return JsonResponse(
+        {
+            "status": "success",
+            "registro": {
+                "id": registro.id,
+                "ativo": registro.ativo,
+                "observacoes": registro.observacoes,
+            },
+        }
+    )
+
+
+@login_required
 @require_GET
 def painel_kpis_api(request):
     """Retorna os indicadores principais exibidos no painel de alunos."""
@@ -301,8 +496,9 @@ def painel_kpis_api(request):
     alunos_ativos = alunos_ativos_qs.count()
 
     datas_nascimento = list(
-        alunos_ativos_qs.filter(data_nascimento__isnull=False)
-        .values_list("data_nascimento", flat=True)
+        alunos_ativos_qs.filter(data_nascimento__isnull=False).values_list(
+            "data_nascimento", flat=True
+        )
     )
     if datas_nascimento:
         hoje = date.today()
@@ -343,13 +539,17 @@ def painel_graficos_api(request):
         values.append(situacao["qtd"])
 
     hoje = date.today()
-    meses = [(hoje - timedelta(days=30 * i)).replace(day=1) for i in reversed(range(12))]
+    meses = [
+        (hoje - timedelta(days=30 * i)).replace(day=1) for i in reversed(range(12))
+    ]
     labels_mes = [mes.strftime("%b/%Y") for mes in meses]
     valores_mes = []
     for mes in meses:
         proximo = (mes + timedelta(days=32)).replace(day=1)
         valores_mes.append(
-            Aluno.objects.filter(created_at__date__gte=mes, created_at__date__lt=proximo).count()
+            Aluno.objects.filter(
+                created_at__date__gte=mes, created_at__date__lt=proximo
+            ).count()
         )
 
     return JsonResponse(
@@ -442,9 +642,7 @@ def painel_tabela_api(request):
         paginacao_html = '<ul class="pagination justify-content-center pagination-sm" id="paginacao-alunos">'
         for numero in alunos_page.paginator.page_range:
             active = " active" if numero == alunos_page.number else ""
-            paginacao_html += (
-                f'<li class="page-item{active}"><a href="#" class="page-link" data-page="{numero}">{numero}</a></li>'
-            )
+            paginacao_html += f'<li class="page-item{active}"><a href="#" class="page-link" data-page="{numero}">{numero}</a></li>'
         paginacao_html += "</ul>"
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":

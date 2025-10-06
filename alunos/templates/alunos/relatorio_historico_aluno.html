@@ -1,9 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'alunos/base_relatorio.html' %}
 {% load static %}
 
-{% block content %}
-<div class="container-fluid">
-  <h2 class="mt-3 mb-4">Relatório: Histórico do Aluno</h2>
+{% block filtros %}
   <form method="get" class="row g-2 mb-4 align-items-end" id="filtros-historico-aluno">
     <div class="col-md-3">
       <label for="filtro-aluno" class="form-label">Aluno</label>
@@ -33,12 +31,19 @@
     </div>
     <div class="col-md-2 d-flex gap-2">
       <button type="submit" class="btn btn-primary">Filtrar</button>
-      <a href="?export=csv{% if filtros.aluno %}&aluno={{ filtros.aluno }}{% endif %}{% if filtros.tipo_evento %}&tipo_evento={{ filtros.tipo_evento }}{% endif %}{% if filtros.data_ini %}&data_ini={{ filtros.data_ini }}{% endif %}{% if filtros.data_fim %}&data_fim={{ filtros.data_fim }}{% endif %}" class="btn btn-outline-secondary" title="Exportar CSV"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</a>
-      <a href="?export=xls{% if filtros.aluno %}&aluno={{ filtros.aluno }}{% endif %}{% if filtros.tipo_evento %}&tipo_evento={{ filtros.tipo_evento }}{% endif %}{% if filtros.data_ini %}&data_ini={{ filtros.data_ini }}{% endif %}{% if filtros.data_fim %}&data_fim={{ filtros.data_fim }}{% endif %}" class="btn btn-outline-secondary" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
-      <a href="?export=pdf{% if filtros.aluno %}&aluno={{ filtros.aluno }}{% endif %}{% if filtros.tipo_evento %}&tipo_evento={{ filtros.tipo_evento }}{% endif %}{% if filtros.data_ini %}&data_ini={{ filtros.data_ini }}{% endif %}{% if filtros.data_fim %}&data_fim={{ filtros.data_fim }}{% endif %}" class="btn btn-outline-secondary" title="Exportar PDF"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
     </div>
   </form>
+{% endblock filtros %}
 
+{% block opcoes_exportacao %}
+  {% if not is_export_pdf %}
+    <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv">Exportar para CSV</a></li>
+    <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=xls">Exportar para Excel</a></li>
+    <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=pdf" target="_blank">Visualizar em PDF</a></li>
+  {% endif %}
+{% endblock opcoes_exportacao %}
+
+{% block relatorio_content %}
   <div class="table-responsive" style="overflow-x:auto;">
     <table class="table table-bordered table-hover align-middle small w-100" id="tabela-historico-aluno" style="min-width:900px;">
       <thead class="table-light">
@@ -67,5 +72,4 @@
       </tbody>
     </table>
   </div>
-</div>
-{% endblock %}
+{% endblock relatorio_content %}

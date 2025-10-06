@@ -21,6 +21,21 @@ from turmas.models import Turma
 from cursos.models import Curso
 from alunos.services import listar_alunos_para_relatorio
 
+NOME_ORGANIZACAO_PADRAO = "OMAUM - Ordem Mística de Aspiração Universal ao Mestrado"
+NOME_SISTEMA_PADRAO = "Sistema de Gestão Integrada"
+
+
+def _cabecalho_relatorio(titulo: str) -> dict:
+    """Retorna o cabeçalho padrão para os relatórios do app Alunos."""
+
+    return {
+        "titulo": titulo,
+        "data_emissao": timezone.now().strftime("%d/%m/%Y %H:%M"),
+        "nome_organizacao": NOME_ORGANIZACAO_PADRAO,
+        "nome_sistema": NOME_SISTEMA_PADRAO,
+    }
+
+
 try:
     import xlwt
 except ImportError:  # pragma: no cover - dependência opcional
@@ -40,53 +55,70 @@ def relatorio_ficha_cadastral(request):
     """
     # Captura de filtros
     filtros = {
-        'aluno_id': request.GET.get('aluno'),
-        'turma_id': request.GET.get('turma'),
-        'curso_id': request.GET.get('curso'),
-        'situacao': request.GET.get('situacao'),
+        "aluno_id": request.GET.get("aluno"),
+        "turma_id": request.GET.get("turma"),
+        "curso_id": request.GET.get("curso"),
+        "situacao": request.GET.get("situacao"),
     }
     alunos = listar_alunos_para_relatorio(**filtros)
 
     # Captura de formato de exportação
-    formato_export = request.GET.get('export')
+    formato_export = request.GET.get("export")
 
     if formato_export:
         # Lógica de Exportação
-        if formato_export == 'csv':
-            response = HttpResponse(content_type='text/csv')
-            response['Content-Disposition'] = 'attachment; filename="ficha_cadastral_alunos.csv"'
+        if formato_export == "csv":
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = (
+                'attachment; filename="ficha_cadastral_alunos.csv"'
+            )
             writer = csv.writer(response)
-            writer.writerow(['Nome', 'CPF', 'Data Nasc.', 'Email', 'Situação'])
+            writer.writerow(["Nome", "CPF", "Data Nasc.", "Email", "Situação"])
             for aluno in alunos:
-                writer.writerow([aluno.nome, aluno.cpf, aluno.data_nascimento, aluno.email, aluno.get_situacao_display()])
+                writer.writerow(
+                    [
+                        aluno.nome,
+                        aluno.cpf,
+                        aluno.data_nascimento,
+                        aluno.email,
+                        aluno.get_situacao_display(),
+                    ]
+                )
             return response
-        
-        elif formato_export == 'excel':
-            df = pd.DataFrame(list(alunos.values('nome', 'cpf', 'data_nascimento', 'email', 'situacao')))
-            df['situacao'] = df['situacao'].apply(lambda x: dict(Aluno.SITUACAO_CHOICES).get(x, x))
-            
+
+        elif formato_export == "excel":
+            df = pd.DataFrame(
+                list(
+                    alunos.values("nome", "cpf", "data_nascimento", "email", "situacao")
+                )
+            )
+            df["situacao"] = df["situacao"].apply(
+                lambda x: dict(Aluno.SITUACAO_CHOICES).get(x, x)
+            )
+
             output = BytesIO()
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name='Ficha Cadastral')
+            with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                df.to_excel(writer, index=False, sheet_name="Ficha Cadastral")
             output.seek(0)
 
             response = HttpResponse(
-                output, 
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                output,
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
-            response['Content-Disposition'] = 'attachment; filename="ficha_cadastral_alunos.xlsx"'
+            response["Content-Disposition"] = (
+                'attachment; filename="ficha_cadastral_alunos.xlsx"'
+            )
             return response
 
     # Renderização HTML padrão
     context = {
-        'titulo': "Relatório de Ficha Cadastral",
-        'data_emissao': timezone.now().strftime('%d/%m/%Y %H:%M'),
-        'alunos': alunos,
-        'filtros': filtros,
-        'todos_alunos': Aluno.objects.all().order_by('nome'),
-        'turmas': Turma.objects.all().order_by('nome'),
-        'cursos': Curso.objects.all().order_by('nome'),
-        'situacoes': Aluno.SITUACAO_CHOICES,
+        **_cabecalho_relatorio("Relatório de Ficha Cadastral"),
+        "alunos": alunos,
+        "filtros": filtros,
+        "todos_alunos": Aluno.objects.all().order_by("nome"),
+        "turmas": Turma.objects.all().order_by("nome"),
+        "cursos": Curso.objects.all().order_by("nome"),
+        "situacoes": Aluno.SITUACAO_CHOICES,
     }
     return render(request, "alunos/relatorio_ficha_cadastral.html", context)
 
@@ -119,7 +151,9 @@ def relatorio_dados_iniciaticos(request):
     if export in ["csv", "xls"]:
         if export == "csv":
             response = HttpResponse(content_type="text/csv")
-            response["Content-Disposition"] = 'attachment; filename="dados_iniciaticos.csv"'
+            response["Content-Disposition"] = (
+                'attachment; filename="dados_iniciaticos.csv"'
+            )
             writer = csv.writer(response)
             writer.writerow(
                 [
@@ -202,7 +236,7 @@ def relatorio_dados_iniciaticos(request):
     )
 
     context = {
-        "titulo": "Relatório - Dados Iniciáticos",
+        **_cabecalho_relatorio("Relatório de Dados Iniciáticos"),
         "alunos": alunos_qs,
         "graus": graus,
         "situacoes": Aluno.SITUACAO_CHOICES,
@@ -240,7 +274,9 @@ def relatorio_historico_aluno(request):
     if export in ["csv", "xls", "pdf"]:
         if export == "csv":
             response = HttpResponse(content_type="text/csv")
-            response["Content-Disposition"] = 'attachment; filename="historico_aluno.csv"'
+            response["Content-Disposition"] = (
+                'attachment; filename="historico_aluno.csv"'
+            )
             writer = csv.writer(response)
             writer.writerow(
                 [
@@ -299,11 +335,14 @@ def relatorio_historico_aluno(request):
             return response
 
         if export == "pdf":
-            from weasyprint import HTML  # import local para evitar dependência obrigatória
+            from weasyprint import (
+                HTML,
+            )  # import local para evitar dependência obrigatória
 
             template = get_template("alunos/relatorio_historico_aluno.html")
             html_string = template.render(
                 {
+                    **_cabecalho_relatorio("Relatório de Histórico do Aluno"),
                     "historico": historico_qs,
                     "alunos": Aluno.objects.all(),
                     "tipos_evento": Codigo.objects.all(),
@@ -326,6 +365,7 @@ def relatorio_historico_aluno(request):
             return response
 
     context = {
+        **_cabecalho_relatorio("Relatório de Histórico do Aluno"),
         "historico": historico_qs,
         "alunos": Aluno.objects.all().order_by("nome"),
         "tipos_evento": Codigo.objects.all().order_by("nome"),
@@ -372,7 +412,9 @@ def relatorio_auditoria_dados(request):
     if export in ["csv", "xls"]:
         if export == "csv":
             response = HttpResponse(content_type="text/csv")
-            response["Content-Disposition"] = 'attachment; filename="auditoria_dados.csv"'
+            response["Content-Disposition"] = (
+                'attachment; filename="auditoria_dados.csv"'
+            )
             writer = csv.writer(response)
             writer.writerow(["Nome", "CPF"] + faltando)
             for aluno in alunos_qs:
@@ -411,6 +453,7 @@ def relatorio_auditoria_dados(request):
             return response
 
     context = {
+        **_cabecalho_relatorio("Relatório de Auditoria de Dados"),
         "alunos": alunos_qs,
         "auditaveis": auditaveis,
         "campos_filtros": campos,
@@ -474,9 +517,7 @@ def relatorio_demografico(request):
                         smart_str(aluno.cpf),
                         dict(Aluno.SEXO_CHOICES).get(aluno.sexo, "-"),
                         aluno.data_nascimento,
-                        smart_str(
-                            aluno.cidade_ref.nome if aluno.cidade_ref else "-"
-                        ),
+                        smart_str(aluno.cidade_ref.nome if aluno.cidade_ref else "-"),
                     ]
                 )
             return response
@@ -542,6 +583,7 @@ def relatorio_demografico(request):
     )
 
     context = {
+        **_cabecalho_relatorio("Relatório Demográfico"),
         "alunos": alunos_qs,
         "faixas": faixas,
         "cidades": cidades,
@@ -579,7 +621,9 @@ def relatorio_aniversariantes(request):
 
         if export == "csv":
             response = HttpResponse(content_type="text/csv")
-            response["Content-Disposition"] = 'attachment; filename="aniversariantes.csv"'
+            response["Content-Disposition"] = (
+                'attachment; filename="aniversariantes.csv"'
+            )
             writer = csv.writer(response)
             writer.writerow([header_org])
             writer.writerow([header_data])
@@ -631,7 +675,13 @@ def relatorio_aniversariantes(request):
             from weasyprint import HTML  # import local para dependência opcional
 
             template = get_template("alunos/relatorio_aniversariantes_pdf.html")
-            html_string = template.render({"alunos": alunos_qs}, request)
+            html_string = template.render(
+                {
+                    **_cabecalho_relatorio("Relatório de Aniversariantes"),
+                    "alunos": alunos_qs,
+                },
+                request,
+            )
             pdf_file = HTML(
                 string=html_string, base_url=request.build_absolute_uri()
             ).write_pdf()
@@ -657,6 +707,7 @@ def relatorio_aniversariantes(request):
     ]
 
     context = {
+        **_cabecalho_relatorio("Relatório de Aniversariantes"),
         "alunos": alunos_qs,
         "meses": meses,
         "mes_filtro": mes,
