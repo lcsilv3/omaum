@@ -28,7 +28,7 @@ RELATORIOS = [
         "nome": "Auditoria de Dados",
         "descricao": "Auditoria de campos obrigatórios e dados faltantes.",
         "url": "alunos:relatorio_auditoria_dados",
-        "exportacoes": ["csv", "xls"],
+        "exportacoes": ["csv", "xls", "pdf"],
     },
     {
         "nome": "Demográfico",

@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Ficha Cadastral de Alunos</title>
+    <title>Relatório de Ficha Cadastral</title>
     <style>
         @page {
             size: A4 landscape;
@@ -63,17 +63,15 @@
 <body>
 
     <div class="report-header">
-        <p class="emission-datetime">
-            Data de Emissão: {% now "d/m/Y H:i" %}
-        </p>
-        <p class="org-title">OMAUM - Ordem Mística de Aspiração Universal ao Mestrado</p>
-        <p class="org-subtitle">Sistema de Gestão Integrada</p>
+        <p class="emission-datetime">Data de Emissão: {{ data_emissao }}</p>
+        <p class="org-title">{{ nome_organizacao|default:"OMAUM - Ordem Mística de Aspiração Universal ao Mestrado" }}</p>
+        <p class="org-subtitle">{{ nome_sistema|default:"Sistema de Gestão Integrada" }}</p>
     </div>
 
     <h1>Relatório de Ficha Cadastral</h1>
 
     <table>
-        <thead>
+    <thead>
             <tr>
                 <th>Nome</th>
                 <th>CPF</th>

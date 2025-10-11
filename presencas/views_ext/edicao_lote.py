@@ -90,7 +90,7 @@ def editar_presencas_lote(request):
         primeiro_dia = date(int(ano), int(mes), 1)
         ultimo_dia = date(int(ano), int(mes), monthrange(int(ano), int(mes))[1])
 
-    presencas_existentes = RegistroPresenca.objects.filter(
+        presencas_existentes = RegistroPresenca.objects.filter(
             turma_id=turma_id, data__range=[primeiro_dia, ultimo_dia]
         ).count()
 

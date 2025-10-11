@@ -5,6 +5,7 @@ from .views_ext.relatorios import (
     relatorio_atividades_curso_turma,
     ajax_turmas_por_curso_relatorio,
     ajax_atividades_filtradas_relatorio,
+    exportar_atividades,
 )
 from .views_ext import importacao
 from .views_ext.dashboard import (
@@ -75,6 +76,11 @@ urlpatterns = [
     ),
     # Relatório de atividades
     path("relatorio/", relatorio_atividades, name="relatorio_atividades"),
+    path(
+        "relatorio/exportar/<str:formato>/",
+        exportar_atividades,
+        name="exportar_atividades",
+    ),
     # AJAX: turmas por curso (relatório)
     path(
         "ajax/relatorio/turmas-por-curso/",

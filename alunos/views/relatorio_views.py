@@ -7,6 +7,7 @@ from io import BytesIO
 
 import pandas as pd
 from django.contrib.auth.decorators import login_required
+from django.db import models
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -110,6 +111,24 @@ def relatorio_ficha_cadastral(request):
             )
             return response
 
+        elif formato_export == "pdf":
+            from weasyprint import HTML
+
+            template = get_template("alunos/relatorio_ficha_cadastral_pdf.html")
+            contexto_pdf = {
+                **_cabecalho_relatorio("Relatório de Ficha Cadastral"),
+                "alunos": alunos,
+            }
+            html_string = template.render(contexto_pdf, request)
+            pdf_file = HTML(
+                string=html_string, base_url=request.build_absolute_uri()
+            ).write_pdf()
+            response = HttpResponse(pdf_file, content_type="application/pdf")
+            response["Content-Disposition"] = (
+                'attachment; filename="ficha_cadastral_alunos.pdf"'
+            )
+            return response
+
     # Renderização HTML padrão
     context = {
         **_cabecalho_relatorio("Relatório de Ficha Cadastral"),
@@ -148,7 +167,7 @@ def relatorio_dados_iniciaticos(request):
 
     alunos_qs = alunos_qs.order_by("nome")
 
-    if export in ["csv", "xls"]:
+    if export in ["csv", "xls", "pdf"]:
         if export == "csv":
             response = HttpResponse(content_type="text/csv")
             response["Content-Disposition"] = (
@@ -226,6 +245,24 @@ def relatorio_dados_iniciaticos(request):
             )
             response["Content-Disposition"] = (
                 'attachment; filename="dados_iniciaticos.xls"'
+            )
+            return response
+
+        if export == "pdf":
+            from weasyprint import HTML
+
+            template = get_template("alunos/relatorio_dados_iniciaticos_pdf.html")
+            contexto_pdf = {
+                **_cabecalho_relatorio("Relatório de Dados Iniciáticos"),
+                "alunos": alunos_qs,
+            }
+            html_string = template.render(contexto_pdf, request)
+            pdf_file = HTML(
+                string=html_string, base_url=request.build_absolute_uri()
+            ).write_pdf()
+            response = HttpResponse(pdf_file, content_type="application/pdf")
+            response["Content-Disposition"] = (
+                'attachment; filename="dados_iniciaticos.pdf"'
             )
             return response
 
@@ -401,15 +438,48 @@ def relatorio_auditoria_dados(request):
     alunos_qs = Aluno.objects.all()
     faltando = []
 
+    texto_fields = (
+        models.CharField,
+        models.TextField,
+        models.EmailField,
+        models.SlugField,
+        models.URLField,
+    )
+
     for campo in campos:
-        if campo in auditaveis:
-            filtro_nulo = {f"{campo}__isnull": True}
-            alunos_qs = alunos_qs.filter(Q(**filtro_nulo) | Q(**{campo: ""}))
-            faltando.append(auditaveis[campo])
+        if campo not in auditaveis:
+            continue
+
+        try:
+            campo_model = Aluno._meta.get_field(campo)
+        except Exception:
+            campo_model = None
+
+        filtros_q = Q(**{f"{campo}__isnull": True})
+
+        if campo_model and isinstance(campo_model, texto_fields):
+            filtros_q |= Q(**{f"{campo}__exact": ""})
+
+        alunos_qs = alunos_qs.filter(filtros_q)
+        faltando.append(auditaveis[campo])
 
     alunos_qs = alunos_qs.distinct().order_by("nome")
+    alunos_list = list(alunos_qs)
 
-    if export in ["csv", "xls"]:
+    auditoria_resultados = []
+    for aluno in alunos_list:
+        faltantes_campos = []
+        valores_campos = {}
+        for campo in campos:
+            valor = getattr(aluno, campo, None)
+            valores_campos[campo] = valor
+            if not valor:
+                faltantes_campos.append(auditaveis.get(campo, campo))
+        auditoria_resultados.append(
+            {"aluno": aluno, "faltantes": faltantes_campos, "valores": valores_campos}
+        )
+
+    if export in ["csv", "xls", "pdf"]:
         if export == "csv":
             response = HttpResponse(content_type="text/csv")
             response["Content-Disposition"] = (
@@ -452,11 +522,35 @@ def relatorio_auditoria_dados(request):
             )
             return response
 
+        if export == "pdf":
+            from weasyprint import HTML
+
+            template = get_template("alunos/relatorio_auditoria_dados_pdf.html")
+            contexto_pdf = {
+                **_cabecalho_relatorio("Relatório de Auditoria de Dados"),
+                "resultados": auditoria_resultados,
+                "campos_selecionados": [
+                    auditaveis.get(campo, campo) for campo in campos
+                ],
+                "auditaveis": auditaveis,
+                "campos_filtros": campos,
+            }
+            html_string = template.render(contexto_pdf, request)
+            pdf_file = HTML(
+                string=html_string, base_url=request.build_absolute_uri()
+            ).write_pdf()
+            response = HttpResponse(pdf_file, content_type="application/pdf")
+            response["Content-Disposition"] = (
+                'attachment; filename="auditoria_dados.pdf"'
+            )
+            return response
+
     context = {
         **_cabecalho_relatorio("Relatório de Auditoria de Dados"),
-        "alunos": alunos_qs,
+        "alunos": alunos_list,
         "auditaveis": auditaveis,
         "campos_filtros": campos,
+        "auditoria_resultados": auditoria_resultados,
     }
     return render(request, "alunos/relatorio_auditoria_dados.html", context)
 

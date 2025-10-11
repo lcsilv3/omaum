@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -14,10 +15,10 @@
             }
         }
         body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 9pt; color: #333; }
-    .report-header { text-align: center; margin-bottom: 0.5cm; position: relative; }
-    .report-header .org-title { font-size: 12pt; font-weight: bold; margin: 0; }
-    .report-header .org-subtitle { font-size: 10pt; margin: 2px 0 0; }
-    .report-header .emission-datetime { position: absolute; top: 0; right: 0; font-size: 9pt; margin: 0; text-align: right; }
+        .report-header { text-align: center; margin-bottom: 0.5cm; position: relative; }
+        .report-header .org-title { font-size: 12pt; font-weight: bold; margin: 0; }
+        .report-header .org-subtitle { font-size: 10pt; margin: 2px 0 0; }
+        .report-header .emission-datetime { position: absolute; top: 0; right: 0; font-size: 9pt; margin: 0; text-align: right; }
         h1 { text-align: center; font-size: 16pt; margin-top: 0; margin-bottom: 1cm; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
         th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; word-wrap: break-word; }
@@ -25,36 +26,71 @@
         th { font-weight: bold; }
         tr { page-break-inside: avoid; page-break-after: auto; }
         tbody tr:nth-child(even) { background-color: #f9f9f9; }
+        .cell-empty { background-color: #fdecea; color: #b02a37; font-weight: 600; }
+        .legenda { margin-bottom: 1cm; font-size: 9pt; }
+        .legenda strong { color: #555; }
     </style>
 </head>
 <body>
     <div class="report-header">
-        <p class="emission-datetime">
-            Data de Emissão: {% now "d/m/Y H:i" %}
-        </p>
-        <p class="org-title">OMAUM - Ordem Mística de Aspiração Universal ao Mestrado</p>
-        <p class="org-subtitle">Sistema de Gestão Integrada</p>
+        <p class="emission-datetime">Data de Emissão: {{ data_emissao }}</p>
+        <p class="org-title">{{ nome_organizacao|default:"OMAUM - Ordem Mística de Aspiração Universal ao Mestrado" }}</p>
+        <p class="org-subtitle">{{ nome_sistema|default:"Sistema de Gestão Integrada" }}</p>
     </div>
     <h1>Relatório de Auditoria de Dados</h1>
+
+    <div class="legenda">
+        <strong>Campos auditados:</strong>
+        {% if campos_selecionados %}
+            {{ campos_selecionados|join:", " }}
+        {% else %}
+            Nenhum campo selecionado.
+        {% endif %}
+        <br>
+        <strong>Legenda:</strong> células destacadas indicam campos sem preenchimento.
+    </div>
+
     <table>
         <thead>
             <tr>
-                {% for header in headers %}
-                <th>{{ header }}</th>
+                <th>Nome</th>
+                <th>CPF</th>
+                {% for campo in campos_filtros %}
+                    <th>{{ auditaveis|get_item:campo }}</th>
                 {% endfor %}
+                <th>Campos faltantes</th>
             </tr>
         </thead>
         <tbody>
-            {% for row in data %}
-            <tr>
-                {% for cell in row %}
-                <td>{{ cell }}</td>
-                {% endfor %}
-            </tr>
+            {% for resultado in resultados %}
+                <tr>
+                    <td>{{ resultado.aluno.nome }}</td>
+                    <td>{{ resultado.aluno.cpf }}</td>
+                    {% for campo in campos_filtros %}
+                        {% with valor=resultado.valores|get_item:campo %}
+                            <td class="{% if not valor %}cell-empty{% endif %}">
+                                {% if valor %}
+                                    {{ valor }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        {% endwith %}
+                    {% endfor %}
+                    <td>
+                        {% if resultado.faltantes %}
+                            {{ resultado.faltantes|join:", " }}
+                        {% else %}
+                            Todos os campos preenchidos
+                        {% endif %}
+                    </td>
+                </tr>
             {% empty %}
-            <tr>
-                <td colspan="{{ headers|length }}" style="text-align: center;">Nenhum aluno encontrado para os filtros selecionados.</td>
-            </tr>
+                <tr>
+                    <td colspan="{{ campos_filtros|length|add:3 }}" style="text-align: center;">
+                        Nenhum aluno encontrado para os filtros selecionados.
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>

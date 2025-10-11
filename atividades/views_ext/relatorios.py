@@ -8,11 +8,26 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET
+from django.utils import timezone
 
 from .utils import get_model_class
 
 # Set up logger
 logger = logging.getLogger(__name__)
+
+NOME_ORGANIZACAO_PADRAO = "OMAUM - Ordem Mística de Aspiração Universal ao Mestrado"
+NOME_SISTEMA_PADRAO = "Sistema de Gestão Integrada"
+
+
+def _cabecalho_relatorio(titulo: str) -> dict:
+    """Retorna os metadados padrão utilizados no cabeçalho dos relatórios do app Atividades."""
+
+    return {
+        "titulo": titulo,
+        "data_emissao": timezone.now().strftime("%d/%m/%Y %H:%M"),
+        "nome_organizacao": NOME_ORGANIZACAO_PADRAO,
+        "nome_sistema": NOME_SISTEMA_PADRAO,
+    }
 
 
 @login_required
@@ -40,17 +55,17 @@ def relatorio_atividades(request):
     # Calcular totais
     total_atividades = atividades.count()
 
-    return render(
-        request,
-        "atividades/relatorio_atividades.html",
-        {
-            "atividades": atividades,
-            "total_atividades": total_atividades,
-            "status": status,
-            "data_inicio": data_inicio,
-            "data_fim": data_fim,
-        },
-    )
+    context = {
+        **_cabecalho_relatorio("Relatório de Atividades"),
+        "atividades": atividades,
+        "total_atividades": total_atividades,
+        "status": status,
+        "status_choices": Atividade.STATUS_CHOICES,
+        "data_inicio": data_inicio,
+        "data_fim": data_fim,
+    }
+
+    return render(request, "atividades/relatorio_atividades.html", context)
 
 
 @login_required

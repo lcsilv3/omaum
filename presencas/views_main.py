@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.core.cache import cache
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.db.models import F
@@ -45,9 +45,7 @@ def listar_presencas_academicas(request):
             RegistroPresenca.objects.select_related(
                 "aluno", "turma__curso", "atividade"
             )
-            .prefetch_related(
-                "aluno__historicos"  # Se necessário para dados relacionados
-            )
+            .prefetch_related("aluno__historico")
             .annotate(
                 turma_nome=F("turma__nome"),
                 curso_nome=F("turma__curso__nome"),
@@ -100,7 +98,7 @@ def listar_presencas_academicas(request):
 
     atividades = cache.get(atividades_cache_key)
     if not atividades:
-        atividades = list(Atividade.objects.only("id", "nome", "tipo"))
+        atividades = list(Atividade.objects.only("id", "nome", "tipo_atividade"))
         cache.set(atividades_cache_key, atividades, 600)  # 10 minutos
 
     context = {
@@ -131,6 +129,7 @@ def registrar_presenca_academica(request):
         atividade_id = request.POST.get("atividade")
         data = request.POST.get("data")
         presente = request.POST.get("presente") == "on"
+        status = "P" if presente else "F"
         observacao = request.POST.get("observacao", "")
         try:
             aluno = buscar_aluno_por_cpf_service(aluno_id)
@@ -147,13 +146,13 @@ def registrar_presenca_academica(request):
                 atividade=atividade,
                 data=data,
                 defaults={
-                    "presente": presente,
+                    "status": status,
                     "registrado_por": request.user.username,
                     "data_registro": timezone.now(),
                 },
             )
             if not created:
-                presenca.presente = presente
+                presenca.status = status
                 presenca.registrado_por = request.user.username
                 presenca.data_registro = timezone.now()
             presenca.save()
@@ -179,7 +178,7 @@ def registrar_presenca_academica(request):
 
     # Carregamento otimizado de listas de referência
     turmas = Turma.objects.select_related("curso").only("id", "nome", "curso__nome")
-    atividades = Atividade.objects.only("id", "nome", "tipo")
+    atividades = Atividade.objects.only("id", "nome", "tipo_atividade")
 
     context = {
         "alunos": alunos,
@@ -199,9 +198,9 @@ def editar_presenca_academica(request, pk):
     if request.method == "POST":
         # Lógica de edição
         presente = request.POST.get("presente") == "on"
+        presenca.status = "P" if presente else "F"
         request.POST.get("observacao", "")
 
-        presenca.presente = presente
         presenca.save()
 
         messages.success(request, "Presença atualizada com sucesso!")
@@ -237,10 +236,163 @@ def detalhar_presenca_academica(request, pk):
     )
 
 
-# ===== FUNÇÕES ACADÊMICAS IMPLEMENTADAS =====
+def _redirect_fluxo_indisponivel(request, mensagem):
+    messages.info(request, mensagem)
+    return redirect("presencas:listar_presencas_academicas")
+
+
+def _json_fluxo_indisponivel():
+    return JsonResponse(
+        {
+            "success": False,
+            "message": "Fluxo avançado de registro/edição em atualização. Utilize o formulário rápido.",
+        },
+        status=501,
+    )
 
 
 @login_required
+def registrar_presenca_dados_basicos(request):
+    return _redirect_fluxo_indisponivel(
+        request,
+        "Fluxo guiado de registro de presenças está em atualização. Utilize o formulário rápido até a conclusão da migração.",
+    )
+
+
+@login_required
+def registrar_presenca_dados_basicos_ajax(request):
+    return _json_fluxo_indisponivel()
+
+
+@login_required
+def registrar_presenca_totais_atividades(request):
+    return registrar_presenca_dados_basicos(request)
+
+
+@login_required
+def registrar_presenca_totais_atividades_ajax(request):
+    return _json_fluxo_indisponivel()
+
+
+@login_required
+def registrar_presenca_dias_atividades(request):
+    return registrar_presenca_dados_basicos(request)
+
+
+@login_required
+def registrar_presenca_dias_atividades_ajax(request):
+    return _json_fluxo_indisponivel()
+
+
+@login_required
+def registrar_presenca_alunos(request):
+    return registrar_presenca_dados_basicos(request)
+
+
+@login_required
+def registrar_presenca_alunos_ajax(request):
+    return _json_fluxo_indisponivel()
+
+
+@login_required
+def registrar_presenca_confirmar(request):
+    return registrar_presenca_dados_basicos(request)
+
+
+@login_required
+def registrar_presenca_confirmar_ajax(request):
+    return _json_fluxo_indisponivel()
+
+
+@login_required
+def registrar_presenca_convocados(request):
+    return registrar_presenca_dados_basicos(request)
+
+
+@login_required
+def registrar_presenca_convocados_ajax(request):
+    return _json_fluxo_indisponivel()
+
+
+@login_required
+def toggle_convocacao_ajax(request):
+    return _json_fluxo_indisponivel()
+
+
+@login_required
+def editar_presencas_lote(request):
+    return _redirect_fluxo_indisponivel(
+        request,
+        "Edição em lote de presenças está em atualização. Use o gerenciamento individual enquanto finalizamos a migração.",
+    )
+
+
+@login_required
+def editar_lote_dados_basicos(request):
+    return editar_presencas_lote(request)
+
+
+@login_required
+def editar_lote_totais_atividades(request):
+    return editar_presencas_lote(request)
+
+
+@login_required
+def editar_lote_dias_atividades(request):
+    return editar_presencas_lote(request)
+
+
+@login_required
+def editar_lote_dias_atividades_ajax(request):
+    return _json_fluxo_indisponivel()
+
+
+@login_required
+def editar_presenca_dados_basicos(request, pk):
+    return _redirect_fluxo_indisponivel(
+        request,
+        "Edição guiada de presença individual está em atualização. Utilize a edição rápida disponível na listagem.",
+    )
+
+
+@login_required
+def editar_presenca_totais_atividades(request, pk):
+    return editar_presenca_dados_basicos(request, pk)
+
+
+@login_required
+def editar_presenca_dias_atividades(request, pk):
+    return editar_presenca_dados_basicos(request, pk)
+
+
+@login_required
+def editar_presenca_alunos(request, pk):
+    return editar_presenca_dados_basicos(request, pk)
+
+
+@login_required
+def detalhar_presenca_dados_basicos(request, pk):
+    return _redirect_fluxo_indisponivel(
+        request,
+        "Detalhamento guiado da presença está em atualização. Use a tela de detalhes simples enquanto finalizamos a migração.",
+    )
+
+
+@login_required
+def detalhar_presenca_totais_atividades(request, pk):
+    return detalhar_presenca_dados_basicos(request, pk)
+
+
+@login_required
+def detalhar_presenca_dias_atividades(request, pk):
+    return detalhar_presenca_dados_basicos(request, pk)
+
+
+@login_required
+def detalhar_presenca_alunos(request, pk):
+    return detalhar_presenca_dados_basicos(request, pk)
+
+
 # ===== FUNÇÕES PLACEHOLDER - IMPLEMENTAÇÃO FUTURA =====
 
 
@@ -254,6 +406,16 @@ def exportar_presencas_academicas(request):
 def importar_presencas_academicas(request):
     """Placeholder: função de importação será implementada conforme demanda."""
     return HttpResponse("Função de importação em desenvolvimento")
+
+
+@login_required
+def listar_observacoes_presenca(request):
+    """Placeholder: observações de presenças migradas para fluxo unificado."""
+    messages.info(
+        request,
+        "O histórico de observações está em atualização. Utilize o campo de observações rápido enquanto isso.",
+    )
+    return redirect("presencas:listar_presencas_academicas")
 
 
 # ===== STUBS PARA VIEWS RITUALÍSTICAS (DESCONTINUADAS) =====
@@ -320,3 +482,9 @@ def importar_presencas_ritualisticas(request):
         "Presenças ritualísticas foram descontinuadas. Use o sistema acadêmico.",
     )
     return redirect("presencas:listar_presencas_academicas")
+
+
+@login_required
+def relatorios_presenca(request):
+    """Exibe a página de relatórios de presença."""
+    return render(request, "presencas/relatorios_presenca.html")

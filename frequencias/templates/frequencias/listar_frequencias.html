@@ -20,9 +20,9 @@
             <a href="{% url 'frequencias:importar_frequencias' %}" class="btn btn-info me-2">
                 <i class="fas fa-file-import"></i> Importar CSV
             </a>
-            <a href="{% url 'frequencias:dashboard' %}" class="btn btn-success">
-                <i class="fas fa-chart-bar"></i> Dashboard
-            </a>
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosFrequencias">
+                <i class="fas fa-chart-bar"></i> Relatórios
+            </button>
         </div>
     </div>
     
@@ -212,6 +212,56 @@
 {% endblock %}
 
 {% block extra_js %}
+<div class="modal fade" id="modalRelatoriosFrequencias" tabindex="-1" aria-labelledby="modalRelatoriosFrequenciasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRelatoriosFrequenciasLabel">
+                    <i class="fas fa-chart-line text-primary me-2"></i> Relatórios e Painéis de Frequência
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Selecione um dos relatórios abaixo para analisar frequências mensais, totais por turma e indicadores executivos.</p>
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    <div class="col">
+                        <div class="card border-primary h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">Relatório de Frequência Mensal</h5>
+                                <p class="card-text flex-grow-1">Gere indicadores completos com filtros por turma, mês e status, incluindo exportações.</p>
+                                <a href="{% url 'frequencias:relatorio_frequencias' %}" class="btn btn-primary mt-auto" aria-label="Acessar relatório de frequência mensal">Acessar</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card border-success h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">Frequência por Turma</h5>
+                                <p class="card-text flex-grow-1">Acompanhe as frequências registradas por turma e período diretamente na listagem operacional.</p>
+                                <a href="{% url 'frequencias:listar_frequencias' %}" class="btn btn-success mt-auto" aria-label="Acessar relatório de frequência por turma">Acessar</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card border-info h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">Painel de Frequências</h5>
+                                <p class="card-text flex-grow-1">Visualize indicadores executivos, gráficos e tendências para tomada de decisão rápida.</p>
+                                <a href="{% url 'frequencias:dashboard' %}" class="btn btn-info text-white mt-auto" aria-label="Acessar painel de frequências">Acessar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Inicializar Select2 para melhorar a experiência de seleção

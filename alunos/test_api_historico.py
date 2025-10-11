@@ -6,7 +6,7 @@ from django.contrib.auth.models import Permission
 from django.test import TestCase
 from django.urls import reverse
 
-from alunos.models import Aluno, Codigo, TipoCodigo, RegistroHistorico
+from alunos.models import Aluno, Codigo, RegistroHistorico, TipoCodigo
 from alunos.services import HistoricoService
 
 

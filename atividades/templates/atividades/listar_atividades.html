@@ -8,16 +8,13 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Atividades</h1>
         <div class="btn-group">
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">Voltar</a>
+            <a href="{% url 'core:home' %}" class="btn btn-secondary me-2">Voltar</a>
             <a href="{% url 'atividades:calendario_atividades' %}" class="btn btn-info me-2">
                 <i class="fas fa-calendar-alt"></i> Calendário
             </a>
-            <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-success me-2">
-                <i class="fas fa-chart-bar"></i> Dashboard
-            </a>
-            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning">
-                <i class="fas fa-file-alt"></i> Relatórios
-            </a>
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosAtividades">
+                <i class="fas fa-chart-bar"></i> Relatórios
+            </button>
         </div>
     </div>
     
@@ -81,40 +78,53 @@
                     <p class="card-text">Gere relatórios detalhados sobre as atividades.</p>
                 </div>
                 <div class="card-footer bg-transparent border-top-0">
-                    <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning">Gerar Relatórios</a>
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalRelatoriosAtividades">
+                        Gerar Relatórios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalRelatoriosAtividades" tabindex="-1" aria-labelledby="modalRelatoriosAtividadesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalRelatoriosAtividadesLabel">
+                        <i class="fas fa-chart-line text-primary me-2"></i> Relatórios e Painéis de Atividades
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Escolha entre o painel executivo e o relatório analítico de atividades.</p>
+                    <div class="row row-cols-1 row-cols-md-2 g-4">
+                        <div class="col">
+                            <div class="card border-success h-100 shadow-sm">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">Painel de Atividades</h5>
+                                    <p class="card-text flex-grow-1">Visualize gráficos e indicadores sobre as atividades em andamento.</p>
+                                    <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-success mt-auto" aria-label="Acessar painel de atividades">Acessar</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card border-warning h-100 shadow-sm">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">Relatório de Atividades</h5>
+                                    <p class="card-text flex-grow-1">Gere listagens detalhadas com filtros e exportações das atividades cadastradas.</p>
+                                    <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning mt-auto" aria-label="Acessar relatório de atividades">Acessar</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Fechar
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-<form method="get" class="row g-3">
-    <div class="col-md-4">
-        <input type="text" name="q" class="form-control" placeholder="Buscar por nome ou descrição..." value="{{ query }}">
-    </div>
-    <div class="col-md-3">
-        <select name="curso" id="id_curso" class="form-select" aria-label="Selecionar curso">
-            <option value="">Selecione</option>
-            {% for curso in cursos %}
-                <option value="{{ curso.id }}" {% if codigo_curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>
-                    {{ curso.nome }}
-                </option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-md-3">
-        <select name="turma" id="id_turma" class="form-select" aria-label="Selecionar turma">
-            <option value="">Selecione</option>
-            {% for turma in turmas %}
-                <option value="{{ turma.id }}" {% if turma_selecionada == turma.id|stringformat:"s" %}selected{% endif %}>
-                    {{ turma.nome }}
-                </option>
-            {% endfor %}
-        </select>
-    </div>    <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">
-            <i class="fas fa-search"></i> Filtrar
-        </button>
-    </div>
-</form>
-</select>

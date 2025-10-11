@@ -1,18 +1,23 @@
+from datetime import date
+
+from django.contrib.auth.models import User
 from django.test import LiveServerTestCase
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from alunos.models import Aluno, Pais, Estado, Cidade, Bairro
-from django.contrib.auth.models import User
-from datetime import date
+from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
+
+from alunos.models import Aluno, Bairro, Cidade, Estado, Pais
 
 
 class AlunoUITest(LiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.browser = webdriver.Chrome()
+        service = Service(ChromeDriverManager().install())
+        cls.browser = webdriver.Chrome(service=service)
         try:
             User.objects.get(username="lcsilv3")
         except User.DoesNotExist:

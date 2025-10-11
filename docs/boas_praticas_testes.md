@@ -71,6 +71,13 @@ def test_criar_aluno_view(self):
 - Teste fluxos completos de uso, do início ao fim.
 - Verifique se a interface do usuário funciona como esperado.
 
+### Gerenciamento do ChromeDriver
+
+- **Não versionar binaries**: o projeto depende do `webdriver-manager`/Selenium Manager para baixar o driver compatível em runtime. Não adicione `chromedriver` ao repositório nem ao container.
+- **Ambiente local**: remova qualquer `chromedriver.exe` legado do seu `PATH` (especialmente em `C:\Windows`). Se precisar manter permissões elevadas, execute `Remove-Item` em um terminal administrativo ou use o utilitário integrado do Selenium (`python -m selenium.webdriver`).
+- **Docker/CI**: garanta que a imagem base contenha somente o Google Chrome e deixe que o Selenium faça o download sob demanda. Se for necessário cachear, exporte `WDM_LOCAL=1` para reutilizar o binário instalado automaticamente.
+- **Execução headless**: em pipelines use Chrome headless e configure a variável `SELENIUM_HEADLESS=1` (respeitada nos testes E2E) para evitar abertura de janelas em ambientes sem display.
+
 Exemplo:
 
 ```python

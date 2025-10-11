@@ -23,6 +23,7 @@
 {% block opcoes_exportacao %}
   <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv">Exportar para CSV</a></li>
   <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=xls">Exportar para Excel</a></li>
+  <li><a class="dropdown-item" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=pdf">Exportar para PDF</a></li>
 {% endblock opcoes_exportacao %}
 
 {% block relatorio_content %}

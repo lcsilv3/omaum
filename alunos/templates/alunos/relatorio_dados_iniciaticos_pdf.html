@@ -5,7 +5,7 @@
     <title>Relatório de Dados Iniciáticos</title>
     <style>
         @page {
-            size: A4 portrait;
+            size: A4 landscape;
             margin: 1.5cm;
             @bottom-right {
                 content: "Página " counter(page) " de " counter(pages);
@@ -14,10 +14,10 @@
             }
         }
         body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 9pt; color: #333; }
-    .report-header { text-align: center; margin-bottom: 0.5cm; position: relative; }
-    .report-header .org-title { font-size: 12pt; font-weight: bold; margin: 0; }
-    .report-header .org-subtitle { font-size: 10pt; margin: 2px 0 0; }
-    .report-header .emission-datetime { position: absolute; top: 0; right: 0; font-size: 9pt; margin: 0; text-align: right; }
+        .report-header { text-align: center; margin-bottom: 0.5cm; position: relative; }
+        .report-header .org-title { font-size: 12pt; font-weight: bold; margin: 0; }
+        .report-header .org-subtitle { font-size: 10pt; margin: 2px 0 0; }
+        .report-header .emission-datetime { position: absolute; top: 0; right: 0; font-size: 9pt; margin: 0; text-align: right; }
         h1 { text-align: center; font-size: 16pt; margin-top: 0; margin-bottom: 1cm; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
         th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; word-wrap: break-word; }
@@ -27,13 +27,12 @@
         tbody tr:nth-child(even) { background-color: #f9f9f9; }
     </style>
 </head>
+{% load alunos_extras %}
 <body>
     <div class="report-header">
-        <p class="emission-datetime">
-            Data de Emissão: {% now "d/m/Y H:i" %}
-        </p>
-        <p class="org-title">OMAUM - Ordem Mística de Aspiração Universal ao Mestrado</p>
-        <p class="org-subtitle">Sistema de Gestão Integrada</p>
+        <p class="emission-datetime">Data de Emissão: {{ data_emissao }}</p>
+        <p class="org-title">{{ nome_organizacao|default:"OMAUM - Ordem Mística de Aspiração Universal ao Mestrado" }}</p>
+        <p class="org-subtitle">{{ nome_sistema|default:"Sistema de Gestão Integrada" }}</p>
     </div>
     <h1>Relatório de Dados Iniciáticos</h1>
     <table>
@@ -54,8 +53,8 @@
                 <td>{{ aluno.cpf|default:"" }}</td>
                 <td>{{ aluno.grau_atual|default:"-" }}</td>
                 <td>{{ aluno.get_situacao_display|default:"" }}</td>
-                <td>{% if aluno.created_at %}{{ aluno.created_at|timesince|cut:", 0 minutes"|cut:", 1 minute"|cut:", 2 minutes"|cut:", 3 minutes"|cut:", 4 minutes"|cut:", 5 minutes"|cut:", 6 minutes"|cut:", 7 minutes"|cut:", 8 minutes"|cut:", 9 minutes" }}{% else %}-{% endif %}</td>
-                <td>{{ aluno.created_at|date:'d/m/Y'|default:"" }}</td>
+                <td>{{ aluno.created_at|anos_desde }}</td>
+                <td>{% if aluno.created_at %}{{ aluno.created_at|date:'d/m/Y' }}{% else %}-{% endif %}</td>
             </tr>
             {% empty %}
             <tr>

@@ -1,38 +1,59 @@
 {% extends 'alunos/base_relatorio.html' %}
 {% load static %}
 
+{% block extra_css %}
+  {{ block.super }}
+  {% if is_export_pdf %}
+    <style>
+      @page {
+          size: A4 landscape;
+          margin: 1.5cm;
+      }
+      table {
+          width: 100% !important;
+      }
+      th, td {
+          font-size: 9pt;
+          padding: 6px;
+      }
+    </style>
+  {% endif %}
+{% endblock extra_css %}
+
 {% block filtros %}
-  <form method="get" class="row g-2 mb-4 align-items-end" id="filtros-historico-aluno">
-    <div class="col-md-3">
-      <label for="filtro-aluno" class="form-label">Aluno</label>
-      <select name="aluno" id="filtro-aluno" class="form-select">
-        <option value="">Todos</option>
-        {% for aluno in alunos %}
-          <option value="{{ aluno.id }}" {% if filtros.aluno == aluno.id|stringformat:'s' %}selected{% endif %}>{{ aluno.nome }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label for="filtro-tipo-evento" class="form-label">Tipo de Evento</label>
-      <select name="tipo_evento" id="filtro-tipo-evento" class="form-select">
-        <option value="">Todos</option>
-        {% for tipo in tipos_evento %}
-          <option value="{{ tipo.id }}" {% if filtros.tipo_evento == tipo.id|stringformat:'s' %}selected{% endif %}>{{ tipo.nome }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-2">
-      <label for="filtro-data-ini" class="form-label">Data Inicial</label>
-      <input type="date" name="data_ini" id="filtro-data-ini" class="form-control" value="{{ filtros.data_ini }}">
-    </div>
-    <div class="col-md-2">
-      <label for="filtro-data-fim" class="form-label">Data Final</label>
-      <input type="date" name="data_fim" id="filtro-data-fim" class="form-control" value="{{ filtros.data_fim }}">
-    </div>
-    <div class="col-md-2 d-flex gap-2">
-      <button type="submit" class="btn btn-primary">Filtrar</button>
-    </div>
-  </form>
+  {% if not is_export_pdf %}
+    <form method="get" class="row g-2 mb-4 align-items-end" id="filtros-historico-aluno">
+      <div class="col-md-3">
+        <label for="filtro-aluno" class="form-label">Aluno</label>
+        <select name="aluno" id="filtro-aluno" class="form-select">
+          <option value="">Todos</option>
+          {% for aluno in alunos %}
+            <option value="{{ aluno.id }}" {% if filtros.aluno == aluno.id|stringformat:'s' %}selected{% endif %}>{{ aluno.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="filtro-tipo-evento" class="form-label">Tipo de Evento</label>
+        <select name="tipo_evento" id="filtro-tipo-evento" class="form-select">
+          <option value="">Todos</option>
+          {% for tipo in tipos_evento %}
+            <option value="{{ tipo.id }}" {% if filtros.tipo_evento == tipo.id|stringformat:'s' %}selected{% endif %}>{{ tipo.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="filtro-data-ini" class="form-label">Data Inicial</label>
+        <input type="date" name="data_ini" id="filtro-data-ini" class="form-control" value="{{ filtros.data_ini }}">
+      </div>
+      <div class="col-md-2">
+        <label for="filtro-data-fim" class="form-label">Data Final</label>
+        <input type="date" name="data_fim" id="filtro-data-fim" class="form-control" value="{{ filtros.data_fim }}">
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+      </div>
+    </form>
+  {% endif %}
 {% endblock filtros %}
 
 {% block opcoes_exportacao %}
@@ -45,7 +66,7 @@
 
 {% block relatorio_content %}
   <div class="table-responsive" style="overflow-x:auto;">
-    <table class="table table-bordered table-hover align-middle small w-100" id="tabela-historico-aluno" style="min-width:900px;">
+    <table class="table table-bordered table-hover align-middle small w-100" id="tabela-historico-aluno" style="min-width:1000px;">
       <thead class="table-light">
         <tr>
           <th>Aluno</th>

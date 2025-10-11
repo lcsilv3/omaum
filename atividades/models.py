@@ -105,6 +105,15 @@ class Atividade(models.Model):
         verbose_name_plural = "Atividades"
         ordering = ["-data_inicio", "hora_inicio"]
 
+    @property
+    def tipo(self):
+        """Compatibilidade retroativa para código legado."""
+        return self.tipo_atividade
+
+    @tipo.setter
+    def tipo(self, value):
+        self.tipo_atividade = value
+
 
 # Alias para compatibilidade após refatoramento
 AtividadeAcademica = Atividade

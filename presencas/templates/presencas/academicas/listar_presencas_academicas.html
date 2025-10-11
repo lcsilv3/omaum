@@ -49,6 +49,10 @@
                     <li><a class="dropdown-item" href="{% url 'presencas:importar_presencas_academicas' %}">Importar CSV</a></li>
                 </ul>
             </div>
+            <!-- 5. Dashboard Executivo -->
+            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosPresencas" title="Abrir dashboard executivo de relatórios">
+                <i class="fas fa-chart-bar"></i> Relatórios
+            </button>
         </div>
     </div>
     <div class="card mb-4">
@@ -239,6 +243,32 @@
 {% endblock content %}
 
 {% block extra_js %}
+<!-- Modal reutilizado dos relatórios de presença -->
+<div class="modal fade" id="modalRelatoriosPresencas" tabindex="-1" aria-labelledby="modalRelatoriosPresencasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRelatoriosPresencasLabel">
+                    <i class="fas fa-chart-bar text-secondary me-2"></i> Relatórios de Presença
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Acesse rapidamente os relatórios e dashboards executivos do módulo.</p>
+                {% include 'relatorios_presenca/partials/_cards_relatorios_presenca.html' %}
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'presencas:listar_dashboard_presencas' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-external-link-alt"></i> Abrir dashboard completo
+                </a>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Inicializar Select2 para melhorar a experiência de seleção

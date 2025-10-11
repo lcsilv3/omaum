@@ -1,10 +1,14 @@
-from django.test import TestCase
-from alunos.models import Aluno, Pais, Estado, Cidade, Bairro
 from datetime import date, time, timedelta
+
 from django.core.exceptions import ValidationError
+from django.test import TestCase
+
+from alunos.models import Aluno, Bairro, Cidade, Estado, Pais
 
 
 class AlunoTest(TestCase):
+    """Verifica criação básica de um aluno."""
+
     @classmethod
     def setUpTestData(cls):
         cls.pais, _ = Pais.objects.get_or_create(
@@ -48,6 +52,8 @@ class AlunoTest(TestCase):
 
 
 class AlunoValidationTest(TestCase):
+    """Garante regras de validação do modelo de aluno."""
+
     @classmethod
     def setUpTestData(cls):
         cls.pais, _ = Pais.objects.get_or_create(
@@ -108,15 +114,6 @@ class AlunoValidationTest(TestCase):
     def test_data_futura_invalida(self):
         self.valid_data["data_nascimento"] = date.today() + timedelta(days=1)
         aluno = Aluno(**self.valid_data)
-        try:
+        with self.assertRaises(ValidationError) as exc:
             aluno.full_clean()
-            self.fail("ValidationError não foi levantado para data_nascimento futura")
-        except ValidationError as e:
-            self.assertIn("data_nascimento", e.message_dict)
-
-
-class SeleniumTestCase(TestCase):
-    """Classe base para testes Selenium com configuração robusta."""
-
-    def setUp(self):
-        self.skipTest("Ignorando temporariamente os testes Selenium.")
+        self.assertIn("data_nascimento", exc.exception.message_dict)

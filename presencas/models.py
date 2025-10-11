@@ -2,7 +2,6 @@
 
 from django.db import models
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 
 
 class RegistroPresenca(models.Model):
@@ -48,3 +47,69 @@ class RegistroPresenca(models.Model):
 
     def __str__(self):
         return f"{self.aluno.nome} - {self.data} - {self.get_status_display()}"
+
+
+class PresencaDetalhada(models.Model):
+    """Representa a visão agregada utilizada pelos relatórios legados."""
+
+    aluno = models.ForeignKey(
+        "alunos.Aluno",
+        on_delete=models.DO_NOTHING,
+        db_column="aluno_id",
+        related_name="+",
+    )
+    turma = models.ForeignKey(
+        "turmas.Turma",
+        on_delete=models.DO_NOTHING,
+        db_column="turma_id",
+        related_name="+",
+    )
+    atividade = models.ForeignKey(
+        "atividades.Atividade",
+        on_delete=models.DO_NOTHING,
+        db_column="atividade_id",
+        related_name="+",
+    )
+    periodo = models.DateField()
+    convocacoes = models.PositiveIntegerField(default=0)
+    presencas = models.PositiveIntegerField(default=0)
+    faltas = models.PositiveIntegerField(default=0)
+    voluntario_extra = models.PositiveIntegerField(default=0)
+    voluntario_simples = models.PositiveIntegerField(default=0)
+    carencias = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        managed = False
+        db_table = "presencas_presencadetalhada"
+        verbose_name = "Presença Detalhada (legado)"
+        verbose_name_plural = "Presenças Detalhadas (legado)"
+        ordering = ["-periodo", "aluno__nome"]
+
+    def __str__(self):
+        return f"{self.aluno} - {self.periodo:%m/%Y}"
+
+    # Métodos utilitários mantêm compatibilidade com scripts e serviços legados
+    def calcular_percentual(self) -> float:
+        """Retorna o percentual de presença considerando convocações."""
+        total_convocacoes = self.convocacoes or 0
+        total_presencas = self.presencas or 0
+        if total_convocacoes <= 0:
+            return 0.0
+        return round((total_presencas / total_convocacoes) * 100, 2)
+
+    def calcular_voluntarios(self) -> int:
+        """Soma os voluntariados extra e simples."""
+        return (self.voluntario_extra or 0) + (self.voluntario_simples or 0)
+
+    def calcular_carencias(self) -> int:
+        """Retorna a quantidade de carências registradas."""
+        return self.carencias or 0
+
+
+class ConfiguracaoPresenca(models.Model):
+    """Placeholder legado para compatibilidade com cálculos estatísticos."""
+
+    class Meta:
+        managed = False
+        verbose_name = "Configuração de Presença (legado)"
+        verbose_name_plural = "Configurações de Presença (legado)"

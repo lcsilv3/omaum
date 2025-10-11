@@ -4,8 +4,15 @@ Inclui um cache simples por período (turma/ano/mês) com TTL curto.
 """
 
 from typing import Dict
+
 from django.core.cache import cache
-from presencas.models import Presenca, ConvocacaoPresenca
+
+from presencas.models import RegistroPresenca
+
+try:  # Compatibilidade com versões antigas onde o modelo ainda existia
+    from presencas.models import ConvocacaoPresenca  # type: ignore
+except ImportError:  # pragma: no cover - fallback quando o modelo foi removido
+    ConvocacaoPresenca = None  # type: ignore
 
 
 CACHE_TTL_SECONDS = 60  # cache curto para evitar dados obsoletos após alterações
@@ -30,7 +37,7 @@ def mapa_presencas_periodo(
     if cached is not None:
         return cached
 
-    qs = Presenca.objects.filter(
+    qs = RegistroPresenca.objects.filter(
         turma_id=turma_id, data__year=ano, data__month=mes
     ).select_related("aluno", "atividade")
     estrutura: Dict[str, Dict[int, Dict[str, dict]]] = {}
@@ -41,7 +48,9 @@ def mapa_presencas_periodo(
         by_cpf = by_dia.setdefault(dia, {})
         by_cpf[p.aluno.cpf] = {
             "id": p.id,
-            "presente": p.presente,
+            "presente": getattr(p, "presente", None)
+            if hasattr(p, "presente")
+            else p.status in {"P", "V1", "V2"},
             "justificativa": p.justificativa or "",
         }
 
@@ -58,10 +67,13 @@ def mapa_convocacoes_periodo(turma_id: int, ano: int, mes: int) -> Dict[tuple, b
     if cached is not None:
         return cached
 
-    qs = ConvocacaoPresenca.objects.filter(
-        turma_id=turma_id, data__year=ano, data__month=mes
-    )
-    mapa = {(str(c.atividade_id), c.data.day, c.aluno.cpf): c.convocado for c in qs}
+    if ConvocacaoPresenca is None:
+        mapa = {}
+    else:
+        qs = ConvocacaoPresenca.objects.filter(
+            turma_id=turma_id, data__year=ano, data__month=mes
+        )
+        mapa = {(str(c.atividade_id), c.data.day, c.aluno.cpf): c.convocado for c in qs}
     cache.set(cache_key, mapa, CACHE_TTL_SECONDS)
     return mapa
 

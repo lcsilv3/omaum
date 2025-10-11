@@ -1,0 +1,114 @@
+{% extends "atividades/base_relatorio.html" %}
+
+{% block title %}{{ titulo|default:"Relatório de Atividades" }}{% endblock %}
+
+{% block filtros %}
+<form method="get" class="row g-3 mb-4 align-items-end" id="filtro-relatorio-atividades">
+  <div class="col-md-3">
+    <label for="filtro-status" class="form-label">Status</label>
+    <select name="status" id="filtro-status" class="form-select">
+      <option value="">Todos</option>
+      {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-data-inicio" class="form-label">Data inicial</label>
+    <input type="date" class="form-control" id="filtro-data-inicio" name="data_inicio" value="{{ data_inicio }}">
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-data-fim" class="form-label">Data final</label>
+    <input type="date" class="form-control" id="filtro-data-fim" name="data_fim" value="{{ data_fim }}">
+  </div>
+  <div class="col-md-3 d-flex align-items-end gap-2">
+    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+    <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-outline-secondary" title="Limpar filtros">Limpar</a>
+  </div>
+</form>
+{% endblock filtros %}
+
+{% block relatorio_content %}
+<div class="mb-3">
+  <span class="badge bg-secondary">
+    Total de atividades: {{ total_atividades }}
+  </span>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-bordered table-hover align-middle small">
+    <thead class="table-light">
+      <tr>
+        <th>Nome</th>
+        <th>Tipo</th>
+        <th>Período</th>
+        <th>Turmas</th>
+        <th>Responsável</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for atividade in atividades %}
+      <tr>
+        <td>{{ atividade.nome }}</td>
+        <td>{{ atividade.get_tipo_atividade_display|default:atividade.tipo_atividade }}</td>
+        <td>
+          {% if atividade.data_inicio %}
+            {{ atividade.data_inicio|date:'d/m/Y' }}
+          {% else %}
+            -
+          {% endif %}
+          {% if atividade.data_fim %}
+            <br><small class="text-muted">até {{ atividade.data_fim|date:'d/m/Y' }}</small>
+          {% endif %}
+        </td>
+        <td>
+          {% with turmas_list=atividade.turmas.all %}
+            {% if turmas_list %}
+              {% for turma in turmas_list %}
+                <span class="badge bg-info text-dark me-1 mb-1">{{ turma.nome }}</span>
+              {% endfor %}
+            {% else %}
+              -
+            {% endif %}
+          {% endwith %}
+        </td>
+        <td>{{ atividade.responsavel|default:"-" }}</td>
+        <td>
+          <span class="badge bg-light text-dark border">{{ atividade.get_status_display|default:atividade.status }}</span>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center">Nenhuma atividade encontrada para os filtros informados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock relatorio_content %}
+
+{% block botoes_relatorio %}
+  {% with params=request.GET.urlencode %}
+  <div class="btn-group">
+    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="fas fa-file-export"></i> Exportar Relatório
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li>
+        <a class="dropdown-item" href="{% url 'atividades:exportar_atividades' 'csv' %}{% if params %}?{{ params }}{% endif %}">
+          CSV
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item" href="{% url 'atividades:exportar_atividades' 'excel' %}{% if params %}?{{ params }}{% endif %}">
+          Excel
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item" href="{% url 'atividades:exportar_atividades' 'pdf' %}{% if params %}?{{ params }}{% endif %}" target="_blank">
+          PDF (visualizar)
+        </a>
+      </li>
+    </ul>
+  </div>
+  {% endwith %}
+{% endblock botoes_relatorio %}

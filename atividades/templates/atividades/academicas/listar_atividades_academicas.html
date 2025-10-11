@@ -17,9 +17,9 @@
                 <i class="fas fa-plus"></i> Nova Atividade
             </a>
             <!-- 3. Relatórios -->
-            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Relatórios">
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosAtividades" title="Relatórios">
                 <i class="fas fa-file-alt"></i> Relatórios
-            </a>
+            </button>
             <!-- 4. Importar CSV -->
             <a href="{% url 'atividades:importar_atividades_academicas' %}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Importar atividades via CSV">
                 <i class="fas fa-file-import"></i> Importar CSV
@@ -188,5 +188,46 @@
             <i class="fas fa-arrow-left"></i> Voltar
         </a>
     </div>
+
+    <!-- Modal de Relatórios e Painéis -->
+    <div class="modal fade" id="modalRelatoriosAtividades" tabindex="-1" aria-labelledby="modalRelatoriosAtividadesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRelatoriosAtividadesLabel">
+                    <i class="fas fa-chart-line text-primary me-2"></i> Relatórios e Painéis de Atividades
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Escolha entre o painel executivo e o relatório analítico de atividades.</p>
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    <div class="col">
+                        <div class="card border-success h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">Painel de Atividades</h5>
+                                <p class="card-text flex-grow-1">Visualize gráficos e indicadores sobre as atividades em andamento.</p>
+                                <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-success mt-auto" aria-label="Acessar painel de atividades">Acessar</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card border-warning h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">Relatório de Atividades</h5>
+                                <p class="card-text flex-grow-1">Gere listagens detalhadas com filtros e exportações das atividades cadastradas.</p>
+                                <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning mt-auto" aria-label="Acessar relatório de atividades">Acessar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endblock %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
-{% endblock %}

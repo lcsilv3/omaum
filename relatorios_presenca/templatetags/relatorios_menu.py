@@ -6,6 +6,20 @@ register = template.Library()
 
 
 # A lógica de coleta permanece a mesma
+EXCLUDED_RELATORIO_URLS = {
+    "alunos:painel",
+    "alunos:relatorio_ficha_cadastral",
+    "alunos:relatorio_dados_iniciaticos",
+    "alunos:relatorio_historico_aluno",
+    "alunos:relatorio_auditoria_dados",
+    "alunos:relatorio_demografico",
+    "alunos:relatorio_aniversariantes",
+    "atividades:relatorio_atividades",
+    "frequencias:relatorio_frequencias",
+    "turmas:listar_turmas",
+}
+
+
 def coletar_relatorios():
     relatorios = []
     for app in settings.INSTALLED_APPS:
@@ -13,7 +27,13 @@ def coletar_relatorios():
             mod = import_module(f"{app}.reports")
             encontrados = getattr(mod, "RELATORIOS", [])
             if encontrados:
-                relatorios.extend(encontrados)
+                relatorios.extend(
+                    [
+                        rel
+                        for rel in encontrados
+                        if rel.get("url") not in EXCLUDED_RELATORIO_URLS
+                    ]
+                )
         except ImportError:
             continue
         except Exception:

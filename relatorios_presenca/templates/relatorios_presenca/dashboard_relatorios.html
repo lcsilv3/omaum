@@ -4,53 +4,7 @@
 <div class="container mt-4">
   <h2>Dashboard de Relatórios de Presença</h2>
   <hr>
-  <div class="row row-cols-1 row-cols-md-3 g-4">
-    <div class="col mb-3">
-      <div class="card border-primary h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Boletim de Frequência do Aluno</h5>
-          <p class="card-text">Consulte e exporte a frequência mensal de qualquer aluno.</p>
-          <a href="{% url 'relatorios_presenca:boletim_frequencia_aluno' %}" class="btn btn-primary" aria-label="Acessar boletim do aluno">Acessar</a>
-        </div>
-      </div>
-    </div>
-    <div class="col mb-3">
-      <div class="card border-success h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Relatório Consolidado</h5>
-          <p class="card-text">Gere relatórios consolidados por turma e período.</p>
-          <a href="{% url 'relatorios_presenca:relatorio_form' %}" class="btn btn-success" aria-label="Acessar relatório consolidado">Acessar</a>
-        </div>
-      </div>
-    </div>
-    <div class="col mb-3">
-      <div class="card border-warning h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Relatório de Frequência por Atividade</h5>
-          <p class="card-text">Visualize a frequência dos alunos em cada atividade específica.</p>
-          <a href="{% url 'relatorios_presenca:frequencia_por_atividade' %}" class="btn btn-warning" aria-label="Acessar frequência por atividade">Acessar</a>
-        </div>
-      </div>
-    </div>
-    <div class="col mb-3">
-      <div class="card border-danger h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Relatório de Faltas</h5>
-          <p class="card-text">Liste alunos com maior número de faltas em determinado período.</p>
-          <a href="{% url 'relatorios_presenca:relatorio_faltas' %}" class="btn btn-danger" aria-label="Acessar relatório de faltas">Acessar</a>
-        </div>
-      </div>
-    </div>
-    <div class="col mb-3">
-      <div class="card border-dark h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Alunos com Carência</h5>
-          <p class="card-text">Identifique alunos que atingiram o limite de carência de frequência.</p>
-          <a href="{% url 'relatorios_presenca:alunos_com_carencia' %}" class="btn btn-dark" aria-label="Acessar alunos com carência">Acessar</a>
-        </div>
-      </div>
-    </div>
-  </div>
+  {% include 'relatorios_presenca/partials/_cards_relatorios_presenca.html' %}
   <div class="mt-4">
     <h5>Status do Sistema</h5>
     <ul>

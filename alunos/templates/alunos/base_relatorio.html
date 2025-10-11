@@ -15,6 +15,28 @@
         <h1 class="mb-4 mt-2">{{ titulo|default:"Relatório" }}</h1>
     </div>
 
+    {% if not is_export_pdf %}
+        <div class="mb-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            {% block botao_voltar_relatorio %}
+                <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar para a Lista
+                </a>
+            {% endblock botao_voltar_relatorio %}
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-file-export"></i> Exportar Relatório
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    {% block opcoes_exportacao %}
+                        <li><a class="dropdown-item" href="?{{ request.GET.urlencode }}&export=csv">Exportar para CSV</a></li>
+                        <li><a class="dropdown-item" href="?{{ request.GET.urlencode }}&export=excel">Exportar para Excel</a></li>
+                        <li><a class="dropdown-item" href="?{{ request.GET.urlencode }}&export=pdf" target="_blank">Visualizar em PDF</a></li>
+                    {% endblock opcoes_exportacao %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+
     {# Bloco para Filtros - a ser sobrescrito por templates filhos #}
     {% block filtros %}{% endblock filtros %}
 
@@ -24,23 +46,7 @@
     {% endblock relatorio_content %}
 
     {# Rodapé Padrão com Botões #}
-    <div class="mt-4 d-flex justify-content-between">
-        <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar para a Lista
-        </a>
-        <div class="btn-group">
-            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-file-export"></i> Exportar Relatório
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                {% block opcoes_exportacao %}
-                    <li><a class="dropdown-item" href="?{{ request.GET.urlencode }}&export=csv">Exportar para CSV</a></li>
-                    <li><a class="dropdown-item" href="?{{ request.GET.urlencode }}&export=excel">Exportar para Excel</a></li>
-                    <li><a class="dropdown-item" href="?{{ request.GET.urlencode }}&export=pdf" target="_blank">Visualizar em PDF</a></li>
-                {% endblock opcoes_exportacao %}
-            </ul>
-        </div>
-    </div>
+    {% block rodape_relatorio_extra %}{% endblock rodape_relatorio_extra %}
 </div>
 {% endblock %}
 
