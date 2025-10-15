@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Atividades</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 1.5cm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9pt;
+                color: #555;
+            }
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 9pt;
+            color: #333;
+        }
+        .report-header {
+            margin-bottom: 0.5cm;
+        }
+        .report-header .org-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+        }
+        .report-header .org-meta {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-top: 2px;
+        }
+        .report-header .org-meta .org-subtitle {
+            font-size: 10pt;
+            margin: 0;
+            text-align: center;
+            flex: 1;
+        }
+        .report-header .org-meta .emission-datetime {
+            font-size: 9pt;
+            margin: 0;
+            text-align: right;
+            margin-left: auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 16pt;
+            margin-top: 0;
+            margin-bottom: 1cm;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            page-break-inside: auto;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+            word-wrap: break-word;
+        }
+        thead {
+            background-color: #f2f2f2;
+            display: table-header-group;
+        }
+        th {
+            font-weight: bold;
+        }
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .summary {
+            margin-top: 1cm;
+            text-align: right;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <p class="org-title">{{ nome_organizacao|default:"OMAUM - Ordem Mística de Aspiração Universal ao Mestrado" }}</p>
+        <div class="org-meta">
+            <p class="org-subtitle">{{ nome_sistema|default:"Sistema de Gestão Integrada" }}</p>
+            <p class="emission-datetime">
+                Data de Emissão:
+                {% if data_emissao %}
+                    {{ data_emissao }}
+                {% else %}
+                    {% now "d/m/Y H:i" %}
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <h1>Relatório de Atividades</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Tipo</th>
+                <th>Data Início</th>
+                <th>Data Término</th>
+                <th>Hora Início</th>
+                <th>Hora Fim</th>
+                <th>Responsável</th>
+                <th>Local</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for atividade in atividades %}
+            <tr>
+                <td>{{ atividade.nome|default:"" }}</td>
+                <td>{{ atividade.get_tipo_atividade_display|default:"" }}</td>
+                <td>{% if atividade.data_inicio %}{{ atividade.data_inicio|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+                <td>{% if atividade.data_fim %}{{ atividade.data_fim|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+                <td>{% if atividade.hora_inicio %}{{ atividade.hora_inicio|time:"H:i" }}{% else %}-{% endif %}</td>
+                <td>{% if atividade.hora_fim %}{{ atividade.hora_fim|time:"H:i" }}{% else %}-{% endif %}</td>
+                <td>{{ atividade.responsavel|default:"-" }}</td>
+                <td>{{ atividade.local|default:"-" }}</td>
+                <td>{{ atividade.get_status_display|default:"" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align: center;">Nenhuma atividade encontrada para os filtros informados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <strong>Total de atividades:</strong> {{ total_atividades }}
+    </div>
+</body>
+</html>

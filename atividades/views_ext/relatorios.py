@@ -239,6 +239,7 @@ def exportar_atividades_pdf(atividades):
 
     template = get_template("atividades/relatorio_atividades_pdf.html")
     context = {
+        **_cabecalho_relatorio("Relatório de Atividades"),
         "atividades": atividades,
         "total_atividades": atividades.count(),
     }
