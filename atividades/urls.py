@@ -3,9 +3,18 @@ from . import views_api
 from .views_ext.relatorios import (
     relatorio_atividades,
     relatorio_atividades_curso_turma,
+    relatorio_participacao_atividades,
     ajax_turmas_por_curso_relatorio,
     ajax_atividades_filtradas_relatorio,
+    ajax_relatorio_participacao_tabela,
     exportar_atividades,
+    exportar_relatorio_participacao,
+    relatorio_frequencia_turma,
+    relatorio_cronograma_curso_turmas,
+    relatorio_historico_aluno,
+    relatorio_carga_instrutores,
+    exportar_relatorio_carga_instrutores,
+    ajax_relatorio_carga_instrutores_tabela,
 )
 from .views_ext import importacao
 from .views_ext.dashboard import (
@@ -81,6 +90,26 @@ urlpatterns = [
         exportar_atividades,
         name="exportar_atividades",
     ),
+    path(
+        "relatorio/participacao/",
+        relatorio_participacao_atividades,
+        name="relatorio_participacao_atividades",
+    ),
+    path(
+        "relatorio/participacao/exportar/<str:formato>/",
+        exportar_relatorio_participacao,
+        name="exportar_relatorio_participacao",
+    ),
+    path(
+        "relatorio/carga-instrutores/",
+        relatorio_carga_instrutores,
+        name="relatorio_carga_instrutores",
+    ),
+    path(
+        "relatorio/carga-instrutores/exportar/<str:formato>/",
+        exportar_relatorio_carga_instrutores,
+        name="exportar_relatorio_carga_instrutores",
+    ),
     # AJAX: turmas por curso (relatório)
     path(
         "ajax/relatorio/turmas-por-curso/",
@@ -92,6 +121,34 @@ urlpatterns = [
         "ajax/relatorio/atividades-filtradas/",
         ajax_atividades_filtradas_relatorio,
         name="ajax_atividades_filtradas_relatorio",
+    ),
+    path(
+        "ajax/relatorio/participacao/tabela/",
+        ajax_relatorio_participacao_tabela,
+        name="ajax_relatorio_participacao_tabela",
+    ),
+    path(
+        "ajax/relatorio/carga-instrutores/tabela/",
+        ajax_relatorio_carga_instrutores_tabela,
+        name="ajax_relatorio_carga_instrutores_tabela",
+    ),
+    # Relatório de Frequência por Turma
+    path(
+        "relatorio/frequencia/",
+        relatorio_frequencia_turma,
+        name="relatorio_frequencia_turma",
+    ),
+    # Relatório Cronograma Curso x Turmas
+    path(
+        "relatorio/cronograma/",
+        relatorio_cronograma_curso_turmas,
+        name="relatorio_cronograma_curso_turmas",
+    ),
+    # Relatório Histórico do Aluno
+    path(
+        "relatorio/historico-aluno/",
+        relatorio_historico_aluno,
+        name="relatorio_historico_aluno",
     ),
     # Dashboard de atividades
     path("dashboard/", dashboard_atividades, name="dashboard_atividades"),

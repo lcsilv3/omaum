@@ -4,10 +4,9 @@ Serviços de Relatórios Administrativos para Gestão Institucional
 Categoria 5 - Relatórios Administrativos
 """
 
-from datetime import datetime, timedelta, date
-from decimal import Decimal
-from typing import Dict, List, Tuple, Any, Optional
-from django.db.models import Q, Avg, Count, Sum, Max, Min, F, Case, When, Value
+from datetime import timedelta
+from typing import Dict
+from django.db.models import Q, Avg, Count, Sum, F, Case, When, Value
 from django.utils import timezone
 from importlib import import_module
 import logging

@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h1>{{ titulo }}</h1>
+  <p class="text-muted">{{ data_emissao }}</p>
+
+  <form id="relatorio-participacao-form">
+    <!-- filtros serão implementados posteriormente -->
+    <a href="{% url 'atividades:exportar_relatorio_participacao' 'csv' %}?{{ query_params }}" class="btn btn-outline-secondary">Exportar CSV</a>
+    <a href="{% url 'atividades:exportar_relatorio_participacao' 'excel' %}?{{ query_params }}" class="btn btn-outline-secondary">Exportar XLSX</a>
+    <a href="{% url 'atividades:exportar_relatorio_participacao' 'pdf' %}?{{ query_params }}" class="btn btn-outline-secondary">Exportar PDF</a>
+  </form>
+
+  <div id="relatorio-participacao-tabela">
+    {% include 'atividades/partials/relatorio_participacao_tabela.html' %}
+  </div>
+</div>
+{% endblock %}
+{% extends "atividades/base_relatorio.html" %}
+
+{% block title %}{{ titulo|default:"Relatório de Participação por Atividade" }}{% endblock %}
+
+{% block filtros %}
+<form method="get" id="relatorio-participacao-form" class="row g-3 mb-4 align-items-end" data-tabela-url="{% url 'atividades:ajax_relatorio_participacao_tabela' %}">
+  <div class="col-md-3">
+    <label for="filtro-curso" class="form-label">Curso</label>
+    <select name="curso" id="filtro-curso" class="form-select" data-turmas-url="{% url 'atividades:ajax_turmas_por_curso_relatorio' %}">
+      <option value="">Todos</option>
+      {% for curso in cursos %}
+        <option value="{{ curso.id }}" {% if filtros.curso_id == curso.id %}selected{% endif %}>{{ curso.nome }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-turma" class="form-label">Turma</label>
+    <select name="turma" id="filtro-turma" class="form-select">
+      <option value="">Todas</option>
+      {% for turma in turmas %}
+        <option value="{{ turma.id }}" {% if filtros.turma_id == turma.id %}selected{% endif %}>{{ turma.nome }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-tipo-atividade" class="form-label">Tipo de Atividade</label>
+    <select name="tipo_atividade" id="filtro-tipo-atividade" class="form-select">
+      <option value="">Todos</option>
+      {% for tipo in tipos %}
+        <option value="{{ tipo.value }}" {% if filtros.tipo_atividade == tipo.value %}selected{% endif %}>{{ tipo.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-status" class="form-label">Status da Atividade</label>
+    <select name="status" id="filtro-status" class="form-select">
+      <option value="">Todos</option>
+      {% for status in status_choices %}
+        <option value="{{ status.value }}" {% if filtros.status_atividade == status.value %}selected{% endif %}>{{ status.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-data-inicio" class="form-label">Data inicial</label>
+    <input type="date" id="filtro-data-inicio" name="data_inicio" class="form-control" value="{{ filtros.data_inicio|date:'Y-m-d' }}">
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-data-fim" class="form-label">Data final</label>
+    <input type="date" id="filtro-data-fim" name="data_fim" class="form-control" value="{{ filtros.data_fim|date:'Y-m-d' }}">
+  </div>
+  <div class="col-md-3 d-flex align-items-end gap-2">
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="fas fa-sync-alt"></i> Atualizar
+    </button>
+    <a href="{% url 'atividades:relatorio_participacao_atividades' %}" class="btn btn-outline-secondary" title="Limpar filtros">Limpar</a>
+  </div>
+</form>
+{% endblock filtros %}
+
+{% block relatorio_content %}
+<div id="relatorio-participacao-wrapper">
+  {% include "atividades/partials/relatorio_participacao_tabela.html" %}
+</div>
+{% endblock relatorio_content %}
+
+{% block botoes_relatorio %}
+<div class="btn-group" role="group">
+  <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="fas fa-file-export"></i> Exportar
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li>
+      <a class="dropdown-item export-link" data-base-url="{% url 'atividades:exportar_relatorio_participacao' 'csv' %}" href="{% url 'atividades:exportar_relatorio_participacao' 'csv' %}{% if query_params %}?{{ query_params }}{% endif %}">CSV</a>
+    </li>
+    <li>
+      <a class="dropdown-item export-link" data-base-url="{% url 'atividades:exportar_relatorio_participacao' 'excel' %}" href="{% url 'atividades:exportar_relatorio_participacao' 'excel' %}{% if query_params %}?{{ query_params }}{% endif %}">Excel</a>
+    </li>
+    <li>
+      <a class="dropdown-item export-link" data-base-url="{% url 'atividades:exportar_relatorio_participacao' 'pdf' %}" href="{% url 'atividades:exportar_relatorio_participacao' 'pdf' %}{% if query_params %}?{{ query_params }}{% endif %}" target="_blank">PDF (visualizar)</a>
+    </li>
+  </ul>
+</div>
+{% endblock botoes_relatorio %}
+
+{% block relatorio_js %}
+<script>
+  (function() {
+    const form = document.getElementById('relatorio-participacao-form');
+    const wrapper = document.getElementById('relatorio-participacao-wrapper');
+    const cursoSelect = document.getElementById('filtro-curso');
+    const turmaSelect = document.getElementById('filtro-turma');
+    const exportLinks = document.querySelectorAll('.export-link');
+
+    if (!form || !wrapper) {
+      return;
+    }
+
+    const atualizarExportLinks = (queryString) => {
+      exportLinks.forEach((link) => {
+        const baseUrl = link.dataset.baseUrl;
+        link.href = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+      });
+    };
+
+    const atualizarTabela = () => {
+      const formData = new FormData(form);
+      const params = new URLSearchParams(formData);
+      const url = `${form.dataset.tabelaUrl}?${params.toString()}`;
+
+      fetch(url, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Erro ao atualizar tabela');
+          }
+          return response.text();
+        })
+        .then((html) => {
+          wrapper.innerHTML = html;
+          atualizarExportLinks(params.toString());
+        })
+        .catch(() => {
+          form.submit();
+        });
+    };
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      atualizarTabela();
+    });
+
+    const atualizarTurmas = (cursoId) => {
+      const turmasUrl = cursoSelect.dataset.turmasUrl;
+      turmaSelect.innerHTML = '<option value="">Todas</option>';
+
+      if (!cursoId) {
+        return;
+      }
+
+      const url = `${turmasUrl}?curso_id=${encodeURIComponent(cursoId)}`;
+
+      fetch(url, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Erro ao buscar turmas');
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (!data || !Array.isArray(data.turmas)) {
+            return;
+          }
+
+          data.turmas.forEach((turma) => {
+            const option = document.createElement('option');
+            option.value = turma.id;
+            option.textContent = turma.nome;
+            turmaSelect.appendChild(option);
+          });
+        })
+        .catch(() => {
+          turmaSelect.innerHTML = '<option value="">Todas</option>';
+        });
+    };
+
+    if (cursoSelect) {
+      cursoSelect.addEventListener('change', (event) => {
+        turmaSelect.value = '';
+        atualizarTurmas(event.target.value);
+      });
+    }
+
+    atualizarExportLinks(new URLSearchParams(new FormData(form)).toString());
+  })();
+</script>
+{% endblock relatorio_js %}

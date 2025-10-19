@@ -31,7 +31,7 @@ RUN mkdir -p /app/static /app/media /app/logs
 RUN chown -R omaum:omaum /app
 
 COPY requirements/ /app/requirements/
-RUN pip install --no-cache-dir -r requirements/production.txt
+RUN pip install --no-cache-dir -r requirements/development.txt
 
 COPY . /app/
 RUN chown -R omaum:omaum /app

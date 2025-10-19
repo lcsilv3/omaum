@@ -213,7 +213,11 @@ def copiar_atividade_ritualistica(request, id):
 
                 messages.success(
                     request,
-                    f"Atividade copiada com sucesso! {atividade_original.participantes.count()} participantes foram copiados.",
+                    (
+                        "Atividade copiada com sucesso! "
+                        + f"{atividade_original.participantes.count()} "
+                        + "participantes foram copiados."
+                    ),
                 )
             else:
                 # Salvar apenas os participantes selecionados no formulário

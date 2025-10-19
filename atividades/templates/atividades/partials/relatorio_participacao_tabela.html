@@ -1,0 +1,79 @@
+<div class="card mt-3">
+  <div class="card-body">
+    <p>Nenhum dado gerado ainda (implementação mínima).</p>
+  </div>
+</div>
+{% if relatorio.linhas %}
+<div class="mb-3 d-flex flex-wrap gap-2">
+  <span class="badge bg-secondary">Atividades analisadas: {{ relatorio.resumo.total_atividades }}</span>
+  <span class="badge bg-info text-dark">Convocados: {{ relatorio.resumo.total_convocados }}</span>
+  <span class="badge bg-success">Presentes: {{ relatorio.resumo.total_presentes }}</span>
+  <span class="badge bg-danger">Faltas: {{ relatorio.resumo.total_faltas }}</span>
+  <span class="badge bg-warning text-dark">Justificadas: {{ relatorio.resumo.total_faltas_justificadas }}</span>
+  <span class="badge bg-primary">Voluntários: {{ relatorio.resumo.total_voluntarios }}</span>
+  <span class="badge bg-dark">Presença média: {{ relatorio.resumo.percentual_presenca_medio|floatformat:2 }}%</span>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-striped table-hover align-middle small">
+    <thead class="table-light">
+      <tr>
+        <th scope="col">Atividade</th>
+        <th scope="col">Curso</th>
+        <th scope="col">Turmas</th>
+        <th scope="col">Período</th>
+        <th scope="col" class="text-center">Convocados</th>
+        <th scope="col" class="text-center">Presentes</th>
+        <th scope="col" class="text-center">Faltas</th>
+        <th scope="col" class="text-center">Justificadas</th>
+        <th scope="col" class="text-center">Voluntários</th>
+        <th scope="col" class="text-center">% Presença</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for linha in relatorio.linhas %}
+      <tr>
+        <td>
+          <strong>{{ linha.atividade_nome }}</strong>
+          <br>
+          <small class="text-muted">{{ linha.tipo_atividade }} • {{ linha.status_atividade }}</small>
+        </td>
+        <td>{{ linha.curso_nome|default:"-" }}</td>
+        <td>
+          {% if linha.turmas %}
+            {% for turma in linha.turmas %}
+              <span class="badge bg-light text-dark border me-1 mb-1">{{ turma }}</span>
+            {% endfor %}
+          {% else %}
+            <span class="text-muted">-</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if linha.data_inicio %}
+            {{ linha.data_inicio|date:'d/m/Y' }}
+          {% else %}
+            -
+          {% endif %}
+          {% if linha.data_fim %}
+            <br><small class="text-muted">até {{ linha.data_fim|date:'d/m/Y' }}</small>
+          {% endif %}
+        </td>
+        <td class="text-center">{{ linha.total_convocados }}</td>
+        <td class="text-center">{{ linha.total_presentes }}</td>
+        <td class="text-center">{{ linha.total_faltas }}</td>
+        <td class="text-center">{{ linha.total_faltas_justificadas }}</td>
+        <td class="text-center">
+          <span class="d-block">Total: {{ linha.total_voluntarios }}</span>
+          <small class="text-muted">Extra: {{ linha.total_voluntario_extra }} • Simples: {{ linha.total_voluntario_simples }}</small>
+        </td>
+        <td class="text-center fw-semibold">{{ linha.percentual_presenca|floatformat:2 }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+  <div class="alert alert-info" role="alert">
+    Nenhuma atividade encontrada para os filtros informados.
+  </div>
+{% endif %}

@@ -6,7 +6,6 @@ import pytest
 from django.test import TestCase, TransactionTestCase
 from django.test.client import Client
 from django.urls import reverse
-from django.contrib.auth.models import User
 from django.db import transaction
 from decimal import Decimal
 from datetime import date, timedelta
@@ -373,7 +372,6 @@ class ConcorrenciaTest(TransactionTestCase):
     def test_matricula_concorrente(self):
         """Teste de matrícula concorrente."""
         import threading
-        import time
 
         aluno = AlunoFactory()
         curso = CursoFactory()

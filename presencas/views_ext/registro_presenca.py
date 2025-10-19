@@ -1206,7 +1206,6 @@ def registrar_presenca_dias_atividades_ajax(request):
 
 @login_required
 def editar_presenca_dados_basicos(request, pk):
-    from presencas.models import Presenca
     from presencas.forms import EditarPresencaIndividualForm
     from presencas.permissions import PresencaPermissionEngine
 
@@ -1247,7 +1246,6 @@ def editar_presenca_dados_basicos(request, pk):
 
 @login_required
 def editar_presenca_totais_atividades(request, pk):
-    from presencas.models import Presenca
     from presencas.permissions import PresencaPermissionEngine
 
     presenca = get_object_or_404(RegistroPresenca, pk=pk)
@@ -1269,7 +1267,6 @@ def editar_presenca_totais_atividades(request, pk):
 
 @login_required
 def editar_presenca_dias_atividades(request, pk):
-    from presencas.models import Presenca
     from presencas.forms import EditarPresencaIndividualForm
     from presencas.permissions import PresencaPermissionEngine
 
@@ -1320,7 +1317,6 @@ def editar_presenca_alunos(request, pk):
 
 @login_required
 def detalhar_presenca_dados_basicos(request, pk):
-    from presencas.models import Presenca
     from presencas.permissions import PresencaPermissionEngine
 
     presenca = get_object_or_404(RegistroPresenca, pk=pk)

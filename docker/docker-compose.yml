@@ -58,12 +58,7 @@ services:
         condition: service_healthy
     networks:
       - omaum-network
-    command: >
-      sh -c "/wait-for-it.sh omaum-db:5432 --timeout=60 --strict -- \
-             python manage.py migrate &&\
-             python manage.py collectstatic --noinput &&\
-             python manage.py runserver 0.0.0.0:8000"
-
+    command: python manage.py runserver 0.0.0.0:8000
   omaum-nginx:
     build:
       context: ..

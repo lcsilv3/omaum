@@ -5,12 +5,9 @@ Categoria 4 - Relatórios Preditivos
 """
 
 import numpy as np
-import pandas as pd
-from datetime import datetime, timedelta, date
-from decimal import Decimal
-from typing import Dict, List, Tuple, Any, Optional
-from django.db.models import Q, Avg, Count, Sum, Max, Min, F, Case, When, Value
-from django.utils import timezone
+from datetime import timedelta, date
+from typing import Dict, List
+from django.db.models import Q, Avg, Sum, F
 from importlib import import_module
 import logging
 

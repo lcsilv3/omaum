@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Carga de Instrutores</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 1.5cm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9pt;
+                color: #555;
+            }
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 9pt;
+            color: #333;
+        }
+        .report-header {
+            margin-bottom: 0.5cm;
+        }
+        .report-header .org-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+        }
+        .report-header .org-meta {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-top: 2px;
+        }
+        .report-header .org-meta .org-subtitle {
+            font-size: 10pt;
+            margin: 0;
+            text-align: center;
+            flex: 1;
+        }
+        .report-header .org-meta .emission-datetime {
+            font-size: 9pt;
+            margin: 0;
+            text-align: right;
+            margin-left: auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 16pt;
+            margin-top: 0;
+            margin-bottom: 0.8cm;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            page-break-inside: auto;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+            word-wrap: break-word;
+        }
+        thead {
+            background-color: #f2f2f2;
+            display: table-header-group;
+        }
+        th {
+            font-weight: bold;
+        }
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .summary {
+            margin-top: 0.8cm;
+            font-size: 10pt;
+        }
+        .summary ul {
+            padding-left: 18px;
+            margin: 0;
+        }
+        .summary li {
+            margin-bottom: 4px;
+        }
+        .filters {
+            margin-bottom: 0.6cm;
+            font-size: 9pt;
+        }
+        .filters table {
+            border: none;
+        }
+        .filters th, .filters td {
+            border: none;
+            padding: 2px 6px;
+        }
+        .filters th {
+            text-align: right;
+            color: #555;
+            width: 120px;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <p class="org-title">{{ nome_organizacao|default:"OMAUM - Ordem Mística de Aspiração Universal ao Mestrado" }}</p>
+        <div class="org-meta">
+            <p class="org-subtitle">{{ nome_sistema|default:"Sistema de Gestão Integrada" }}</p>
+            <p class="emission-datetime">
+                Data de Emissão:
+                {% if data_emissao %}
+                    {{ data_emissao }}
+                {% else %}
+                    {% now "d/m/Y H:i" %}
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <h1>Relatório de Carga de Instrutores</h1>
+
+    <div class="filters">
+        <table>
+            <tbody>
+                <tr>
+                    <th>Instrutor:</th>
+                    <td>{{ descricao_filtros.instrutor|default:"Todos" }}</td>
+                    <th>Curso:</th>
+                    <td>{{ descricao_filtros.curso|default:"Todos" }}</td>
+                </tr>
+                <tr>
+                    <th>Status da Turma:</th>
+                    <td>{{ descricao_filtros.status_turma|default:"Todos" }}</td>
+                    <th>Período:</th>
+                    <td>{{ descricao_filtros.periodo|default:"Sem restrições" }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Instrutor</th>
+                <th>Papel</th>
+                <th>Cursos</th>
+                <th>Turmas</th>
+                <th>Total de Atividades</th>
+                <th>Total de Horas</th>
+                <th>Distribuição por Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for linha in relatorio.linhas %}
+            <tr>
+                <td>{{ linha.instrutor_nome }}</td>
+                <td>{{ linha.papel_display }}</td>
+                <td>{% if linha.cursos %}{{ linha.cursos|join:", " }}{% else %}-{% endif %}</td>
+                <td>{% if linha.turmas %}{{ linha.turmas|join:", " }}{% else %}-{% endif %}</td>
+                <td>{{ linha.total_atividades }}</td>
+                <td>{{ linha.total_horas|floatformat:2 }}</td>
+                <td>
+                    {% if linha.atividades_por_status %}
+                        {% for status, quantidade in linha.atividades_por_status.items %}
+                            {{ status }}: {{ quantidade }}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center;">Nenhum registro encontrado para os filtros informados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <strong>Totais Consolidados</strong>
+        <ul>
+            <li>Instrutores únicos: {{ relatorio.resumo.total_instrutores }}</li>
+            <li>Atividades contabilizadas: {{ relatorio.resumo.total_atividades }}</li>
+            <li>Total de horas previstas: {{ relatorio.resumo.total_horas|floatformat:2 }}</li>
+            <li>
+                Distribuição de status:
+                {% if relatorio.resumo.atividades_por_status %}
+                    {% for status, quantidade in relatorio.resumo.atividades_por_status.items %}
+                        {{ status }}: {{ quantidade }}{% if not forloop.last %}; {% endif %}
+                    {% endfor %}
+                {% else %}
+                    sem registros
+                {% endif %}
+            </li>
+        </ul>
+    </div>
+</body>
+</html>

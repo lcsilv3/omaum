@@ -44,7 +44,10 @@ def listar_atividades_academicas(request):
                         corrigidas += 1
             if corrigidas > 0:
                 logger.info(
-                    f"Auto-correção: {corrigidas} atividades receberam cursos automaticamente"
+                    (
+                        "Auto-correção: "
+                        f"{corrigidas} atividades receberam cursos automaticamente"
+                    )
                 )
         except Exception as e:
             logger.error(f"Erro na auto-correção: {str(e)}")
@@ -166,7 +169,11 @@ def editar_atividade_academica(request, id):
                 atividade.curso = primeira_turma.curso
                 atividade.save()
                 logger.info(
-                    f"Auto-correção aplicada: Atividade '{atividade.nome}' recebeu curso '{primeira_turma.curso.nome}'"
+                    (
+                        "Auto-correção aplicada: "
+                        + f"Atividade '{atividade.nome}' recebeu curso '"
+                        + f"{primeira_turma.curso.nome}'"
+                    )
                 )
 
         if request.method == "POST":
