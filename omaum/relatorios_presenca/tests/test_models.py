@@ -4,10 +4,8 @@ Testes para os modelos do app relatorios_presenca.
 
 from django.test import TestCase
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.utils import timezone
-from datetime import date, timedelta
-import json
+from datetime import timedelta
 
 from ..models import ConfiguracaoRelatorio, HistoricoRelatorio, AgendamentoRelatorio
 

@@ -4,12 +4,14 @@ Este módulo contém a lógica de negócio relacionada às atividades,
 seguindo o padrão Service Layer.
 """
 
-from django.db import transaction
-from django.core.exceptions import ValidationError
 from datetime import date
 from typing import Optional
-from .models import Atividade, Presenca
-from .repositories import AtividadeRepository, PresencaRepository
+
+from django.core.exceptions import ValidationError
+from django.db import transaction
+
+from ..models import Atividade, Presenca
+from ..repositories import AtividadeRepository, PresencaRepository
 
 
 class AtividadeService:
@@ -169,3 +171,6 @@ class PresencaService:
 
         presenca.delete()
         return True
+
+
+__all__ = ["AtividadeService", "PresencaService"]

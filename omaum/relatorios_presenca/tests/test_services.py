@@ -3,10 +3,8 @@ Testes para os services do app relatorios_presenca.
 """
 
 from django.test import TestCase
-from django.contrib.auth.models import User
-from django.utils import timezone
-from datetime import date, timedelta
-from unittest.mock import Mock, patch, MagicMock
+from datetime import date
+from unittest.mock import Mock, patch
 
 from ..services.relatorio_service import RelatorioPresencaService
 

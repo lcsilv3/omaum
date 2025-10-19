@@ -77,7 +77,10 @@ def importar_atividades_academicas(request):
                             atividade.turmas.add(turma)
                         except Turma.DoesNotExist:
                             errors.append(
-                                f"Turma com ID {turma_id} não encontrada para '{atividade.nome}'"
+                                (
+                                    f"Turma com ID {turma_id} não encontrada "
+                                    f"para '{atividade.nome}'"
+                                )
                             )
                 count += 1
             except Exception as e:

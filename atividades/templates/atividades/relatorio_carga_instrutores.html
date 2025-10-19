@@ -1,0 +1,127 @@
+{% extends "atividades/base_relatorio.html" %}
+
+{% block title %}{{ titulo|default:"Relatório de Carga de Instrutores" }}{% endblock %}
+
+{% block filtros %}
+<form method="get" id="relatorio-carga-instrutores-form" class="row g-3 mb-4 align-items-end" data-tabela-url="{% url 'atividades:ajax_relatorio_carga_instrutores_tabela' %}">
+  <div class="col-md-3">
+    <label for="filtro-instrutor" class="form-label">Instrutor</label>
+    <select name="instrutor" id="filtro-instrutor" class="form-select">
+      <option value="">Todos</option>
+      {% for instrutor in instrutores %}
+        <option value="{{ instrutor.id }}" {% if filtros.instrutor_id == instrutor.id %}selected{% endif %}>{{ instrutor.nome }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-curso" class="form-label">Curso</label>
+    <select name="curso" id="filtro-curso" class="form-select">
+      <option value="">Todos</option>
+      {% for curso in cursos %}
+        <option value="{{ curso.id }}" {% if filtros.curso_id == curso.id %}selected{% endif %}>{{ curso.nome }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-status-turma" class="form-label">Status da Turma</label>
+    <select name="status_turma" id="filtro-status-turma" class="form-select">
+      <option value="">Todos</option>
+      {% for status in status_turma_choices %}
+        <option value="{{ status.value }}" {% if filtros.status_turma == status.value %}selected{% endif %}>{{ status.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-data-inicio" class="form-label">Data inicial</label>
+    <input type="date" id="filtro-data-inicio" name="data_inicio" class="form-control" value="{{ filtros.data_inicio|date:'Y-m-d' }}">
+  </div>
+  <div class="col-md-3">
+    <label for="filtro-data-fim" class="form-label">Data final</label>
+    <input type="date" id="filtro-data-fim" name="data_fim" class="form-control" value="{{ filtros.data_fim|date:'Y-m-d' }}">
+  </div>
+  <div class="col-md-3 d-flex align-items-end gap-2">
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="fas fa-sync-alt"></i> Atualizar
+    </button>
+    <a href="{% url 'atividades:relatorio_carga_instrutores' %}" class="btn btn-outline-secondary" title="Limpar filtros">Limpar</a>
+  </div>
+</form>
+{% endblock filtros %}
+
+{% block relatorio_content %}
+<div id="relatorio-carga-instrutores-wrapper">
+  {% include "atividades/partials/relatorio_carga_instrutores_tabela.html" %}
+</div>
+{% endblock relatorio_content %}
+
+{% block botoes_relatorio %}
+<div class="btn-group" role="group">
+  <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="fas fa-file-export"></i> Exportar
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li>
+      <a class="dropdown-item export-link" data-base-url="{% url 'atividades:exportar_relatorio_carga_instrutores' 'csv' %}" href="{% url 'atividades:exportar_relatorio_carga_instrutores' 'csv' %}{% if query_params %}?{{ query_params }}{% endif %}">CSV</a>
+    </li>
+    <li>
+      <a class="dropdown-item export-link" data-base-url="{% url 'atividades:exportar_relatorio_carga_instrutores' 'excel' %}" href="{% url 'atividades:exportar_relatorio_carga_instrutores' 'excel' %}{% if query_params %}?{{ query_params }}{% endif %}">Excel</a>
+    </li>
+    <li>
+      <a class="dropdown-item export-link" data-base-url="{% url 'atividades:exportar_relatorio_carga_instrutores' 'pdf' %}" href="{% url 'atividades:exportar_relatorio_carga_instrutores' 'pdf' %}{% if query_params %}?{{ query_params }}{% endif %}" target="_blank">PDF (visualizar)</a>
+    </li>
+  </ul>
+</div>
+{% endblock botoes_relatorio %}
+
+{% block relatorio_js %}
+<script>
+  (function() {
+  const form = document.getElementById('relatorio-carga-instrutores-form');
+    const wrapper = document.getElementById('relatorio-carga-instrutores-wrapper');
+    const exportLinks = document.querySelectorAll('.export-link');
+
+    if (!form || !wrapper) {
+      return;
+    }
+
+    const atualizarExportLinks = (queryString) => {
+      exportLinks.forEach((link) => {
+        const baseUrl = link.dataset.baseUrl;
+        link.href = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+      });
+    };
+
+    const atualizarTabela = () => {
+      const formData = new FormData(form);
+      const params = new URLSearchParams(formData);
+      const url = `${form.dataset.tabelaUrl}?${params.toString()}`;
+
+      fetch(url, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Erro ao atualizar tabela');
+          }
+          return response.text();
+        })
+        .then((html) => {
+          wrapper.innerHTML = html;
+          atualizarExportLinks(params.toString());
+        })
+        .catch(() => {
+          form.submit();
+        });
+    };
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      atualizarTabela();
+    });
+
+    atualizarExportLinks(new URLSearchParams(new FormData(form)).toString());
+  })();
+</script>
+{% endblock relatorio_js %}

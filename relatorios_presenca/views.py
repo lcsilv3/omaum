@@ -236,7 +236,6 @@ def dashboard_relatorios(request):
     return render(request, "relatorios_presenca/dashboard_relatorios.html")
 
 
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
 try:
@@ -336,7 +335,6 @@ def boletim_frequencia_aluno(request):
 import datetime
 import csv  # Import the csv module
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render
 from .services import RelatorioPresencaService
 from .generators.excel import ExcelGenerator
 from turmas.models import Turma
