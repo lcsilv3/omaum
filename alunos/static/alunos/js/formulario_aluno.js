@@ -167,39 +167,74 @@ function initializeHistoricoFormset() {
 // ========================================================================
 
 function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
+    if (!urlTipos || !urlCodigosPorTipo) {
+        console.warn('[Histórico] URLs para carregamento dinâmico ausentes; mantendo opções server-side.');
+        return;
+    }
+
     let cacheTipos = null;
     const cacheCodigos = {};
 
+    const defaultFetchOptions = {
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    };
+
+    function fetchJson(url) {
+        return fetch(url, defaultFetchOptions).then(response => {
+            if (!response.ok) {
+                throw new Error(`[Histórico] Falha ao carregar ${url}: ${response.status}`);
+            }
+            return response.json();
+        });
+    }
+
     function fetchTipos() {
         if (cacheTipos) return Promise.resolve(cacheTipos);
-        return fetch(urlTipos).then(r => r.json()).then(data => {
-            if (data.status === 'success') {
-                cacheTipos = data.tipos;
-                return cacheTipos;
-            }
-            throw new Error(data.message || 'Erro ao carregar tipos');
-        });
+        return fetchJson(urlTipos)
+            .then(data => {
+                if (data.status === 'success' && Array.isArray(data.tipos)) {
+                    cacheTipos = data.tipos;
+                    return cacheTipos;
+                }
+                throw new Error(data.message || '[Histórico] Resposta inválida ao carregar tipos.');
+            });
     }
 
     function fetchCodigos(tipoId) {
         if (cacheCodigos[tipoId]) return Promise.resolve(cacheCodigos[tipoId]);
         const url = new URL(urlCodigosPorTipo, window.location.origin);
         url.searchParams.set('tipo_id', tipoId);
-        return fetch(url).then(r => r.json()).then(data => {
-            if (data.status === 'success') {
-                cacheCodigos[tipoId] = data.codigos;
-                return data.codigos;
-            }
-            throw new Error(data.message || 'Erro ao carregar códigos');
-        });
+        return fetchJson(url)
+            .then(data => {
+                if (data.status === 'success' && Array.isArray(data.codigos)) {
+                    cacheCodigos[tipoId] = data.codigos;
+                    return data.codigos;
+                }
+                throw new Error(data.message || '[Histórico] Resposta inválida ao carregar códigos.');
+            });
     }
 
-    function populateSelect(selectEl, items, placeholder, selectedValue) {
+    function populateSelect(selectEl, items, placeholder, selectedValue, fallbackHtml) {
+        if (!Array.isArray(items) || items.length === 0) {
+            if (fallbackHtml) {
+                selectEl.innerHTML = fallbackHtml;
+            }
+            selectEl.disabled = false;
+            return;
+        }
+
         selectEl.innerHTML = `<option value="">${placeholder}</option>`;
         items.forEach(item => {
+            if (!item || typeof item.id === 'undefined') return;
             const opt = document.createElement('option');
             opt.value = item.id;
-            opt.textContent = item.descricao ? `${item.nome} (${item.descricao})` : item.nome;
+            const nome = item.nome || '';
+            const descricao = item.descricao ? ` (${item.descricao})` : '';
+            opt.textContent = `${nome}${descricao}`.trim();
             if (String(selectedValue) === String(item.id)) {
                 opt.selected = true;
             }
@@ -213,34 +248,60 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
         const codigoSelect = container.querySelector('select.codigo-select');
         if (!tipoSelect || !codigoSelect) return;
 
+        const originalTipoHtml = tipoSelect.innerHTML;
+        const originalCodigoHtml = codigoSelect.innerHTML;
+
         const initialTipo = tipoSelect.dataset.initial || tipoSelect.value;
         const initialCodigo = codigoSelect.dataset.initial || codigoSelect.value;
 
-        fetchTipos().then(tipos => {
-            populateSelect(tipoSelect, tipos, '-- selecione o tipo --', initialTipo);
-            if (initialTipo) {
-                codigoSelect.disabled = true;
-                codigoSelect.innerHTML = '<option value="">Carregando...</option>';
-                fetchCodigos(initialTipo).then(codigos => {
-                    populateSelect(codigoSelect, codigos, '-- selecione o código --', initialCodigo);
-                });
-            } else {
-                codigoSelect.disabled = true;
-                codigoSelect.innerHTML = '<option value="">-- escolha o tipo --</option>';
-            }
-        });
+        fetchTipos()
+            .then(tipos => {
+                populateSelect(tipoSelect, tipos, '-- selecione o tipo --', initialTipo, originalTipoHtml);
+                if (initialTipo) {
+                    codigoSelect.disabled = true;
+                    codigoSelect.innerHTML = '<option value="">Carregando...</option>';
+                    fetchCodigos(initialTipo)
+                        .then(codigos => {
+                            populateSelect(codigoSelect, codigos, '-- selecione o código --', initialCodigo, originalCodigoHtml);
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            codigoSelect.innerHTML = originalCodigoHtml;
+                            codigoSelect.disabled = false;
+                        });
+                } else {
+                    codigoSelect.disabled = true;
+                    codigoSelect.innerHTML = '<option value="">-- escolha o tipo --</option>';
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                tipoSelect.innerHTML = originalTipoHtml;
+                tipoSelect.disabled = false;
+                codigoSelect.innerHTML = originalCodigoHtml;
+                codigoSelect.disabled = false;
+            });
 
         tipoSelect.addEventListener('change', () => {
             const tipoId = tipoSelect.value;
+            if (!tipoId) {
+                codigoSelect.disabled = true;
+                codigoSelect.innerHTML = '<option value="">-- escolha o tipo --</option>';
+                return;
+            }
+
             codigoSelect.disabled = true;
             codigoSelect.innerHTML = '<option value="">Carregando...</option>';
-            if (tipoId) {
-                fetchCodigos(tipoId).then(codigos => {
-                    populateSelect(codigoSelect, codigos, '-- selecione o código --', null);
+
+            fetchCodigos(tipoId)
+                .then(codigos => {
+                    populateSelect(codigoSelect, codigos, '-- selecione o código --', null, originalCodigoHtml);
+                })
+                .catch(error => {
+                    console.error(error);
+                    codigoSelect.innerHTML = originalCodigoHtml;
+                    codigoSelect.disabled = false;
                 });
-            } else {
-                codigoSelect.innerHTML = '<option value="">-- escolha o tipo --</option>';
-            }
         });
     }
 
@@ -248,7 +309,10 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
     document.querySelectorAll('.historico-form').forEach(setupLine);
 
     // Ouve por novos formulários adicionados ao formset
-    document.getElementById('historico-form-list').addEventListener('formset:added', e => {
-        setupLine(e.target);
-    });
+    const historicoList = document.getElementById('historico-form-list');
+    if (historicoList) {
+        historicoList.addEventListener('formset:added', e => {
+            setupLine(e.target);
+        });
+    }
 }

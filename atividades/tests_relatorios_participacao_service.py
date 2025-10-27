@@ -82,9 +82,7 @@ class RelatorioParticipacaoServiceTest(TestCase):
         self.assertEqual(relatorio.resumo.total_voluntario_simples, 1)
         self.assertGreaterEqual(len(relatorio.linhas), 2)
 
-        linhas_por_atividade = {
-            linha.atividade_id: linha for linha in relatorio.linhas
-        }
+        linhas_por_atividade = {linha.atividade_id: linha for linha in relatorio.linhas}
 
         linha_base = linhas_por_atividade[self.atividade.id]
         self.assertAlmostEqual(linha_base.percentual_presenca, 20.0)

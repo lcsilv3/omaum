@@ -14,7 +14,6 @@ EXCLUDED_RELATORIO_URLS = {
     "alunos:relatorio_auditoria_dados",
     "alunos:relatorio_demografico",
     "alunos:relatorio_aniversariantes",
-    "atividades:relatorio_atividades",
     "frequencias:relatorio_frequencias",
     "turmas:listar_turmas",
 }

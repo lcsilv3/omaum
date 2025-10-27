@@ -19,10 +19,13 @@ class Command(BaseCommand):
         self.stdout.write(self.style.HTTP_INFO("\n1. Análise de Nacionalidade"))
 
         # Valores únicos de nacionalidade nos Alunos
+        alunos_com_pais = Aluno.objects.select_related("pais_nacionalidade").filter(
+            pais_nacionalidade__isnull=False
+        )
         nacionalidades_alunos = (
-            Aluno.objects.exclude(nacionalidade__isnull=True)
-            .exclude(nacionalidade__exact="")
-            .values_list("nacionalidade", flat=True)
+            alunos_com_pais.values_list("pais_nacionalidade__nacionalidade", flat=True)
+            .exclude(pais_nacionalidade__nacionalidade__isnull=True)
+            .exclude(pais_nacionalidade__nacionalidade__exact="")
             .distinct()
         )
         self.stdout.write(
@@ -52,40 +55,38 @@ class Command(BaseCommand):
             )
         else:
             for nac_aluno in nacionalidades_alunos:
-                try:
-                    pais_encontrado = Pais.objects.get(
-                        nacionalidade__iexact=nac_aluno.strip()
-                    )
+                valor = (nac_aluno or "").strip()
+                if not valor:
+                    continue
+                pais_encontrado = Pais.objects.filter(
+                    nacionalidade__iexact=valor
+                ).first()
+                if pais_encontrado:
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f'    [SUCESSO] "{nac_aluno}" -> Encontrado em País: {pais_encontrado.nome} (Nacionalidade: {pais_encontrado.nacionalidade})'
+                            f'    [SUCESSO] "{valor}" -> Encontrado em País: {pais_encontrado.nome} (Nacionalidade: {pais_encontrado.nacionalidade})'
                         )
                     )
-                except Pais.DoesNotExist:
+                else:
                     self.stdout.write(
                         self.style.ERROR(
-                            f'    [FALHA] "{nac_aluno}" -> Não encontrado na tabela de Países com busca exata.'
-                        )
-                    )
-                except Pais.MultipleObjectsReturned:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f'    [FALHA] "{nac_aluno}" -> Múltiplos resultados encontrados, dados ambíguos.'
+                            f'    [FALHA] "{valor}" -> Não encontrado na tabela de Países com busca exata.'
                         )
                     )
 
         # --- Diagnóstico de Naturalidade ---
         self.stdout.write(self.style.HTTP_INFO("\n2. Análise de Naturalidade"))
-        naturalidades_alunos = (
-            Aluno.objects.exclude(naturalidade__isnull=True)
-            .exclude(naturalidade__exact="")
-            .values_list("naturalidade", flat=True)
-            .distinct()
-        )
+        alunos_com_cidade = Aluno.objects.select_related(
+            "cidade_naturalidade", "cidade_naturalidade__estado"
+        ).filter(cidade_naturalidade__isnull=False)
+        naturalidades_alunos = alunos_com_cidade.values_list(
+            "cidade_naturalidade__nome", "cidade_naturalidade__estado__codigo"
+        ).distinct()
 
         self.stdout.write(
             self.style.WARNING(
-                f"  - Primeiras 50 naturalidades distintas encontradas em Alunos: {list(naturalidades_alunos)[:50]}..."
+                "  - Primeiras 50 naturalidades distintas encontradas em Alunos: "
+                f"{[(nome, uf) for nome, uf in list(naturalidades_alunos)[:50]]}..."
             )
         )
 
@@ -96,28 +97,33 @@ class Command(BaseCommand):
                 self.style.NOTICE("    Nenhuma naturalidade para testar em Alunos.")
             )
         else:
-            for nat_aluno in list(naturalidades_alunos)[:50]:
-                nat_aluno_strip = nat_aluno.strip()
-                try:
-                    # Tentativa 1: Busca exata pelo nome da cidade
-                    cidade_encontrada = Cidade.objects.get(nome__iexact=nat_aluno_strip)
+            for nome_cidade, uf in list(naturalidades_alunos)[:50]:
+                nome_cidade = (nome_cidade or "").strip()
+                uf = (uf or "").strip()
+                if not nome_cidade:
+                    continue
+                qs = Cidade.objects.filter(nome__iexact=nome_cidade)
+                if uf:
+                    qs = qs.filter(estado__codigo__iexact=uf)
+                cidades = list(qs)
+                if len(cidades) == 1:
+                    cidade = cidades[0]
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f'    [SUCESSO] "{nat_aluno}" -> Encontrada cidade: {cidade_encontrada.nome}/{cidade_encontrada.estado.codigo}'
+                            f'    [SUCESSO] "{nome_cidade}" ({uf or "??"}) -> Encontrada cidade: {cidade.nome}/{cidade.estado.codigo}'
                         )
                     )
-                except Cidade.DoesNotExist:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f'    [FALHA] "{nat_aluno}" -> Nenhuma cidade encontrada com este nome.'
-                        )
-                    )
-                except Cidade.MultipleObjectsReturned:
-                    cidades = Cidade.objects.filter(nome__iexact=nat_aluno_strip)
+                elif len(cidades) > 1:
                     estados = [c.estado.codigo for c in cidades]
                     self.stdout.write(
                         self.style.ERROR(
-                            f'    [FALHA] "{nat_aluno}" -> Nome de cidade ambíguo. Encontrado em múltiplos estados: {estados}'
+                            f'    [FALHA] "{nome_cidade}" -> Nome ambiguo. Encontrado em múltiplos estados: {estados}'
+                        )
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f'    [FALHA] "{nome_cidade}" ({uf or "??"}) -> Nenhuma cidade encontrada com este nome.'
                         )
                     )
 
