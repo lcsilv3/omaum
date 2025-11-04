@@ -9,12 +9,21 @@ from .views_ext.relatorios import (
     ajax_relatorio_participacao_tabela,
     exportar_atividades,
     exportar_relatorio_participacao,
-    relatorio_frequencia_turma,
+    relatorio_frequencia_turmas,
     relatorio_cronograma_curso_turmas,
+    exportar_relatorio_cronograma,
     relatorio_historico_aluno,
+    exportar_relatorio_historico_aluno,
+    ajax_relatorio_historico_tabela,
+    ajax_relatorio_historico_opcoes,
     relatorio_carga_instrutores,
     exportar_relatorio_carga_instrutores,
     ajax_relatorio_carga_instrutores_tabela,
+    exportar_relatorio_frequencia,
+    ajax_relatorio_frequencia_tabela,
+    ajax_relatorio_frequencia_opcoes,
+    ajax_relatorio_cronograma_tabela,
+    ajax_relatorio_cronograma_opcoes,
 )
 from .views_ext import importacao
 from .views_ext.dashboard import (
@@ -135,8 +144,23 @@ urlpatterns = [
     # Relatório de Frequência por Turma
     path(
         "relatorio/frequencia/",
-        relatorio_frequencia_turma,
-        name="relatorio_frequencia_turma",
+        relatorio_frequencia_turmas,
+        name="relatorio_frequencia_turmas",
+    ),
+    path(
+        "relatorio/frequencia/exportar/<str:formato>/",
+        exportar_relatorio_frequencia,
+        name="exportar_relatorio_frequencia",
+    ),
+    path(
+        "ajax/relatorio/frequencia/tabela/",
+        ajax_relatorio_frequencia_tabela,
+        name="ajax_relatorio_frequencia_tabela",
+    ),
+    path(
+        "ajax/relatorio/frequencia/opcoes/",
+        ajax_relatorio_frequencia_opcoes,
+        name="ajax_relatorio_frequencia_opcoes",
     ),
     # Relatório Cronograma Curso x Turmas
     path(
@@ -144,11 +168,41 @@ urlpatterns = [
         relatorio_cronograma_curso_turmas,
         name="relatorio_cronograma_curso_turmas",
     ),
+    path(
+        "relatorio/cronograma/exportar/<str:formato>/",
+        exportar_relatorio_cronograma,
+        name="exportar_relatorio_cronograma",
+    ),
+    path(
+        "ajax/relatorio/cronograma/tabela/",
+        ajax_relatorio_cronograma_tabela,
+        name="ajax_relatorio_cronograma_tabela",
+    ),
+    path(
+        "ajax/relatorio/cronograma/opcoes/",
+        ajax_relatorio_cronograma_opcoes,
+        name="ajax_relatorio_cronograma_opcoes",
+    ),
     # Relatório Histórico do Aluno
     path(
         "relatorio/historico-aluno/",
         relatorio_historico_aluno,
         name="relatorio_historico_aluno",
+    ),
+    path(
+        "relatorio/historico-aluno/exportar/<str:formato>/",
+        exportar_relatorio_historico_aluno,
+        name="exportar_relatorio_historico_aluno",
+    ),
+    path(
+        "ajax/relatorio/historico/tabela/",
+        ajax_relatorio_historico_tabela,
+        name="ajax_relatorio_historico_tabela",
+    ),
+    path(
+        "ajax/relatorio/historico/opcoes/",
+        ajax_relatorio_historico_opcoes,
+        name="ajax_relatorio_historico_opcoes",
     ),
     # Dashboard de atividades
     path("dashboard/", dashboard_atividades, name="dashboard_atividades"),

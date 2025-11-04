@@ -14,6 +14,7 @@ from django.utils import timezone
 from django.db.models import F
 
 from atividades.models import Atividade
+from cursos.models import Curso
 from presencas.models import RegistroPresenca
 from alunos.services import (
     listar_alunos as listar_alunos_service,
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def listar_presencas_academicas(request):
+    curso_id = request.GET.get("curso", "")
     aluno_id = request.GET.get("aluno", "")
     turma_id = request.GET.get("turma", "")
     atividade_id = request.GET.get("atividade", "")
@@ -33,7 +35,10 @@ def listar_presencas_academicas(request):
     data_fim = request.GET.get("data_fim", "")
 
     # FASE 3B: Cache para queries de filtros complexos
-    cache_key = f"presencas_filtros_{aluno_id}_{turma_id}_{atividade_id}_{data_inicio}_{data_fim}"
+    cache_key = (
+        f"presencas_filtros_{curso_id}_{aluno_id}_{turma_id}"
+        f"_{atividade_id}_{data_inicio}_{data_fim}"
+    )
     cached_result = cache.get(cache_key)
 
     if cached_result:
@@ -53,8 +58,10 @@ def listar_presencas_academicas(request):
             )
         )
 
+        if curso_id:
+            presencas_qs = presencas_qs.filter(turma__curso_id=curso_id)
         if aluno_id:
-            presencas_qs = presencas_qs.filter(aluno__cpf=aluno_id)
+            presencas_qs = presencas_qs.filter(aluno__id=aluno_id)
         if turma_id:
             presencas_qs = presencas_qs.filter(turma__id=turma_id)
         if atividade_id:
@@ -86,15 +93,26 @@ def listar_presencas_academicas(request):
         alunos = []
 
     # Carregamento otimizado de listas de referência com cache
+    cursos_cache_key = "cursos_listagem"
     turmas_cache_key = "turmas_listagem"
     atividades_cache_key = "atividades_listagem"
 
-    turmas = cache.get(turmas_cache_key)
-    if not turmas:
-        turmas = list(
+    cursos = cache.get(cursos_cache_key)
+    if not cursos:
+        cursos = list(Curso.objects.only("id", "nome"))
+        cache.set(cursos_cache_key, cursos, 600)  # 10 minutos
+
+    turmas_cached = cache.get(turmas_cache_key)
+    if not turmas_cached:
+        turmas_cached = list(
             Turma.objects.select_related("curso").only("id", "nome", "curso__nome")
         )
-        cache.set(turmas_cache_key, turmas, 600)  # 10 minutos
+        cache.set(turmas_cache_key, turmas_cached, 600)  # 10 minutos
+    turmas = (
+        [t for t in turmas_cached if str(t.curso_id) == str(curso_id)]
+        if curso_id
+        else turmas_cached
+    )
 
     atividades = cache.get(atividades_cache_key)
     if not atividades:
@@ -106,9 +124,11 @@ def listar_presencas_academicas(request):
         "presencas": page_obj.object_list,
         "total_count": total_count,
         "alunos": alunos,
+        "cursos": cursos,
         "turmas": turmas,
         "atividades": atividades,
         "filtros": {
+            "curso": curso_id,
             "aluno": aluno_id,
             "turma": turma_id,
             "atividade": atividade_id,

@@ -12,9 +12,10 @@
             <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Voltar ao Painel de Controle">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <!-- 2. Nova Atividade -->
-            <a href="{% url 'atividades:criar_atividade' %}" class="btn btn-success" data-bs-toggle="tooltip" title="Criar nova atividade">
-                <i class="fas fa-plus"></i> Nova Atividade
+                <a href="{% url 'atividades:calendario_atividades' %}" class="btn btn-outline-primary">Calendário</a>
+                <!-- 2. Nova Atividade -->
+                <a href="{% url 'atividades:criar_atividade' %}" class="btn btn-success" data-bs-toggle="tooltip" title="Criar nova atividade">
+                    <i class="fas fa-plus"></i> Nova Atividade
             </a>
             <!-- 3. Relatórios -->
             <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosAtividades" title="Relatórios">
@@ -175,13 +176,105 @@
                 <li class="page-item">
                     <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">&raquo;</a>
                 </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-
+                                {% if page_obj %}
+                                    {% for atividade in page_obj.object_list %}
+                                        <tr>
+                                            <td>{{ atividade.nome }}</td>
+                                            <td>{{ atividade.curso }}</td>
+                                            <td>
+                                                {% for turma in atividade.turmas.all %}
+                                                    <span class="badge bg-info">{{ turma.nome }}</span>
+                                                {% empty %}
+                                                    <span class="text-muted">-</span>
+                                                {% endfor %}
+                                            </td>
+                                            <td>{{ atividade.get_tipo_atividade_display }}</td>
+                                            <td>
+                                                {% if atividade.status == 'CANCELADA' %}
+                                                    <span class="badge bg-danger">Cancelada</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Ativa</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+                                            <td>
+                                                {% if atividade.data_fim %}
+                                                    {{ atividade.data_fim|date:"d/m/Y" }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if atividade.convocacao %}
+                                                    <span class="badge bg-success">Sim</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Não</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-start">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{% url 'atividades:detalhar_atividade' atividade.id %}" class="btn btn-info" title="Detalhar atividade"><i class="fas fa-eye"></i></a>
+                                                    <a href="{% url 'atividades:editar_atividade' atividade.id %}" class="btn btn-warning" title="Editar atividade"><i class="fas fa-edit"></i></a>
+                                                    <a href="{% url 'atividades:excluir_atividade' atividade.id %}" class="btn btn-danger" title="Excluir atividade"><i class="fas fa-trash"></i></a>
+                                                    <a href="{% url 'atividades:copiar_atividade' atividade.id %}" class="btn btn-secondary" title="Copiar atividade"><i class="fas fa-copy"></i></a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="9" class="text-center py-4">Nenhuma atividade encontrada.</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    {% for atividade in atividades %}
+                                        <tr>
+                                            <td>{{ atividade.nome }}</td>
+                                            <td>{{ atividade.curso }}</td>
+                                            <td>
+                                                {% for turma in atividade.turmas.all %}
+                                                    <span class="badge bg-info">{{ turma.nome }}</span>
+                                                {% empty %}
+                                                    <span class="text-muted">-</span>
+                                                {% endfor %}
+                                            </td>
+                                            <td>{{ atividade.get_tipo_atividade_display }}</td>
+                                            <td>
+                                                {% if atividade.status == 'CANCELADA' %}
+                                                    <span class="badge bg-danger">Cancelada</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Ativa</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+                                            <td>
+                                                {% if atividade.data_fim %}
+                                                    {{ atividade.data_fim|date:"d/m/Y" }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if atividade.convocacao %}
+                                                    <span class="badge bg-success">Sim</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Não</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-start">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{% url 'atividades:detalhar_atividade' atividade.id %}" class="btn btn-info" title="Detalhar atividade"><i class="fas fa-eye"></i></a>
+                                                    <a href="{% url 'atividades:editar_atividade' atividade.id %}" class="btn btn-warning" title="Editar atividade"><i class="fas fa-edit"></i></a>
+                                                    <a href="{% url 'atividades:excluir_atividade' atividade.id %}" class="btn btn-danger" title="Excluir atividade"><i class="fas fa-trash"></i></a>
+                                                    <a href="{% url 'atividades:copiar_atividade' atividade.id %}" class="btn btn-secondary" title="Copiar atividade"><i class="fas fa-copy"></i></a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="9" class="text-center py-4">Nenhuma atividade encontrada.</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
     <!-- Botão Voltar ao final da listagem -->
     <div class="mt-3">
         <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-outline-secondary">

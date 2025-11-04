@@ -98,15 +98,19 @@
                         {% include 'includes/form_field.html' with field=form.nome_iniciatico %}
                     </div>
                 </div>
+                {{ form.grau_atual }}
                 <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.grau_atual %}
-                    </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.situacao_iniciatica %}
                     </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.grau_atual_automatico %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label d-block">Grau Atual (automático)</label>
+                            <span class="badge rounded-pill bg-warning text-dark px-3 py-2">
+                                {{ form.grau_atual_automatico.value|default:"Aluno sem matricula" }}
+                            </span>
+                        </div>
+                        {{ form.grau_atual_automatico }}
                     </div>
                 </div>
             </div>

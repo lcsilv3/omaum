@@ -42,14 +42,7 @@ class AlunoForm(forms.ModelForm):
     grau_atual_automatico = forms.CharField(
         label="Grau Atual (automático)",
         required=False,
-        widget=forms.TextInput(
-            attrs={
-                "readonly": "readonly",
-                "class": "form-control-plaintext",
-                "tabindex": "-1",
-                "style": "background: #f8f9fa; color: #333; font-weight: bold;",
-            }
-        ),
+        widget=forms.HiddenInput(),
     )
     """Formulário simplificado para criação e edição de alunos."""
 
@@ -108,7 +101,7 @@ class AlunoForm(forms.ModelForm):
             ),
             "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "nome_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
-            "grau_atual": forms.TextInput(attrs={"class": "form-control"}),
+            "grau_atual": forms.HiddenInput(),
             "situacao_iniciatica": forms.Select(attrs={"class": "form-control"}),
             "tipo_sanguineo": forms.Select(attrs={"class": "form-control"}),
             "alergias": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
@@ -162,7 +155,7 @@ class AlunoForm(forms.ModelForm):
         self.fields["grau_atual_automatico"].initial = (
             self.instance.grau_atual_automatico
             if self.instance and self.instance.pk
-            else "Não informado"
+            else "Aluno sem matricula"
         )
         # Placeholders
         placeholders = {

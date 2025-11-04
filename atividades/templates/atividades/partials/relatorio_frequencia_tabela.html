@@ -1,0 +1,60 @@
+<div class="card shadow-sm">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <strong>Resultado do relatório</strong>
+      <div class="small text-muted">
+        Curso: {{ descricao_filtros.curso|default:'Todos' }} · Turma: {{ descricao_filtros.turma|default:'Todas' }} · Período: {{ descricao_filtros.periodo|default:'Todos' }} · Status: {{ descricao_filtros.status_carencia|default:'Todos' }}
+      </div>
+    </div>
+    <span class="badge bg-primary">{{ relatorio.linhas|length }} alunos</span>
+  </div>
+  <div class="card-body p-0">
+    {% if relatorio.linhas %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Aluno</th>
+              <th scope="col">Curso</th>
+              <th scope="col">Turma</th>
+              <th scope="col" class="text-center">Atividades</th>
+              <th scope="col" class="text-center">Presenças</th>
+              <th scope="col" class="text-center">Faltas</th>
+              <th scope="col" class="text-center">% Presença</th>
+              <th scope="col" class="text-center">Carências</th>
+              <th scope="col" class="text-center">Liberado</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for linha in relatorio.linhas %}
+              <tr>
+                <td>{{ linha.aluno_nome }}</td>
+                <td>{{ linha.curso_nome }}</td>
+                <td>{{ linha.turma_nome }}</td>
+                <td class="text-center">{{ linha.total_atividades }}</td>
+                <td class="text-center">{{ linha.presentes }}</td>
+                <td class="text-center">{{ linha.faltas }}</td>
+                <td class="text-center">{{ linha.percentual_presenca|floatformat:2 }}%</td>
+                <td class="text-center">{{ linha.numero_carencias }}</td>
+                <td class="text-center">
+                  {% if linha.liberado %}
+                    <span class="badge bg-success">Sim</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">Não</span>
+                  {% endif %}
+                </td>
+                <td>{{ linha.status_carencia|default:'-' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="p-4 text-center">
+        <p class="mb-1">Nenhum dado encontrado para os filtros selecionados.</p>
+        <small class="text-muted">Ajuste os filtros e tente novamente.</small>
+      </div>
+    {% endif %}
+  </div>
+</div>

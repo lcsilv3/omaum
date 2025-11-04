@@ -1,0 +1,142 @@
+<div class="row mb-4 g-3">
+  <div class="col-md-3">
+    <div class="card card-resumo shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-1">Atividades avaliadas</h2>
+        <p class="display-6 mb-1">{{ relatorio.resumo.total_atividades }}</p>
+        <small class="text-muted">Registros encontrados</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card card-resumo shadow-sm border-danger">
+      <div class="card-body">
+        <h2 class="h5 text-danger mb-1">Atrasadas</h2>
+        <p class="display-6 text-danger mb-1">{{ relatorio.resumo.atividades_atrasadas }}</p>
+        <small class="text-muted">Considera datas passadas</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card card-resumo shadow-sm border-success">
+      <div class="card-body">
+        <h2 class="h5 text-success mb-1">Adiantadas</h2>
+        <p class="display-6 text-success mb-1">{{ relatorio.resumo.atividades_adiantadas }}</p>
+        <small class="text-muted">Execuções antes do previsto</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card card-resumo shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-1">Filtros aplicados</h2>
+        <p class="mb-1">Curso: {{ descricao_filtros.curso|default:'Todos' }}</p>
+        <p class="mb-1">Turma: {{ descricao_filtros.turma|default:'Todas' }}</p>
+        <small class="text-muted">Período: {{ descricao_filtros.periodo|default:'Todos' }}<br>Status: {{ descricao_filtros.status|default:'Todos' }}<br>Responsável: {{ descricao_filtros.responsavel|default:'Todos' }}</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <strong>Resultado do relatório</strong>
+      <div class="small text-muted">
+        Curso: {{ descricao_filtros.curso|default:'Todos' }} · Turma: {{ descricao_filtros.turma|default:'Todas' }} · Período: {{ descricao_filtros.periodo|default:'Todos' }} · Status: {{ descricao_filtros.status|default:'Todos' }}
+      </div>
+    </div>
+    <span class="badge bg-primary">{{ relatorio.linhas|length }} atividades</span>
+  </div>
+  <div class="card-body p-0">
+    {% if relatorio.linhas %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Atividade</th>
+              <th scope="col">Curso</th>
+              <th scope="col">Turmas</th>
+              <th scope="col" class="text-center">Data Prevista</th>
+              <th scope="col" class="text-center">Data Final Prevista</th>
+              <th scope="col" class="text-center">Data Realizada</th>
+              <th scope="col">Status</th>
+              <th scope="col">Responsável</th>
+              <th scope="col" class="text-center">Atraso (dias)</th>
+              <th scope="col" class="text-center">Adiantamento (dias)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for linha in relatorio.linhas %}
+              <tr>
+                <td>{{ linha.atividade_nome }}</td>
+                <td>{{ linha.curso_nome }}</td>
+                <td>
+                  {% if linha.turmas %}
+                    {{ linha.turmas|join:', ' }}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  {% if linha.data_prevista %}
+                    {{ linha.data_prevista|date:'d/m/Y' }}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  {% if linha.data_prevista_fim %}
+                    {{ linha.data_prevista_fim|date:'d/m/Y' }}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  {% if linha.data_realizada %}
+                    {{ linha.data_realizada|date:'d/m/Y' }}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>{{ linha.status }}</td>
+                <td>{{ linha.responsavel|default:'-' }}</td>
+                <td class="text-center">
+                  {% if linha.atraso_dias %}
+                    <span class="badge bg-danger">{{ linha.atraso_dias }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  {% if linha.adiantamento_dias %}
+                    <span class="badge bg-success">{{ linha.adiantamento_dias }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="p-4 text-center">
+        <p class="mb-1">Nenhum dado encontrado para os filtros selecionados.</p>
+        <small class="text-muted">Ajuste os filtros e tente novamente.</small>
+      </div>
+    {% endif %}
+  </div>
+  <div class="card-footer">
+    <small class="text-muted">Distribuição por status:</small>
+    {% if relatorio.resumo.atividades_por_status %}
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        {% for status, quantidade in relatorio.resumo.atividades_por_status.items %}
+          <span class="badge bg-secondary">{{ status }}: {{ quantidade }}</span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="mb-0 text-muted">Nenhum status disponível.</p>
+    {% endif %}
+  </div>
+</div>

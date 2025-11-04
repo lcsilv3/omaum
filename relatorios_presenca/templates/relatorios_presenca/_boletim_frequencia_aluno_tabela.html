@@ -1,5 +1,3 @@
-
-
 <style>
   .boletim-header {
     margin-bottom: 1em;
@@ -36,46 +34,47 @@
     .boletim-table th, .boletim-table td { font-size: 0.95em; padding: 4px 4px; }
   }
 </style>
+<div class="boletim-wrapper" data-boletim-carregado="{% if dados %}1{% else %}0{% endif %}">
+  {% if dados %}
+  <div class="boletim-header" aria-label="Informações do aluno">
+    <span>Aluno: <strong>{{ dados.aluno.nome }}</strong></span><br>
+    <span>Mês/Ano: <strong>{{ mes }}/{{ ano }}</strong></span><br>
+    <span>Limite de Frequência: <strong>{{ dados.limite_percentual }}%</strong></span>
+  </div>
+  {% endif %}
 
-{% if dados %}
-<div class="boletim-header" aria-label="Informações do aluno">
-  <span>Aluno: <strong>{{ dados.aluno.nome }}</strong></span><br>
-  <span>Mês/Ano: <strong>{{ mes }}/{{ ano }}</strong></span><br>
-  <span>Limite de Frequência: <strong>{{ dados.limite_percentual }}%</strong></span>
-</div>
-{% endif %}
-
-<div class="table-responsive">
-  <table class="table table-striped table-bordered table-hover table-sm boletim-table" aria-label="Tabela de frequência do aluno">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col">Convocações</th>
-        <th scope="col">Presenças</th>
-        <th scope="col">Faltas</th>
-        <th scope="col">%</th>
-        <th scope="col">V1</th>
-        <th scope="col">V2</th>
-        <th scope="col">Vol</th>
-        <th scope="col">Car</th>
-        <th scope="col">Limite%</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% if dados %}
-      <tr style="background: #f6fff6; font-weight: 500;">
-        <td>{{ dados.convocacoes }}</td>
-        <td>{{ dados.presencas }}</td>
-        <td>{{ dados.faltas }}</td>
-        <td>{{ dados.percentual }}</td>
-        <td>{{ dados.v1 }}</td>
-        <td>{{ dados.v2 }}</td>
-        <td>{{ dados.vol }}</td>
-        <td>{{ dados.carencias }}</td>
-        <td>{{ dados.limite_percentual }}</td>
-      </tr>
-      {% else %}
-      <tr><td colspan="9">Selecione os filtros e clique em Buscar.</td></tr>
-      {% endif %}
-    </tbody>
-  </table>
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered table-hover table-sm boletim-table" aria-label="Tabela de frequência do aluno">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col">Convocações</th>
+          <th scope="col">Presenças</th>
+          <th scope="col">Faltas</th>
+          <th scope="col">%</th>
+          <th scope="col">V1</th>
+          <th scope="col">V2</th>
+          <th scope="col">Vol</th>
+          <th scope="col">Car</th>
+          <th scope="col">Limite%</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if dados %}
+        <tr style="background: #f6fff6; font-weight: 500;">
+          <td>{{ dados.convocacoes }}</td>
+          <td>{{ dados.presencas }}</td>
+          <td>{{ dados.faltas }}</td>
+          <td>{{ dados.percentual }}</td>
+          <td>{{ dados.v1 }}</td>
+          <td>{{ dados.v2 }}</td>
+          <td>{{ dados.vol }}</td>
+          <td>{{ dados.carencias }}</td>
+          <td>{{ dados.limite_percentual }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9">Selecione os filtros e clique em Buscar.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
 </div>

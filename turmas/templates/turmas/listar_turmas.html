@@ -1,152 +1,325 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% extends 'base.html' %}
 
-{% block title %}Lista de Turmas{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <!-- Padronizar cabeçalho com botões -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Lista de Turmas</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-outline-primary me-2">
-                <i class="fas fa-chart-bar"></i> Relatórios (Curso/Turma)
-            </a>
-            <a href="{% url 'turmas:criar_turma' %}" class="btn btn-primary me-2">
-                <i class="fas fa-plus"></i> Nova Turma
-            </a>
-            <a href="{% url 'turmas:exportar_turmas' %}" class="btn btn-success me-2">
-                <i class="fas fa-file-export"></i> Exportar CSV
-            </a>
-            <a href="{% url 'turmas:importar_turmas' %}" class="btn btn-info">
-                <i class="fas fa-file-import"></i> Importar CSV
-            </a>
-        </div>
-    </div>
 
-    <!-- Mensagem de erro, se houver -->
-    {% if error_message %}
-        <div class="alert alert-danger">{{ error_message }}</div>
+{% block title %}Lista de Turmas{% endblock %}{% block title %}Lista de Turmas{% endblock %}
+
+
+
+{% block content %}{% block content %}
+
+<div class="container mt-5"><div class="container mt-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h1 class="h3">Lista de Turmas</h1>        <h1 class="h3">Lista de Turmas</h1>
+
+        <div class="btn-group">        <div class="btn-group">
+
+            <a href="{% url 'core:pagina_inicial' %}" class="btn btn-secondary">Voltar</a>            <a href="{% url 'core:pagina_inicial' %}" class="btn btn-secondary">Voltar</a>
+
+            <a href="{% url 'turmas:criar_turma' %}" class="btn btn-success">Nova Turma</a>            <a href="{% url 'turmas:criar_turma' %}" class="btn btn-success">Nova Turma</a>
+
+            <a href="{% url 'turmas:importar_turmas' %}" class="btn btn-info">Importar CSV</a>            <a href="{% url 'turmas:importar_turmas' %}" class="btn btn-info">Importar CSV</a>
+
+            <div class="btn-group">            <div class="btn-group">
+
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+
+                    <i class="fas fa-file-export"></i> Exportar                    <i class="fas fa-file-export"></i> Exportar
+
+                </button>                </button>
+
+                <ul class="dropdown-menu dropdown-menu-end">                <ul class="dropdown-menu dropdown-menu-end">
+
+                    <li><a class="dropdown-item" href="{% url 'turmas:exportar_turmas' %}">Exportar CSV</a></li>                    <li><a class="dropdown-item" href="{% url 'turmas:exportar_turmas' %}">Exportar CSV</a></li>
+
+                </ul>                </ul>
+
+            </div>            </div>
+
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosTurmas">            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosTurmas">
+
+                <i class="fas fa-chart-bar"></i> Relatórios                <i class="fas fa-chart-bar"></i> Relatórios
+
+            </button>            </button>
+
+        </div>        </div>
+
+    </div>    </div>
+
+
+
+    {% if error_message %}    <!-- Mensagem de erro, se houver -->
+
+        <div class="alert alert-danger" role="alert">{{ error_message }}</div>    {% if error_message %}
+
+    {% endif %}        <div class="alert alert-danger">{{ error_message }}</div>
+
     {% endif %}
 
-    <!-- Barra de busca e filtros -->
     <div class="card mb-4">
-        <div class="card-header">
-            <form method="get" class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome..." value="{{ query }}">
-                </div>
-                <div class="col-md-4">
-                    <select name="curso" class="form-select">
-                        <option value="">Todos os cursos</option>
-                        {% for curso in cursos %}
-                            <option value="{{ curso.id }}" {% if curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>
-                                {{ curso.nome }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-search"></i> Filtrar
-                    </button>
-                </div>
-            </form>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Curso</th>
-                            <th>Nome da Turma</th>
-                            <th>Instrutor</th>
-                            <th>Status</th>
-                            <th>Data Início</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for turma in page_obj.object_list %}
-                            <tr>
-                                <td>{{ turma.curso.nome }}</td>
-                                <td>{{ turma.nome }}</td>
-                                <td>{{ turma.instrutor.nome|default:"Não definido" }}</td>
-                                <td>
-                                    <span class="badge {% if turma.status == 'A' %}bg-success{% elif turma.status == 'P' %}bg-info{% elif turma.status == 'C' %}bg-secondary{% else %}bg-danger{% endif %}">
-                                        {{ turma.get_status_display }}
-                                    </span>
-                                </td>
-                                <td>{{ turma.data_inicio_ativ|date:"d/m/Y"|default:"-" }}</td>
-                                <td>
-                                    <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da turma">Detalhes</a>
-                                    <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning" title="Editar informações da turma">Editar</a>
-                                    <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-sm btn-danger" title="Excluir esta turma">Excluir</a>
-                                    <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-sm btn-success" title="Matricular alunos nesta turma">
-                                        Matricular
-                                    </a>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center">
-                                    <p class="my-3">Nenhuma turma cadastrada.</p>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <!-- Debug: Exibir IDs das turmas na página -->
-                <div class="text-muted small">
-                    <strong>Debug:</strong> IDs das turmas nesta página: 
-                    {% for turma in page_obj.object_list %}{{ turma.id }} {% empty %}nenhuma{% endfor %}<br>
-                    <strong>Debug:</strong> page_obj length: {{ page_obj.object_list|length }} | total_turmas: {{ total_turmas|default:'?' }}<br>
-                    <strong>Debug:</strong> object_list: {{ page_obj.object_list }}
-                </div>
+
+        <div class="card-header">    <!-- Barra de busca e filtros -->
+
+            <form method="get" class="row g-3 align-items-end">    <div class="card mb-4">
+
+                <div class="col-md-5">        <div class="card-header">
+
+                    <label for="busca-turma" class="form-label">Buscar por nome, instrutor ou curso</label>            <div method="get" class="row g-3 align-items-end">
+
+                    <input type="text" name="q" id="busca-turma" class="form-control" placeholder="Digite para pesquisar" value="{{ query }}">                <div class="col-md-5">
+
+                </div>                    <label for="busca-turma" class="form-label">Buscar por nome, instrutor ou curso</label>
+
+                <div class="col-md-4">                    <input type="text" name="q" id="busca-turma" class="form-control" placeholder="Digite para pesquisar" value="{{ query }}">
+
+                    <label for="curso-select" class="form-label">Curso</label>                </div>
+
+                    <select name="curso" id="curso-select" class="form-select">                <div class="col-md-4">
+
+                        <option value="">Todos os cursos</option>                    <label for="curso-select" class="form-label">Curso</label>
+
+                        {% for curso in cursos %}                    <select name="curso" id="curso-select" class="form-select">
+
+                            <option value="{{ curso.id }}" {% if curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>{{ curso.nome }}</option>                        <option value="">Todos os cursos</option>
+
+                        {% endfor %}                        {% for curso in cursos %}
+
+                    </select>                            <option value="{{ curso.id }}" {% if curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>{{ curso.nome }}</option>
+
+                </div>                        {% endfor %}
+
+                <div class="col-md-3 d-grid">                    </select>
+
+                    <button type="submit" class="btn btn-primary">                </div>
+
+                        <i class="fas fa-search"></i> Filtrar                <div class="col-md-3 d-grid">
+
+                    </button>                    <button type="submit" class="btn btn-primary">
+
+                </div>                        <i class="fas fa-search"></i> Filtrar
+
+            </form>                    </button>
+
+        </div>                </div>
+
+        <div class="card-body">                </div>
+
+            <div class="table-responsive">                </div>
+
+                <table class="table table-striped align-middle">
+
+                    <thead>                <div class="modal fade" id="modalRelatoriosTurmas" tabindex="-1" aria-labelledby="modalRelatoriosTurmasLabel" aria-hidden="true">
+
+                        <tr>                        <tr>
+
+                            <th>Curso</th>                            <th>Curso</th>
+
+                            <th>Nome da Turma</th>                            <th>Nome da Turma</th>
+
+                            <th>Instrutor</th>                            <th>Instrutor</th>
+
+                            <th>Status</th>                            <th>Status</th>
+
+                            <th>Data Início</th>                            <th>Data Início</th>
+
+                            <th class="text-start">Ações</th>                            <th>Ações</th>
+
+                        </tr>                        </tr>
+
+                    </thead>                    </thead>
+
+                    <tbody>                    <tbody>
+
+                        {% for turma in page_obj.object_list %}                        {% for turma in page_obj.object_list %}
+
+                            <tr>                            <tr>
+
+                                <td>{{ turma.curso.nome }}</td>                                <td>{{ turma.curso.nome }}</td>
+
+                                <td>{{ turma.nome }}</td>                                <td>{{ turma.nome }}</td>
+
+                                <td>{{ turma.instrutor.nome|default:"Não definido" }}</td>                                <td>{{ turma.instrutor.nome|default:"Não definido" }}</td>
+
+                                <td>                                <td>
+
+                                    <span class="badge {% if turma.status == 'A' %}bg-success{% elif turma.status == 'P' %}bg-info{% elif turma.status == 'C' %}bg-secondary{% else %}bg-danger{% endif %}">                                    <span class="badge {% if turma.status == 'A' %}bg-success{% elif turma.status == 'P' %}bg-info{% elif turma.status == 'C' %}bg-secondary{% else %}bg-danger{% endif %}">
+
+                                        {{ turma.get_status_display }}                                        {{ turma.get_status_display }}
+
+                                    </span>                                    </span>
+
+                                </td>                                </td>
+
+                                <td>{{ turma.data_inicio_ativ|date:"d/m/Y"|default:"-" }}</td>                                <td>{{ turma.data_inicio_ativ|date:"d/m/Y"|default:"-" }}</td>
+
+                                <td class="text-start">                                <td>
+
+                                    <div class="btn-group btn-group-sm" role="group">                                    <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-sm btn-info" title="Ver detalhes completos da turma">Detalhes</a>
+
+                                        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-info" title="Detalhes da turma"><i class="fas fa-eye"></i></a>                                    <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-sm btn-warning" title="Editar informações da turma">Editar</a>
+
+                                        <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning" title="Editar turma"><i class="fas fa-edit"></i></a>                                    <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-sm btn-danger" title="Excluir esta turma">Excluir</a>
+
+                                        <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger" title="Excluir turma"><i class="fas fa-trash"></i></a>                                    <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-sm btn-success" title="Matricular alunos nesta turma">
+
+                                        <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-success" title="Matricular alunos"><i class="fas fa-user-plus"></i></a>                                        Matricular
+
+                                    </div>                                    </a>
+
+                                </td>                                </td>
+
+                            </tr>                            </tr>
+
+                        {% empty %}                        {% empty %}
+
+                            <tr>                            <tr>
+
+                                <td colspan="6" class="text-center py-4">Nenhuma turma cadastrada.</td>                                <td colspan="6" class="text-center">
+
+                            </tr>                                    <p class="my-3">Nenhuma turma cadastrada.</p>
+
+                        {% endfor %}                                </td>
+
+                    </tbody>                            </tr>
+
+                </table>                        {% endfor %}
+
+            </div>                    </tbody>
+
+        </div>                </table>
+
+        <div class="card-footer">            </div>
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">        </div>
+
+                <span>Total: {{ total_turmas|default:"0" }} turma(s)</span>        <div class="card-footer">
+
+                <span>Página {{ page_obj.number|default:'1' }} de {{ page_obj.paginator.num_pages|default:'1' }}</span>            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+            </div>                <span>Total: {{ total_turmas|default:"0" }} turma(s)</span>
+
+            {% if page_obj and page_obj.has_other_pages %}                <span>Página {{ page_obj.number|default:'1' }} de {{ page_obj.paginator.num_pages|default:'1' }}</span>
+
+                <nav aria-label="Paginação de turmas" class="mt-3">            </div>
+
+                    <ul class="pagination justify-content-center mb-0">            {% if page_obj and page_obj.has_other_pages %}
+
+                        {% if page_obj.has_previous %}                <nav aria-label="Paginação de turmas" class="mt-3">
+
+                            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&amp;q={{ query }}&amp;curso={{ curso_selecionado }}">Anterior</a></li>                    <ul class="pagination justify-content-center mb-0">
+
+                        {% else %}                        {% if page_obj.has_previous %}
+
+                            <li class="page-item disabled"><span class="page-link">Anterior</span></li>                            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&amp;q={{ query }}&amp;curso={{ curso_selecionado }}">Anterior</a></li>
+
+                        {% endif %}                        {% else %}
+
+                        {% for num in page_obj.paginator.page_range %}                            <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+
+                            {% if page_obj.number == num %}                        {% endif %}
+
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>                        {% for num in page_obj.paginator.page_range %}
+
+                            {% else %}                            {% if page_obj.number == num %}
+
+                                <li class="page-item"><a class="page-link" href="?page={{ num }}&amp;q={{ query }}&amp;curso={{ curso_selecionado }}">{{ num }}</a></li>                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+
+                            {% endif %}                            {% else %}
+
+                        {% endfor %}                                <li class="page-item"><a class="page-link" href="?page={{ num }}&amp;q={{ query }}&amp;curso={{ curso_selecionado }}">{{ num }}</a></li>
+
+                        {% if page_obj.has_next %}                            {% endif %}
+
+                            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&amp;q={{ query }}&amp;curso={{ curso_selecionado }}">Próxima</a></li>                        {% endfor %}
+
+                        {% else %}                        {% if page_obj.has_next %}
+
+                            <li class="page-item disabled"><span class="page-link">Próxima</span></li>                            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&amp;q={{ query }}&amp;curso={{ curso_selecionado }}">Próxima</a></li>
+
+                        {% endif %}                        {% else %}
+
+                    </ul>                            <li class="page-item disabled"><span class="page-link">Próxima</span></li>
+
+                </nav>                        {% endif %}
+
+            {% endif %}                    </ul>
+
+        </div>                </nav>
+
+    </div>            {% endif %}
+
+</div>        </div>
+
+    </div>
+
+<div class="modal fade" id="modalRelatoriosTurmas" tabindex="-1" aria-labelledby="modalRelatoriosTurmasLabel" aria-hidden="true"></div>
+
+    <div class="modal-dialog modal-lg modal-dialog-centered">{% endblock %}
+
+        <div class="modal-content">{% endblock %}
+
+            <div class="modal-header"> 
+
+                <h5 class="modal-title" id="modalRelatoriosTurmasLabel">Relatórios de Turmas e Cursos</h5>    <div class="modal fade" id="modalRelatoriosTurmas" tabindex="-1" aria-labelledby="modalRelatoriosTurmasLabel" aria-hidden="true">
+
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>        <div class="modal-dialog modal-lg modal-dialog-centered">
+
+            </div>            <div class="modal-content">
+
+            <div class="modal-body">                <div class="modal-header">
+
+                <div class="row g-3">                    <h5 class="modal-title" id="modalRelatoriosTurmasLabel">Relatórios de Turmas e Cursos</h5>
+
+                    <div class="col-md-6">                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+
+                        <div class="card h-100 border-primary">                </div>
+
+                            <div class="card-body d-flex flex-column">                <div class="modal-body">
+
+                                <h5 class="card-title">Relatório de Turmas</h5>                    <div class="row g-3">
+
+                                <p class="card-text flex-grow-1">Visualize indicadores e exportações das turmas cadastradas.</p>                        <div class="col-md-6">
+
+                                <a href="{% url 'turmas:relatorio_turmas' %}" class="btn btn-primary mt-auto">Acessar relatório</a>                            <div class="card h-100 border-primary">
+
+                            </div>                                <div class="card-body d-flex flex-column">
+
+                        </div>                                    <h5 class="card-title">Relatório de Turmas</h5>
+
+                    </div>                                    <p class="card-text flex-grow-1">Visualize indicadores e exportações das turmas cadastradas.</p>
+
+                    <div class="col-md-6">                                    <a href="{% url 'turmas:relatorio_turmas' %}" class="btn btn-primary mt-auto">Acessar relatório</a>
+
+                        <div class="card h-100 border-success">                                </div>
+
+                            <div class="card-body d-flex flex-column">                            </div>
+
+                                <h5 class="card-title">Painel Curso/Turma</h5>                        </div>
+
+                                <p class="card-text flex-grow-1">Acompanhe desempenho por curso e turma com gráficos interativos.</p>                        <div class="col-md-6">
+
+                                <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-success mt-auto">Abrir painel</a>                            <div class="card h-100 border-success">
+
+                            </div>                                <div class="card-body d-flex flex-column">
+
+                        </div>                                    <h5 class="card-title">Painel Curso/Turma</h5>
+
+                    </div>                                    <p class="card-text flex-grow-1">Acompanhe desempenho por curso e turma com gráficos interativos.</p>
+
+                </div>                                    <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-success mt-auto">Abrir painel</a>
+
+            </div>                                </div>
+
+        </div>                            </div>
+
+    </div>                        </div>
+
+</div>                    </div>
+
+{% endblock %}                </div>
+
             </div>
         </div>
-        <div class="card-footer">
-            <p class="text-muted mb-0">Total: {{ total_turmas|default:"0" }} turma(s) | Página: {{ page_obj.number|default:'1' }} de {{ page_obj.paginator.num_pages|default:'1' }}</p>
-            {% if page_obj and page_obj.has_other_pages %}
-                <nav aria-label="Paginação">
-                    <ul class="pagination justify-content-center mb-0">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Anterior</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Anterior</span>
-                            </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                            {% else %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}&q={{ query }}&curso={{ curso_selecionado }}">{{ num }}</a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Próxima</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Próxima</span>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
-        </div>
     </div>
-</div>
-{% endblock %}

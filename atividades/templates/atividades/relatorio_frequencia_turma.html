@@ -1,8 +1,215 @@
 {% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+  .relatorio-frequencia .card-resumo {
+    min-height: 120px;
+  }
+  .relatorio-frequencia .filtros-form .form-control,
+  .relatorio-frequencia .filtros-form .form-select {
+    min-height: 42px;
+  }
+  .relatorio-frequencia .acoes-exportacao .btn {
+    min-width: 120px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container">
-  <h1>{{ titulo }}</h1>
-  <p class="text-muted">{{ data_emissao }}</p>
-  <p>Relatório de Frequência (implementação mínima).</p>
+<div class="container relatorio-frequencia">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="h3 mb-1">{{ titulo }}</h1>
+      <small class="text-muted">{{ nome_organizacao }} · {{ nome_sistema }}</small>
+      <p class="text-muted mb-0">Emitido em {{ data_emissao }}</p>
+    </div>
+    <div class="acoes-exportacao text-end">
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'atividades:exportar_relatorio_frequencia' 'csv' %}?{{ query_params }}">CSV</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'atividades:exportar_relatorio_frequencia' 'excel' %}?{{ query_params }}">Excel</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'atividades:exportar_relatorio_frequencia' 'pdf' %}?{{ query_params }}">PDF</a>
+    </div>
+  </div>
+
+  <div class="card mb-4 filtros-form">
+    <div class="card-header">
+      <strong>Filtros do relatório</strong>
+    </div>
+    <div class="card-body">
+      <form id="form-frequencia" class="row g-3" autocomplete="off">
+        <div class="col-md-4">
+          <label for="id_curso" class="form-label">Curso</label>
+          <select id="id_curso" name="curso" class="form-select">
+            <option value="">Todos</option>
+            {% for curso in cursos %}
+              <option value="{{ curso.id }}" {% if filtros.curso_id == curso.id %}selected{% endif %}>{{ curso.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="id_turma" class="form-label">Turma</label>
+          <select id="id_turma" name="turma" class="form-select">
+            <option value="">Todas</option>
+            {% for turma in turmas %}
+              <option value="{{ turma.id }}" {% if filtros.turma_id == turma.id %}selected{% endif %}>{{ turma.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="id_mes" class="form-label">Mês</label>
+          <select id="id_mes" name="mes" class="form-select">
+            <option value="">Todos</option>
+            {% for mes in meses %}
+              <option value="{{ mes.value }}" {% if filtros.mes|stringformat:'s' == mes.value %}selected{% endif %}>{{ mes.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="id_ano" class="form-label">Ano</label>
+          <select id="id_ano" name="ano" class="form-select">
+            <option value="">Todos</option>
+            {% for ano in anos %}
+              <option value="{{ ano.value }}" {% if filtros.ano|stringformat:'s' == ano.value %}selected{% endif %}>{{ ano.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="id_status_carencia" class="form-label">Status da carência</label>
+          <select id="id_status_carencia" name="status_carencia" class="form-select">
+            <option value="">Todos</option>
+            {% for status in status_carencia_choices %}
+              <option value="{{ status.value }}" {% if filtros.status_carencia == status.value %}selected{% endif %}>{{ status.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-12 d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary mt-2">Aplicar filtros</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row mb-4 g-3">
+    <div class="col-md-3">
+      <div class="card card-resumo shadow-sm">
+        <div class="card-body">
+          <h2 class="h5">Alunos avaliados</h2>
+          <p class="display-6 mb-1">{{ relatorio.resumo.total_alunos }}</p>
+          <span class="text-muted">Turmas filtradas</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card card-resumo shadow-sm border-success">
+        <div class="card-body">
+          <h2 class="h5 text-success">Liberados</h2>
+          <p class="display-6 mb-1 text-success">{{ relatorio.resumo.alunos_liberados }}</p>
+          <small class="text-muted">Percentual médio {{ relatorio.resumo.percentual_presenca_medio }}%</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card card-resumo shadow-sm border-warning">
+        <div class="card-body">
+          <h2 class="h5 text-warning">Com carência</h2>
+          <p class="display-6 mb-1 text-warning">{{ relatorio.resumo.alunos_com_carencia }}</p>
+          <small class="text-muted">Total de faltas {{ relatorio.resumo.total_faltas }}</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card card-resumo shadow-sm">
+        <div class="card-body">
+          <h2 class="h5">Período selecionado</h2>
+          <p class="mb-1">{{ descricao_filtros.periodo|default:'Todos' }}</p>
+          <small class="text-muted">Curso: {{ descricao_filtros.curso|default:'Todos' }}<br>Turma: {{ descricao_filtros.turma|default:'Todas' }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tabela-frequencia-container">
+    {% include 'atividades/partials/relatorio_frequencia_tabela.html' with relatorio=relatorio descricao_filtros=descricao_filtros %}
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function() {
+    const form = document.getElementById('form-frequencia');
+    const campoCurso = document.getElementById('id_curso');
+    const campoAno = document.getElementById('id_ano');
+    const campoTurma = document.getElementById('id_turma');
+    const tabelaContainer = document.getElementById('tabela-frequencia-container');
+    const endpointTabela = "{% url 'atividades:ajax_relatorio_frequencia_tabela' %}";
+    const endpointOpcoes = "{% url 'atividades:ajax_relatorio_frequencia_opcoes' %}";
+
+    function montarQueryString(formData) {
+      const params = new URLSearchParams();
+      for (const [chave, valor] of formData.entries()) {
+        if (valor) {
+          params.append(chave, valor);
+        }
+      }
+      return params.toString();
+    }
+
+    async function atualizarTabela() {
+      const params = montarQueryString(new FormData(form));
+      const resposta = await fetch(`${endpointTabela}?${params}`, {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      });
+
+      if (resposta.ok) {
+        const html = await resposta.text();
+        tabelaContainer.innerHTML = html;
+      }
+    }
+
+    async function atualizarOpcoes() {
+      const params = new URLSearchParams();
+      const curso = campoCurso.value;
+      const ano = campoAno.value;
+      if (curso) params.append('curso', curso);
+      if (ano) params.append('ano', ano);
+
+      const resposta = await fetch(`${endpointOpcoes}?${params.toString()}`, {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      });
+
+      if (!resposta.ok) {
+        return;
+      }
+
+      const dados = await resposta.json();
+      campoTurma.innerHTML = '<option value="">Todas</option>';
+      (dados.turmas || []).forEach((turma) => {
+        const option = document.createElement('option');
+        option.value = turma.id;
+        option.textContent = turma.nome;
+        campoTurma.appendChild(option);
+      });
+    }
+
+    form.addEventListener('submit', function(evento) {
+      evento.preventDefault();
+      atualizarTabela();
+    });
+
+    campoCurso.addEventListener('change', function() {
+      atualizarOpcoes().then(atualizarTabela);
+    });
+
+    campoAno.addEventListener('change', function() {
+      atualizarOpcoes().then(atualizarTabela);
+    });
+
+    ['id_mes', 'id_status_carencia'].forEach((idCampo) => {
+      const campo = document.getElementById(idCampo);
+      if (campo) {
+        campo.addEventListener('change', atualizarTabela);
+      }
+    });
+  })();
+</script>
 {% endblock %}

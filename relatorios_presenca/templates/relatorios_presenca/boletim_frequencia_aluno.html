@@ -4,57 +4,84 @@
 {% block title %}Boletim de Frequência do Aluno{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Boletim de Frequência do Aluno</h2>
-    <hr>
-    <form id="boletimForm" method="get">
-        <div class="form-row">
-            <div class="form-group col-md-4">
-                <label for="curso_id">Curso</label>
-                <select id="curso_id" name="curso_id" class="form-control">
-                    <option value="">Selecione um Curso</option>
-                    {% for curso in cursos %}
-                        <option value="{{ curso.id }}">{{ curso.nome }}</option>
-                    {% endfor %}
-                </select>
-            </div>.
-            <div class="form-group col-md-4">
-                <label for="turma_id">Turma</label>
-                <select id="turma_id" name="turma_id" class="form-control" disabled>
-                    <option value="">Selecione uma Turma</option>
-                </select>
+<div class="container relatorio-boletim py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+            <div>
+                <h1 class="h3 mb-1">Boletim de Frequência do Aluno</h1>
+                <p class="text-muted mb-0">Selecione os filtros, acompanhe os indicadores em tempo real e exporte o boletim consolidado.</p>
             </div>
-            <div class="form-group col-md-4">
-                <label for="aluno_id">Aluno</label>
-                <select id="aluno_id" name="aluno_id" class="form-control" disabled>
-                    <option value="">Selecione um Aluno</option>
-                </select>
+            <div class="text-end small text-muted">
+                <span class="d-block">Dados carregados sob demanda a cada consulta.</span>
             </div>
         </div>
-        <div class="form-row">
-            <div class="form-group col-md-3">
-                <label for="mes">Mês</label>
-                <input type="number" min="1" max="12" class="form-control" id="mes" name="mes" required>
-            </div>
-            <div class="form-group col-md-3">
-                <label for="ano">Ano</label>
-                <input type="number" class="form-control" id="ano" name="ano" required>
-            </div>
-            <div class="form-group col-md-3 align-self-end">
-                <button type="button" id="btnBuscar" class="btn btn-primary">Buscar</button>
-            </div>
-            <div class="form-group col-md-3 align-self-end">
-                <button type="button" id="btnExportarCSV" class="btn btn-success">Exportar CSV</button>
-                <button type="button" id="btnExportarPDF" class="btn btn-danger">Exportar PDF</button>
-            </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form id="boletimForm" class="row g-3" autocomplete="off" novalidate>
+                <div class="col-12 col-lg-4">
+                    <label for="curso_id" class="form-label">Curso</label>
+                    <select id="curso_id" name="curso_id" class="form-select" data-initial-value="{{ curso_id|default:'' }}">
+                        <option value="">Selecione um curso</option>
+                        {% for curso in cursos %}
+                            <option value="{{ curso.id }}" {% if curso_id and curso.id|stringformat:'s' == curso_id|stringformat:'s' %}selected{% endif %}>{{ curso.nome }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">A lista de turmas e alunos será atualizada automaticamente.</small>
+                </div>
+
+                <div class="col-12 col-lg-4">
+                    <label for="turma_id" class="form-label">Turma</label>
+                    <select id="turma_id" name="turma_id" class="form-select" data-initial-value="{{ turma_id|default:'' }}" {% if not turma_id %}disabled{% endif %}>
+                        <option value="">Selecione uma turma</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-lg-4">
+                    <label for="aluno_id" class="form-label">Aluno</label>
+                    <select id="aluno_id" name="aluno_id" class="form-select" data-initial-value="{{ aluno_id|default:'' }}" {% if not aluno_id %}disabled{% endif %}>
+                        <option value="">Selecione um aluno</option>
+                    </select>
+                </div>
+
+                <div class="col-6 col-lg-2">
+                    <label for="mes" class="form-label">Mês</label>
+                    <input type="number" inputmode="numeric" min="1" max="12" class="form-control" id="mes" name="mes" value="{{ mes|default:'' }}" required>
+                </div>
+
+                <div class="col-6 col-lg-2">
+                    <label for="ano" class="form-label">Ano</label>
+                    <input type="number" inputmode="numeric" class="form-control" id="ano" name="ano" value="{{ ano|default:'' }}" required>
+                </div>
+
+                <div class="col-12 col-lg-4 d-flex align-items-end gap-2">
+                    <button type="button" id="btnBuscar" class="btn btn-primary flex-shrink-0">
+                        <i class="fas fa-search me-1"></i> Buscar
+                    </button>
+                    <button type="button" id="btnExportarCSV" class="btn btn-outline-success flex-shrink-0">
+                        <i class="fas fa-file-csv me-1"></i> CSV
+                    </button>
+                    <button type="button" id="btnExportarPDF" class="btn btn-outline-danger flex-shrink-0">
+                        <i class="fas fa-file-pdf me-1"></i> PDF
+                    </button>
+                </div>
+
+                <div class="col-12 col-lg-4 d-flex align-items-end">
+                    <div class="alert alert-info w-100 mb-0 py-2" role="status">
+                        <small class="mb-0 d-block">
+                            Informe mês, ano e aluno. Os botões de exportação ficam disponíveis após carregar o boletim.
+                        </small>
+                    </div>
+                </div>
+            </form>
         </div>
-    </form>
-    <div id="tabela-boletim">
+    </div>
+
+    <div id="tabela-boletim" class="position-relative">
         {% include 'relatorios_presenca/_boletim_frequencia_aluno_tabela.html' %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
 <script src="{% static 'relatorios_presenca/js/filtros_dinamicos.js' %}"></script>
-<script>
-// TODO: JS para buscar e exportar boletim via AJAX
-</script>
 {% endblock %}

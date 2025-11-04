@@ -10,6 +10,15 @@ def frequencia_por_atividade(request):
     data_inicio = request.GET.get("data_inicio")
     data_fim = request.GET.get("data_fim")
     resultados = None
+    filtros_aplicados = any(
+        valor
+        for valor in [turma_id, atividade_id, data_inicio, data_fim]
+        if valor not in (None, "")
+    )
+    is_partial = (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or request.GET.get("partial") == "1"
+    )
     formato = request.GET.get("formato")
     if request.GET:
         service = RelatorioPresencaService()
@@ -67,7 +76,17 @@ def frequencia_por_atividade(request):
         "turmas": turmas,
         "atividades": atividades,
         "resultados": resultados,
+        "filtros_aplicados": filtros_aplicados,
     }
+    if is_partial:
+        return render(
+            request,
+            "relatorios_presenca/partials/_frequencia_por_atividade_tabela.html",
+            {
+                "resultados": resultados,
+                "filtros_aplicados": filtros_aplicados,
+            },
+        )
     return render(
         request, "relatorios_presenca/frequencia_por_atividade.html", contexto
     )
@@ -81,6 +100,13 @@ def relatorio_faltas(request):
     data_inicio = request.GET.get("data_inicio")
     data_fim = request.GET.get("data_fim")
     resultados = None
+    filtros_aplicados = any(
+        valor for valor in [turma_id, data_inicio, data_fim] if valor not in (None, "")
+    )
+    is_partial = (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or request.GET.get("partial") == "1"
+    )
     formato = request.GET.get("formato")
 
     if request.GET:
@@ -154,7 +180,17 @@ def relatorio_faltas(request):
     contexto = {
         "turmas": turmas,
         "resultados": resultados,
+        "filtros_aplicados": filtros_aplicados,
     }
+    if is_partial:
+        return render(
+            request,
+            "relatorios_presenca/partials/_relatorio_faltas_tabela.html",
+            {
+                "resultados": resultados,
+                "filtros_aplicados": filtros_aplicados,
+            },
+        )
     return render(request, "relatorios_presenca/relatorio_faltas.html", contexto)
 
 
@@ -169,6 +205,15 @@ def alunos_com_carencia(request):
     data_inicio = request.GET.get("data_inicio")
     data_fim = request.GET.get("data_fim")
     resultados = None
+    filtros_aplicados = any(
+        valor
+        for valor in [curso_id, turma_id, data_inicio, data_fim]
+        if valor not in (None, "")
+    )
+    is_partial = (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or request.GET.get("partial") == "1"
+    )
     formato = request.GET.get("formato")
     if request.GET:
         service = RelatorioPresencaService()
@@ -223,10 +268,21 @@ def alunos_com_carencia(request):
         "cursos": cursos,
         "turmas": turmas,
         "resultados": resultados,
+        "filtros_aplicados": filtros_aplicados,
     }
+    if is_partial:
+        return render(
+            request,
+            "relatorios_presenca/partials/_alunos_com_carencia_tabela.html",
+            {
+                "resultados": resultados,
+                "filtros_aplicados": filtros_aplicados,
+            },
+        )
     return render(request, "relatorios_presenca/alunos_com_carencia.html", contexto)
 
 
+from django.db import models
 from django.shortcuts import render
 
 
