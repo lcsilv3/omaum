@@ -36,6 +36,40 @@ coverage report
 coverage html
 ```
 
+### Docker
+```bash
+# Verificar status do servidor Docker
+python scripts/verificar_docker.py
+
+# Verificação detalhada
+python scripts/verificar_docker.py --verbose
+
+# Verificação silenciosa
+python scripts/verificar_docker.py --quiet
+
+# Saída em JSON
+python scripts/verificar_docker.py --json
+
+# Iniciar containers
+make up
+docker compose -f docker/docker-compose.yml up -d
+
+# Parar containers
+make down
+docker compose -f docker/docker-compose.yml down
+
+# Ver logs
+make logs
+docker compose -f docker/docker-compose.yml logs -f
+
+# Executar comandos no container
+make shell
+docker compose -f docker/docker-compose.yml exec omaum-web bash
+
+# Ver todos os comandos Make disponíveis
+make help
+```
+
 ### Produção
 ```bash
 # Coletar arquivos estáticos

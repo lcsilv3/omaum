@@ -83,6 +83,39 @@ python manage.py runserver
 
 Acesse: **http://localhost:8000**
 
+### 🐳 Docker
+
+Para executar o projeto com Docker:
+
+```bash
+# Verificar se o servidor está ativo
+python scripts/verificar_docker.py
+
+# Iniciar containers
+make up
+# ou
+docker compose -f docker/docker-compose.yml up -d
+
+# Parar containers
+make down
+# ou
+docker compose -f docker/docker-compose.yml down
+
+# Ver logs
+make logs
+# ou
+docker compose -f docker/docker-compose.yml logs -f
+
+# Verificar status (modo verbose)
+python scripts/verificar_docker.py --verbose
+
+# Verificar status (modo silencioso)
+python scripts/verificar_docker.py --quiet
+
+# Ver outros comandos disponíveis
+make help
+```
+
 ## 🛠️ Tecnologias Utilizadas
 
 ### Backend

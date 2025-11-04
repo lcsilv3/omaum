@@ -100,6 +100,16 @@ urlpatterns = [
         name="api_tipos_codigos",
     ),
     path(
+        "api/cidades/estado/<int:estado_id>/",
+        api_views.cidades_por_estado_api,
+        name="api_cidades_por_estado",
+    ),
+    path(
+        "api/bairros/cidade/<int:cidade_id>/",
+        api_views.bairros_por_cidade_api,
+        name="api_bairros_por_cidade",
+    ),
+    path(
         "api/codigos-por-tipo/",
         listar_codigos_por_tipo_ajax,
         name="api_codigos_por_tipo",

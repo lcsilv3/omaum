@@ -3,7 +3,7 @@ RELATORIOS = [
     {
         "nome": "Frequência por Turma",
         "descricao": "Relatório de frequência por turma",
-        "url": "turmas:listar_turmas",
-        "exportacoes": ["csv"],
+        "url": "turmas:relatorio_turmas",
+        "exportacoes": [],
     },
 ]

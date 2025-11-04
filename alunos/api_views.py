@@ -3,12 +3,11 @@
 import csv
 import json
 import logging
-import traceback
 from datetime import date, datetime, timedelta
 from io import BytesIO
-
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import DatabaseError, IntegrityError
 from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -20,7 +19,12 @@ from rest_framework import viewsets
 
 from .models import Aluno, RegistroHistorico
 from .serializers import AlunoSerializer
-from .services import HistoricoService, HistoricoValidationError, InstrutorService
+from .services import (
+    HistoricoService,
+    HistoricoValidationError,
+    InstrutorService,
+    InstrutorServiceError,
+)
 
 try:
     import xlwt
@@ -34,6 +38,16 @@ def get_aluno_model():
     """Obtém o modelo Aluno dinamicamente."""
     alunos_module = import_module("alunos.models")
     return getattr(alunos_module, "Aluno")
+
+
+def get_aluno_manager():
+    """Retorna o manager padrão do modelo de aluno."""
+
+    aluno_model = get_aluno_model()
+    manager = getattr(aluno_model, "objects", None)
+    if manager is None:  # pragma: no cover - cenário improprovável
+        raise AttributeError("Modelo de aluno não possui manager padrão exposto.")
+    return manager
 
 
 @require_GET
@@ -62,120 +76,138 @@ def search_alunos(request):
 
 
 @login_required
-def search_instrutores(request):
-    """Busca alunos elegíveis para assumirem papel de instrutor."""
+@require_GET
+def get_aluno(request, cpf):
+    """Retorna informações básicas do aluno identificado pelo CPF."""
 
+    aluno_model = get_aluno_model()
     try:
-        query = request.GET.get("q", "").strip()
-        AlunoModel = get_aluno_model()
-        alunos = AlunoModel.objects.filter(situacao="ATIVO")
-
-        if query and len(query) >= 2:
-            alunos = alunos.filter(Q(nome__icontains=query) | Q(cpf__icontains=query))
-
-        alunos = alunos[:10]
-
-        resultados = []
-        for aluno in alunos:
-            resultados.append(
-                {
-                    "cpf": aluno.cpf,
-                    "nome": aluno.nome,
-                    "foto": aluno.foto.url if getattr(aluno, "foto", None) else None,
-                    "situacao": aluno.get_situacao_display()
-                    if hasattr(aluno, "get_situacao_display")
-                    else "",
-                    "situacao_codigo": aluno.situacao,
-                    "esta_ativo": getattr(aluno, "esta_ativo", False),
-                    "elegivel": getattr(aluno, "pode_ser_instrutor", True),
-                }
-            )
-
-        logger.info(
-            "Busca de instrutores por '%s' retornou %s resultados",
-            query,
-            len(resultados),
+        aluno = aluno_model.objects.get(cpf=cpf)
+    except aluno_model.DoesNotExist:  # type: ignore[attr-defined]
+        logger.warning("Usuário %s consultou CPF inexistente %s", request.user.id, cpf)
+        return JsonResponse(
+            {"success": False, "message": "Aluno não encontrado."}, status=404
         )
-        return JsonResponse(resultados, safe=False)
-    except Exception as exc:  # pragma: no cover - proteção adicional
-        logger.error("Erro em search_instrutores: %s", exc)
-        return JsonResponse({"error": str(exc)}, status=500)
+
+    logger.info("Usuário %s consultou dados do aluno %s", request.user.id, cpf)
+    return JsonResponse(
+        {
+            "success": True,
+            "aluno": {
+                "cpf": aluno.cpf,
+                "nome": aluno.nome,
+                "numero_iniciatico": aluno.numero_iniciatico or "N/A",
+                "foto": aluno.foto.url if getattr(aluno, "foto", None) else None,
+            },
+        }
+    )
 
 
 @login_required
-def get_aluno(request, cpf):
-    """Retorna dados resumidos de um aluno específico."""
+def search_instrutores(request):
+    """Busca alunos elegíveis para assumirem papel de instrutor."""
+
+    query = request.GET.get("q", "").strip()
+    if query and len(query) < 2:
+        return JsonResponse(
+            {"error": "Informe ao menos 2 caracteres para a busca."}, status=400
+        )
 
     try:
-        AlunoModel = get_aluno_model()
-        aluno = get_object_or_404(AlunoModel, cpf=cpf)
+        aluno_model = get_aluno_model()
+    except ImportError as exc:
+        logger.exception("Falha ao importar modelo de aluno: %s", exc)
         return JsonResponse(
+            {"error": "Serviço temporariamente indisponível."}, status=500
+        )
+
+    alunos = aluno_model.objects.filter(situacao="ATIVO")
+    if query:
+        alunos = alunos.filter(Q(nome__icontains=query) | Q(cpf__icontains=query))
+
+    alunos = alunos[:10]
+
+    resultados = []
+    for aluno in alunos:
+        resultados.append(
             {
-                "success": True,
-                "aluno": {
-                    "cpf": aluno.cpf,
-                    "nome": aluno.nome,
-                    "foto": aluno.foto.url if getattr(aluno, "foto", None) else None,
-                },
+                "cpf": aluno.cpf,
+                "nome": aluno.nome,
+                "foto": aluno.foto.url if getattr(aluno, "foto", None) else None,
+                "situacao": aluno.get_situacao_display()
+                if hasattr(aluno, "get_situacao_display")
+                else "",
+                "situacao_codigo": aluno.situacao,
+                "esta_ativo": getattr(aluno, "esta_ativo", False),
+                "elegivel": getattr(aluno, "pode_ser_instrutor", True),
             }
         )
-    except Exception as exc:  # pragma: no cover - caminho excepcional
-        return JsonResponse({"success": False, "error": str(exc)}, status=404)
+
+    logger.info(
+        "Busca de instrutores por '%s' retornou %s resultados",
+        query,
+        len(resultados),
+    )
+    return JsonResponse(resultados, safe=False)
 
 
 @login_required
 def get_aluno_detalhes(request, cpf):
     """Exibe informações adicionais e vínculos de um aluno."""
 
-    AlunoModel = get_aluno_model()
+    aluno_model = get_aluno_model()
 
     try:
-        aluno = AlunoModel.objects.get(cpf=cpf)
-
-        turmas_como_instrutor = False
-        try:
-            Turma = import_module("turmas.models").Turma
-            turmas_como_instrutor = Turma.objects.filter(
-                Q(instrutor=aluno)
-                | Q(instrutor_auxiliar=aluno)
-                | Q(auxiliar_instrucao=aluno)
-            ).exists()
-        except Exception as exc:  # pragma: no cover - dependência externa
-            logger.error("Erro ao verificar turmas como instrutor: %s", exc)
-
-        turmas_matriculado = []
-        try:
-            Matricula = import_module("matriculas.models").Matricula
-            matriculas = Matricula.objects.filter(aluno=aluno, status="A")
-            turmas_matriculado = [
-                {
-                    "id": matricula.turma.id,
-                    "nome": matricula.turma.nome,
-                    "curso": matricula.turma.curso.nome
-                    if matricula.turma and matricula.turma.curso
-                    else "Sem curso",
-                }
-                for matricula in matriculas
-            ]
-        except Exception as exc:  # pragma: no cover - dependência externa
-            logger.error("Erro ao buscar matrículas: %s", exc)
-
-        resposta = JsonResponse(
-            {
-                "success": True,
-                "e_instrutor": turmas_como_instrutor,
-                "turmas": turmas_matriculado,
-                "pode_ser_instrutor": getattr(aluno, "pode_ser_instrutor", False),
-            }
-        )
-        return resposta
-    except AlunoModel.DoesNotExist:
+        aluno = aluno_model.objects.get(cpf=cpf)
+    except aluno_model.DoesNotExist:  # type: ignore[attr-defined]
+        logger.info("Usuário %s consultou CPF inexistente %s", request.user.id, cpf)
         return JsonResponse(
             {"success": False, "error": "Aluno não encontrado"}, status=404
         )
-    except Exception as exc:  # pragma: no cover - caminho excepcional
-        logger.error("Erro ao obter detalhes do aluno: %s", exc, exc_info=True)
-        return JsonResponse({"success": False, "error": str(exc)}, status=500)
+
+    turmas_como_instrutor = False
+    try:
+        turma_model = import_module("turmas.models").Turma
+        turmas_como_instrutor = turma_model.objects.filter(
+            Q(instrutor=aluno)
+            | Q(instrutor_auxiliar=aluno)
+            | Q(auxiliar_instrucao=aluno)
+        ).exists()
+    except ImportError as exc:  # pragma: no cover - dependência externa
+        logger.warning("Falha ao importar turmas para CPF %s: %s", cpf, exc)
+    except AttributeError as exc:  # pragma: no cover - dependência externa
+        logger.warning("Modelo Turma sem atributos esperados para CPF %s: %s", cpf, exc)
+
+    turmas_matriculado = []
+    try:
+        matricula_model = import_module("matriculas.models").Matricula
+        matriculas = matricula_model.objects.filter(aluno=aluno, status="A")
+        turmas_matriculado = [
+            {
+                "id": matricula.turma.id,
+                "nome": matricula.turma.nome,
+                "curso": matricula.turma.curso.nome
+                if matricula.turma and matricula.turma.curso
+                else "Sem curso",
+            }
+            for matricula in matriculas
+        ]
+    except ImportError as exc:  # pragma: no cover - dependência externa
+        logger.warning("Falha ao importar matrículas para CPF %s: %s", cpf, exc)
+    except AttributeError as exc:  # pragma: no cover - dependência externa
+        logger.warning(
+            "Modelo Matricula sem atributos esperados para CPF %s: %s", cpf, exc
+        )
+
+    logger.info("Usuário %s consultou detalhes do aluno %s", request.user.id, cpf)
+    return JsonResponse(
+        {
+            "success": True,
+            "e_instrutor": turmas_como_instrutor,
+            "turmas": turmas_matriculado,
+            "pode_ser_instrutor": getattr(aluno, "pode_ser_instrutor", False),
+        }
+    )
 
 
 @login_required
@@ -183,51 +215,60 @@ def get_aluno_detalhes(request, cpf):
 def verificar_elegibilidade_endpoint(request, cpf):
     """API endpoint para verificar se um aluno pode ser instrutor."""
     try:
-        AlunoModel = get_aluno_model()
-        aluno = get_object_or_404(AlunoModel, cpf=cpf)
-
-        if aluno.situacao != "ATIVO":
-            return JsonResponse(
-                {
-                    "elegivel": False,
-                    "motivo": (
-                        f"O aluno não está ativo. "
-                        f"Situação atual: {aluno.get_situacao_display()}"
-                    ),
-                }
-            )
-
-        try:
-            resultado = InstrutorService.verificar_elegibilidade_completa(aluno)
-            if "elegivel" not in resultado:
-                resultado["elegivel"] = bool(resultado)
-        except Exception as exc:  # pragma: no cover - serviço opcional
-            logger.warning(
-                "Falha ao consultar InstrutorService para o CPF %s: %s", cpf, exc
-            )
-            elegivel = getattr(aluno, "pode_ser_instrutor", True)
-            resultado = {
-                "elegivel": elegivel,
-                "motivo": (
-                    "O aluno não atende aos requisitos para ser instrutor."
-                    if not elegivel
-                    else ""
-                ),
-            }
-
-        return JsonResponse(resultado)
-    except Exception as exc:
-        logger.error(
-            "Erro ao verificar elegibilidade do aluno %s: %s", cpf, exc, exc_info=True
-        )
+        aluno_model = get_aluno_model()
+    except ImportError as exc:
+        logger.exception("Falha ao importar modelo de aluno: %s", exc)
         return JsonResponse(
             {
                 "elegivel": False,
-                "motivo": f"Erro na verificação: {str(exc)}",
-                "trace": traceback.format_exc(),
+                "motivo": "Serviço de elegibilidade indisponível no momento.",
             },
-            status=500,
+            status=503,
         )
+
+    aluno = get_object_or_404(aluno_model, cpf=cpf)
+
+    if aluno.situacao != "ATIVO":
+        return JsonResponse(
+            {
+                "elegivel": False,
+                "motivo": (
+                    "O aluno não está ativo. "
+                    f"Situação atual: {aluno.get_situacao_display()}"
+                ),
+            }
+        )
+
+    try:
+        resultado = InstrutorService.verificar_elegibilidade_completa(aluno)
+    except HistoricoValidationError as exc:  # pragma: no cover - serviço opcional
+        logger.warning("Validação de elegibilidade falhou para CPF %s: %s", cpf, exc)
+        resultado = {
+            "elegivel": False,
+            "motivo": str(exc),
+        }
+    except InstrutorServiceError as exc:  # pragma: no cover - serviço opcional
+        logger.warning("Erro inesperado no InstrutorService para CPF %s: %s", cpf, exc)
+        elegivel = getattr(aluno, "pode_ser_instrutor", True)
+        resultado = {
+            "elegivel": elegivel,
+            "motivo": (
+                "O aluno não atende aos requisitos para ser instrutor."
+                if not elegivel
+                else ""
+            ),
+        }
+    else:
+        if "elegivel" not in resultado:
+            resultado["elegivel"] = bool(resultado)
+
+    logger.info(
+        "Usuário %s verificou elegibilidade do aluno %s (result: %s)",
+        request.user.id,
+        cpf,
+        resultado.get("elegivel"),
+    )
+    return JsonResponse(resultado)
 
 
 class AlunoViewSet(viewsets.ModelViewSet):
@@ -235,8 +276,10 @@ class AlunoViewSet(viewsets.ModelViewSet):
     API endpoint que permite que os alunos sejam visualizados ou editados.
     """
 
-    queryset = Aluno.objects.all().order_by("nome")
     serializer_class = AlunoSerializer
+
+    def get_queryset(self):
+        return get_aluno_manager().all().order_by("nome")
 
 
 @login_required
@@ -245,60 +288,99 @@ def listar_historico_aluno_api(request, aluno_id):
     """
     API endpoint para listar o histórico de registros de um aluno, com paginação.
     """
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    historico_list = HistoricoService.listar(aluno)
+
+    page_raw = request.GET.get("page", 1)
+    page_size_raw = request.GET.get("page_size", 25)
+
     try:
-        aluno = get_object_or_404(Aluno, pk=aluno_id)
-        historico_list = HistoricoService.listar(aluno)
-
-        page = request.GET.get("page", 1)
-        # Garante que page_size seja inteiro
-        page_size = int(request.GET.get("page_size", 25))
-
-        paginator = Paginator(historico_list, page_size)
-        try:
-            historico_page = paginator.page(page)
-        except PageNotAnInteger:
-            historico_page = paginator.page(1)
-        except EmptyPage:
-            historico_page = paginator.page(paginator.num_pages)
-
-        results = []
-        for item in historico_page:
-            codigo = getattr(item, "codigo", None)
-            tipo_codigo = getattr(codigo, "tipo_codigo", None)
-
-            results.append(
-                {
-                    "id": item.id,
-                    "codigo_id": codigo.id if codigo else None,
-                    "tipo_codigo": getattr(tipo_codigo, "nome", "N/A") or "N/A",
-                    "codigo": getattr(codigo, "nome", None) or "N/A",
-                    "descricao": getattr(codigo, "descricao", None) or "",
-                    "data_os": item.data_os.isoformat() if item.data_os else None,
-                    "ordem_servico": item.ordem_servico or "",
-                    "observacoes": item.observacoes or "",
-                    "ativo": item.ativo,
-                    "created_at": item.created_at.isoformat()
-                    if item.created_at
-                    else None,
-                }
-            )
-
+        page_size = max(int(page_size_raw), 1)
+    except (TypeError, ValueError):
         return JsonResponse(
+            {"status": "error", "message": "Parâmetros de paginação inválidos."},
+            status=400,
+        )
+
+    paginator = Paginator(historico_list, page_size)
+    try:
+        historico_page = paginator.page(page_raw)
+    except PageNotAnInteger:
+        historico_page = paginator.page(1)
+    except EmptyPage:
+        historico_page = paginator.page(paginator.num_pages)
+
+    results = []
+    for item in historico_page:
+        codigo = getattr(item, "codigo", None)
+        tipo_codigo = getattr(codigo, "tipo_codigo", None)
+
+        results.append(
             {
-                "status": "success",
-                "results": results,
-                "page": historico_page.number,
-                "total_pages": paginator.num_pages,
-                "count": paginator.count,
+                "id": item.id,
+                "codigo_id": codigo.id if codigo else None,
+                "tipo_codigo": getattr(tipo_codigo, "nome", "N/A") or "N/A",
+                "codigo": getattr(codigo, "nome", None) or "N/A",
+                "descricao": getattr(codigo, "descricao", None) or "",
+                "data_os": item.data_os.isoformat() if item.data_os else None,
+                "ordem_servico": item.ordem_servico or "",
+                "observacoes": item.observacoes or "",
+                "ativo": item.ativo,
+                "created_at": item.created_at.isoformat() if item.created_at else None,
             }
         )
-    except Exception as e:
-        logger.error(
-            f"Erro ao listar histórico do aluno {aluno_id}: {e}", exc_info=True
-        )
+
+    return JsonResponse(
+        {
+            "status": "success",
+            "results": results,
+            "page": historico_page.number,
+            "total_pages": paginator.num_pages,
+            "count": paginator.count,
+        }
+    )
+
+
+@login_required
+@require_GET
+def cidades_por_estado_api(request, estado_id):
+    """Retorna cidades de um estado usando `LocalidadeService` com fallback híbrido."""
+
+    try:
+        from alunos.services.localidade_service import get_cidades_por_estado
+    except ImportError as exc:
+        logger.exception("Serviço de localidades indisponível: %s", exc)
         return JsonResponse(
-            {"status": "error", "message": "Erro interno do servidor."}, status=500
+            {"status": "error", "message": "Serviço de localidades indisponível."},
+            status=500,
         )
+
+    sync = request.GET.get("sync") == "true"
+    resultado = get_cidades_por_estado(estado_id, async_when_remote=not sync)
+    if isinstance(resultado, dict) and resultado.get("status") == "pending":
+        return JsonResponse({"status": "pending"})
+    return JsonResponse(list(resultado), safe=False)
+
+
+@login_required
+@require_GET
+def bairros_por_cidade_api(request, cidade_id):
+    """Retorna bairros de uma cidade usando `LocalidadeService`."""
+
+    try:
+        from alunos.services.localidade_service import get_bairros_por_cidade
+    except ImportError as exc:
+        logger.exception("Serviço de localidades indisponível: %s", exc)
+        return JsonResponse(
+            {"status": "error", "message": "Serviço de localidades indisponível."},
+            status=500,
+        )
+
+    sync = request.GET.get("sync") == "true"
+    resultado = get_bairros_por_cidade(cidade_id, async_when_remote=not sync)
+    if isinstance(resultado, dict) and resultado.get("status") == "pending":
+        return JsonResponse({"status": "pending"})
+    return JsonResponse(list(resultado), safe=False)
 
 
 @login_required
@@ -350,7 +432,7 @@ def criar_historico_aluno_api(request, aluno_id):
         # HistoricoValidationError pode expor message_dict ou messages
         erros = getattr(exc, "message_dict", None) or {"erros": exc.messages}
         return JsonResponse({"status": "error", "errors": erros}, status=400)
-    except Exception as exc:  # pragma: no cover - falhas inesperadas
+    except (IntegrityError, DatabaseError) as exc:  # pragma: no cover - falha de BD
         logger.error(
             "Erro ao criar registro histórico para aluno %s: %s",
             aluno_id,
@@ -414,7 +496,7 @@ def desativar_historico_aluno_api(request, aluno_id, registro_id):
     except HistoricoValidationError as exc:
         erros = getattr(exc, "message_dict", None) or {"erros": exc.messages}
         return JsonResponse({"status": "error", "errors": erros}, status=400)
-    except Exception as exc:  # pragma: no cover - falhas inesperadas
+    except DatabaseError as exc:  # pragma: no cover - falha de BD
         logger.error(
             "Erro ao desativar registro histórico %s do aluno %s: %s",
             registro_id,
@@ -431,6 +513,13 @@ def desativar_historico_aluno_api(request, aluno_id, registro_id):
         )
 
     registro.refresh_from_db()
+    user_id = getattr(request.user, "id", "anonimo")
+    logger.info(
+        "Usuário %s desativou registro histórico %s do aluno %s",
+        user_id,
+        registro_id,
+        aluno_id,
+    )
     return JsonResponse(
         {
             "status": "success",
@@ -457,7 +546,7 @@ def reativar_historico_aluno_api(request, aluno_id, registro_id):
     except HistoricoValidationError as exc:
         erros = getattr(exc, "message_dict", None) or {"erros": exc.messages}
         return JsonResponse({"status": "error", "errors": erros}, status=400)
-    except Exception as exc:  # pragma: no cover - falhas inesperadas
+    except DatabaseError as exc:  # pragma: no cover - falha de BD
         logger.error(
             "Erro ao reativar registro histórico %s do aluno %s: %s",
             registro_id,
@@ -474,6 +563,13 @@ def reativar_historico_aluno_api(request, aluno_id, registro_id):
         )
 
     registro.refresh_from_db()
+    user_id = getattr(request.user, "id", "anonimo")
+    logger.info(
+        "Usuário %s reativou registro histórico %s do aluno %s",
+        user_id,
+        registro_id,
+        aluno_id,
+    )
     return JsonResponse(
         {
             "status": "success",
@@ -491,8 +587,12 @@ def reativar_historico_aluno_api(request, aluno_id, registro_id):
 def painel_kpis_api(request):
     """Retorna os indicadores principais exibidos no painel de alunos."""
 
-    total_alunos = Aluno.objects.count()
-    alunos_ativos_qs = Aluno.objects.filter(situacao="a")
+    user_id = getattr(request.user, "id", "anonimo")
+    logger.info("Usuário %s consultou painel de KPIs de alunos", user_id)
+
+    aluno_manager = get_aluno_manager()
+    total_alunos = aluno_manager.count()
+    alunos_ativos_qs = aluno_manager.filter(situacao="a")
     alunos_ativos = alunos_ativos_qs.count()
 
     datas_nascimento = list(
@@ -530,10 +630,14 @@ def painel_kpis_api(request):
 def painel_graficos_api(request):
     """Agrupa dados para os gráficos do painel (situação e evolução mensal)."""
 
-    situacoes = Aluno.objects.values("situacao").annotate(qtd=Count("id"))
+    user_id = getattr(request.user, "id", "anonimo")
+    logger.info("Usuário %s consultou gráficos do painel de alunos", user_id)
+
+    aluno_manager = get_aluno_manager()
+    situacoes = aluno_manager.values("situacao").annotate(qtd=Count("id"))
     labels = []
     values = []
-    mapa = dict(Aluno._meta.get_field("situacao").choices)
+    mapa = dict(Aluno.SITUACAO_CHOICES)
     for situacao in situacoes:
         labels.append(mapa.get(situacao["situacao"], situacao["situacao"]))
         values.append(situacao["qtd"])
@@ -547,7 +651,7 @@ def painel_graficos_api(request):
     for mes in meses:
         proximo = (mes + timedelta(days=32)).replace(day=1)
         valores_mes.append(
-            Aluno.objects.filter(
+            aluno_manager.filter(
                 created_at__date__gte=mes, created_at__date__lt=proximo
             ).count()
         )
@@ -575,7 +679,8 @@ def painel_tabela_api(request):
     except (TypeError, ValueError):
         page = 1
 
-    alunos_qs = Aluno.objects.all()
+    aluno_manager = get_aluno_manager()
+    alunos_qs = aluno_manager.all()
     if nome:
         alunos_qs = alunos_qs.filter(nome__icontains=nome)
     if cpf:
@@ -642,7 +747,11 @@ def painel_tabela_api(request):
         paginacao_html = '<ul class="pagination justify-content-center pagination-sm" id="paginacao-alunos">'
         for numero in alunos_page.paginator.page_range:
             active = " active" if numero == alunos_page.number else ""
-            paginacao_html += f'<li class="page-item{active}"><a href="#" class="page-link" data-page="{numero}">{numero}</a></li>'
+            paginacao_html += (
+                f'<li class="page-item{active}">'  # abertura do item
+                f'<a href="#" class="page-link" data-page="{numero}">{numero}</a>'
+                "</li>"
+            )
         paginacao_html += "</ul>"
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":

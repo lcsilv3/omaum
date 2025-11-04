@@ -10,39 +10,127 @@ RELATORIOS = [
         "nome": "Ficha Cadastral",
         "descricao": "Ficha completa dos alunos, com filtros e exportação.",
         "url": "alunos:relatorio_ficha_cadastral",
-        "exportacoes": ["csv", "xls", "pdf"],
+        "exportacoes": [
+            {
+                "label": "CSV",
+                "url_name": "alunos:relatorio_ficha_cadastral",
+                "query": {"export": "csv"},
+            },
+            {
+                "label": "Excel",
+                "url_name": "alunos:relatorio_ficha_cadastral",
+                "query": {"export": "excel"},
+            },
+            {
+                "label": "PDF",
+                "url_name": "alunos:relatorio_ficha_cadastral",
+                "query": {"export": "pdf"},
+            },
+        ],
     },
     {
         "nome": "Dados Iniciáticos",
         "descricao": "Relatório de dados iniciáticos, grau, situação e tempo de casa.",
         "url": "alunos:relatorio_dados_iniciaticos",
-        "exportacoes": ["csv", "xls"],
+        "exportacoes": [
+            {
+                "label": "CSV",
+                "url_name": "alunos:relatorio_dados_iniciaticos",
+                "query": {"export": "csv"},
+            },
+            {
+                "label": "Excel",
+                "url_name": "alunos:relatorio_dados_iniciaticos",
+                "query": {"export": "xls"},
+            },
+            {
+                "label": "PDF",
+                "url_name": "alunos:relatorio_dados_iniciaticos",
+                "query": {"export": "pdf"},
+            },
+        ],
     },
     {
         "nome": "Histórico do Aluno",
         "descricao": "Eventos, registros e histórico individual ou geral.",
         "url": "alunos:relatorio_historico_aluno",
-        "exportacoes": ["csv", "xls", "pdf"],
+        "exportacoes": [
+            {
+                "label": "CSV",
+                "url_name": "alunos:relatorio_historico_aluno",
+                "query": {"export": "csv"},
+            },
+            {
+                "label": "Excel",
+                "url_name": "alunos:relatorio_historico_aluno",
+                "query": {"export": "xls"},
+            },
+            {
+                "label": "PDF",
+                "url_name": "alunos:relatorio_historico_aluno",
+                "query": {"export": "pdf"},
+            },
+        ],
     },
     {
         "nome": "Auditoria de Dados",
         "descricao": "Auditoria de campos obrigatórios e dados faltantes.",
         "url": "alunos:relatorio_auditoria_dados",
-        "exportacoes": ["csv", "xls", "pdf"],
+        "exportacoes": [
+            {
+                "label": "CSV",
+                "url_name": "alunos:relatorio_auditoria_dados",
+                "query": {"export": "csv"},
+            },
+            {
+                "label": "Excel",
+                "url_name": "alunos:relatorio_auditoria_dados",
+                "query": {"export": "xls"},
+            },
+            {
+                "label": "PDF",
+                "url_name": "alunos:relatorio_auditoria_dados",
+                "query": {"export": "pdf"},
+            },
+        ],
     },
     {
         "nome": "Demográfico",
         "descricao": "Distribuição por faixa etária, cidade e sexo, com gráficos.",
         "url": "alunos:relatorio_demografico",
-        "exportacoes": ["csv", "xls"],
+        "exportacoes": [
+            {
+                "label": "CSV",
+                "url_name": "alunos:relatorio_demografico",
+                "query": {"export": "csv"},
+            },
+            {
+                "label": "Excel",
+                "url_name": "alunos:relatorio_demografico",
+                "query": {"export": "xls"},
+            },
+        ],
     },
     {
         "nome": "Aniversariantes",
         "descricao": "Lista de aniversariantes do mês, com exportação e integração futura.",
         "url": "alunos:relatorio_aniversariantes",
-        "exportacoes": ["csv", "xls"],
+        "exportacoes": [
+            {
+                "label": "CSV",
+                "url_name": "alunos:relatorio_aniversariantes",
+                "query": {"export": "csv"},
+            },
+            {
+                "label": "Excel",
+                "url_name": "alunos:relatorio_aniversariantes",
+                "query": {"export": "xls"},
+            },
+            {
+                "label": "PDF",
+                "url_name": "alunos:relatorio_aniversariantes",
+                "query": {"export": "pdf"},
+            },
+        ],
     },
 ]
-
-# Print simples para depuração: garantir que RELATORIOS está definido corretamente
-print(f"[DEBUG] RELATORIOS definido em reports.py: {RELATORIOS}")

@@ -1,0 +1,30 @@
+{% if resultados %}
+<div class="table-responsive" data-resultados="1">
+  <table class="table table-striped table-bordered table-hover table-sm" aria-label="Tabela de alunos com maior número de faltas">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">Aluno</th>
+        <th scope="col">Turma</th>
+        <th scope="col">Faltas</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in resultados %}
+      <tr>
+        <td>{{ r.aluno.nome }}</td>
+        <td>{{ r.turma.nome }}</td>
+        <td>{{ r.faltas }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% elif filtros_aplicados %}
+<div class="alert alert-warning" role="status" data-resultados="0">
+  Não encontramos registros de faltas para o período selecionado.
+</div>
+{% else %}
+<div class="alert alert-info" role="status" data-resultados="0">
+  Defina os filtros desejados e acione "Buscar" para visualizar os resultados.
+</div>
+{% endif %}

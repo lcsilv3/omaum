@@ -123,9 +123,23 @@
           return;
         }
         fetch(`/alunos/api/cidades/estado/${estadoId}/`)
-          .then(r=>r.ok?r.json():[])
-          .then(lista=>{if(Array.isArray(lista)&&lista.length){cacheCidadesPorEstado[estadoId]=lista;turnCityIntoSelect(lista);} })
-          .catch(()=>{});
+          .then(r => r.ok ? r.json() : [])
+          .then(data => {
+            // provider may return {status: 'pending'} while background fetch runs
+            if (data && data.status === 'pending') {
+              // Indica ao usuário que estamos consultando provedores remotos
+              if (cidadeField.tagName === 'SELECT') {
+                cidadeField.innerHTML = '<option value="">Buscando dados externos...</option>';
+              }
+              return;
+            }
+            const lista = Array.isArray(data) ? data : [];
+            if (Array.isArray(lista) && lista.length) {
+              cacheCidadesPorEstado[estadoId] = lista;
+              turnCityIntoSelect(lista);
+            }
+          })
+          .catch(() => {});
       });
       // Encadeamento cidade -> bairros (se campos presentes)
       let bairroField=document.getElementById('id_bairro');
@@ -133,17 +147,29 @@
         if(!bairroField) return;
         // Endpoint pode não existir em alguns ambientes; fallback silencioso
         fetch(`/alunos/api/bairros/cidade/${cidadeId}/`)
-          .then(r=>r.ok?r.json():[])
-          .then(lista=>{
-            if(!Array.isArray(lista)) return;
-            if(bairroField.tagName!=='SELECT'){
-              const select=document.createElement('select');
-              select.name=bairroField.name; select.id=bairroField.id; select.className='form-select';
-              bairroField.replaceWith(select); bairroField=select;
+          .then(r => r.ok ? r.json() : [])
+          .then(data => {
+            if (data && data.status === 'pending') {
+              if (bairroField && bairroField.tagName === 'SELECT') {
+                bairroField.innerHTML = '<option value="">Buscando dados externos...</option>';
+              }
+              return;
             }
-            bairroField.innerHTML='<option value="">Selecione</option>'+lista.map(b=>`<option value="${b.nome}" data-id="${b.id}">${b.nome}</option>`).join('');
+            const lista = Array.isArray(data) ? data : [];
+            if (!Array.isArray(lista)) return;
+            if (bairroField.tagName !== 'SELECT') {
+              const select = document.createElement('select');
+              select.name = bairroField.name;
+              select.id = bairroField.id;
+              select.className = 'form-select';
+              bairroField.replaceWith(select);
+              bairroField = select;
+            }
+            bairroField.innerHTML = '<option value="">Selecione</option>' + lista
+              .map(b => `<option value="${b.nome}" data-id="${b.id}">${b.nome}</option>`)
+              .join('');
           })
-          .catch(()=>{});
+          .catch(() => {});
       };
       if(cidadeField){
         cidadeField.addEventListener('change',()=>{

@@ -1,8 +1,203 @@
 {% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+  .relatorio-historico .card-resumo {
+    min-height: 120px;
+  }
+  .relatorio-historico .filtros-form .form-control,
+  .relatorio-historico .filtros-form .form-select {
+    min-height: 42px;
+  }
+  .relatorio-historico .acoes-exportacao .btn {
+    min-width: 120px;
+  }
+  .relatorio-historico .timeline-evento::before {
+    content: '';
+    position: absolute;
+    left: 16px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+  }
+  .relatorio-historico .timeline-evento {
+    position: relative;
+    padding-left: 42px;
+    margin-left: 8px;
+  }
+  .relatorio-historico .timeline-evento .marcador {
+    position: absolute;
+    left: 8px;
+    top: 12px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+  }
+  .relatorio-historico .timeline-evento .marcador.voluntario {
+    background-color: #198754;
+  }
+  .relatorio-historico .timeline-evento .marcador.instrucao {
+    background-color: #6f42c1;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container">
-  <h1>{{ titulo }}</h1>
-  <p class="text-muted">{{ data_emissao }}</p>
-  <p>Relatório Histórico do Aluno (implementação mínima).</p>
+<div class="container relatorio-historico">
+  <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-3">
+    <div>
+      <h1 class="h3 mb-1">{{ titulo }}</h1>
+      <small class="text-muted">{{ nome_organizacao }} · {{ nome_sistema }}</small>
+      <p class="text-muted mb-0">Emitido em {{ data_emissao }}</p>
+    </div>
+    <div class="acoes-exportacao text-end">
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'atividades:exportar_relatorio_historico_aluno' 'csv' %}?{{ query_params }}">CSV</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'atividades:exportar_relatorio_historico_aluno' 'excel' %}?{{ query_params }}">Excel</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'atividades:exportar_relatorio_historico_aluno' 'pdf' %}?{{ query_params }}">PDF</a>
+    </div>
+  </div>
+
+  <div class="card mb-4 filtros-form">
+    <div class="card-header">
+      <strong>Filtros do relatório</strong>
+    </div>
+    <div class="card-body">
+      <form id="form-historico-aluno" class="row g-3" autocomplete="off">
+        <div class="col-md-4">
+          <label for="id_aluno" class="form-label">Aluno</label>
+          <select id="id_aluno" name="aluno" class="form-select">
+            <option value="">Selecione um aluno</option>
+            {% for aluno in alunos %}
+              <option value="{{ aluno.id }}" {% if filtros.aluno_id == aluno.id %}selected{% endif %}>{{ aluno.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="id_curso" class="form-label">Curso</label>
+          <select id="id_curso" name="curso" class="form-select">
+            <option value="">Todos</option>
+            {% for curso in cursos %}
+              <option value="{{ curso.id }}" {% if filtros.curso_id == curso.id %}selected{% endif %}>{{ curso.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="id_papel" class="form-label">Papel exercido</label>
+          <select id="id_papel" name="papel" class="form-select">
+            <option value="">Todos</option>
+            {% for papel in papeis %}
+              <option value="{{ papel.value }}" {% if filtros.papel == papel.value %}selected{% endif %}>{{ papel.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="id_data_inicio" class="form-label">Data inicial</label>
+          <input id="id_data_inicio" type="date" name="data_inicio" class="form-control" value="{% if filtros.data_inicio %}{{ filtros.data_inicio|date:'Y-m-d' }}{% endif %}">
+        </div>
+        <div class="col-md-4">
+          <label for="id_data_fim" class="form-label">Data final</label>
+          <input id="id_data_fim" type="date" name="data_fim" class="form-control" value="{% if filtros.data_fim %}{{ filtros.data_fim|date:'Y-m-d' }}{% endif %}">
+        </div>
+        <div class="col-12 d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary mt-2">Aplicar filtros</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="historico-dados-container">
+    {% include 'atividades/partials/relatorio_historico_aluno_timeline.html' with relatorio=relatorio descricao_filtros=descricao_filtros %}
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function() {
+    const form = document.getElementById('form-historico-aluno');
+    const campoAluno = document.getElementById('id_aluno');
+    const campoCurso = document.getElementById('id_curso');
+    const campoPapel = document.getElementById('id_papel');
+    const campoDataInicio = document.getElementById('id_data_inicio');
+    const campoDataFim = document.getElementById('id_data_fim');
+    const container = document.getElementById('historico-dados-container');
+    const endpointTabela = "{% url 'atividades:ajax_relatorio_historico_tabela' %}";
+    const endpointOpcoes = "{% url 'atividades:ajax_relatorio_historico_opcoes' %}";
+
+    function montarQueryString(formData) {
+      const params = new URLSearchParams();
+      for (const [chave, valor] of formData.entries()) {
+        if (valor) {
+          params.append(chave, valor);
+        }
+      }
+      return params.toString();
+    }
+
+    async function atualizarTabela() {
+      const params = montarQueryString(new FormData(form));
+      const url = params ? `${endpointTabela}?${params}` : endpointTabela;
+      const resposta = await fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+
+      if (!resposta.ok) {
+        return;
+      }
+
+      const html = await resposta.text();
+      container.innerHTML = html;
+    }
+
+    async function atualizarOpcoes() {
+      const params = new URLSearchParams();
+      if (campoCurso.value) {
+        params.append('curso', campoCurso.value);
+      }
+      if (campoAluno.value) {
+        params.append('aluno', campoAluno.value);
+      }
+
+      const consulta = params.toString();
+      const url = consulta ? `${endpointOpcoes}?${consulta}` : endpointOpcoes;
+      const resposta = await fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+
+      if (!resposta.ok) {
+        return;
+      }
+
+      const dados = await resposta.json();
+      const alunoSelecionado = campoAluno.value;
+      campoAluno.innerHTML = '<option value="">Selecione um aluno</option>';
+      (dados.alunos || []).forEach((aluno) => {
+        const option = document.createElement('option');
+        option.value = aluno.id;
+        option.textContent = aluno.nome;
+        if (String(aluno.id) === alunoSelecionado) {
+          option.selected = true;
+        }
+        campoAluno.appendChild(option);
+      });
+    }
+
+    form.addEventListener('submit', function(evento) {
+      evento.preventDefault();
+      atualizarTabela();
+    });
+
+    campoCurso.addEventListener('change', function() {
+      atualizarOpcoes().then(atualizarTabela);
+    });
+
+    [campoAluno, campoPapel, campoDataInicio, campoDataFim]
+      .filter(Boolean)
+      .forEach((campo) => {
+        campo.addEventListener('change', atualizarTabela);
+      });
+  })();
+</script>
 {% endblock %}

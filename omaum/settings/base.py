@@ -189,3 +189,23 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
 }
+
+# Configurações para estratégia híbrida de localidades (cache local + fetch remoto)
+# Permite controlar se chamadas externas são permitidas nos ambientes
+LOCALIDADES_ALLOW_REMOTE = config("LOCALIDADES_ALLOW_REMOTE", default=True, cast=bool)
+LOCALIDADES_REMOTE_PROVIDERS = config(
+    "LOCALIDADES_REMOTE_PROVIDERS", default="viacep,ibge", cast=Csv()
+)
+# Timeout (segundos) para chamadas a provedores remotos de localidades
+LOCALIDADES_REMOTE_TIMEOUT = config("LOCALIDADES_REMOTE_TIMEOUT", default=5, cast=int)
+
+# Cache: preferimos usar Redis em produção; se não existir, Django local será utilizado.
+# A configuração concreta de CACHES pode ser feita por ambiente (ex.: .env), aqui deixamos
+# valores padrão simples se necessário.
+if not config("CACHES_CONFIGURED", default=False, cast=bool):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "omaum-localidades-cache",
+        }
+    }

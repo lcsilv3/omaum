@@ -1,0 +1,105 @@
+<div class="row mb-4 g-3">
+  <div class="col-md-3">
+    <div class="card card-resumo shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-1">Eventos registrados</h2>
+        <p class="display-6 mb-1">{{ relatorio.resumo.total_eventos }}</p>
+        <small class="text-muted">Participações e atuações encontradas</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card card-resumo shadow-sm border-success">
+      <div class="card-body">
+        <h2 class="h5 text-success mb-1">Presenças</h2>
+        <p class="display-6 text-success mb-1">{{ relatorio.resumo.total_presencas }}</p>
+        <small class="text-muted">{{ relatorio.resumo.total_participacoes }} participações contabilizadas</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card card-resumo shadow-sm border-warning">
+      <div class="card-body">
+        <h2 class="h5 text-warning mb-1">Faltas</h2>
+        <p class="display-6 text-warning mb-1">{{ relatorio.resumo.total_faltas }}</p>
+        <small class="text-muted">Justificadas: {{ relatorio.resumo.total_justificadas }}</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card card-resumo shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-1">Filtros aplicados</h2>
+        <p class="mb-1">Aluno: {{ descricao_filtros.aluno|default:'--' }}</p>
+        <p class="mb-1">Curso: {{ descricao_filtros.curso|default:'Todos' }}</p>
+        <small class="text-muted">Papel: {{ descricao_filtros.papel|default:'Todos' }}<br>Período: {{ descricao_filtros.periodo|default:'Sem restrições' }}</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <strong>Resumo consolidado</strong>
+      <div class="small text-muted">
+        Voluntariado: {{ relatorio.resumo.total_voluntarios }} · Instrução: {{ relatorio.resumo.total_instrucao }}
+      </div>
+    </div>
+    <span class="badge bg-primary">{{ relatorio.eventos|length }} registros</span>
+  </div>
+  <div class="card-body">
+    {% if relatorio.resumo.eventos_por_papel %}
+      <div class="d-flex flex-wrap gap-2">
+        {% for papel, quantidade in relatorio.resumo.eventos_por_papel.items %}
+          <span class="badge bg-secondary">{{ papel }}: {{ quantidade }}</span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="mb-0 text-muted">Nenhum evento encontrado para os filtros selecionados.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header">
+    <strong>Histórico cronológico</strong>
+  </div>
+  <div class="card-body">
+    {% if relatorio.eventos %}
+      <div class="list-group list-group-flush">
+        {% for evento in relatorio.eventos %}
+          <div class="list-group-item timeline-evento">
+            <span class="marcador{% if evento.papel == 'voluntario_extra' or evento.papel == 'voluntario_simples' %} voluntario{% elif evento.papel == 'instrutor' or evento.papel == 'instrutor_auxiliar' or evento.papel == 'auxiliar_instrucao' %} instrucao{% endif %}"></span>
+            <div class="d-flex justify-content-between flex-wrap gap-2">
+              <div>
+                <h3 class="h6 mb-1">{{ evento.descricao }}</h3>
+                <p class="mb-1 text-muted">{{ evento.papel_display }} · {{ evento.data|date:'d/m/Y' }}</p>
+                <p class="mb-0 small text-muted">
+                  Atividade: {{ evento.atividade_nome|default:'--' }}<br>
+                  Curso: {{ evento.curso_nome|default:'--' }} · Turma: {{ evento.turma_nome|default:'--' }}
+                </p>
+              </div>
+              <div class="text-end small text-muted">
+                {% if evento.status_presenca %}
+                  <div>Status de presença: {{ evento.status_presenca }}</div>
+                {% endif %}
+                {% if evento.status_atividade %}
+                  <div>Status da atividade: {{ evento.status_atividade }}</div>
+                {% endif %}
+                {% if evento.tipo_atividade %}
+                  <div>Tipo: {{ evento.tipo_atividade }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-4">
+        <p class="mb-1">Nenhum histórico disponível para os filtros informados.</p>
+        <small class="text-muted">Selecione um aluno e ajuste os filtros para visualizar os dados.</small>
+      </div>
+    {% endif %}
+  </div>
+</div>

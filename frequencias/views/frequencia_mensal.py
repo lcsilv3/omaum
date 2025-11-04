@@ -29,6 +29,11 @@ def listar_frequencias(request):
         if turma_id:
             frequencias = frequencias.filter(turma_id=turma_id)
 
+        # Filtrar por mês
+        mes = request.GET.get("mes")
+        if mes:
+            frequencias = frequencias.filter(mes=mes)
+
         # Filtrar por ano
         ano = request.GET.get("ano")
         if ano:
@@ -58,7 +63,9 @@ def listar_frequencias(request):
             "page_obj": page_obj,
             "turmas": turmas,
             "anos": anos,
+            "meses_choices": FrequenciaMensal.MES_CHOICES,
             "turma_selecionada": turma_id,
+            "mes_selecionado": mes,
             "ano_selecionado": ano,
         }
 

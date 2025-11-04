@@ -29,6 +29,11 @@ logger = logging.getLogger("alunos.services")
 CPF_REGEX = re.compile(r"\d{11}")
 DEFAULT_EMAIL_DOMAIN = "alunos.omaum.edu.br"
 
+
+class InstrutorServiceError(Exception):
+    """Erro de alto nível ao executar operações do serviço de instrutores."""
+
+
 __all__ = [
     "buscar_aluno_por_id",
     "buscar_aluno_por_cpf",
@@ -40,6 +45,7 @@ __all__ = [
     "sincronizar_historico_iniciatico",
     "reconciliar_historico_if_divergente",
     "InstrutorService",
+    "InstrutorServiceError",
     "_calcular_checksum",
 ]
 
@@ -217,7 +223,7 @@ def listar_alunos(
 
     if curso_id:
         try:
-            Matricula = import_module("matriculas.models").Matricula
+            import_module("matriculas.models")
             alunos = alunos.filter(matriculas__turma__curso_id=curso_id)
         except ModuleNotFoundError:
             logger.warning(
@@ -508,6 +514,19 @@ class InstrutorService:
     def verificar_elegibilidade_completa(aluno: Aluno | None) -> dict[str, Any]:
         """Analisa elegibilidade de um aluno para atuar como instrutor."""
 
+        try:
+            return InstrutorService._verificar_elegibilidade_core(aluno)
+        except InstrutorServiceError:
+            raise
+        except Exception as exc:  # pragma: no cover - caminho defensivo
+            raise InstrutorServiceError(
+                "Falha inesperada ao verificar elegibilidade do aluno."
+            ) from exc
+
+    @staticmethod
+    def _verificar_elegibilidade_core(aluno: Aluno | None) -> dict[str, Any]:
+        """Implementa a lógica de verificação de elegibilidade."""
+
         if aluno is None:
             return {
                 "elegivel": False,
@@ -561,7 +580,11 @@ class InstrutorService:
         }
 
 
-from .historico import HistoricoEventoDados, HistoricoService, HistoricoValidationError
+from .historico import (  # noqa: E402
+    HistoricoEventoDados,
+    HistoricoService,
+    HistoricoValidationError,
+)
 
 __all__ += [
     "HistoricoService",

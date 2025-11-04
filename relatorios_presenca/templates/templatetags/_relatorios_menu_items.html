@@ -1,13 +1,15 @@
 {% for relatorio in relatorios %}
     <li>
-        <a class="dropdown-item" href="{% url relatorio.url %}">
+        <a class="dropdown-item" href="{{ relatorio.link }}">
             {{ relatorio.nome }}
         </a>
-        <small class="text-muted ms-2">{{ relatorio.descricao }}</small>
-        {% if relatorio.exportacoes %}
+        {% if relatorio.descricao %}
+            <small class="text-muted ms-2">{{ relatorio.descricao }}</small>
+        {% endif %}
+        {% if relatorio.export_links %}
             <div class="ms-3">
-                {% for tipo in relatorio.exportacoes %}
-                    <a href="{% url relatorio.url %}?export={{ tipo }}" class="badge bg-secondary text-light ms-1">{{ tipo|upper }}</a>
+                {% for export in relatorio.export_links %}
+                    <a href="{{ export.url }}" class="badge bg-secondary text-light ms-1">{{ export.label }}</a>
                 {% endfor %}
             </div>
         {% endif %}

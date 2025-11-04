@@ -148,6 +148,40 @@ class Bairro(models.Model):
         return f"{self.nome} - {self.cidade.nome}/{self.cidade.estado.codigo}"  # pragma: no cover
 
 
+class LocalidadeFaltante(models.Model):
+    """Registra tentativas de busca externa de localidades quando não existem localmente.
+
+    Útil para auditoria e para re-processamento assíncrono.
+    """
+
+    CHOICES_STATUS = [
+        ("pending", "Pendente"),
+        ("success", "Sucesso"),
+        ("error", "Erro"),
+    ]
+
+    chave = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="Chave única da requisição (ex: estado:RJ ou cep:23560352)",
+    )
+    provedor = models.CharField(max_length=50, blank=True, null=True)
+    parametros = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=20, choices=CHOICES_STATUS, default="pending")
+    tentativas = models.IntegerField(default=0)
+    resultado_cache = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Localidade Faltante"
+        verbose_name_plural = "Localidades Faltantes"
+        indexes = [models.Index(fields=["status"])]
+
+    def __str__(self):
+        return f"{self.chave} ({self.status})"
+
+
 class Aluno(models.Model):
     """Modelo que representa um aluno."""
 
@@ -469,7 +503,7 @@ class Aluno(models.Model):
     @property
     def grau_atual_automatico(self):
         """Retorna o grau atual baseado no último curso matriculado."""
-        return self.ultimo_curso_matriculado or self.grau_atual or "Não informado"
+        return self.ultimo_curso_matriculado or self.grau_atual or "Aluno sem matricula"
 
     def clean(self):
         """Validações adicionais para o modelo Aluno."""
