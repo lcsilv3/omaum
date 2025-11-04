@@ -58,7 +58,8 @@ class DockerChecker:
         self.project_root = Path(__file__).parent.parent
         self.compose_file = self.project_root / "docker" / "docker-compose.yml"
 
-        # Serviços esperados no docker-compose
+        # Serviços críticos esperados no docker-compose
+        # Nota: nginx e celery são serviços opcionais (profiles) e não são verificados
         self.expected_services = {
             "omaum-web": "Servidor Web Django",
             "omaum-db": "Banco de Dados PostgreSQL",
@@ -81,11 +82,11 @@ class DockerChecker:
                 capture_output=True,
                 text=True,
                 cwd=self.project_root,
-                timeout=30,
+                timeout=15,
             )
             return result.stdout.strip(), result.stderr.strip(), result.returncode
         except subprocess.TimeoutExpired:
-            return "", "Comando expirou após 30 segundos", 1
+            return "", "Comando expirou após 15 segundos", 1
         except Exception as e:
             return "", str(e), 1
 
@@ -216,7 +217,14 @@ class DockerChecker:
             }
 
         try:
-            container_data = json.loads(stdout.split("\n")[0])
+            lines = stdout.split("\n")
+            if not lines or not lines[0].strip():
+                return {
+                    "healthy": False,
+                    "status": "not found",
+                    "message": f"Serviço {service_name} não encontrado",
+                }
+            container_data = json.loads(lines[0])
             state = container_data.get("State", "")
             health = container_data.get("Health", "")
 
@@ -336,7 +344,7 @@ class DockerChecker:
             and containers_data["running"] > 0
             and all(
                 status_data["services"].get(s, {}).get("healthy", False)
-                for s in ["omaum-web", "omaum-db", "omaum-redis"]
+                for s in self.expected_services.keys()
             )
         )
 
