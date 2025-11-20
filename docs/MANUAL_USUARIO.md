@@ -117,23 +117,34 @@ Todas as telas de listagem possuem:
 5. Adicione **Justificativas** para ausências
 6. Clique em **"Salvar em Lote"**
 
+#### Avisos de turma encerrada
+
+- Um banner amarelo com ícone de cadeado é exibido quando a turma escolhida está encerrada administrativamente.
+- Caso o formulário rejeite a turma, selecione outra turma ativa utilizando o campo de busca.
+- Se precisar seguir com aquela turma, solicite aos administradores a reabertura no módulo **Turmas** antes de tentar novamente.
+
+
 ### Validações Automáticas
+
 O sistema realiza as seguintes validações:
 - ✅ **P + F ≤ C**: Presenças + Faltas não podem superar Convocações
 - ✅ **Data futura**: Não permite registros em datas futuras
 - ✅ **Justificativa**: Obrigatória para ausências
 - ✅ **Duplicação**: Previne registros duplicados
 - ✅ **Limites**: Respeita configurações de carência da turma
+- ✅ **Turma ativa obrigatória**: Turmas encerradas exibem alerta e não aceitam novos lançamentos até serem reabertas em **Turmas**.
 
 ## Consulta e Relatórios
 
 ### 1. Listar Presenças
+
 - Acesse **"Presenças" → "Listar Presenças"**
 - Use os filtros para refinar a busca
 - Visualize dados individuais ou em lote
 - Ações disponíveis: Editar, Excluir, Detalhar
 
 ### 2. Consolidado de Presenças
+
 - Acesse **"Presenças" → "Consolidado"**
 - Aplique filtros de período, turma ou curso
 - Visualize estatísticas agregadas:
@@ -143,6 +154,7 @@ O sistema realiza as seguintes validações:
   - Alunos com carência
 
 ### 3. Painel de Estatísticas
+
 - Acesse **"Presenças" → "Painel Estatísticas"**
 - Visualize gráficos interativos:
   - **Gráfico de Pizza**: Distribuição presença/ausência
@@ -151,6 +163,7 @@ O sistema realiza as seguintes validações:
   - **Indicadores**: KPIs principais
 
 #### Principais Indicadores
+
 - 📊 **Taxa de Presença Geral**: Percentual geral de presenças
 - 👥 **Total de Alunos**: Quantidade de alunos no período
 - 📚 **Atividades Registradas**: Total de atividades
@@ -159,6 +172,7 @@ O sistema realiza as seguintes validações:
 ## Exportação de Dados
 
 ### Exportação Simples
+
 1. Em qualquer listagem, clique em **"Exportar"**
 2. Escolha o formato:
    - **Excel (.xlsx)**: Formato padrão para análise
@@ -166,6 +180,7 @@ O sistema realiza as seguintes validações:
    - **PDF (.pdf)**: Para impressão e arquivamento
 
 ### Exportação Avançada
+
 1. Acesse **"Presenças" → "Exportação"**
 2. Configure as opções:
    - **Formato**: Excel Básico/Profissional, PDF, CSV
@@ -178,24 +193,28 @@ O sistema realiza as seguintes validações:
 ### Formatos Disponíveis
 
 #### Excel Profissional
+
 - 📊 Gráficos automáticos
 - 🎨 Formatação profissional
 - 📈 Tabelas dinâmicas
 - 🧮 Fórmulas e cálculos
 
 #### PDF Completo
+
 - 📄 Layout profissional
 - 📊 Gráficos incorporados
 - 📋 Sumário executivo
 - 🖼️ Logotipo institucional
 
 #### CSV Estruturado
+
 - 📝 Dados tabulares limpos
 - 🔗 Compatível com sistemas externos
 - ⚡ Processamento rápido
 - 📊 Ideal para análises
 
 ### Agendamento de Relatórios
+
 1. Na tela de **Exportação Avançada**, clique em **"Agendar"**
 2. Configure:
    - **Nome**: Identificação do agendamento
@@ -220,44 +239,77 @@ O sistema realiza as seguintes validações:
 4. Configure o **peso no cálculo** para a atividade
 
 ### Configuração de Turmas
+
 - Acesse **Turmas** para configurar:
-  - **Percentual mínimo de presença**
-  - **Atividades obrigatórias**
-  - **Período letivo**
+   - **Percentual mínimo de presença**
+   - **Atividades obrigatórias**
+   - **Período letivo**
+- Utilize o mesmo cadastro para encerrar ou reabrir uma turma. Quando marcada como encerrada, o status "Encerrada" aparece no topo da tela e bloqueia registros de presenças, criação de atividades e lançamentos de frequência.
+- Antes de tentar novos registros, confirme se o status está como "Ativa". Se precisar reabrir, use a ação apropriada no cadastro ou acione o administrador responsável.
+
+### Bloqueios em Atividades e Frequências
+
+- Em **Atividades → Nova Atividade Acadêmica**, um alerta amarelo informa que turmas encerradas não podem ser associadas no multi-selecionador.
+- Em **Frequências → Registrar Frequência Mensal**, o formulário mostra mensagem equivalente e impede o salvamento quando a turma não está ativa.
+- Os serviços internos utilizam a validação `turma_services.validar_turma_para_registro`, portanto a API também recusa operações com turmas encerradas.
+- Verifique com a coordenação se a turma deve continuar encerrada antes de solicitar reabertura.
 
 ## Resolução de Problemas
 
 ### Problemas Comuns
 
 #### ❌ "Erro ao salvar presença"
+
 **Causa**: Dados inválidos ou conflitantes
+
 **Solução**:
+
 1. Verifique se P + F ≤ C
 2. Confirme se a data não é futura
 3. Adicione justificativa para ausências
 
 #### ❌ "Presença já registrada"
+
 **Causa**: Tentativa de duplicar registro
+
 **Solução**:
+
 1. Use a função "Editar" ao invés de criar novo registro
 2. Verifique se o registro já existe na listagem
 
 #### ❌ "Erro na exportação"
+
 **Causa**: Volume muito grande de dados
+
 **Solução**:
+
 1. Aplique filtros para reduzir o volume
 2. Use exportação por partes (períodos menores)
 3. Tente em horário de menor uso do sistema
 
 #### ❌ "Gráficos não carregam"
+
 **Causa**: Problemas de navegador ou cache
+
 **Solução**:
+
 1. Atualize a página (F5)
 2. Limpe o cache do navegador
 3. Tente em modo anônimo/privado
 
+#### ❌ "Turma encerrada não aceita novos lançamentos"
+
+**Causa**: A turma foi encerrada administrativamente e está bloqueada para registros.
+
+**Solução**:
+
+1. Confirme se selecionou a turma correta e se ela deveria continuar encerrada.
+2. Solicite a reabertura no módulo **Turmas** ou peça acesso a uma turma ativa.
+3. Recarregue o formulário após a reabertura para que o alerta desapareça.
+
 ### Contato para Suporte
-- **Email**: suporte@omaum.edu.br
+
+- **Email**: [suporte@omaum.edu.br](mailto:suporte@omaum.edu.br)
 - **Telefone**: (11) 1234-5678
 - **Horário**: Segunda a sexta, 8h às 18h
 

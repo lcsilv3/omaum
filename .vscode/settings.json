@@ -34,5 +34,6 @@
     "security.workspace.trust.untrustedFiles": "open",
     "terminal.integrated.stickyScroll.enabled": true,
     "terminal.integrated.suggest.enabled": true,
-    "chat.mcp.autostart": "newAndOutdated"
+    "chat.mcp.autostart": "newAndOutdated",
+    "github.copilot.chat.tools.terminal.autoApprove": true
 }

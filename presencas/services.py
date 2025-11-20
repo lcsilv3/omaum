@@ -4,10 +4,13 @@ Contém a lógica de negócios complexa.
 """
 
 import logging
+from datetime import date, datetime
+from importlib import import_module
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from importlib import import_module
-from datetime import date, datetime
+
+from turmas import services as turma_services
 
 # Importar nova calculadora de estatísticas
 
@@ -143,6 +146,9 @@ def registrar_presenca(dados_presenca):
                 else None
             )
 
+            if turma:
+                turma_services.validar_turma_para_registro(turma)
+
             # Validar data
             data_presenca = dados_presenca.get("data")
             if isinstance(data_presenca, str):
@@ -225,6 +231,8 @@ def atualizar_presenca(presenca_id, dados_atualizacao):
             modelos = get_presenca_models()
             presenca = modelos["Presenca"].objects.get(id=presenca_id)
 
+            turma_services.validar_turma_para_registro(presenca.turma)
+
             # Campos permitidos para atualização
             campos_permitidos = ["presente", "justificativa", "data", "registrado_por"]
 
@@ -270,6 +278,7 @@ def excluir_presenca(presenca_id):
         with transaction.atomic():
             modelos = get_presenca_models()
             presenca = modelos["Presenca"].objects.get(id=presenca_id)
+            turma_services.validar_turma_para_registro(presenca.turma)
             presenca.delete()
 
             logger.info(f"Presença excluída: ID {presenca_id}")
@@ -382,6 +391,7 @@ def criar_observacao_presenca(dados_observacao):
                 aluno = Aluno.objects.get(cpf=dados_observacao["aluno_cpf"])
 
             turma = Turma.objects.get(id=dados_observacao["turma_id"])
+            turma_services.validar_turma_para_registro(turma)
 
             # Criar observação
             observacao = modelos["ObservacaoPresenca"].objects.create(

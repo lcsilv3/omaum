@@ -4,6 +4,9 @@ import logging
 from importlib import import_module
 
 from django import forms
+from django.core.exceptions import ValidationError
+
+from turmas import services as turma_services
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +36,17 @@ def get_models():
     except (ImportError, AttributeError) as e:
         logger.error("Erro ao obter modelos: %s", e)
         raise
+
+
+def _validar_turmas_para_operacao(form, turmas):
+    if not turmas:
+        return
+    for turma in turmas:
+        try:
+            turma_services.validar_turma_para_registro(turma)
+        except ValidationError as exc:
+            form.add_error("turmas", exc.message)
+            break
 
 
 class AtividadeFiltroForm(forms.Form):
@@ -209,6 +223,8 @@ class AtividadeForm(forms.ModelForm):
                         "O curso selecionado deve ser o mesmo das turmas escolhidas.",
                     )
 
+            _validar_turmas_para_operacao(self, turmas)
+
         return cleaned_data
 
     def save(self, commit=True):
@@ -379,6 +395,8 @@ class AtividadeAcademicaForm(forms.ModelForm):
                         "curso",
                         "O curso selecionado deve ser o mesmo das turmas escolhidas.",
                     )
+
+            _validar_turmas_para_operacao(self, turmas)
 
         return cleaned_data
 

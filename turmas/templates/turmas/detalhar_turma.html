@@ -32,9 +32,24 @@
         <h1>Detalhes da Turma</h1>
         <div>
             <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
+            {% if not turma.esta_encerrada %}
             <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-success ms-2">Matricular Alunos</a>
+            {% endif %}
+            {% if turma.esta_encerrada %}
+            <a href="{% url 'turmas:transferir_alunos_turma' turma.id %}" class="btn btn-warning ms-2">Transferir Alunos</a>
+            {% endif %}
         </div>
     </div>
+
+    {% if turma.esta_encerrada %}
+    <div class="alert alert-danger" role="alert">
+        <strong>Turma encerrada:</strong> movimentações estão bloqueadas desde {{ turma.data_fim|date:"d/m/Y" }}.
+        {% if turma.encerrada_em %}
+        <span class="d-block">Encerrada em {{ turma.encerrada_em|date:"d/m/Y H:i" }}{% if turma.encerrada_por %} por {{ turma.encerrada_por }}{% endif %}.</span>
+        {% endif %}
+        <span class="d-block mt-2">Utilize o botão "Transferir Alunos" para mover as matrículas para outra turma ativa.</span>
+    </div>
+    {% endif %}
 
     <!-- Seção: Dados Básicos (recolhível, aberta por padrão) -->
     <div class="card mb-4">

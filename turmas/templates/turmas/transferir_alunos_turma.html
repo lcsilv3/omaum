@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Transferir Alunos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Transferir alunos da turma {{ turma.nome }}</h1>
+        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-secondary">Voltar</a>
+    </div>
+
+    <div class="alert alert-warning">
+        <strong>Aviso:</strong> Esta ação moverá todas as matrículas ativas da turma encerrada
+        <strong>{{ turma.nome }}</strong> para a turma de destino selecionada. O histórico da turma de origem será mantido.
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
+
+        <div class="card mb-4">
+            <div class="card-body">
+                {% include 'includes/form_field.html' with field=form.turma_destino %}
+                {% include 'includes/form_field.html' with field=form.confirmacao %}
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Transferir alunos</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

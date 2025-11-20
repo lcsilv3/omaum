@@ -15,10 +15,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
 from importlib import import_module
 
 # Importar a função utilitária centralizada
 from core.utils import get_model_dynamically
+from turmas import services as turma_services
 
 
 def get_model(app_name, model_name):
@@ -69,6 +71,26 @@ def get_turma_form():
         except (ImportError, AttributeError) as e:
             print(f"Erro ao importar TurmaForm da core: {e}")
             return None
+
+
+def get_transferencia_form():
+    """Obtém o formulário de transferência de turmas."""
+    try:
+        forms_module = import_module("turmas.forms")
+        return getattr(forms_module, "TransferenciaTurmaForm")
+    except (ImportError, AttributeError) as e:
+        print(f"Erro ao importar TransferenciaTurmaForm: {e}")
+        return None
+
+
+def _bloquear_operacao_em_turma_encerrada(request, turma, acao):
+    if getattr(turma, "esta_encerrada", False):
+        messages.error(
+            request,
+            f"A turma {turma.nome} está encerrada e não permite {acao}.",
+        )
+        return redirect("turmas:detalhar_turma", turma_id=turma.id)
+    return None
 
 
 @login_required
@@ -156,7 +178,11 @@ def listar_turmas(request):
         logger.error(
             "Erro ao importar modelos necessários na listagem de turmas: %s", e
         )
-        messages.error(request, "Erro interno no sistema. Contate o administrador.")
+        suporte_msg = (
+            "Não conseguimos carregar as turmas agora. Tente novamente em alguns minutos "
+            "e, se o problema continuar, informe o suporte com o código TURMAS-LIST-500."
+        )
+        messages.error(request, suporte_msg)
         return render(
             request,
             "turmas/listar_turmas.html",
@@ -166,7 +192,7 @@ def listar_turmas(request):
                 "query": "",
                 "cursos": [],
                 "curso_selecionado": "",
-                "error_message": "Erro ao carregar dados. Tente novamente mais tarde.",
+                "error_message": suporte_msg,
             },
         )
     except Exception as e:  # noqa: BLE001
@@ -180,7 +206,11 @@ def listar_turmas(request):
             e,
             exc_info=True,
         )
-        messages.error(request, "Erro interno no sistema. Contate o administrador.")
+        suporte_msg = (
+            "Não conseguimos carregar as turmas agora. Tente novamente em alguns minutos "
+            "e, se o problema continuar, informe o suporte com o código TURMAS-LIST-500."
+        )
+        messages.error(request, suporte_msg)
         return render(
             request,
             "turmas/listar_turmas.html",
@@ -190,7 +220,7 @@ def listar_turmas(request):
                 "query": "",
                 "cursos": [],
                 "curso_selecionado": "",
-                "error_message": "Erro interno. Tente novamente mais tarde.",
+                "error_message": suporte_msg,
             },
         )
 
@@ -209,13 +239,25 @@ def criar_turma(request):
         return redirect("turmas:listar_turmas")
 
     if request.method == "POST":
-        form = TurmaForm(request.POST)
+        form = TurmaForm(request.POST, usuario=request.user)
         if form.is_valid():
-            turma = form.save()
-            messages.success(request, "Turma criada com sucesso!")
+            turma = form.save(commit=False)
+            encerrando_agora = form.cleaned_data.get("_encerrar")
+            turma.save()
+            form.save_m2m()
+
+            if encerrando_agora:
+                turma_services.encerrar_turma(turma, request.user)
+
+            turma_services.criar_atividades_basicas(turma)
+
+            mensagem = "Turma criada com sucesso!"
+            if encerrando_agora:
+                mensagem += " Encerramento registrado e bloqueios aplicados."
+            messages.success(request, mensagem)
             return redirect("turmas:detalhar_turma", turma_id=turma.id)
     else:
-        form = TurmaForm()
+        form = TurmaForm(usuario=request.user)
 
     # Obter todos os alunos ativos para o contexto
     try:
@@ -289,16 +331,33 @@ def editar_turma(request, turma_id):
 
     Turma = get_turma_model()
     turma = get_object_or_404(Turma, id=turma_id)
+    estava_encerrada = turma.esta_encerrada
     if request.method == "POST":
-        form = TurmaForm(request.POST, instance=turma)
+        form = TurmaForm(request.POST, instance=turma, usuario=request.user)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Turma atualizada com sucesso!")
+            turma_atualizada = form.save(commit=False)
+            nova_data_fim = form.cleaned_data.get("data_fim")
+            encerrando_agora = bool(nova_data_fim) and not estava_encerrada
+
+            if not nova_data_fim:
+                turma_atualizada.encerrada_em = None
+                turma_atualizada.encerrada_por = None
+
+            turma_atualizada.save()
+            form.save_m2m()
+
+            if encerrando_agora:
+                turma_services.encerrar_turma(turma_atualizada, request.user)
+
+            mensagem = "Turma atualizada com sucesso!"
+            if encerrando_agora:
+                mensagem += " Encerramento registrado e bloqueios aplicados."
+            messages.success(request, mensagem)
             return redirect("turmas:detalhar_turma", turma_id=turma.id)
         else:
             messages.error(request, "Corrija os erros no formulário.")
     else:
-        form = TurmaForm(instance=turma)
+        form = TurmaForm(instance=turma, usuario=request.user)
     # Obter todos os alunos ativos para o formulário
     try:
         Aluno = get_aluno_model()
@@ -321,6 +380,12 @@ def excluir_turma(request, turma_id):
     Turma = get_turma_model()
     turma = get_object_or_404(Turma, id=turma_id)
 
+    bloqueio = _bloquear_operacao_em_turma_encerrada(
+        request, turma, "novas matrículas"
+    )
+    if bloqueio:
+        return bloqueio
+
     # Obter modelos dinamicamente para evitar importações circulares
     matriculas_module = import_module("matriculas.models")
     Matricula = getattr(matriculas_module, "Matricula")
@@ -329,7 +394,7 @@ def excluir_turma(request, turma_id):
     Atividade = getattr(atividades_module, "Atividade")
 
     presencas_module = import_module("presencas.models")
-    Presenca = getattr(presencas_module, "Presenca")
+    RegistroPresenca = getattr(presencas_module, "RegistroPresenca")
 
     notas_module = import_module("notas.models")
     Nota = getattr(notas_module, "Nota")
@@ -339,9 +404,11 @@ def excluir_turma(request, turma_id):
 
     matriculas = list(Matricula.objects.filter(turma=turma))
     atividades = list(Atividade.objects.filter(turmas=turma))
-    presencas = list(Presenca.objects.filter(turma=turma))
+    presencas = list(RegistroPresenca.objects.filter(turma=turma))
     notas = list(Nota.objects.filter(turma=turma))
-    pagamentos = list(Pagamento.objects.filter(turma=turma))
+    pagamentos = list(
+        Pagamento.objects.filter(aluno__matricula__turma=turma).distinct()
+    )
     dependencias = {
         "matriculas": matriculas,
         "atividades": atividades,
@@ -470,6 +537,12 @@ def remover_aluno_turma(request, turma_id, aluno_id):
         # Verificar se o aluno está matriculado na turma
         matricula = get_object_or_404(Matricula, aluno=aluno, turma=turma, status="A")
 
+        bloqueio = _bloquear_operacao_em_turma_encerrada(
+            request, turma, "remover alunos"
+        )
+        if bloqueio:
+            return bloqueio
+
         if request.method == "POST":
             # Cancelar a matrícula
             matricula.status = "C"  # Cancelada
@@ -498,6 +571,12 @@ def atualizar_instrutores(request, turma_id):
     Aluno = get_aluno_model()
 
     turma = get_object_or_404(Turma, id=turma_id)
+
+    bloqueio = _bloquear_operacao_em_turma_encerrada(
+        request, turma, "atualizar instrutores"
+    )
+    if bloqueio:
+        return bloqueio
 
     if request.method == "POST":
         instrutor_cpf = request.POST.get("instrutor")
@@ -545,6 +624,12 @@ def remover_instrutor(request, turma_id, tipo):
     Turma = get_turma_model()
 
     turma = get_object_or_404(Turma, id=turma_id)
+
+    bloqueio = _bloquear_operacao_em_turma_encerrada(
+        request, turma, "alterar instrutores"
+    )
+    if bloqueio:
+        return bloqueio
 
     if request.method == "POST":
         if tipo == "principal":
@@ -613,6 +698,12 @@ def listar_atividades_turma(request, turma_id):
 
     turma = get_object_or_404(Turma, id=turma_id)
 
+    bloqueio = _bloquear_operacao_em_turma_encerrada(
+        request, turma, "adição de atividades"
+    )
+    if bloqueio:
+        return bloqueio
+
     try:
         Atividade = get_atividade_model()
         atividades = Atividade.objects.filter(turmas=turma).order_by("-data_inicio")
@@ -646,9 +737,9 @@ def adicionar_atividade_turma(request, turma_id):
         if request.method == "POST":
             form = AtividadeForm(request.POST)
             if form.is_valid():
-                atividade = form.save(commit=False)
+                atividade = form.save()
+                form.save_m2m()
                 atividade.turmas.add(turma)
-                atividade.save()
                 messages.success(request, "Atividade adicionada com sucesso!")
                 return redirect("turmas:listar_atividades_turma", turma_id=turma_id)
         else:
@@ -674,6 +765,12 @@ def registrar_frequencia_turma(request, turma_id):
     Turma = get_turma_model()
 
     turma = get_object_or_404(Turma, id=turma_id)
+
+    bloqueio = _bloquear_operacao_em_turma_encerrada(
+        request, turma, "registro de frequência"
+    )
+    if bloqueio:
+        return bloqueio
 
     try:
         # Obter matrículas ativas
@@ -732,6 +829,57 @@ def registrar_frequencia_turma(request, turma_id):
     except (ImportError, AttributeError) as e:
         messages.error(request, f"Erro ao registrar frequência: {str(e)}")
         return redirect("turmas:detalhar_turma", turma_id=turma_id)
+
+
+@login_required
+def transferir_alunos_turma(request, turma_id):
+    """Transfere alunos de uma turma encerrada para outra turma ativa."""
+    Turma = get_turma_model()
+    turma = get_object_or_404(Turma, id=turma_id)
+
+    if not turma.esta_encerrada:
+        messages.info(
+            request,
+            "A transferência em lote fica disponível somente após o encerramento da turma.",
+        )
+        return redirect("turmas:detalhar_turma", turma_id=turma.id)
+
+    TransferenciaForm = get_transferencia_form()
+    if TransferenciaForm is None:
+        messages.error(
+            request,
+            "Formulário de transferência indisponível. Contate o administrador.",
+        )
+        return redirect("turmas:detalhar_turma", turma_id=turma.id)
+
+    if request.method == "POST":
+        form = TransferenciaForm(turma, request.POST)
+        if form.is_valid():
+            turma_destino = form.cleaned_data["turma_destino"]
+            try:
+                total = turma_services.transferir_matriculas_em_lote(
+                    turma, turma_destino, request.user
+                )
+                messages.success(
+                    request,
+                    f"{total} aluno(s) transferidos para {turma_destino.nome}.",
+                )
+                return redirect("turmas:detalhar_turma", turma_id=turma.id)
+            except ValidationError as exc:
+                form.add_error(None, exc.message)
+            except Exception as exc:  # noqa: BLE001
+                messages.error(request, f"Erro ao transferir alunos: {exc}")
+    else:
+        form = TransferenciaForm(turma)
+
+    return render(
+        request,
+        "turmas/transferir_alunos_turma.html",
+        {
+            "turma": turma,
+            "form": form,
+        },
+    )
 
 
 @login_required

@@ -5,6 +5,10 @@ Este módulo contém os serializers para a API REST das atividades.
 
 from rest_framework import serializers
 from importlib import import_module
+from django.core.exceptions import ValidationError as DjangoValidationError
+
+from turmas import services as turma_services
+
 from .models import Atividade, Presenca
 
 
@@ -68,14 +72,39 @@ class AtividadeSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["created_at", "updated_at"]
 
+    def _fetch_turmas_validas(self, turmas_ids):
+        if not turmas_ids:
+            return []
+        Turma = get_model_dynamically("turmas", "Turma")
+        turmas = list(Turma.objects.filter(id__in=turmas_ids))
+        encontrados = {turma.id for turma in turmas}
+        faltantes = [str(tid) for tid in turmas_ids if tid not in encontrados]
+        if faltantes:
+            raise serializers.ValidationError(
+                {"turmas_ids": f"Turmas não encontradas: {', '.join(faltantes)}"}
+            )
+        for turma in turmas:
+            try:
+                turma_services.validar_turma_para_registro(turma)
+            except DjangoValidationError as exc:
+                raise serializers.ValidationError({"turmas_ids": exc.message})
+        return turmas
+
+    def validate_turmas_ids(self, value):
+        turmas = self._fetch_turmas_validas(value)
+        self._validated_turmas_cache = turmas
+        return value
+
     def create(self, validated_data):
         """Cria uma nova atividade."""
         turmas_ids = validated_data.pop("turmas_ids", [])
         atividade = Atividade.objects.create(**validated_data)
 
-        if turmas_ids:
-            Turma = get_model_dynamically("turmas", "Turma")
-            turmas = Turma.objects.filter(id__in=turmas_ids)
+        turmas = getattr(self, "_validated_turmas_cache", None)
+        if turmas is None and turmas_ids:
+            turmas = self._fetch_turmas_validas(turmas_ids)
+
+        if turmas:
             atividade.turmas.set(turmas)
 
         return atividade
@@ -89,8 +118,9 @@ class AtividadeSerializer(serializers.ModelSerializer):
         instance.save()
 
         if turmas_ids is not None:
-            Turma = get_model_dynamically("turmas", "Turma")
-            turmas = Turma.objects.filter(id__in=turmas_ids)
+            turmas = getattr(self, "_validated_turmas_cache", None)
+            if turmas is None:
+                turmas = self._fetch_turmas_validas(turmas_ids)
             instance.turmas.set(turmas)
 
         return instance

@@ -1,8 +1,9 @@
-from django.db import models
-from django.core.validators import MinValueValidator
+from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator
+from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 class Turma(models.Model):
@@ -26,6 +27,17 @@ class Turma(models.Model):
         related_name="turmas",
     )
     descricao = models.TextField(blank=True, null=True, verbose_name="Descrição")
+
+    data_inicio = models.DateField(
+        verbose_name="Data de Início",
+        help_text="Data administrativa de início da turma.",
+    )
+    data_fim = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Data de Fim",
+        help_text="Informe para encerrar administrativamente a turma.",
+    )
 
     # Novos campos solicitados
     num_livro = models.PositiveIntegerField(
@@ -112,6 +124,21 @@ class Turma(models.Model):
         blank=True, null=True, verbose_name="Mensagem de Alerta"
     )
 
+    encerrada_em = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Encerrada em",
+        help_text="Registrado automaticamente quando a data de fim é definida.",
+    )
+    encerrada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="turmas_encerradas",
+        verbose_name="Encerrada por",
+    )
+
     # Metadados
     created_at = models.DateTimeField(default=timezone.now, verbose_name="Criado em")
     updated_at = models.DateTimeField(
@@ -127,7 +154,7 @@ class Turma(models.Model):
     class Meta:
         verbose_name = "Turma"
         verbose_name_plural = "Turmas"
-        ordering = ["-data_inicio_ativ"]
+        ordering = ["-data_inicio"]
 
     @property
     def vagas_disponiveis(self):
@@ -151,8 +178,38 @@ class Turma(models.Model):
             and self.status == "A"
         )
 
+    @property
+    def esta_encerrada(self):
+        """Indica se a turma foi encerrada administrativamente."""
+        return bool(self.data_fim)
+
+    def registrar_encerramento(self, usuario):
+        """Define metadados de encerramento para fins de auditoria."""
+        self.encerrada_em = timezone.now()
+        self.encerrada_por = usuario
+
     def clean(self):
         super().clean()
+        if not self.data_inicio:
+            raise ValidationError({"data_inicio": _("A data de início é obrigatória.")})
+
+        encerramento_previsto = getattr(self, "_encerramento_previsto", False)
+
+        if self.data_fim and self.data_fim < self.data_inicio:
+            raise ValidationError(
+                {"data_fim": _("A data de fim não pode ser anterior à data de início.")}
+            )
+
+        if self.data_fim and (not self.encerrada_em or not self.encerrada_por_id):
+            if not encerramento_previsto:
+                raise ValidationError(
+                    {
+                        "data_fim": _(
+                            "Informe o usuário responsável e o horário do encerramento."
+                        )
+                    }
+                )
+
         # Verificar se já existe uma turma com o mesmo nome (ignorando case)
         if self.nome:
             turmas_existentes = Turma.objects.filter(nome__iexact=self.nome)

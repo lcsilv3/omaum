@@ -5,14 +5,25 @@ Views para gerenciamento de frequências mensais.
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 import logging
 import json
 
 # Importar funções utilitárias do módulo utils
 from frequencias.utils import get_models, get_forms, get_turma_model
+from turmas import services as turma_services
 
 logger = logging.getLogger(__name__)
+
+
+def _turma_bloqueada(request, turma):
+    try:
+        turma_services.validar_turma_para_registro(turma)
+    except ValidationError as exc:
+        messages.error(request, exc.message)
+        return True
+    return False
 
 
 @login_required
@@ -138,6 +149,11 @@ def editar_frequencia_mensal(request, frequencia_id):
 
         frequencia = get_object_or_404(FrequenciaMensal, id=frequencia_id)
 
+        if _turma_bloqueada(request, frequencia.turma):
+            return redirect(
+                "frequencias:detalhar_frequencia_mensal", frequencia_id=frequencia.id
+            )
+
         if request.method == "POST":
             form = FrequenciaMensalForm(request.POST, instance=frequencia)
             if form.is_valid():
@@ -183,6 +199,11 @@ def excluir_frequencia_mensal(request, frequencia_id):
         FrequenciaMensal, _ = get_models()
         frequencia = get_object_or_404(FrequenciaMensal, id=frequencia_id)
 
+        if _turma_bloqueada(request, frequencia.turma):
+            return redirect(
+                "frequencias:detalhar_frequencia_mensal", frequencia_id=frequencia.id
+            )
+
         if request.method == "POST":
             frequencia.delete()
             messages.success(request, "Frequência mensal excluída com sucesso!")
@@ -204,6 +225,11 @@ def detalhar_frequencia_mensal(request, frequencia_id):
     try:
         FrequenciaMensal, Carencia = get_models()
         frequencia = get_object_or_404(FrequenciaMensal, id=frequencia_id)
+
+        if _turma_bloqueada(request, frequencia.turma):
+            return redirect(
+                "frequencias:detalhar_frequencia_mensal", frequencia_id=frequencia.id
+            )
 
         # Obter carências
         carencias = Carencia.objects.filter(

@@ -1,6 +1,9 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from importlib import import_module
+
+from turmas import services as turma_services
 
 
 def get_models():
@@ -66,6 +69,11 @@ class FrequenciaMensalForm(forms.ModelForm):
                 self.add_error(
                     None, "Já existe uma frequência mensal para esta turma, mês e ano."
                 )
+
+            try:
+                turma_services.validar_turma_para_registro(turma)
+            except ValidationError as exc:
+                self.add_error("turma", exc.message)
 
         return cleaned_data
 

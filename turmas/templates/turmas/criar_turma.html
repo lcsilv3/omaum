@@ -97,6 +97,28 @@
                     </div>
                 </div>
                 <div class="row">
+                    <div class="col-md-12">
+                        <div class="alert alert-warning small">
+                            <strong>Encerramento administrativo:</strong> informe a data de fim apenas quando a turma não tiver mais aulas previstas e confirme o encerramento para registrar o evento.
+                            {% if turma and turma.data_fim %}
+                            <span class="d-block fw-semibold text-danger mt-2">
+                                Turma encerrada desde {{ turma.data_fim|date:"d/m/Y" }}.
+                            </span>
+                            {% if turma.encerrada_em %}
+                            <small class="text-muted">
+                                Registro criado em {{ turma.encerrada_em|date:"d/m/Y H:i" }}{% if turma.encerrada_por %} por {{ turma.encerrada_por }}{% endif %}.
+                            </small>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.confirmar_encerramento %}
+                    </div>
+                </div>
+                <div class="row">
                     <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.local %}
                     </div>

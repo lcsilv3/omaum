@@ -17,6 +17,18 @@
         {% include "includes/form_field.html" with field=form.descricao %}
         {% include "includes/form_field.html" with field=form.vagas %}
         {% include "includes/form_field.html" with field=form.status %}
+        {% include "includes/form_field.html" with field=form.data_inicio %}
+        {% include "includes/form_field.html" with field=form.data_fim %}
+        <div class="alert alert-warning small">
+          <strong>Encerramento administrativo:</strong> preencha a data de fim apenas quando a turma concluir suas atividades e confirme o encerramento para que o sistema registre auditoria.
+          {% if turma and turma.data_fim %}
+          <span class="d-block fw-semibold text-danger mt-2">Turma encerrada desde {{ turma.data_fim|date:"d/m/Y" }}.</span>
+          {% if turma.encerrada_em %}
+          <small class="text-muted">Registro criado em {{ turma.encerrada_em|date:"d/m/Y H:i" }}{% if turma.encerrada_por %} por {{ turma.encerrada_por }}{% endif %}.</small>
+          {% endif %}
+          {% endif %}
+        </div>
+        {% include "includes/form_field.html" with field=form.confirmar_encerramento %}
       </div>
     </div>
 

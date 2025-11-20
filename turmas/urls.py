@@ -29,6 +29,11 @@ urlpatterns = [
     path("<int:turma_id>/", views.detalhar_turma, name="detalhar_turma"),
     path("<int:turma_id>/editar/", views.editar_turma, name="editar_turma"),
     path("<int:turma_id>/excluir/", views.excluir_turma, name="excluir_turma"),
+    path(
+        "<int:turma_id>/transferir-alunos/",
+        views.transferir_alunos_turma,
+        name="transferir_alunos_turma",
+    ),
     # URLs para gerenciamento de alunos na turma
     path(
         "<int:turma_id>/alunos/", views.listar_alunos_turma, name="listar_alunos_turma"

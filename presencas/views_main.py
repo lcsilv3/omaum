@@ -6,13 +6,14 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
+from django.db.models import F
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.db.models import F
 
 from atividades.models import Atividade
 from presencas.models import RegistroPresenca
@@ -21,8 +22,18 @@ from alunos.services import (
     buscar_aluno_por_cpf as buscar_aluno_por_cpf_service,
 )
 from turmas.models import Turma
+from turmas import services as turma_services
 
 logger = logging.getLogger(__name__)
+
+
+def _turma_encerrada(request, turma):
+    try:
+        turma_services.validar_turma_para_registro(turma)
+    except ValidationError as exc:
+        messages.error(request, exc.message)
+        return True
+    return False
 
 
 @login_required
@@ -170,6 +181,9 @@ def registrar_presenca_academica(request):
                 messages.error(request, f"Aluno com CPF {aluno_id} não encontrado.")
                 return redirect("presencas:listar_presencas_academicas")
 
+            if _turma_encerrada(request, turma):
+                return redirect("presencas:listar_presencas_academicas")
+
             presenca, created = RegistroPresenca.objects.get_or_create(
                 aluno=aluno,
                 turma=turma,
@@ -225,6 +239,9 @@ def registrar_presenca_academica(request):
 def editar_presenca_academica(request, pk):
     presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
+    if _turma_encerrada(request, presenca.turma):
+        return redirect("presencas:listar_presencas_academicas")
+
     if request.method == "POST":
         # Lógica de edição
         presente = request.POST.get("presente") == "on"
@@ -245,6 +262,9 @@ def editar_presenca_academica(request, pk):
 @login_required
 def excluir_presenca_academica(request, pk):
     presenca = get_object_or_404(RegistroPresenca, pk=pk)
+
+    if _turma_encerrada(request, presenca.turma):
+        return redirect("presencas:listar_presencas_academicas")
 
     if request.method == "POST":
         presenca.delete()

@@ -11,6 +11,13 @@
                     <h4 class="mb-0">{{ titulo }}</h4>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+                        <i class="fas fa-lock"></i>
+                        <div>
+                            Apenas turmas ativas podem receber novos registros de frequência. Caso a turma desejada
+                            esteja encerrada, escolha outra turma ou solicite o cancelamento do encerramento.
+                        </div>
+                    </div>
                     <form method="post" novalidate>
                         {% csrf_token %}
                         

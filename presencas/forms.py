@@ -1,4 +1,15 @@
+import logging
+
 from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from django_select2.forms import Select2Widget
+
+from atividades.models import AtividadeAcademica
+from cursos.models import Curso
+from turmas.models import Turma
+
+from turmas import services as turma_services
 
 
 class RegistroRapidoForm(forms.Form):
@@ -11,14 +22,6 @@ class ExportacaoForm(forms.Form):
 
 class PresencaDetalhadaForm(forms.Form):
     pass
-
-
-import logging
-from cursos.models import Curso
-from turmas.models import Turma
-from atividades.models import AtividadeAcademica
-from django.utils import timezone
-from django_select2.forms import Select2Widget
 
 
 logger = logging.getLogger(__name__)
@@ -85,6 +88,16 @@ class RegistrarPresencaForm(forms.Form):
                 curso_id=curso_id, status="A"
             ).order_by("nome")
 
+    def clean(self):
+        cleaned_data = super().clean()
+        turma = cleaned_data.get("turma")
+        if turma:
+            try:
+                turma_services.validar_turma_para_registro(turma)
+            except ValidationError as exc:
+                self.add_error("turma", exc.message)
+        return cleaned_data
+
 
 class TotaisAtividadesPresencaForm(forms.Form):
     """
@@ -124,6 +137,12 @@ class TotaisAtividadesPresencaForm(forms.Form):
         # Auto-preenchimento: se não há curso mas há turma, usar curso da turma
         if turma and not curso:
             cleaned_data["curso"] = turma.curso
+
+        if turma:
+            try:
+                turma_services.validar_turma_para_registro(turma)
+            except ValidationError as exc:
+                self.add_error("turma", exc.message)
 
         return cleaned_data
 
@@ -361,6 +380,13 @@ class EditarPresencaDetalhadaForm(forms.Form):
             raise forms.ValidationError(
                 "A soma de presenças e faltas não pode ser maior que convocações."
             )
+
+        turma = cleaned_data.get("turma")
+        if turma:
+            try:
+                turma_services.validar_turma_para_registro(turma)
+            except ValidationError as exc:
+                self.add_error("turma", exc.message)
 
         return cleaned_data
 

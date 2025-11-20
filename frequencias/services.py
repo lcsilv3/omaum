@@ -8,6 +8,8 @@ from django.core.exceptions import ValidationError
 from django.db import transaction, models
 from importlib import import_module
 
+from turmas import services as turma_services
+
 logger = logging.getLogger(__name__)
 
 
@@ -109,6 +111,7 @@ def criar_frequencia_mensal(dados_frequencia):
 
             # Buscar turma
             turma = Turma.objects.get(id=dados_frequencia["turma_id"])
+            turma_services.validar_turma_para_registro(turma)
 
             # Verificar se já existe frequência para este período
             frequencia_existente = (
@@ -158,6 +161,7 @@ def atualizar_frequencia_mensal(frequencia_id, dados_atualizacao):
         with transaction.atomic():
             modelos = get_frequencia_models()
             frequencia = modelos["FrequenciaMensal"].objects.get(id=frequencia_id)
+            turma_services.validar_turma_para_registro(frequencia.turma)
 
             # Campos permitidos para atualização
             campos_permitidos = ["percentual_minimo"]
@@ -193,6 +197,7 @@ def excluir_frequencia_mensal(frequencia_id):
         with transaction.atomic():
             modelos = get_frequencia_models()
             frequencia = modelos["FrequenciaMensal"].objects.get(id=frequencia_id)
+            turma_services.validar_turma_para_registro(frequencia.turma)
 
             # Verificar dependências (carências, notificações)
             carencias = modelos["Carencia"].objects.filter(frequencia_mensal=frequencia)
@@ -221,6 +226,7 @@ def recalcular_carencias_frequencia(frequencia_id):
     try:
         modelos = get_frequencia_models()
         frequencia = modelos["FrequenciaMensal"].objects.get(id=frequencia_id)
+        turma_services.validar_turma_para_registro(frequencia.turma)
 
         frequencia.calcular_carencias()
 
@@ -261,6 +267,7 @@ def atualizar_carencia(carencia_id, dados_atualizacao):
         with transaction.atomic():
             modelos = get_frequencia_models()
             carencia = modelos["Carencia"].objects.get(id=carencia_id)
+            turma_services.validar_turma_para_registro(carencia.frequencia_mensal.turma)
 
             # Campos permitidos para atualização
             campos_permitidos = ["status", "observacoes", "liberado"]

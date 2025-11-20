@@ -1,8 +1,15 @@
 # c:/projetos/omaum/turmas/services.py
 from __future__ import annotations
 
+import logging
+from datetime import time
+
 from django.core.exceptions import ValidationError
+from django.db import transaction
+
 from core.utils import get_model_dynamically
+
+logger = logging.getLogger(__name__)
 
 
 def criar_turma(dados_turma: dict):
@@ -87,3 +94,107 @@ def listar_turmas_ativas():
     """
     Turma = get_model_dynamically("turmas", "Turma")
     return Turma.objects.filter(status="A").select_related("curso")
+
+
+def validar_turma_para_registro(turma):
+    """Impede operações quando a turma foi encerrada."""
+    if getattr(turma, "esta_encerrada", False):
+        raise ValidationError(
+            "Esta turma está encerrada e não aceita novos lançamentos."
+        )
+
+
+def criar_atividades_basicas(turma):
+    """Gera atividades padrão 'Aula' e 'Plenilúnio' para a turma informada."""
+    try:
+        Atividade = get_model_dynamically("atividades", "Atividade")
+    except (ImportError, AttributeError):
+        logger.warning(
+            "Modulo atividades indisponível, atividades padrão não foram criadas."
+        )
+        return
+
+    existentes = Atividade.objects.filter(
+        turmas=turma, nome__in=["Aula", "Plenilúnio"]
+    ).values_list("nome", flat=True)
+    faltantes = [
+        {
+            "nome": "Aula",
+            "tipo": "AULA",
+            "hora": time(19, 0),
+        },
+        {
+            "nome": "Plenilúnio",
+            "tipo": "PALESTRA",
+            "hora": time(20, 0),
+        },
+    ]
+
+    data_padrao = turma.data_inicio
+    for definicao in faltantes:
+        if definicao["nome"] in existentes:
+            continue
+        atividade = Atividade.objects.create(
+            nome=definicao["nome"],
+            descricao="Atividade gerada automaticamente ao criar a turma.",
+            tipo_atividade=definicao["tipo"],
+            data_inicio=data_padrao,
+            data_fim=data_padrao,
+            hora_inicio=definicao["hora"],
+            hora_fim=definicao["hora"],
+            curso=turma.curso,
+            status="PENDENTE",
+        )
+        atividade.turmas.add(turma)
+        logger.info(
+            "Atividade padrão %s criada para a turma %s", atividade.nome, turma.id
+        )
+
+
+def encerrar_turma(turma, usuario):
+    """Registra auditoria do encerramento."""
+    turma.registrar_encerramento(usuario)
+    turma.save(update_fields=["encerrada_em", "encerrada_por"])
+    logger.info(
+        "Turma %s encerrada por %s em %s",
+        turma.id,
+        getattr(usuario, "username", usuario),
+        turma.encerrada_em,
+    )
+
+
+def transferir_matriculas_em_lote(turma_origem, turma_destino, usuario):
+    """Transfere todos os alunos ativos de uma turma encerrada."""
+    if turma_origem == turma_destino:
+        raise ValidationError("Selecione uma turma de destino diferente.")
+
+    validar_turma_para_registro(turma_destino)
+
+    Matricula = get_model_dynamically("matriculas", "Matricula")
+
+    with transaction.atomic():
+        matriculas = Matricula.objects.select_for_update().filter(
+            turma=turma_origem, status="A"
+        )
+        transferidos = 0
+        for matricula in matriculas:
+            matricula.status = "T"
+            matricula.ativa = False
+            matricula.save(update_fields=["status", "ativa"])
+            Matricula.objects.create(
+                aluno=matricula.aluno,
+                turma=turma_destino,
+                data_matricula=turma_destino.data_inicio,
+                ativa=True,
+                status="A",
+            )
+            transferidos += 1
+
+    logger.info(
+        "Transferência em lote concluída da turma %s para %s por %s. Total: %s",
+        turma_origem.id,
+        turma_destino.id,
+        getattr(usuario, "username", usuario),
+        transferidos,
+    )
+    return transferidos
