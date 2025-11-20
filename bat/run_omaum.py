@@ -1,60 +1,82 @@
+"""Utilitário para inicializar o servidor de desenvolvimento do Omaum no Windows."""
+
+from __future__ import annotations
+
 import os
-import sys
+import signal
 import subprocess
-import webbrowser
+import sys
 import time
+import webbrowser
+from pathlib import Path
 
 
-def run_command(command):
-    process = subprocess.Popen(
-        command,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SERVER_URL = "http://127.0.0.1:8000/"
+
+
+def resolver_python() -> str:
+    """Retorna o executável Python preferencial, usando a virtualenv local quando disponível."""
+
+    venv_python = PROJECT_ROOT / ".venv" / "Scripts" / "python.exe"
+    if venv_python.exists():
+        return str(venv_python)
+    return sys.executable or "python"
+
+
+def iniciar_servidor(python_cmd: str) -> subprocess.Popen[str]:
+    """Inicia o servidor Django e devolve o processo ativo."""
+
+    manage_py = PROJECT_ROOT / "manage.py"
+    comando = [python_cmd, str(manage_py), "runserver"]
+    return subprocess.Popen(
+        comando,
+        cwd=PROJECT_ROOT,
+        stdout=None,
+        stderr=None,
         text=True,
+        creationflags=getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+        if sys.platform == "win32"
+        else 0,
     )
-    output, error = process.communicate()
-    return process.returncode, output, error
 
 
-def activate_venv():
-    venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "venv")
+def encerrar_servidor(process: subprocess.Popen[str]) -> None:
+    """Finaliza o processo do servidor de forma graciosa."""
+
+    if process.poll() is not None:
+        return
     if sys.platform == "win32":
-        activate_script = os.path.join(venv_path, "Scripts", "activate.bat")
-        if os.path.exists(activate_script):
-            return f"call {activate_script} &&"
+        process.send_signal(signal.CTRL_BREAK_EVENT)
     else:
-        activate_script = os.path.join(venv_path, "bin", "activate")
-        if os.path.exists(activate_script):
-            return f"source {activate_script} &&"
-    return ""
+        process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
 
 
-def main():
-    # Change to the directory containing manage.py
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    # Activate virtual environment if it exists
-    activate_cmd = activate_venv()
+def main() -> None:
+    """Executa o fluxo completo: seleciona Python, inicia server e abre o navegador."""
 
-    # Start Django server
-    command = f"{activate_cmd} python manage.py runserver"
-    returncode, output, error = run_command(command)
+    os.chdir(PROJECT_ROOT)
+    python_cmd = resolver_python()
 
-    if returncode != 0:
-        print("An error occurred while running the server:")
-        print(error)
-        input("Press Enter to exit...")
+    servidor = iniciar_servidor(python_cmd)
+    time.sleep(2)
+
+    if servidor.poll() is not None:
+        print("Falha ao iniciar o servidor Django. Verifique os logs no terminal.")
         return
 
-    # Open web browser
-    webbrowser.open("http://127.0.0.1:8000/")
+    webbrowser.open(SERVER_URL)
+    print("Servidor em execução. Pressione Ctrl+C para encerrar.")
 
-    print("Server is running. Press Ctrl+C to stop.")
     try:
-        while True:
-            time.sleep(1)
+        servidor.wait()
     except KeyboardInterrupt:
-        print("\nStopping server...")
+        print("\nEncerrando servidor...")
+        encerrar_servidor(servidor)
 
 
 if __name__ == "__main__":

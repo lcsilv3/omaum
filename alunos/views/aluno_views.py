@@ -419,7 +419,7 @@ def listar_tipos_codigos_ajax(request):
                 {"status": "error", "message": "Modelo TipoCodigo indisponível"},
                 status=500,
             )
-        tipos = TipoCodigo.objects.all().values("id", "nome", "descricao")
+        tipos = TipoCodigo.objects.filter(ativo=True).values("id", "nome", "descricao")
         return JsonResponse({"status": "success", "tipos": list(tipos)})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
@@ -442,9 +442,9 @@ def listar_codigos_por_tipo_ajax(request):
                 status=400,
             )
 
-        codigos = Codigo.objects.filter(tipo_codigo_id=tipo_id).values(
-            "id", "nome", "descricao"
-        )
+        codigos = Codigo.objects.filter(
+            tipo_codigo_id=tipo_id, ativo=True, tipo_codigo__ativo=True
+        ).values("id", "nome", "descricao")
 
         return JsonResponse({"status": "success", "codigos": list(codigos)})
     except Exception as e:

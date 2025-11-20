@@ -169,7 +169,7 @@ def listar_turmas(request):
                 "error_message": "Erro ao carregar dados. Tente novamente mais tarde.",
             },
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         # Tratamento para erros não previstos - log detalhado mas mensagem genérica para usuário
         import logging
 
@@ -353,7 +353,11 @@ def excluir_turma(request, turma_id):
         if any(len(lst) > 0 for lst in dependencias.values()):
             messages.error(
                 request,
-                "Não é possível excluir a turma pois existem registros vinculados (matrículas, atividades, presenças, notas, pagamentos, etc.). Remova as dependências antes de tentar novamente.",
+                (
+                    "Não é possível excluir a turma pois existem registros vinculados "
+                    "(matrículas, atividades, presenças, notas, pagamentos, etc.). "
+                    "Remova as dependências antes de tentar novamente."
+                ),
                 extra_tags="safe",
             )
             return redirect("turmas:excluir_turma", id=turma.id)
@@ -361,7 +365,7 @@ def excluir_turma(request, turma_id):
             turma.delete()
             messages.success(request, "Turma excluída com sucesso!")
             return redirect("turmas:listar_turmas")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             messages.error(request, f"Erro ao excluir turma: {str(e)}")
             return redirect("turmas:detalhar_turma", id=turma.id)
     return render(
@@ -440,7 +444,7 @@ def matricular_aluno(request, turma_id):
                 request,
                 f"Aluno {aluno.nome} matriculado com sucesso na turma {turma.nome}.",
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             messages.error(request, f"Erro ao matricular aluno: {str(e)}")
 
         return redirect("turmas:detalhar_turma", turma_id=turma_id)
@@ -818,7 +822,7 @@ def exportar_turmas(request):
                 "Local",
                 "Horário",
                 "Número do Livro",
-                "Percentual de Carência",
+                "Percentual Mínimo de Presença",
                 "Data de Iniciação",
                 "Data de Início das Atividades",
                 "Data da Primeira Aula",
@@ -838,14 +842,14 @@ def exportar_turmas(request):
                     turma.local,
                     turma.horario,
                     turma.num_livro,
-                    turma.perc_carencia,
+                    turma.perc_presenca_minima,
                     turma.data_iniciacao,
                     turma.data_inicio_ativ,
                     turma.data_prim_aula,
                 ]
             )
         return response
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         messages.error(request, f"Erro ao exportar turmas: {str(e)}")
         return redirect("turmas:listar_turmas")
 
@@ -930,9 +934,14 @@ def importar_turmas(request):
                         continue
 
                     # Validar obrigatoriedade dos campos iniciáticos
+                    perc_min_presenca = (
+                        row.get("Percentual Mínimo de Presença")
+                        or row.get("Percentual de Carência")
+                    )
+
                     obrigatorios = [
                         ("Número do Livro", row.get("Número do Livro")),
-                        ("Percentual de Carência", row.get("Percentual de Carência")),
+                        ("Percentual Mínimo de Presença", perc_min_presenca),
                         ("Data de Iniciação", data_iniciacao),
                         ("Data de Início das Atividades", data_inicio_ativ),
                         ("Data da Primeira Aula", data_prim_aula),
@@ -954,13 +963,13 @@ def importar_turmas(request):
                         local=row.get("Local", "").strip(),
                         horario=row.get("Horário", "").strip(),
                         num_livro=row.get("Número do Livro"),
-                        perc_carencia=row.get("Percentual de Carência"),
+                        perc_presenca_minima=perc_min_presenca,
                         data_iniciacao=data_iniciacao,
                         data_inicio_ativ=data_inicio_ativ,
                         data_prim_aula=data_prim_aula,
                     )
                     count += 1
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     errors.append(f"Erro na linha {count+1}: {str(e)}")
 
             if errors:
@@ -975,7 +984,7 @@ def importar_turmas(request):
             else:
                 messages.success(request, f"{count} turmas importadas com sucesso!")
             return redirect("turmas:listar_turmas")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             messages.error(request, f"Erro ao importar turmas: {str(e)}")
 
     return render(request, "turmas/importar_turmas.html")
@@ -997,11 +1006,11 @@ def relatorio_turmas(request):
         Curso = get_curso_model()
         cursos = Curso.objects.all()
 
-        turmas_por_curso = []
+        turmas_por_curso_dados = []
         for curso in cursos:
             count = Turma.objects.filter(curso=curso).count()
             if count > 0:
-                turmas_por_curso.append(
+                turmas_por_curso_dados.append(
                     {
                         "curso": curso,
                         "count": count,
@@ -1046,13 +1055,13 @@ def relatorio_turmas(request):
             "turmas_ativas": turmas_ativas,
             "turmas_concluidas": turmas_concluidas,
             "turmas_canceladas": turmas_canceladas,
-            "turmas_por_curso": turmas_por_curso,
+            "turmas_por_curso": turmas_por_curso_dados,
             "turmas_por_instrutor": turmas_por_instrutor,
         }
 
         return render(request, "turmas/relatorio_turmas.html", context)
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         messages.error(request, f"Erro ao gerar relatório de turmas: {str(e)}")
         return redirect("turmas:listar_turmas")
 
@@ -1116,7 +1125,7 @@ def dashboard_turmas(request):
 
         return render(request, "turmas/dashboard_turmas.html", context)
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         messages.error(request, f"Erro ao carregar dashboard de turmas: {str(e)}")
         return redirect("turmas:listar_turmas")
 

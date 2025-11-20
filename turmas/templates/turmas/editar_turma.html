@@ -129,7 +129,7 @@
                         {% include 'includes/form_field.html' with field=form.num_livro %}
                     </div>
                     <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.perc_carencia %}
+                        {% include 'includes/form_field.html' with field=form.perc_presenca_minima %}
                     </div>
                     <div class="col-md-4">
                         {% include 'includes/form_field.html' with field=form.data_iniciacao %}
@@ -222,6 +222,7 @@
 
 {% block extra_js %}
 <script src="{% static 'js/instrutor_search.js' %}"></script>
+<script src="{% static 'js/turmas/form.js' %}"></script>
 <script>
     // Rotaciona o chevron ao expandir/recolher
     document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {

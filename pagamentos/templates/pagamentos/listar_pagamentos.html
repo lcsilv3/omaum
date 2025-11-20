@@ -3,35 +3,37 @@
 
 {% block title %}Lista de Pagamentos{% endblock %}
 
+{% block extra_css %}
+<style>
+    #loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 3rem;
+    }
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
+    <!-- Cabeçalho -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Pagamentos</h1>
         <div class="d-flex gap-2">
-            <a href="{% url 'pagamentos:painel_geral' %}" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Voltar ao Painel de Controle">
+            <a href="{% url 'pagamentos:painel_geral' %}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <a href="{% url 'pagamentos:criar_pagamento' %}" class="btn btn-success" data-bs-toggle="tooltip" title="Criar novo pagamento">
+            <a href="{% url 'pagamentos:criar_pagamento' %}" class="btn btn-success">
                 <i class="fas fa-plus"></i> Criar Pagamento
             </a>
-            <a href="{% url 'pagamentos:importar_pagamentos_csv' %}" class="btn btn-outline-primary me-2" data-bs-toggle="tooltip" title="Importar pagamentos via CSV">
-                <i class="fas fa-file-import"></i> Importar CSV
-            </a>
-            <div class="btn-group">
-                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Exportar pagamentos" data-bs-toggle="tooltip">
-                    <i class="fas fa-file-export"></i> Exportar
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="?exportar=csv{{ request.GET.q|default_if_none:''|yesno:'&q=' }}">Exportar CSV</a></li>
-                    <li><a class="dropdown-item" href="?exportar=excel{{ request.GET.q|default_if_none:''|yesno:'&q=' }}">Exportar Excel</a></li>
-                    <li><a class="dropdown-item" href="?exportar=pdf{{ request.GET.q|default_if_none:''|yesno:'&q=' }}" target="_blank">Exportar PDF</a></li>
-                </ul>
-            </div>
         </div>
     </div>
 
     <!-- Filtros -->
-    <form method="get" class="row g-3 mb-4">
+    <form method="get" id="filtro-pagamentos" class="row g-3 mb-4">
         <div class="col-md-3">
             <label for="id_q" class="form-label">Busca</label>
             <input type="text" name="q" id="id_q" class="form-control" placeholder="Buscar por nome, CPF ou observação" value="{{ query }}">
@@ -64,117 +66,25 @@
         </div>
     </form>
 
-    <!-- Tabela de pagamentos -->
-    <div class="table-responsive">
-        <table class="table align-middle table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>Aluno</th>
-                    <th>CPF</th>
-                    <th>Valor (R$)</th>
-                    <th>Vencimento</th>
-                    <th>Status</th>
-                    <th>Data Pagamento</th>
-                    <th>Método</th>
-                    <th>Observações</th>
-                    <th class="text-start">Ações</th> <!-- Alinha à esquerda -->
-                </tr>
-            </thead>
-            <tbody>
-                {% for pagamento in pagamentos %}
-                <tr{% if pagamento.status == 'ATRASADO' %} class="table-danger"{% endif %}>
-                    <td>
-                        <a href="{% url 'pagamentos:pagamentos_aluno' pagamento.aluno.cpf %}" title="Ver pagamentos do aluno" data-bs-toggle="tooltip">
-                            {{ pagamento.aluno.nome }}
-                        </a>
-                    </td>
-                    <td>{{ pagamento.aluno.cpf }}</td>
-                    <td>{{ pagamento.valor|floatformat:2 }}</td>
-                    <td>{{ pagamento.data_vencimento|date:"d/m/Y" }}</td>
-                    <td>
-                        {% if pagamento.status == 'PAGO' %}
-                            <span class="badge bg-success">Pago</span>
-                        {% elif pagamento.status == 'PENDENTE' %}
-                            <span class="badge bg-warning text-dark">Pendente</span>
-                        {% elif pagamento.status == 'ATRASADO' %}
-                            <span class="badge bg-danger">Atrasado</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ pagamento.status }}</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if pagamento.data_pagamento %}
-                            {{ pagamento.data_pagamento|date:"d/m/Y" }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if pagamento.metodo_pagamento %}
-                            {{ pagamento.get_metodo_pagamento_display }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>{{ pagamento.observacoes|default:"-" }}</td>
-                    <td class="text-start">
-                        <div class="btn-group btn-group-sm" role="group">
-                            <a href="{% url 'pagamentos:detalhar_pagamento' pagamento.id %}" class="btn btn-info" title="Detalhar pagamento" data-bs-toggle="tooltip">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{% url 'pagamentos:editar_pagamento' pagamento.id %}" class="btn btn-warning" title="Editar pagamento" data-bs-toggle="tooltip">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button type="button" class="btn btn-danger btn-excluir" title="Excluir pagamento" data-bs-toggle="tooltip"
-                                data-pagamento-id="{{ pagamento.id }}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            {% if pagamento.status != 'PAGO' %}
-                                <a href="{% url 'pagamentos:registrar_pagamento_rapido' pagamento.aluno.cpf %}" class="btn btn-success" title="Pagamento Rápido" data-bs-toggle="tooltip">
-                                    <i class="fas fa-bolt"></i>
-                                </a>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="9" class="text-center">Nenhum pagamento encontrado.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Loading Spinner -->
+    <div id="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+        <p class="mt-2">Carregando pagamentos...</p>
     </div>
 
-    <!-- Paginação -->
-    {% if page_obj.has_other_pages %}
-    <nav aria-label="Paginação">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">&laquo;</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
-            {% endif %}
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">{{ num }}</a></li>
-                {% endif %}
-            {% endfor %}
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">&raquo;</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-
+    <!-- Tabela de pagamentos -->
+    <div class="card">
+        <div class="card-body" id="tabela-container">
+            <div class="table-responsive">
+                {% include 'pagamentos/_tabela_pagamentos_parcial.html' %}
+            </div>
+        </div>
+        <div class="card-footer">
+            {% include 'pagamentos/_paginacao_parcial.html' %}
+        </div>
+    </div>
     <!-- Totais -->
     <div class="row mt-4 mb-4 g-3">
         <div class="col-12 col-sm-6 col-md-3">
@@ -240,6 +150,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'pagamentos/listar_pagamentos.js' %}"></script>
 <script>
     // Ativar tooltips Bootstrap 5
     document.addEventListener('DOMContentLoaded', function () {

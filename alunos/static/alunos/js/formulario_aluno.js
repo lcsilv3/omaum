@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Inicializa a lógica dos selects dinâmicos
     initializeDynamicSelects(URL_TIPOS, URL_CODIGOS_POR_TIPO);
+
+    // Destaca cards que possuem erros de validação
+    highlightCardsWithErrors();
 });
 
 
@@ -50,7 +53,8 @@ function injectFormsetStyles() {
         .historico-form .form-text { margin-top: 0.25rem; }
         .historico-row { align-items: stretch !important; }
         .historico-row > [class*='col-'] { display: flex; flex-direction: column; }
-        .historico-row .mb-3 { flex: 1 1 auto; display: flex; flex-direction: column; margin-bottom: .5rem !important; }
+    .historico-row .mb-3 { flex: 1 1 auto; display: flex; flex-direction: column; margin-bottom: .5rem !important; }
+    .tipo-select-wrapper select { font-size: 0.875rem; }
         .historico-row select[disabled] { background: #e9ecef; }
         .historico-row .action-wrapper { justify-content: flex-end; }
         /* Oculta labels repetidos para compactar a UI em telas maiores */
@@ -175,6 +179,36 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
     let cacheTipos = null;
     const cacheCodigos = {};
 
+    const hasSelect2 = () => typeof window.jQuery !== 'undefined' && !!window.jQuery.fn && typeof window.jQuery.fn.select2 === 'function';
+
+    const destroyCodigoSelect = selectEl => {
+        if (!selectEl || !hasSelect2()) return;
+        const $select = window.jQuery(selectEl);
+        if ($select.hasClass('select2-hidden-accessible')) {
+            $select.select2('destroy');
+        }
+    };
+
+    const enhanceCodigoSelect = (selectEl, placeholderText) => {
+        if (!selectEl || !hasSelect2()) return;
+        const $select = window.jQuery(selectEl);
+        const parent = $select.closest('.codigo-wrapper');
+        const config = {
+            width: '100%',
+            dropdownParent: parent.length ? parent : $select.parent(),
+            placeholder: placeholderText || '-- selecione o código --',
+            allowClear: true,
+            language: {
+                noResults: () => 'Nenhum código encontrado',
+                searching: () => 'Buscando...'
+            }
+        };
+        if ($select.hasClass('select2-hidden-accessible')) {
+            $select.select2('destroy');
+        }
+        $select.select2(config);
+    };
+
     const defaultFetchOptions = {
         credentials: 'same-origin',
         headers: {
@@ -224,6 +258,9 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
                 selectEl.innerHTML = fallbackHtml;
             }
             selectEl.disabled = false;
+            if (selectEl.classList.contains('codigo-select')) {
+                destroyCodigoSelect(selectEl);
+            }
             return;
         }
 
@@ -241,6 +278,10 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
             selectEl.appendChild(opt);
         });
         selectEl.disabled = false;
+        selectEl.dataset.placeholder = placeholder;
+        if (selectEl.classList.contains('codigo-select')) {
+            enhanceCodigoSelect(selectEl, placeholder);
+        }
     }
 
     function setupLine(container) {
@@ -259,6 +300,7 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
                 populateSelect(tipoSelect, tipos, '-- selecione o tipo --', initialTipo, originalTipoHtml);
                 if (initialTipo) {
                     codigoSelect.disabled = true;
+                    destroyCodigoSelect(codigoSelect);
                     codigoSelect.innerHTML = '<option value="">Carregando...</option>';
                     fetchCodigos(initialTipo)
                         .then(codigos => {
@@ -266,11 +308,14 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
                         })
                         .catch(error => {
                             console.error(error);
+                            destroyCodigoSelect(codigoSelect);
                             codigoSelect.innerHTML = originalCodigoHtml;
                             codigoSelect.disabled = false;
+                            enhanceCodigoSelect(codigoSelect, '-- selecione o código --');
                         });
                 } else {
                     codigoSelect.disabled = true;
+                    destroyCodigoSelect(codigoSelect);
                     codigoSelect.innerHTML = '<option value="">-- escolha o tipo --</option>';
                 }
             })
@@ -278,19 +323,23 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
                 console.error(error);
                 tipoSelect.innerHTML = originalTipoHtml;
                 tipoSelect.disabled = false;
+                destroyCodigoSelect(codigoSelect);
                 codigoSelect.innerHTML = originalCodigoHtml;
                 codigoSelect.disabled = false;
+                enhanceCodigoSelect(codigoSelect, '-- selecione o código --');
             });
 
         tipoSelect.addEventListener('change', () => {
             const tipoId = tipoSelect.value;
             if (!tipoId) {
                 codigoSelect.disabled = true;
+                destroyCodigoSelect(codigoSelect);
                 codigoSelect.innerHTML = '<option value="">-- escolha o tipo --</option>';
                 return;
             }
 
             codigoSelect.disabled = true;
+            destroyCodigoSelect(codigoSelect);
             codigoSelect.innerHTML = '<option value="">Carregando...</option>';
 
             fetchCodigos(tipoId)
@@ -299,8 +348,10 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
                 })
                 .catch(error => {
                     console.error(error);
+                    destroyCodigoSelect(codigoSelect);
                     codigoSelect.innerHTML = originalCodigoHtml;
                     codigoSelect.disabled = false;
+                    enhanceCodigoSelect(codigoSelect, '-- selecione o código --');
                 });
         });
     }
@@ -315,4 +366,46 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
             setupLine(e.target);
         });
     }
+}
+
+
+// ========================================================================
+// SEÇÃO: DESTAQUE DE CARDS COM ERROS
+// ========================================================================
+
+function highlightCardsWithErrors() {
+    const selectors = [
+        '.invalid-feedback.d-block',
+        '.alert.alert-danger',
+        '[aria-invalid="true"]'
+    ];
+    const cardsWithErrors = new Set();
+
+    selectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+            const card = el.closest('.card');
+            if (card) {
+                cardsWithErrors.add(card);
+            }
+        });
+    });
+
+    const hasBootstrap = typeof window.bootstrap !== 'undefined' && window.bootstrap.Collapse;
+
+    cardsWithErrors.forEach(card => {
+        const header = card.querySelector('.card-header');
+        if (header) {
+            header.classList.add('card-validation-error');
+        }
+
+        const collapsible = card.querySelector('.collapse');
+        if (collapsible && !collapsible.classList.contains('show')) {
+            if (hasBootstrap) {
+                const instance = window.bootstrap.Collapse.getOrCreateInstance(collapsible, { toggle: false });
+                instance.show();
+            } else {
+                collapsible.classList.add('show');
+            }
+        }
+    });
 }

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
   <h1>{% if turma and turma.id %}Editar{% else %}Criar{% endif %} Turma</h1>
@@ -30,7 +31,7 @@
       </div>
       <div id="dados-iniciaticos" class="collapse card-body">
         {% include "includes/form_field.html" with field=form.num_livro %}
-        {% include "includes/form_field.html" with field=form.perc_carencia %}
+        {% include "includes/form_field.html" with field=form.perc_presenca_minima %}
         {% include "includes/form_field.html" with field=form.data_iniciacao %}
         {% include "includes/form_field.html" with field=form.data_inicio_ativ %}
         {% include "includes/form_field.html" with field=form.data_prim_aula %}
@@ -98,4 +99,8 @@
       </button>
     </div>
   </form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/turmas/form.js' %}"></script>
 {% endblock %}

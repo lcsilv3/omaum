@@ -1,5 +1,25 @@
 // Utilidades de máscaras e auto-preenchimento para o app Alunos
 // Fase 1-2: CEP -> (rua,bairro,cidade,estado) e Estado -> Cidades (com cache simples)
+// Expõe utilitário global para remover máscaras antes do submit
+window.addSubmitMaskRemover = function(formId) {
+  const form = document.getElementById(formId);
+  if (!form) {
+    return;
+  }
+  form.addEventListener('submit', () => {
+    const limpar = campoId => {
+      const campo = document.getElementById(campoId);
+      if (campo && typeof campo.value === 'string') {
+        campo.value = campo.value.replace(/\D/g, '');
+      }
+    };
+    limpar('id_cpf');
+    limpar('id_cep');
+    limpar('id_celular_primeiro_contato');
+    limpar('id_celular_segundo_contato');
+  });
+};
+
 (function(){
   const cacheCidadesPorEstado = {}; // {estadoId: [{id,nome}, ...]}
   function maskCPF(v){return v.replace(/\D/g,'').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2').substring(0,14);} 
@@ -23,7 +43,10 @@
   }
 
   function attach(){
-    const cpf=document.getElementById('id_cpf'); if(cpf){cpf.addEventListener('input',e=>e.target.value=maskCPF(e.target.value));}
+    const cpf=document.getElementById('id_cpf'); if(cpf){
+      cpf.value = maskCPF(cpf.value);
+      cpf.addEventListener('input',e=>e.target.value=maskCPF(e.target.value));
+    }
 
     // Máscara Ordem de Serviço (____/9999)
     function applyOrdemServicoMaskTo(el) {
@@ -66,6 +89,7 @@
       observer.observe(historicoFormList, { childList: true, subtree: true });
     }
     const cep=document.getElementById('id_cep'); if(cep){
+      cep.value = maskCEP(cep.value);
       cep.addEventListener('input',e=>e.target.value=maskCEP(e.target.value));
       cep.addEventListener('blur',()=>{
         const raw=cleanDigits(cep.value);
@@ -77,7 +101,16 @@
                 const map={rua:'logradouro',bairro:'bairro',cidade:'localidade',estado:'uf'};
                 ['rua','bairro','cidade','estado'].forEach(k=>{
                   const el=document.getElementById('id_'+k);
-                  if(el && !el.value) el.value=d[map[k]]||'';
+                  if(!el) return;
+                  const novoValor=d[map[k]]||'';
+                  if(novoValor){
+                    if(el.value!==novoValor){
+                      el.value=novoValor;
+                      el.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                  } else if(!el.value) {
+                    el.value='';
+                  }
                 });
               }
             })
@@ -85,7 +118,10 @@
         }
       });
     }
-    ['celular_primeiro_contato','celular_segundo_contato'].forEach(id=>{const el=document.getElementById('id_'+id); if(el){el.addEventListener('input',e=>e.target.value=maskPhone(e.target.value));}});
+    ['celular_primeiro_contato','celular_segundo_contato'].forEach(id=>{const el=document.getElementById('id_'+id); if(el){
+      el.value = maskPhone(el.value);
+      el.addEventListener('input',e=>e.target.value=maskPhone(e.target.value));
+    }});
 
     // Carregamento dinâmico de cidades baseado no estado (se houver endpoint disponível)
     const estadoField=document.getElementById('id_estado');

@@ -1,17 +1,111 @@
 import csv
+import unicodedata
+from datetime import datetime
+from io import StringIO
+from pathlib import Path
+from typing import Any, Dict, List
+
+import openpyxl
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
-from .models import Curso
-from .forms import CursoForm
-from . import services
-from reportlab.pdfgen import canvas
+from django.shortcuts import redirect, render
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
-from datetime import datetime
-import openpyxl
+from reportlab.pdfgen import canvas
+
+from . import services
+from .forms import CursoForm
+from .models import Curso
+
+
+def _normalizar_coluna(chave: Any) -> str:
+    """Normaliza o nome da coluna removendo acentos, espaços e underscores."""
+
+    texto = services.normalizar_texto(chave)
+    base = (
+        unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
+    )
+    return base.replace(" ", "").replace("_", "").lower()
+
+
+def _mapear_registro(row: Dict[str, Any], linha_planilha: int) -> Dict[str, Any]:
+    """Transforma uma linha da planilha em dicionário compatível com o serviço."""
+
+    colunas_normalizadas = {
+        _normalizar_coluna(coluna): valor for coluna, valor in row.items() if coluna
+    }
+
+    return {
+        "linha": linha_planilha,
+        "id": colunas_normalizadas.get("id") or colunas_normalizadas.get("codigo"),
+        "nome": colunas_normalizadas.get("nome")
+        or colunas_normalizadas.get("curso")
+        or colunas_normalizadas.get("titulo"),
+        "descricao": colunas_normalizadas.get("descricao")
+        or colunas_normalizadas.get("descricaodocurso"),
+        "ativo": colunas_normalizadas.get("ativo")
+        or colunas_normalizadas.get("status"),
+    }
+
+
+def _linha_vazia(row: Dict[str, Any]) -> bool:
+    """Retorna True quando todas as células da linha estão vazias."""
+
+    return not any(services.normalizar_texto(valor) for valor in row.values())
+
+
+def _ler_csv(arquivo) -> List[Dict[str, Any]]:
+    """Lê arquivo CSV e devolve lista normalizada para sincronização."""
+
+    arquivo.seek(0)
+    conteudo = arquivo.read()
+    if isinstance(conteudo, bytes):
+        texto = conteudo.decode("utf-8-sig")
+    else:
+        texto = conteudo
+
+    buffer = StringIO(texto)
+    amostra = buffer.read(2048)
+    buffer.seek(0)
+    delimitador = ";" if amostra.count(";") > amostra.count(",") else ","
+
+    reader = csv.DictReader(buffer, delimiter=delimitador)
+    registros: List[Dict[str, Any]] = []
+    for indice, row in enumerate(reader, start=2):
+        if _linha_vazia(row):
+            continue
+        registros.append(_mapear_registro(row, indice))
+
+    arquivo.seek(0)
+    return registros
+
+
+def _ler_xlsx(arquivo) -> List[Dict[str, Any]]:
+    """Lê arquivo XLSX e devolve lista normalizada para sincronização."""
+
+    arquivo.seek(0)
+    workbook = openpyxl.load_workbook(arquivo, read_only=True, data_only=True)
+    sheet = workbook.active
+    headers: List[str] = []
+    registros: List[Dict[str, Any]] = []
+
+    for indice, row in enumerate(sheet.iter_rows(values_only=True), start=1):
+        valores = [services.normalizar_texto(valor) for valor in row]
+        if indice == 1:
+            headers = valores
+            continue
+        row_dict: Dict[str, Any] = {
+            headers[posicao] if posicao < len(headers) else f"coluna_{posicao}": valor
+            for posicao, valor in enumerate(valores)
+        }
+        if _linha_vazia(row_dict):
+            continue
+        registros.append(_mapear_registro(row_dict, indice))
+
+    workbook.close()
+    return registros
 
 
 @login_required
@@ -223,42 +317,65 @@ def excluir_curso(request, id):
 
 @login_required
 def importar_cursos(request):
-    """Importa cursos de um arquivo CSV."""
-    if request.method == "POST" and request.FILES.get("csv_file"):
+    """Importa cursos a partir de planilha CSV ou XLSX utilizando a camada de serviço."""
+    if request.method == "POST" and request.FILES.get("arquivo"):
+        arquivo = request.FILES["arquivo"]
+        extensao = Path(arquivo.name).suffix.lower()
+
         try:
-            from io import TextIOWrapper
+            registros: List[Dict[str, Any]]
+            if extensao in {".csv"}:
+                registros = _ler_csv(arquivo)
+            elif extensao in {".xlsx", ".xlsm"}:
+                registros = _ler_xlsx(arquivo)
+            else:
+                messages.error(
+                    request,
+                    "Formato não suportado. Utilize arquivos CSV ou XLSX.",
+                )
+                return redirect("cursos:importar_cursos")
 
-            csv_file = TextIOWrapper(request.FILES["csv_file"].file, encoding="utf-8")
-            reader = csv.DictReader(csv_file)
-            count = 0
-            errors = []
+            if not registros:
+                messages.warning(
+                    request, "Nenhum registro válido encontrado no arquivo."
+                )
+                return redirect("cursos:importar_cursos")
 
-            for row in reader:
-                try:
-                    nome = row.get("Nome", "").strip()
-                    descricao = row.get("Descrição", "").strip()
-                    Curso.objects.create(
-                        nome=nome,
-                        descricao=descricao,
-                    )
+            resumo = services.sincronizar_cursos(
+                registros,
+                desativar_nao_listados=False,
+            )
 
-                    count += 1
-                except Exception as e:
-                    errors.append(f"Erro na linha {count+1}: {str(e)}")
-
-            if errors:
+            if resumo.get("processados", 0):
+                mensagem_sucesso = (
+                    f"Importação concluída: {resumo['processados']} processados, "
+                    f"{resumo['criados']} criados, {resumo['atualizados']} atualizados, "
+                    f"{resumo['reativados']} reativados."
+                )
+                messages.success(request, mensagem_sucesso)
+            else:
                 messages.warning(
                     request,
-                    f"{count} cursos importados com {len(errors)} erros.",
+                    "Nenhum curso foi processado. Verifique o conteúdo da planilha.",
                 )
-                for error in errors[:5]:
-                    messages.error(request, error)
-                if len(errors) > 5:
-                    messages.error(request, f"... e mais {len(errors) - 5} erros.")
-            else:
-                messages.success(request, f"{count} cursos importados com sucesso!")
+
+            avisos = resumo.get("avisos", [])
+            if avisos:
+                messages.warning(
+                    request,
+                    f"Foram encontrados {len(avisos)} avisos durante a importação.",
+                )
+                for aviso in avisos[:5]:
+                    messages.info(request, aviso)
+                if len(avisos) > 5:
+                    messages.info(
+                        request,
+                        f"... e mais {len(avisos) - 5} avisos não exibidos.",
+                    )
+
             return redirect("cursos:listar_cursos")
-        except Exception as e:
-            messages.error(request, f"Erro ao importar cursos: {str(e)}")
+        except Exception as exc:  # pragma: no cover - proteção contra erros imprevistos
+            messages.error(request, f"Erro ao importar cursos: {exc}")
+            return redirect("cursos:importar_cursos")
 
     return render(request, "cursos/importar_cursos.html")

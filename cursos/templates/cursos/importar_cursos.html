@@ -13,9 +13,9 @@
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="mb-3">
-                    <label for="csv_file" class="form-label">Arquivo CSV</label>
-                    <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
-                    <div class="form-text">O arquivo deve ter cabeçalhos: Código, Nome, Descrição, Duração (meses)</div>
+                    <label for="arquivo" class="form-label">Arquivo de cursos</label>
+                    <input type="file" name="arquivo" id="arquivo" class="form-control" accept=".csv,.xlsx" required>
+                    <div class="form-text">Cabeçalhos esperados: Nome (obrigatório), Descricao (opcional) e Ativo (opcional). Utilize CSV ou XLSX.</div>
                 </div>
                 
                 <div class="d-flex">

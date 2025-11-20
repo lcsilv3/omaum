@@ -1,14 +1,16 @@
 # c:/projetos/omaum/turmas/services.py
+from __future__ import annotations
+
 from django.core.exceptions import ValidationError
 from core.utils import get_model_dynamically
-from .models import Turma
 
 
-def criar_turma(dados_turma: dict) -> Turma:
+def criar_turma(dados_turma: dict):
     """
     Cria uma nova turma com base nos dados fornecidos em um dicionário.
     Valida a existência do curso e a unicidade do nome da turma para o curso.
     """
+    Turma = get_model_dynamically("turmas", "Turma")
     Curso = get_model_dynamically("cursos", "Curso")
     curso_id = dados_turma.get("curso_id")
     if not curso_id:
@@ -16,8 +18,8 @@ def criar_turma(dados_turma: dict) -> Turma:
 
     try:
         curso = Curso.objects.get(pk=curso_id)
-    except Curso.DoesNotExist:
-        raise ValidationError(f"O curso com ID {curso_id} não existe.")
+    except Curso.DoesNotExist as exc:
+        raise ValidationError(f"O curso com ID {curso_id} não existe.") from exc
 
     nome_turma = dados_turma.get("nome")
     if Turma.objects.filter(curso=curso, nome=nome_turma).exists():
@@ -30,7 +32,8 @@ def criar_turma(dados_turma: dict) -> Turma:
         nome=nome_turma,
         descricao=dados_turma.get("descricao"),
         num_livro=dados_turma.get("num_livro"),
-        perc_carencia=dados_turma.get("perc_carencia"),
+        perc_presenca_minima=dados_turma.get("perc_presenca_minima")
+        or dados_turma.get("perc_carencia"),
         data_iniciacao=dados_turma.get("data_iniciacao"),
         data_inicio_ativ=dados_turma.get("data_inicio_ativ"),
         data_prim_aula=dados_turma.get("data_prim_aula"),
@@ -50,14 +53,17 @@ def matricular_aluno_em_turma(aluno_id: int, turma_id: int):
     """
     Matricula um aluno em uma turma, realizando todas as validações necessárias.
     """
+    Turma = get_model_dynamically("turmas", "Turma")
     Aluno = get_model_dynamically("alunos", "Aluno")
     Matricula = get_model_dynamically("matriculas", "Matricula")
 
     try:
         aluno = Aluno.objects.get(pk=aluno_id)
         turma = Turma.objects.get(pk=turma_id)
-    except (Aluno.DoesNotExist, Turma.DoesNotExist) as e:
-        raise ValidationError(f"Aluno ou Turma não encontrado(a). Detalhe: {e}")
+    except (Aluno.DoesNotExist, Turma.DoesNotExist) as exc:
+        raise ValidationError(
+            f"Aluno ou Turma não encontrado(a). Detalhe: {exc}"
+        ) from exc
 
     # 1. Validar se a turma está ativa para novas matrículas
     if turma.status not in ["A"]:
@@ -79,4 +85,5 @@ def listar_turmas_ativas():
     """
     Retorna um QuerySet com todas as turmas que estão com status 'Ativa'.
     """
+    Turma = get_model_dynamically("turmas", "Turma")
     return Turma.objects.filter(status="A").select_related("curso")

@@ -78,8 +78,26 @@ def listar_pagamentos(request):
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
 
+        # Se for requisição AJAX, retornar JSON com os dados
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            from django.template.loader import render_to_string
+
+            tabela_html = render_to_string(
+                "pagamentos/_tabela_pagamentos_parcial.html",
+                {"pagamentos": page_obj, "request": request},
+            )
+            paginacao_html = render_to_string(
+                "pagamentos/_paginacao_parcial.html",
+                {"page_obj": page_obj, "request": request},
+            )
+
+            return JsonResponse(
+                {"tabela_html": tabela_html, "paginacao_html": paginacao_html}
+            )
+
         context = {
             "pagamentos": page_obj,
+            "page_obj": page_obj,
             "total_pago": total_pago,
             "total_pendente": total_pendente,
             "total_atrasado": total_atrasado,

@@ -1,5 +1,7 @@
 from django import template
 
+from turmas.reports import RELATORIOS
+
 register = template.Library()
 
 
@@ -19,3 +21,9 @@ def mul(value, arg):
         return float(value) * float(arg)
     except ValueError:
         return 0
+
+
+@register.simple_tag
+def get_relatorios_turmas():
+    """Retorna a lista de relatórios disponíveis para turmas."""
+    return RELATORIOS

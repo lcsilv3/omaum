@@ -21,6 +21,7 @@ def listar_notas(request):
     query = request.GET.get("q", "")
     aluno_id = request.GET.get("aluno", "")
     curso_id = request.GET.get("curso", "")
+    periodo = request.GET.get("periodo", "")
 
     # Filtrar notas
     notas = Nota.objects.all().select_related("aluno", "curso", "turma")
@@ -36,8 +37,40 @@ def listar_notas(request):
     if curso_id:
         notas = notas.filter(curso_id=curso_id)
 
+    # Filtrar por período
+    if periodo:
+        from datetime import datetime, timedelta
+
+        hoje = datetime.now()
+        if periodo == "atual":
+            notas = notas.filter(data__month=hoje.month, data__year=hoje.year)
+        elif periodo == "ultimo_mes":
+            mes_passado = hoje - timedelta(days=30)
+            notas = notas.filter(
+                data__month=mes_passado.month, data__year=mes_passado.year
+            )
+        elif periodo == "ultimo_trimestre":
+            tres_meses_atras = hoje - timedelta(days=90)
+            notas = notas.filter(data__gte=tres_meses_atras)
+        elif periodo == "ultimo_semestre":
+            seis_meses_atras = hoje - timedelta(days=180)
+            notas = notas.filter(data__gte=seis_meses_atras)
+
     # Ordenar por data mais recente
     notas = notas.order_by("-data")
+
+    # Calcular estatísticas
+    estatisticas = notas.aggregate(
+        total_notas=Count("id"),
+        media_geral=Avg("nota"),
+        nota_maxima=Max("nota"),
+        nota_minima=Min("nota"),
+    )
+    # Valores padrão se não houver notas
+    estatisticas["total_notas"] = estatisticas["total_notas"] or 0
+    estatisticas["media_geral"] = estatisticas["media_geral"] or 0
+    estatisticas["nota_maxima"] = estatisticas["nota_maxima"] or 0
+    estatisticas["nota_minima"] = estatisticas["nota_minima"] or 0
 
     # Paginação
     paginator = Paginator(notas, 10)  # 10 notas por página
@@ -48,14 +81,29 @@ def listar_notas(request):
     alunos = listar_alunos_service()
     cursos = listar_cursos_service()
 
+    # Se for requisição AJAX, retornar JSON com os dados
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        from django.template.loader import render_to_string
+
+        tabela_html = render_to_string(
+            "notas/_tabela_notas_parcial.html", {"notas": page_obj, "request": request}
+        )
+        paginacao_html = render_to_string(
+            "notas/_paginacao_parcial.html", {"page_obj": page_obj, "request": request}
+        )
+
+        return JsonResponse(
+            {"tabela_html": tabela_html, "paginacao_html": paginacao_html}
+        )
+
     context = {
         "notas": page_obj,
         "page_obj": page_obj,
         "query": query,
         "alunos": alunos,
         "cursos": cursos,
-        "aluno_selecionado": aluno_id,
-        "curso_selecionado": curso_id,
+        "filtros": {"aluno": aluno_id, "curso": curso_id, "periodo": periodo},
+        "estatisticas": estatisticas,
         "total_notas": notas.count(),
     }
 

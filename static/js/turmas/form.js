@@ -88,20 +88,111 @@ $(document).ready(function() {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Máscara para horário (__:__ às __:__)
+  // Máscara para horário (__:__ "às" __:__) com preenchimento guiado
   const horarioInput = document.querySelector('input[name="horario"]');
   if (horarioInput) {
-    horarioInput.addEventListener("input", function (e) {
-      let v = e.target.value.replace(/\D/g, "");
-      if (v.length > 4) v = v.slice(0, 8);
-      if (v.length >= 4) {
-        e.target.value = v.slice(0, 2) + ":" + v.slice(2, 4) + " às " + (v.slice(4, 6) || "") + (v.length > 6 ? ":" + v.slice(6, 8) : "");
-      } else if (v.length >= 2) {
-        e.target.value = v.slice(0, 2) + ":" + v.slice(2, 4);
+    const MASCARA_HORARIO = '__:__ "às" __:__';
+    const POSICOES_DIGITOS = [0, 1, 3, 4, 11, 12, 14, 15];
+    const limparNaoDigitos = (valor) => valor.replace(/\D/g, '').slice(0, 8);
+
+    const formatarHorario = (digitos) => {
+      const caracteres = MASCARA_HORARIO.split('');
+      POSICOES_DIGITOS.forEach((posicao, indice) => {
+        caracteres[posicao] = digitos[indice] || '_';
+      });
+      return caracteres.join('');
+    };
+
+    const atualizarInput = (alvo, digitos) => {
+      alvo.dataset.horarioDigitos = digitos;
+      if (digitos.length === 0) {
+        alvo.value = MASCARA_HORARIO;
       } else {
-        e.target.value = v;
+        alvo.value = formatarHorario(digitos);
+      }
+      posicionarCursor(alvo, digitos.length);
+    };
+
+    const posicionarCursor = (alvo, quantidadeDigitos) => {
+      const mapaPosicoes = [0, 1, 3, 4, 11, 12, 14, 15, MASCARA_HORARIO.length];
+      const posicao = mapaPosicoes[Math.min(quantidadeDigitos, mapaPosicoes.length - 1)];
+      requestAnimationFrame(() => {
+        try {
+          alvo.setSelectionRange(posicao, posicao);
+        } catch (err) {
+          // Ignora navegadores que não suportam setSelectionRange
+        }
+      });
+    };
+
+    const iniciarMascaraSeNecessario = () => {
+      const digitosIniciais = limparNaoDigitos(horarioInput.value || '');
+      if (digitosIniciais) {
+        atualizarInput(horarioInput, digitosIniciais);
+      } else {
+        horarioInput.dataset.horarioDigitos = '';
+        horarioInput.value = '';
+      }
+      horarioInput.placeholder = MASCARA_HORARIO;
+    };
+
+    horarioInput.addEventListener('focus', () => {
+      const digitos = horarioInput.dataset.horarioDigitos || '';
+      atualizarInput(horarioInput, digitos);
+    });
+
+    horarioInput.addEventListener('blur', () => {
+      const digitos = horarioInput.dataset.horarioDigitos || '';
+      if (digitos.length === 0) {
+        horarioInput.value = '';
+      } else {
+        horarioInput.value = formatarHorario(digitos);
       }
     });
+
+    horarioInput.addEventListener('keydown', (event) => {
+      if (event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      const digitosAtuais = horarioInput.dataset.horarioDigitos || '';
+      const tecla = event.key;
+
+      if (tecla === 'Backspace') {
+        event.preventDefault();
+        atualizarInput(horarioInput, digitosAtuais.slice(0, -1));
+        return;
+      }
+
+      if (tecla === 'Delete') {
+        event.preventDefault();
+        atualizarInput(horarioInput, '');
+        return;
+      }
+
+      if (tecla.length === 1) {
+        if (/\d/.test(tecla)) {
+          event.preventDefault();
+          if (digitosAtuais.length >= POSICOES_DIGITOS.length) {
+            return;
+          }
+          atualizarInput(horarioInput, digitosAtuais + tecla);
+        } else {
+          event.preventDefault();
+        }
+        return;
+      }
+      // Permite outras teclas de navegação (Tab, Enter, setas, etc.)
+    });
+
+    horarioInput.addEventListener('paste', (event) => {
+      event.preventDefault();
+      const texto = (event.clipboardData || window.clipboardData).getData('text') || '';
+      const digitos = limparNaoDigitos(texto);
+      atualizarInput(horarioInput, digitos);
+    });
+
+    iniciarMascaraSeNecessario();
   }
 
   // Máscara para número do livro (apenas números)

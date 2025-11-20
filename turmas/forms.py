@@ -10,7 +10,7 @@ class TurmaForm(forms.ModelForm):
             "nome",
             "descricao",
             "num_livro",
-            "perc_carencia",
+            "perc_presenca_minima",
             "data_iniciacao",
             "data_inicio_ativ",
             "data_termino_atividades",
@@ -34,11 +34,11 @@ class TurmaForm(forms.ModelForm):
             "data_iniciacao": "Data de Iniciação",
             "data_prim_aula": "Data da Primeira Aula",
             "num_livro": "Nº do Livro de Presenças",
-            "perc_carencia": "Percentual de Carência (%)",
+            "perc_presenca_minima": "Percentual Mínimo de Presença (%)",
         }
         help_texts = {
-            "perc_carencia": "Percentual mínimo de faltas permitido para a turma.",
-            "horario": "Exemplo: 13:30 às 15:30",
+            "perc_presenca_minima": "Percentual mínimo de presença exigido para a turma.",
+            "horario": 'Exemplo: 13:30 "às" 15:30',
         }
         widgets = {
             "data_inicio_ativ": forms.DateInput(attrs={"type": "date"}),
@@ -51,7 +51,7 @@ class TurmaForm(forms.ModelForm):
                     "placeholder": "Selecione o Curso desejado",
                 }
             ),
-            "horario": forms.TextInput(attrs={"placeholder": "13:30 às 15:30"}),
+            "horario": forms.TextInput(attrs={"placeholder": '13:30 "às" 15:30'}),
             "num_livro": forms.NumberInput(attrs={"placeholder": "999"}),
         }
 
@@ -72,7 +72,7 @@ class TurmaForm(forms.ModelForm):
 
         # Torna os campos iniciáticos obrigatórios
         self.fields["num_livro"].required = True
-        self.fields["perc_carencia"].required = True
+        self.fields["perc_presenca_minima"].required = True
         self.fields["data_iniciacao"].required = True
         self.fields["data_inicio_ativ"].required = True
         self.fields["data_prim_aula"].required = True
@@ -110,7 +110,7 @@ class TurmaForm(forms.ModelForm):
         # Validação extra para garantir que os campos obrigatórios não estejam vazios
         for field in [
             "num_livro",
-            "perc_carencia",
+            "perc_presenca_minima",
             "data_iniciacao",
             "data_inicio_ativ",
             "data_prim_aula",

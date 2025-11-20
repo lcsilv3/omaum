@@ -50,7 +50,7 @@ services:
       - omaum_media:/app/media
       - omaum_logs:/app/logs
     ports:
-      - "8000:8000"
+      - "0.0.0.0:8000:8000"
     depends_on:
       omaum-db:
         condition: service_healthy

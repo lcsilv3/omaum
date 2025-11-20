@@ -2,9 +2,22 @@
 
 Este arquivo contém informações importantes para agentes de IA e desenvolvedores sobre o Sistema OMAUM.
 
+## Premissas do Projeto
+
+- Arquitetura Django modular com apps focados em domínio (`presencas`, `alunos`, `turmas`, `atividades`, `cursos`, `core`, `relatorios_presenca`).
+- O módulo `presencas` é núcleo funcional; `core` abriga apenas utilitários essenciais e não deve criar dependências cruzadas.
+- Comunicação entre módulos deve evitar importações diretas; prefira `importlib.import_module()` para reduzir ciclos.
+- Views priorizam implementação function-based; mantenha nomenclatura de URLs padronizada (`listar_[recurso]s`, `criar_[recurso]`, `editar_[recurso]`, etc.).
+- Filtros em relatórios/listagens são dinâmicos (AJAX) e interdependentes, sem recarregar a página inteira.
+- Validações importantes em múltiplas camadas: front-end (JS), formulários Django, modelos e services.
+- Cada app possui `admin.py` próprio, sem dependências cruzadas.
+- Templates seguem padrão Bootstrap 5 com includes/modais compartilhados; respeite identidade visual existente.
+- Sempre que ajustarmos arquivos estáticos e formos validar no ambiente Docker, execute `python manage.py collectstatic --noinput`; reinicie o serviço aplicado se as alterações não refletirem imediatamente.
+
 ## Comandos Importantes
 
 ### Desenvolvimento
+
 ```bash
 # Ativar ambiente virtual
 venv\Scripts\activate  # Windows
@@ -20,6 +33,14 @@ python manage.py test presencas  # Apenas módulo de presenças
 # Migrações
 python manage.py makemigrations
 python manage.py migrate
+
+# Ambiente Docker (mantém contêiner sincronizado)
+docker compose -f docker/docker-compose.yml exec omaum-web python manage.py makemigrations
+docker compose -f docker/docker-compose.yml exec omaum-web python manage.py migrate
+
+# Sincronizar cursos a partir da planilha oficial
+python scripts/manutencao/sincronizar_cursos.py
+docker compose -f docker/docker-compose.yml exec omaum-web python scripts/manutencao/sincronizar_cursos.py
 
 # Criar superusuário
 python manage.py createsuperuser
@@ -37,6 +58,7 @@ coverage html
 ```
 
 ### Produção
+
 ```bash
 # Coletar arquivos estáticos
 python manage.py collectstatic --noinput
@@ -54,6 +76,7 @@ python manage.py loaddata backup.json
 ## Estrutura do Projeto
 
 ### Módulos Principais
+
 - **presencas/**: Sistema completo de controle de frequência ⭐ (FOCO PRINCIPAL)
 - **alunos/**: Gestão de estudantes
 - **turmas/**: Organização de turmas e períodos
@@ -62,7 +85,8 @@ python manage.py loaddata backup.json
 - **core/**: Utilitários e configurações comuns
 
 ### Sistema de Presenças (Módulo Principal)
-```
+
+```text
 presencas/
 ├── models.py              # Modelos: Presenca, PresencaDetalhada, ConfiguracaoPresenca
 ├── views/                 # Views organizadas por funcionalidade
@@ -79,6 +103,7 @@ presencas/
 ## Padrões de Código
 
 ### Nomenclatura
+
 - **Modelos**: PascalCase (ex: `PresencaDetalhada`)
 - **Views**: PascalCase + "View" (ex: `RegistrarPresencaView`)
 - **Funções**: snake_case (ex: `calcular_carencias`)
@@ -86,6 +111,7 @@ presencas/
 - **Parâmetros URL**: `modelo_id` (ex: `turma_id`, `aluno_id`)
 
 ### Docstrings Obrigatórias
+
 ```python
 def calcular_estatisticas(turma_id, periodo):
     """
@@ -104,6 +130,7 @@ def calcular_estatisticas(turma_id, periodo):
 ```
 
 ### Validações Multi-camadas
+
 1. **Frontend**: Validação JavaScript em tempo real
 2. **Forms**: Validação Django forms
 3. **Models**: Método `clean()` para regras de negócio
@@ -112,18 +139,22 @@ def calcular_estatisticas(turma_id, periodo):
 ## Configurações Importantes
 
 ### Banco de Dados
+
 - **Desenvolvimento**: SQLite (`db.sqlite3`)
 - **Produção**: PostgreSQL (recomendado)
 
 ### Cache
+
 - **Desenvolvimento**: Memória local
 - **Produção**: Redis (recomendado)
 
 ### Arquivos Estáticos
+
 - **Desenvolvimento**: Django dev server
 - **Produção**: Nginx para servir estáticos
 
 ### Logs
+
 - **Localização**: `logs/` directory
 - **Níveis**: DEBUG, INFO, WARNING, ERROR, CRITICAL
 - **Módulos principais**: `presencas`, `django.db.backends`
@@ -131,6 +162,7 @@ def calcular_estatisticas(turma_id, periodo):
 ## Features Implementadas (v2.0)
 
 ### ✅ Sistema de Presenças
+
 - [x] Registro Multi-etapas (5 etapas guiadas)
 - [x] Registro Rápido (interface AJAX otimizada)
 - [x] Cálculos automáticos (percentuais, carências)
@@ -138,18 +170,21 @@ def calcular_estatisticas(turma_id, periodo):
 - [x] Validações robustas em múltiplas camadas
 
 ### ✅ Relatórios e Análises
+
 - [x] Painel de Estatísticas (gráficos Chart.js)
 - [x] Exportação avançada (Excel, PDF, CSV)
 - [x] Agendamento automático de relatórios
 - [x] Relatórios consolidados por período/turma
 
 ### ✅ API REST
+
 - [x] Endpoints documentados (Swagger/ReDoc)
 - [x] Autenticação por token
 - [x] Rate limiting
 - [x] Versionamento de API
 
 ### ✅ Performance
+
 - [x] Queries otimizadas (select_related/prefetch_related)
 - [x] Cache estratégico
 - [x] Paginação eficiente
@@ -158,7 +193,8 @@ def calcular_estatisticas(turma_id, periodo):
 ## Testes
 
 ### Estrutura de Testes
-```
+
+```text
 tests/
 ├── test_models.py         # Testes de modelos
 ├── test_views.py          # Testes de views
@@ -168,12 +204,14 @@ tests/
 ```
 
 ### Cobertura Atual
+
 - **Modelos**: 90%+
 - **Views**: 80%+
 - **API**: 85%+
 - **Services**: 75%+
 
 ### Executar Testes Específicos
+
 ```bash
 # Por módulo
 python manage.py test presencas
@@ -191,10 +229,12 @@ python manage.py test presencas.tests.test_models.PresencaDetalhadaTestCase.test
 ## Debugging
 
 ### Django Debug Toolbar
+
 - **URL**: `/__debug__/` (apenas em DEBUG=True)
 - **Funcionalidades**: SQL queries, cache hits, templates
 
 ### Logs Importantes
+
 ```python
 import logging
 logger = logging.getLogger(__name__)
@@ -208,6 +248,7 @@ logger.critical("Crítico")
 ```
 
 ### Breakpoints
+
 ```python
 # Python 3.7+
 breakpoint()
@@ -219,6 +260,7 @@ import pdb; pdb.set_trace()
 ## Troubleshooting Comum
 
 ### Erro: "No module named 'django'"
+
 ```bash
 # Verificar se ambiente virtual está ativo
 which python  # Linux/Mac

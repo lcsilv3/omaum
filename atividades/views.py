@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from django.core.paginator import Paginator
 from .utils import get_models, get_cursos
 
 
@@ -42,6 +43,8 @@ def listar_atividades_academicas(request):
     query = request.GET.get("q", "")
     curso_id = request.GET.get("curso", "")
     turma_id = request.GET.get("turma", "")
+    page_number = request.GET.get("page", 1)
+    
     models = get_models()
     Curso = models["Curso"]
     Turma = models["Turma"]
@@ -49,48 +52,50 @@ def listar_atividades_academicas(request):
 
     cursos = Curso.objects.all()
     turmas = Turma.objects.all()
-    atividades = AtividadeAcademica.objects.all()
+    atividades_list = AtividadeAcademica.objects.all()
 
     if query:
-        atividades = atividades.filter(nome__icontains=query)
+        atividades_list = atividades_list.filter(nome__icontains=query)
     if curso_id:
-        atividades = atividades.filter(curso_id=curso_id)
+        atividades_list = atividades_list.filter(curso_id=curso_id)
         turmas = turmas.filter(curso_id=curso_id)
     if turma_id:
-        atividades = atividades.filter(turmas__id=turma_id)
+        atividades_list = atividades_list.filter(turmas__id=turma_id)
         cursos = cursos.filter(
             id__in=Turma.objects.filter(id=turma_id).values_list("curso_id", flat=True)
         )
 
+    # Adiciona paginação
+    paginator = Paginator(atividades_list, 10)
+    page_obj = paginator.get_page(page_number)
+    total_atividades = atividades_list.count()
+
     context = {
-        "atividades": atividades,
+        "atividades": page_obj,
+        "page_obj": page_obj,
         "cursos": cursos,
         "turmas": turmas,
         "query": query,
         "curso_selecionado": curso_id,
         "turma_selecionada": turma_id,
+        "total_atividades": total_atividades,
     }
+    
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         tabela_html = render_to_string(
-            "atividades/academicas/partials/atividades_tabela.html",
+            "atividades/academicas/partials/_tabela_atividades_parcial.html",
             context,
             request=request,
         )
-        cursos_html = render_to_string(
-            "atividades/academicas/partials/cursos_options.html",
-            context,
-            request=request,
-        )
-        turmas_html = render_to_string(
-            "atividades/academicas/partials/turmas_options.html",
+        paginacao_html = render_to_string(
+            "atividades/academicas/partials/_paginacao_parcial.html",
             context,
             request=request,
         )
         return JsonResponse(
             {
                 "tabela_html": tabela_html,
-                "cursos_html": cursos_html,
-                "turmas_html": turmas_html,
+                "paginacao_html": paginacao_html,
             }
         )
     return render(

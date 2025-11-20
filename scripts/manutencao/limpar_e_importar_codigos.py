@@ -1,176 +1,357 @@
 #!/usr/bin/env python
-"""Script utilitário: limpa e repovoa a tabela Codigo a partir de codigos.csv."""
+"""Sincroniza tipos e códigos iniciáticos a partir das planilhas oficiais."""
 
-import os
+from __future__ import annotations
+
+import argparse
 import csv
-import django
-from typing import Dict, Any
+import os
+import sys
+from pathlib import Path
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple
 
-# Configurar Django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
+# Configuração mínima de ambiente Django ---------------------------------------
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings.development")
+import django  # noqa: E402  # pylint: disable=wrong-import-position
+
 django.setup()
 
-# Importações dependentes do Django após setup (suprimindo E402)
 from alunos.utils import get_codigo_model, get_tipo_codigo_model  # noqa: E402
 
 Codigo: Any = get_codigo_model()
 TipoCodigo: Any = get_tipo_codigo_model()
-if not (Codigo and TipoCodigo):
+if not (Codigo and TipoCodigo):  # pragma: no cover - verificação defensiva
     raise RuntimeError("Modelos iniciáticos (Codigo/TipoCodigo) indisponíveis.")
 
-
-def limpar_tabela():
-    """Limpa todos os registros da tabela Codigo."""
-    print("🧹 Limpando a tabela Codigo...")
-    count = Codigo.objects.count()
-    print(f"📊 Registros encontrados: {count}")
-
-    if count > 0:
-        Codigo.objects.all().delete()
-        print("✅ Tabela limpa com sucesso!")
-    else:
-        print("ℹ️  Tabela já estava vazia.")
+DOCS_DIR = PROJECT_ROOT / "docs"
+PLANILHA_TIPOS_CANDIDATOS = (
+    DOCS_DIR / "Planilha Tipos de  Códigos.csv",
+    DOCS_DIR / "Planilha Tipos de Códigos.csv",
+    DOCS_DIR / "Planilha Tipos de Códigos.xlsx",
+)
+PLANILHA_CODIGOS_CANDIDATOS = (
+    DOCS_DIR / "Planilha de Códigos.csv",
+    DOCS_DIR / "Planilha de Códigos.xlsx",
+)
 
 
-def obter_tipos_codigo() -> Dict[str, object]:
-    """Obtém todos os tipos de código disponíveis."""
-    print("\n🔍 Verificando tipos de código disponíveis...")
-    tipos: Dict[str, object] = {}
-
-    for tipo in TipoCodigo.objects.all():
-        tipos[tipo.nome] = tipo
-        print(f"  • {tipo.nome}: {tipo.descricao}")
-
-    return tipos
+# Utilidades --------------------------------------------------------------------
 
 
-def importar_csv():
-    """Importa dados do arquivo CSV para a tabela Codigo."""
-    print("\n📥 Importando dados do CSV...")
+def localizar_primeiro_existente(caminhos: Iterable[Path]) -> Optional[Path]:
+    """Retorna o primeiro caminho existente dentro da sequência fornecida."""
 
-    csv_file = "codigos.csv"
-    if not os.path.exists(csv_file):
-        print(f"❌ Arquivo {csv_file} não encontrado!")
-        return False
+    for caminho in caminhos:
+        if caminho.exists():
+            return caminho
+    return None
 
-    # Obter tipos de código
-    tipos_codigo = obter_tipos_codigo()
 
+def normalizar_texto(valor: Any) -> str:
+    """Converte o valor para string e aplica strip defensivo."""
+
+    if valor is None:
+        return ""
+    return str(valor).strip()
+
+
+def converter_para_int(valor: Any) -> Optional[int]:
+    """Converte um valor textual em inteiro tolerando sufixos ".0"."""
+
+    texto = normalizar_texto(valor)
+    if not texto:
+        return None
+    if texto.endswith(".0"):
+        texto = texto[:-2]
     try:
-        with open(csv_file, "r", encoding="utf-8") as file:
-            reader = csv.DictReader(file)
-            count = 0
-            erros = 0
-
-            for row_num, row in enumerate(reader, 1):
-                try:
-                    # Buscar o tipo de código
-                    tipo_nome = row["tipo"]
-
-                    if tipo_nome not in tipos_codigo:
-                        print(f"⚠️  Linha {row_num}: Tipo '{tipo_nome}' não encontrado!")
-                        erros += 1
-                        continue
-
-                    # Criar o código
-                    Codigo.objects.create(
-                        nome=row["nome"],
-                        tipo_codigo=tipos_codigo[tipo_nome],
-                        descricao=row["descricao"],
-                    )
-
-                    if count % 50 == 0:  # Mostrar progresso a cada 50 registros
-                        print(f"📊 Processados {count} registros...")
-
-                    count += 1
-
-                except Exception as e:
-                    print(f"❌ Erro na linha {row_num}: {e}")
-                    erros += 1
-
-            print("\n📊 Importação concluída:")
-            print(f"  • Total de registros importados: {count}")
-            print(f"  • Total de erros: {erros}")
-
-            return erros == 0
-
-    except Exception as e:
-        print(f"❌ Erro ao importar CSV: {e}")
-        return False
+        return int(texto)
+    except ValueError:
+        try:
+            return int(float(texto))
+        except (TypeError, ValueError):
+            return None
 
 
-def verificar_dados():
-    """Verifica os dados importados."""
-    print("\n🔍 Verificando dados importados...")
-    codigos = Codigo.objects.all()
+def carregar_planilha(caminho: Path) -> List[List[str]]:
+    """Carrega dados CSV/XLSX para lista de linhas com strings normalizadas."""
 
-    if not codigos.exists():
-        print("⚠️  Nenhum registro encontrado!")
+    if caminho.suffix.lower() == ".csv":
+        with caminho.open("r", encoding="utf-8-sig", newline="") as ponteiro:
+            leitor = csv.reader(ponteiro, delimiter=";")
+            return [[normalizar_texto(celula) for celula in linha] for linha in leitor]
+
+    if caminho.suffix.lower() in {".xlsx", ".xlsm"}:
+        try:
+            from openpyxl import load_workbook  # type: ignore
+        except ImportError as exc:  # pragma: no cover - dependência opcional
+            raise RuntimeError(
+                "openpyxl é necessário para ler arquivos .xlsx; instale a dependência"
+            ) from exc
+
+        workbook = load_workbook(filename=caminho, read_only=True, data_only=True)
+        planilha = workbook.active
+        linhas: List[List[str]] = []
+        for linha in planilha.iter_rows(values_only=True):
+            linhas.append([normalizar_texto(celula) for celula in linha])
+        return linhas
+
+    raise ValueError(f"Formato de planilha não suportado: {caminho.suffix}")
+
+
+def remover_linhas_vazias(linhas: Iterable[List[str]]) -> Iterator[List[str]]:
+    """Remove linhas sem conteúdo para evitar processamento desnecessário."""
+
+    for linha in linhas:
+        if any(celula for celula in linha):
+            yield linha
+
+
+# Sincronização de Tipos ---------------------------------------------------------
+
+
+def sincronizar_tipos(
+    arquivo: Optional[Path] = None,
+) -> Tuple[Dict[int, Any], Dict[str, Any]]:
+    """Sincroniza a planilha de tipos e devolve mapa id->objeto com resumo."""
+
+    caminho = arquivo or localizar_primeiro_existente(PLANILHA_TIPOS_CANDIDATOS)
+    resumo = {
+        "arquivo": str(caminho) if caminho else None,
+        "criados": 0,
+        "atualizados": 0,
+        "reativados": 0,
+        "desativados": 0,
+        "avisos": [],
+    }
+
+    if not caminho:
+        resumo["avisos"].append("Arquivo de tipos não encontrado.")
+        return {}, resumo
+
+    linhas = carregar_planilha(caminho)
+    linhas_util = list(remover_linhas_vazias(linhas))
+    if len(linhas_util) <= 1:
+        resumo["avisos"].append("Planilha de tipos vazia ou sem registros válidos.")
+        return {}, resumo
+
+    tipos_por_id: Dict[int, Any] = {}
+    ids_importados: List[int] = []
+
+    for indice, linha in enumerate(linhas_util[1:], start=2):
+        tipo_id = converter_para_int(linha[0] if len(linha) > 0 else None)
+        nome = normalizar_texto(linha[1] if len(linha) > 1 else None)
+        descricao = normalizar_texto(linha[2] if len(linha) > 2 else None)
+
+        if tipo_id is None:
+            resumo["avisos"].append(f"Linha {indice}: identificador do tipo ausente.")
+            continue
+        if not nome:
+            resumo["avisos"].append(
+                f"Linha {indice}: nome não informado para o tipo {tipo_id}."
+            )
+            continue
+
+        existente = TipoCodigo.objects.filter(id=tipo_id).first()
+        estava_inativo = bool(existente and not existente.ativo)
+
+        objeto, criado = TipoCodigo.objects.update_or_create(
+            id=tipo_id,
+            defaults={"nome": nome, "descricao": descricao or None, "ativo": True},
+        )
+        if criado:
+            resumo["criados"] += 1
+        else:
+            resumo["atualizados"] += 1
+            if estava_inativo:
+                resumo["reativados"] += 1
+
+        objeto.refresh_from_db()
+        tipos_por_id[objeto.id] = objeto
+        ids_importados.append(objeto.id)
+
+    if ids_importados:
+        desativados = (
+            TipoCodigo.objects.filter(ativo=True)
+            .exclude(id__in=ids_importados)
+            .update(ativo=False)
+        )
+        resumo["desativados"] = desativados
+
+    return tipos_por_id, resumo
+
+
+# Sincronização de Códigos -------------------------------------------------------
+
+
+def sincronizar_codigos(
+    tipos_por_id: Dict[int, Any], arquivo: Optional[Path] = None
+) -> Dict[str, Any]:
+    """Sincroniza a planilha de códigos utilizando os tipos previamente importados."""
+
+    caminho = arquivo or localizar_primeiro_existente(PLANILHA_CODIGOS_CANDIDATOS)
+    resumo = {
+        "arquivo": str(caminho) if caminho else None,
+        "criados": 0,
+        "atualizados": 0,
+        "reativados": 0,
+        "desativados": 0,
+        "avisos": [],
+        "divergencias_tipo": [],
+    }
+
+    if not caminho:
+        resumo["avisos"].append("Arquivo de códigos não encontrado.")
+        return resumo
+
+    linhas = carregar_planilha(caminho)
+    linhas_util = list(remover_linhas_vazias(linhas))
+    if len(linhas_util) <= 1:
+        resumo["avisos"].append("Planilha de códigos vazia ou sem registros válidos.")
+        return resumo
+
+    nomes_importados: List[str] = []
+
+    for indice, linha in enumerate(linhas_util[1:], start=2):
+        tipo_id = converter_para_int(linha[1] if len(linha) > 1 else None)
+        tipo_nome_planilha = normalizar_texto(linha[2] if len(linha) > 2 else None)
+        codigo_nome = normalizar_texto(linha[3] if len(linha) > 3 else None)
+        descricao = normalizar_texto(linha[4] if len(linha) > 4 else None)
+
+        if not codigo_nome:
+            resumo["avisos"].append(
+                f"Linha {indice}: código sem identificador; ignorado."
+            )
+            continue
+
+        if tipo_id is None or tipo_id not in tipos_por_id:
+            resumo["avisos"].append(
+                f"Linha {indice}: tipo {tipo_id!r} inexistente; código {codigo_nome} ignorado."
+            )
+            continue
+
+        tipo_obj = tipos_por_id[tipo_id]
+        if tipo_nome_planilha and tipo_nome_planilha != tipo_obj.nome:
+            resumo["divergencias_tipo"].append(
+                f"Linha {indice}: tipo informado '{tipo_nome_planilha}' difere do cadastrado '{tipo_obj.nome}'."
+            )
+
+        existente = Codigo.objects.filter(nome=codigo_nome).first()
+        estava_inativo = bool(existente and not existente.ativo)
+
+        objeto, criado = Codigo.objects.update_or_create(
+            nome=codigo_nome,
+            defaults={
+                "tipo_codigo": tipo_obj,
+                "descricao": descricao or None,
+                "ativo": True,
+            },
+        )
+        if criado:
+            resumo["criados"] += 1
+        else:
+            resumo["atualizados"] += 1
+            if estava_inativo:
+                resumo["reativados"] += 1
+
+        nomes_importados.append(objeto.nome)
+
+    if nomes_importados:
+        desativados = (
+            Codigo.objects.filter(ativo=True)
+            .exclude(nome__in=nomes_importados)
+            .update(ativo=False)
+        )
+        resumo["desativados"] = desativados
+
+    return resumo
+
+
+# Saída formatada ----------------------------------------------------------------
+
+
+def imprimir_resumo(titulo: str, resumo: Dict[str, Any]) -> None:
+    """Imprime resumo amigável com contagens e avisos."""
+
+    print(f"\n🗂️  {titulo}")
+    if resumo.get("arquivo"):
+        print(f"   • Fonte: {resumo['arquivo']}")
+    for chave in ("criados", "atualizados", "reativados", "desativados"):
+        if chave in resumo:
+            print(f"   • {chave.capitalize()}: {resumo.get(chave, 0)}")
+
+    if resumo.get("divergencias_tipo"):
+        print("   • Divergências entre planilha e banco:")
+        for aviso in resumo["divergencias_tipo"][:10]:
+            print(f"     - {aviso}")
+        if len(resumo["divergencias_tipo"]) > 10:
+            print("     - ... (demais divergências omitidas)")
+
+    if resumo.get("avisos"):
+        print("   • Avisos:")
+        for aviso in resumo["avisos"][:10]:
+            print(f"     - {aviso}")
+        if len(resumo["avisos"]) > 10:
+            print("     - ... (demais avisos omitidos)")
+
+
+# Execução -----------------------------------------------------------------------
+
+
+def executar_pipeline(
+    apenas_tipos: bool, arquivo_tipos: Optional[Path], arquivo_codigos: Optional[Path]
+) -> None:
+    """Executa o fluxo de sincronização conforme parâmetros informados."""
+
+    tipos_por_id, resumo_tipos = sincronizar_tipos(arquivo_tipos)
+    imprimir_resumo("Tipos de Código", resumo_tipos)
+
+    if apenas_tipos:
         return
 
-    print(f"📊 Total de registros: {codigos.count()}")
+    if not tipos_por_id:
+        print("\n⚠️  Nenhum tipo foi importado; sincronização de códigos cancelada.")
+        return
 
-    # Agrupar por tipo
-    tipos_count = {}
-    for codigo in codigos:
-        tipo_nome = codigo.tipo_codigo.nome
-        if tipo_nome not in tipos_count:
-            tipos_count[tipo_nome] = 0
-        tipos_count[tipo_nome] += 1
-
-    print("\n📋 Registros por tipo:")
-    for tipo, count in tipos_count.items():
-        print(f"  • {tipo}: {count} códigos")
-
-    # Mostrar alguns exemplos
-    print("\n📝 Exemplos de registros:")
-    for codigo in codigos[:5]:
-        print(
-            f"  • {codigo.nome} ({codigo.tipo_codigo.nome}): {codigo.descricao[:50]}..."
-        )
+    resumo_codigos = sincronizar_codigos(tipos_por_id, arquivo_codigos)
+    imprimir_resumo("Códigos Iniciáticos", resumo_codigos)
 
 
-def validar_integridade():
-    """Valida a integridade dos dados."""
-    print("\n🔍 Validando integridade dos dados...")
-    # Import local para evitar alerta de uso antes da definição em ferramentas estáticas
-    from django.db import models  # noqa: WPS433 (import interno intencional)
+def obter_argumentos() -> argparse.Namespace:
+    """Interpreta argumentos de linha de comando."""
 
-    # Verificar registros duplicados
-    codigos_duplicados = (
-        Codigo.objects.values("nome")
-        .annotate(count=models.Count("nome"))
-        .filter(count__gt=1)
+    parser = argparse.ArgumentParser(
+        description="Sincroniza tipos e códigos iniciáticos a partir das planilhas oficiais.",
     )
+    parser.add_argument(
+        "--apenas-tipos",
+        action="store_true",
+        help="Processa apenas a planilha de tipos (não altera códigos).",
+    )
+    parser.add_argument(
+        "--tipos-arquivo",
+        type=Path,
+        help="Caminho alternativo para a planilha de tipos.",
+    )
+    parser.add_argument(
+        "--codigos-arquivo",
+        type=Path,
+        help="Caminho alternativo para a planilha de códigos.",
+    )
+    return parser.parse_args()
 
-    if codigos_duplicados.exists():
-        print("⚠️  Códigos duplicados encontrados:")
-        for dup in codigos_duplicados:
-            print(f"  • {dup['nome']}: {dup['count']} ocorrências")
-    else:
-        print("✅ Nenhum código duplicado encontrado!")
 
-    # Verificar integridade referencial
-    codigos_sem_tipo = Codigo.objects.filter(tipo_codigo__isnull=True)
-    if codigos_sem_tipo.exists():
-        print(f"⚠️  {codigos_sem_tipo.count()} códigos sem tipo encontrados!")
-    else:
-        print("✅ Integridade referencial validada!")
+def main() -> None:
+    """Função principal quando o script é executado via CLI."""
+
+    argumentos = obter_argumentos()
+    executar_pipeline(
+        argumentos.apenas_tipos, argumentos.tipos_arquivo, argumentos.codigos_arquivo
+    )
 
 
 if __name__ == "__main__":
-    print("🚀 Iniciando processo de limpeza e importação da tabela Codigo")
-    print("=" * 70)
-
-    # Etapa 1: Limpar tabela
-    limpar_tabela()
-
-    # Etapa 2: Importar CSV
-    if importar_csv():
-        # Etapa 3: Verificar dados
-        verificar_dados()
-        # Etapa 4: Validar integridade
-        validar_integridade()
-        print("\n✅ Processo concluído com sucesso!")
-    else:
-        print("\n❌ Processo falhou durante a importação!")
+    main()

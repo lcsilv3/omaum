@@ -176,11 +176,11 @@ class Aluno(models.Model):
     ]
 
     cpf_validator = RegexValidator(
-        regex=r"^\\d{11}$", message=_("CPF deve conter 11 dígitos numéricos")
+        regex=r"^\d{11}$", message=_("CPF deve conter 11 dígitos numéricos")
     )
 
     celular_validator = RegexValidator(
-        regex=r"^\\d{10,11}$", message=_("Número de celular inválido")
+        regex=r"^\d{10,11}$", message=_("Número de celular inválido")
     )
 
     # Campos básicos
@@ -491,6 +491,7 @@ class TipoCodigo(models.Model):
 
     nome = models.CharField(max_length=50, unique=True, verbose_name=_("Nome"))
     descricao = models.TextField(blank=True, null=True, verbose_name=_("Descrição"))
+    ativo = models.BooleanField(default=True, verbose_name=("Ativo"))
 
     class Meta:
         verbose_name = _("Tipo de Código")
@@ -512,6 +513,7 @@ class Codigo(models.Model):
     )
     nome = models.CharField(max_length=100, unique=True, verbose_name=_("Nome"))
     descricao = models.TextField(blank=True, null=True, verbose_name=_("Descrição"))
+    ativo = models.BooleanField(default=True, verbose_name=("Ativo"))
 
     class Meta:
         verbose_name = _("Código")

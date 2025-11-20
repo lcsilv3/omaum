@@ -1,5 +1,6 @@
 from django import forms
 from alunos.models import Aluno, RegistroHistorico, Codigo, TipoCodigo
+from cursos.models import Curso
 from django_select2.forms import ModelSelect2Widget
 from .utils import clean_cpf
 
@@ -108,7 +109,7 @@ class AlunoForm(forms.ModelForm):
             ),
             "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "nome_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
-            "grau_atual": forms.TextInput(attrs={"class": "form-control"}),
+            "grau_atual": forms.Select(attrs={"class": "form-control"}),
             "situacao_iniciatica": forms.Select(attrs={"class": "form-control"}),
             "tipo_sanguineo": forms.Select(attrs={"class": "form-control"}),
             "alergias": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
@@ -164,6 +165,20 @@ class AlunoForm(forms.ModelForm):
             if self.instance and self.instance.pk
             else "Não informado"
         )
+        # Grau atual: usa cursos ativos como opções
+        if "grau_atual" in self.fields:
+            cursos_ativos = list(
+                Curso.objects.filter(ativo=True)
+                .order_by("nome")
+                .values_list("nome", flat=True)
+            )
+            choices = [(nome, nome) for nome in cursos_ativos]
+            valor_atual = self.initial.get("grau_atual") or getattr(
+                self.instance, "grau_atual", ""
+            )
+            if valor_atual and valor_atual not in cursos_ativos:
+                choices = [(valor_atual, valor_atual)] + choices
+            self.fields["grau_atual"].choices = [("", "Selecione")] + choices
         # Placeholders
         placeholders = {
             "cpf": "___.___.___-__",
@@ -188,6 +203,14 @@ class AlunoForm(forms.ModelForm):
                 "cep"
             ].max_length = 10  # somente apresentação; modelo continua 8 dígitos
             self.fields["cep"].widget.attrs["maxlength"] = "10"
+        # Telefones com máscara precisam de limite visual maior
+        for contato_field in [
+            "celular_primeiro_contato",
+            "celular_segundo_contato",
+        ]:
+            if contato_field in self.fields:
+                self.fields[contato_field].max_length = 15
+                self.fields[contato_field].widget.attrs["maxlength"] = "15"
         # Campos referência exibidos em modo avançado: usar css helper
         for ref_field in ["cidade_ref", "bairro_ref"]:
             if ref_field in self.fields:

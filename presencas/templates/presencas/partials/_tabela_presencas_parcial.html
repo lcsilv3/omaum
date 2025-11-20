@@ -1,0 +1,107 @@
+{% if presencas %}
+<table class="table table-striped table-hover align-middle">
+    <thead class="table-light">
+        <tr>
+            <th>Aluno</th>
+            <th>Atividade</th>
+            <th>Turma</th>
+            <th>Data</th>
+            <th>Status</th>
+            <th>Justificativa</th>
+            <th class="text-center">Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for presenca in presencas %}
+        <tr>
+            <td>
+                <div class="d-flex align-items-center">
+                    {% if presenca.aluno.foto %}
+                    <img src="{{ presenca.aluno.foto.url }}" alt="{{ presenca.aluno.nome }}" 
+                         class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
+                    {% else %}
+                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                         style="width: 40px; height: 40px; color: white;">
+                        {{ presenca.aluno.nome|first|upper }}
+                    </div>
+                    {% endif %}
+                    <div>
+                        <div class="fw-semibold">{{ presenca.aluno.nome }}</div>
+                        <small class="text-muted">{{ presenca.aluno.cpf }}</small>
+                    </div>
+                </div>
+            </td>
+            <td>{{ presenca.atividade.nome }}</td>
+            <td>
+                {% if presenca.turma %}
+                    <span class="badge bg-info">
+                        {% if presenca.turma.curso %}{{ presenca.turma.curso.nome }} - {% endif %}{{ presenca.turma.nome }}
+                    </span>
+                {% else %}
+                    <span class="text-muted">-</span>
+                {% endif %}
+            </td>
+            <td>{{ presenca.data|date:"d/m/Y" }}</td>
+            <td>
+                {% if presenca.presente %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-check me-1"></i>Presente
+                    </span>
+                {% else %}
+                    <span class="badge bg-danger">
+                        <i class="fas fa-times me-1"></i>Ausente
+                    </span>
+                {% endif %}
+            </td>
+            <td>
+                {% if presenca.justificativa %}
+                    <span class="text-truncate d-inline-block" style="max-width: 200px;" data-bs-toggle="tooltip" title="{{ presenca.justificativa }}">
+                        {{ presenca.justificativa|truncatechars:30 }}
+                    </span>
+                {% else %}
+                    <span class="text-muted">-</span>
+                {% endif %}
+            </td>
+            <td class="text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                    <a href="{% url 'presencas:detalhar_presenca_dados_basicos' presenca.id %}" 
+                       class="btn btn-info" 
+                       title="Ver detalhes" 
+                       data-bs-toggle="tooltip" 
+                       aria-label="Ver detalhes de {{ presenca.aluno.nome }}">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{% url 'presencas:editar_presenca_dados_basicos' presenca.id %}" 
+                       class="btn btn-warning" 
+                       title="Editar presença" 
+                       data-bs-toggle="tooltip" 
+                       aria-label="Editar presença de {{ presenca.aluno.nome }}">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="#" 
+                       onclick="confirmarExclusao({{ presenca.id }}, '{{ presenca.aluno.nome }}')" 
+                       class="btn btn-danger" 
+                       title="Excluir presença" 
+                       data-bs-toggle="tooltip" 
+                       aria-label="Excluir presença de {{ presenca.aluno.nome }}">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" class="text-center text-muted py-4">
+                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                <p class="mb-0">Nenhum registro de presença encontrado com os filtros selecionados.</p>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="text-center text-muted py-4">
+    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+    <p class="mb-0">Nenhum dado de presenças disponível no momento.</p>
+</div>
+{% endif %}

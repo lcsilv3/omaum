@@ -1,0 +1,46 @@
+{% if page_obj and page_obj.paginator %}
+<nav aria-label="Paginação de presenças">
+    <ul class="pagination justify-content-center mb-0">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.curso %}&curso={{ request.GET.curso }}{% endif %}{% if request.GET.turma %}&turma={{ request.GET.turma }}{% endif %}{% if request.GET.atividade %}&atividade={{ request.GET.atividade }}{% endif %}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.data_inicio %}&data_inicio={{ request.GET.data_inicio }}{% endif %}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}" aria-label="Anterior">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% else %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% if request.GET.curso %}&curso={{ request.GET.curso }}{% endif %}{% if request.GET.turma %}&turma={{ request.GET.turma }}{% endif %}{% if request.GET.atividade %}&atividade={{ request.GET.atividade }}{% endif %}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.data_inicio %}&data_inicio={{ request.GET.data_inicio }}{% endif %}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.curso %}&curso={{ request.GET.curso }}{% endif %}{% if request.GET.turma %}&turma={{ request.GET.turma }}{% endif %}{% if request.GET.atividade %}&atividade={{ request.GET.atividade }}{% endif %}{% if request.GET.aluno %}&aluno={{ request.GET.aluno }}{% endif %}{% if request.GET.data_inicio %}&data_inicio={{ request.GET.data_inicio }}{% endif %}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}" aria-label="Próximo">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&raquo;</span>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+<div class="text-center mt-2">
+    <small class="text-muted">
+        Exibindo {{ page_obj.start_index }} a {{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros
+    </small>
+</div>
+{% else %}
+<p class="text-muted small mb-0 text-center">Sem páginas para exibir.</p>
+{% endif %}

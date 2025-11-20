@@ -1,47 +1,40 @@
-import sys
+#!/usr/bin/env python
+"""Sincroniza cursos utilizando a planilha oficial do projeto."""
+
+from __future__ import annotations
+
 import os
+import sys
+from pathlib import Path
+from typing import Optional, Union
+
 import django
 
-# Adicionar o caminho raiz do projeto ao sys.path
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(project_root)
 
-# Configurar o ambiente Django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings.development")
+
 django.setup()
 
-from cursos.models import Curso
+from scripts.manutencao.sincronizar_cursos import (  # noqa: E402  # pylint: disable=wrong-import-position
+    executar_sincronizacao,
+)
 
 
-def popular_cursos():
-    """
-    Popula o banco de dados com uma lista predefinida de cursos.
-    """
-    cursos_a_criar = [
-        {"nome": "Pré-Iniciático", "descricao": "Pré-Iniciático"},
-        {"nome": "1º Grau", "descricao": "1º Grau"},
-        {"nome": "2º Grau", "descricao": "2º Grau"},
-        {"nome": "3º Grau", "descricao": "3º Grau"},
-        {"nome": "4º Grau", "descricao": "4º Grau"},
-        {"nome": "5º Grau", "descricao": "5º Grau"},
-        {"nome": "Coleginho", "descricao": "Coleginho"},
-        {"nome": "Colégio Sacerdotal", "descricao": "Colégio Sacerdotal"},
-    ]
+def popular_cursos(
+    arquivo: Optional[Union[str, Path]] = None,
+    manter_existentes: bool = True,
+) -> None:
+    """Executa a sincronização de cursos a partir da planilha informada."""
 
-    print("Iniciando a população de cursos...")
-
-    for dados_curso in cursos_a_criar:
-        curso, criado = Curso.objects.get_or_create(
-            nome=dados_curso["nome"],
-            defaults={"descricao": dados_curso["descricao"], "ativo": True},
-        )
-        if criado:
-            print(f"Curso '{curso.nome}' criado com sucesso.")
-        else:
-            print(f"Curso '{curso.nome}' já existe.")
-
-    print("\nPopulação de cursos concluída!")
+    caminho = Path(arquivo) if arquivo else None
+    executar_sincronizacao(caminho, manter_existentes)
 
 
 if __name__ == "__main__":
-    popular_cursos()
+    print("Iniciando sincronização de cursos...")
+    popular_cursos(manter_existentes=True)
+    print("Sincronização concluída.")

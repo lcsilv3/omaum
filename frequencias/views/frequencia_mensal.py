@@ -29,6 +29,11 @@ def listar_frequencias(request):
         if turma_id:
             frequencias = frequencias.filter(turma_id=turma_id)
 
+        # Filtrar por mês
+        mes = request.GET.get("mes")
+        if mes:
+            frequencias = frequencias.filter(mes=mes)
+
         # Filtrar por ano
         ano = request.GET.get("ano")
         if ano:
@@ -53,11 +58,33 @@ def listar_frequencias(request):
             .order_by("-ano")
         )
 
+        # Obter meses disponíveis
+        meses_choices = FrequenciaMensal.MESES_CHOICES
+
+        # Se for requisição AJAX, retornar JSON com os dados
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            from django.template.loader import render_to_string
+            from django.http import JsonResponse
+
+            tabela_html = render_to_string(
+                "frequencias/includes/_tabela_frequencias_parcial.html",
+                {"frequencias": page_obj, "request": request},
+            )
+            paginacao_html = render_to_string(
+                "frequencias/includes/_paginacao_parcial.html",
+                {"page_obj": page_obj, "request": request},
+            )
+
+            return JsonResponse(
+                {"tabela_html": tabela_html, "paginacao_html": paginacao_html}
+            )
+
         context = {
             "frequencias": page_obj,
             "page_obj": page_obj,
             "turmas": turmas,
             "anos": anos,
+            "meses_choices": meses_choices,
             "turma_selecionada": turma_id,
             "ano_selecionado": ano,
         }

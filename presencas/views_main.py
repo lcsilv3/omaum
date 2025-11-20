@@ -10,6 +10,7 @@ from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db.models import F
 
@@ -101,6 +102,14 @@ def listar_presencas_academicas(request):
         atividades = list(Atividade.objects.only("id", "nome", "tipo_atividade"))
         cache.set(atividades_cache_key, atividades, 600)  # 10 minutos
 
+    # Obter lista de cursos para o filtro
+    cursos_cache_key = "cursos_listagem"
+    cursos = cache.get(cursos_cache_key)
+    if not cursos:
+        from cursos.models import Curso
+        cursos = list(Curso.objects.only("id", "nome"))
+        cache.set(cursos_cache_key, cursos, 600)  # 10 minutos
+
     context = {
         "page_obj": page_obj,
         "presencas": page_obj.object_list,
@@ -108,6 +117,7 @@ def listar_presencas_academicas(request):
         "alunos": alunos,
         "turmas": turmas,
         "atividades": atividades,
+        "cursos": cursos,
         "filtros": {
             "aluno": aluno_id,
             "turma": turma_id,
@@ -116,6 +126,26 @@ def listar_presencas_academicas(request):
             "data_fim": data_fim,
         },
     }
+
+    # Suporte AJAX
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        tabela_html = render_to_string(
+            "presencas/partials/_tabela_presencas_parcial.html",
+            context,
+            request=request,
+        )
+        paginacao_html = render_to_string(
+            "presencas/partials/_paginacao_parcial.html",
+            context,
+            request=request,
+        )
+        return JsonResponse(
+            {
+                "tabela_html": tabela_html,
+                "paginacao_html": paginacao_html,
+            }
+        )
+
     return render(
         request, "presencas/academicas/listar_presencas_academicas.html", context
     )

@@ -1,0 +1,39 @@
+{% if atividades and atividades.paginator %}
+<nav aria-label="Paginação">
+    <ul class="pagination justify-content-center">
+        {% if atividades.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ atividades.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}" aria-label="Anterior">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+        </li>
+        {% endif %}
+
+        {% for num in atividades.paginator.page_range %}
+        {% if atividades.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% else %}
+        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
+
+        {% if atividades.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ atividades.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}" aria-label="Próximo">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&raquo;</span>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% else %}
+<p class="text-muted small mb-0">Sem páginas para exibir.</p>
+{% endif %}
