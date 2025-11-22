@@ -139,6 +139,30 @@ class Turma(models.Model):
         verbose_name="Encerrada por",
     )
 
+    bloqueio_total = models.BooleanField(
+        default=False,
+        verbose_name="Bloqueio Total",
+        help_text="Indica se a turma está com todos os relacionamentos bloqueados.",
+    )
+    bloqueio_ativo_em = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Bloqueio ativado em",
+    )
+    bloqueio_ativo_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="turmas_bloqueadas",
+        verbose_name="Bloqueio ativado por",
+    )
+    justificativa_reabertura = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Justificativa de Reabertura",
+    )
+
     # Metadados
     created_at = models.DateTimeField(default=timezone.now, verbose_name="Criado em")
     updated_at = models.DateTimeField(
@@ -155,6 +179,9 @@ class Turma(models.Model):
         verbose_name = "Turma"
         verbose_name_plural = "Turmas"
         ordering = ["-data_inicio"]
+        permissions = [
+            ("pode_reabrir_turma", "Pode reabrir turma encerrada"),
+        ]
 
     @property
     def vagas_disponiveis(self):
@@ -187,6 +214,15 @@ class Turma(models.Model):
         """Define metadados de encerramento para fins de auditoria."""
         self.encerrada_em = timezone.now()
         self.encerrada_por = usuario
+
+    def limpar_encerramento(self):
+        """Remove marcações de encerramento e bloqueio."""
+        self.data_fim = None
+        self.encerrada_em = None
+        self.encerrada_por = None
+        self.bloqueio_total = False
+        self.bloqueio_ativo_em = None
+        self.bloqueio_ativo_por = None
 
     def clean(self):
         super().clean()

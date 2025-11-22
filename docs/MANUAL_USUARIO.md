@@ -119,9 +119,19 @@ Todas as telas de listagem possuem:
 
 #### Avisos de turma encerrada
 
-- Um banner amarelo com ícone de cadeado é exibido quando a turma escolhida está encerrada administrativamente.
-- Caso o formulário rejeite a turma, selecione outra turma ativa utilizando o campo de busca.
+- **Badge cinza "Encerrada"**: aparece quando a turma foi encerrada sem vínculos pendentes. É apenas informativo e indica que não haverá novas movimentações, mas registros históricos continuam disponíveis.
+- **Badge vermelha "Encerrada"**: indica que o encerramento encontrou vínculos (matrículas, atividades, registros de presença, notas ou pagamentos). Enquanto estiver vermelha, todos os módulos relacionados permanecem em modo leitura e operações como matrículas, lançamentos de presença ou ajustes financeiros serão bloqueadas automaticamente.
+- Um banner amarelo com ícone de cadeado continua sendo exibido nos formulários afetados para reforçar que a turma não aceita novos lançamentos enquanto o bloqueio total estiver ativo.
+- Caso o formulário rejeite a turma, selecione outra turma ativa utilizando o campo de busca ou conclua o tratamento das dependências.
 - Se precisar seguir com aquela turma, solicite aos administradores a reabertura no módulo **Turmas** antes de tentar novamente.
+
+> ℹ️ Consulte também `docs/regras_encerramento_turmas_2025-11-20.md` para entender como os bloqueios são aplicados em cada módulo.
+
+#### Reabertura controlada
+
+- Apenas administradores (ou usuários com a permissão **turmas.pode_reabrir_turma**) conseguem reverter o encerramento.
+- O processo exige justificativa obrigatória e registra auditoria no histórico da turma.
+- Após a reabertura, o badge volta ao estado normal e os módulos são liberados gradualmente, permitindo novos lançamentos.
 
 
 ### Validações Automáticas
@@ -133,6 +143,7 @@ O sistema realiza as seguintes validações:
 - ✅ **Duplicação**: Previne registros duplicados
 - ✅ **Limites**: Respeita configurações de carência da turma
 - ✅ **Turma ativa obrigatória**: Turmas encerradas exibem alerta e não aceitam novos lançamentos até serem reabertas em **Turmas**.
+- ✅ **Bloqueio total quando houver vínculos**: se o encerramento encontrou dependências, os módulos `matriculas`, `atividades`, `presencas`, `notas` e `pagamentos` entram automaticamente em modo leitura até que um administrador reabra ou transfira os dados.
 
 ## Consulta e Relatórios
 

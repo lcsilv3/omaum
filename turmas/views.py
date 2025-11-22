@@ -96,19 +96,23 @@ def _bloquear_operacao_em_turma_encerrada(request, turma, acao):
 @login_required
 def listar_turmas(request):
     """Lista todas as turmas cadastradas."""
+    import logging
+
+    logger = logging.getLogger(__name__)
+
     try:
-        Turma = get_model_dynamically("turmas", "Turma")
+        # Importação direta do modelo local (evita problemas de importação circular)
+        from turmas.models import Turma
+
+        # Importação dinâmica apenas para modelo externo
         Curso = get_model_dynamically("cursos", "Curso")
 
         # Obter parâmetros de busca e filtro
         query = request.GET.get("q", "")
         curso_id = request.GET.get("curso", "")
 
-        # Filtrar turmas (sem select_related)
+        # Filtrar turmas
         turmas = Turma.objects.all()
-
-        print("DEBUG - Turmas antes dos filtros:", Turma.objects.all().count())
-        print("DEBUG - Query params:", request.GET)
 
         if query:
             turmas = turmas.filter(
@@ -120,25 +124,18 @@ def listar_turmas(request):
         if curso_id:
             turmas = turmas.filter(curso_id=curso_id)
 
-        print("DEBUG - Turmas após filtros:", turmas.count())
-
         # Ordenar turmas por status, nome do curso e nome da turma
         turmas = turmas.order_by("status", "curso__nome", "nome")
 
-        # Forçar avaliação do queryset para evitar problemas de lazy evaluation
+        # Forçar avaliação do queryset
         turmas_list = list(turmas)
-        print("DEBUG - Lista de turmas (forçada):", [t.id for t in turmas_list])
 
         # Paginação
-        paginator = Paginator(turmas_list, 10)  # 10 turmas por página
+        paginator = Paginator(turmas_list, 10)
         page_number = request.GET.get("page")
         try:
             page_obj = paginator.get_page(page_number)
         except (ValueError, TypeError) as e:
-            # Tratar erros específicos de paginação (página inválida, tipo incorreto)
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.warning(
                 "Erro na paginação de turmas - página solicitada: %s, erro: %s",
                 page_number,
@@ -146,22 +143,11 @@ def listar_turmas(request):
             )
             page_obj = paginator.get_page(1)
 
-        # Debug detalhado do conteúdo da página
-        ids_na_pagina = list(getattr(page_obj, "object_list", []))
-        print("DEBUG - IDs das turmas na página:", [t.id for t in ids_na_pagina])
-        print(
-            "DEBUG - page_obj length:",
-            len(ids_na_pagina),
-            "| total_turmas:",
-            len(turmas_list),
-        )
-        print("DEBUG - object_list:", ids_na_pagina)
-
         # Obter cursos para o filtro
         cursos = Curso.objects.all().order_by("nome")
 
         context = {
-            "turmas": page_obj,  # O template deve iterar sobre page_obj.object_list
+            "turmas": page_obj,
             "page_obj": page_obj,
             "query": query,
             "cursos": cursos,
@@ -169,14 +155,14 @@ def listar_turmas(request):
             "total_turmas": len(turmas_list),
         }
 
+        logger.info(
+            "Listagem de turmas concluída com sucesso: %d turmas encontradas",
+            len(turmas_list),
+        )
         return render(request, "turmas/listar_turmas.html", context)
     except (ImportError, AttributeError) as e:
-        # Tratar erros específicos de importação de modelos
-        import logging
-
-        logger = logging.getLogger(__name__)
         logger.error(
-            "Erro ao importar modelos necessários na listagem de turmas: %s", e
+            "Erro ao importar modelos na listagem de turmas: %s", e, exc_info=True
         )
         suporte_msg = (
             "Não conseguimos carregar as turmas agora. Tente novamente em alguns minutos "
@@ -196,10 +182,6 @@ def listar_turmas(request):
             },
         )
     except Exception as e:  # noqa: BLE001
-        # Tratamento para erros não previstos - log detalhado mas mensagem genérica para usuário
-        import logging
-
-        logger = logging.getLogger(__name__)
         logger.error(
             "Erro inesperado na listagem de turmas: %s: %s",
             type(e).__name__,
@@ -380,9 +362,7 @@ def excluir_turma(request, turma_id):
     Turma = get_turma_model()
     turma = get_object_or_404(Turma, id=turma_id)
 
-    bloqueio = _bloquear_operacao_em_turma_encerrada(
-        request, turma, "novas matrículas"
-    )
+    bloqueio = _bloquear_operacao_em_turma_encerrada(request, turma, "novas matrículas")
     if bloqueio:
         return bloqueio
 
@@ -1082,10 +1062,9 @@ def importar_turmas(request):
                         continue
 
                     # Validar obrigatoriedade dos campos iniciáticos
-                    perc_min_presenca = (
-                        row.get("Percentual Mínimo de Presença")
-                        or row.get("Percentual de Carência")
-                    )
+                    perc_min_presenca = row.get(
+                        "Percentual Mínimo de Presença"
+                    ) or row.get("Percentual de Carência")
 
                     obrigatorios = [
                         ("Número do Livro", row.get("Número do Livro")),

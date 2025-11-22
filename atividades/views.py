@@ -44,7 +44,7 @@ def listar_atividades_academicas(request):
     curso_id = request.GET.get("curso", "")
     turma_id = request.GET.get("turma", "")
     page_number = request.GET.get("page", 1)
-    
+
     models = get_models()
     Curso = models["Curso"]
     Turma = models["Turma"]
@@ -80,7 +80,7 @@ def listar_atividades_academicas(request):
         "turma_selecionada": turma_id,
         "total_atividades": total_atividades,
     }
-    
+
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         tabela_html = render_to_string(
             "atividades/academicas/partials/_tabela_atividades_parcial.html",

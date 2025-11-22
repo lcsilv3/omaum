@@ -5,68 +5,68 @@ import django.utils.timezone
 
 
 def preencher_data_inicio(apps, schema_editor):
-    Turma = apps.get_model('turmas', 'Turma')
+    Turma = apps.get_model("turmas", "Turma")
     for turma in Turma.objects.filter(data_inicio__isnull=True):
         turma.data_inicio = turma.data_inicio_ativ or django.utils.timezone.now().date()
-        turma.save(update_fields=['data_inicio'])
+        turma.save(update_fields=["data_inicio"])
 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('turmas', '0002_remove_turma_perc_carencia_and_more'),
+        ("turmas", "0002_remove_turma_perc_carencia_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='turma',
-            name='data_inicio',
+            model_name="turma",
+            name="data_inicio",
             field=models.DateField(
                 blank=True,
                 null=True,
-                help_text='Data administrativa de início da turma.',
-                verbose_name='Data de Início',
+                help_text="Data administrativa de início da turma.",
+                verbose_name="Data de Início",
             ),
         ),
         migrations.AddField(
-            model_name='turma',
-            name='data_fim',
+            model_name="turma",
+            name="data_fim",
             field=models.DateField(
                 blank=True,
                 null=True,
-                help_text='Informe para encerrar administrativamente a turma.',
-                verbose_name='Data de Fim',
+                help_text="Informe para encerrar administrativamente a turma.",
+                verbose_name="Data de Fim",
             ),
         ),
         migrations.AddField(
-            model_name='turma',
-            name='encerrada_em',
+            model_name="turma",
+            name="encerrada_em",
             field=models.DateTimeField(
                 blank=True,
                 null=True,
-                help_text='Registrado automaticamente quando a data de fim é definida.',
-                verbose_name='Encerrada em',
+                help_text="Registrado automaticamente quando a data de fim é definida.",
+                verbose_name="Encerrada em",
             ),
         ),
         migrations.AddField(
-            model_name='turma',
-            name='encerrada_por',
+            model_name="turma",
+            name="encerrada_por",
             field=models.ForeignKey(
                 blank=True,
                 null=True,
                 on_delete=models.SET_NULL,
-                related_name='turmas_encerradas',
+                related_name="turmas_encerradas",
                 to=settings.AUTH_USER_MODEL,
-                verbose_name='Encerrada por',
+                verbose_name="Encerrada por",
             ),
         ),
         migrations.RunPython(preencher_data_inicio, migrations.RunPython.noop),
         migrations.AlterField(
-            model_name='turma',
-            name='data_inicio',
+            model_name="turma",
+            name="data_inicio",
             field=models.DateField(
-                help_text='Data administrativa de início da turma.',
-                verbose_name='Data de Início',
+                help_text="Data administrativa de início da turma.",
+                verbose_name="Data de Início",
             ),
         ),
     ]

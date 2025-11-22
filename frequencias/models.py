@@ -44,6 +44,7 @@ class FrequenciaMensal(models.Model):
         (11, "Novembro"),
         (12, "Dezembro"),
     ]
+    MESES_CHOICES = MES_CHOICES  # Compatibilidade com views legadas
 
     turma = models.ForeignKey(
         get_turma_model(), on_delete=models.CASCADE, verbose_name="Turma"

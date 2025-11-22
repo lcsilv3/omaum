@@ -206,7 +206,5 @@ class TransferenciaTurmaForm(forms.Form):
     def clean_turma_destino(self):
         turma_destino = self.cleaned_data["turma_destino"]
         if getattr(turma_destino, "esta_encerrada", False):
-            raise forms.ValidationError(
-                "A turma de destino não pode estar encerrada."
-            )
+            raise forms.ValidationError("A turma de destino não pode estar encerrada.")
         return turma_destino

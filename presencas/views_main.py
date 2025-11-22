@@ -118,6 +118,7 @@ def listar_presencas_academicas(request):
     cursos = cache.get(cursos_cache_key)
     if not cursos:
         from cursos.models import Curso
+
         cursos = list(Curso.objects.only("id", "nome"))
         cache.set(cursos_cache_key, cursos, 600)  # 10 minutos
 

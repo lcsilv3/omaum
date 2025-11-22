@@ -1,0 +1,16 @@
+{
+  "timestamp": "20251122_155445",
+  "file": "C:\\projetos\\omaum\\scripts\\deploy\\exports\\dev_data_20251122_155445.json",
+  "size_kb": 207.2587890625,
+  "stats": {
+    "auth.User": 3,
+    "cursos.Curso": 12,
+    "alunos.Aluno": 54,
+    "turmas.Turma": 31,
+    "matriculas.Matricula": 68,
+    "atividades.Atividade": 40,
+    "notas.Nota": 130,
+    "pagamentos.Pagamento": 72
+  },
+  "total_records": 410
+}

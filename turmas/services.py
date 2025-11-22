@@ -4,12 +4,25 @@ from __future__ import annotations
 import logging
 from datetime import time
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.utils import timezone
 
 from core.utils import get_model_dynamically
 
 logger = logging.getLogger(__name__)
+
+
+DEPENDENCIAS_RELACIONADAS = (
+    ("matriculas", ("matriculas", "Matricula", "turma", {})),
+    ("atividades", ("atividades", "Atividade", "turmas", {"many_to_many": True})),
+    ("presencas", ("presencas", "RegistroPresenca", "turma", {})),
+    ("notas", ("notas", "Nota", "turma", {})),
+    (
+        "pagamentos",
+        ("pagamentos", "Pagamento", "aluno__matricula__turma", {"distinct": True}),
+    ),
+)
 
 
 def criar_turma(dados_turma: dict):
@@ -102,6 +115,85 @@ def validar_turma_para_registro(turma):
         raise ValidationError(
             "Esta turma está encerrada e não aceita novos lançamentos."
         )
+    if getattr(turma, "bloqueio_total", False):
+        raise ValidationError(
+            "Turma bloqueada por encerramento com vínculos. Operação não permitida."
+        )
+
+
+def listar_dependencias(turma):
+    """Retorna um dicionário com listas de dependências relacionadas à turma."""
+    resultado = {}
+    for chave, (app, model_name, lookup, config) in DEPENDENCIAS_RELACIONADAS:
+        try:
+            Modelo = get_model_dynamically(app, model_name)
+        except (ImportError, AttributeError):
+            resultado[chave] = []
+            continue
+
+        queryset = Modelo.objects.all()
+        many_to_many = config.get("many_to_many")
+        distinct = config.get("distinct")
+
+        if many_to_many:
+            queryset = queryset.filter(**{f"{lookup}__in": [turma]})
+        else:
+            queryset = queryset.filter(**{lookup: turma})
+
+        if distinct:
+            queryset = queryset.distinct()
+
+        resultado[chave] = list(queryset[:50])  # limitar listagem para preview
+    return resultado
+
+
+def possui_dependencias(turma):
+    dependencias = listar_dependencias(turma)
+    return any(dependencias[key] for key in dependencias)
+
+
+def ativar_bloqueio_total(turma, usuario):
+    """Marca a turma como bloqueada por possuir dependências ao encerrar."""
+    turma.bloqueio_total = True
+    turma.bloqueio_ativo_em = timezone.now()
+    turma.bloqueio_ativo_por = usuario
+    turma.save(
+        update_fields=["bloqueio_total", "bloqueio_ativo_em", "bloqueio_ativo_por"]
+    )
+    logger.info(
+        "Bloqueio total ativado para turma %s por %s",
+        turma.id,
+        getattr(usuario, "username", usuario),
+    )
+
+
+def reabrir_turma(turma, usuario, justificativa=""):
+    """Reverte encerramento/bloqueio, restringindo a usuários autorizados."""
+    if not (
+        getattr(usuario, "is_superuser", False)
+        or usuario.has_perm("turmas.pode_reabrir_turma")
+    ):
+        raise PermissionDenied("Usuário não possui permissão para reabrir turma.")
+
+    turma.limpar_encerramento()
+    turma.justificativa_reabertura = justificativa
+    turma.save(
+        update_fields=[
+            "data_fim",
+            "encerrada_em",
+            "encerrada_por",
+            "bloqueio_total",
+            "bloqueio_ativo_em",
+            "bloqueio_ativo_por",
+            "justificativa_reabertura",
+        ]
+    )
+    logger.info(
+        "Turma %s reaberta por %s",
+        turma.id,
+        getattr(usuario, "username", usuario),
+    )
+    return turma
 
 
 def criar_atividades_basicas(turma):
