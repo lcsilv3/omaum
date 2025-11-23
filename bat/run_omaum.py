@@ -1,60 +1,36 @@
-import os
-import sys
+import shutil
 import subprocess
-import webbrowser
-import time
+from pathlib import Path
 
 
-def run_command(command):
-    process = subprocess.Popen(
-        command,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    output, error = process.communicate()
-    return process.returncode, output, error
-
-
-def activate_venv():
-    venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "venv")
-    if sys.platform == "win32":
-        activate_script = os.path.join(venv_path, "Scripts", "activate.bat")
-        if os.path.exists(activate_script):
-            return f"call {activate_script} &&"
-    else:
-        activate_script = os.path.join(venv_path, "bin", "activate")
-        if os.path.exists(activate_script):
-            return f"source {activate_script} &&"
-    return ""
-
-
-def main():
-    # Change to the directory containing manage.py
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    # Activate virtual environment if it exists
-    activate_cmd = activate_venv()
-
-    # Start Django server
-    command = f"{activate_cmd} python manage.py runserver"
-    returncode, output, error = run_command(command)
-
-    if returncode != 0:
-        print("An error occurred while running the server:")
-        print(error)
-        input("Press Enter to exit...")
+def main() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    runner = repo_root / "scripts" / "run_omaum.ps1"
+    if not runner.exists():
+        print(f"Script não encontrado: {runner}")
+        input("Pressione Enter para sair...")
         return
 
-    # Open web browser
-    webbrowser.open("http://127.0.0.1:8000/")
+    shell = shutil.which("pwsh") or shutil.which("powershell")
+    if not shell:
+        print("PowerShell não encontrado. Instale o PowerShell 7 ou habilite o Windows PowerShell.")
+        input("Pressione Enter para sair...")
+        return
 
-    print("Server is running. Press Ctrl+C to stop.")
+    command = [
+        shell,
+        "-ExecutionPolicy",
+        "Bypass",
+        "-NoLogo",
+        "-File",
+        str(runner),
+    ]
+
     try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("\nStopping server...")
+        subprocess.run(command, check=True)
+    except subprocess.CalledProcessError as exc:
+        print(f"Ocorreu um erro ao acionar o script PowerShell (código {exc.returncode}).")
+    input("Pressione Enter para sair...")
 
 
 if __name__ == "__main__":

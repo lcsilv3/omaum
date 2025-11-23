@@ -1,0 +1,407 @@
+Unnamed: 0;código tipo;Descrição tipo;código;Descrição código
+;1;Administrativos;10;Códigos Administrativos
+;1;Administrativos;11;Presidente
+;1;Administrativos;12;Conselheiro
+;1;Administrativos;13;Secretário Geral
+;1;Administrativos;14;Diretor Administrativo
+;1;Administrativos;15;Diretor de Cursos
+;1;Administrativos;16;Diretor de Disciplina
+;1;Administrativos;17;Diretor de Patrimônio
+;1;Administrativos;18;Diretor de Pessoal
+;1;Administrativos;19;Diretor de Relações Públicas
+;1;Administrativos;20;Diretor Social
+;1;Administrativos;21;Coordenador de Informática
+;1;Administrativos;22;Auxiliar da Secretaria Geral
+;1;Administrativos;23;Auxiliar da Dir. Administrativa
+;1;Administrativos;24;Auxiliar da Dir. de Patrimônio
+;1;Administrativos;25;Auxiliar da Dir. de Pessoal
+;1;Administrativos;26;Auxiliar da Dir. Social
+;1;Administrativos;27;Auxiliar da Seção de Notas
+;1;Administrativos;28;Auxiliar da Coord. de Informática
+;1;Administrativos;29;Encarregado da Alimentação no Ritual de 1ªiniciação
+;1;Administrativos;30;Auxiliar do Encarreg. da Alimentação no Ritual de 1ªiniciação
+;1;Administrativos;31;Encarregado da Alimentação no Ritual de 2ªiniciação
+;1;Administrativos;32;Auxiliar do Encarreg. da Alimentação no Ritual de 2ªiniciação
+;1;Administrativos;33;Encarregado da Alimentação no Ritual de 3ªiniciação
+;1;Administrativos;34;Auxiliar do Encarreg. da Alimentação no Ritual de 3ªiniciação
+;1;Administrativos;35;Encarregado da Alimentação no Ritual de 4ªiniciação
+;1;Administrativos;36;Auxiliar do Encarreg. da Alimentação no Ritual de 4ªiniciação
+;1;Administrativos;37;Encarregado da Alimentação no Ritual de 5ªiniciação
+;1;Administrativos;38;Auxiliar do Encarreg. da Alimentação no Ritual de 5ªiniciação
+;1;Administrativos;39;Encarregado da Alimentação no Ritual de Sagração
+;1;Administrativos;40;Auxiliar do Encarreg. da Alimentação no Ritual de Sagração
+;1;Administrativos;41;Responsável pela Cantina
+;1;Administrativos;42;Auxiliar do Responsável pela Cantina
+;1;Administrativos;43;Guardião de Santuário
+;1;Administrativos;44;Auxiliar do guardião de Santuário
+;1;Administrativos;45;Auxiliar da equipe guardiã do Santuário
+;1;Administrativos;46;Encarregado de entrevistar candidatos ao Pré-Iniciático
+;2;Trabalho Curador;60;Códigos Trabalho Curador
+;2;Trabalho Curador;61;Coordenador de Trab. Curador de 3ª feira
+;2;Trabalho Curador;62;Coordenador de Trab. Curador de 4ª feira
+;2;Trabalho Curador;63;Coordenador de Trab. Curador de 5ª feira
+;2;Trabalho Curador;64;Coordenador de Trab. Curador de 6ª feira
+;2;Trabalho Curador;65;Auxiliar da Coord. no Trab. Curador
+;2;Trabalho Curador;66;Auxiliar da Coord. no atendimento pessoal
+;2;Trabalho Curador;70;Direção Passes Genéricos Templo Menor
+;2;Trabalho Curador;71;Auxiliar da Dir. Passes Genéricos Templo Menor
+;2;Trabalho Curador;75;Direção Passes Específicos Templo Menor
+;2;Trabalho Curador;76;Auxiliar da Dir. Passes Específicos Templo Menor
+;2;Trabalho Curador;77;Auxiliar da Coord. na Harmonização dos Pacientes
+;2;Trabalho Curador;80;Direção Trabalhos Especiais no Auditório I
+;2;Trabalho Curador;81;Auxiliar da Dir. Trabalhos Especiais no Auditório I
+;2;Trabalho Curador;85;Direção Relax
+;2;Trabalho Curador;86;Auxiliar da Dir. Relax
+;2;Trabalho Curador;90;Direção Correntes e Águas
+;2;Trabalho Curador;91;Auxiliar da Dir. Correntes e Águas
+;2;Trabalho Curador;93;Auxiliar da Coord. na Meditação em Templo Maior
+;2;Trabalho Curador;95;Operador de Trab. Esp. Entrevistas e Avaliações
+;2;Trabalho Curador;96;Operador de Trab. Esp. Cromoterapia
+;2;Trabalho Curador;97;Operador de Trab. Esp. Letargia
+;2;Trabalho Curador;98;Operador de Trab. Esp. (outros)
+;3;Ritos Maiores;100;Funções nos ritos de 1ª iniciação
+;3;Ritos Maiores;101;Sac. Ofic. do Ritual da 1ª iniciação
+;3;Ritos Maiores;102;Sac. Ac. Imediato do Ofic. do Ritual da 1ª Inic.
+;3;Ritos Maiores;105;Sac. Mestre de Cerimônias da 1ª Inic.
+;3;Ritos Maiores;106;Sac. Ac. do Mestre de Cerimôrias da 1ª Inic.
+;3;Ritos Maiores;110;Sac. Mestre de Cerimônias em Santuário da 1ª Inic.
+;3;Ritos Maiores;111;Sac. Ac. do Mestre de Cerimôrias em Santuário da 1ª Inic.
+;3;Ritos Maiores;115;Sac. Guardião do Ritual da 1ª Inic.
+;3;Ritos Maiores;116;Sac. Ac. do Guardião do Ritual da 1ª Inic.
+;3;Ritos Maiores;117;Discípulo Ac. do Sac. Guardião do Ritual da 1ª Inic.
+;3;Ritos Maiores;118;Apóstolo Ac. do Sac. Guardião do Ritual da 1ª Inic.
+;3;Ritos Maiores;119;Mestre (Companheiro ou Aprendiz) Ac. do Sac. Guardião do Ritual da 1ª Inic.
+;3;Ritos Maiores;120;Sac. Ofic. dos Ritos Preparatórios da 1ª Inic.
+;3;Ritos Maiores;121;Sac. Ac. do Ofic. dos Ritos Preparatórios da 1ª Inic.
+;3;Ritos Maiores;130;Sac. Ofic. da Rito da Preparação do Templo Maior da 1ª Inic.
+;3;Ritos Maiores;131;Sac.Ac. do Ofic. do Rito da Preparação do Templo Maior da 1ª Inic.
+;3;Ritos Maiores;132;Sac. Ofic. em TMaior no Elem. Terra da 1ª Inic.
+;3;Ritos Maiores;133;Sac. Ofic. em TMaior no Elem. Água da 1ª Inic.
+;3;Ritos Maiores;134;Sac. Ofic. em TMaior no Elem. Fogo da 1ª Inic.
+;3;Ritos Maiores;135;Sac. Ofic. em TMaior no Elem. Ar da 1ª Inic.
+;3;Ritos Maiores;136;Discípulo em ofício em TMaior no Elem. Terra da 1ª Inic.
+;3;Ritos Maiores;137;Discípulo em ofício em TMaior no Elem. Água da 1ª Inic.
+;3;Ritos Maiores;138;Discípulo em ofício em TMaior no Elem. Fogo da 1ª Inic.
+;3;Ritos Maiores;139;Discípulo em ofício em TMaior no Elem. Ar da 1ª Inic.
+;3;Ritos Maiores;140;Sac. Ofic. do Rito de Apres. e Vinc. c/os Reg. Elementais da 1ª Inic.
+;3;Ritos Maiores;141;Sac. Ac. do Ofic. do Rito de Apres. e Vinc. c/os Reg. Elementais da 1ª Inic.
+;3;Ritos Maiores;142;Discípulo (ou Sac.) em oficio no Elem. Terra da 1ª Inic.
+;3;Ritos Maiores;143;Discípulo (ou Sac.) em oficio no Elem. Água da 1ª Inic.
+;3;Ritos Maiores;144;Discípulo (ou Sac.) em oficio no Elem. Fogo da 1ª Inic.
+;3;Ritos Maiores;145;Discípulo (ou Sac.) em oficio no Elem. Ar da 1ª Inic.
+;3;Ritos Maiores;146;Aprendiz (Companheiro ou Mestre) Acólito no Elem. Terra da 1ª Inic.
+;3;Ritos Maiores;147;Aprendiz (Companheiro ou Mestre) Acólito no Elem. Água da 1ª Inic.
+;3;Ritos Maiores;148;Aprendiz (Companheiro ou Mestre) Acólito no Elem. Fogo da 1ª Inic.
+;3;Ritos Maiores;149;Aprendiz (Companheiro ou Mestre) Acólito no Elem. Ar da 1ª Inic.
+;3;Ritos Maiores;150;Sac. Ofic. do Rito da Harmonização e Purificação da 1ª Inic.
+;3;Ritos Maiores;151;Sac. Ac. do Ofic. do Rito da Harmonização e Purificação da 1ª Inic.
+;3;Ritos Maiores;152;Sac. Ofic. do Rito da Harmonização Grupal da 1ª Inic.
+;3;Ritos Maiores;153;Sac. Ac. do Ofic. do Rito da Harmonização Grupal da 1ª Inic.
+;3;Ritos Maiores;154;Discípulo Ac. do Ofic. do Rito da Harmonização Grupal da 1ª Inic.
+;3;Ritos Maiores;155;Apóstolo Ac. do Ofic. do Rito da Harmonização Grupal da 1ª Inic.
+;3;Ritos Maiores;156;Mestre Ac. do Ofic. do Rito da Harmonização Grupal da 1ª Inic.
+;3;Ritos Maiores;157;Companheiro Ac. do Ofic. do Rito da Harmonização Grupal da 1ª Inic.
+;3;Ritos Maiores;158;Aprendiz Ac. do Ofic. do Rito da Harmonização Grupal da 1ª Inic.
+;3;Ritos Maiores;160;Sac. Ofic. do Rito de Apres. e Vinc. c/a Egregora de Santuário da 1ª Inic.
+;3;Ritos Maiores;161;Sac. Ac. do Ofic. do Rito de Apres. e Vinc. c/a Egreg. de Santuário da 1ª Inic.
+;3;Ritos Maiores;165;Sac. Ofic. do Rito da Purificação Grupal da 1ª Inic.
+;3;Ritos Maiores;166;Sac. Ac. do Ofic. do Rito da Purificação Grupal da 1ª Inic.
+;3;Ritos Maiores;167;Discípulo Ac. do Ofic. do Rito da Purificação Grupal da 1ª Inic.
+;3;Ritos Maiores;200;Funções nos ritos de 2ª iniciação
+;3;Ritos Maiores;201;Sac. Ofic. do Ritual da 2ª Iniciação
+;3;Ritos Maiores;202;Sac. Ac. Imediato do Ofic. do Ritual da 2ª Inic.
+;3;Ritos Maiores;205;Sac. Mestre de Cerimônias da 2ª Inic.
+;3;Ritos Maiores;206;Sac. Ac. do Mestre de Cerimôrias da 2ª Inic.
+;3;Ritos Maiores;207;Díscipulo Ac. do Mestre de Cerimôrias da 2ª Inic.
+;3;Ritos Maiores;208;Apóstolo Ac. do Mestre de Cerimôrias da 2ª Inic.
+;3;Ritos Maiores;209;Mestre Ac. do Mestre de Cerimôrias da 2ª Inic.
+;3;Ritos Maiores;215;Sac. Guardião do Ritual da 2ª Inic.
+;3;Ritos Maiores;216;Sac. Ac. do Guardião do Ritual da 2ª Inic.
+;3;Ritos Maiores;217;Díscipulo Ac. do Guardião do Ritual da 2ª Inic.
+;3;Ritos Maiores;218;Apóstolo Ac. do Guardião do Ritual da 2ª Inic.
+;3;Ritos Maiores;219;Mestre Ac. do Guardião do Ritual da 2ª Inic.
+;3;Ritos Maiores;220;Sac. Ofic. dos Ritos Preparatórios da 2ª Inic.
+;3;Ritos Maiores;221;Sac. Ac. do Ofic. dos Ritos Preparatórios da 2ª Inic.
+;3;Ritos Maiores;225;Sac. Ofic. do Rito da Harmonização e Vinculação em Santuário da 2ª Inic.
+;3;Ritos Maiores;226;Sac. Ac. do Ofic. do Rito da Harm. e Vinculação em Santuário da 2ª Inic.
+;3;Ritos Maiores;227;Díscipulo Ac. do Ofic. do Rito da Harm. e Vinculação em Santuário da 2ª Inic.
+;3;Ritos Maiores;228;Apóstolo Ac. do Ofic. do Rito da Harm. e Vinculação em Santuário da 2ª Inic.
+;3;Ritos Maiores;229;Mestre (ou Companheiro) Ac. do Ofic. do Rito da Harm. e Vinculação em Santuário da 2ª Inic.
+;3;Ritos Maiores;230;Sac. Ofic. do Ritual Externo da 2ª Inic.
+;3;Ritos Maiores;231;Sac. Ac. do Ofic. do Ritual Externo da 2ª Inic.
+;3;Ritos Maiores;232;Guardião dos Implementos no Ritual Externo da 2ª Inic. - (Portador)
+;3;Ritos Maiores;233;Portador da Espada no Ritual Externo da 2ª Inic.
+;3;Ritos Maiores;234;Portador da Taça no Ritual Externo da 2ª Inic.
+;3;Ritos Maiores;235;Sac. Ofic. do Rito Prep./Cons. do Templo da Estrela Rit. Ext. da 2ª Inic.
+;3;Ritos Maiores;236;Sac. Ac. do Ofic. do Rito Prep./Cons. do Templo da Estrela Rit. Ext. da 2ª Inic.
+;3;Ritos Maiores;237;Díscipulo Ac. no Rito Prep./Cons. do Templo da Estrela Rit. Ext. da 2ª Inic.
+;3;Ritos Maiores;238;Apóstolo Ac. no Rito Prep./Cons. do Templo da Estrela Rit. Ext. da 2ª Inic.
+;3;Ritos Maiores;239;Mestre Ac. no Rito Prep./Cons. do Templo da Estrela Rit. Ext. da 2ª Inic.
+;3;Ritos Maiores;240;Sac. Ofic. do Rito Batismal no Ritual Externo da 2ª Inic.
+;3;Ritos Maiores;241;Sac. Ac. do Ofic. do Rito Batismal no Ritual Externo da 2ª Inic.
+;3;Ritos Maiores;242;Discípulo Ac. Batizadores no Rito Batismal no Ritual Externo da 2ª Inic.
+;3;Ritos Maiores;243;Apóstolo Ac. dos Batizadores no Rito Batismal no Ritual Externo da 2ª Inic.
+;3;Ritos Maiores;244;Mestre Ac. dos Batizadores no Rito Batismal no Ritual Externo da 2ª Inic.
+;3;Ritos Maiores;250;Sac. Ofic. do Rito da Purif. e Dinamização dos Centros da 2ª Inic.
+;3;Ritos Maiores;251;Sac. Ac. do Ofic. do Rito da Purif. e Dinamização dos Centros da 2ª Inic.
+;3;Ritos Maiores;252;Discípulo Ac. do Ofic. do Rito da Purif. e Dinamização dos Centros da 2ª Inic.
+;3;Ritos Maiores;253;Apóstolo Ac. do Ofic. do Rito da Purif. e Dinamização dos Centros da 2ª Inic.
+;3;Ritos Maiores;260;Sac. Ofic. do Rito da Selagem da 2ª Inic.
+;3;Ritos Maiores;261;Sac. Ac. do Ofic. do Rito da Selagem da 2ª Inic.
+;3;Ritos Maiores;265;Sac. Ofic. do Rito da Palestra no Ritual da Selagem da 2ª Inic.
+;3;Ritos Maiores;266;Sac. Ac. do Ofic. do Rito da Palestra no Ritual da Selagem da 2ª Inic.
+;3;Ritos Maiores;270;Sac. Ofic. do Rito da Confissão da 2ª Inic.
+;3;Ritos Maiores;271;Sac. Ac. do Ofic. do Rito da Confissão da 2ª Inic.
+;3;Ritos Maiores;275;Sac. Ofic. do Rito da Comunhão dos Iniciados da 2ª Inic.
+;3;Ritos Maiores;276;Sac. Ac. do Ofic. do Rito da Comunhão dos Iniciados da 2ª Inic.
+;3;Ritos Maiores;280;Sac. Ofic. do Rito da Vinculação dos Cordões da 2ª Inic.
+;3;Ritos Maiores;281;Sac. Ac. do Ofic. do Rito da Vinculação dos Cordões da 2ª Inic.
+;3;Ritos Maiores;285;Sac. Ofic. do Rito dos Nós da 2ª Inic.
+;3;Ritos Maiores;286;Sac. Ac. do Ofic. do Rito dos Nós da 2ª Inic.
+;3;Ritos Maiores;290;Sac. Ofic. do Rito da Palestra no Ritual da Confirmação da 2ª Inic.
+;3;Ritos Maiores;291;Sac. Ac. do Ofic. do Rito da Palestra no Ritual da Confirmação da 2ª Inic.
+;3;Ritos Maiores;300;Funções nos ritos de 3ª iniciação
+;3;Ritos Maiores;301;Sac. Ofic. do Ritual da 3ª Iniciação
+;3;Ritos Maiores;302;Sac. Ac. Imediato do Ofic. do Ritual da 3ª Inic.
+;3;Ritos Maiores;305;Sac. Mestre de Cerimônias da 3ª Inic.
+;3;Ritos Maiores;306;Sac. Ac. do Mestre de Cerimôrias da 3ª Inic.
+;3;Ritos Maiores;307;Discípulo Ac. do Mestre de Cerimôrias da 3ª Inic.
+;3;Ritos Maiores;308;Apóstolo Ac. do Mestre de Cerimôrias da 3ª Inic.
+;3;Ritos Maiores;309;Mestre Ac. do Mestre de Cerimôrias da 3ª Inic.
+;3;Ritos Maiores;315;Sac. Guardião do Ritual da 3ª Inic.
+;3;Ritos Maiores;316;Sac. Ac. do Guardião do Ritual da 3ª Inic.
+;3;Ritos Maiores;317;Discípulo Ac. do Guardião do Ritual da 3ª Inic.
+;3;Ritos Maiores;318;Apóstolo Ac. do Guardião do Ritual da 3ª Inic.
+;3;Ritos Maiores;319;Mestre Ac. do Guardião do Ritual da 3ª Inic.
+;3;Ritos Maiores;320;Sac. Ofic. dos Ritos Preparatórios da 3ª Inic.
+;3;Ritos Maiores;321;Sac. Ac. do Ofic. dos Ritos Preparatórios da 3ª Inic.
+;3;Ritos Maiores;322;Discípulo Ac. do Ofic. dos Ritos Preparatórios da 3ª Inic.
+;3;Ritos Maiores;340;Sac. Ofic. do Ritual Externo da 3ª Inic.
+;3;Ritos Maiores;341;Sac. Ac. Imediato do Ofic. do Ritual Externo da 3ª Inic.
+;3;Ritos Maiores;342;Sac. Ac. do Ofic. do Ritual Externo da 3ª Inic.
+;3;Ritos Maiores;343;Sac. Ac. do Ofic. do Ritual Externo da 3ª Inic. - Portador da Capa
+;3;Ritos Maiores;344;Sac. Ac. do Ofic. do Ritual Externo da 3ª Inic. - Portador da Tocha
+;3;Ritos Maiores;345;Sac. Ac. do Ofic. do Ritual Externo da 3ª Inic. - Portador dos Implementos
+;3;Ritos Maiores;350;Sac. Ofic. do Rito do Batismo de Fogo e Sacrifício da 3ª Inic.
+;3;Ritos Maiores;351;Sac. Ac. do Ofic. do Rito do Batismo de Fogo e Sacrifício da 3ª Inic.
+;3;Ritos Maiores;360;Sac. Ofic. do Rito da Construção da Estrela da 3ª Inic.
+;3;Ritos Maiores;361;Sac. Ac. do Ofic. do Rito da Construção da Estrela da 3ª Inic.
+;3;Ritos Maiores;362;Discípulo Ac. do Ofic. do Rito da Construção da Estrela da 3ª Inic.
+;3;Ritos Maiores;363;Apóstolo Ac. do Ofic. do Rito da Construção da Estrela da 3ª Inic.
+;3;Ritos Maiores;364;Mestre Ac. do Ofic. do Rito da Construção da Estrela da 3ª Inic.
+;3;Ritos Maiores;370;Sac. Ofic. do Ritual da Comunhão de Fogo da 3ª Inic.
+;3;Ritos Maiores;371;Sac. Ac. Imediato do Ofic. do Ritual da Comunhão de Fogo da 3ª Inic.
+;3;Ritos Maiores;372;Sac. Ofic. do Ritual da Comunhão dos Iniciados da 3ª Inic.
+;3;Ritos Maiores;373;Sac. Ac. do Ofic. do Ritual da Comunhão dos Iniciados da 3ª Inic.
+;3;Ritos Maiores;374;Sac. Ofic. do Rito da Palestra da 3ª Inic.
+;3;Ritos Maiores;375;Sac. Ac. do Ofic. do Rito da Palestra da 3ª Inic.
+;3;Ritos Maiores;380;Sac. Ofic. do Ritual da Confirmação da 3ª Inic.
+;3;Ritos Maiores;381;Sac. Ac. do Ofic. do Ritual da Confirmação da 3ª Inic.
+;3;Ritos Maiores;385;Sac. Ofic. do Rito do Compromisso da 3ª Inic.
+;3;Ritos Maiores;386;Sac. Ac. do Ofic. do Rito do Compromisso da 3ª Inic.
+;3;Ritos Maiores;387;Discípulo Ac. do Ofic. do Compromisso da 3ª Inic.
+;3;Ritos Maiores;388;Apóstolo Ac. do Ofic. do Compromisso da 3ª Inic.
+;3;Ritos Maiores;390;Sac. Ofic. do Rito dos Nós da 3ª Inic.
+;3;Ritos Maiores;391;Sac. Ac. do Ofic. do Rito dos Nós da 3ª Inic.
+;3;Ritos Maiores;392;Discípulo Ac. do Ofic. do Rito dos Nós da 3ª Inic.
+;3;Ritos Maiores;393;Apóstolo (ou Mestre) Ac. do Ofic. do Rito dos Nós da 3ª Inic.
+;3;Ritos Maiores;400;Funções nos ritos de 4ª iniciação
+;3;Ritos Maiores;401;Sac. Ofic. do Ritual da 4ª Iniciação
+;3;Ritos Maiores;402;Sac. Ac. Imediato do Ofic. do Ritual da 4ª Inic.
+;3;Ritos Maiores;405;Sac. Mestre de Cerimônias da 4ª Inic.
+;3;Ritos Maiores;406;Sac. Ac. do Mestre de Cerimôrias da 4ª Inic.
+;3;Ritos Maiores;407;Discípulo Ac. do Mestre de Cerimôrias da 4ª Inic.
+;3;Ritos Maiores;408;Apóstolo Ac. do Mestre de Cerimôrias da 4ª Inic.
+;3;Ritos Maiores;415;Sac. Guardião do Ritual da 4ª Inic.
+;3;Ritos Maiores;416;Sac. Ac. do Guardião do Ritual da 4ª Inic.
+;3;Ritos Maiores;417;Discípulo Ac. do Guardião do Ritual da 4ª Inic.
+;3;Ritos Maiores;418;Apóstolo Ac. do Guardião do Ritual da 4ª Inic.
+;3;Ritos Maiores;420;Sac. Ofic. do Ritual Externo da 4ª Inic.
+;3;Ritos Maiores;421;Sac. Ac. Imediato do Ofic. do Ritual Externo da 4ª Inic.
+;3;Ritos Maiores;422;Discípulo Ac. do Ofic. do Ritual Externo da 4ª Inic.
+;3;Ritos Maiores;423;Apóstolo Ac. do Ofic. do Ritual Externo da 4ª Inic.
+;3;Ritos Maiores;430;Sac. Ofic. do Ritual do Renascimento da 4ª Inic.
+;3;Ritos Maiores;431;Sac. Ofic. do Rito do Renascimento da 4ª Inic.
+;3;Ritos Maiores;432;Sac. Ac. do Ofic. do Rito do Renascimento da 4ª Inic.
+;3;Ritos Maiores;435;Sac. Ofic. do Rito da Confissão da 4ª Inic.
+;3;Ritos Maiores;436;Sac. Ac. do Ofic. do Rito da Confissão da 4ª Inic.
+;3;Ritos Maiores;437;Díscipulo Ac. do Ofic. do Rito da Confissão da 4ª Inic.
+;3;Ritos Maiores;438;Apóstolo Ac. do Ofic. do Rito da Confissão da 4ª Inic.
+;3;Ritos Maiores;440;Sac. Ofic. do Rito da Purificação e Perfumação da 4ª Inic.
+;3;Ritos Maiores;441;Sac. Ac. do Ofic. do Rito da Purificação e Perfumação da 4ª Inic.
+;3;Ritos Maiores;442;Díscipulo Ac. do Ofic. do Rito da Purificação e Perfumação da 4ª Inic.
+;3;Ritos Maiores;443;Apóstolo Ac. do Ofic. do Rito da Purificação e Perfumação da 4ª Inic.
+;3;Ritos Maiores;450;Sac. Ofic. do Rito da Conferição de Poderes da 4ª Inic.
+;3;Ritos Maiores;451;Sac. Ac. do Ofic. do Rito da Conferição de Poderes da 4ª Inic.
+;3;Ritos Maiores;460;Sac. Ofic. do Rito do Juramento da 4ª Inic.
+;3;Ritos Maiores;461;Sac. Ac. do Ofic. do Rito do Juramento da 4ª Inic.
+;3;Ritos Maiores;462;Díscipulo Ac. do Ofic. do Rito do Juramento da 4ª Inic.
+;3;Ritos Maiores;463;Apóstolo Ac. do Ofic. do Rito do Juramento da 4ª Inic.
+;3;Ritos Maiores;470;Sac. Ofic. do Rito da Identificação da 4ª Inic.
+;3;Ritos Maiores;471;Sac. Ac. do Ofic. do Rito da Identificação da 4ª Inic.
+;3;Ritos Maiores;472;Díscipulo Ac. do Ofic. do Rito da Identificação da 4ª Inic.
+;3;Ritos Maiores;473;Apóstolo Ac. do Ofic. do Rito da Identificação da 4ª Inic.
+;3;Ritos Maiores;480;Sac. Ofic. do Rito da Ordenação da 4ª Inic.
+;3;Ritos Maiores;481;Sac. Ac. do Ofic. do Rito da Ordenação da 4ª Inic.
+;3;Ritos Maiores;490;Sac. Ofic. do Ritual da Confirmação da 4ª Inic.
+;3;Ritos Maiores;491;Sac. Ac. do Ofic. do Ritual da Confirmação da 4ª Inic.
+;3;Ritos Maiores;492;Díscipulo Ac. do Ofic. do Ritual da Confirmação da 4ª Inic.
+;3;Ritos Maiores;493;Apóstolo Ac. do Ofic. do Ritual da Confirmação da 4ª Inic.
+;3;Ritos Maiores;500;Funções nos ritos de 5ª iniciação
+;3;Ritos Maiores;501;Sac. Ofic. do Ritual da 5ª Iniciação 
+;3;Ritos Maiores;502;Sac. Ac. Imediato do Ofic. do Ritual da 5ª Inic.
+;3;Ritos Maiores;505;Sac. Mestre de Cerimônias da 5ª Inic.
+;3;Ritos Maiores;506;Sac. (ou Discípulo) Ac. do Mestre de Cerimôrias da 5ª Inic.
+;3;Ritos Maiores;507;Discípulo Ac. do Mestre de Cerimôrias da 5ª Inic.
+;3;Ritos Maiores;515;Sac. Guardião do Ritual da 5ª Inic.
+;3;Ritos Maiores;516;Sac. Ac. do Guardião do Ritual da 5ª Inic.
+;3;Ritos Maiores;517;Discípulo Ac. do Guardião do Ritual da 5ª Inic.
+;3;Ritos Maiores;520;Sac. Ofic. das 1ª Vigilias da 5ª Inic.
+;3;Ritos Maiores;521;Sac. Ac. do Ofic. das 1ª Vigilias da 5ª Inic.
+;3;Ritos Maiores;530;Sac. Ofic. das 2ª Vigilias da 5ª Inic.
+;3;Ritos Maiores;531;Sac. Ac. do Ofic. das 2ª Vigilias da 5ª Inic.
+;3;Ritos Maiores;540;Sac. Ofic. da 3ª Vigilia da 5ª Inic.
+;3;Ritos Maiores;541;Sac. Ac. do Ofic. da 3ª Vigilia da 5ª Inic.
+;3;Ritos Maiores;550;Sac. Ofic. da 4ª Vigilia da 5ª Inic.
+;3;Ritos Maiores;551;Sac. Ac. do Ofic. da 4ª Vigilia da 5ª Inic.
+;3;Ritos Maiores;560;Sac. Ofic. do Rito do Sacrifício da 5ª Inic.
+;3;Ritos Maiores;561;Sac. Ac. do Ofic. do Rito do Sacrifício da 5ª Inic.
+;3;Ritos Maiores;570;Sac. Ofic. do Rito da Comunhão dos Iniciados da 5ª Inic.
+;3;Ritos Maiores;571;Sac. Ac. do Ofic. do Rito da Comunhão dos Iniciados da 5ª Inic.
+;3;Ritos Maiores;580;Sac. Ofic. do Ritos da Ord. e Conf. de Poderes e da Revel. da 5ª Inic.
+;3;Ritos Maiores;581;Sac. Ac. do Ofic. do Ritos da Ord. e Conf. de Poderes e da Revel. da 5ª Inic.
+;3;Ritos Maiores;590;Sac. Ofic. do Rito do Juramento da 5ª Inic.
+;3;Ritos Maiores;591;Sac. Ac. do Ofic. do Rito do Juramento da 5ª Inic.
+;3;Ritos Maiores;600;Funções nos ritos de Sagração Sacerdotal
+;3;Ritos Maiores;601;Sac. Ofic. do Ritual da Sagração Sacerdotal
+;3;Ritos Maiores;602;Sac. Ac. Imediato do Ofic. do Ritual da Sagr. Sacerdotal
+;3;Ritos Maiores;620;Sac. Ofic. do Rito de Purificação das Vestes da Sagr. Sacerdotal
+;3;Ritos Maiores;621;Sac. Ac. do Ofic. do Rito de Purificação das Vestes da Sagr. Sacerdotal
+;3;Ritos Maiores;630;Sac. Ofic. do Rito de Comunhão e Oferenda das Vestes da Sagr. Sacerdotal
+;3;Ritos Maiores;631;Sac. Ac. do Ofic. do Rito de Com. e Oferenda das Vestes da Sagr. Sacerdotal
+;3;Ritos Maiores;640;Sac. Responsável por Grupo da Sagr. Sacerdotal
+;3;Ritos Maiores;641;Sac. Ac. do Responsável por Grupo da Sagr. Sacerdotal
+;3;Ritos Maiores;700;Funções nos ritos de Veneração
+;3;Ritos Maiores;701;Sac. Ofic. do Ritual da Veneração
+;3;Ritos Maiores;702;Sac. Ac. Imediato do Ofic. do Ritual da Veneração
+;3;Ritos Maiores;705;Sac. Mestre de Cerimônias da Veneração
+;3;Ritos Maiores;706;Sac. Ac. do Mestre de Cerimôrias da Veneração
+;3;Ritos Maiores;715;Sac. Guardião do Ritual da Veneração
+;3;Ritos Maiores;716;Sac. Ac. do Guardião do Ritual da Veneração
+;3;Ritos Maiores;720;Sac. Ofic. do Rito da Comunhão e Prece da Veneração
+;3;Ritos Maiores;721;Sac. Ac. do Ofic. do Rito da Comunhão e Prece da Veneração
+;3;Ritos Maiores;750;Funções nos ritos Especiais
+;3;Ritos Maiores;751;Sac. Ofic. do Ritual de Consagração do Santuário
+;3;Ritos Maiores;752;Sac. Ac. Imediato do Ofic. do Ritual de Consagração do Santuário
+;3;Ritos Maiores;753;Sac. Ac. no Ritual de Consagração do Santuário
+;3;Ritos Maiores;761;Sac. Ofic. do Ritual de Consagração do Templo Maior
+;3;Ritos Maiores;762;Sac. Ac. Imediato do Ofic. do Ritual de Consagração do Templo Maior
+;3;Ritos Maiores;763;Sac. Ac. no Ritual de Consagração do Templo Maior
+;3;Ritos Maiores;771;Sac. Ofic. do Ritual de Consagração do Templo Menor
+;3;Ritos Maiores;772;Sac. Ac. Imediato do Ofic. do Ritual de Consagração do Templo Menor
+;3;Ritos Maiores;773;Sac. Ac. no Ritual de Consagração do Templo Menor
+;4;Ritos Menores;800;Funções nos diversos outros ritos
+;4;Ritos Menores;801;Ofic. do Ritual de Eucaristia
+;4;Ritos Menores;802;Ofic. do Rito de Eucaristia
+;4;Ritos Menores;803;Acólito no Rito de Eucaristia
+;4;Ritos Menores;804;Mestre de Cerimônia do Rito de Eucaristia
+;4;Ritos Menores;805;Ofic. do Ritual de Comunhão Comunitária
+;4;Ritos Menores;806;Ofic. do Rito de Comunhão Comunitária
+;4;Ritos Menores;807;Acólito no Rito de Comunhão Comunitária
+;4;Ritos Menores;810;Ofic. do Ritual de Batismo
+ ;4;Ritos Menores;811;Ofic. do Rito de Batismo
+;4;Ritos Menores;812;Acólito no Rito de Batismo
+;4;Ritos Menores;815;Ofic. do Ritual de Benção
+;4;Ritos Menores;816;Ofic. do Rito de Benção
+;4;Ritos Menores;817;Acólito no Rito de Benção
+;4;Ritos Menores;820;Ofic. do Ritual de Matrimônio
+;4;Ritos Menores;821;Ofic. do Rito de Matrimônio
+;4;Ritos Menores;822;Acólito no Rito de Matrimônio
+;4;Ritos Menores;825;Ofic. do Ritual de Bodas
+;4;Ritos Menores;826;Ofic. do Rito de Bodas
+;4;Ritos Menores;827;Acólito no Rito de Bodas
+;4;Ritos Menores;830;Ofic. do Ritual de Exéquias
+;4;Ritos Menores;831;Ofic. do Rito de Exéquias
+;4;Ritos Menores;832;Acólito no Rito de Exéquias
+;4;Ritos Menores;833;Guardião no Rito de Exéquias
+;4;Ritos Menores;850;Ofic. do Ritual de Desmagnetização
+;4;Ritos Menores;851;Ofic. do Rito de Desmagnetização
+;4;Ritos Menores;852;Acólito no Rito de Desmagnetização
+;4;Ritos Menores;860;Ofic. no Ritual de Plenilúnio
+;4;Ritos Menores;861;Acólito no Ritual de Plenilúnio
+;4;Ritos Menores;862;Ofic. no Ritual de Plenilúnio de Pacientes
+;4;Ritos Menores;863;Acólito no Ritual de Plenilúnio de Pacientes
+;4;Ritos Menores;870;Ofic. do Rito de Purificação da Casa Templária
+;4;Ritos Menores;871;Mestre de Cerimônia do Rito de Purificação da Casa Templária
+;4;Ritos Menores;872;Guardião do Rito de Purificação da Casa Templária
+;4;Ritos Menores;873;Acólito portador do Fogareiro no Rito de Purificação da Casa Templária
+;4;Ritos Menores;874;Acólito portador da Tocha no Rito de Purificação da Casa Templária
+;4;Ritos Menores;875;Acólito portador da Água no Rito de Purificação da Casa Templária
+;4;Ritos Menores;876;Acólito portador de Círio no Rito de Purificação da Casa Templária
+;4;Ritos Menores;880;Ofic. do Rito do Dia Mundial da Grande Invocação
+;4;Ritos Menores;881;Acólito do Rito do Dia Mundial da Grande Invocação
+;4;Ritos Menores;882;Dirigente da Palestra T.Menor do Rito do Dia Mundial da Grande Invocação
+;4;Ritos Menores;883;Acólito na Palestra T.Menor do Rito do Dia Mundial da Grande Invocação
+;4;Ritos Menores;890;Ofic. do Rito de Purificação das Vestes da Sagr. Sacerdotal
+;4;Ritos Menores;891;Acólito em Rito de Purificação das Vestes da Sagr. Sacerdotal
+;4;Ritos Menores;892;Ofic. do Rito de Comunhão e Oferenda das Vestes da Sagr. Sacerdotal
+;4;Ritos Menores;893;Acólito em Rito de Com. e Oferenda das Vestes da Sagr. Sacerdotal
+;4;Ritos Menores;895;Ofic. do Rito de Harmonização em Santuário
+;4;Ritos Menores;896;Acólito em Rito de Harmonização em Santuário
+;4;Ritos Menores;897;Ofic. de Rito de preparação de cordão
+;4;Ritos Menores;898;Acólito em Rito de preparação de cordão
+;5;Instrutoria;900;Cargos de Instrutoria e assemelhados
+;5;Instrutoria;901;Instrutor do GTPré
+;5;Instrutoria;902;Instrutor Auxiliar do GTPré
+;5;Instrutoria;903;Auxiliar de Instrução no GTPré
+;5;Instrutoria;904;Secretaria do GTPré
+;5;Instrutoria;911;Instrutor de 1º Grau
+;5;Instrutoria;912;Instrutor Auxiliar de 1º Grau
+;5;Instrutoria;913;Auxiliar de Instrução no 1º Grau
+;5;Instrutoria;914;Auxiliar de grau no 1º Grau
+;5;Instrutoria;921;Instrutor de 2º Grau
+;5;Instrutoria;922;Instrutor Auxiliar de 2º Grau
+;5;Instrutoria;923;Auxiliar de Instrução no 2º Grau
+;5;Instrutoria;924;Auxiliar de grau no 2º Grau
+;5;Instrutoria;931;Instrutor de 3º Grau
+;5;Instrutoria;932;Instrutor Auxiliar de 3º Grau
+;5;Instrutoria;933;Auxiliar de Instrução no 3º Grau
+;5;Instrutoria;934;Auxiliar de grau no 3º Grau
+;5;Instrutoria;941;Instrutor de 4º Grau
+;5;Instrutoria;942;Instrutor Auxiliar de 4º Grau
+;5;Instrutoria;943;Auxiliar de Instrução no 4º Grau
+;5;Instrutoria;944;Auxiliar de grau no 4º Grau
+;5;Instrutoria;951;Instrutor de 5º Grau
+;5;Instrutoria;952;Instrutor Auxiliar de 5º Grau
+;5;Instrutoria;953;Auxiliar de Instrução no 5º Grau
+;5;Instrutoria;954;Auxiliar de grau no 5º Grau
+;5;Instrutoria;961;Instrutor do Colégio Sacerdotal
+;5;Instrutoria;962;Instrutor Auxiliar do Colégio Sacerdotal
+;5;Instrutoria;963;Auxiliar de grau no Colégio Sacerdotal
+;5;Instrutoria;971;Instrutor Auxiliar do Colégio Sacerdotal (Instr. Coleginho)
+;5;Instrutoria;972;Auxiliar de Instrução no Colégio Sacerdotal (Coleginho)
+;5;Instrutoria;973;Auxiliar de grau no Colégio Sacerdotal (Coleginho)
+;5;Instrutoria;981;..... substituir pelo cód 50 administrativo
+;5;Instrutoria;982;...... substituir pelo cód 51 administrativo
+;5;Instrutoria;991;Sac. Convocado p/prova de verificação e aprendizagem 1ºgrau (2ª iniciação)
+;5;Instrutoria;992;Sac. Convocado p/prova de verificação e aprendizagem 2ºgrau (3ª iniciação)
+;5;Instrutoria;993;Sac. Convocado p/prova de verificação e aprendizagem 3ºgrau (4ª iniciação)
+;5;Instrutoria;994;Sac. Convocado p/prova de verificação e aprendizagem 4ºgrau (5ª iniciação)
+;5;Instrutoria;995;Sac. Convocado p/secretaria de verificação e aprendizagem 1ºgrau (2ª iniciação)
+;5;Instrutoria;996;Sac. Convocado p/secretaria de verificação e aprendizagem 2ºgrau (3ª iniciação)
+;5;Instrutoria;997;Sac. Convocado p/secretaria de verificação e aprendizagem 3ºgrau (4ª iniciação)
+;5;Instrutoria;998;Sac. Convocado p/secretaria de verificação e aprendizagem 4ºgrau (5ª iniciação)
+;5;Instrutoria;999;Sac. Convocado p/aferição de Tônica
+;6;Punições;1000;Códigos das Punições
+;6;Punições;1010;Falta disciplinar
+;6;Punições;1020;Advertência verbal
+;6;Punições;1030;Advertência escrita
+;6;Punições;1040;Suspensão
+;6;Punições;1050;Exclusão disciplinar administrativa
+;6;Punições;1060;Exclusão disciplinar grave
+;6;Punições;1110;Desligado do 1º grau por carência
+;6;Punições;1120;Desligado do 2º grau por carência
+;6;Punições;1130;Desligado do 3º grau por carência
+;6;Punições;1140;Desligado do 4º grau por carência
+;6;Punições;1150;Desligado do 5º grau por carência
+;6;Punições;1160;Desligado do coleginho por carência

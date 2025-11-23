@@ -11,11 +11,29 @@ from django.core.cache import cache
 from django.core.mail import EmailMessage
 from django.conf import settings
 from django.utils import timezone
+from importlib import import_module
 
-from .models import PresencaDetalhada, AgendamentoRelatorio
-from .bulk_operations import BulkPresencaOperations
+from .models import PresencaDetalhada
+from omaum.relatorios_presenca.models import AgendamentoRelatorio
+
 
 logger = logging.getLogger(__name__)
+
+
+def get_bulk_operations():
+    """Carrega BulkPresencaOperations sob demanda."""
+
+    try:
+        module = import_module("presencas.bulk_operations")
+        bulk_ops = getattr(module, "BulkPresencaOperations", None)
+        if bulk_ops is None:
+            logger.warning(
+                "BulkPresencaOperations não encontrado em presencas.bulk_operations"
+            )
+        return bulk_ops
+    except (ImportError, AttributeError) as exc:
+        logger.warning("BulkPresencaOperations indisponível: %s", exc)
+        return None
 
 
 @shared_task(bind=True, max_retries=3)
@@ -116,7 +134,11 @@ def recalcular_estatisticas(
             periodo_fim = datetime.strptime(periodo_fim, "%Y-%m-%d").date()
 
         # Usar bulk operations para performance
-        stats = BulkPresencaOperations.otimizar_queries_estatisticas(
+        bulk_ops = get_bulk_operations()
+        if not bulk_ops:
+            raise RuntimeError("BulkPresencaOperations indisponível para estatísticas")
+
+        stats = bulk_ops.otimizar_queries_estatisticas(
             turma_id=turma_id, periodo_inicio=periodo_inicio, periodo_fim=periodo_fim
         )
 
@@ -197,7 +219,11 @@ def processar_bulk_presencas(
     try:
         logger.info(f"Processando {len(dados_presencas)} presenças em lote")
 
-        stats = BulkPresencaOperations.criar_presencas_lote(
+        bulk_ops = get_bulk_operations()
+        if not bulk_ops:
+            raise RuntimeError("BulkPresencaOperations indisponível para bulk create")
+
+        stats = bulk_ops.criar_presencas_lote(
             dados_presencas, registrado_por
         )
 

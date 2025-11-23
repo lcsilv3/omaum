@@ -1,26 +1,42 @@
 #!/usr/bin/env python
-"""Script utilitário: limpa e repovoa a tabela Codigo a partir de codigos.csv."""
+"""Script utilitário: limpa e repovoa a tabela ``Codigo`` a partir de CSVs."""
 
-import os
+from __future__ import annotations
+
 import csv
-import django
-from typing import Dict, Any
+import os
+import sys
+from pathlib import Path
+from typing import Any, Dict, Iterable, Optional, Tuple
 
-# Configurar Django
+SCRIPT_ROOT = Path(__file__).resolve().parent
+SCRIPTS_DIR = SCRIPT_ROOT.parent
+PROJ_ROOT = SCRIPTS_DIR.parent
+
+if str(PROJ_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJ_ROOT))
+
+import django
+from django.db import IntegrityError, models
+
+# Configurar Django antes de importar módulos dependentes
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
 django.setup()
 
-# Importações dependentes do Django após setup (suprimindo E402)
 from alunos.utils import get_codigo_model, get_tipo_codigo_model  # noqa: E402
+from scripts.import_utils import normaliza, pick_field  # noqa: E402
 
-Codigo: Any = get_codigo_model()
-TipoCodigo: Any = get_tipo_codigo_model()
-if not (Codigo and TipoCodigo):
+Codigo = get_codigo_model()
+TipoCodigo = get_tipo_codigo_model()
+if not Codigo or not TipoCodigo:
     raise RuntimeError("Modelos iniciáticos (Codigo/TipoCodigo) indisponíveis.")
 
+CODIGOS_CSV = SCRIPTS_DIR / "codigos.csv"
+PLANILHA_CODIGOS_CSV = SCRIPTS_DIR / "docs" / "Planilha de Códigos.csv"
 
-def limpar_tabela():
-    """Limpa todos os registros da tabela Codigo."""
+
+def limpar_tabela() -> None:
+    """Apaga todos os registros de ``Codigo`` antes da importação."""
     print("🧹 Limpando a tabela Codigo...")
     count = Codigo.objects.count()
     print(f"📊 Registros encontrados: {count}")
@@ -32,144 +48,261 @@ def limpar_tabela():
         print("ℹ️  Tabela já estava vazia.")
 
 
+def detectar_delimitador(csv_path: Path, encoding: str) -> str:
+    """Detecta o delimitador mais provável (vírgula ou ponto e vírgula)."""
+    linha = ""
+    try:
+        with csv_path.open("r", encoding=encoding, errors="ignore") as handle:
+            linha = handle.readline()
+    except OSError:
+        return ";"
+
+    return ";" if linha.count(";") >= linha.count(",") else ","
+
+
+def localizar_csv() -> Optional[Tuple[Path, str, str, str]]:
+    """Retorna o CSV disponível com delimitador, encoding e origem."""
+    if CODIGOS_CSV.exists():
+        encoding = "utf-8"
+        delimiter = detectar_delimitador(CODIGOS_CSV, encoding)
+        return CODIGOS_CSV, delimiter, encoding, "codigos.csv"
+
+    if PLANILHA_CODIGOS_CSV.exists():
+        return PLANILHA_CODIGOS_CSV, ";", "latin1", "Planilha de Códigos.csv"
+
+    return None
+
+
 def obter_tipos_codigo() -> Dict[str, object]:
-    """Obtém todos os tipos de código disponíveis."""
+    """Carrega todos os ``TipoCodigo`` e indexa por nome/descrição normalizados."""
     print("\n🔍 Verificando tipos de código disponíveis...")
     tipos: Dict[str, object] = {}
 
-    for tipo in TipoCodigo.objects.all():
-        tipos[tipo.nome] = tipo
+    for tipo in TipoCodigo.objects.all().order_by("nome"):
         print(f"  • {tipo.nome}: {tipo.descricao}")
+        for chave in {tipo.nome, tipo.descricao}:
+            normalizado = normaliza(chave or "")
+            if normalizado:
+                tipos[normalizado] = tipo
 
     return tipos
 
 
-def importar_csv():
-    """Importa dados do arquivo CSV para a tabela Codigo."""
-    print("\n📥 Importando dados do CSV...")
+def resolver_tipo(
+    mapa_tipos: Dict[str, object], valores: Iterable[Optional[str]]
+) -> Optional[object]:
+    """Encontra o ``TipoCodigo`` a partir das possíveis chaves do CSV."""
+    for valor in valores:
+        if not valor:
+            continue
+        chave = normaliza(valor)
+        if chave and chave in mapa_tipos:
+            return mapa_tipos[chave]
+    return None
 
-    csv_file = "codigos.csv"
-    if not os.path.exists(csv_file):
-        print(f"❌ Arquivo {csv_file} não encontrado!")
+
+def atualizar_descricao(codigo_obj: Any, nova_descricao: str) -> bool:
+    """Adiciona uma nova descrição ao código, evitando duplicidades."""
+    nova_descricao = (nova_descricao or "").strip()
+    if not nova_descricao:
         return False
 
-    # Obter tipos de código
+    existentes = [
+        item.strip()
+        for item in (codigo_obj.descricao or "").split("\n")
+        if item.strip()
+    ]
+
+    if not existentes:
+        codigo_obj.descricao = nova_descricao
+        return True
+
+    if nova_descricao in existentes:
+        return False
+
+    existentes.append(nova_descricao)
+    codigo_obj.descricao = "\n".join(existentes)
+    return True
+
+
+def importar_csv() -> bool:
+    """Importa dados do CSV preenchendo ``Codigo`` conforme mapeamento solicitado."""
+    info = localizar_csv()
+    if not info:
+        print(
+            "❌ Nenhum arquivo de códigos encontrado (codigos.csv ou Planilha de Códigos.csv)."
+        )
+        return False
+
+    csv_path, delimiter, encoding, origem = info
+    print(f"\n📥 Importando dados do CSV ({origem})...")
+
     tipos_codigo = obter_tipos_codigo()
+    if not tipos_codigo:
+        print("ℹ️  Nenhum TipoCodigo encontrado. Novos tipos serão criados automaticamente." )
 
-    try:
-        with open(csv_file, "r", encoding="utf-8") as file:
-            reader = csv.DictReader(file)
-            count = 0
-            erros = 0
+    total_processado = 0
+    criados = 0
+    atualizados = 0
+    sem_alteracao = 0
+    erros = 0
 
-            for row_num, row in enumerate(reader, 1):
-                try:
-                    # Buscar o tipo de código
-                    tipo_nome = row["tipo"]
+    with csv_path.open("r", encoding=encoding, newline="") as handle:
+        reader = csv.DictReader(handle, delimiter=delimiter)
+        for row_num, row in enumerate(reader, start=1):
+            tipo_valores = (
+                pick_field(row, ["código tipo", "codigo tipo", "tipo"]),
+                pick_field(row, ["descrição tipo", "descricao tipo"]),
+            )
+            tipo_codigo = resolver_tipo(tipos_codigo, tipo_valores)
+            if not tipo_codigo:
+                codigo_tipo_valor, descricao_tipo_valor = tipo_valores
+                nome_tipo = (descricao_tipo_valor or codigo_tipo_valor or "").strip()
 
-                    if tipo_nome not in tipos_codigo:
-                        print(f"⚠️  Linha {row_num}: Tipo '{tipo_nome}' não encontrado!")
-                        erros += 1
-                        continue
+                if not nome_tipo:
+                    print(
+                        f"⚠️  Linha {row_num}: Tipo não identificado (valores={tipo_valores})."
+                    )
+                    erros += 1
+                    continue
 
-                    # Criar o código
-                    Codigo.objects.create(
-                        nome=row["nome"],
-                        tipo_codigo=tipos_codigo[tipo_nome],
-                        descricao=row["descricao"],
+                defaults_tipo = {
+                    "descricao": (descricao_tipo_valor or nome_tipo or None),
+                }
+
+                tipo_codigo, created_tipo = TipoCodigo.objects.get_or_create(
+                    nome=nome_tipo,
+                    defaults=defaults_tipo,
+                )
+
+                if created_tipo:
+                    print(
+                        f"➕ TipoCodigo criado automaticamente: nome='{tipo_codigo.nome}'"
                     )
 
-                    if count % 50 == 0:  # Mostrar progresso a cada 50 registros
-                        print(f"📊 Processados {count} registros...")
+                for chave in {nome_tipo, descricao_tipo_valor, codigo_tipo_valor}:
+                    normalizado = normaliza(chave or "")
+                    if normalizado:
+                        tipos_codigo[normalizado] = tipo_codigo
 
-                    count += 1
+            nome_codigo = (tipo_codigo.descricao or tipo_codigo.nome or "").strip()
+            if not nome_codigo:
+                nome_codigo = str(tipo_codigo.pk)
 
-                except Exception as e:
-                    print(f"❌ Erro na linha {row_num}: {e}")
-                    erros += 1
+            descricao_codigo = pick_field(row, ["descrição código", "descricao codigo"])
+            codigo_bruto = pick_field(row, ["código", "codigo"])
+            descricao_final = (descricao_codigo or codigo_bruto or "").strip()
 
-            print("\n📊 Importação concluída:")
-            print(f"  • Total de registros importados: {count}")
-            print(f"  • Total de erros: {erros}")
+            defaults = {
+                "tipo_codigo": tipo_codigo,
+                "descricao": descricao_final or None,
+            }
 
-            return erros == 0
+            try:
+                codigo_obj, created = Codigo.objects.get_or_create(
+                    nome=nome_codigo,
+                    defaults=defaults,
+                )
+            except IntegrityError as err:
+                print(
+                    f"⚠️  Linha {row_num}: não foi possível criar/atualizar registro "
+                    f"para '{nome_codigo}'. {err}"
+                )
+                erros += 1
+                continue
 
-    except Exception as e:
-        print(f"❌ Erro ao importar CSV: {e}")
-        return False
+            if created:
+                criados += 1
+            else:
+                campos_alterados = []
+                if codigo_obj.tipo_codigo_id != tipo_codigo.id:
+                    codigo_obj.tipo_codigo = tipo_codigo
+                    campos_alterados.append("tipo_codigo")
+
+                if atualizar_descricao(codigo_obj, descricao_final):
+                    if "descricao" not in campos_alterados:
+                        campos_alterados.append("descricao")
+
+                if campos_alterados:
+                    codigo_obj.save(update_fields=campos_alterados)
+                    atualizados += 1
+                else:
+                    sem_alteracao += 1
+
+            total_processado += 1
+            if total_processado % 50 == 0:
+                print(f"📊 Processadas {total_processado} linhas...")
+
+    print("\n📊 Importação concluída:")
+    print(f"  • Total de linhas processadas: {total_processado}")
+    print(f"  • Novos códigos criados: {criados}")
+    print(f"  • Códigos atualizados: {atualizados}")
+    print(f"  • Linhas sem alteração relevante: {sem_alteracao}")
+    print(f"  • Total de erros: {erros}")
+
+    return erros == 0
 
 
-def verificar_dados():
-    """Verifica os dados importados."""
+def verificar_dados() -> None:
+    """Exibe um resumo rápido dos registros importados."""
     print("\n🔍 Verificando dados importados...")
-    codigos = Codigo.objects.all()
+    codigos = Codigo.objects.select_related("tipo_codigo")
 
     if not codigos.exists():
         print("⚠️  Nenhum registro encontrado!")
         return
 
-    print(f"📊 Total de registros: {codigos.count()}")
-
-    # Agrupar por tipo
-    tipos_count = {}
-    for codigo in codigos:
-        tipo_nome = codigo.tipo_codigo.nome
-        if tipo_nome not in tipos_count:
-            tipos_count[tipo_nome] = 0
-        tipos_count[tipo_nome] += 1
+    total = codigos.count()
+    print(f"📊 Total de registros: {total}")
 
     print("\n📋 Registros por tipo:")
-    for tipo, count in tipos_count.items():
-        print(f"  • {tipo}: {count} códigos")
+    por_tipo = (
+        codigos.values("tipo_codigo__nome")
+        .annotate(total=models.Count("id"))
+        .order_by("tipo_codigo__nome")
+    )
+    for item in por_tipo:
+        print(f"  • {item['tipo_codigo__nome']}: {item['total']} códigos")
 
-    # Mostrar alguns exemplos
     print("\n📝 Exemplos de registros:")
-    for codigo in codigos[:5]:
+    for codigo in codigos.order_by("tipo_codigo__nome", "nome")[:5]:
         print(
-            f"  • {codigo.nome} ({codigo.tipo_codigo.nome}): {codigo.descricao[:50]}..."
+            f"  • {codigo.tipo_codigo.nome} | nome='{codigo.nome}' | "
+            f"descrição='{(codigo.descricao or '')[:60]}'"
         )
 
 
-def validar_integridade():
-    """Valida a integridade dos dados."""
+def validar_integridade() -> None:
+    """Executa verificações simples pós-importação."""
     print("\n🔍 Validando integridade dos dados...")
-    # Import local para evitar alerta de uso antes da definição em ferramentas estáticas
-    from django.db import models  # noqa: WPS433 (import interno intencional)
 
-    # Verificar registros duplicados
-    codigos_duplicados = (
+    duplicados = (
         Codigo.objects.values("nome")
-        .annotate(count=models.Count("nome"))
-        .filter(count__gt=1)
+        .annotate(total=models.Count("id"))
+        .filter(total__gt=1)
     )
-
-    if codigos_duplicados.exists():
-        print("⚠️  Códigos duplicados encontrados:")
-        for dup in codigos_duplicados:
-            print(f"  • {dup['nome']}: {dup['count']} ocorrências")
+    if duplicados.exists():
+        print("⚠️  Códigos com o mesmo campo 'nome':")
+        for dup in duplicados:
+            print(f"  • '{dup['nome']}' aparece {dup['total']} vezes")
     else:
-        print("✅ Nenhum código duplicado encontrado!")
+        print("✅ Nenhum duplicado encontrado pelo campo 'nome'.")
 
-    # Verificar integridade referencial
-    codigos_sem_tipo = Codigo.objects.filter(tipo_codigo__isnull=True)
-    if codigos_sem_tipo.exists():
-        print(f"⚠️  {codigos_sem_tipo.count()} códigos sem tipo encontrados!")
+    sem_tipo = Codigo.objects.filter(tipo_codigo__isnull=True)
+    if sem_tipo.exists():
+        print("⚠️  Existem códigos sem vínculo de tipo (IDs):")
+        print("  ", list(sem_tipo.values_list("id", flat=True)))
     else:
-        print("✅ Integridade referencial validada!")
+        print("✅ Todos os códigos possuem TipoCodigo vinculado.")
 
 
 if __name__ == "__main__":
     print("🚀 Iniciando processo de limpeza e importação da tabela Codigo")
-    print("=" * 70)
 
-    # Etapa 1: Limpar tabela
     limpar_tabela()
 
-    # Etapa 2: Importar CSV
     if importar_csv():
-        # Etapa 3: Verificar dados
         verificar_dados()
-        # Etapa 4: Validar integridade
         validar_integridade()
         print("\n✅ Processo concluído com sucesso!")
     else:

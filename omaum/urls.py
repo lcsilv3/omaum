@@ -11,8 +11,15 @@ from django.conf.urls.static import static
 from core import views as core_views
 
 urlpatterns = [
+    path("health/", core_views.health_check, name="health_check"),
+    # URLs de autenticação do Django
+    path("accounts/login/", core_views.CustomLoginView.as_view(), name="login"),
+    path("accounts/", include("django.contrib.auth.urls")),
+    path("entrar/", core_views.CustomLoginView.as_view(), name="entrar"),
+    path("register/", core_views.registro_usuario, name="register"),
+    # Rota do django-select2 para widgets AJAX
+    path("select2/", include("django_select2.urls")),
     path("admin/", admin.site.urls),
-    path("", include("core.urls")),
     path("alunos/", include("alunos.urls")),
     path("cursos/", include("cursos.urls")),
     path("turmas/", include("turmas.urls")),
@@ -26,19 +33,10 @@ urlpatterns = [
     ),
     path("notas/", include("notas.urls")),
     path("pagamentos/", include("pagamentos.urls")),
-    # URLs de autenticação do Django
-    path("accounts/login/", core_views.CustomLoginView.as_view(), name="login"),
-    path("accounts/", include("django.contrib.auth.urls")),
-    # Adicionar rota para 'entrar/' (opcional, pode apontar para CustomLoginView também)
-    path("entrar/", core_views.CustomLoginView.as_view(), name="entrar"),
-    # Adicionar rota para 'register'
-    path("register/", core_views.registro_usuario, name="register"),
-    # Rota do django-select2 para widgets AJAX
-    path("select2/", include("django_select2.urls")),
+    path("", include("core.urls")),
 ]
 
 # Configurações para ambiente de desenvolvimento
 if settings.DEBUG:
-    # Servir arquivos de mídia em desenvolvimento
     # Servir arquivos de mídia em desenvolvimento
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

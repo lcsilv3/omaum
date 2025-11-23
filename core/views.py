@@ -328,3 +328,8 @@ class CustomLoginView(LoginView):
             logger.error(f"Erro ao registrar log de login inválido: {str(e)}")
 
         return response
+
+
+def health_check(request):
+    """View simples para healthcheck do Docker."""
+    return HttpResponse("ok", content_type="text/plain")

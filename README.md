@@ -81,7 +81,71 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Acesse: **http://localhost:8000**
+Acesse: **[http://localhost:8000](http://localhost:8000)**
+
+## Import seguro de códigos (curto)
+
+Antes de rodar imports que alteram dados, crie um backup do banco de produção. Exemplo (PowerShell):
+
+```powershell
+# criar pasta de backups local
+mkdir .\backups -Force
+
+# gerar dump no container Postgres (formato custom)
+docker --% exec -i omaum-db-prod bash -lc "pg_dump -U omaum_app -d omaum_prod -F c -f /tmp/omaum_prod_$(date +%Y%m%d%H%M%S).dump"
+
+# copiar dump para o host
+docker cp omaum-db-prod:/tmp/omaum_prod_<TIMESTAMP>.dump .\backups\
+```
+
+Executar o import (script idempotente que cria tipos quando solicitado):
+
+```powershell
+docker compose -f docker\docker-compose.prod.yml exec -w /app omaum-web bash -lc "export PYTHONPATH=/app; export DJANGO_SETTINGS_MODULE=omaum.settings.production; python scripts/popular_codigos_por_tipo.py --create-types"
+```
+
+Restaurar a partir do dump (se necessário):
+
+```powershell
+# copiar o dump de volta para o container
+docker cp .\backups\omaum_prod_<TIMESTAMP>.dump omaum-db-prod:/tmp/
+
+# restaurar (substitui dados atuais)
+docker --% exec -i omaum-db-prod bash -lc "pg_restore -U omaum_app -d omaum_prod /tmp/omaum_prod_<TIMESTAMP>.dump"
+```
+
+Observação: `scripts/popular_codigos_por_tipo.py` foi refatorado para ser mais tolerante a cabeçalhos e possui a flag `--create-types`.
+
+## ▶️ Inicialização com Docker e atalho
+
+Para iniciar o ambiente completo (Docker + aplicação + navegador) utilize o script PowerShell dedicado:
+
+```powershell
+cd C:\projetos\omaum
+pwsh -ExecutionPolicy Bypass -File scripts/run_omaum.ps1
+```
+
+- O script garante que o Docker Desktop esteja ativo, sobe os serviços `omaum-web` e `omaum-nginx` via `docker-compose` e pergunta qual navegador deve abrir `http://omaum.local/`.
+- Caso o PowerShell solicite permissão, execute uma única vez como administrador: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+### Criar atalho na área de trabalho
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File scripts/create_desktop_shortcut.ps1
+```
+
+- Será gerado o atalho **"OMAUM - Iniciar"** na área de trabalho apontando para `scripts/run_omaum.ps1`.
+- Use os parâmetros `-ShortcutName` ou `-AppUrl` para customizar o nome do atalho ou o endereço aberto após o boot dos serviços.
+
+### Executar scripts localmente (wrapper)
+
+Você pode usar um wrapper que configura automaticamente o PYTHONPATH para a raiz do repositório e executa o script com o Python do `venv` (se existir) ou com o `py`/`python` do sistema:
+
+```powershell
+python scripts/run_local.py scripts/popular_codigos_por_tipo.py
+```
+
+O wrapper tentará localizar `venv\Scripts\python.exe`, depois `py -3` e por fim `python` no PATH. Se não encontrar um interpretador, instale o Python 3.8+ e/ou crie o `venv` com `python -m venv venv`.
 
 ## 🛠️ Tecnologias Utilizadas
 

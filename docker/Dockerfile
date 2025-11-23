@@ -1,50 +1,50 @@
-# docker/Dockerfile
-FROM python:3.11-slim
+FROM python:3.11
 
-LABEL maintainer="OmAum Development Team"
-LABEL version="2.0"
-LABEL description="OM-AUM Django Application"
-
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=omaum.settings.production
-
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libfreetype6-dev \
-    gettext \
-    postgresql-client \
-    netcat-openbsd \
-    libpango-1.0-0 \
-    libcairo2 \
-    libgobject-2.0-0 \
-    libpangoft2-1.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN groupadd -r omaum && useradd -r -g omaum omaum
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    libpq-dev \
+    libpq5 \
+    gettext \
+    curl \
+    libcairo2 \
+    libcairo2-dev \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libwebp-dev \
+    zlib1g-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --upgrade pip setuptools wheel
+
+COPY requirements.txt requirements-production.txt ./
+
+RUN pip install --no-cache-dir -r requirements-production.txt
+
+COPY .. /app/
+
 RUN mkdir -p /app/static /app/media /app/logs
-RUN chown -R omaum:omaum /app
 
-COPY requirements/ /app/requirements/
-RUN pip install --no-cache-dir -r requirements/production.txt
-
-COPY . /app/
-RUN chown -R omaum:omaum /app
-
-COPY docker/scripts/entrypoint.sh /entrypoint.sh
-COPY docker/scripts/wait-for-it.sh /wait-for-it.sh
-RUN chmod +x /entrypoint.sh /wait-for-it.sh
-
-USER omaum
-
-RUN python manage.py collectstatic --noinput
+RUN python manage.py collectstatic --noinput || true
 
 EXPOSE 8000
 
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "omaum.wsgi:application"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health/ || exit 1
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "omaum.wsgi:application"]

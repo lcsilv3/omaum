@@ -17,10 +17,23 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
 # Configurações específicas para produção
+def _resolve_redis_url() -> str:
+    """Retorna URL do Redis priorizando configurações de ambiente do deploy."""
+
+    return (
+        os.getenv("CELERY_BROKER_URL")
+        or os.getenv("CELERY_RESULT_BACKEND")
+        or os.getenv("REDIS_URL")
+        or "redis://localhost:6379/0"
+    )
+
+
+redis_url = _resolve_redis_url()
+
 app.conf.update(
     # Broker e Result Backend
-    broker_url=os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
-    result_backend=os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0"),
+    broker_url=redis_url,
+    result_backend=os.getenv("CELERY_RESULT_BACKEND", redis_url),
     # Serialização
     task_serializer="json",
     accept_content=["json"],
