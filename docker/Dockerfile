@@ -36,27 +36,9 @@ COPY requirements.txt requirements-production.txt ./
 
 RUN pip install --no-cache-dir -r requirements-production.txt
 
-COPY .. /app/
+COPY . /app/
 
 RUN mkdir -p /app/static /app/media /app/logs
-
-<<<<<<< HEAD
-RUN python manage.py collectstatic --noinput || true
-=======
-COPY requirements/ /app/requirements/
-RUN pip install --no-cache-dir -r requirements/development.txt
-
-COPY . /app/
-RUN chown -R omaum:omaum /app
-
-COPY docker/scripts/entrypoint.sh /entrypoint.sh
-COPY docker/scripts/wait-for-it.sh /wait-for-it.sh
-RUN chmod +x /entrypoint.sh /wait-for-it.sh
-
-USER omaum
-
-RUN python manage.py collectstatic --noinput
->>>>>>> 408299a06960214d4e871aec07657048dac81487
 
 EXPOSE 8000
 
