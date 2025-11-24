@@ -6,6 +6,21 @@ Sistema automatizado de deploy para ambiente de produção do OMAUM, executando 
 
 ## 🚀 Como Executar
 
+### Passo 0: Exportar Dados do Desenvolvimento (Primeira vez ou quando atualizar dados)
+
+**NA MÁQUINA DE DESENVOLVIMENTO:**
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+.\scripts\deploy\01_export_dev_data.ps1
+```
+
+Isso irá:
+- Exportar dados do container `omaum-web` (desenvolvimento)
+- Salvar em `scripts/deploy/exports/dev_data_TIMESTAMP.json`
+- Mostrar instruções de próximos passos
+
+**Depois copie o arquivo gerado para a máquina de PRODUÇÃO** no mesmo caminho.
+
 ### Opção 1: Deploy Interativo (Recomendado)
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
@@ -115,6 +130,7 @@ if content.startswith(b'\xef\xbb\xbf'):
 
 ```
 scripts/deploy/
+├── 01_export_dev_data.ps1              # Exportação de dados do DEV
 ├── 02_deploy_atualizar_producao.ps1    # Script principal
 ├── 03_deploy_atualizar_producao_auto.ps1  # Wrapper automático
 ├── fix_fixture_situacao.py             # Corretor de fixtures
@@ -168,12 +184,13 @@ docker compose -f docker\docker-compose.prod.yml up -d omaum-nginx
 
 **Causa:** Fixture antigo com estrutura de modelo desatualizada.
 
-**Solução:** Gerar novo fixture:
+**Solução:** Gerar novo fixture na máquina de desenvolvimento:
 ```powershell
-docker exec omaum-web-prod python manage.py dumpdata --indent=2 \
-  -e contenttypes -e auth.Permission -e sessions -e admin.logentry \
-  > scripts\deploy\exports\dev_data_novo.json
+# NA MÁQUINA DE DESENVOLVIMENTO
+.\scripts\deploy\01_export_dev_data.ps1
 ```
+
+Depois copie o arquivo para produção e execute o deploy novamente.
 
 ### Dados não importados
 Verifique:
