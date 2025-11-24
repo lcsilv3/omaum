@@ -21,12 +21,18 @@ if (!(Test-Path $deployScript)) {
 }
 
 # Sequencia de respostas fornecida ao script 02:
-#  1) confirma execucao do fluxo completo
-#  2) autoriza criar commit pendente
-#  3) define mensagem do commit
-#  4) autoriza git pull
-#  5) confirma importacao dos dados de desenvolvimento
-$responses = @(
+#  1) (opcional) autoriza executar fora do servidor oficial
+#  2) confirma execucao do fluxo completo
+#  3) autoriza criar commit pendente
+#  4) define mensagem do commit
+#  5) autoriza git pull
+#  6) confirma importacao dos dados de desenvolvimento
+$responses = @()
+if ($env:COMPUTERNAME -ne "DESKTOP-OAE3R5M") {
+    $responses += "y"
+}
+
+$responses += @(
     "y",
     "y",
     $CommitMessage,
