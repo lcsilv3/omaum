@@ -14,7 +14,7 @@ from django.shortcuts import render
 from django.template.loader import get_template
 from django.utils import timezone
 from django.utils.encoding import smart_str
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_http_methods
 
 # Importação corrigida para buscar modelos de seus respectivos apps
 from alunos.models import Aluno, RegistroHistorico, Codigo

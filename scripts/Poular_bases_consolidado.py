@@ -2,21 +2,16 @@ import os
 import sys
 import django
 import random
-from datetime import date, time, timedelta
-from decimal import Decimal
+from datetime import date
 
 # Configuração do ambiente Django
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
 django.setup()
 
-from django.contrib.auth.models import User
 
 # --- Model Imports ---
 from alunos.models import Aluno
-from cursos.models import Curso
-from turmas.models import Turma
-from atividades.models import Atividade
 
 # --- Script Imports ---
 from scripts.popular_cursos import popular_cursos

@@ -6,13 +6,9 @@ fielmente o layout e formatação das planilhas originais do projeto.
 """
 
 import os
-from datetime import datetime
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment, NamedStyle
 from openpyxl.utils import get_column_letter
-from openpyxl.formatting.rule import CellIsRule
-from django.conf import settings
-from django.core.files.base import ContentFile
 import io
 import logging
 
@@ -130,7 +126,7 @@ class ExcelRelatorioGenerator:
             wb.save(arquivo_memoria)
             arquivo_memoria.seek(0)
 
-            logger.info(f"Relatório consolidado gerado com sucesso")
+            logger.info("Relatório consolidado gerado com sucesso")
             return arquivo_memoria
 
         except Exception as e:

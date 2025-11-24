@@ -46,6 +46,7 @@ services:
     volumes:
       - ../:/app
       - omaum_static:/app/static
+      - omaum_staticfiles:/app/staticfiles
       - omaum_media:/app/media
       - omaum_logs:/app/logs
     ports:
@@ -57,12 +58,7 @@ services:
         condition: service_healthy
     networks:
       - omaum-network
-    command: >
-      sh -c "/wait-for-it.sh omaum-db:5432 --timeout=60 --strict -- \
-             python manage.py migrate &&\
-             python manage.py collectstatic --noinput &&\
-             python manage.py runserver 0.0.0.0:8000"
-
+    command: python manage.py runserver 0.0.0.0:8000
   omaum-nginx:
     build:
       context: ..
@@ -108,6 +104,7 @@ volumes:
   omaum_db_data:
   omaum_redis_data:
   omaum_static:
+  omaum_staticfiles:
   omaum_media:
   omaum_logs:
 

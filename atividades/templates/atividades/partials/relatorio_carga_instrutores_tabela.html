@@ -1,0 +1,85 @@
+{% if descricao_filtros %}
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <span class="badge bg-light text-dark border">Instrutor: {{ descricao_filtros.instrutor|default:"Todos" }}</span>
+    <span class="badge bg-light text-dark border">Curso: {{ descricao_filtros.curso|default:"Todos" }}</span>
+    <span class="badge bg-light text-dark border">Status da turma: {{ descricao_filtros.status_turma|default:"Todos" }}</span>
+    <span class="badge bg-light text-dark border">Período: {{ descricao_filtros.periodo|default:"Sem restrições" }}</span>
+  </div>
+{% endif %}
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title mb-3">Resumo geral</h5>
+    {% if relatorio.resumo.total_instrutores %}
+      <div class="row g-3">
+        <div class="col-md-3 col-6">
+          <div class="border rounded p-3 text-center">
+            <div class="text-muted small">Total de horas</div>
+            <div class="fw-bold fs-5">{{ relatorio.resumo.total_horas|floatformat:2 }}</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="border rounded p-3 text-center">
+            <div class="text-muted small">Total de instrutores</div>
+            <div class="fw-bold fs-5">{{ relatorio.resumo.total_instrutores }}</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="border rounded p-3 text-center">
+            <div class="text-muted small">Total de atividades</div>
+            <div class="fw-bold fs-5">{{ relatorio.resumo.total_atividades }}</div>
+          </div>
+        </div>
+        {% for status, quantidade in relatorio.resumo.atividades_por_status.items %}
+          <div class="col-md-3 col-6">
+            <div class="border rounded p-3 text-center">
+              <div class="text-muted small">{{ status }}</div>
+              <div class="fw-bold fs-5">{{ quantidade }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted mb-0">Nenhum registro encontrado para os filtros selecionados.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if relatorio.linhas %}
+  <div class="table-responsive mt-4">
+    <table class="table table-striped align-middle">
+      <thead>
+        <tr>
+          <th scope="col">Instrutor</th>
+          <th scope="col">Papel</th>
+          <th scope="col">Curso</th>
+          <th scope="col">Turmas</th>
+          <th scope="col" class="text-end">Qtd. Atividades</th>
+          <th scope="col" class="text-end">Total de Horas</th>
+          <th scope="col">Distribuição por Status</th>
+        </tr>
+      </thead>
+      <tbody>
+  {% for linha in relatorio.linhas %}
+          <tr>
+            <td>{{ linha.instrutor_nome }}</td>
+            <td>{{ linha.papel_display }}</td>
+            <td>{{ linha.cursos|join:", "|default:"-" }}</td>
+            <td>{{ linha.turmas|join:", "|default:"-" }}</td>
+            <td class="text-end">{{ linha.total_atividades }}</td>
+            <td class="text-end">{{ linha.total_horas|floatformat:2 }}</td>
+            <td>
+              {% if linha.atividades_por_status %}
+                {% for status, quantidade in linha.atividades_por_status.items %}
+                  <span class="badge bg-secondary me-1">{{ status }}: {{ quantidade }}</span>
+                {% endfor %}
+              {% else %}
+                <span class="text-muted">Sem dados</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}

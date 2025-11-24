@@ -35,5 +35,5 @@
     "security.workspace.trust.untrustedFiles": "open",
     "terminal.integrated.stickyScroll.enabled": true,
     "terminal.integrated.suggest.enabled": true,
-    "chat.mcp.autostart": "never"
+    "chat.mcp.autostart": "newAndOutdated"
 }

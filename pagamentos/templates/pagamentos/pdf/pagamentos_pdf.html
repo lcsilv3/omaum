@@ -5,17 +5,47 @@
     <title>Relatório de Pagamentos</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Helvetica', 'Arial', sans-serif;
             margin: 20px;
-            font-size: 12px;
+            font-size: 9pt;
+            color: #333;
         }
         h1 {
             text-align: center;
             color: #333;
+            font-size: 16pt;
+            margin-top: 0;
+            margin-bottom: 1cm;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
         }
         .header {
-            margin-bottom: 20px;
+            margin-bottom: 0.5cm;
+        }
+        .header .org-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin: 0;
             text-align: center;
+        }
+        .header .org-meta {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-top: 2px;
+        }
+        .header .org-meta .org-subtitle {
+            font-size: 10pt;
+            margin: 0;
+            text-align: center;
+            flex: 1;
+        }
+        .header .org-meta .emission-datetime {
+            font-size: 9pt;
+            margin: 0;
+            text-align: right;
+            font-weight: normal;
+            margin-left: auto;
         }
         .info {
             margin-bottom: 20px;
@@ -64,8 +94,12 @@
 </head>
 <body>
     <div class="header">
+        <p class="org-title">OMAUM - Ordem Mística de Aspiração Universal ao Mestrado</p>
+        <div class="org-meta">
+            <p class="org-subtitle">Sistema de Gestão Integrada</p>
+            <p class="emission-datetime">Data de Emissão: {{ data_geracao|date:"d/m/Y H:i" }}</p>
+        </div>
         <h1>Relatório de Pagamentos</h1>
-        <p>Data de geração: {{ data_geracao|date:"d/m/Y H:i" }}</p>
     </div>
     
     <div class="info">

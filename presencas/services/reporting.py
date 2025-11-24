@@ -704,7 +704,7 @@ def csv_comparativo_frequencias(contexto):
 
 def get_dashboard_presencas():
     """Obtém dados para o painel executivo."""
-    from datetime import date, timedelta
+    from datetime import date
     from django.db.models import Count
 
     PD = _pd_model()

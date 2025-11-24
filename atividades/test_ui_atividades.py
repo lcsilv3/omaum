@@ -65,10 +65,11 @@ class AtividadesUITest(StaticLiveServerTestCase):
         self.driver.find_element(By.NAME, "descricao").send_keys(
             "Atividade criada via Selenium"
         )
-        self.driver.find_element(
-            By.XPATH,
-            '//form//button[@type="submit" or @type="button" and (text()="Salvar" or text()="Criar")]',
-        ).click()
+        salvar_criar_xpath = (
+            '//form//button[@type="submit" or @type="button" '
+            'and (text()="Salvar" or text()="Criar")]'
+        )
+        self.driver.find_element(By.XPATH, salvar_criar_xpath).click()
         time.sleep(1)
         self.driver.get(f"{self.live_server_url}/atividades/")
         body = self.driver.find_element(By.TAG_NAME, "body").text
@@ -84,10 +85,11 @@ class AtividadesUITest(StaticLiveServerTestCase):
         campo_nome = self.driver.find_element(By.NAME, "nome")
         campo_nome.clear()
         campo_nome.send_keys("Atividade Selenium Editada")
-        self.driver.find_element(
-            By.XPATH,
-            '//form//button[@type="submit" or @type="button" and (text()="Salvar" or text()="Atualizar")]',
-        ).click()
+        salvar_atualizar_xpath = (
+            '//form//button[@type="submit" or @type="button" '
+            'and (text()="Salvar" or text()="Atualizar")]'
+        )
+        self.driver.find_element(By.XPATH, salvar_atualizar_xpath).click()
         time.sleep(1)
         if self.driver.find_elements(By.LINK_TEXT, "Excluir"):
             self.driver.find_element(By.LINK_TEXT, "Excluir").click()

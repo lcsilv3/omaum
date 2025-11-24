@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h2>{{ titulo }}</h2>
+  <p>PDF preview - Relatório de Participação</p>
+</div>
+{% endblock %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Participação por Atividade</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 1.5cm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9pt;
+                color: #555;
+            }
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 9pt;
+            color: #333;
+        }
+        .report-header {
+            margin-bottom: 0.5cm;
+        }
+        .report-header .org-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+        }
+        .report-header .org-meta {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-top: 2px;
+        }
+        .report-header .org-meta .org-subtitle {
+            font-size: 10pt;
+            margin: 0;
+            text-align: center;
+            flex: 1;
+        }
+        .report-header .org-meta .emission-datetime {
+            font-size: 9pt;
+            margin: 0;
+            text-align: right;
+            margin-left: auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 16pt;
+            margin-top: 0;
+            margin-bottom: 0.8cm;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            page-break-inside: auto;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+            word-wrap: break-word;
+        }
+        thead {
+            background-color: #f2f2f2;
+            display: table-header-group;
+        }
+        th {
+            font-weight: bold;
+        }
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .summary {
+            margin-top: 0.8cm;
+            font-size: 10pt;
+        }
+        .summary ul {
+            padding-left: 18px;
+            margin: 0;
+        }
+        .summary li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <p class="org-title">{{ nome_organizacao|default:"OMAUM - Ordem Mística de Aspiração Universal ao Mestrado" }}</p>
+        <div class="org-meta">
+            <p class="org-subtitle">{{ nome_sistema|default:"Sistema de Gestão Integrada" }}</p>
+            <p class="emission-datetime">
+                Data de Emissão:
+                {% if data_emissao %}
+                    {{ data_emissao }}
+                {% else %}
+                    {% now "d/m/Y H:i" %}
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <h1>Relatório de Participação por Atividade</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Atividade</th>
+                <th>Curso</th>
+                <th>Turmas</th>
+                <th>Período</th>
+                <th>Convocados</th>
+                <th>Presentes</th>
+                <th>Faltas</th>
+                <th>Justificadas</th>
+                <th>Voluntários (Extra / Simples)</th>
+                <th>% Presença</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for linha in relatorio.linhas %}
+            <tr>
+                <td>
+                    <strong>{{ linha.atividade_nome|default:"-" }}</strong><br>
+                    <small>{{ linha.tipo_atividade }} • {{ linha.status_atividade }}</small>
+                </td>
+                <td>{{ linha.curso_nome|default:"-" }}</td>
+                <td>
+                    {% if linha.turmas %}
+                        {% for turma in linha.turmas %}
+                            <span>{{ turma }}</span>{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if linha.data_inicio %}
+                        {{ linha.data_inicio|date:"d/m/Y" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                    {% if linha.data_fim %}
+                        <br><small>até {{ linha.data_fim|date:"d/m/Y" }}</small>
+                    {% endif %}
+                </td>
+                <td>{{ linha.total_convocados }}</td>
+                <td>{{ linha.total_presentes }}</td>
+                <td>{{ linha.total_faltas }}</td>
+                <td>{{ linha.total_faltas_justificadas }}</td>
+                <td>{{ linha.total_voluntario_extra }} / {{ linha.total_voluntario_simples }}</td>
+                <td>{{ linha.percentual_presenca|floatformat:2 }}%</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" style="text-align: center;">Nenhuma atividade encontrada para os filtros informados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <strong>Totais Consolidados</strong>
+        <ul>
+            <li>Atividades analisadas: {{ relatorio.resumo.total_atividades }}</li>
+            <li>Convocados: {{ relatorio.resumo.total_convocados }}</li>
+            <li>Presentes: {{ relatorio.resumo.total_presentes }}</li>
+            <li>Faltas: {{ relatorio.resumo.total_faltas }} ({{ relatorio.resumo.total_faltas_justificadas }} justificadas)</li>
+            <li>Voluntários: {{ relatorio.resumo.total_voluntarios }} (Extra: {{ relatorio.resumo.total_voluntario_extra }} • Simples: {{ relatorio.resumo.total_voluntario_simples }})</li>
+            <li>Percentual médio de presença: {{ relatorio.resumo.percentual_presenca_medio|floatformat:2 }}%</li>
+        </ul>
+    </div>
+</body>
+</html>

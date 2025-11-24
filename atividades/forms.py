@@ -188,7 +188,8 @@ class AtividadeForm(forms.ModelForm):
         turmas = cleaned_data.get("turmas")
 
         if turmas:
-            # Se não foi selecionado um curso, mas há turmas, usar o curso da primeira turma
+            # Se não foi selecionado um curso, mas há turmas,
+            # usar o curso da primeira turma
             if not curso:
                 primeira_turma = turmas.first()
                 if primeira_turma and primeira_turma.curso:
@@ -358,7 +359,8 @@ class AtividadeAcademicaForm(forms.ModelForm):
         turmas = cleaned_data.get("turmas")
 
         if turmas:
-            # Se não foi selecionado um curso, mas há turmas, usar o curso da primeira turma
+            # Se não foi selecionado um curso, mas há turmas,
+            # usar o curso da primeira turma
             if not curso:
                 primeira_turma = turmas.first()
                 if primeira_turma and primeira_turma.curso:

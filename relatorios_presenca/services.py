@@ -2,7 +2,6 @@ from django.db.models import Q, Count
 from presencas.models import RegistroPresenca
 from alunos.models import Aluno
 from turmas.models import Turma
-from cursos.models import Curso
 
 
 class RelatorioPresencaService:
@@ -46,7 +45,7 @@ class RelatorioPresencaService:
         self, turma_id=None, atividade_id=None, data_inicio=None, data_fim=None
     ):
         """Obtém frequência dos alunos por atividade, filtrando por turma, atividade e período."""
-        from atividades.models import Presenca, Atividade
+        from atividades.models import Presenca
 
         filtros = Q()
         if turma_id:

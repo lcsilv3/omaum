@@ -15,10 +15,11 @@
             }
         }
         body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 9pt; color: #333; }
-        .report-header { text-align: center; margin-bottom: 0.5cm; position: relative; }
-        .report-header .org-title { font-size: 12pt; font-weight: bold; margin: 0; }
-        .report-header .org-subtitle { font-size: 10pt; margin: 2px 0 0; }
-        .report-header .emission-datetime { position: absolute; top: 0; right: 0; font-size: 9pt; margin: 0; text-align: right; }
+    .report-header { margin-bottom: 0.5cm; }
+    .report-header .org-title { font-size: 12pt; font-weight: bold; margin: 0; text-align: center; }
+    .report-header .org-meta { display: flex; align-items: center; width: 100%; margin-top: 2px; }
+    .report-header .org-meta .org-subtitle { font-size: 10pt; margin: 0; text-align: center; flex: 1; }
+    .report-header .org-meta .emission-datetime { font-size: 9pt; margin: 0; text-align: right; margin-left: auto; }
         h1 { text-align: center; font-size: 16pt; margin-top: 0; margin-bottom: 1cm; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
         th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; word-wrap: break-word; }
@@ -33,9 +34,11 @@
 </head>
 <body>
     <div class="report-header">
-        <p class="emission-datetime">Data de Emissão: {{ data_emissao }}</p>
         <p class="org-title">{{ nome_organizacao|default:"OMAUM - Ordem Mística de Aspiração Universal ao Mestrado" }}</p>
-        <p class="org-subtitle">{{ nome_sistema|default:"Sistema de Gestão Integrada" }}</p>
+        <div class="org-meta">
+            <p class="org-subtitle">{{ nome_sistema|default:"Sistema de Gestão Integrada" }}</p>
+            <p class="emission-datetime">Data de Emissão: {{ data_emissao }}</p>
+        </div>
     </div>
     <h1>Relatório de Auditoria de Dados</h1>
 

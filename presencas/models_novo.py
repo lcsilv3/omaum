@@ -8,7 +8,6 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 import logging
-from django.contrib.auth.models import User
 
 logger = logging.getLogger(__name__)
 

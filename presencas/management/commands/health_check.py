@@ -6,7 +6,6 @@ import time
 import logging
 from datetime import datetime
 from typing import Dict, Any
-import importlib.util  # Adicionado import aqui
 
 from django.core.management.base import BaseCommand
 from django.core.cache import cache

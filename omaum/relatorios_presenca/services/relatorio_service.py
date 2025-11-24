@@ -5,8 +5,7 @@ Este service centraliza toda a lógica de negócio para obtenção
 e processamento de dados para os diferentes tipos de relatórios.
 """
 
-from datetime import datetime, date, timedelta
-from django.db.models import Q, Count, Sum, Avg
+from datetime import date, timedelta
 from django.utils import timezone
 from importlib import import_module
 import logging

@@ -1,7 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
 from datetime import date, timedelta
-from relatorios_presenca.services import RelatorioPresencaService
 from alunos.models import Aluno
 from turmas.models import Turma
 from cursos.models import Curso

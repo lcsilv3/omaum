@@ -4,7 +4,6 @@ Mantém compatibilidade com dados existentes através de migração.
 """
 
 # Importações existentes mantidas...
-import datetime
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import RegexValidator
