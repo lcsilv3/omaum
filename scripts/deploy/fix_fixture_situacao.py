@@ -54,10 +54,21 @@ def fix_fixture(input_file: Path, output_file: Path = None):
     print(f"\nTotal de correções: {total_fixed}")
     
     print(f"Salvando fixture corrigido: {output_file}")
-    with open(output_file, 'w', encoding='utf-8') as f:
+    # Salvar sem BOM UTF-8
+    with open(output_file, 'w', encoding='utf-8-sig') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     
-    print("✓ Fixture corrigido com sucesso!")
+    # Remover BOM se existir
+    with open(output_file, 'rb') as f:
+        content = f.read()
+    
+    # Verificar e remover BOM UTF-8 (EF BB BF)
+    if content.startswith(b'\xef\xbb\xbf'):
+        print("Removendo BOM UTF-8...")
+        with open(output_file, 'wb') as f:
+            f.write(content[3:])
+    
+    print("✓ Fixture corrigido com sucesso (sem BOM)!")
 
 
 if __name__ == '__main__':
