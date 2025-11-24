@@ -39,6 +39,41 @@ $ProjectRoot = "c:\projetos\omaum"
 $BackupDir = "$ProjectRoot\backups"
 $ExportDir = "$ProjectRoot\scripts\deploy\exports"
 $Timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+$DockerDir = "$ProjectRoot\docker"
+$ComposeFile = "$DockerDir\docker-compose.prod.yml"
+$EnvFile = "$DockerDir\.env.production"
+$DbContainerName = "omaum-db-prod"
+$WebContainerName = "omaum-web-prod"
+$ComposeServiceWeb = "omaum-web"
+
+[hashtable]$EnvConfig = @{}
+if (Test-Path $EnvFile) {
+    Get-Content $EnvFile | ForEach-Object {
+        $line = $_.Trim()
+        if (-not [string]::IsNullOrWhiteSpace($line) -and -not $line.StartsWith("#") -and $line.Contains("=")) {
+            $pair = $line.Split("=", 2)
+            $EnvConfig[$pair[0].Trim()] = $pair[1].Trim()
+        }
+    }
+} else {
+    Write-Warn "Arquivo de ambiente nao encontrado: $EnvFile"
+}
+
+function Get-EnvConfigValue {
+    param(
+        [string]$Key,
+        [string]$Default = $null
+    )
+
+    if ($EnvConfig.ContainsKey($Key) -and $EnvConfig[$Key]) {
+        return $EnvConfig[$Key]
+    }
+
+    return $Default
+}
+
+$PostgresDb = Get-EnvConfigValue "POSTGRES_DB" "omaum"
+$PostgresUser = Get-EnvConfigValue "POSTGRES_USER" "postgres"
 
 # Funções auxiliares
 function Write-Info { 
@@ -69,6 +104,26 @@ function Write-Step {
     Write-Host "================================================================" -ForegroundColor Cyan
 }
 
+function Invoke-Compose {
+    param(
+        [Parameter(Mandatory = $true, ValueFromRemainingArguments = $true)]
+        [string[]]$Args
+    )
+
+    if (!(Test-Path $ComposeFile)) {
+        Write-Err "Arquivo docker-compose nao encontrado: $ComposeFile"
+        exit 1
+    }
+
+    $baseArgs = @("-f", $ComposeFile)
+
+    if (Test-Path $EnvFile) {
+        $baseArgs += @("--env-file", $EnvFile)
+    }
+
+    & docker-compose @baseArgs @Args
+}
+
 # 1. Verificar pré-requisitos
 function Test-Prerequisites {
     Write-Step 1 8 "VERIFICANDO PRE-REQUISITOS"
@@ -79,6 +134,16 @@ function Test-Prerequisites {
         Set-Location $ProjectRoot
     }
     
+    # Verificar arquivos essenciais
+    if (!(Test-Path $ComposeFile)) {
+        Write-Err "Arquivo docker-compose de producao nao encontrado em $ComposeFile"
+        exit 1
+    }
+
+    if (!(Test-Path $EnvFile)) {
+        Write-Warn "Arquivo de variaveis (.env.production) nao encontrado em $EnvFile"
+    }
+
     # Verificar se Docker está rodando
     try {
         $null = docker ps 2>&1
@@ -93,7 +158,7 @@ function Test-Prerequisites {
     
     if ($containers.Count -eq 0) {
         Write-Err "Nenhum container do OMAUM encontrado!"
-        Write-Info "Execute primeiro: docker-compose up -d"
+        Write-Info "Execute primeiro: docker-compose -f $ComposeFile up -d"
         exit 1
     }
     
@@ -131,13 +196,13 @@ function Backup-Database {
     
     try {
         # Tentar com sufixo -prod primeiro, senão sem sufixo
-        $dbContainer = docker ps --format "{{.Names}}" | Where-Object { $_ -eq "omaum-db-prod" }
+        $dbContainer = docker ps --format "{{.Names}}" | Where-Object { $_ -eq $DbContainerName }
         if (!$dbContainer) {
             $dbContainer = "omaum-db"
             Write-Warn "Usando container sem sufixo -prod: $dbContainer"
         }
         
-        docker exec $dbContainer pg_dump -U postgres omaum | Out-File -FilePath $backupFile -Encoding UTF8
+        docker exec $dbContainer pg_dump -U $PostgresUser $PostgresDb | Out-File -FilePath $backupFile -Encoding UTF8
         
         if (Test-Path $backupFile) {
             $sizeKB = [math]::Round((Get-Item $backupFile).Length / 1KB, 2)
@@ -188,9 +253,14 @@ function Update-Code {
         if ($hasRemote) {
             $pull = Read-Host "Deseja fazer pull do repositorio remoto? (y/N)"
             if ($pull -eq 'y' -or $pull -eq 'Y') {
-                Write-Info "Executando git pull..."
-                git pull origin main
-                Write-Success "Codigo atualizado do repositorio"
+                $currentBranch = (git rev-parse --abbrev-ref HEAD).Trim()
+                if (-not $currentBranch) {
+                    Write-Warn "Nao foi possivel identificar o branch atual. Pulando git pull."
+                } else {
+                    Write-Info "Executando git pull do branch $currentBranch..."
+                    git pull origin $currentBranch
+                    Write-Success "Codigo atualizado do repositorio"
+                }
             }
         }
     } else {
@@ -205,7 +275,7 @@ function Import-DevData {
         return
     }
     
-    Write-Step 4 8 "IMPORTANDO DADOS DE DESENVOLVIMENTO"
+    Write-Step 5 8 "IMPORTANDO DADOS DE DESENVOLVIMENTO"
     
     # Encontrar arquivo de exportação mais recente
     $exportFiles = Get-ChildItem -Path $ExportDir -Filter "dev_data_*.json" -ErrorAction SilentlyContinue |
@@ -236,26 +306,26 @@ function Import-DevData {
     }
     
     Write-Warn "ATENCAO: Limpando banco de dados atual..."
-    docker-compose run --rm web python manage.py flush --no-input
+    Invoke-Compose @("exec", "-T", $ComposeServiceWeb, "python", "manage.py", "flush", "--no-input")
     
     Write-Info "Copiando arquivo para container..."
-    docker cp $exportFile.FullName omaum-web-prod:/tmp/dev_data.json
+    docker cp $exportFile.FullName "${WebContainerName}:/tmp/dev_data.json"
     
     Write-Info "Importando dados..."
-    docker exec omaum-web-prod python manage.py loaddata /tmp/dev_data.json
+    docker exec $WebContainerName python manage.py loaddata /tmp/dev_data.json
     
     Write-Success "Dados importados com sucesso!"
 }
 
 # 5. Aplicar migrações
 function Apply-Migrations {
-    Write-Step 5 8 "APLICANDO MIGRACOES"
+    Write-Step 4 8 "APLICANDO MIGRACOES"
     
     Write-Info "Criando migracoes (se houver alteracoes nos models)..."
-    docker-compose run --rm web python manage.py makemigrations
+    Invoke-Compose @("run", "--rm", $ComposeServiceWeb, "python", "manage.py", "makemigrations")
     
     Write-Info "Aplicando migracoes..."
-    docker-compose run --rm web python manage.py migrate --no-input
+    Invoke-Compose @("run", "--rm", $ComposeServiceWeb, "python", "manage.py", "migrate", "--no-input")
     
     Write-Success "Migracoes aplicadas"
 }
@@ -265,7 +335,7 @@ function Collect-Static {
     Write-Step 6 8 "COLETANDO ARQUIVOS ESTATICOS"
     
     Write-Info "Coletando CSS, JS, imagens..."
-    docker-compose run --rm web python manage.py collectstatic --no-input --clear
+    Invoke-Compose @("run", "--rm", $ComposeServiceWeb, "python", "manage.py", "collectstatic", "--no-input", "--clear")
     
     Write-Success "Arquivos estaticos coletados"
 }
@@ -275,10 +345,10 @@ function Rebuild-Containers {
     Write-Step 7 8 "RECONSTRUINDO E REINICIANDO CONTAINERS"
     
     Write-Info "Reconstruindo imagens Docker..."
-    docker-compose build --pull
+    Invoke-Compose @("build", "--pull")
     
     Write-Info "Reiniciando containers..."
-    docker-compose up -d
+    Invoke-Compose @("up", "-d")
     
     Write-Success "Containers reiniciados"
     
@@ -292,11 +362,11 @@ function Test-Health {
     Write-Step 8 8 "VERIFICANDO SAUDE DOS SERVICOS"
     
     Write-Info "Status dos containers:"
-    docker-compose ps
+    Invoke-Compose @("ps")
     
     Write-Host ""
     Write-Info "Ultimas linhas dos logs:"
-    docker-compose logs --tail=20 web
+    Invoke-Compose @("logs", "--tail=20", $ComposeServiceWeb)
     
     # Testar acesso HTTP
     Write-Host ""
@@ -320,7 +390,7 @@ function Invoke-SmokeTests {
     
     Write-Info "Verificando dados no banco..."
     $shellCmd = 'from turmas.models import Turma; from cursos.models import Curso; print(f\"Turmas: {Turma.objects.count()}, Cursos: {Curso.objects.count()}\")'
-    $result = docker exec omaum-web-prod python manage.py shell -c $shellCmd
+    $result = docker exec $WebContainerName python manage.py shell -c $shellCmd
     Write-Host "  $result" -ForegroundColor White
     
     Write-Success "Testes concluidos"
@@ -338,13 +408,18 @@ function Main {
     # Confirmar início
     Write-Host "Este script ira:" -ForegroundColor Yellow
     Write-Host "  1. Fazer backup do banco de dados" -ForegroundColor White
+    $stepCounter = 2
+    Write-Host "  $stepCounter. Aplicar migracoes do banco" -ForegroundColor White
     if (!$SemDados) {
-        Write-Host "  2. Importar dados de desenvolvimento (OPCIONAL)" -ForegroundColor White
+        $stepCounter++
+        Write-Host "  $stepCounter. Importar dados de desenvolvimento (OPCIONAL)" -ForegroundColor White
     }
-    Write-Host "  3. Aplicar migracoes do banco" -ForegroundColor White
-    Write-Host "  4. Coletar arquivos estaticos" -ForegroundColor White
-    Write-Host "  5. Reconstruir e reiniciar containers" -ForegroundColor White
-    Write-Host "  6. Validar funcionamento" -ForegroundColor White
+    $stepCounter++
+    Write-Host "  $stepCounter. Coletar arquivos estaticos" -ForegroundColor White
+    $stepCounter++
+    Write-Host "  $stepCounter. Reconstruir e reiniciar containers" -ForegroundColor White
+    $stepCounter++
+    Write-Host "  $stepCounter. Validar funcionamento" -ForegroundColor White
     Write-Host ""
     
     $confirm = Read-Host "Deseja continuar? (y/N)"
@@ -361,11 +436,12 @@ function Main {
         Backup-Database
         Update-Code
         
+        Apply-Migrations
+        
         if (!$SemDados) {
             Import-DevData
         }
         
-        Apply-Migrations
         Collect-Static
         Rebuild-Containers
         Test-Health
@@ -397,7 +473,7 @@ function Main {
         Write-Host ""
         Write-Warn "Para restaurar o backup:"
         Write-Host "  Expand-Archive $BackupDir\backup_$Timestamp.sql.zip -DestinationPath $BackupDir\temp" -ForegroundColor White
-        Write-Host "  Get-Content $BackupDir\temp\backup_$Timestamp.sql | docker exec -i omaum-db-prod psql -U postgres omaum" -ForegroundColor White
+        Write-Host "  Get-Content $BackupDir\temp\backup_$Timestamp.sql | docker exec -i $DbContainerName psql -U $PostgresUser $PostgresDb" -ForegroundColor White
         Write-Host ""
         exit 1
     }
