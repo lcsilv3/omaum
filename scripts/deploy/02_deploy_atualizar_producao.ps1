@@ -45,6 +45,13 @@ $EnvFile = "$DockerDir\.env.production"
 $DbContainerName = "omaum-db-prod"
 $WebContainerName = "omaum-web-prod"
 $ComposeServiceWeb = "omaum-web"
+$LogDir = "$ProjectRoot\scripts\deploy\logs"
+$LogFile = "$LogDir\deploy_$Timestamp.log"
+
+# Criar diretório de logs se não existir
+if (-not (Test-Path $LogDir)) {
+    New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
+}
 
 [hashtable]$EnvConfig = @{}
 if (Test-Path $EnvFile) {
@@ -75,33 +82,60 @@ function Get-EnvConfigValue {
 $PostgresDb = Get-EnvConfigValue "POSTGRES_DB" "omaum"
 $PostgresUser = Get-EnvConfigValue "POSTGRES_USER" "postgres"
 
+# Função para logging duplo (console + arquivo)
+function Write-Log {
+    param(
+        [string]$Message,
+        [string]$Level = "INFO"
+    )
+    
+    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    $logMessage = "[$timestamp] [$Level] $Message"
+    
+    # Escrever no arquivo
+    Add-Content -Path $LogFile -Value $logMessage -Encoding UTF8
+    
+    # Retornar mensagem para console (será processada pelas funções Write-*)
+    return $Message
+}
+
 # Funções auxiliares
 function Write-Info { 
     param($Message)
-    Write-Host "[INFO] $Message" -ForegroundColor Cyan 
+    $msg = Write-Log -Message $Message -Level "INFO"
+    Write-Host "[INFO] $msg" -ForegroundColor Cyan 
 }
 
 function Write-Success { 
     param($Message)
-    Write-Host "[OK] $Message" -ForegroundColor Green 
+    $msg = Write-Log -Message $Message -Level "SUCCESS"
+    Write-Host "[OK] $msg" -ForegroundColor Green 
 }
 
 function Write-Warn { 
     param($Message)
-    Write-Host "[AVISO] $Message" -ForegroundColor Yellow 
+    $msg = Write-Log -Message $Message -Level "WARNING"
+    Write-Host "[AVISO] $msg" -ForegroundColor Yellow 
 }
 
 function Write-Err { 
     param($Message)
-    Write-Host "[ERRO] $Message" -ForegroundColor Red 
+    $msg = Write-Log -Message $Message -Level "ERROR"
+    Write-Host "[ERRO] $msg" -ForegroundColor Red 
 }
 
 function Write-Step {
     param($Number, $Total, $Message)
+    $separator = "================================================================"
+    Write-Log -Message "" -Level "STEP"
+    Write-Log -Message $separator -Level "STEP"
+    Write-Log -Message "  PASSO $Number/$Total - $Message" -Level "STEP"
+    Write-Log -Message $separator -Level "STEP"
+    
     Write-Host ""
-    Write-Host "================================================================" -ForegroundColor Cyan
+    Write-Host $separator -ForegroundColor Cyan
     Write-Host "  PASSO $Number/$Total - $Message" -ForegroundColor Cyan
-    Write-Host "================================================================" -ForegroundColor Cyan
+    Write-Host $separator -ForegroundColor Cyan
 }
 
 function Invoke-Compose {
@@ -122,6 +156,13 @@ function Invoke-Compose {
     }
 
     $commandArgs += $ComposeArgs
+
+    $cmdLine = "docker $($commandArgs -join ' ')"
+    Write-Log -Message "Executando: $cmdLine" -Level "DEBUG"
+    
+    if ($Verbose) {
+        Write-Host "[CMD] $cmdLine" -ForegroundColor DarkGray
+    }
 
     & docker @commandArgs
 }
@@ -406,11 +447,30 @@ function Invoke-SmokeTests {
 
 # Função principal
 function Main {
+    # Inicializar arquivo de log
+    $logHeader = @"
+================================================================================
+DEPLOY OMAUM - LOG DE EXECUÇÃO
+================================================================================
+Data/Hora: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+Servidor: $env:COMPUTERNAME
+Usuário: $env:USERNAME
+IP: 192.168.15.4
+Script: 02_deploy_atualizar_producao.ps1
+Parâmetros: SemBackup=$SemBackup, SemDados=$SemDados, Verbose=$Verbose
+================================================================================
+
+"@
+    Set-Content -Path $LogFile -Value $logHeader -Encoding UTF8
+    Write-Host $logHeader -ForegroundColor DarkGray
+    
     Write-Host ""
     Write-Host "================================================================" -ForegroundColor Cyan
     Write-Host "  ATUALIZACAO DE PRODUCAO - OMAUM" -ForegroundColor Cyan
     Write-Host "  Servidor: DESKTOP-OAE3R5M (192.168.15.4)" -ForegroundColor Cyan
     Write-Host "================================================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Info "Log sendo salvo em: $LogFile"
     Write-Host ""
     
     # Confirmar início
@@ -464,11 +524,14 @@ function Main {
         Write-Host ""
         Write-Success "Tempo total: $($duration.Minutes)m $($duration.Seconds)s"
         Write-Info "Backup salvo em: $BackupDir\backup_$Timestamp.sql.zip"
+        Write-Success "Log salvo em: $LogFile"
         Write-Host ""
         Write-Info "Acessos:"
         Write-Host "  - Web: http://192.168.15.4" -ForegroundColor White
         Write-Host "  - Admin: http://192.168.15.4/admin" -ForegroundColor White
         Write-Host ""
+        
+        Write-Log -Message "DEPLOY CONCLUIDO COM SUCESSO - Tempo: $($duration.Minutes)m $($duration.Seconds)s" -Level "SUCCESS"
         
     } catch {
         Write-Host ""
@@ -483,6 +546,12 @@ function Main {
         Write-Host "  Expand-Archive $BackupDir\backup_$Timestamp.sql.zip -DestinationPath $BackupDir\temp" -ForegroundColor White
         Write-Host "  Get-Content $BackupDir\temp\backup_$Timestamp.sql | docker exec -i $DbContainerName psql -U $PostgresUser $PostgresDb" -ForegroundColor White
         Write-Host ""
+        Write-Err "Log de erros salvo em: $LogFile"
+        Write-Host ""
+        
+        Write-Log -Message "DEPLOY FALHOU: $($_.Exception.Message)" -Level "ERROR"
+        Write-Log -Message $_.ScriptStackTrace -Level "ERROR"
+        
         exit 1
     }
 }
