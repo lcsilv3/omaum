@@ -106,8 +106,8 @@ function Write-Step {
 
 function Invoke-Compose {
     param(
-        [Parameter(Mandatory = $true, ValueFromRemainingArguments = $true)]
-        [string[]]$Args
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$ComposeArgs
     )
 
     if (!(Test-Path $ComposeFile)) {
@@ -115,13 +115,15 @@ function Invoke-Compose {
         exit 1
     }
 
-    $baseArgs = @("-f", $ComposeFile)
+    $commandArgs = @("compose", "-f", $ComposeFile)
 
     if (Test-Path $EnvFile) {
-        $baseArgs += @("--env-file", $EnvFile)
+        $commandArgs += @("--env-file", $EnvFile)
     }
 
-    & docker-compose @baseArgs @Args
+    $commandArgs += $ComposeArgs
+
+    & docker @commandArgs
 }
 
 # 1. Verificar pré-requisitos
@@ -306,7 +308,7 @@ function Import-DevData {
     }
     
     Write-Warn "ATENCAO: Limpando banco de dados atual..."
-    Invoke-Compose @("exec", "-T", $ComposeServiceWeb, "python", "manage.py", "flush", "--no-input")
+    Invoke-Compose exec -T $ComposeServiceWeb python manage.py flush --no-input
     
     Write-Info "Copiando arquivo para container..."
     docker cp $exportFile.FullName "${WebContainerName}:/tmp/dev_data.json"
@@ -322,10 +324,10 @@ function Apply-Migrations {
     Write-Step 4 8 "APLICANDO MIGRACOES"
     
     Write-Info "Criando migracoes (se houver alteracoes nos models)..."
-    Invoke-Compose @("run", "--rm", $ComposeServiceWeb, "python", "manage.py", "makemigrations")
+    Invoke-Compose run --rm $ComposeServiceWeb python manage.py makemigrations
     
     Write-Info "Aplicando migracoes..."
-    Invoke-Compose @("run", "--rm", $ComposeServiceWeb, "python", "manage.py", "migrate", "--no-input")
+    Invoke-Compose run --rm $ComposeServiceWeb python manage.py migrate --no-input
     
     Write-Success "Migracoes aplicadas"
 }
@@ -335,7 +337,7 @@ function Collect-Static {
     Write-Step 6 8 "COLETANDO ARQUIVOS ESTATICOS"
     
     Write-Info "Coletando CSS, JS, imagens..."
-    Invoke-Compose @("run", "--rm", $ComposeServiceWeb, "python", "manage.py", "collectstatic", "--no-input", "--clear")
+    Invoke-Compose run --rm $ComposeServiceWeb python manage.py collectstatic --no-input --clear
     
     Write-Success "Arquivos estaticos coletados"
 }
@@ -345,10 +347,10 @@ function Rebuild-Containers {
     Write-Step 7 8 "RECONSTRUINDO E REINICIANDO CONTAINERS"
     
     Write-Info "Reconstruindo imagens Docker..."
-    Invoke-Compose @("build", "--pull")
+    Invoke-Compose build --pull
     
     Write-Info "Reiniciando containers..."
-    Invoke-Compose @("up", "-d")
+    Invoke-Compose up -d
     
     Write-Success "Containers reiniciados"
     
@@ -362,11 +364,11 @@ function Test-Health {
     Write-Step 8 8 "VERIFICANDO SAUDE DOS SERVICOS"
     
     Write-Info "Status dos containers:"
-    Invoke-Compose @("ps")
+    Invoke-Compose ps
     
     Write-Host ""
     Write-Info "Ultimas linhas dos logs:"
-    Invoke-Compose @("logs", "--tail=20", $ComposeServiceWeb)
+    Invoke-Compose logs --tail=20 $ComposeServiceWeb
     
     # Testar acesso HTTP
     Write-Host ""

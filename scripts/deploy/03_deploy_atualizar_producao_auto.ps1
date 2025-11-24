@@ -14,6 +14,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$LogArchiveDir = Join-Path $ProjectRoot "scripts/deploy/logs"
+$timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+$archivedOut = $null
+$archivedErr = $null
 
 $deployScript = Join-Path $ProjectRoot "scripts/deploy/02_deploy_atualizar_producao.ps1"
 if (!(Test-Path $deployScript)) {
@@ -89,5 +93,29 @@ try {
 
     Write-Host "Deploy automatizado concluido com sucesso." -ForegroundColor Green
 } finally {
+    try {
+        if (!(Test-Path $LogArchiveDir)) {
+            New-Item -ItemType Directory -Path $LogArchiveDir -Force | Out-Null
+        }
+
+        if (Test-Path $outputFile) {
+            $archivedOut = Join-Path $LogArchiveDir ("auto-deploy_${timestamp}.out.log")
+            Copy-Item $outputFile $archivedOut -Force
+        }
+
+        if ((Test-Path $errorFile) -and (Get-Item $errorFile).Length -gt 0) {
+            $archivedErr = Join-Path $LogArchiveDir ("auto-deploy_${timestamp}.err.log")
+            Copy-Item $errorFile $archivedErr -Force
+        }
+
+        if ($archivedOut -or $archivedErr) {
+            Write-Host "Logs arquivados em ${LogArchiveDir}:" -ForegroundColor Cyan
+            if ($archivedOut) { Write-Host "  - Saida: $archivedOut" -ForegroundColor White }
+            if ($archivedErr) { Write-Host "  - Erros: $archivedErr" -ForegroundColor Yellow }
+        }
+    } catch {
+        Write-Warn "Nao foi possivel arquivar os logs: $($_.Exception.Message)"
+    }
+
     Remove-Item -ErrorAction SilentlyContinue $inputFile, $outputFile, $errorFile
 }
