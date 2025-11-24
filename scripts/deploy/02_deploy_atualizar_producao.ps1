@@ -241,7 +241,13 @@ function Update-Code {
             
             $commit = Read-Host "Deseja fazer commit das alteracoes? (y/N)"
             if ($commit -eq 'y' -or $commit -eq 'Y') {
-                $message = Read-Host "Mensagem do commit"
+                $autoCommitMessage = $env:OMAUM_DEPLOY_COMMIT_MESSAGE
+                if ([string]::IsNullOrWhiteSpace($autoCommitMessage)) {
+                    $message = Read-Host "Mensagem do commit"
+                } else {
+                    Write-Info "Usando mensagem de commit fornecida via OMAUM_DEPLOY_COMMIT_MESSAGE"
+                    $message = $autoCommitMessage
+                }
                 git add .
                 git commit -m $message
                 Write-Success "Commit realizado"

@@ -1,8 +1,7 @@
 ################################################################################
-# Script auxiliar: executa 02_deploy_atualizar_producao.ps1 respondendo "sim"
-# a todos os prompts, reproduzindo no ambiente de producao tudo que esta no
-# desenvolvimento. Este utilitario serve para administradores que precisam
-# rodar o fluxo completo sem interacao manual.
+# Script auxiliar: executa 02_deploy_atualizar_producao.ps1 com interacao
+# do usuario no terminal. Define a variavel OMAUM_DEPLOY_COMMIT_MESSAGE para
+# usar a mensagem de commit fornecida via parametro.
 #
 # Uso sugerido:
 #   powershell -ExecutionPolicy Bypass -File scripts/deploy/03_deploy_...
@@ -14,108 +13,28 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$LogArchiveDir = Join-Path $ProjectRoot "scripts/deploy/logs"
-$timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
-$archivedOut = $null
-$archivedErr = $null
+
+$originalCommitMessageEnv = $env:OMAUM_DEPLOY_COMMIT_MESSAGE
+$env:OMAUM_DEPLOY_COMMIT_MESSAGE = $CommitMessage
 
 $deployScript = Join-Path $ProjectRoot "scripts/deploy/02_deploy_atualizar_producao.ps1"
 if (!(Test-Path $deployScript)) {
     throw "Script base nao encontrado em: $deployScript"
 }
 
-# Sequencia de respostas fornecida ao script 02:
-#  1) (opcional) autoriza executar fora do servidor oficial
-#  2) confirma execucao do fluxo completo
-#  3) autoriza criar commit pendente
-#  4) define mensagem do commit
-#  5) autoriza git pull
-#  6) confirma importacao dos dados de desenvolvimento
-$responses = @()
-if ($env:COMPUTERNAME -ne "DESKTOP-OAE3R5M") {
-    $responses += "y"
-}
-
-$responses += @(
-    "y",
-    "y",
-    $CommitMessage,
-    "y",
-    "y"
-)
-
-# Arquivos temporarios para redirecionar entrada/saida/erros do processo filho
-$inputFile = Join-Path ([System.IO.Path]::GetTempPath()) ("omaum-deploy-input-" + [guid]::NewGuid().ToString() + ".txt")
-$outputFile = Join-Path ([System.IO.Path]::GetTempPath()) ("omaum-deploy-out-" + [guid]::NewGuid().ToString() + ".log")
-$errorFile = Join-Path ([System.IO.Path]::GetTempPath()) ("omaum-deploy-err-" + [guid]::NewGuid().ToString() + ".log")
-
 try {
-    # Grava respostas para alimentar o Read-Host do script principal
-    $responses | Set-Content -Path $inputFile -Encoding ASCII
-
-    Write-Host "Executando script de deploy automatico utilizando respostas pre-definidas..." -ForegroundColor Cyan
-    Write-Host "Log de saida: $outputFile" -ForegroundColor White
-    Write-Host "Log de erro: $errorFile" -ForegroundColor White
-
-    $arguments = @(
-        "-NoLogo",
-        "-NoProfile",
-        "-ExecutionPolicy", "Bypass",
-        "-File", $deployScript
-    )
-
-    # Roda o script 02 em um novo processo para que possamos enviar stdin
-    $process = Start-Process -FilePath "powershell.exe" `
-        -ArgumentList $arguments `
-        -WorkingDirectory $ProjectRoot `
-        -RedirectStandardInput $inputFile `
-        -RedirectStandardOutput $outputFile `
-        -RedirectStandardError $errorFile `
-        -PassThru -Wait
-
-    Write-Host "============================================================" -ForegroundColor Cyan
-    Write-Host "SAIDA COMPLETA DO SCRIPT 02:" -ForegroundColor Cyan
-    Write-Host "============================================================" -ForegroundColor Cyan
-    if (Test-Path $outputFile) {
-        Get-Content $outputFile | ForEach-Object { Write-Host $_ }
-    }
-
-    if ((Test-Path $errorFile) -and (Get-Item $errorFile).Length -gt 0) {
-        Write-Host "============================================================" -ForegroundColor Yellow
-        Write-Host "ERROS/ALERTAS:" -ForegroundColor Yellow
-        Write-Host "============================================================" -ForegroundColor Yellow
-        Get-Content $errorFile | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
-    }
-
-    if ($process.ExitCode -ne 0) {
-        throw "Script retornou codigo de saida $($process.ExitCode). Consulte os logs acima."
-    }
-
-    Write-Host "Deploy automatizado concluido com sucesso." -ForegroundColor Green
+    Write-Host "Executando script de deploy com interacao no terminal..." -ForegroundColor Cyan
+    Write-Host ""
+    
+    Set-Location $ProjectRoot
+    & $deployScript
+    
+    Write-Host ""
+    Write-Host "Deploy concluido." -ForegroundColor Green
 } finally {
-    try {
-        if (!(Test-Path $LogArchiveDir)) {
-            New-Item -ItemType Directory -Path $LogArchiveDir -Force | Out-Null
-        }
-
-        if (Test-Path $outputFile) {
-            $archivedOut = Join-Path $LogArchiveDir ("auto-deploy_${timestamp}.out.log")
-            Copy-Item $outputFile $archivedOut -Force
-        }
-
-        if ((Test-Path $errorFile) -and (Get-Item $errorFile).Length -gt 0) {
-            $archivedErr = Join-Path $LogArchiveDir ("auto-deploy_${timestamp}.err.log")
-            Copy-Item $errorFile $archivedErr -Force
-        }
-
-        if ($archivedOut -or $archivedErr) {
-            Write-Host "Logs arquivados em ${LogArchiveDir}:" -ForegroundColor Cyan
-            if ($archivedOut) { Write-Host "  - Saida: $archivedOut" -ForegroundColor White }
-            if ($archivedErr) { Write-Host "  - Erros: $archivedErr" -ForegroundColor Yellow }
-        }
-    } catch {
-        Write-Warn "Nao foi possivel arquivar os logs: $($_.Exception.Message)"
+    if ($null -ne $originalCommitMessageEnv) {
+        $env:OMAUM_DEPLOY_COMMIT_MESSAGE = $originalCommitMessageEnv
+    } else {
+        Remove-Item Env:OMAUM_DEPLOY_COMMIT_MESSAGE -ErrorAction SilentlyContinue
     }
-
-    Remove-Item -ErrorAction SilentlyContinue $inputFile, $outputFile, $errorFile
 }
