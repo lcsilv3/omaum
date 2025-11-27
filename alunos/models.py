@@ -491,6 +491,7 @@ class TipoCodigo(models.Model):
 
     nome = models.CharField(max_length=50, unique=True, verbose_name=_("Nome"))
     descricao = models.TextField(blank=True, null=True, verbose_name=_("Descrição"))
+    ativo = models.BooleanField(default=True, verbose_name=_("Ativo"))
 
     class Meta:
         verbose_name = _("Tipo de Código")
@@ -512,6 +513,7 @@ class Codigo(models.Model):
     )
     nome = models.CharField(max_length=100, unique=True, verbose_name=_("Nome"))
     descricao = models.TextField(blank=True, null=True, verbose_name=_("Descrição"))
+    ativo = models.BooleanField(default=True, verbose_name=_("Ativo"))
 
     class Meta:
         verbose_name = _("Código")
