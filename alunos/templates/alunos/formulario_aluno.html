@@ -499,9 +499,10 @@ document.addEventListener('DOMContentLoaded', function() {
         timeoutBusca = setTimeout(() => {
             if (!numeroIniciatico || numeroIniciatico.trim() === '') return;
             
-            // Só busca se não houver foto já selecionada pelo usuário
+            // Só busca se não houver foto já selecionada MANUALMENTE pelo usuário NESTA SESSÃO
+            // (não confundir com foto já salva no banco - queremos sempre buscar a mais recente)
             if (fotoInput.files && fotoInput.files.length > 0) {
-                console.log('Foto já selecionada manualmente pelo usuário, não buscar automaticamente');
+                console.log('Foto já selecionada manualmente nesta sessão, não buscar automaticamente');
                 return;
             }
             
@@ -564,8 +565,10 @@ document.addEventListener('DOMContentLoaded', function() {
         buscarFotoAutomatica(this.value);
     });
     
-    // Busca automática ao carregar a página (para edição)
-    if (numeroIniciaticoInput.value && (!fotoInput.value || fotoInput.value === '')) {
+    // Busca automática ao carregar a página (para criação e edição)
+    // Sempre busca a foto mais recente quando o número iniciático está preenchido
+    if (numeroIniciaticoInput.value && numeroIniciaticoInput.value.trim() !== '') {
+        console.log('Buscando foto automaticamente ao carregar (número iniciático:', numeroIniciaticoInput.value, ')');
         buscarFotoAutomatica(numeroIniciaticoInput.value);
     }
     
