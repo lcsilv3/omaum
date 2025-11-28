@@ -9,6 +9,48 @@
     {% if historico_formset %}
         {{ historico_formset.media.css|default_if_none:'' }}
     {% endif %}
+    <style>
+        /* Estilos para cards com erro */
+        .card.border-danger {
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+            animation: pulseError 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseError {
+            0%, 100% { box-shadow: 0 0 10px rgba(220, 53, 69, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(220, 53, 69, 0.5); }
+        }
+        
+        .badge-error {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* Destaque em campos com erro */
+        .is-invalid, [aria-invalid="true"] {
+            border-color: #dc3545 !important;
+            border-width: 2px !important;
+            background-color: #fff5f5 !important;
+        }
+        
+        .is-invalid:focus, [aria-invalid="true"]:focus {
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+        
+        /* Melhoria na mensagem de erro global */
+        .alert-error ul, .alert-danger ul {
+            padding-left: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .alert-error li, .alert-danger li {
+            margin-bottom: 0.25rem;
+        }
+    </style>
 {% endblock %}
 
 {# ---- CONTEÚDO PRINCIPAL ---- #}
@@ -440,4 +482,164 @@ document.addEventListener('DOMContentLoaded', function() {
 {# Scripts principais da página #}
 <script src="{% static 'alunos/masks.js' %}"></script>
 <script src="{% static 'alunos/js/formulario_aluno.js' %}"></script>
+
+{# Script para marcar cards com erros e melhorar UX #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mapeia campos para seus respectivos cards
+    const campoParaCard = {
+        'cpf': 'dados-pessoais',
+        'nome': 'dados-pessoais',
+        'data_nascimento': 'dados-pessoais',
+        'hora_nascimento': 'dados-pessoais',
+        'email': 'dados-pessoais',
+        'sexo': 'dados-pessoais',
+        'situacao': 'dados-pessoais',
+        'foto': 'dados-pessoais',
+        
+        'numero_iniciatico': 'dados-iniciaticos-principais',
+        'nome_iniciatico': 'dados-iniciaticos-principais',
+        'grau_atual': 'dados-iniciaticos-principais',
+        'situacao_iniciatica': 'dados-iniciaticos-principais',
+        
+        'pais_nacionalidade': 'nacionalidade',
+        'estado_naturalidade': 'nacionalidade',
+        'cidade_naturalidade': 'nacionalidade',
+        
+        'cep': 'endereco',
+        'rua': 'endereco',
+        'numero_imovel': 'endereco',
+        'complemento': 'endereco',
+        'bairro': 'endereco',
+        'estado': 'endereco',
+        'cidade': 'endereco',
+        
+        'nome_primeiro_contato': 'contatos',
+        'celular_primeiro_contato': 'contatos',
+        'tipo_relacionamento_primeiro_contato': 'contatos',
+        'nome_segundo_contato': 'contatos',
+        'celular_segundo_contato': 'contatos',
+        'tipo_relacionamento_segundo_contato': 'contatos',
+        
+        'tipo_sanguineo': 'medicas',
+        'convenio_medico': 'medicas',
+        'hospital': 'medicas',
+        'alergias': 'medicas',
+        'condicoes_medicas_gerais': 'medicas'
+    };
+    
+    // Encontra todos os campos com erro
+    const camposComErro = document.querySelectorAll('.is-invalid, [aria-invalid="true"]');
+    const cardsComErro = new Set();
+    const errosPorCard = {};
+    
+    // Processa cada campo com erro
+    camposComErro.forEach(campo => {
+        // Extrai o nome do campo (remove prefixos de formset)
+        let nomeCampo = campo.name || campo.id;
+        nomeCampo = nomeCampo.replace(/^historico-\d+-/, '');
+        nomeCampo = nomeCampo.replace(/^id_/, '');
+        
+        // Identifica o card correspondente
+        let cardId;
+        if (nomeCampo.startsWith('historico-') || campo.closest('.historico-form')) {
+            cardId = 'dados-iniciaticos';
+        } else {
+            cardId = campoParaCard[nomeCampo];
+        }
+        
+        if (cardId) {
+            cardsComErro.add(cardId);
+            
+            // Coleta informações do erro
+            if (!errosPorCard[cardId]) {
+                errosPorCard[cardId] = [];
+            }
+            
+            const label = campo.closest('.mb-3')?.querySelector('label')?.textContent?.trim() || nomeCampo;
+            const erroMsg = campo.closest('.mb-3')?.querySelector('.invalid-feedback, .errorlist, [id$="_error"]')?.textContent?.trim();
+            
+            if (label && erroMsg) {
+                errosPorCard[cardId].push({ campo: label, erro: erroMsg });
+            }
+        }
+    });
+    
+    // Marca os cards com erros
+    cardsComErro.forEach(cardId => {
+        const card = document.querySelector(`#${cardId}`)?.closest('.card');
+        if (!card) return;
+        
+        const header = card.querySelector('.card-header');
+        const collapseToggle = header?.querySelector('.collapse-toggle');
+        const cardBody = card.querySelector(`#${cardId}`);
+        
+        // Adiciona badge de erro no header
+        if (header && !header.querySelector('.badge-error')) {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-danger ms-2 badge-error';
+            badge.innerHTML = '<i class="fas fa-exclamation-circle"></i> Contém erros';
+            badge.style.fontSize = '0.85rem';
+            
+            const h5 = header.querySelector('h5');
+            if (h5) {
+                h5.appendChild(badge);
+            }
+        }
+        
+        // Adiciona borda vermelha ao card
+        card.classList.add('border-danger');
+        card.style.borderWidth = '2px';
+        
+        // Expande o card automaticamente
+        if (cardBody && cardBody.classList.contains('collapse') && !cardBody.classList.contains('show')) {
+            const bsCollapse = new bootstrap.Collapse(cardBody, { toggle: true });
+            
+            // Atualiza o chevron
+            if (collapseToggle) {
+                const chevron = collapseToggle.querySelector('.chevron');
+                if (chevron) {
+                    chevron.style.transform = 'rotate(90deg)';
+                }
+            }
+        }
+    });
+    
+    // Melhora a mensagem de erro global
+    const alertErro = document.querySelector('.alert-error, .alert-danger');
+    if (alertErro && cardsComErro.size > 0) {
+        let mensagemDetalhada = '<strong>Foram encontrados erros nos seguintes cards:</strong><ul class="mb-0 mt-2">';
+        
+        cardsComErro.forEach(cardId => {
+            const card = document.querySelector(`#${cardId}`)?.closest('.card');
+            const titulo = card?.querySelector('.card-header h5 a')?.textContent?.trim().replace('▶', '').replace(/\(clique.*\)/, '').trim();
+            
+            if (titulo) {
+                mensagemDetalhada += `<li><strong>${titulo}</strong>`;
+                
+                if (errosPorCard[cardId] && errosPorCard[cardId].length > 0) {
+                    mensagemDetalhada += '<ul>';
+                    errosPorCard[cardId].forEach(item => {
+                        mensagemDetalhada += `<li><em>${item.campo}:</em> ${item.erro}</li>`;
+                    });
+                    mensagemDetalhada += '</ul>';
+                }
+                
+                mensagemDetalhada += '</li>';
+            }
+        });
+        
+        mensagemDetalhada += '</ul>';
+        alertErro.innerHTML = mensagemDetalhada + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>';
+    }
+    
+    // Scroll para o primeiro campo com erro
+    if (camposComErro.length > 0) {
+        setTimeout(() => {
+            camposComErro[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            camposComErro[0].focus();
+        }, 500);
+    }
+});
+</script>
 {% endblock %}
