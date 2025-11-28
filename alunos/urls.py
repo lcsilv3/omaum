@@ -6,6 +6,7 @@ from alunos.views import (
     api_views,
     listar_tipos_codigos_ajax,
     listar_codigos_por_tipo_ajax,
+    localidade_api,
 )
 from alunos.api.viewsets import AlunoViewSet
 
@@ -118,6 +119,37 @@ urlpatterns = [
         "api/painel/tabela/",
         api_views.painel_tabela_api,
         name="api_painel_tabela",
+    ),
+    # APIs de Localidade (Estados e Cidades)
+    path(
+        "api/localidade/paises/",
+        localidade_api.search_paises,
+        name="api_search_paises",
+    ),
+    path(
+        "api/localidade/estados/",
+        localidade_api.search_estados,
+        name="api_search_estados",
+    ),
+    path(
+        "api/localidade/cidades/",
+        localidade_api.search_cidades,
+        name="api_search_cidades",
+    ),
+    path(
+        "api/localidade/estados/<int:estado_id>/cidades/",
+        localidade_api.get_cidades_por_estado,
+        name="api_cidades_por_estado",
+    ),
+    path(
+        "api/localidade/bairros/",
+        localidade_api.search_bairros,
+        name="api_search_bairros",
+    ),
+    path(
+        "api/localidade/cidades/<int:cidade_id>/bairros/",
+        localidade_api.get_bairros_por_cidade,
+        name="api_bairros_por_cidade",
     ),
     path("", include(router.urls)),
 ]

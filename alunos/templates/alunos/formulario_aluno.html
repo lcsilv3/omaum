@@ -251,6 +251,9 @@
             <div id="nacionalidade" class="card-body collapse">
                 <div class="row">
                     <div class="col-md-6">{% include 'includes/form_field.html' with field=form.pais_nacionalidade %}</div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.estado_naturalidade %}</div>
                     <div class="col-md-6">{% include 'includes/form_field.html' with field=form.cidade_naturalidade %}</div>
                 </div>
             </div>
@@ -358,6 +361,80 @@
 <script>
     document.body.dataset.tiposCodigosApiUrl = '{% url "alunos:api_tipos_codigos" %}';
     document.body.dataset.codigosPorTipoApiUrl = '{% url "alunos:api_codigos_por_tipo" %}';
+    document.body.dataset.cidadesPorEstadoApiUrl = '{% url "alunos:api_cidades_por_estado" estado_id=0 %}'.replace('/0/', '/{estadoId}/');
+</script>
+
+{# Script para filtro dinâmico Estado → Cidade #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const estadoSelect = document.getElementById('id_estado_naturalidade');
+    const cidadeSelect = document.getElementById('id_cidade_naturalidade');
+    
+    if (!estadoSelect || !cidadeSelect) return;
+    
+    // Salvar opções originais da cidade (caso já tenha uma selecionada)
+    const cidadeOriginalValue = cidadeSelect.value;
+    
+    function carregarCidades(estadoId, manterSelecao = false) {
+        if (!estadoId) {
+            // Sem estado selecionado: desabilitar campo de cidade
+            cidadeSelect.disabled = true;
+            cidadeSelect.innerHTML = '<option value="">Selecione o estado primeiro</option>';
+            return;
+        }
+        
+        // Mostrar loading
+        cidadeSelect.disabled = true;
+        cidadeSelect.innerHTML = '<option value="">Carregando cidades...</option>';
+        
+        // Buscar cidades via AJAX
+        const url = document.body.dataset.cidadesPorEstadoApiUrl.replace('{estadoId}', estadoId);
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Erro ao carregar cidades');
+            return response.json();
+        })
+        .then(cidades => {
+            cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+            
+            cidades.forEach(cidade => {
+                const option = document.createElement('option');
+                option.value = cidade.id;
+                option.textContent = cidade.display;
+                cidadeSelect.appendChild(option);
+            });
+            
+            cidadeSelect.disabled = false;
+            
+            // Manter seleção anterior se aplicável
+            if (manterSelecao && cidadeOriginalValue) {
+                cidadeSelect.value = cidadeOriginalValue;
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao carregar cidades:', error);
+            cidadeSelect.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+            cidadeSelect.disabled = true;
+        });
+    }
+    
+    // Evento: quando estado muda, carregar suas cidades
+    estadoSelect.addEventListener('change', function() {
+        carregarCidades(this.value, false);
+    });
+    
+    // Carregar cidades ao carregar página se já houver estado selecionado
+    if (estadoSelect.value) {
+        carregarCidades(estadoSelect.value, true);
+    }
+});
 </script>
 
 {# Scripts principais da página #}
