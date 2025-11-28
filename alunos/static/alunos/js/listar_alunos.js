@@ -20,11 +20,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('filtro-form');
     const tabelaContainer = document.getElementById('tabela-container');
     const spinner = document.getElementById('loading-spinner');
+    const searchInput = document.getElementById('search-aluno');
+    const cursoSelect = document.getElementById('curso-select');
+    
+    let debounceTimer = null;
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         fetchAlunos();
     });
+
+    // Busca ao digitar no campo de pesquisa (com debounce de 500ms)
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                fetchAlunos();
+            }, 500);
+        });
+    }
+
+    // Busca ao mudar o curso
+    if (cursoSelect) {
+        cursoSelect.addEventListener('change', function() {
+            fetchAlunos();
+        });
+    }
 
     // Dispara AJAX ao abrir o modal de relatórios
     var modalRelatorios = document.getElementById('modalRelatoriosAlunos');
