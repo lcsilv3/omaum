@@ -251,7 +251,13 @@ class Aluno(models.Model):
     complemento = models.CharField(
         max_length=50, blank=True, null=True, verbose_name=_("Complemento")
     )
-    cep = models.CharField(max_length=8, verbose_name=_("CEP"), blank=True, null=True)
+    cep = models.CharField(
+        max_length=10,  # Permite máscara: 00.000-000
+        verbose_name=_("CEP"),
+        blank=True,
+        null=True,
+        help_text="Digite apenas números ou com máscara (00.000-000)",
+    )
     cidade_ref = models.ForeignKey(
         Cidade,
         on_delete=models.SET_NULL,
@@ -279,11 +285,11 @@ class Aluno(models.Model):
         null=True,
     )
     celular_primeiro_contato = models.CharField(
-        max_length=11,
-        validators=[celular_validator],
+        max_length=15,  # Permite máscara: (99) 99999-9999
         verbose_name=_("Celular do 1º Contato"),
         blank=True,
         null=True,
+        help_text="Digite apenas números ou com máscara (99) 99999-9999",
     )
     tipo_relacionamento_primeiro_contato = models.CharField(
         max_length=50,
@@ -298,11 +304,11 @@ class Aluno(models.Model):
         verbose_name=_("Nome do 2º Contato"),
     )
     celular_segundo_contato = models.CharField(
-        max_length=11,
+        max_length=15,  # Permite máscara: (99) 99999-9999
         blank=True,
         null=True,
-        validators=[celular_validator],
         verbose_name=_("Celular do 2º Contato"),
+        help_text="Digite apenas números ou com máscara (99) 99999-9999",
     )
     tipo_relacionamento_segundo_contato = models.CharField(
         max_length=50,
@@ -484,6 +490,38 @@ class Aluno(models.Model):
             
             # Normaliza para apenas números (será salvo assim)
             self.cpf = cpf_limpo
+
+        # Validação e normalização de CEP
+        if self.cep:
+            cep_limpo = ''.join(filter(str.isdigit, self.cep))
+            
+            if len(cep_limpo) != 8:
+                raise ValidationError(
+                    {"cep": _("CEP deve conter exatamente 8 dígitos numéricos")}
+                )
+            
+            self.cep = cep_limpo
+
+        # Validação e normalização de celulares
+        if self.celular_primeiro_contato:
+            cel1_limpo = ''.join(filter(str.isdigit, self.celular_primeiro_contato))
+            
+            if len(cel1_limpo) not in [10, 11]:  # (99) 9999-9999 ou (99) 99999-9999
+                raise ValidationError(
+                    {"celular_primeiro_contato": _("Celular deve conter 10 ou 11 dígitos numéricos")}
+                )
+            
+            self.celular_primeiro_contato = cel1_limpo
+
+        if self.celular_segundo_contato:
+            cel2_limpo = ''.join(filter(str.isdigit, self.celular_segundo_contato))
+            
+            if len(cel2_limpo) not in [10, 11]:
+                raise ValidationError(
+                    {"celular_segundo_contato": _("Celular deve conter 10 ou 11 dígitos numéricos")}
+                )
+            
+            self.celular_segundo_contato = cel2_limpo
 
         # Validação de data de nascimento
         if self.data_nascimento and self.data_nascimento > datetime.date.today():
