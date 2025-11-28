@@ -176,11 +176,11 @@ class Aluno(models.Model):
     ]
 
     cpf_validator = RegexValidator(
-        regex=r"^\\d{11}$", message=_("CPF deve conter 11 dígitos numéricos")
+        regex=r"^\d{11}$", message=_("CPF deve conter 11 dígitos numéricos")
     )
 
     celular_validator = RegexValidator(
-        regex=r"^\\d{10,11}$", message=_("Número de celular inválido")
+        regex=r"^\d{10,11}$", message=_("Número de celular inválido")
     )
 
     # Campos básicos
