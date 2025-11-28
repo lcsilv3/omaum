@@ -175,21 +175,17 @@ class Aluno(models.Model):
         ("e", "Excluído"),
     ]
 
-    cpf_validator = RegexValidator(
-        regex=r"^\d{11}$", message=_("CPF deve conter 11 dígitos numéricos")
-    )
-
     celular_validator = RegexValidator(
         regex=r"^\d{10,11}$", message=_("Número de celular inválido")
     )
 
     # Campos básicos
     cpf = models.CharField(
-        max_length=11,
+        max_length=14,  # Permite máscara: 999.999.999-99
         unique=True,
         db_index=True,
-        validators=[cpf_validator],
         verbose_name=_("CPF"),
+        help_text="Digite apenas números ou com máscara (999.999.999-99)",
     )
     nome = models.CharField(max_length=100, verbose_name=_("Nome Completo"))
     data_nascimento = models.DateField(verbose_name=_("Data de Nascimento"))
@@ -474,6 +470,20 @@ class Aluno(models.Model):
     def clean(self):
         """Validações adicionais para o modelo Aluno."""
         super().clean()
+
+        # Validação e normalização de CPF
+        if self.cpf:
+            # Remove pontuação e espaços
+            cpf_limpo = ''.join(filter(str.isdigit, self.cpf))
+            
+            # Valida quantidade de dígitos
+            if len(cpf_limpo) != 11:
+                raise ValidationError(
+                    {"cpf": _("CPF deve conter exatamente 11 dígitos numéricos")}
+                )
+            
+            # Normaliza para apenas números (será salvo assim)
+            self.cpf = cpf_limpo
 
         # Validação de data de nascimento
         if self.data_nascimento and self.data_nascimento > datetime.date.today():

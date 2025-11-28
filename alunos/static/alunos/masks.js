@@ -2,7 +2,17 @@
 // Fase 1-2: CEP -> (rua,bairro,cidade,estado) e Estado -> Cidades (com cache simples)
 (function(){
   const cacheCidadesPorEstado = {}; // {estadoId: [{id,nome}, ...]}
-  function maskCPF(v){return v.replace(/\D/g,'').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2').substring(0,14);} 
+  
+  // Máscara de CPF: aceita entrada com ou sem formatação, aplica formato 999.999.999-99
+  function maskCPF(v){
+    const digits = v.replace(/\D/g,''); // Remove tudo que não é dígito
+    if (digits.length === 0) return '';
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return digits.replace(/(\d{3})(\d{1,3})/,'$1.$2');
+    if (digits.length <= 9) return digits.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
+    return digits.substring(0,11).replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+  }
+  
   function maskCEP(v){
     // Novo formato: 00.000-000 (10 caracteres visuais) armazenando só dígitos
     const d = v.replace(/\D/g,'').substring(0,8); // max 8 dígitos
