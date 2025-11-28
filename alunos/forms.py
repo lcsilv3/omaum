@@ -108,7 +108,12 @@ class AlunoForm(forms.ModelForm):
             ),
             "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "nome_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
-            "grau_atual": forms.TextInput(attrs={"class": "form-control"}),
+            "grau_atual": forms.TextInput(attrs={
+                "class": "form-control",
+                "readonly": "readonly",
+                "style": "background-color: #f8f9fa; cursor: not-allowed;",
+                "title": "Este campo será preenchido automaticamente quando o aluno for matriculado em uma turma"
+            }),
             "situacao_iniciatica": forms.Select(attrs={"class": "form-control"}),
             "tipo_sanguineo": forms.Select(attrs={"class": "form-control"}),
             "alergias": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
