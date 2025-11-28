@@ -93,8 +93,8 @@
                 <div class="col-md-4">
                     <div class="border rounded p-3 text-center" 
                          style="border-style: dashed !important; border-color: #007bff !important; border-width: 2px !important; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto;">
-                        {% if aluno.foto %}
-                            <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" style="max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;">
+                        {% if aluno.get_foto_url %}
+                            <img src="{{ aluno.get_foto_url }}" alt="Foto de {{ aluno.nome }}" style="max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;">
                         {% else %}
                             <div class="text-muted">Sem foto</div>
                         {% endif %}

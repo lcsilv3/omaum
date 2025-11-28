@@ -473,6 +473,72 @@ class Aluno(models.Model):
         """Retorna o grau atual baseado no último curso matriculado."""
         return self.ultimo_curso_matriculado or self.grau_atual or "Não informado"
 
+    def get_foto_url(self):
+        """
+        Retorna a URL da foto do aluno com fallback para busca no diretório.
+        
+        Lógica:
+        1. Se aluno.foto existe no banco → retorna foto.url
+        2. Caso contrário, busca no diretório media/alunos/fotos/ por numero_iniciatico
+        3. Se encontrar múltiplas fotos, retorna a mais recente (st_mtime)
+        4. Se não encontrar nada, retorna None
+        
+        Returns:
+            str: URL da foto ou None se não encontrada
+        """
+        # Prioridade 1: Foto salva no banco de dados
+        if self.foto:
+            return self.foto.url
+        
+        # Prioridade 2: Buscar no diretório por numero_iniciatico
+        if not self.numero_iniciatico:
+            return None
+        
+        try:
+            from django.conf import settings
+            import os
+            import glob
+            
+            foto_dir = os.path.join(settings.MEDIA_ROOT, 'alunos', 'fotos')
+            
+            if not os.path.exists(foto_dir):
+                return None
+            
+            # Padrões de busca
+            extensoes = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
+            padroes = [
+                f"{self.numero_iniciatico}.{{ext}}",
+                f"{self.numero_iniciatico}_*.{{ext}}",
+                f"*_{self.numero_iniciatico}.{{ext}}"
+            ]
+            
+            fotos_encontradas = []
+            for padrao in padroes:
+                for ext in extensoes:
+                    busca = os.path.join(foto_dir, padrao.format(ext=ext))
+                    fotos_encontradas.extend(glob.glob(busca))
+            
+            if not fotos_encontradas:
+                return None
+            
+            # Se múltiplas fotos, retorna a mais recente
+            if len(fotos_encontradas) > 1:
+                fotos_encontradas.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+            
+            # Retorna URL relativa
+            foto_path = fotos_encontradas[0]
+            relative_path = os.path.relpath(foto_path, settings.MEDIA_ROOT)
+            # Normaliza para forward slashes (funciona em Windows e Linux)
+            relative_path = relative_path.replace('\\', '/')
+            return f"{settings.MEDIA_URL}{relative_path}"
+            
+        except Exception as e:
+            # Log do erro mas não quebra a página
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Erro ao buscar foto para aluno {self.id}: {e}")
+            return None
+
     def clean(self):
         """Validações adicionais para o modelo Aluno."""
         super().clean()

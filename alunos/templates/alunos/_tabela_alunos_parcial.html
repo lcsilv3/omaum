@@ -29,8 +29,8 @@
         <tr>
             <td>
                 <div class="d-flex align-items-center" tabindex="0" aria-label="Foto e nome de {{ aluno.nome }}" data-bs-toggle="tooltip" title="Nascimento: {{ aluno.data_nascimento|date:'d/m/Y' }}&#10;Cidade: {{ aluno.cidade_naturalidade|default:'-' }}">
-                    {% if aluno.foto %}
-                        <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.nome }}" class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;">
+                    {% if aluno.get_foto_url %}
+                        <img src="{{ aluno.get_foto_url }}" alt="Foto de {{ aluno.nome }}" class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;">
                     {% else %}
                         <div class="rounded-circle me-3" style="width: 40px; height: 40px; background-color: #e9ecef; display: flex; align-items: center; justify-content: center;">
                             <i class="fas fa-user text-muted"></i>
