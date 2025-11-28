@@ -649,3 +649,62 @@ def painel_tabela_api(request):
         return HttpResponse(html + paginacao_html)
 
     return HttpResponse(html)
+
+
+@login_required
+@require_GET
+def buscar_foto_por_numero_iniciatico(request, numero_iniciatico):
+    """
+    Busca foto existente no diretório baseada no número iniciático.
+    
+    Retorna o caminho relativo da foto mais recente encontrada.
+    """
+    import os
+    from django.conf import settings
+    from pathlib import Path
+    
+    # Diretório de fotos
+    fotos_dir = Path(settings.MEDIA_ROOT) / 'alunos' / 'fotos'
+    
+    # Extensões suportadas
+    extensoes = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+    
+    # Procura por arquivos com o número iniciático
+    arquivos_encontrados = []
+    
+    if fotos_dir.exists():
+        for ext in extensoes:
+            # Procura exato: numero_iniciatico.ext
+            arquivo = fotos_dir / f"{numero_iniciatico}{ext}"
+            if arquivo.exists():
+                arquivos_encontrados.append(arquivo)
+            
+            # Procura variações: numero_iniciatico_*.ext
+            for variacao in fotos_dir.glob(f"{numero_iniciatico}_*{ext}"):
+                arquivos_encontrados.append(variacao)
+            
+            # Procura: *_numero_iniciatico.ext
+            for variacao in fotos_dir.glob(f"*_{numero_iniciatico}{ext}"):
+                arquivos_encontrados.append(variacao)
+    
+    if not arquivos_encontrados:
+        return JsonResponse({
+            'success': False,
+            'message': 'Nenhuma foto encontrada para este número iniciático'
+        })
+    
+    # Ordena por data de modificação (mais recente primeiro)
+    arquivos_encontrados.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+    arquivo_mais_recente = arquivos_encontrados[0]
+    
+    # Retorna caminho relativo ao MEDIA_ROOT
+    caminho_relativo = arquivo_mais_recente.relative_to(settings.MEDIA_ROOT)
+    url_foto = f"{settings.MEDIA_URL}{caminho_relativo}".replace('\\', '/')
+    
+    return JsonResponse({
+        'success': True,
+        'foto_url': url_foto,
+        'foto_path': str(caminho_relativo).replace('\\', '/'),
+        'nome_arquivo': arquivo_mais_recente.name,
+        'total_encontradas': len(arquivos_encontrados)
+    })

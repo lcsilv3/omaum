@@ -102,6 +102,15 @@ def criar_aluno(request):
                 with transaction.atomic():
                     aluno = form.save(commit=False)
                     aluno.cpf = "".join(filter(str.isdigit, str(aluno.cpf)))
+                    
+                    # Se não houver foto no upload mas houver foto encontrada automaticamente
+                    if not request.FILES.get('foto') and request.POST.get('foto_encontrada_path'):
+                        from django.conf import settings
+                        from pathlib import Path
+                        foto_path = request.POST.get('foto_encontrada_path')
+                        # Salva o caminho relativo da foto encontrada
+                        aluno.foto = foto_path
+                    
                     aluno.save()
 
                     historico_formset.instance = aluno
@@ -236,7 +245,17 @@ def editar_aluno(request, aluno_id):
                 if form.is_valid() and historico_formset.is_valid():
                     try:
                         with transaction.atomic():
-                            form.save()
+                            aluno_editado = form.save(commit=False)
+                            
+                            # Se não houver foto no upload mas houver foto encontrada automaticamente
+                            if not request.FILES.get('foto') and request.POST.get('foto_encontrada_path'):
+                                from django.conf import settings
+                                from pathlib import Path
+                                foto_path = request.POST.get('foto_encontrada_path')
+                                # Salva o caminho relativo da foto encontrada
+                                aluno_editado.foto = foto_path
+                            
+                            aluno_editado.save()
                             historico_formset.save()
                         messages.success(request, "Aluno atualizado com sucesso!")
                         return redirect("alunos:detalhar_aluno", aluno_id=aluno.id)

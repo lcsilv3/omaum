@@ -479,6 +479,111 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+{# Script para buscar foto automaticamente por número iniciático #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const numeroIniciaticoInput = document.getElementById('id_numero_iniciatico');
+    const fotoInput = document.getElementById('id_foto');
+    const fotoPreview = document.querySelector('.border.rounded.p-3.mb-3'); // Container da prévia
+    
+    if (!numeroIniciaticoInput || !fotoInput) return;
+    
+    let timeoutBusca = null;
+    let fotoEncontradaPath = null;
+    
+    function buscarFotoAutomatica(numeroIniciatico) {
+        // Limpa timeout anterior
+        if (timeoutBusca) clearTimeout(timeoutBusca);
+        
+        // Aguarda 800ms após parar de digitar
+        timeoutBusca = setTimeout(() => {
+            if (!numeroIniciatico || numeroIniciatico.trim() === '') return;
+            
+            // Só busca se não houver foto já selecionada pelo usuário
+            if (fotoInput.files && fotoInput.files.length > 0) {
+                console.log('Foto já selecionada manualmente pelo usuário, não buscar automaticamente');
+                return;
+            }
+            
+            // Monta URL da API
+            const url = `/alunos/api/buscar-foto/${encodeURIComponent(numeroIniciatico.trim())}/`;
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.foto_url) {
+                    // Armazena o caminho da foto encontrada
+                    fotoEncontradaPath = data.foto_path;
+                    
+                    // Atualiza preview da foto
+                    if (fotoPreview) {
+                        fotoPreview.innerHTML = `
+                            <img src="${data.foto_url}" 
+                                 alt="Foto do aluno" 
+                                 style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                            <div class="mt-2 text-center">
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle"></i> Foto encontrada automaticamente
+                                </small>
+                                <br>
+                                <small class="text-muted">${data.nome_arquivo}</small>
+                            </div>
+                        `;
+                    }
+                    
+                    // Adiciona input hidden para enviar o caminho da foto encontrada
+                    let hiddenInput = document.getElementById('foto_encontrada_path');
+                    if (!hiddenInput) {
+                        hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.id = 'foto_encontrada_path';
+                        hiddenInput.name = 'foto_encontrada_path';
+                        fotoInput.parentNode.appendChild(hiddenInput);
+                    }
+                    hiddenInput.value = data.foto_path;
+                    
+                    console.log(`Foto encontrada automaticamente: ${data.nome_arquivo} (${data.total_encontradas} foto(s) no total)`);
+                } else {
+                    console.log('Nenhuma foto encontrada para o número iniciático:', numeroIniciatico);
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar foto:', error);
+            });
+        }, 800);
+    }
+    
+    // Monitora mudanças no campo número iniciático
+    numeroIniciaticoInput.addEventListener('input', function() {
+        buscarFotoAutomatica(this.value);
+    });
+    
+    // Busca automática ao carregar a página (para edição)
+    if (numeroIniciaticoInput.value && (!fotoInput.value || fotoInput.value === '')) {
+        buscarFotoAutomatica(numeroIniciaticoInput.value);
+    }
+    
+    // Se usuário selecionar arquivo manualmente, limpa a busca automática
+    fotoInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+            const hiddenInput = document.getElementById('foto_encontrada_path');
+            if (hiddenInput) {
+                hiddenInput.remove();
+            }
+            fotoEncontradaPath = null;
+            console.log('Usuário selecionou foto manualmente');
+        }
+    });
+});
+</script>
+
+
 {# Scripts principais da página #}
 <script src="{% static 'alunos/masks.js' %}"></script>
 <script src="{% static 'alunos/js/formulario_aluno.js' %}"></script>

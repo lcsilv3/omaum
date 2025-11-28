@@ -151,5 +151,11 @@ urlpatterns = [
         localidade_api.get_bairros_por_cidade,
         name="api_bairros_por_cidade",
     ),
+    # API de busca de foto por número iniciático
+    path(
+        "api/buscar-foto/<str:numero_iniciatico>/",
+        api_views.buscar_foto_por_numero_iniciatico,
+        name="api_buscar_foto_numero_iniciatico",
+    ),
     path("", include(router.urls)),
 ]
