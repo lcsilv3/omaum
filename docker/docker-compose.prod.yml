@@ -51,6 +51,7 @@ services:
       - omaum_static:/app/static
       - omaum_media:/app/media
       - omaum_logs:/app/logs
+      - 'D:\Documentos Ordem\Ordem\CIIniciados\fotos:/fotos_externas:ro'
     depends_on:
       omaum-db:
         condition: service_healthy

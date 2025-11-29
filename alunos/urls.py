@@ -157,5 +157,11 @@ urlpatterns = [
         api_views.buscar_foto_por_numero_iniciatico,
         name="api_buscar_foto_numero_iniciatico",
     ),
+    # API para servir fotos de diretórios externos
+    path(
+        "api/servir-foto/<str:numero_iniciatico>/",
+        api_views.servir_foto_externa,
+        name="api_servir_foto_externa",
+    ),
     path("", include(router.urls)),
 ]

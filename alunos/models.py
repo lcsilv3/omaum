@@ -475,11 +475,11 @@ class Aluno(models.Model):
 
     def get_foto_url(self):
         """
-        Retorna a URL da foto do aluno com fallback para busca no diretório.
+        Retorna a URL da foto do aluno com fallback para busca nos diretórios.
         
         Lógica:
         1. Se aluno.foto existe no banco → retorna foto.url
-        2. Caso contrário, busca no diretório media/alunos/fotos/ por numero_iniciatico
+        2. Caso contrário, busca nos diretórios (MEDIA_ROOT e externo) por numero_iniciatico
         3. Se encontrar múltiplas fotos, retorna a mais recente (st_mtime)
         4. Se não encontrar nada, retorna None
         
@@ -490,7 +490,7 @@ class Aluno(models.Model):
         if self.foto:
             return self.foto.url
         
-        # Prioridade 2: Buscar no diretório por numero_iniciatico
+        # Prioridade 2: Buscar nos diretórios por numero_iniciatico
         if not self.numero_iniciatico:
             return None
         
@@ -498,11 +498,13 @@ class Aluno(models.Model):
             from django.conf import settings
             import os
             import glob
+            from pathlib import Path
             
-            foto_dir = os.path.join(settings.MEDIA_ROOT, 'alunos', 'fotos')
-            
-            if not os.path.exists(foto_dir):
-                return None
+            # Diretórios de busca (em ordem de prioridade)
+            diretorios = [
+                os.path.join(settings.MEDIA_ROOT, 'alunos', 'fotos'),
+                '/fotos_externas' if os.path.exists('/fotos_externas') else r'D:\Documentos Ordem\Ordem\CIIniciados\fotos',
+            ]
             
             # Padrões de busca
             extensoes = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
@@ -513,10 +515,12 @@ class Aluno(models.Model):
             ]
             
             fotos_encontradas = []
-            for padrao in padroes:
-                for ext in extensoes:
-                    busca = os.path.join(foto_dir, padrao.format(ext=ext))
-                    fotos_encontradas.extend(glob.glob(busca))
+            for foto_dir in diretorios:
+                if os.path.exists(foto_dir):
+                    for padrao in padroes:
+                        for ext in extensoes:
+                            busca = os.path.join(foto_dir, padrao.format(ext=ext))
+                            fotos_encontradas.extend(glob.glob(busca))
             
             if not fotos_encontradas:
                 return None
@@ -525,12 +529,28 @@ class Aluno(models.Model):
             if len(fotos_encontradas) > 1:
                 fotos_encontradas.sort(key=lambda x: os.path.getmtime(x), reverse=True)
             
-            # Retorna URL relativa
+            # Verifica se está no MEDIA_ROOT ou externo
             foto_path = fotos_encontradas[0]
-            relative_path = os.path.relpath(foto_path, settings.MEDIA_ROOT)
-            # Normaliza para forward slashes (funciona em Windows e Linux)
-            relative_path = relative_path.replace('\\', '/')
-            return f"{settings.MEDIA_URL}{relative_path}"
+            media_root_path = Path(settings.MEDIA_ROOT)
+            foto_path_obj = Path(foto_path)
+            
+            try:
+                if foto_path_obj.is_relative_to(media_root_path):
+                    # Foto dentro do MEDIA_ROOT - URL normal
+                    relative_path = os.path.relpath(foto_path, settings.MEDIA_ROOT)
+                    relative_path = relative_path.replace('\\', '/')
+                    return f"{settings.MEDIA_URL}{relative_path}"
+                else:
+                    # Foto externa - endpoint de servir foto
+                    return f"/alunos/api/servir-foto/{self.numero_iniciatico}/"
+            except (ValueError, AttributeError):
+                # Fallback para Python < 3.9 ou outros erros
+                if foto_path.startswith(str(media_root_path)):
+                    relative_path = os.path.relpath(foto_path, settings.MEDIA_ROOT)
+                    relative_path = relative_path.replace('\\', '/')
+                    return f"{settings.MEDIA_URL}{relative_path}"
+                else:
+                    return f"/alunos/api/servir-foto/{self.numero_iniciatico}/"
             
         except Exception as e:
             # Log do erro mas não quebra a página

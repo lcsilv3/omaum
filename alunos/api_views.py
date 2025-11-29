@@ -655,37 +655,42 @@ def painel_tabela_api(request):
 @require_GET
 def buscar_foto_por_numero_iniciatico(request, numero_iniciatico):
     """
-    Busca foto existente no diretório baseada no número iniciático.
+    Busca foto existente nos diretórios baseada no número iniciático.
     
     Retorna o caminho relativo da foto mais recente encontrada.
+    Busca primeiro no MEDIA_ROOT e depois no diretório alternativo.
     """
     import os
     from django.conf import settings
     from pathlib import Path
     
-    # Diretório de fotos
-    fotos_dir = Path(settings.MEDIA_ROOT) / 'alunos' / 'fotos'
+    # Diretórios de fotos (em ordem de prioridade)
+    diretorios_fotos = [
+        Path(settings.MEDIA_ROOT) / 'alunos' / 'fotos',
+        Path('/fotos_externas') if os.path.exists('/fotos_externas') else Path(r'D:\Documentos Ordem\Ordem\CIIniciados\fotos'),
+    ]
     
     # Extensões suportadas
     extensoes = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
     
-    # Procura por arquivos com o número iniciático
+    # Procura por arquivos com o número iniciático em todos os diretórios
     arquivos_encontrados = []
     
-    if fotos_dir.exists():
-        for ext in extensoes:
-            # Procura exato: numero_iniciatico.ext
-            arquivo = fotos_dir / f"{numero_iniciatico}{ext}"
-            if arquivo.exists():
-                arquivos_encontrados.append(arquivo)
-            
-            # Procura variações: numero_iniciatico_*.ext
-            for variacao in fotos_dir.glob(f"{numero_iniciatico}_*{ext}"):
-                arquivos_encontrados.append(variacao)
-            
-            # Procura: *_numero_iniciatico.ext
-            for variacao in fotos_dir.glob(f"*_{numero_iniciatico}{ext}"):
-                arquivos_encontrados.append(variacao)
+    for fotos_dir in diretorios_fotos:
+        if fotos_dir.exists():
+            for ext in extensoes:
+                # Procura exato: numero_iniciatico.ext
+                arquivo = fotos_dir / f"{numero_iniciatico}{ext}"
+                if arquivo.exists():
+                    arquivos_encontrados.append(arquivo)
+                
+                # Procura variações: numero_iniciatico_*.ext
+                for variacao in fotos_dir.glob(f"{numero_iniciatico}_*{ext}"):
+                    arquivos_encontrados.append(variacao)
+                
+                # Procura: *_numero_iniciatico.ext
+                for variacao in fotos_dir.glob(f"*_{numero_iniciatico}{ext}"):
+                    arquivos_encontrados.append(variacao)
     
     if not arquivos_encontrados:
         return JsonResponse({
@@ -697,14 +702,67 @@ def buscar_foto_por_numero_iniciatico(request, numero_iniciatico):
     arquivos_encontrados.sort(key=lambda x: x.stat().st_mtime, reverse=True)
     arquivo_mais_recente = arquivos_encontrados[0]
     
-    # Retorna caminho relativo ao MEDIA_ROOT
-    caminho_relativo = arquivo_mais_recente.relative_to(settings.MEDIA_ROOT)
-    url_foto = f"{settings.MEDIA_URL}{caminho_relativo}".replace('\\', '/')
+    # Verifica se o arquivo está no MEDIA_ROOT ou no diretório externo
+    media_root = Path(settings.MEDIA_ROOT)
+    if arquivo_mais_recente.is_relative_to(media_root):
+        # Arquivo dentro do MEDIA_ROOT - usa URL normal
+        caminho_relativo = arquivo_mais_recente.relative_to(media_root)
+        url_foto = f"{settings.MEDIA_URL}{caminho_relativo}".replace('\\', '/')
+        foto_path = str(caminho_relativo).replace('\\', '/')
+    else:
+        # Arquivo externo - usa endpoint de servir foto
+        url_foto = f"/alunos/api/servir-foto/{numero_iniciatico}/"
+        foto_path = str(arquivo_mais_recente).replace('\\', '/')
     
     return JsonResponse({
         'success': True,
         'foto_url': url_foto,
-        'foto_path': str(caminho_relativo).replace('\\', '/'),
+        'foto_path': foto_path,
         'nome_arquivo': arquivo_mais_recente.name,
         'total_encontradas': len(arquivos_encontrados)
     })
+
+
+@require_http_methods(["GET"])
+@login_required
+def servir_foto_externa(request, numero_iniciatico):
+    """
+    Serve foto de diretório externo (fora do MEDIA_ROOT).
+    Usado para fotos em D:\\Documentos Ordem\\Ordem\\CIIniciados\\fotos
+    """
+    from pathlib import Path
+    from django.http import FileResponse, Http404
+    from django.conf import settings
+    
+    # Diretórios de fotos (mesma ordem da busca)
+    diretorios_fotos = [
+        Path(settings.MEDIA_ROOT) / 'alunos' / 'fotos',
+        Path('/fotos_externas') if os.path.exists('/fotos_externas') else Path(r'D:\Documentos Ordem\Ordem\CIIniciados\fotos'),
+    ]
+    
+    # Extensões suportadas
+    extensoes = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+    
+    # Procura o arquivo
+    arquivos_encontrados = []
+    for fotos_dir in diretorios_fotos:
+        if fotos_dir.exists():
+            for ext in extensoes:
+                arquivo = fotos_dir / f"{numero_iniciatico}{ext}"
+                if arquivo.exists():
+                    arquivos_encontrados.append(arquivo)
+                
+                for variacao in fotos_dir.glob(f"{numero_iniciatico}_*{ext}"):
+                    arquivos_encontrados.append(variacao)
+                
+                for variacao in fotos_dir.glob(f"*_{numero_iniciatico}{ext}"):
+                    arquivos_encontrados.append(variacao)
+    
+    if not arquivos_encontrados:
+        raise Http404("Foto não encontrada")
+    
+    # Retorna o arquivo mais recente
+    arquivos_encontrados.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+    arquivo = arquivos_encontrados[0]
+    
+    return FileResponse(open(arquivo, 'rb'), content_type='image/jpeg')
