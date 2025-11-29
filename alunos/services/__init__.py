@@ -205,14 +205,15 @@ def listar_alunos(
 
     if query:
         termo = query.strip()
-        cpf_normalizado = _normalizar_cpf(termo)
+        # Remove formatação do CPF para busca parcial (permite buscar "819" em "123.456.789-10")
+        cpf_digitos = re.sub(r"\D", "", termo)
         filtros = (
             Q(nome__icontains=termo)
             | Q(email__icontains=termo)
             | Q(numero_iniciatico__icontains=termo)
         )
-        if cpf_normalizado:
-            filtros |= Q(cpf__icontains=cpf_normalizado)
+        if cpf_digitos:
+            filtros |= Q(cpf__icontains=cpf_digitos)
         alunos = alunos.filter(filtros)
 
     if curso_id:
