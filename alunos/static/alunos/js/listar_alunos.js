@@ -84,7 +84,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(async response => {
+            console.log('Resposta recebida:', response.status, response.statusText);
             if (response.status === 401 || response.redirected) {
+                console.warn('Sessão expirada ou redirecionada');
                 tabelaContainer.innerHTML = '<p class="text-danger">Sua sessão expirou. Faça login novamente para continuar.</p>';
                 spinner.style.display = 'none';
                 tabelaContainer.style.display = 'block';
@@ -93,13 +95,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) {
                 throw new Error(`Erro na requisição: ${response.statusText}`);
             }
-            return response.json();
+            const jsonData = await response.json();
+            console.log('JSON recebido:', jsonData);
+            return jsonData;
         })
         .then(data => {
-            if (!data) return;
+            console.log('Processando dados:', data);
+            if (!data) {
+                console.warn('Dados nulos - abortando');
+                return;
+            }
             if (data.tabela_html && data.paginacao_html) {
+                console.log('Atualizando HTML da tabela - comprimento:', data.tabela_html.length);
                 tabelaContainer.innerHTML = data.tabela_html;
                 document.querySelector('.card-footer').innerHTML = data.paginacao_html;
+                console.log('Tabela atualizada com sucesso!');
                 // Atualiza dinamicamente o conteúdo do modal de relatórios, se presente
                 if (data.cards_relatorios_html) {
                     var modalBody = document.querySelector('#modalRelatoriosAlunos .modal-body');
@@ -108,6 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } else {
+                console.error('Resposta inválida - faltando tabela_html ou paginacao_html:', data);
                 tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados. Resposta inválida do servidor.</p>';
             }
         })
