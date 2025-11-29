@@ -25,6 +25,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let debounceTimer = null;
 
+    // Debug: confirma que o script foi carregado
+    console.log('listar_alunos.js carregado - versão com debounce 100ms');
+    
+    if (!searchInput) {
+        console.error('Campo search-aluno não encontrado!');
+    }
+    
+    if (!tabelaContainer) {
+        console.error('Container tabela-container não encontrado!');
+    }
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         fetchAlunos();
@@ -32,12 +43,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Busca ao digitar no campo de pesquisa (com debounce de 100ms - busca quase instantânea)
     if (searchInput) {
+        console.log('Evento input registrado no campo search-aluno');
         searchInput.addEventListener('input', function() {
+            console.log('Input detectado:', this.value);
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
+                console.log('Executando fetchAlunos para:', this.value);
                 fetchAlunos();
             }, 100); // 100ms = busca começa logo após primeira letra
         });
+    } else {
+        console.error('searchInput não encontrado - evento não registrado');
     }
 
     // Busca ao mudar o curso
