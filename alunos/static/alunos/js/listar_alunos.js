@@ -30,13 +30,13 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchAlunos();
     });
 
-    // Busca ao digitar no campo de pesquisa (com debounce de 500ms)
+    // Busca ao digitar no campo de pesquisa (com debounce de 100ms - busca quase instantânea)
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 fetchAlunos();
-            }, 500);
+            }, 100); // 100ms = busca começa logo após primeira letra
         });
     }
 
