@@ -53,8 +53,7 @@ class Matricula(models.Model):
             raise ValidationError(
                 {
                     "turma": _(
-                        "Não é possível matricular em uma turma "
-                        "inativa ou concluída."
+                        "Não é possível matricular em uma turma inativa ou concluída."
                     )
                 }
             )
