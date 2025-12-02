@@ -308,6 +308,16 @@ Repita este checklist **sempre** que um merge cair no `main`:
 5. Rodar smoke tests (`scripts/run_smoke_tests.py`, `pytest` ou requisições básicas).
 6. Registrar o hash aplicado no log/planilha de deploy.
 
+#### Dependências extras para smoke tests
+
+Os contêineres `omaum-web` (dev e prod) são construídos apenas com as dependências mínimas de produção. Para executar `scripts/run_smoke_tests.py` dentro do Docker é preciso instalar rapidamente os pacotes de teste:**pytest**, **pytest-django**, **pytest-cov** e **requests**. O processo pode ser feito logo após o `up -d`:
+
+```powershell
+docker compose -f docker/docker-compose.yml exec omaum-web pip install pytest pytest-django pytest-cov requests
+```
+
+Essas instalações ficam disponíveis apenas até o próximo `build`. Caso queira torná-las permanentes, adicione-as ao `requirements-dev.txt` e ajuste a imagem conforme necessário.
+
 ---
 
 ## 📋 CHECKLIST ANTES DE SUBIR PARA PRODUÇÃO

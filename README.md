@@ -83,6 +83,26 @@ python manage.py runserver
 
 Acesse: **[http://localhost:8000](http://localhost:8000)**
 
+### Dependências extras no Windows (WeasyPrint / Smoke tests)
+
+Se você desenvolve no Windows e precisa gerar relatórios PDF ou rodar os smoke tests (`scripts/run_smoke_tests.py`), instale o [GTK3 Runtime 64-bit](https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases/latest). Siga estes passos:
+
+1. Baixe o instalador `gtk3-runtime-*-ts-win64.exe` e execute como administrador.
+2. Mantenha as opções padrão do assistente ("Set up PATH..." marcado e destino `<installdir>\bin`).
+3. Após concluir, feche e reabra o PowerShell/VS Code para carregar o novo `PATH`.
+
+Você pode validar com `where libgobject-2.0-0.dll` ou rodando:
+
+```powershell
+python - <<'PY'
+import ctypes
+ctypes.CDLL('libgobject-2.0-0.dll')
+print('GTK OK')
+PY
+```
+
+Sem esse runtime o import do WeasyPrint falha com `OSError: cannot load library 'libgobject-2.0-0'`.
+
 ## Import seguro de códigos (curto)
 
 Antes de rodar imports que alteram dados, crie um backup do banco de produção. Exemplo (PowerShell):
