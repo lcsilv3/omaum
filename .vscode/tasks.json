@@ -76,7 +76,9 @@
 				"-m",
 				"pytest",
 				"-q",
-				"presencas/tests/test_edicao_lote_ajax_smoke.py"
+				"presencas/tests/test_edicao_lote_ajax_smoke.py",
+				"--no-cov",
+				"--cov-fail-under=0"
 			],
 			"isBackground": false,
 			"problemMatcher": [
@@ -119,7 +121,9 @@
 				"-m",
 				"pytest",
 				"-vv",
-				"presencas/tests/test_edicao_lote_ajax_smoke.py"
+				"presencas/tests/test_edicao_lote_ajax_smoke.py",
+				"--no-cov",
+				"--cov-fail-under=0"
 			],
 			"isBackground": false,
 			"problemMatcher": [
