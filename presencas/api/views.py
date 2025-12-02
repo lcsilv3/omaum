@@ -77,7 +77,7 @@ class AtualizarPresencasView(APIResponseMixin, View):
                 for campo in campos_obrigatorios:
                     if campo not in presenca_data:
                         erros_validacao.append(
-                            f"Presença {i+1}: Campo '{campo}' obrigatório"
+                            f"Presença {i + 1}: Campo '{campo}' obrigatório"
                         )
 
             if erros_validacao:

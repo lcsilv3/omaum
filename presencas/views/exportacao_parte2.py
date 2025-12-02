@@ -550,7 +550,7 @@ class AgendadorRelatorios:
             Nome: {agendamento.nome}
             Template: {agendamento.get_template_display()}
             Formato: {agendamento.get_formato_display()}
-            Data de geração: {timezone.now().strftime('%d/%m/%Y %H:%M')}
+            Data de geração: {timezone.now().strftime("%d/%m/%Y %H:%M")}
             
             Atenciosamente,
             Sistema de Presenças OMAUM

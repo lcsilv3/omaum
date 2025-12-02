@@ -80,7 +80,7 @@ class Command(BaseCommand):
 
                 status = "✅ PASS" if result.get("status") == "healthy" else "❌ FAIL"
                 self.stdout.write(
-                    f'{status} {check.upper()}: {result.get("summary", "N/A")}'
+                    f"{status} {check.upper()}: {result.get('summary', 'N/A')}"
                 )
 
             except Exception as e:

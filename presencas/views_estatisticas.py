@@ -401,9 +401,9 @@ def exportar_consolidado(request):
             turma = get_object_or_404(Turma, id=turma_id)
             nome_arquivo += f"_{slugify(turma.nome)}"
         if periodo_inicio:
-            nome_arquivo += f'_{periodo_inicio.strftime("%Y%m%d")}'
+            nome_arquivo += f"_{periodo_inicio.strftime('%Y%m%d')}"
         if periodo_fim:
-            nome_arquivo += f'_{periodo_fim.strftime("%Y%m%d")}'
+            nome_arquivo += f"_{periodo_fim.strftime('%Y%m%d')}"
 
         response["Content-Disposition"] = f'attachment; filename="{nome_arquivo}.csv"'
 

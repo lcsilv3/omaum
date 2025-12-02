@@ -712,7 +712,7 @@ def get_indicadores_qualidade():
 
             evolucao_trimestral.append(
                 {
-                    "trimestre": f"T{4-i}",
+                    "trimestre": f"T{4 - i}",
                     "presenca_media": round(
                         stats_trimestre.get("presenca_media", 0) or 0, 1
                     ),

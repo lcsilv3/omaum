@@ -186,7 +186,7 @@ Olá,
 Em anexo está o relatório de presenças solicitado.
 
 Arquivo: {filename}
-Data de geração: {datetime.now().strftime('%d/%m/%Y às %H:%M')}
+Data de geração: {datetime.now().strftime("%d/%m/%Y às %H:%M")}
 
 Este é um email automático, não responda.
 
@@ -223,9 +223,7 @@ def processar_bulk_presencas(
         if not bulk_ops:
             raise RuntimeError("BulkPresencaOperations indisponível para bulk create")
 
-        stats = bulk_ops.criar_presencas_lote(
-            dados_presencas, registrado_por
-        )
+        stats = bulk_ops.criar_presencas_lote(dados_presencas, registrado_por)
 
         # Limpar cache relacionado após operação em lote
         cache.delete_pattern("presencas_*")
