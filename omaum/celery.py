@@ -16,6 +16,7 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 # Auto-discover tasks de todos os apps registrados
 app.autodiscover_tasks()
 
+
 # Configurações específicas para produção
 def _resolve_redis_url() -> str:
     """Retorna URL do Redis priorizando configurações de ambiente do deploy."""

@@ -13,7 +13,9 @@ def main() -> None:
 
     shell = shutil.which("pwsh") or shutil.which("powershell")
     if not shell:
-        print("PowerShell não encontrado. Instale o PowerShell 7 ou habilite o Windows PowerShell.")
+        print(
+            "PowerShell não encontrado. Instale o PowerShell 7 ou habilite o Windows PowerShell."
+        )
         input("Pressione Enter para sair...")
         return
 
@@ -29,7 +31,9 @@ def main() -> None:
     try:
         subprocess.run(command, check=True)
     except subprocess.CalledProcessError as exc:
-        print(f"Ocorreu um erro ao acionar o script PowerShell (código {exc.returncode}).")
+        print(
+            f"Ocorreu um erro ao acionar o script PowerShell (código {exc.returncode})."
+        )
     input("Pressione Enter para sair...")
 
 
