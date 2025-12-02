@@ -34,8 +34,8 @@ class Command(BaseCommand):
                         data_fim = data_inicio + timedelta(days=random.randint(1, 10))
 
                     atividade = Atividade(
-                        nome=f"{tipo.title()} {status.title()} {i+1}",
-                        descricao=f"Descrição para {tipo} - {status} - {i+1}",
+                        nome=f"{tipo.title()} {status.title()} {i + 1}",
+                        descricao=f"Descrição para {tipo} - {status} - {i + 1}",
                         tipo_atividade=tipo,
                         data_inicio=data_inicio,
                         data_fim=data_fim,
