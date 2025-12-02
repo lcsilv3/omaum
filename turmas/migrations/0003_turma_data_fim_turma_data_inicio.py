@@ -4,20 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('turmas', '0002_remove_turma_perc_carencia_and_more'),
+        ("turmas", "0002_remove_turma_perc_carencia_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='turma',
-            name='data_fim',
-            field=models.DateField(blank=True, null=True, verbose_name='Data de Término'),
+            model_name="turma",
+            name="data_fim",
+            field=models.DateField(
+                blank=True, null=True, verbose_name="Data de Término"
+            ),
         ),
         migrations.AddField(
-            model_name='turma',
-            name='data_inicio',
-            field=models.DateField(blank=True, null=True, verbose_name='Data de Início'),
+            model_name="turma",
+            name="data_inicio",
+            field=models.DateField(
+                blank=True, null=True, verbose_name="Data de Início"
+            ),
         ),
     ]
