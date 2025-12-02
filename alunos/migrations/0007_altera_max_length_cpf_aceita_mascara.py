@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('alunos', '0006_adiciona_campo_ativo_codigos'),
+        ('alunos', '0006_codigo_ativo_tipocodigo_ativo_and_more'),
     ]
 
     operations = [
