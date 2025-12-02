@@ -34,9 +34,9 @@ class FrequenciasUITest(StaticLiveServerTestCase):
         time.sleep(1)
         # Verificação explícita de login bem-sucedido
         body = self.driver.find_element(By.TAG_NAME, "body").text
-        assert (
-            "Sair" in body or "Administração" in body or "Logout" in body
-        ), "Login falhou: usuário não autenticado."
+        assert "Sair" in body or "Administração" in body or "Logout" in body, (
+            "Login falhou: usuário não autenticado."
+        )
         self.driver.get(f"{self.live_server_url}/frequencias/")
         time.sleep(1)
         # Verificação robusta de header
