@@ -11,17 +11,17 @@ echo.
 cd docker
 
 echo 1. Parando containers...
-docker-compose -f docker-compose.prod.yml down
+docker-compose --env-file .env.production -f docker-compose.prod.yml down
 echo    [OK] Containers parados
 echo.
 
 echo 2. Reconstruindo imagens...
-docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose --env-file .env.production -f docker-compose.prod.yml build --no-cache
 echo    [OK] Imagens reconstruidas
 echo.
 
 echo 3. Iniciando containers...
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose --env-file .env.production -f docker-compose.prod.yml up -d
 echo    [OK] Containers iniciados
 echo.
 

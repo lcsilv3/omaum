@@ -40,6 +40,9 @@ services:
       dockerfile: docker/Dockerfile
     container_name: omaum-web
     environment:
+      - SECRET_KEY=django-insecure-dev-key-change-me
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
       - DJANGO_SETTINGS_MODULE=omaum.settings.development
       - DATABASE_URL=postgresql://omaum_user:omaum_password@omaum-db:5432/omaum_dev
       - REDIS_URL=redis://omaum-redis:6379/0
@@ -82,6 +85,9 @@ services:
       dockerfile: docker/Dockerfile
     container_name: omaum-celery
     environment:
+      - SECRET_KEY=django-insecure-dev-key-change-me
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
       - DJANGO_SETTINGS_MODULE=omaum.settings.development
       - DATABASE_URL=postgresql://omaum_user:omaum_password@omaum-db:5432/omaum_dev
       - REDIS_URL=redis://omaum-redis:6379/0
