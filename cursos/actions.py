@@ -43,8 +43,7 @@ def get_desativar_cursos_impacto_view(modeladmin):
             cursos.update(ativo=False)
 
             msg = (
-                f"{cursos_count} curso(s) e "
-                f"{turmas_count} turma(s) foram desativados."
+                f"{cursos_count} curso(s) e {turmas_count} turma(s) foram desativados."
             )
             messages.success(request, msg)
             changelist_url = reverse("admin:cursos_curso_changelist")

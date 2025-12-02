@@ -244,7 +244,7 @@ def importar_cursos(request):
 
                     count += 1
                 except Exception as e:
-                    errors.append(f"Erro na linha {count+1}: {str(e)}")
+                    errors.append(f"Erro na linha {count + 1}: {str(e)}")
 
             if errors:
                 messages.warning(

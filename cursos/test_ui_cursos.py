@@ -136,9 +136,9 @@ class CursoUITest(StaticLiveServerTestCase):
         self.driver.get(f"{self.live_server_url}/cursos/")
         body = self.driver.find_element(By.TAG_NAME, "body").text
         print(f"[DEBUG] Body após criação do curso: {body}")
-        assert (
-            "Curso Selenium" in body
-        ), "Curso Selenium não encontrado na listagem após criação."
+        assert "Curso Selenium" in body, (
+            "Curso Selenium não encontrado na listagem após criação."
+        )
         # 7. Acessar detalhes do curso (clicar no link da linha que contém 'Curso Selenium')
         linhas = self.driver.find_elements(By.XPATH, "//tr")
         achou = False

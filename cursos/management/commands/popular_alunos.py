@@ -306,13 +306,13 @@ class Command(BaseCommand):
                 else:
                     self.stdout.write(
                         self.style.WARNING(
-                            f'Aluno com CPF {aluno_data["cpf"]} já existe.'
+                            f"Aluno com CPF {aluno_data['cpf']} já existe."
                         )
                     )
             except Exception as e:
                 self.stdout.write(
                     self.style.ERROR(
-                        f'Erro ao criar aluno {aluno_data["nome"]}: {str(e)}'
+                        f"Erro ao criar aluno {aluno_data['nome']}: {str(e)}"
                     )
                 )
 
