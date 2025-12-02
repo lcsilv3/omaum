@@ -4,6 +4,7 @@ Uso:
 
 Requisitos: pandas (pip install pandas openpyxl)
 """
+
 from pathlib import Path
 import sys
 
@@ -19,7 +20,9 @@ if not input_xlsx.exists():
 try:
     import pandas as pd
 except ImportError:
-    print("Biblioteca 'pandas' não encontrada. Instale com: pip install pandas openpyxl")
+    print(
+        "Biblioteca 'pandas' não encontrada. Instale com: pip install pandas openpyxl"
+    )
     sys.exit(2)
 
 output_dir.mkdir(parents=True, exist_ok=True)
@@ -27,5 +30,5 @@ output_dir.mkdir(parents=True, exist_ok=True)
 print(f"Lendo {input_xlsx}...")
 df = pd.read_excel(input_xlsx)
 print(f"Escrevendo {output_csv} (encoding latin1, separador ';')...")
-df.to_csv(output_csv, sep=';', index=False, encoding='latin1')
+df.to_csv(output_csv, sep=";", index=False, encoding="latin1")
 print("Concluído.")

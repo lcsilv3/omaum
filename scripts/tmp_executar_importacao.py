@@ -8,11 +8,15 @@ from pathlib import Path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings.production")
 
 import django
+
 django.setup()
 
 # Importar função do script principal
 import importlib.util
-spec = importlib.util.spec_from_file_location("limpar_importar", "/app/limpar_importar.py")
+
+spec = importlib.util.spec_from_file_location(
+    "limpar_importar", "/app/limpar_importar.py"
+)
 modulo = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(modulo)
 sincronizar_tipos = modulo.sincronizar_tipos
@@ -20,9 +24,9 @@ sincronizar_codigos = modulo.sincronizar_codigos
 imprimir_resumo = modulo.imprimir_resumo
 
 # Caminhos ajustados para produção
-DOCS_DIR = Path('/app/docs')
-ARQUIVO_TIPOS = DOCS_DIR / 'Planilha Tipos de  Códigos.csv'
-ARQUIVO_CODIGOS = DOCS_DIR / 'Planilha de Códigos.csv'
+DOCS_DIR = Path("/app/docs")
+ARQUIVO_TIPOS = DOCS_DIR / "Planilha Tipos de  Códigos.csv"
+ARQUIVO_CODIGOS = DOCS_DIR / "Planilha de Códigos.csv"
 
 print("🚀 Iniciando sincronização de códigos iniciáticos...")
 print(f"📁 Diretório docs: {DOCS_DIR}")

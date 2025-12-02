@@ -96,7 +96,7 @@ def popular_alunos():
             )
         except Exception as e:
             # Em caso de colisão de CPF ou e-mail, apenas ignore e continue
-            print(f"Aviso ao criar aluno {i+1}: {e}")
+            print(f"Aviso ao criar aluno {i + 1}: {e}")
             continue
     print(f"Total de {Aluno.objects.count()} alunos no banco.")
 

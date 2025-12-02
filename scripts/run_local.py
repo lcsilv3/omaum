@@ -36,12 +36,14 @@ def find_python():
         parts = candidate_exec(cmd)
         try:
             # testa import básico
-            proc = subprocess.run(parts + ["-c", "import sys; print(sys.executable)"],
-                                  cwd=REPO_ROOT,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  text=True,
-                                  timeout=5)
+            proc = subprocess.run(
+                parts + ["-c", "import sys; print(sys.executable)"],
+                cwd=REPO_ROOT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=5,
+            )
             return proc.returncode == 0
         except Exception:
             return False
@@ -91,7 +93,9 @@ def main():
 
     python_exec = find_python()
     if not python_exec:
-        print("Nenhum interpretador Python encontrado. Instale Python 3.8+ e/ou crie o venv.")
+        print(
+            "Nenhum interpretador Python encontrado. Instale Python 3.8+ e/ou crie o venv."
+        )
         sys.exit(3)
 
     rc = run_script(python_exec, script_path, sys.argv[2:])
@@ -100,5 +104,5 @@ def main():
     sys.exit(rc)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

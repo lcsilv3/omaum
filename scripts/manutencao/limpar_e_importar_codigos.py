@@ -139,7 +139,9 @@ def importar_csv() -> bool:
 
     tipos_codigo = obter_tipos_codigo()
     if not tipos_codigo:
-        print("ℹ️  Nenhum TipoCodigo encontrado. Novos tipos serão criados automaticamente." )
+        print(
+            "ℹ️  Nenhum TipoCodigo encontrado. Novos tipos serão criados automaticamente."
+        )
 
     total_processado = 0
     criados = 0

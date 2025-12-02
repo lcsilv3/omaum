@@ -135,7 +135,7 @@ def migrar_dados_iniciaticos():
     print(f"Total de alunos: {total_alunos}")
     print(f"Migrados com sucesso: {migrados}")
     print(f"Erros: {erros}")
-    print(f"Taxa de sucesso: {(migrados/total_alunos)*100:.1f}%")
+    print(f"Taxa de sucesso: {(migrados / total_alunos) * 100:.1f}%")
 
     return migrados, erros
 
@@ -205,7 +205,7 @@ def criar_backup_dados():
 
     # Salvar backup
     backup_filename = (
-        f'backup_dados_iniciaticos_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+        f"backup_dados_iniciaticos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     )
     with open(backup_filename, "w", encoding="utf-8") as f:
         json.dump(backup_data, f, indent=2, ensure_ascii=False)

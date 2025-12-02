@@ -21,15 +21,13 @@ try:
                     if atividades.exists():
                         for atividade in atividades:
                             print(
-                                f"    Atividade: {atividade.nome} "
-                                f"(ID: {atividade.id})"
+                                f"    Atividade: {atividade.nome} (ID: {atividade.id})"
                             )
                     else:
                         print("    Nenhuma atividade para esta turma.")
                 except Exception as e:
                     print(
-                        f"    Erro ao buscar atividades para a turma "
-                        f"{turma.nome}: {e}"
+                        f"    Erro ao buscar atividades para a turma {turma.nome}: {e}"
                     )
 except Exception as e:
     print(f"Erro geral ao buscar cursos/turmas/atividades: {e}")

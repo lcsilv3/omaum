@@ -181,9 +181,7 @@ def gerar_cpf_unico():
 def gerar_email_unico(nome, sobrenome):
     base_email = f"{nome.lower()}.{sobrenome.lower()}@exemplo.com"
     if Aluno.objects.filter(email=base_email).exists():
-        return (
-            f"{nome.lower()}.{sobrenome.lower()}{random.randint(1, 999)}" "@exemplo.com"
-        )
+        return f"{nome.lower()}.{sobrenome.lower()}{random.randint(1, 999)}@exemplo.com"
     return base_email
 
 
@@ -195,7 +193,7 @@ def baixar_foto_aleatoria(sexo, nome, sobrenome):
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             filename = (
-                f"temp_{nome.lower()}_{sobrenome.lower()}_{random.randint(1,9999)}.jpg"
+                f"temp_{nome.lower()}_{sobrenome.lower()}_{random.randint(1, 9999)}.jpg"
             )
             with open(filename, "wb") as f:
                 f.write(response.content)
@@ -257,7 +255,7 @@ def popular_cursos_e_turmas():
                     ano_atual = date.today().year
                     Turma.objects.create(
                         curso=curso,
-                        nome=f"Turma {i+1} - {curso.nome} ({ano_atual})",
+                        nome=f"Turma {i + 1} - {curso.nome} ({ano_atual})",
                         # O campo 'ativo' não existe mais diretamente no modelo Turma,
                         # o status é controlado pelo campo 'status'.
                         # 'A' para Ativa.
@@ -317,7 +315,7 @@ for i in range(QUANTIDADE_ALUNOS):
                 f"{random.choice(nomes)} {random.choice(sobrenomes)}"
             ),
             "celular_primeiro_contato": (
-                f"{random.randint(10, 99)}9" f"{random.randint(10000000, 99999999)}"
+                f"{random.randint(10, 99)}9{random.randint(10000000, 99999999)}"
             ),
             "tipo_relacionamento_primeiro_contato": random.choice(
                 ["Pai", "Mãe", "Irmão", "Irmã", "Cônjuge"]
@@ -326,7 +324,7 @@ for i in range(QUANTIDADE_ALUNOS):
                 f"{random.choice(nomes)} {random.choice(sobrenomes)}"
             ),
             "celular_segundo_contato": (
-                f"{random.randint(10, 99)}9" f"{random.randint(10000000, 99999999)}"
+                f"{random.randint(10, 99)}9{random.randint(10000000, 99999999)}"
             ),
             "tipo_relacionamento_segundo_contato": random.choice(
                 ["Pai", "Mãe", "Irmão", "Irmã", "Amigo", "Amiga"]
@@ -394,12 +392,12 @@ for i in range(QUANTIDADE_ALUNOS):
                     matriculas_criadas += 1
 
         print(
-            f'({i+1}/{QUANTIDADE_ALUNOS}) Aluno "{aluno.nome}" criado com sucesso com histórico!'
+            f'({i + 1}/{QUANTIDADE_ALUNOS}) Aluno "{aluno.nome}" criado com sucesso com histórico!'
         )
         alunos_criados += 1
 
     except Exception as e:
-        print(f"Erro ao criar aluno {i+1}: {str(e)}")
+        print(f"Erro ao criar aluno {i + 1}: {str(e)}")
 
 print(f"\nTotal de {alunos_criados} alunos criados com sucesso!")
 print(f"Total de {matriculas_criadas} matrículas criadas.")

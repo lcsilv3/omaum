@@ -31,7 +31,7 @@ def analyze_saved_html():
             start = max(0, pos - 150)
             end = min(len(html), pos + 150)
             context = html[start:end]
-            print(f"\n--- CONTEXTO {i+1} (pos {pos}) ---")
+            print(f"\n--- CONTEXTO {i + 1} (pos {pos}) ---")
             print(repr(context))  # usar repr para ver caracteres especiais
             print("--- FIM CONTEXTO ---")
 

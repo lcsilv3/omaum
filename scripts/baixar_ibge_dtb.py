@@ -180,7 +180,7 @@ def salvar_conteudo(dest: Path, conteudo: str, force: bool) -> None:
         return
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(conteudo, encoding="utf-8")
-    print(f"[+] Salvo CSV em: {dest} ({dest.stat().st_size/1024:.1f} KB)")
+    print(f"[+] Salvo CSV em: {dest} ({dest.stat().st_size / 1024:.1f} KB)")
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

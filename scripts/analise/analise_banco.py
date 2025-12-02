@@ -29,12 +29,12 @@ if presencas_recentes.exists():
     print("📋 DADOS ENCONTRADOS:")
     for p in presencas_recentes[:10]:
         print(
-            f'   ID: {p.id} | Aluno: {p.aluno.nome} | Atividade: {p.atividade.nome if p.atividade else "N/A"}'
+            f"   ID: {p.id} | Aluno: {p.aluno.nome} | Atividade: {p.atividade.nome if p.atividade else 'N/A'}"
         )
         print(
             f"      Data: {p.data} | Presente: {p.presente} | Criado: {p.data_registro}"
         )
-        print(f'      Turma: {p.turma.nome if p.turma else "N/A"}')
+        print(f"      Turma: {p.turma.nome if p.turma else 'N/A'}")
         print("   ---")
 else:
     print("❌ NENHUMA PRESENÇA ENCONTRADA nas últimas 24h")
@@ -54,7 +54,7 @@ try:
         for p in presencas_turma:
             atividade_nome = p.atividade.nome if p.atividade else "N/A"
             print(
-                f'   {atividade_nome} - Data {p.data} - {p.aluno.nome} - {"Presente" if p.presente else "Ausente"} - {p.data_registro}'
+                f"   {atividade_nome} - Data {p.data} - {p.aluno.nome} - {'Presente' if p.presente else 'Ausente'} - {p.data_registro}"
             )
     else:
         print("❌ Nenhuma presença encontrada para esta turma")
