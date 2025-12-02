@@ -7,14 +7,16 @@ from .utils import clean_cpf
 class AlunoForm(forms.ModelForm):
     # Campo auxiliar para filtrar cidades por estado (não salvo no banco)
     estado_naturalidade = forms.ModelChoiceField(
-        queryset=Estado.objects.all().order_by('nome'),
+        queryset=Estado.objects.all().order_by("nome"),
         required=False,
         label="Estado de Naturalidade",
         help_text="Selecione o estado para filtrar as cidades",
-        widget=forms.Select(attrs={"class": "form-control", "id": "id_estado_naturalidade"}),
+        widget=forms.Select(
+            attrs={"class": "form-control", "id": "id_estado_naturalidade"}
+        ),
         empty_label="Selecione o estado primeiro",
     )
-    
+
     # Substituir widgets de cidade_ref e bairro_ref por AJAX
     cpf = forms.CharField(
         max_length=14,  # Aceita máscara: 000.000.000-00
@@ -118,12 +120,14 @@ class AlunoForm(forms.ModelForm):
             ),
             "numero_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
             "nome_iniciatico": forms.TextInput(attrs={"class": "form-control"}),
-            "grau_atual": forms.TextInput(attrs={
-                "class": "form-control",
-                "readonly": "readonly",
-                "style": "background-color: #f8f9fa; cursor: not-allowed;",
-                "title": "Este campo será preenchido automaticamente quando o aluno for matriculado em uma turma"
-            }),
+            "grau_atual": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "readonly": "readonly",
+                    "style": "background-color: #f8f9fa; cursor: not-allowed;",
+                    "title": "Este campo será preenchido automaticamente quando o aluno for matriculado em uma turma",
+                }
+            ),
             "situacao_iniciatica": forms.Select(attrs={"class": "form-control"}),
             "tipo_sanguineo": forms.Select(attrs={"class": "form-control"}),
             "alergias": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
@@ -168,11 +172,13 @@ class AlunoForm(forms.ModelForm):
             self.fields["bairro_ref"].queryset = self.fields[
                 "bairro_ref"
             ].widget.model.objects.all()
-        
+
         # Popular estado_naturalidade se já houver cidade selecionada
         if self.instance and self.instance.pk and self.instance.cidade_naturalidade:
-            self.initial["estado_naturalidade"] = self.instance.cidade_naturalidade.estado.id
-        
+            self.initial["estado_naturalidade"] = (
+                self.instance.cidade_naturalidade.estado.id
+            )
+
         # Datas
         if self.instance and self.instance.pk and self.instance.data_nascimento:
             self.initial["data_nascimento"] = self.instance.data_nascimento.strftime(

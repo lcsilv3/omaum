@@ -4,40 +4,63 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0005_remove_registrohistorico_nome_iniciatico_and_more'),
+        ("alunos", "0005_remove_registrohistorico_nome_iniciatico_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='codigo',
-            name='ativo',
-            field=models.BooleanField(default=True, verbose_name='Ativo'),
+            model_name="codigo",
+            name="ativo",
+            field=models.BooleanField(default=True, verbose_name="Ativo"),
         ),
         migrations.AddField(
-            model_name='tipocodigo',
-            name='ativo',
-            field=models.BooleanField(default=True, verbose_name='Ativo'),
+            model_name="tipocodigo",
+            name="ativo",
+            field=models.BooleanField(default=True, verbose_name="Ativo"),
         ),
         migrations.AlterField(
-            model_name='aluno',
-            name='celular_primeiro_contato',
-            field=models.CharField(blank=True, help_text='Digite apenas números ou com máscara (99) 99999-9999', max_length=15, null=True, verbose_name='Celular do 1º Contato'),
+            model_name="aluno",
+            name="celular_primeiro_contato",
+            field=models.CharField(
+                blank=True,
+                help_text="Digite apenas números ou com máscara (99) 99999-9999",
+                max_length=15,
+                null=True,
+                verbose_name="Celular do 1º Contato",
+            ),
         ),
         migrations.AlterField(
-            model_name='aluno',
-            name='celular_segundo_contato',
-            field=models.CharField(blank=True, help_text='Digite apenas números ou com máscara (99) 99999-9999', max_length=15, null=True, verbose_name='Celular do 2º Contato'),
+            model_name="aluno",
+            name="celular_segundo_contato",
+            field=models.CharField(
+                blank=True,
+                help_text="Digite apenas números ou com máscara (99) 99999-9999",
+                max_length=15,
+                null=True,
+                verbose_name="Celular do 2º Contato",
+            ),
         ),
         migrations.AlterField(
-            model_name='aluno',
-            name='cep',
-            field=models.CharField(blank=True, help_text='Digite apenas números ou com máscara (00.000-000)', max_length=10, null=True, verbose_name='CEP'),
+            model_name="aluno",
+            name="cep",
+            field=models.CharField(
+                blank=True,
+                help_text="Digite apenas números ou com máscara (00.000-000)",
+                max_length=10,
+                null=True,
+                verbose_name="CEP",
+            ),
         ),
         migrations.AlterField(
-            model_name='aluno',
-            name='cpf',
-            field=models.CharField(db_index=True, help_text='Digite apenas números ou com máscara (999.999.999-99)', max_length=14, unique=True, verbose_name='CPF'),
+            model_name="aluno",
+            name="cpf",
+            field=models.CharField(
+                db_index=True,
+                help_text="Digite apenas números ou com máscara (999.999.999-99)",
+                max_length=14,
+                unique=True,
+                verbose_name="CPF",
+            ),
         ),
     ]

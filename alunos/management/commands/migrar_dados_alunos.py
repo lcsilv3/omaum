@@ -191,7 +191,7 @@ class Command(BaseCommand):
 
         for i, aluno in enumerate(alunos_a_processar):
             self.stdout.write(
-                f"\n({i+1}/{total_alunos}) Processando: {aluno.nome} ({aluno.cpf})"
+                f"\n({i + 1}/{total_alunos}) Processando: {aluno.nome} ({aluno.cpf})"
             )
 
             alterado_nacionalidade = self._migrar_nacionalidade(aluno)

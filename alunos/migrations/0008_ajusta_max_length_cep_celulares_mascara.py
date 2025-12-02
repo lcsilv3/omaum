@@ -4,15 +4,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0007_altera_max_length_cpf_aceita_mascara'),
+        ("alunos", "0007_altera_max_length_cpf_aceita_mascara"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='aluno',
-            name='cpf',
-            field=models.CharField(db_index=True, help_text='Digite apenas números ou com máscara (999.999.999-99)', max_length=14, unique=True, verbose_name='CPF'),
+            model_name="aluno",
+            name="cpf",
+            field=models.CharField(
+                db_index=True,
+                help_text="Digite apenas números ou com máscara (999.999.999-99)",
+                max_length=14,
+                unique=True,
+                verbose_name="CPF",
+            ),
         ),
     ]

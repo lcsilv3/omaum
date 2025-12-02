@@ -476,44 +476,46 @@ class Aluno(models.Model):
     def get_foto_url(self):
         """
         Retorna a URL da foto do aluno com fallback para busca nos diretórios.
-        
+
         Lógica:
         1. Se aluno.foto existe no banco → retorna foto.url
         2. Caso contrário, busca nos diretórios (MEDIA_ROOT e externo) por numero_iniciatico
         3. Se encontrar múltiplas fotos, retorna a mais recente (st_mtime)
         4. Se não encontrar nada, retorna None
-        
+
         Returns:
             str: URL da foto ou None se não encontrada
         """
         # Prioridade 1: Foto salva no banco de dados
         if self.foto:
             return self.foto.url
-        
+
         # Prioridade 2: Buscar nos diretórios por numero_iniciatico
         if not self.numero_iniciatico:
             return None
-        
+
         try:
             from django.conf import settings
             import os
             import glob
             from pathlib import Path
-            
+
             # Diretórios de busca (em ordem de prioridade)
             diretorios = [
-                os.path.join(settings.MEDIA_ROOT, 'alunos', 'fotos'),
-                '/fotos_externas' if os.path.exists('/fotos_externas') else r'D:\Documentos Ordem\Ordem\CIIniciados\fotos',
+                os.path.join(settings.MEDIA_ROOT, "alunos", "fotos"),
+                "/fotos_externas"
+                if os.path.exists("/fotos_externas")
+                else r"D:\Documentos Ordem\Ordem\CIIniciados\fotos",
             ]
-            
+
             # Padrões de busca
-            extensoes = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
+            extensoes = ["jpg", "jpeg", "png", "gif", "webp", "bmp"]
             padroes = [
                 f"{self.numero_iniciatico}.{{ext}}",
                 f"{self.numero_iniciatico}_*.{{ext}}",
-                f"*_{self.numero_iniciatico}.{{ext}}"
+                f"*_{self.numero_iniciatico}.{{ext}}",
             ]
-            
+
             fotos_encontradas = []
             for foto_dir in diretorios:
                 if os.path.exists(foto_dir):
@@ -521,24 +523,24 @@ class Aluno(models.Model):
                         for ext in extensoes:
                             busca = os.path.join(foto_dir, padrao.format(ext=ext))
                             fotos_encontradas.extend(glob.glob(busca))
-            
+
             if not fotos_encontradas:
                 return None
-            
+
             # Se múltiplas fotos, retorna a mais recente
             if len(fotos_encontradas) > 1:
                 fotos_encontradas.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-            
+
             # Verifica se está no MEDIA_ROOT ou externo
             foto_path = fotos_encontradas[0]
             media_root_path = Path(settings.MEDIA_ROOT)
             foto_path_obj = Path(foto_path)
-            
+
             try:
                 if foto_path_obj.is_relative_to(media_root_path):
                     # Foto dentro do MEDIA_ROOT - URL normal
                     relative_path = os.path.relpath(foto_path, settings.MEDIA_ROOT)
-                    relative_path = relative_path.replace('\\', '/')
+                    relative_path = relative_path.replace("\\", "/")
                     return f"{settings.MEDIA_URL}{relative_path}"
                 else:
                     # Foto externa - endpoint de servir foto
@@ -547,14 +549,15 @@ class Aluno(models.Model):
                 # Fallback para Python < 3.9 ou outros erros
                 if foto_path.startswith(str(media_root_path)):
                     relative_path = os.path.relpath(foto_path, settings.MEDIA_ROOT)
-                    relative_path = relative_path.replace('\\', '/')
+                    relative_path = relative_path.replace("\\", "/")
                     return f"{settings.MEDIA_URL}{relative_path}"
                 else:
                     return f"/alunos/api/servir-foto/{self.numero_iniciatico}/"
-            
+
         except Exception as e:
             # Log do erro mas não quebra a página
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(f"Erro ao buscar foto para aluno {self.id}: {e}")
             return None
@@ -566,47 +569,55 @@ class Aluno(models.Model):
         # Validação e normalização de CPF
         if self.cpf:
             # Remove pontuação e espaços
-            cpf_limpo = ''.join(filter(str.isdigit, self.cpf))
-            
+            cpf_limpo = "".join(filter(str.isdigit, self.cpf))
+
             # Valida quantidade de dígitos
             if len(cpf_limpo) != 11:
                 raise ValidationError(
                     {"cpf": _("CPF deve conter exatamente 11 dígitos numéricos")}
                 )
-            
+
             # Normaliza para apenas números (será salvo assim)
             self.cpf = cpf_limpo
 
         # Validação e normalização de CEP
         if self.cep:
-            cep_limpo = ''.join(filter(str.isdigit, self.cep))
-            
+            cep_limpo = "".join(filter(str.isdigit, self.cep))
+
             if len(cep_limpo) != 8:
                 raise ValidationError(
                     {"cep": _("CEP deve conter exatamente 8 dígitos numéricos")}
                 )
-            
+
             self.cep = cep_limpo
 
         # Validação e normalização de celulares
         if self.celular_primeiro_contato:
-            cel1_limpo = ''.join(filter(str.isdigit, self.celular_primeiro_contato))
-            
+            cel1_limpo = "".join(filter(str.isdigit, self.celular_primeiro_contato))
+
             if len(cel1_limpo) not in [10, 11]:  # (99) 9999-9999 ou (99) 99999-9999
                 raise ValidationError(
-                    {"celular_primeiro_contato": _("Celular deve conter 10 ou 11 dígitos numéricos")}
+                    {
+                        "celular_primeiro_contato": _(
+                            "Celular deve conter 10 ou 11 dígitos numéricos"
+                        )
+                    }
                 )
-            
+
             self.celular_primeiro_contato = cel1_limpo
 
         if self.celular_segundo_contato:
-            cel2_limpo = ''.join(filter(str.isdigit, self.celular_segundo_contato))
-            
+            cel2_limpo = "".join(filter(str.isdigit, self.celular_segundo_contato))
+
             if len(cel2_limpo) not in [10, 11]:
                 raise ValidationError(
-                    {"celular_segundo_contato": _("Celular deve conter 10 ou 11 dígitos numéricos")}
+                    {
+                        "celular_segundo_contato": _(
+                            "Celular deve conter 10 ou 11 dígitos numéricos"
+                        )
+                    }
                 )
-            
+
             self.celular_segundo_contato = cel2_limpo
 
         # Validação de data de nascimento

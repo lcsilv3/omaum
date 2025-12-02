@@ -5,25 +5,55 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('alunos', '0006_codigo_ativo_tipocodigo_ativo_and_more'),
+        ("alunos", "0006_codigo_ativo_tipocodigo_ativo_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='aluno',
-            name='celular_primeiro_contato',
-            field=models.CharField(blank=True, max_length=11, null=True, validators=[django.core.validators.RegexValidator(message='Número de celular inválido', regex='^\\d{10,11}$')], verbose_name='Celular do 1º Contato'),
+            model_name="aluno",
+            name="celular_primeiro_contato",
+            field=models.CharField(
+                blank=True,
+                max_length=11,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Número de celular inválido", regex="^\\d{10,11}$"
+                    )
+                ],
+                verbose_name="Celular do 1º Contato",
+            ),
         ),
         migrations.AlterField(
-            model_name='aluno',
-            name='celular_segundo_contato',
-            field=models.CharField(blank=True, max_length=11, null=True, validators=[django.core.validators.RegexValidator(message='Número de celular inválido', regex='^\\d{10,11}$')], verbose_name='Celular do 2º Contato'),
+            model_name="aluno",
+            name="celular_segundo_contato",
+            field=models.CharField(
+                blank=True,
+                max_length=11,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Número de celular inválido", regex="^\\d{10,11}$"
+                    )
+                ],
+                verbose_name="Celular do 2º Contato",
+            ),
         ),
         migrations.AlterField(
-            model_name='aluno',
-            name='cpf',
-            field=models.CharField(db_index=True, max_length=11, unique=True, validators=[django.core.validators.RegexValidator(message='CPF deve conter 11 dígitos numéricos', regex='^\\d{11}$')], verbose_name='CPF'),
+            model_name="aluno",
+            name="cpf",
+            field=models.CharField(
+                db_index=True,
+                max_length=11,
+                unique=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="CPF deve conter 11 dígitos numéricos",
+                        regex="^\\d{11}$",
+                    )
+                ],
+                verbose_name="CPF",
+            ),
         ),
     ]
