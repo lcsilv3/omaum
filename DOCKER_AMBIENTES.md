@@ -15,6 +15,13 @@ docker/
 └── docker-compose.prod.yml      → 🔴 PRODUÇÃO
 ```
 
+> **Importante:** jamais reutilize o `docker-compose.yml` puro em produção.
+> Ele monta o código via volume, expõe portas de banco/Redis e mantém
+> `DEBUG=True`. Em produção sempre utilize o `docker-compose.prod.yml`
+> (isolado ou combinado com o base via `docker compose -f ...`). Dessa força
+> evitamos que variáveis, portas ou dados de desenvolvimento vazem para o
+> ambiente crítico.
+
 ---
 
 ## 🔵 AMBIENTE DE DESENVOLVIMENTO
@@ -277,6 +284,29 @@ docker-compose -f docker-compose.prod.yml up -d
 docker exec omaum-web-prod python manage.py migrate
 docker exec omaum-web-prod python manage.py collectstatic --noinput
 ```
+
+#### Como garantir que a build usa o hash correto de `main`
+
+1. Obtenha o hash atual: `git rev-parse --short HEAD`
+2. Monte uma tag para as imagens: `set TAG=afbfcc8` (exemplo)
+3. Execute o build com tag explícita:
+   ```powershell
+   docker compose -f docker-compose.prod.yml build --build-arg GIT_SHA=%TAG% --no-cache
+   docker tag omaum-web-prod:latest omaum-web-prod:%TAG%
+   ```
+4. (Opcional) Publique em um registry: `docker push omaum-web-prod:%TAG%`
+5. Registre no log de deploy qual tag/commit foi aplicada e use `TAG` na hora de dar `up -d` (`IMAGE=omaum-web-prod:%TAG%`).
+
+### Ritual obrigatório pós-merge em `main`
+
+Repita este checklist **sempre** que um merge cair no `main`:
+
+1. `git pull origin main` no ambiente alvo (dev ou prod).
+2. `docker compose -f <arquivo>.yml build` ou `pull` para atualizar imagens.
+3. `docker compose -f <arquivo>.yml up -d` para recriar serviços.
+4. `docker compose -f <arquivo>.yml exec <web> python manage.py migrate --noinput`.
+5. Rodar smoke tests (`scripts/run_smoke_tests.py`, `pytest` ou requisições básicas).
+6. Registrar o hash aplicado no log/planilha de deploy.
 
 ---
 
