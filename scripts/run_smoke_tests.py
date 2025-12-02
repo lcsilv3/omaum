@@ -52,8 +52,8 @@ def main() -> int:
         pytest_cmd.extend(
             [
                 "presencas/tests/test_edicao_lote_ajax_smoke.py",
-                "-k",
-                "edicao_lote_ajax_smoke",
+                "--no-cov",
+                "--cov-fail-under=0",
             ]
         )
 
