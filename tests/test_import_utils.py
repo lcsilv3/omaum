@@ -12,9 +12,14 @@ def test_pick_field_handles_corrupted_headers():
         "Descrio cdigo": "Códigos Administrativos",
     }
 
-    tipo = pick_field(row, ["Tipo", "tipo", "codigo tipo", "código tipo", "cdigo tipo", "unnamed: 0"])
-    codigo = pick_field(row, ["Nome", "nome", "codigo", "código", "cdigo"]) 
-    descricao = pick_field(row, ["Descrição", "descricao", "Descrio", "Descrio cdigo", "Descri\u00e7\u00e3o"]) 
+    tipo = pick_field(
+        row, ["Tipo", "tipo", "codigo tipo", "código tipo", "cdigo tipo", "unnamed: 0"]
+    )
+    codigo = pick_field(row, ["Nome", "nome", "codigo", "código", "cdigo"])
+    descricao = pick_field(
+        row,
+        ["Descrição", "descricao", "Descrio", "Descrio cdigo", "Descri\u00e7\u00e3o"],
+    )
 
     assert tipo is not None and tipo.strip() == "1"
     assert codigo is not None and codigo.strip() == "10"

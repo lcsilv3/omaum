@@ -293,10 +293,10 @@ class TestRunner:
 RELATÓRIO DE TESTES AUTOMATIZADOS
 ================================
 
-Data/Hora: {report['timestamp']}
-Total de aplicações testadas: {report['total_apps']}
-Aplicações com sucesso: {report['successful_apps']}
-Cobertura média: {report.get('average_coverage', 0):.2f}%
+Data/Hora: {report["timestamp"]}
+Total de aplicações testadas: {report["total_apps"]}
+Aplicações com sucesso: {report["successful_apps"]}
+Cobertura média: {report.get("average_coverage", 0):.2f}%
 
 DETALHES POR APLICAÇÃO:
 """

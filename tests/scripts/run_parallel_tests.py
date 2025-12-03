@@ -101,7 +101,7 @@ def generate_coverage_report():
         total_coverage = coverage_data.get("totals", {}).get("percent_covered", 0)
 
         print("\n📊 RELATÓRIO DE COBERTURA")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
         print(f"Cobertura total: {total_coverage:.2f}%")
 
         files_data = coverage_data.get("files", {})

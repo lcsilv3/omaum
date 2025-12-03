@@ -192,7 +192,7 @@ class TestAutomationManager:
                 )
 
                 print("\n📊 RESUMO DE COBERTURA")
-                print(f"{'='*50}")
+                print(f"{'=' * 50}")
                 print(f"Cobertura total: {total_coverage:.2f}%")
 
                 if total_coverage >= 90:

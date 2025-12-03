@@ -36,8 +36,8 @@ class PerformanceTestCase(TestCase):
         self.turmas = []
         for i in range(5):
             turma = Turma.objects.create(
-                nome=f"Turma de Teste {i+1}",
-                codigo=f"TT-{i+1:03d}",
+                nome=f"Turma de Teste {i + 1}",
+                codigo=f"TT-{i + 1:03d}",
                 data_inicio=timezone.now().date(),
                 status="A",
             )
@@ -47,9 +47,9 @@ class PerformanceTestCase(TestCase):
         self.alunos = []
         for i in range(100):
             aluno = Aluno.objects.create(
-                cpf=f"{i+1:011d}",
-                nome=f"Aluno Teste {i+1}",
-                email=f"aluno{i+1}@teste.com",
+                cpf=f"{i + 1:011d}",
+                nome=f"Aluno Teste {i + 1}",
+                email=f"aluno{i + 1}@teste.com",
                 data_nascimento="1990-01-01",
             )
             self.alunos.append(aluno)
@@ -67,8 +67,8 @@ class PerformanceTestCase(TestCase):
         self.atividades = []
         for i in range(20):
             atividade = Atividade.objects.create(
-                nome=f"Atividade de Teste {i+1}",
-                descricao=f"Descrição da atividade {i+1}",
+                nome=f"Atividade de Teste {i + 1}",
+                descricao=f"Descrição da atividade {i + 1}",
                 data_inicio=timezone.now().date() + datetime.timedelta(days=i),
                 hora_inicio=timezone.now().time(),
                 responsavel="Professor Teste",
