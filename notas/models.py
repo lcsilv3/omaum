@@ -60,9 +60,7 @@ class Nota(models.Model):
 
     def __str__(self):
         tipo_display = self.get_tipo_avaliacao_display()
-        return (
-            f"Nota de {self.aluno} em {self.curso} " f"({tipo_display}): {self.valor}"
-        )
+        return f"Nota de {self.aluno} em {self.curso} ({tipo_display}): {self.valor}"
 
     @property
     def valor_ponderado(self):
