@@ -102,20 +102,30 @@ def criar_aluno(request):
                 with transaction.atomic():
                     aluno = form.save(commit=False)
                     aluno.cpf = "".join(filter(str.isdigit, str(aluno.cpf)))
-                    
+
                     # Se não houver foto no upload mas houver foto encontrada automaticamente
-                    if not request.FILES.get('foto') and request.POST.get('foto_encontrada_path'):
+                    if not request.FILES.get("foto") and request.POST.get(
+                        "foto_encontrada_path"
+                    ):
                         from django.core.files import File
                         from pathlib import Path
                         import os
-                        foto_path_relativo = request.POST.get('foto_encontrada_path')
+
+                        foto_path_relativo = request.POST.get("foto_encontrada_path")
                         # Converte para caminho absoluto
                         from django.conf import settings
-                        foto_path_abs = os.path.join(settings.MEDIA_ROOT, foto_path_relativo)
+
+                        foto_path_abs = os.path.join(
+                            settings.MEDIA_ROOT, foto_path_relativo
+                        )
                         if os.path.exists(foto_path_abs):
-                            with open(foto_path_abs, 'rb') as f:
-                                aluno.foto.save(os.path.basename(foto_path_relativo), File(f), save=False)
-                    
+                            with open(foto_path_abs, "rb") as f:
+                                aluno.foto.save(
+                                    os.path.basename(foto_path_relativo),
+                                    File(f),
+                                    save=False,
+                                )
+
                     aluno.save()
 
                     historico_formset.instance = aluno
@@ -251,20 +261,32 @@ def editar_aluno(request, aluno_id):
                     try:
                         with transaction.atomic():
                             aluno_editado = form.save(commit=False)
-                            
+
                             # Se não houver foto no upload mas houver foto encontrada automaticamente
-                            if not request.FILES.get('foto') and request.POST.get('foto_encontrada_path'):
+                            if not request.FILES.get("foto") and request.POST.get(
+                                "foto_encontrada_path"
+                            ):
                                 from django.core.files import File
                                 from pathlib import Path
                                 import os
-                                foto_path_relativo = request.POST.get('foto_encontrada_path')
+
+                                foto_path_relativo = request.POST.get(
+                                    "foto_encontrada_path"
+                                )
                                 # Converte para caminho absoluto
                                 from django.conf import settings
-                                foto_path_abs = os.path.join(settings.MEDIA_ROOT, foto_path_relativo)
+
+                                foto_path_abs = os.path.join(
+                                    settings.MEDIA_ROOT, foto_path_relativo
+                                )
                                 if os.path.exists(foto_path_abs):
-                                    with open(foto_path_abs, 'rb') as f:
-                                        aluno_editado.foto.save(os.path.basename(foto_path_relativo), File(f), save=False)
-                            
+                                    with open(foto_path_abs, "rb") as f:
+                                        aluno_editado.foto.save(
+                                            os.path.basename(foto_path_relativo),
+                                            File(f),
+                                            save=False,
+                                        )
+
                             aluno_editado.save()
                             historico_formset.save()
                         messages.success(request, "Aluno atualizado com sucesso!")

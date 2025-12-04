@@ -141,7 +141,7 @@ def criar_aluno(request):
         historico_formset = CustomFormSet(request.POST, prefix="historico")
         t5 = time.perf_counter()
         logger.info(
-            f"[PERF] Tempo para instanciar AlunoForm: {t4-t3:.4f}s | Formset: {t5-t4:.4f}s"
+            f"[PERF] Tempo para instanciar AlunoForm: {t4 - t3:.4f}s | Formset: {t5 - t4:.4f}s"
         )
         if form.is_valid() and historico_formset.is_valid():
             try:
@@ -150,7 +150,7 @@ def criar_aluno(request):
                 historico_formset.instance = aluno
                 historico_formset.save()
                 t7 = time.perf_counter()
-                logger.info(f"[PERF] Tempo para salvar aluno e formset: {t7-t6:.4f}s")
+                logger.info(f"[PERF] Tempo para salvar aluno e formset: {t7 - t6:.4f}s")
                 messages.success(request, "Aluno cadastrado com sucesso!")
                 return redirect("alunos:detalhar_aluno", cpf=aluno.cpf)
             except ValidationError as e:
@@ -168,7 +168,7 @@ def criar_aluno(request):
                 {"form": form, "aluno": None, "historico_formset": historico_formset},
             )
             t9 = time.perf_counter()
-            logger.info(f"[PERF] Tempo para renderizar template (erro): {t9-t8:.4f}s")
+            logger.info(f"[PERF] Tempo para renderizar template (erro): {t9 - t8:.4f}s")
             return response
         else:
             messages.error(request, "Por favor, corrija os erros abaixo.")
@@ -181,7 +181,7 @@ def criar_aluno(request):
         )
         t11 = time.perf_counter()
         logger.info(
-            f"[PERF] Tempo para renderizar template (validação): {t11-t10:.4f}s"
+            f"[PERF] Tempo para renderizar template (validação): {t11 - t10:.4f}s"
         )
         return response
     else:
@@ -197,7 +197,7 @@ def criar_aluno(request):
             _ = historico_formset.management_form
             t15 = time.perf_counter()
             logger.info(
-                f"[PERF] Tempo para instanciar AlunoForm: {t13-t12:.4f}s | Formset: {t14-t13:.4f}s | Management form: {t15-t14:.4f}s"
+                f"[PERF] Tempo para instanciar AlunoForm: {t13 - t12:.4f}s | Formset: {t14 - t13:.4f}s | Management form: {t15 - t14:.4f}s"
             )
             t16 = time.perf_counter()
             response = render(
@@ -207,7 +207,7 @@ def criar_aluno(request):
             )
             t17 = time.perf_counter()
             logger.info(
-                f"[PERF] Tempo para renderizar template (GET): {t17-t16:.4f}s | Total: {t17-t0:.4f}s"
+                f"[PERF] Tempo para renderizar template (GET): {t17 - t16:.4f}s | Total: {t17 - t0:.4f}s"
             )
             return response
         except Exception as e:
