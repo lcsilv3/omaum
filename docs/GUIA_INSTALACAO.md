@@ -21,7 +21,34 @@ git --version
 pip --version
 ```
 
-## Instalação
+## Inicialização Rápida (Docker recomendado)
+
+1. **Instale o Docker Desktop** (com WSL2 no Windows) e garanta que o serviço esteja ativo.
+2. **Clone o repositório** (`git clone https://github.com/lcsilv3/omaum.git`).
+3. **Execute o script oficial**:
+
+    ```powershell
+    cd C:\projetos\omaum
+    pwsh -ExecutionPolicy Bypass -File scripts/run_omaum.ps1 -Environment dev
+    ```
+
+    O script liga o Docker, sobe `omaum-web/omaum-db/omaum-redis` e abre `http://localhost:8000`.
+
+4. **Gerencie superusuários e migrações dentro do container**:
+
+    ```powershell
+    docker compose -f docker\docker-compose.yml exec omaum-web python manage.py migrate
+    docker compose -f docker\docker-compose.yml exec omaum-web \
+      python scripts/gerenciar_superusuario.py --username desenv --password desenv123 --forcar-troca-senha
+    ```
+
+> **Não utilize** `python manage.py runserver` ou `venv` locais. O banco padrão é o PostgreSQL do Docker.
+
+Se preferir, substitua o script por `docker compose -f docker\docker-compose.yml up -d` e execute os comandos `exec` mostrados acima.
+
+## (LEGADO) Instalação manual sem Docker
+
+> Esta seção permanece apenas como referência histórica. O fluxo oficial **não** dá suporte ao ambiente local com `venv`/SQLite. Use somente Docker.
 
 ### 1. Clonar o Repositório
 

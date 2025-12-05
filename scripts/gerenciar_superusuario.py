@@ -11,6 +11,9 @@ Características:
 - Pode forçar redefinição de senha existente (--forcar-troca-senha).
 - Pode apenas listar superusuários (--apenas-exibir).
 - Parametrização via argumentos ou variáveis de ambiente.
+- Define automaticamente credenciais padrão por ambiente
+    (produção: admin/admin123, desenvolvimento: desenv/desenv123),
+    permitindo sobrescrever via argumentos ou SUPERUSER_*.
 
 Variáveis de ambiente suportadas:
   SUPERUSER_USERNAME
@@ -52,7 +55,7 @@ project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings.development")
 try:
     django_module = importlib.import_module("django")  # evita import direto repetido
     django_module.setup()
@@ -66,6 +69,41 @@ from django.contrib.auth import get_user_model  # noqa: E402
 from django.db import connections, DEFAULT_DB_ALIAS  # noqa: E402
 from django.db.migrations.executor import MigrationExecutor  # noqa: E402
 from django.core.management import call_command  # noqa: E402
+
+
+def _ambiente_atual() -> str:
+    settings_module = os.getenv("DJANGO_SETTINGS_MODULE", "")
+    if settings_module.endswith("production"):
+        return "production"
+    if settings_module.endswith("development"):
+        return "development"
+    return "default"
+
+
+DEFAULT_SUPERUSER_CREDENTIALS = {
+    "production": {
+        "username": "admin",
+        "email": "admin@omaum.org",
+        "password": "admin123",
+    },
+    "development": {
+        "username": "desenv",
+        "email": "desenv@omaum.org",
+        "password": "desenv123",
+    },
+    "default": {
+        "username": "admin",
+        "email": "admin@example.com",
+        "password": "admin123",
+    },
+}
+
+
+def _credenciais_padrao() -> Dict[str, str]:
+    return DEFAULT_SUPERUSER_CREDENTIALS.get(
+        _ambiente_atual(), DEFAULT_SUPERUSER_CREDENTIALS["default"]
+    )
+
 
 # ---------------------------------------------------------------------------
 
@@ -89,6 +127,7 @@ def _aplicar_migracoes_silencioso():
 
 
 def obter_args() -> argparse.Namespace:
+    defaults = _credenciais_padrao()
     parser = argparse.ArgumentParser(
         description="Gerencia (cria/atualiza) superusuário de forma idempotente.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -96,20 +135,23 @@ def obter_args() -> argparse.Namespace:
     parser.add_argument(
         "--username",
         dest="username",
-        default=os.getenv("SUPERUSER_USERNAME", "admin"),
-        help="Username (ou campo USERNAME_FIELD se customizado)",
+        default=os.getenv("SUPERUSER_USERNAME", defaults["username"]),
+        help=(
+            "Username/IDENTIFIER a ser usado (ajusta automaticamente conforme o ambiente,"
+            " mas pode ser sobrescrito)"
+        ),
     )
     parser.add_argument(
         "--email",
         dest="email",
-        default=os.getenv("SUPERUSER_EMAIL", "admin@example.com"),
-        help="Email do superusuário",
+        default=os.getenv("SUPERUSER_EMAIL", defaults["email"]),
+        help="Email do superusuário (ajustável via argumento ou SUPERUSER_EMAIL)",
     )
     parser.add_argument(
         "--password",
         dest="password",
-        default=os.getenv("SUPERUSER_PASSWORD"),
-        help="Senha (se omitida e necessário, será solicitada interativamente)",
+        default=os.getenv("SUPERUSER_PASSWORD", defaults["password"]),
+        help="Senha padrão do ambiente atual (ou fornecida via argumento/variável)",
     )
     parser.add_argument(
         "--migrar",
@@ -270,7 +312,11 @@ def main():  # pragma: no cover - execução de script
         status_criacao = "SEM ALTERAÇÕES"  # idempotente
 
     log(
-        f"[RESULTADO] {status_criacao} id={resultado['id']} {resultado['username_field']}={resultado['identificador']} alteracoes={resultado['alteracoes']}",
+        (
+            f"[RESULTADO] {status_criacao} id={resultado['id']} "
+            f"{resultado['username_field']}={resultado['identificador']} "
+            f"alteracoes={resultado['alteracoes']}"
+        ),
         silencioso=args.silencioso,
     )
 

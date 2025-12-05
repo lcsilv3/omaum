@@ -74,6 +74,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "omaum.context_processors.pagamentos_context",
+                "omaum.context_processors.environment_context",
             ],
         },
     },
@@ -187,3 +188,11 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
 }
+
+# Informações exibidas no banner de ambiente (sobrescritas por cada settings)
+ENVIRONMENT_LABEL = config("ENVIRONMENT_LABEL", default="Ambiente padrão")
+ENVIRONMENT_BADGE_CLASSES = config(
+    "ENVIRONMENT_BADGE_CLASSES", default="bg-secondary text-white"
+)
+ENVIRONMENT_HINT = config("ENVIRONMENT_HINT", default="")
+ENVIRONMENT_SHOW_BANNER = config("ENVIRONMENT_SHOW_BANNER", default=True, cast=bool)

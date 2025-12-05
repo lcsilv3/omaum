@@ -29,8 +29,8 @@
     "terminal.integrated.allowWorkspaceConfiguration": true,
     "terminal.integrated.shellIntegration.enabled": true,
     // Ativar venv automaticamente e fixar interpretador do projeto
-    "python.terminal.activateEnvironment": true,
-    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+    "python.terminal.activateEnvironment": false,
+    "python.defaultInterpreterPath": "python",
     // Confiar arquivos não confiáveis como 'open' (não bloquear)
     "security.workspace.trust.untrustedFiles": "open",
     "terminal.integrated.stickyScroll.enabled": true,

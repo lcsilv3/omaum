@@ -4,39 +4,36 @@ Este arquivo contém informações importantes para agentes de IA e desenvolvedo
 
 ## Comandos Importantes
 
-### Desenvolvimento
+### Desenvolvimento (Docker obrigatório)
+
 ```bash
-# Ativar ambiente virtual
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
+# Subir serviços
+docker compose -f docker\docker-compose.yml up -d
 
-# Executar servidor de desenvolvimento
-python manage.py runserver
+# Executar migrações/comandos dentro do container
+docker compose -f docker\docker-compose.yml exec omaum-web python manage.py migrate
+docker compose -f docker\docker-compose.yml exec omaum-web python manage.py test
+docker compose -f docker\docker-compose.yml exec omaum-web python manage.py test presencas
 
-# Executar testes
-python manage.py test
-python manage.py test presencas  # Apenas módulo de presenças
+# Criar/atualizar superusuário
+docker compose -f docker\docker-compose.yml exec omaum-web \
+    python scripts/gerenciar_superusuario.py --username desenv --password desenv123 --forcar-troca-senha
 
-# Migrações
-python manage.py makemigrations
-python manage.py migrate
+# Lint/format
+docker compose -f docker\docker-compose.yml exec omaum-web python scripts/lint.py
+docker compose -f docker\docker-compose.yml exec omaum-web black .
+docker compose -f docker\docker-compose.yml exec omaum-web isort .
+docker compose -f docker\docker-compose.yml exec omaum-web flake8 .
 
-# Criar superusuário
-python manage.py createsuperuser
-
-# Linting e qualidade de código
-python scripts/lint.py
-black .
-isort .
-flake8 .
-
-# Coverage de testes
-coverage run --source='.' manage.py test
-coverage report
-coverage html
+# Coverage
+docker compose -f docker\docker-compose.yml exec omaum-web \
+    coverage run --source='.' manage.py test
+docker compose -f docker\docker-compose.yml exec omaum-web coverage report
+docker compose -f docker\docker-compose.yml exec omaum-web coverage html
 ```
 
 ### Produção
+
 ```bash
 # Coletar arquivos estáticos
 python manage.py collectstatic --noinput
@@ -112,15 +109,15 @@ def calcular_estatisticas(turma_id, periodo):
 ## Configurações Importantes
 
 ### Banco de Dados
-- **Desenvolvimento**: SQLite (`db.sqlite3`)
-- **Produção**: PostgreSQL (recomendado)
+- **Desenvolvimento**: PostgreSQL via Docker (`docker-compose.yml`)
+- **Produção**: PostgreSQL (mesmo modelo)
 
 ### Cache
 - **Desenvolvimento**: Memória local
 - **Produção**: Redis (recomendado)
 
 ### Arquivos Estáticos
-- **Desenvolvimento**: Django dev server
+- **Desenvolvimento**: Servidos pelo `runserver` dentro do container
 - **Produção**: Nginx para servir estáticos
 
 ### Logs

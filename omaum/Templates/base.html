@@ -23,6 +23,7 @@
         .navbar-dark .navbar-toggler-icon {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 215, 0, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
         }
+        .environment-banner { font-size: 0.85rem; letter-spacing: 0.05em; }
     </style>
 </head>
 <body>
@@ -157,6 +158,14 @@
                 </div>
             </div>
         </nav>
+        {% if environment_banner.show %}
+        <div class="environment-banner {{ environment_banner.classes }} text-center py-1 text-uppercase fw-semibold">
+            <span>{{ environment_banner.label }}</span>
+            {% if environment_banner.hint %}
+            <span class="d-inline-block ms-2 text-reset text-lowercase">{{ environment_banner.hint }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
     </header>
     <main class="py-4">
         {% include 'partials/messages.html' %}

@@ -17,7 +17,17 @@ pause
 goto :eof
 
 :found
-%SHELL% -ExecutionPolicy Bypass -NoLogo -File "scripts\run_omaum.ps1"
+set TARGET_ENV=
+echo Selecione o ambiente alvo:
+echo   [D] Desenvolvimento
+echo   [P] Producao
+choice /C DP /M "Escolha uma opcao"
+if errorlevel 2 (
+	set TARGET_ENV=prod
+) else (
+	set TARGET_ENV=dev
+)
+%SHELL% -ExecutionPolicy Bypass -NoLogo -File "scripts\run_omaum.ps1" -Environment %TARGET_ENV%
 
 popd
 pause

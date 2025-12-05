@@ -4,6 +4,7 @@ Este módulo adiciona variáveis globais ao contexto do Django.
 """
 
 import logging
+from django.conf import settings
 from pagamentos.views.dashboard_views import get_pagamento_model
 
 logger = logging.getLogger(__name__)
@@ -32,4 +33,24 @@ def pagamentos_context(request):
     return {
         "pagamentos_atrasados_count": pagamentos_atrasados_count,
         "pagamentos_atrasados": pagamentos_atrasados,
+    }
+
+
+def environment_context(_request):
+    """Expõe informações do ambiente atual para o frontend."""
+
+    label = getattr(settings, "ENVIRONMENT_LABEL", "Ambiente não configurado")
+    css_classes = getattr(
+        settings, "ENVIRONMENT_BADGE_CLASSES", "bg-secondary text-white"
+    )
+    hint = getattr(settings, "ENVIRONMENT_HINT", "")
+    show_banner = getattr(settings, "ENVIRONMENT_SHOW_BANNER", True)
+
+    return {
+        "environment_banner": {
+            "label": label,
+            "classes": css_classes,
+            "hint": hint,
+            "show": show_banner,
+        }
     }

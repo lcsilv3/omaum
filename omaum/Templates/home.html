@@ -47,7 +47,16 @@
                                 
                                 <div class="mb-3">
                                     <label for="id_password_home" class="form-label small">Senha</label>
-                                    <input type="password" name="password" id="id_password_home" class="form-control form-control-sm" required>
+                                    <div class="input-group input-group-sm">
+                                        <input type="password" name="password" id="id_password_home" class="form-control" required>
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                id="togglePasswordVisibilityHome"
+                                                aria-label="Mostrar senha"
+                                                aria-pressed="false">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                     <div class="invalid-feedback">
                                         Por favor, informe sua senha.
                                     </div>
@@ -222,6 +231,27 @@
         });
     }, false);
 })();
+
+// Toggle de exibição de senha na home
+document.addEventListener('DOMContentLoaded', function () {
+    var toggleButton = document.getElementById('togglePasswordVisibilityHome');
+    var passwordInput = document.getElementById('id_password_home');
+    if (!toggleButton || !passwordInput) {
+        return;
+    }
+    toggleButton.addEventListener('click', function () {
+        var isHidden = passwordInput.type === 'password';
+        passwordInput.type = isHidden ? 'text' : 'password';
+        var icon = this.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('fa-eye', !isHidden);
+            icon.classList.toggle('fa-eye-slash', isHidden);
+        }
+        this.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+        this.setAttribute('aria-label', isHidden ? 'Ocultar senha' : 'Mostrar senha');
+        this.title = isHidden ? 'Ocultar senha' : 'Mostrar senha';
+    });
+});
 </script>
 {% endif %}
 {% endblock %}

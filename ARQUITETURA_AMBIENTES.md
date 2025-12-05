@@ -16,7 +16,7 @@ O projeto OMAUM possui **APENAS 2 AMBIENTES**, ambos em Docker:
 - **Python:** 3.11.14 (dentro do container)
 - **Características:** Gunicorn + Nginx + Celery + PostgreSQL + Redis
 - **Debug:** ❌ Desabilitado
-- **Atualizar:** `.\atualizar_docker.bat`
+- **Atualizar:** `.\bat\atualizar_docker.bat` (selecionar **P** no prompt)
 
 ### 2. 🔵 **DESENVOLVIMENTO (Docker)**
 - **Finalidade:** Desenvolvimento e testes
@@ -74,7 +74,7 @@ docker-compose down
 
 ```powershell
 # Atualizar código e reiniciar produção
-.\atualizar_docker.bat
+.\bat\atualizar_docker.bat
 ```
 
 ---
@@ -102,7 +102,7 @@ docker-compose down
 ### Produção:
 ```powershell
 # Atualizar código
-.\atualizar_docker.bat
+.\bat\atualizar_docker.bat
 
 # Ver logs
 docker logs omaum-web-prod
@@ -195,7 +195,7 @@ Sempre que for desenvolver:
 
 ### Scripts de automação:
 - ✅ `iniciar_dev_docker.bat` - Inicia desenvolvimento
-- ✅ `atualizar_docker.bat` - Atualiza produção
+- ✅ `bat\atualizar_docker.bat` - Atualiza produção (selecionar ambiente)
 
 ### Documentação:
 - ✅ `ARQUITETURA_AMBIENTES.md` - Este arquivo

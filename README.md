@@ -1,3 +1,4 @@
+<!-- markdownlint-disable-file -->
 # Sistema OMAUM 🎓
 
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
@@ -45,43 +46,29 @@ O script ficará rodando em segundo plano, monitorando alterações nos arquivos
 
 ## 🚀 Quick Start
 
+> **Importante:** o ambiente local com `venv` e `python manage.py runserver` foi descontinuado.
+> Utilize somente o stack Docker oficial para evitar inconsistências de banco/credenciais.
 
 ```bash
-
 # 1. Clonar o repositório
 git clone https://github.com/lcsilv3/omaum.git
 cd omaum
 
-# 2. Configurar ambiente virtual
+# 2. Iniciar o ambiente de desenvolvimento (Windows PowerShell)
+pwsh -ExecutionPolicy Bypass -File scripts/run_omaum.ps1 -Environment dev
 
-python -m venv venv
+# (alternativa) Iniciar manualmente
+docker compose -f docker\docker-compose.yml up -d
 
-source venv/bin/activate  # Linux/Mac
+# 3. Gerenciar superusuário direto no container
+docker compose -f docker\docker-compose.yml exec omaum-web \
+	python scripts/gerenciar_superusuario.py --username desenv --password desenv123 --forcar-troca-senha
 
-# ou
-
-venv\Scripts\activate     # Windows
-
-# 3. Instalar dependências
-
-pip install -r requirements.txt
-
-
-# 4. Configurar banco de dados
-
-python manage.py migrate
-
-
-# 5. Criar superusuário
-
-python manage.py createsuperuser
-
-
-# 6. Executar servidor
-python manage.py runserver
+# 4. Aplicar migrações se necessário
+docker compose -f docker\docker-compose.yml exec omaum-web python manage.py migrate
 ```
 
-Acesse: **[http://localhost:8000](http://localhost:8000)**
+Acesse: **[http://localhost:8000](http://localhost:8000)** (carregado pelo próprio script). Nunca execute `python manage.py runserver` fora do Docker.
 
 ### Dependências extras no Windows (WeasyPrint / Smoke tests)
 
@@ -157,24 +144,22 @@ pwsh -ExecutionPolicy Bypass -File scripts/create_desktop_shortcut.ps1
 - Será gerado o atalho **"OMAUM - Iniciar"** na área de trabalho apontando para `scripts/run_omaum.ps1`.
 - Use os parâmetros `-ShortcutName` ou `-AppUrl` para customizar o nome do atalho ou o endereço aberto após o boot dos serviços.
 
-### Executar scripts localmente (wrapper)
+### Executar scripts utilitários
 
-Você pode usar um wrapper que configura automaticamente o PYTHONPATH para a raiz do repositório e executa o script com o Python do `venv` (se existir) ou com o `py`/`python` do sistema:
+Sempre execute utilitários dentro do container já iniciado:
 
 ```powershell
-python scripts/run_local.py scripts/popular_codigos_por_tipo.py
+docker compose -f docker\docker-compose.yml exec omaum-web python scripts/popular_codigos_por_tipo.py
 ```
 
-O wrapper tentará localizar `venv\Scripts\python.exe`, depois `py -3` e por fim `python` no PATH. Se não encontrar um interpretador, instale o Python 3.8+ e/ou crie o `venv` com `python -m venv venv`.
+Isso garante acesso ao mesmo Postgres/Redis e evita discrepâncias de dependências.
 
 ## 🛠️ Tecnologias Utilizadas
 
 ### Backend
 - **Django 4.2+**: Framework web robusto
 - **Django REST Framework**: API REST moderna
-- **PostgreSQL**: Banco de dados principal (produção)
-
-- **SQLite**: Desenvolvimento local
+- **PostgreSQL (Docker)**: Banco de dados único para dev e produção
 
 ## Aviso Importante
 

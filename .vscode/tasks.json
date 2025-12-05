@@ -4,12 +4,15 @@
 		{
 			"type": "shell",
 			"label": "Monitoramento automático Ruff",
-			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"command": "docker",
 			"args": [
+				"compose",
+				"-f",
+				"${workspaceFolder}/docker/docker-compose.yml",
+				"exec",
+				"omaum-web",
+				"python",
 				"scripts/format_code.py"
-			],
-			"dependsOn": [
-				"Setup venv deps"
 			],
 			"group": "build",
 			"isBackground": true,
@@ -27,12 +30,15 @@
 		{
 			"type": "shell",
 			"label": "Watch testes presenças",
-			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"command": "docker",
 			"args": [
+				"compose",
+				"-f",
+				"${workspaceFolder}/docker/docker-compose.yml",
+				"exec",
+				"omaum-web",
+				"python",
 				"scripts/watch_tests.py"
-			],
-			"dependsOn": [
-				"Setup venv deps"
 			],
 			"group": "build",
 			"isBackground": true,
@@ -49,8 +55,14 @@
 		{
 			"label": "Smoke tests (marcadores)",
 			"type": "shell",
-			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"command": "docker",
 			"args": [
+				"compose",
+				"-f",
+				"${workspaceFolder}/docker/docker-compose.yml",
+				"exec",
+				"omaum-web",
+				"python",
 				"scripts/run_smoke_tests.py"
 			],
 			"isBackground": false,
@@ -63,16 +75,19 @@
 				"panel": "dedicated",
 				"showReuseMessage": false,
 				"clear": false
-			},
-			"dependsOn": [
-				"Setup venv deps"
-			]
+			}
 		},
 		{
 			"label": "Testes rápidos presenças",
 			"type": "shell",
-			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"command": "docker",
 			"args": [
+				"compose",
+				"-f",
+				"${workspaceFolder}/docker/docker-compose.yml",
+				"exec",
+				"omaum-web",
+				"python",
 				"-m",
 				"pytest",
 				"-q",
@@ -93,31 +108,16 @@
 			}
 		},
 		{
-			"label": "Setup venv deps",
-			"type": "shell",
-			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
-			"args": [
-				"-m",
-				"pip",
-				"install",
-				"-q",
-				"ruff",
-				"watchdog",
-				"pytest",
-				"pytest-django",
-				"xlrd"
-			],
-			"isBackground": false,
-			"problemMatcher": [
-				"$python"
-			],
-			"group": "build"
-		},
-		{
 			"label": "Run smoke test verbose",
 			"type": "shell",
-			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"command": "docker",
 			"args": [
+				"compose",
+				"-f",
+				"${workspaceFolder}/docker/docker-compose.yml",
+				"exec",
+				"omaum-web",
+				"python",
 				"-m",
 				"pytest",
 				"-vv",
@@ -147,8 +147,14 @@
 		{
 			"label": "Smoke tests (marcadores)",
 			"type": "shell",
-			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"command": "docker",
 			"args": [
+				"compose",
+				"-f",
+				"${workspaceFolder}/docker/docker-compose.yml",
+				"exec",
+				"omaum-web",
+				"python",
 				"scripts/run_smoke_tests.py"
 			],
 			"isBackground": false,
@@ -160,8 +166,18 @@
 		{
 			"label": "Testes Django - CRUD Tipos e Códigos",
 			"type": "shell",
-			"command": "python manage.py test alunos",
-			"args": [],
+			"command": "docker",
+			"args": [
+				"compose",
+				"-f",
+				"${workspaceFolder}/docker/docker-compose.yml",
+				"exec",
+				"omaum-web",
+				"python",
+				"manage.py",
+				"test",
+				"alunos"
+			],
 			"isBackground": false,
 			"group": "test"
 		}

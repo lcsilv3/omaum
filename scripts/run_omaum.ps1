@@ -1,13 +1,68 @@
 param(
-    [string]$AppUrl = "http://omaum.local/"
+    [ValidateSet('dev', 'prod')]
+    [string]$Environment,
+    [string]$AppUrl
 )
 
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = (Get-Item -LiteralPath $PSScriptRoot).Parent.FullName
-$composeFile = Join-Path $repoRoot 'docker\docker-compose.prod.yml'
-$envFile = Join-Path $repoRoot 'docker\.env.production'
-$services = @('omaum-web', 'omaum-nginx')
+$envConfigs = @{
+    dev = @{
+        ComposeFile    = Join-Path $repoRoot 'docker\docker-compose.yml'
+        EnvFile        = $null
+        Services       = @('omaum-web')
+        ContainerNames = @('omaum-web', 'omaum-db', 'omaum-redis')
+        ProjectName    = 'omaum-dev'
+        BrowserUrl     = 'http://localhost:8000/'
+    }
+    prod = @{
+        ComposeFile    = Join-Path $repoRoot 'docker\docker-compose.prod.yml'
+        EnvFile        = Join-Path $repoRoot 'docker\.env.production'
+        Services       = @('omaum-web', 'omaum-nginx')
+        ContainerNames = @(
+            'omaum-web-prod',
+            'omaum-nginx-prod',
+            'omaum-celery-prod',
+            'omaum-celery-beat-prod',
+            'omaum-db-prod',
+            'omaum-redis-prod'
+        )
+        ProjectName    = 'docker'
+        BrowserUrl     = 'http://omaum.local/'
+    }
+}
+
+function Prompt-Environment {
+    Write-Host ''
+    Write-Host 'Selecione o ambiente:'
+    Write-Host '  1 - Desenvolvimento'
+    Write-Host '  2 - Producao'
+    while ($true) {
+        $answer = Read-Host 'Opcao (1/2)'
+        switch ($answer) {
+            '1' { return 'dev' }
+            '2' { return 'prod' }
+            default { Write-Warn 'Opcao inválida. Informe 1 ou 2.' }
+        }
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($Environment)) {
+    $Environment = Prompt-Environment
+}
+
+if (-not $envConfigs.ContainsKey($Environment)) {
+    throw "Ambiente desconhecido: $Environment"
+}
+
+$script:SelectedConfig = $envConfigs[$Environment]
+if ([string]::IsNullOrWhiteSpace($AppUrl)) {
+    $AppUrl = $script:SelectedConfig.BrowserUrl
+}
+$script:TargetAppUrl = $AppUrl
+$script:Services = $script:SelectedConfig.Services
+$script:ContainerNames = $script:SelectedConfig.ContainerNames
 
 function Write-Info($message) {
     Write-Host "[INFO] $message" -ForegroundColor Cyan
@@ -75,40 +130,65 @@ function Wait-DockerReady {
 }
 
 function Get-ComposeArgs {
-    $args = @('compose', '-f', $composeFile)
-    if (Test-Path $envFile) {
-        $args += @('--env-file', $envFile)
+    $args = @('compose', '-f', $script:SelectedConfig.ComposeFile)
+    if ($script:SelectedConfig.EnvFile) {
+        $args += @('--env-file', $script:SelectedConfig.EnvFile)
+    }
+    if ($script:SelectedConfig.ProjectName) {
+        $args += @('-p', $script:SelectedConfig.ProjectName)
     }
     return $args
 }
 
-function Get-RunningServices {
-    $args = Get-ComposeArgs
-    $args += @('ps', '--services', '--filter', 'status=running')
-    $cmdOutput = & docker @args 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warn 'Não foi possível verificar o status dos serviços.'
-        return @()
+function Get-RunningContainers {
+    $running = @()
+    try {
+        $rawNames = & docker ps --format '{{.Names}}'
+        if ($LASTEXITCODE -eq 0 -and $null -ne $rawNames) {
+            if ($rawNames -is [string]) {
+                $rawNames = @($rawNames)
+            }
+            $rawNames = $rawNames | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+            foreach ($name in $script:ContainerNames) {
+                if ($rawNames -contains $name) {
+                    $running += $name
+                }
+            }
+            return $running
+        }
+        Write-Warn 'Não foi possível obter containers via docker ps. Usando fallback.'
+    } catch {
+        Write-Warn 'Falha ao consultar docker ps. Usando fallback por inspeção.'
     }
-    if ($null -eq $cmdOutput) {
-        return @()
+
+    foreach ($name in $script:ContainerNames) {
+        try {
+            $status = & docker inspect --format '{{.State.Status}}' $name 2>$null
+            if ($LASTEXITCODE -eq 0 -and $status -eq 'running') {
+                $running += $name
+            }
+        } catch {
+            continue
+        }
     }
-    return ($cmdOutput | Where-Object { $_ -ne '' })
+    return $running
 }
 
 function Ensure-Services {
-    $running = Get-RunningServices
-    if ($running.Count -gt 0) {
-        $missing = @($services | Where-Object { $running -notcontains $_ })
-        if ($missing.Count -eq 0) {
-            Write-Info 'Serviços já estão ativos.'
-            return $true
-        }
+    $running = Get-RunningContainers
+    if ($running.Count -eq $script:ContainerNames.Count) {
+        Write-Info 'Serviços já estão ativos.'
+        return $true
     }
-    Write-Info 'Inicializando serviços docker...'
+    if ($running.Count -gt 0) {
+        Write-Info ("Containers já ativos: {0}" -f ($running -join ', '))
+    }
+    Write-Info 'Inicializando serviços docker... (aguarde, o processo pode levar alguns instantes)'
+    Write-Progress -Activity 'docker compose up' -Status 'Processando...' -PercentComplete 20
     $args = Get-ComposeArgs
-    $args += @('up', '-d') + $services
+    $args += @('up', '-d') + $script:Services
     & docker @args
+    Write-Progress -Activity 'docker compose up' -Completed
     if ($LASTEXITCODE -ne 0) {
         Write-ErrorMessage 'Falha ao subir os serviços do OMAUM.'
         return $false
@@ -135,7 +215,7 @@ function Open-App($choice) {
     }
     if (-not $map.ContainsKey($choice) -or [string]::IsNullOrWhiteSpace($choice)) {
         Write-Info 'Abrindo no navegador padrão.'
-        Start-Process $AppUrl
+        Start-Process $script:TargetAppUrl
         return
     }
     $entry = $map[$choice]
@@ -157,17 +237,40 @@ function Open-App($choice) {
     }
     if ($null -ne $browserPath) {
         Write-Info "Abrindo no $label."
-        Start-Process -FilePath $browserPath -ArgumentList $AppUrl
+        Start-Process -FilePath $browserPath -ArgumentList $script:TargetAppUrl
     } else {
         Write-Warn "${label} não foi encontrado. Abrindo no navegador padrão."
-        Start-Process $AppUrl
+        Start-Process $script:TargetAppUrl
+    }
+}
+
+function Ensure-WSL {
+    Write-Info 'Verificando WSL (requerido para o backend do Docker em Windows)...'
+    try {
+        & wsl.exe -l -q *> $null
+        Write-Info 'WSL respondeu corretamente.'
+        return $true
+    } catch {
+        Write-Warn 'WSL não respondeu. Tentando inicializar...'
+        try {
+            & wsl.exe --status *> $null
+            Start-Sleep -Seconds 2
+            & wsl.exe -l -q *> $null
+            Write-Info 'WSL foi iniciado com sucesso.'
+            return $true
+        } catch {
+            Write-Warn 'Não foi possível confirmar o WSL. Verifique se ele está instalado e habilitado.'
+            return $false
+        }
     }
 }
 
 try {
-    if (-not (Test-Path $composeFile)) {
-        throw "Arquivo docker-compose não encontrado em $composeFile"
+    if (-not (Test-Path $script:SelectedConfig.ComposeFile)) {
+        throw "Arquivo docker-compose não encontrado em $($script:SelectedConfig.ComposeFile)"
     }
+    Ensure-WSL | Out-Null
+    Write-Info "Ambiente selecionado: $Environment"
     if (-not (Wait-DockerReady)) {
         throw 'Docker indisponível. Encerrando.'
     }
@@ -176,7 +279,7 @@ try {
     }
     $choice = Select-Browser
     Open-App $choice
-    Write-Info 'Ambiente pronto. Boa utilização!'
+    Write-Info "Ambiente pronto ($Environment). Boa utilização!"
 } catch {
     Write-ErrorMessage $_
     Read-Host 'Pressione Enter para sair'

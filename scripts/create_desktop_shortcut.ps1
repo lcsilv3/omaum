@@ -1,6 +1,8 @@
 param(
     [string]$ShortcutName = "OMAUM - Iniciar",
-    [string]$AppUrl = "http://omaum.local/"
+    [ValidateSet('dev','prod')]
+    [string]$Environment,
+    [string]$AppUrl
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,7 +23,14 @@ $shortcutPath = Join-Path $desktop "$ShortcutName.lnk"
 $wsh = New-Object -ComObject WScript.Shell
 $shortcut = $wsh.CreateShortcut($shortcutPath)
 $shortcut.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
-$shortcut.Arguments = "-ExecutionPolicy Bypass -NoLogo -File `"$runner`" -AppUrl `"$AppUrl`""
+$arguments = "-ExecutionPolicy Bypass -NoLogo -File `"$runner`""
+if (-not [string]::IsNullOrWhiteSpace($Environment)) {
+    $arguments += " -Environment $Environment"
+}
+if (-not [string]::IsNullOrWhiteSpace($AppUrl)) {
+    $arguments += " -AppUrl `"$AppUrl`""
+}
+$shortcut.Arguments = $arguments
 $shortcut.WorkingDirectory = $repoRoot
 $shortcut.Save()
 

@@ -273,8 +273,8 @@ docker-compose -f docker-compose.prod.yml down
 
 ### 🔴 Produção (Manual):
 ```powershell
-# Use o script criado:
-.\atualizar_docker.bat
+# Use o script criado (o prompt pede o ambiente e escolha **P** para produção):
+.\bat\atualizar_docker.bat
 
 # OU manualmente:
 cd docker
@@ -353,7 +353,7 @@ Essas instalações ficam disponíveis apenas até o próximo `build`. Caso quei
    Status: ✅ RODANDO (22h)
    Código: ❌ DESATUALIZADO (sem commit 475e4b84)
    URL: http://192.168.15.4
-   Ação: Executar .\atualizar_docker.bat
+   Ação: Executar .\bat\atualizar_docker.bat (selecionar Produção)
 
 💻 DESENVOLVIMENTO (Local/Windows):
    Status: ❌ QUEBRADO (Python não instalado)
@@ -366,7 +366,7 @@ Essas instalações ficam disponíveis apenas até o próximo `build`. Caso quei
 
 ### 1. Atualizar Produção (Urgente):
 ```powershell
-.\atualizar_docker.bat
+.\bat\atualizar_docker.bat
 ```
 Isso aplicará o commit 475e4b84 (grau_atual readonly)
 
