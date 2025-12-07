@@ -1,0 +1,19 @@
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+api:
+  dashboard: true
+  insecure: true # apenas ambiente local; remover em produção real
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: reverse-proxy
+
+log:
+  level: INFO
+
+accessLog: {}

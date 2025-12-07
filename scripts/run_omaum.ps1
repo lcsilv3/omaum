@@ -12,19 +12,18 @@ $envConfigs = @{
         ComposeFile    = Join-Path $repoRoot 'docker\docker-compose.yml'
         EnvFile        = $null
         Services       = @('omaum-web')
-        ContainerNames = @('omaum-web', 'omaum-db', 'omaum-redis')
+        # Nomes reais dos containers no docker-compose.yml (container_name)
+        ContainerNames = @('omaum-web-dev', 'omaum-db-dev', 'omaum-redis-dev')
         ProjectName    = 'omaum-dev'
         BrowserUrl     = 'http://localhost:8000/'
     }
     prod = @{
         ComposeFile    = Join-Path $repoRoot 'docker\docker-compose.prod.yml'
         EnvFile        = Join-Path $repoRoot 'docker\.env.production'
-        Services       = @('omaum-web', 'omaum-nginx')
+        Services       = @('omaum-web', 'omaum-celery')
         ContainerNames = @(
             'omaum-web-prod',
-            'omaum-nginx-prod',
             'omaum-celery-prod',
-            'omaum-celery-beat-prod',
             'omaum-db-prod',
             'omaum-redis-prod'
         )
@@ -180,14 +179,43 @@ function Ensure-Services {
         Write-Info 'Serviços já estão ativos.'
         return $true
     }
+
+    $needsCompose = $true
+
     if ($running.Count -gt 0) {
         Write-Info ("Containers já ativos: {0}" -f ($running -join ', '))
+        $missing = $script:ContainerNames | Where-Object { $running -notcontains $_ }
+        if ($missing.Count -gt 0) {
+            Write-Info ("Tentando iniciar containers faltantes: {0}" -f ($missing -join ', '))
+            $allStarted = $true
+            foreach ($name in $missing) {
+                # Suprimir erros temporariamente para permitir fallback ao compose
+                try {
+                    $null = & docker start $name 2>&1
+                    if ($LASTEXITCODE -ne 0) {
+                        $allStarted = $false
+                        break
+                    }
+                } catch {
+                    # container não existe ou não iniciou: vamos usar compose
+                    $allStarted = $false
+                    break
+                }
+            }
+            if ($allStarted) {
+                Write-Info 'Containers faltantes iniciados com sucesso.'
+                return $true
+            }
+            Write-Info 'Alguns containers não existem; criando via compose...'
+        }
     }
+
+    # Subir via docker compose
     Write-Info 'Inicializando serviços docker... (aguarde, o processo pode levar alguns instantes)'
     Write-Progress -Activity 'docker compose up' -Status 'Processando...' -PercentComplete 20
-    $args = Get-ComposeArgs
-    $args += @('up', '-d') + $script:Services
-    & docker @args
+    $composeArgs = Get-ComposeArgs
+    $composeArgs += @('up', '-d') + $script:Services
+    & docker @composeArgs
     Write-Progress -Activity 'docker compose up' -Completed
     if ($LASTEXITCODE -ne 0) {
         Write-ErrorMessage 'Falha ao subir os serviços do OMAUM.'

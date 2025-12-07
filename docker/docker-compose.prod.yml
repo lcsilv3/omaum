@@ -1,13 +1,15 @@
-services:
+﻿services:
   omaum-db:
     image: postgres:15-alpine
     container_name: omaum-db-prod
+    env_file:
+      - ./.env.production
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - omaum_db_data:/var/lib/postgresql/data
+      - omaum_db_data_prod:/var/lib/postgresql/data
     networks:
       - omaum-network
     restart: unless-stopped
@@ -20,9 +22,11 @@ services:
   omaum-redis:
     image: redis:7-alpine
     container_name: omaum-redis-prod
+    env_file:
+      - ./.env.production
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
-      - omaum_redis_data:/data
+      - omaum_redis_data_prod:/data
     networks:
       - omaum-network
     restart: unless-stopped
@@ -37,6 +41,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: omaum-web-prod
+    env_file:
+      - ./.env.production
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -49,10 +55,10 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,omaum.local,192.168.15.4,omaum-web}
     volumes:
-      - omaum_static:/app/static
-      - omaum_media:/app/media
-      - omaum_logs:/app/logs
-      - 'D:\Documentos Ordem\Ordem\CIIniciados\fotos:/fotos_externas:ro'
+      - omaum_static_prod:/app/static
+      - omaum_media_prod:/app/media
+      - omaum_logs_prod:/app/logs
+      - 'D:\\Documentos Ordem\\Ordem\\CIIniciados\\fotos:/fotos_externas:ro'
     depends_on:
       omaum-db:
         condition: service_healthy
@@ -60,37 +66,27 @@ services:
         condition: service_healthy
     networks:
       - omaum-network
+      - reverse-proxy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  omaum-nginx:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.nginx
-    container_name: omaum-nginx-prod
-    volumes:
-      - omaum_static:/var/www/static:ro
-      - omaum_media:/var/www/media:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      omaum-web:
-        condition: service_healthy
-    networks:
-      - omaum-network
-    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.omaum-prod.rule=Host(`omaum.local`)"
+      - "traefik.http.routers.omaum-prod.entrypoints=web"
+      - "traefik.http.services.omaum-prod.loadbalancer.server.port=8000"
 
   omaum-celery:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: omaum-celery-prod
+    env_file:
+      - ./.env.production
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -102,8 +98,8 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - SECRET_KEY=${SECRET_KEY}
     volumes:
-      - omaum_media:/app/media
-      - omaum_logs:/app/logs
+      - omaum_media_prod:/app/media
+      - omaum_logs_prod:/app/logs
     depends_on:
       omaum-db:
         condition: service_healthy
@@ -124,6 +120,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: omaum-celery-beat-prod
+    env_file:
+      - ./.env.production
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -135,7 +133,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - SECRET_KEY=${SECRET_KEY}
     volumes:
-      - omaum_logs:/app/logs
+      - omaum_logs_prod:/app/logs
     depends_on:
       omaum-db:
         condition: service_healthy
@@ -152,12 +150,14 @@ services:
       retries: 3
 
 volumes:
-  omaum_db_data:
-  omaum_redis_data:
-  omaum_static:
-  omaum_media:
-  omaum_logs:
+  omaum_db_data_prod:
+  omaum_redis_data_prod:
+  omaum_static_prod:
+  omaum_media_prod:
+  omaum_logs_prod:
 
 networks:
   omaum-network:
     driver: bridge
+  reverse-proxy:
+    external: true

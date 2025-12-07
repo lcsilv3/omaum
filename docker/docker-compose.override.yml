@@ -1,6 +1,5 @@
 # Exemplo de docker-compose.override.yml para produção
 # Use junto com docker-compose.yml para customizar variáveis e serviços em produção
-version: '3.8'
 
 services:
   omaum-web:
