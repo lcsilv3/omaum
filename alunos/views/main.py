@@ -108,23 +108,20 @@ def criar_aluno(request):
                         "foto_encontrada_path"
                     ):
                         from django.core.files import File
-                        from pathlib import Path
                         import os
 
                         foto_path_relativo = request.POST.get("foto_encontrada_path")
-                        # Converte para caminho absoluto
                         from django.conf import settings
 
-                        foto_path_abs = os.path.join(
-                            settings.MEDIA_ROOT, foto_path_relativo
+                        foto_path_abs = (
+                            foto_path_relativo
+                            if os.path.isabs(foto_path_relativo)
+                            else os.path.join(settings.MEDIA_ROOT, foto_path_relativo)
                         )
                         if os.path.exists(foto_path_abs):
+                            nome_arquivo = os.path.basename(foto_path_abs)
                             with open(foto_path_abs, "rb") as f:
-                                aluno.foto.save(
-                                    os.path.basename(foto_path_relativo),
-                                    File(f),
-                                    save=False,
-                                )
+                                aluno.foto.save(nome_arquivo, File(f), save=False)
 
                     aluno.save()
 
@@ -267,7 +264,6 @@ def editar_aluno(request, aluno_id):
                                 "foto_encontrada_path"
                             ):
                                 from django.core.files import File
-                                from pathlib import Path
                                 import os
 
                                 foto_path_relativo = request.POST.get(
@@ -276,15 +272,18 @@ def editar_aluno(request, aluno_id):
                                 # Converte para caminho absoluto
                                 from django.conf import settings
 
-                                foto_path_abs = os.path.join(
-                                    settings.MEDIA_ROOT, foto_path_relativo
+                                foto_path_abs = (
+                                    foto_path_relativo
+                                    if os.path.isabs(foto_path_relativo)
+                                    else os.path.join(
+                                        settings.MEDIA_ROOT, foto_path_relativo
+                                    )
                                 )
                                 if os.path.exists(foto_path_abs):
+                                    nome_arquivo = os.path.basename(foto_path_abs)
                                     with open(foto_path_abs, "rb") as f:
                                         aluno_editado.foto.save(
-                                            os.path.basename(foto_path_relativo),
-                                            File(f),
-                                            save=False,
+                                            nome_arquivo, File(f), save=False
                                         )
 
                             aluno_editado.save()

@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     libpq-dev \
     libpq5 \
+    postgresql-client \
     gettext \
     curl \
     libcairo2 \
@@ -38,11 +39,12 @@ RUN pip install --no-cache-dir -r requirements-production.txt
 
 COPY . /app/
 
-RUN mkdir -p /app/static /app/media /app/logs
+RUN mkdir -p /app/static /app/media /app/logs && \
+    chmod +x /app/docker/entrypoint.sh
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "omaum.wsgi:application"]
+ENTRYPOINT ["/app/docker/entrypoint.sh"]

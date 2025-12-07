@@ -21,6 +21,10 @@ docker/
 > (isolado ou combinado com o base via `docker compose -f ...`). Dessa força
 > evitamos que variáveis, portas ou dados de desenvolvimento vazem para o
 > ambiente crítico.
+>
+> Compose V2 já entende que o arquivo está na versão mais recente, então
+> removemos a chave `version` para eliminar warnings e seguir as melhores
+> práticas atuais.
 
 ---
 
@@ -33,6 +37,7 @@ docker/
 - ✅ **Portas expostas** - Acesso direto ao DB e Redis
 - ✅ **Banco de dados**: `omaum_dev`
 - ✅ **Settings**: `omaum.settings.development`
+- ✅ **Fotos locais**: diretório `D:/Documentos Ordem/Ordem/CIIniciados/fotos` já montado em `/fotos_externas` no container para prévia automática por número iniciático.
 
 ### Portas:
 - **8000** → Django
@@ -41,9 +46,11 @@ docker/
 
 ### Containers:
 ```
-omaum-web       → Servidor Django (development mode)
-omaum-db        → PostgreSQL 15 (omaum_dev)
-omaum-redis     → Redis 7
+omaum-web-dev   → Servidor Django (development mode)
+omaum-db-dev    → PostgreSQL 15 (omaum_dev)
+omaum-redis-dev → Redis 7
+omaum-nginx-dev → (proxy reverso opcional quando usado no perfil production)
+omaum-celery-dev → Celery worker (perfil celery)
 ```
 
 ### Como usar:
@@ -87,8 +94,10 @@ docker-compose down
 - 🔒 **Variáveis em .env.production**
 
 ### Portas:
-- **80** → HTTP (Nginx)
-- **443** → HTTPS (Nginx)
+- **8080** → HTTP (Nginx, mapeado a 80 interno; evita conflito com dev)
+- **5433** → PostgreSQL (exposição apenas local para manutenção)
+- **6380** → Redis (exposição apenas local para manutenção)
+- **8001** → Django/Gunicorn (útil para diagnósticos rápidos)
 
 ### Containers:
 ```
@@ -97,7 +106,6 @@ omaum-web-prod        → Gunicorn + Django
 omaum-db-prod         → PostgreSQL 15 (omaum_prod)
 omaum-redis-prod      → Redis 7 (com senha)
 omaum-celery-prod     → Celery worker
-omaum-celery-beat-prod → Celery beat (tarefas agendadas)
 ```
 
 ### Como usar:
@@ -116,8 +124,8 @@ docker-compose -f docker-compose.prod.yml logs -f
 docker-compose -f docker-compose.prod.yml down
 
 # Acessar
-# http://192.168.15.4
-# http://omaum.local
+# http://localhost:8080
+# (porta 8080 mapeia o 80 interno do Nginx)
 ```
 
 ### Diferencial do PROD:

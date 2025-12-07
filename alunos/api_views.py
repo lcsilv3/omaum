@@ -655,14 +655,35 @@ def painel_tabela_api(request):
 @require_GET
 def buscar_foto_por_numero_iniciatico(request, numero_iniciatico):
     """
-    Busca foto existente nos diretórios baseada no número iniciático.
+    Busca foto baseada no número iniciático.
 
-    Retorna o caminho relativo da foto mais recente encontrada.
-    Busca primeiro no MEDIA_ROOT e depois no diretório alternativo.
+    Ordem: (1) banco (foto já salva no aluno) → (2) MEDIA_ROOT → (3) diretório externo.
+    Retorna URL para pré-visualização e caminho para posterior salvamento.
     """
     import os
     from django.conf import settings
     from pathlib import Path
+    from importlib import import_module
+
+    # 1) Banco de dados: se já existir foto para o número iniciático, devolve imediatamente
+    try:
+        Aluno = getattr(import_module("alunos.models"), "Aluno")
+        aluno_bd = Aluno.objects.filter(numero_iniciatico=numero_iniciatico).first()
+        if aluno_bd and aluno_bd.foto:
+            foto_url = aluno_bd.foto.url
+            foto_path = aluno_bd.foto.name.replace("\\", "/")
+            return JsonResponse(
+                {
+                    "success": True,
+                    "foto_url": foto_url,
+                    "foto_path": foto_path,
+                    "nome_arquivo": Path(foto_path).name,
+                    "total_encontradas": 1,
+                }
+            )
+    except Exception:
+        # Não bloqueia fluxo se algo falhar na consulta
+        pass
 
     # Diretórios de fotos (em ordem de prioridade)
     diretorios_fotos = [
@@ -736,6 +757,7 @@ def servir_foto_externa(request, numero_iniciatico):
     Serve foto de diretório externo (fora do MEDIA_ROOT).
     Usado para fotos em D:\\Documentos Ordem\\Ordem\\CIIniciados\\fotos
     """
+    import os
     from pathlib import Path
     from django.http import FileResponse, Http404
     from django.conf import settings
