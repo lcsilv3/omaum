@@ -1,43 +1,83 @@
-<tbody>
-{% for atividade in atividades %}
-    <tr>
-        <td>{{ atividade.nome }}</td>
-        <td>
-            {% if atividade.curso %}
-                {{ atividade.curso.nome }}
-            {% else %}
-                <span class="text-muted">-</span>
-            {% endif %}
-        </td>
-        <td>
-            {% if atividade.turmas.exists %}
-                {% for turma in atividade.turmas.all %}
-                    <span class="badge bg-secondary">
-                        {{ turma.nome }}
-                    </span>
-                {% endfor %}
-            {% else %}
-                <span class="text-muted">Nenhuma</span>
-            {% endif %}
-        </td>
-        <td>
-            {{ atividade.get_tipo_atividade_display|default:atividade.get_tipo_display }}
-        </td>
-        <td>
-            {{ atividade.get_status_display|default:atividade.status }}
-        </td>
-        <td>
-            {{ atividade.data_inicio|date:"d/m/Y" }}
-        </td>
-        <td>
-            <a href="{% url 'atividades:detalhar_atividade' atividade.id %}" class="btn btn-sm btn-info" title="Detalhes">Detalhes</a>
-            <a href="{% url 'atividades:editar_atividade' atividade.id %}" class="btn btn-sm btn-warning" title="Editar">Editar</a>
-            <a href="{% url 'atividades:excluir_atividade' atividade.id %}" class="btn btn-sm btn-danger" title="Excluir">Excluir</a>
-        </td>
-    </tr>
-{% empty %}
-    <tr>
-        <td colspan="7" class="text-center">Nenhuma atividade encontrada.</td>
-    </tr>
-{% endfor %}
-</tbody>
+<div class="table-responsive">
+    <table class="table align-middle table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Nome</th>
+                <th>Curso</th>
+                <th>Turmas</th>
+                <th>Tipo</th>
+                <th>Status</th>
+                <th>Data Início</th>
+                <th>Data Fim</th>
+                <th>Convocação</th>
+                <th class="text-start">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for atividade in atividades %}
+                <tr>
+                    <td>{{ atividade.nome }}</td>
+                    <td>
+                        {% if atividade.curso %}
+                            {{ atividade.curso.nome }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if atividade.turmas.exists() %}
+                            {% for turma in atividade.turmas.all %}
+                                <span class="badge bg-info">{{ turma.nome }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">Nenhuma</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ atividade.get_tipo_atividade_display|default:atividade.get_tipo_display }}</td>
+                    <td>
+                        {% if atividade.status == 'CANCELADA' %}
+                            <span class="badge bg-danger">Cancelada</span>
+                        {% else %}
+                            <span class="badge bg-success">Ativa</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if atividade.data_fim %}
+                            {{ atividade.data_fim|date:"d/m/Y" }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if atividade.convocacao %}
+                            <span class="badge bg-success">Sim</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Não</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-start">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{% url 'atividades:detalhar_atividade' atividade.id %}" class="btn btn-info" title="Detalhar atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'atividades:editar_atividade' atividade.id %}" class="btn btn-warning" title="Editar atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'atividades:excluir_atividade' atividade.id %}" class="btn btn-danger" title="Excluir atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            <a href="{% url 'atividades:copiar_atividade' atividade.id %}" class="btn btn-secondary" title="Copiar atividade" data-bs-toggle="tooltip">
+                                <i class="fas fa-copy"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">Nenhuma atividade encontrada.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

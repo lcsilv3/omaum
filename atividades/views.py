@@ -2,13 +2,13 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from django.core.paginator import Paginator
 from .utils import get_models, get_cursos
 
 
 def relatorio_atividades(request):
     models = get_models()
     AtividadeAcademica = models["AtividadeAcademica"]
-    models["Curso"]
 
     atividades = AtividadeAcademica.objects.prefetch_related("turmas__curso").all()
     curso_id = request.GET.get("curso")
@@ -62,8 +62,16 @@ def listar_atividades_academicas(request):
             id__in=Turma.objects.filter(id=turma_id).values_list("curso_id", flat=True)
         )
 
+    atividades = atividades.order_by("nome")
+
+    paginator = Paginator(atividades, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        "atividades": atividades,
+        "atividades": page_obj.object_list,
+        "page_obj": page_obj,
+        "total_atividades": paginator.count,
         "cursos": cursos,
         "turmas": turmas,
         "query": query,
@@ -86,11 +94,23 @@ def listar_atividades_academicas(request):
             context,
             request=request,
         )
+        paginacao_html = render_to_string(
+            "atividades/academicas/partials/paginacao_atividades.html",
+            context,
+            request=request,
+        )
+        rodape_html = render_to_string(
+            "atividades/academicas/partials/rodape_atividades.html",
+            context,
+            request=request,
+        )
         return JsonResponse(
             {
                 "tabela_html": tabela_html,
                 "cursos_html": cursos_html,
                 "turmas_html": turmas_html,
+                "paginacao_html": paginacao_html,
+                "rodape_html": rodape_html,
             }
         )
     return render(
@@ -99,16 +119,24 @@ def listar_atividades_academicas(request):
 
 
 def ajax_atividades_filtradas(request):
-    """Filtra atividades via AJAX."""
-    # Obter modelos
+    """Filtra atividades via AJAX aplicando busca, curso e turma."""
     models = get_models()
     AtividadeAcademica = models["AtividadeAcademica"]
 
-    # Aplicar filtros básicos
+    query = request.GET.get("q", "")
+    curso_id = request.GET.get("curso", "")
+    turma_id = request.GET.get("turma", "")
+
     atividades = AtividadeAcademica.objects.prefetch_related("turmas__curso").all()
 
-    # Aplicar filtros específicos se necessário
-    # TODO: Implementar lógica de filtros baseada nos parâmetros da requisição
+    if query:
+        atividades = atividades.filter(nome__icontains=query)
+    if curso_id:
+        atividades = atividades.filter(curso_id=curso_id)
+    if turma_id:
+        atividades = atividades.filter(turmas__id=turma_id)
+
+    atividades = atividades.order_by("nome")
 
     return render(
         request,

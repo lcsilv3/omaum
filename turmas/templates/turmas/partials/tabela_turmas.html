@@ -1,0 +1,51 @@
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Curso</th>
+                <th>Nome da Turma</th>
+                <th>Instrutor</th>
+                <th>Status</th>
+                <th>Data Início</th>
+                <th class="text-center">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for turma in page_obj.object_list %}
+                <tr>
+                    <td>{{ turma.curso.nome }}</td>
+                    <td>{{ turma.nome }}</td>
+                    <td>{{ turma.instrutor.nome|default:"Não definido" }}</td>
+                    <td>
+                        <span class="badge {% if turma.status == 'A' %}bg-success{% elif turma.status == 'P' %}bg-info{% elif turma.status == 'C' %}bg-secondary{% else %}bg-danger{% endif %}">
+                            {{ turma.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ turma.data_inicio_ativ|date:"d/m/Y"|default:"-" }}</td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-info" title="Ver detalhes" aria-label="Ver detalhes da turma {{ turma.nome }}">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning" title="Editar turma" aria-label="Editar turma {{ turma.nome }}">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger" title="Excluir turma" aria-label="Excluir turma {{ turma.nome }}">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-success" title="Matricular alunos" aria-label="Matricular alunos na turma {{ turma.nome }}">
+                                <i class="fas fa-user-plus"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">
+                        <p class="my-3">Nenhuma turma cadastrada.</p>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

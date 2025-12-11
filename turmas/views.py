@@ -8,9 +8,12 @@ Padrão de Nomenclatura:
   mas nas views e URLs usamos nomes mais descritivos.
 """
 
+from django.db import DatabaseError, IntegrityError
 from django.db.models import Q
-from django.http import JsonResponse
+from django.db.models.deletion import ProtectedError
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -60,14 +63,14 @@ def get_turma_form():
     try:
         forms_module = import_module("turmas.forms")
         return getattr(forms_module, "TurmaForm")
-    except (ImportError, AttributeError) as e:
-        print(f"Erro ao importar TurmaForm: {e}")
+    except (ImportError, AttributeError) as import_error:
+        print(f"Erro ao importar TurmaForm: {import_error}")
         # Fallback para o formulário da core, se existir
         try:
             core_forms = import_module("core.forms")
             return getattr(core_forms, "TurmaForm")
-        except (ImportError, AttributeError) as e:
-            print(f"Erro ao importar TurmaForm da core: {e}")
+        except (ImportError, AttributeError) as core_import_error:
+            print(f"Erro ao importar TurmaForm da core: {core_import_error}")
             return None
 
 
@@ -81,6 +84,7 @@ def listar_turmas(request):
         # Obter parâmetros de busca e filtro
         query = request.GET.get("q", "")
         curso_id = request.GET.get("curso", "")
+        status = request.GET.get("status", "")
 
         # Filtrar turmas (sem select_related)
         turmas = Turma.objects.all()
@@ -97,6 +101,9 @@ def listar_turmas(request):
 
         if curso_id:
             turmas = turmas.filter(curso_id=curso_id)
+
+        if status:
+            turmas = turmas.filter(status=status)
 
         print("DEBUG - Turmas após filtros:", turmas.count())
 
@@ -144,8 +151,27 @@ def listar_turmas(request):
             "query": query,
             "cursos": cursos,
             "curso_selecionado": curso_id,
+            "status_selecionado": status,
             "total_turmas": len(turmas_list),
         }
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            tabela_html = render_to_string(
+                "turmas/partials/tabela_turmas.html", context, request=request
+            )
+            paginacao_html = render_to_string(
+                "turmas/partials/paginacao_turmas.html", context, request=request
+            )
+            rodape_html = render_to_string(
+                "turmas/partials/rodape_turmas.html", context, request=request
+            )
+            return JsonResponse(
+                {
+                    "tabela_html": tabela_html,
+                    "paginacao_html": paginacao_html,
+                    "rodape_html": rodape_html,
+                }
+            )
 
         return render(request, "turmas/listar_turmas.html", context)
     except (ImportError, AttributeError) as e:
@@ -169,15 +195,15 @@ def listar_turmas(request):
                 "error_message": "Erro ao carregar dados. Tente novamente mais tarde.",
             },
         )
-    except Exception as e:
+    except DatabaseError as db_error:
         # Tratamento para erros não previstos - log detalhado mas mensagem genérica para usuário
         import logging
 
         logger = logging.getLogger(__name__)
         logger.error(
             "Erro inesperado na listagem de turmas: %s: %s",
-            type(e).__name__,
-            e,
+            type(db_error).__name__,
+            db_error,
             exc_info=True,
         )
         messages.error(request, "Erro interno no sistema. Contate o administrador.")
@@ -353,7 +379,11 @@ def excluir_turma(request, turma_id):
         if any(len(lst) > 0 for lst in dependencias.values()):
             messages.error(
                 request,
-                "Não é possível excluir a turma pois existem registros vinculados (matrículas, atividades, presenças, notas, pagamentos, etc.). Remova as dependências antes de tentar novamente.",
+                (
+                    "Não é possível excluir a turma pois existem registros vinculados "
+                    "(matrículas, atividades, presenças, notas, pagamentos, etc.). "
+                    "Remova as dependências antes de tentar novamente."
+                ),
                 extra_tags="safe",
             )
             return redirect("turmas:excluir_turma", id=turma.id)
@@ -361,8 +391,8 @@ def excluir_turma(request, turma_id):
             turma.delete()
             messages.success(request, "Turma excluída com sucesso!")
             return redirect("turmas:listar_turmas")
-        except Exception as e:
-            messages.error(request, f"Erro ao excluir turma: {str(e)}")
+        except (ProtectedError, IntegrityError, DatabaseError) as exc:
+            messages.error(request, f"Erro ao excluir turma: {exc}")
             return redirect("turmas:detalhar_turma", id=turma.id)
     return render(
         request,
@@ -440,8 +470,8 @@ def matricular_aluno(request, turma_id):
                 request,
                 f"Aluno {aluno.nome} matriculado com sucesso na turma {turma.nome}.",
             )
-        except Exception as e:
-            messages.error(request, f"Erro ao matricular aluno: {str(e)}")
+        except (IntegrityError, DatabaseError) as exc:
+            messages.error(request, f"Erro ao matricular aluno: {exc}")
 
         return redirect("turmas:detalhar_turma", turma_id=turma_id)
 
@@ -633,9 +663,6 @@ def adicionar_atividade_turma(request, turma_id):
     turma = get_object_or_404(Turma, id=turma_id)
 
     try:
-        # Importar o formulário AtividadeForm dinamicamente
-        from importlib import import_module
-
         forms_module = import_module("atividades.forms")
         AtividadeForm = getattr(forms_module, "AtividadeForm")
 
@@ -703,7 +730,7 @@ def registrar_frequencia_turma(request, turma_id):
                 justificativa = request.POST.get(f"justificativa_{aluno.cpf}", "")
 
                 # Verificar se já existe registro para este aluno nesta atividade
-                frequencia, created = Frequencia.objects.update_or_create(
+                Frequencia.objects.update_or_create(
                     aluno=aluno,
                     atividade=atividade,
                     defaults={
@@ -796,9 +823,8 @@ def relatorio_frequencia_turma(request, turma_id):
 @login_required
 def exportar_turmas(request):
     """Exporta os dados das turmas para um arquivo CSV."""
+    import csv
     try:
-        import csv
-        from django.http import HttpResponse
 
         Turma = get_turma_model()
         turmas = Turma.objects.all()
@@ -845,20 +871,19 @@ def exportar_turmas(request):
                 ]
             )
         return response
-    except Exception as e:
-        messages.error(request, f"Erro ao exportar turmas: {str(e)}")
+    except (csv.Error, OSError, DatabaseError) as exc:
+        messages.error(request, f"Erro ao exportar turmas: {exc}")
         return redirect("turmas:listar_turmas")
 
 
 @login_required
 def importar_turmas(request):
     """Importa turmas de um arquivo CSV."""
+    import csv
+    from io import TextIOWrapper
+
     if request.method == "POST" and request.FILES.get("csv_file"):
         try:
-            import csv
-            from io import TextIOWrapper
-            from django.utils import timezone
-
             Turma = get_turma_model()
             Curso = get_curso_model()
             Aluno = get_aluno_model()
@@ -970,8 +995,8 @@ def importar_turmas(request):
                         data_prim_aula=data_prim_aula,
                     )
                     count += 1
-                except Exception as e:
-                    errors.append(f"Erro na linha {count + 1}: {str(e)}")
+                except (ValueError, KeyError, IntegrityError, DatabaseError) as exc:
+                    errors.append(f"Erro na linha {count + 1}: {exc}")
 
             if errors:
                 messages.warning(
@@ -985,8 +1010,8 @@ def importar_turmas(request):
             else:
                 messages.success(request, f"{count} turmas importadas com sucesso!")
             return redirect("turmas:listar_turmas")
-        except Exception as e:
-            messages.error(request, f"Erro ao importar turmas: {str(e)}")
+        except (csv.Error, OSError, IntegrityError, DatabaseError, ValueError) as exc:
+            messages.error(request, f"Erro ao importar turmas: {exc}")
 
     return render(request, "turmas/importar_turmas.html")
 
@@ -1007,11 +1032,11 @@ def relatorio_turmas(request):
         Curso = get_curso_model()
         cursos = Curso.objects.all()
 
-        turmas_por_curso = []
+        turmas_por_curso_stats = []
         for curso in cursos:
             count = Turma.objects.filter(curso=curso).count()
             if count > 0:
-                turmas_por_curso.append(
+                turmas_por_curso_stats.append(
                     {
                         "curso": curso,
                         "count": count,
@@ -1056,14 +1081,14 @@ def relatorio_turmas(request):
             "turmas_ativas": turmas_ativas,
             "turmas_concluidas": turmas_concluidas,
             "turmas_canceladas": turmas_canceladas,
-            "turmas_por_curso": turmas_por_curso,
+            "turmas_por_curso": turmas_por_curso_stats,
             "turmas_por_instrutor": turmas_por_instrutor,
         }
 
         return render(request, "turmas/relatorio_turmas.html", context)
 
-    except Exception as e:
-        messages.error(request, f"Erro ao gerar relatório de turmas: {str(e)}")
+    except DatabaseError as exc:
+        messages.error(request, f"Erro ao gerar relatório de turmas: {exc}")
         return redirect("turmas:listar_turmas")
 
 
@@ -1126,8 +1151,8 @@ def dashboard_turmas(request):
 
         return render(request, "turmas/dashboard_turmas.html", context)
 
-    except Exception as e:
-        messages.error(request, f"Erro ao carregar dashboard de turmas: {str(e)}")
+    except DatabaseError as exc:
+        messages.error(request, f"Erro ao carregar dashboard de turmas: {exc}")
         return redirect("turmas:listar_turmas")
 
 

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load turmas_extras %}
 
 {% block title %}Lista de Turmas{% endblock %}
@@ -43,12 +44,12 @@
     <!-- Barra de busca e filtros -->
     <div class="card mb-4">
         <div class="card-header">
-            <form method="get" class="row g-2 align-items-center">
+            <form id="filtro-turmas-form" method="get" class="row g-2 align-items-center">
                 <div class="col-lg-6 col-md-6">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por nome..." value="{{ query }}">
+                    <input type="text" name="q" id="id_q" class="form-control" placeholder="Buscar por nome..." value="{{ query }}">
                 </div>
                 <div class="col-lg-3 col-md-3">
-                    <select name="curso" class="form-select">
+                    <select name="curso" id="id_curso" class="form-select">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
                             <option value="{{ curso.id }}" {% if curso_selecionado == curso.id|stringformat:"s" %}selected{% endif %}>
@@ -58,7 +59,7 @@
                     </select>
                 </div>
                 <div class="col-lg-2 col-md-2">
-                    <select name="status" class="form-select">
+                    <select name="status" id="id_status" class="form-select">
                         <option value="">Status</option>
                         <option value="A" {% if status_selecionado == 'A' %}selected{% endif %}>Ativa</option>
                         <option value="P" {% if status_selecionado == 'P' %}selected{% endif %}>Planejada</option>
@@ -74,98 +75,22 @@
             </form>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Curso</th>
-                            <th>Nome da Turma</th>
-                            <th>Instrutor</th>
-                            <th>Status</th>
-                            <th>Data Início</th>
-                            <th class="text-center">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for turma in page_obj.object_list %}
-                            <tr>
-                                <td>{{ turma.curso.nome }}</td>
-                                <td>{{ turma.nome }}</td>
-                                <td>{{ turma.instrutor.nome|default:"Não definido" }}</td>
-                                <td>
-                                    <span class="badge {% if turma.status == 'A' %}bg-success{% elif turma.status == 'P' %}bg-info{% elif turma.status == 'C' %}bg-secondary{% else %}bg-danger{% endif %}">
-                                        {{ turma.get_status_display }}
-                                    </span>
-                                </td>
-                                <td>{{ turma.data_inicio_ativ|date:"d/m/Y"|default:"-" }}</td>
-                                <td class="text-center">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{% url 'turmas:detalhar_turma' turma.id %}" class="btn btn-info" title="Ver detalhes" aria-label="Ver detalhes da turma {{ turma.nome }}">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning" title="Editar turma" aria-label="Editar turma {{ turma.nome }}">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger" title="Excluir turma" aria-label="Excluir turma {{ turma.nome }}">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                        <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-success" title="Matricular alunos" aria-label="Matricular alunos na turma {{ turma.nome }}">
-                                            <i class="fas fa-user-plus"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center">
-                                    <p class="my-3">Nenhuma turma cadastrada.</p>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div id="turmas-spinner" class="text-center my-3" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+            </div>
+            <div id="tabela-turmas-container">
+                {% include 'turmas/partials/tabela_turmas.html' %}
             </div>
         </div>
-        <div class="card-footer">
-            <p class="text-muted mb-0">Total: {{ total_turmas|default:"0" }} turma(s) | Página: {{ page_obj.number|default:'1' }} de {{ page_obj.paginator.num_pages|default:'1' }}</p>
-            {% if page_obj and page_obj.has_other_pages %}
-                <nav aria-label="Paginação">
-                    <ul class="pagination justify-content-center mb-0">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Anterior</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Anterior</span>
-                            </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                            {% else %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}&q={{ query }}&curso={{ curso_selecionado }}">{{ num }}</a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&curso={{ curso_selecionado }}">Próxima</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">Próxima</span>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
+        <div class="card-footer" id="turmas-card-footer">
+            {% include 'turmas/partials/rodape_turmas.html' %}
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'turmas/js/listar_turmas.js' %}?v=20251211"></script>
 {% endblock %}

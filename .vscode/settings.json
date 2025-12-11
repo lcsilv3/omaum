@@ -3,6 +3,15 @@
     "python.linting.pylintEnabled": true,
     "python.linting.flake8Enabled": true,
     "python.formatting.provider": "black",
+    "python.envFile": "${workspaceFolder}/.env",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}",
+        "${workspaceFolder}/omaum"
+    ],
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingImports": "none",
+        "reportMissingModuleSource": "none"
+    },
     "editor.formatOnSave": false,
     "python.linting.pylintArgs": [
         "--ignore=migrations"
