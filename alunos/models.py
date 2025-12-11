@@ -193,6 +193,20 @@ class Aluno(models.Model):
         null=True, blank=True, verbose_name=_("Hora de Nascimento")
     )
     email = models.EmailField(unique=True, verbose_name=_("E-mail"))
+    telefone = models.CharField(
+        max_length=15,  # Permite máscara: (99) 9999-9999
+        null=True,
+        blank=True,
+        verbose_name=_("Telefone"),
+        help_text="Digite apenas números ou com máscara (99) 9999-9999",
+    )
+    celular = models.CharField(
+        max_length=15,  # Permite máscara: (99) 99999-9999
+        null=True,
+        blank=True,
+        verbose_name=_("Celular"),
+        help_text="Digite apenas números ou com máscara (99) 99999-9999",
+    )
     foto = models.ImageField(
         upload_to="alunos/fotos/",
         null=True,

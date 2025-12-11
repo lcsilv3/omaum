@@ -1,9 +1,12 @@
 import sys
 import os
+from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pandas as pd
 import django
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 def main():
@@ -13,8 +16,8 @@ def main():
 
     from alunos.models import Codigo, TipoCodigo
 
-    # Caminho da planilha
-    xlsx_path = r"C:/projetos/omaum/docs/Planilha de Códigos.xlsx"
+    # Caminho da planilha (relativo ao repo)
+    xlsx_path = BASE_DIR / "docs" / "Planilha de Códigos.xlsx"
     df = pd.read_excel(xlsx_path)
 
     # Limpa todos os códigos existentes (opcional, cuidado!)

@@ -34,7 +34,7 @@ class TurmaAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "num_livro",
-                    "perc_carencia",
+                    "perc_presenca_minima",
                     "data_iniciacao",
                     "data_prim_aula",
                     "ativo",

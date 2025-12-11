@@ -432,8 +432,10 @@ class CalculadoraEstatisticas:
                 turma_info = {
                     "id": primeira_presenca.turma.id,
                     "nome": primeira_presenca.turma.nome,
-                    "perc_carencia": getattr(
-                        primeira_presenca.turma, "perc_carencia", None
+                    "perc_presenca_minima": getattr(
+                        primeira_presenca.turma,
+                        "perc_presenca_minima",
+                        getattr(primeira_presenca.turma, "perc_carencia", None),
                     ),
                 }
 
@@ -556,12 +558,15 @@ class CalculadoraEstatisticas:
                 metodo_calculo = "configuracao_especifica"
             else:
                 # Usar lógica padrão da turma
-                if (
-                    hasattr(presenca.turma, "perc_carencia")
-                    and presenca.turma.perc_carencia
-                ):
+                percentual_turma = getattr(
+                    presenca.turma,
+                    "perc_presenca_minima",
+                    getattr(presenca.turma, "perc_carencia", None),
+                )
+
+                if percentual_turma:
                     percentual_atual = presenca.calcular_percentual()
-                    percentual_minimo = presenca.turma.perc_carencia
+                    percentual_minimo = percentual_turma
 
                     if percentual_atual < percentual_minimo:
                         presencas_necessarias = (
@@ -728,7 +733,11 @@ class CalculadoraEstatisticas:
     def _criar_estatisticas_turma_vazia(turma_id: int) -> Dict[str, Any]:
         """Cria estatísticas vazias para turma."""
         return {
-            "turma": {"id": turma_id, "nome": None, "perc_carencia": None},
+            "turma": {
+                "id": turma_id,
+                "nome": None,
+                "perc_presenca_minima": None,
+            },
             "periodo": {"inicio": None, "fim": None},
             "totais": {
                 "convocacoes": 0,

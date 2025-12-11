@@ -1,15 +1,12 @@
 services:
   omaum-db:
     image: postgres:15-alpine
-    container_name: omaum-db-dev
     environment:
       POSTGRES_DB: omaum_dev
       POSTGRES_USER: omaum_user
       POSTGRES_PASSWORD: omaum_password
     volumes:
       - omaum_db_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     networks:
       - omaum-network
     healthcheck:
@@ -20,12 +17,9 @@ services:
 
   omaum-redis:
     image: redis:7-alpine
-    container_name: omaum-redis-dev
     command: redis-server --appendonly yes
     volumes:
       - omaum_redis_data:/data
-    ports:
-      - "6379:6379"
     networks:
       - omaum-network
     healthcheck:
@@ -38,14 +32,13 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: omaum-web-dev
     environment:
       - SECRET_KEY=django-insecure-dev-key-change-me
       - DEBUG=True
       - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
       - DJANGO_SETTINGS_MODULE=omaum.settings.development
-      - DATABASE_URL=postgresql://omaum_user:omaum_password@omaum-db-dev:5432/omaum_dev
-      - REDIS_URL=redis://omaum-redis-dev:6379/0
+      - DATABASE_URL=postgresql://omaum_user:omaum_password@omaum-db:5432/omaum_dev
+      - REDIS_URL=redis://omaum-redis:6379/0
     volumes:
       - ../:/app
       - omaum_static:/app/static
@@ -53,8 +46,6 @@ services:
       - omaum_media:/app/media
       - omaum_logs:/app/logs
       - "D:/Documentos Ordem/Ordem/CIIniciados/fotos:/fotos_externas:ro"
-    ports:
-      - "8000:8000"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\" || exit 1"]
       interval: 30s
@@ -73,7 +64,6 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.nginx
-    container_name: omaum-nginx-dev
     volumes:
       - omaum_static:/var/www/static:ro
       - omaum_media:/var/www/media:ro
@@ -90,14 +80,13 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: omaum-celery-dev
     environment:
       - SECRET_KEY=django-insecure-dev-key-change-me
       - DEBUG=True
       - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
       - DJANGO_SETTINGS_MODULE=omaum.settings.development
-      - DATABASE_URL=postgresql://omaum_user:omaum_password@omaum-db-dev:5432/omaum_dev
-      - REDIS_URL=redis://omaum-redis-dev:6379/0
+      - DATABASE_URL=postgresql://omaum_user:omaum_password@omaum-db:5432/omaum_dev
+      - REDIS_URL=redis://omaum-redis:6379/0
     volumes:
       - ../:/app
       - omaum_media:/app/media

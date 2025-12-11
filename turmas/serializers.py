@@ -1,4 +1,3 @@
-# c:/projetos/omaum/turmas/serializers.py
 from rest_framework import serializers
 from .models import Turma
 

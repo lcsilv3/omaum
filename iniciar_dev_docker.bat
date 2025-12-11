@@ -1,7 +1,7 @@
 @echo off
 REM Script para iniciar ambiente de DESENVOLVIMENTO Docker
 REM Autor: GitHub Copilot
-REM Data: 29/11/2025
+REM Atualizado em: 10/12/2025
 
 echo ========================================
 echo   AMBIENTE DE DESENVOLVIMENTO - OMAUM
@@ -22,13 +22,13 @@ if %ERRORLEVEL% NEQ 0 (
 echo    [OK] Docker disponivel
 echo.
 
-echo 2. Parando containers de producao (se existirem)...
-docker-compose -f docker-compose.prod.yml down 2>nul
-echo    [OK] Producao parada
+echo 2. Parando ambiente de desenvolvimento (se estiver rodando)...
+docker compose -p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml down 2>nul
+echo    [OK] Dev parado
 echo.
 
-echo 3. Iniciando ambiente de DESENVOLVIMENTO...
-docker-compose up -d
+echo 3. Iniciando ambiente de DESENVOLVIMENTO (binds em E:)...
+docker compose -p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml up -d
 if %ERRORLEVEL% NEQ 0 (
     echo    [ERRO] Falha ao iniciar containers
     pause
@@ -42,12 +42,12 @@ timeout /t 20 /nobreak > nul
 echo.
 
 echo 5. Aplicando migracoes...
-docker-compose exec -T web python manage.py migrate --noinput
+docker compose -p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml exec -T omaum-web python manage.py migrate --noinput
 echo    [OK] Migracoes aplicadas
 echo.
 
 echo 6. Verificando status...
-docker-compose ps
+docker compose -p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml ps
 echo.
 
 echo ========================================

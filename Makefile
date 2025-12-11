@@ -1,9 +1,20 @@
 # Makefile para automação do projeto OmAum
-.PHONY: help build up down logs shell test backup restore migrate makemigrations collectstatic build-prod up-prod down-prod logs-prod backup-prod clean clean-all stats ps install reset
+.PHONY: help build up down logs shell test backup restore migrate makemigrations collectstatic build-prod up-prod down-prod logs-prod backup-prod clean clean-all stats ps install reset up-dev down-dev logs-dev ps-dev up-prod-local down-prod-local logs-prod-local ps-prod-local _guard
 
 COMPOSE_FILE = docker/docker-compose.yml
 COMPOSE_FILE_PROD = docker/docker-compose.prod.yml
 PROJECT_NAME = omaum
+COMPOSE_DEV_OVERRIDE = docker/docker-compose.dev.override.yml
+COMPOSE_PROD_OVERRIDE = docker/docker-compose.prod.override.yml
+ENV_DEV ?= .env.dev
+ENV_PROD ?= .env.prod
+PROJECT_NAME_DEV = omaum-dev
+PROJECT_NAME_PROD = omaum-prod
+
+_guard:
+ifeq (,$(wildcard docker/docker-compose.yml))
+	$(error Rode o make na raiz do repositório: docker/docker-compose.yml não encontrado)
+endif
 
 help:
 	@echo "Comandos disponíveis:"
@@ -74,6 +85,30 @@ stats: ## Mostra estatísticas dos containers
 
 ps: ## Lista containers em execução
 	docker compose -f $(COMPOSE_FILE) ps
+
+up-dev: _guard ## Sobe dev com project name e override de binds/portas
+	docker compose -p $(PROJECT_NAME_DEV) --env-file $(ENV_DEV) -f $(COMPOSE_FILE) -f $(COMPOSE_DEV_OVERRIDE) up -d
+
+down-dev: _guard ## Para dev
+	docker compose -p $(PROJECT_NAME_DEV) --env-file $(ENV_DEV) -f $(COMPOSE_FILE) -f $(COMPOSE_DEV_OVERRIDE) down
+
+logs-dev: _guard ## Logs do dev
+	docker compose -p $(PROJECT_NAME_DEV) --env-file $(ENV_DEV) -f $(COMPOSE_FILE) -f $(COMPOSE_DEV_OVERRIDE) logs -f
+
+ps-dev: _guard ## Containers do dev
+	docker compose -p $(PROJECT_NAME_DEV) --env-file $(ENV_DEV) -f $(COMPOSE_FILE) -f $(COMPOSE_DEV_OVERRIDE) ps
+
+up-prod-local: _guard ## Sobe prod-local com binds/portas separados
+	docker compose -p $(PROJECT_NAME_PROD) --env-file $(ENV_PROD) -f $(COMPOSE_FILE) -f $(COMPOSE_PROD_OVERRIDE) up -d
+
+down-prod-local: _guard ## Para prod-local
+	docker compose -p $(PROJECT_NAME_PROD) --env-file $(ENV_PROD) -f $(COMPOSE_FILE) -f $(COMPOSE_PROD_OVERRIDE) down
+
+logs-prod-local: _guard ## Logs do prod-local
+	docker compose -p $(PROJECT_NAME_PROD) --env-file $(ENV_PROD) -f $(COMPOSE_FILE) -f $(COMPOSE_PROD_OVERRIDE) logs -f
+
+ps-prod-local: _guard ## Containers do prod-local
+	docker compose -p $(PROJECT_NAME_PROD) --env-file $(ENV_PROD) -f $(COMPOSE_FILE) -f $(COMPOSE_PROD_OVERRIDE) ps
 
 install: ## Instalação inicial do projeto
 	cp docker/env/.env.example docker/env/.env.development

@@ -1,4 +1,3 @@
-# c:/projetos/omaum/turmas/services.py
 from django.core.exceptions import ValidationError
 from core.utils import get_model_dynamically
 from .models import Turma
@@ -30,7 +29,8 @@ def criar_turma(dados_turma: dict) -> Turma:
         nome=nome_turma,
         descricao=dados_turma.get("descricao"),
         num_livro=dados_turma.get("num_livro"),
-        perc_carencia=dados_turma.get("perc_carencia"),
+        perc_presenca_minima=dados_turma.get("perc_presenca_minima")
+        or dados_turma.get("perc_carencia"),
         data_iniciacao=dados_turma.get("data_iniciacao"),
         data_inicio_ativ=dados_turma.get("data_inicio_ativ"),
         data_prim_aula=dados_turma.get("data_prim_aula"),

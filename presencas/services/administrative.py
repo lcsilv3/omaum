@@ -1,4 +1,3 @@
-# c:/projetos/omaum/presencas/services/administrative.py
 """
 Serviços de Relatórios Administrativos para Gestão Institucional
 Categoria 5 - Relatórios Administrativos

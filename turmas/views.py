@@ -818,7 +818,7 @@ def exportar_turmas(request):
                 "Local",
                 "Horário",
                 "Número do Livro",
-                "Percentual de Carência",
+                "Percentual de Presença Mínima",
                 "Data de Iniciação",
                 "Data de Início das Atividades",
                 "Data da Primeira Aula",
@@ -838,7 +838,7 @@ def exportar_turmas(request):
                     turma.local,
                     turma.horario,
                     turma.num_livro,
-                    turma.perc_carencia,
+                    getattr(turma, "perc_presenca_minima", None),
                     turma.data_iniciacao,
                     turma.data_inicio_ativ,
                     turma.data_prim_aula,
@@ -932,7 +932,11 @@ def importar_turmas(request):
                     # Validar obrigatoriedade dos campos iniciáticos
                     obrigatorios = [
                         ("Número do Livro", row.get("Número do Livro")),
-                        ("Percentual de Carência", row.get("Percentual de Carência")),
+                        (
+                            "Percentual de Presença Mínima",
+                            row.get("Percentual de Presença Mínima")
+                            or row.get("Percentual de Carência"),
+                        ),
                         ("Data de Iniciação", data_iniciacao),
                         ("Data de Início das Atividades", data_inicio_ativ),
                         ("Data da Primeira Aula", data_prim_aula),
@@ -943,6 +947,12 @@ def importar_turmas(request):
                             continue
 
                     # Criar a turma
+                    perc_presenca = (
+                        row.get("Percentual de Presença Mínima")
+                        or row.get("Percentual de Carência")
+                        or None
+                    )
+
                     Turma.objects.create(
                         nome=row.get("Nome", "").strip(),
                         curso=curso,
@@ -954,7 +964,7 @@ def importar_turmas(request):
                         local=row.get("Local", "").strip(),
                         horario=row.get("Horário", "").strip(),
                         num_livro=row.get("Número do Livro"),
-                        perc_carencia=row.get("Percentual de Carência"),
+                        perc_presenca_minima=perc_presenca,
                         data_iniciacao=data_iniciacao,
                         data_inicio_ativ=data_inicio_ativ,
                         data_prim_aula=data_prim_aula,

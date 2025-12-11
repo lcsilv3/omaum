@@ -82,7 +82,7 @@ function initializeCollapseToggles() {
 
 function initializeImagePreview() {
     const fotoInput = document.getElementById('id_foto');
-    const fotoContainer = document.querySelector('.border.rounded.p-3.mb-3.text-center');
+    const fotoContainer = document.getElementById('foto-preview');
     if (!fotoInput || !fotoContainer) return;
 
     fotoInput.addEventListener('change', function() {

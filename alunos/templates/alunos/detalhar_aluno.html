@@ -73,6 +73,8 @@
                         </div>
                         <div class="col-md-6">
                             <p><strong>Email:</strong> {{ aluno.email }}</p>
+                            <p><strong>Celular:</strong> <span class="celular-mask">{{ aluno.celular }}</span></p>
+                            <p><strong>Telefone:</strong> <span class="telefone-mask">{{ aluno.telefone }}</span></p>
                             <p><strong>Sexo:</strong> {{ aluno.get_sexo_display }}</p>
                             <p><strong>Situação:</strong> 
                                 {% if aluno.situacao == 'ATIVO' %}
@@ -252,6 +254,17 @@
         </div>
         <div id="endereco" class="card-body collapse">
             <p><strong>Endereço Completo:</strong> {{ aluno.rua }}, {{ aluno.numero_imovel }}{% if aluno.complemento %}, {{ aluno.complemento }}{% endif %} - {{ aluno.bairro }}, {{ aluno.cidade }}/{{ aluno.estado }} - CEP: <span class="cep-mask">{{ aluno.cep }}</span></p>
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <p class="mb-1"><strong>Estado:</strong> {{ aluno.estado|default:"-" }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p class="mb-1"><strong>Cidade:</strong> {{ aluno.cidade|default:"-" }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p class="mb-1"><strong>Bairro:</strong> {{ aluno.bairro|default:"-" }}</p>
+                </div>
+            </div>
         </div>
     </div>
     <!-- Seção: Contatos de Emergência (recolhível, fechada por padrão) -->

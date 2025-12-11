@@ -6,11 +6,14 @@ Script para testar as correções implementadas no sistema de presenças.
 import os
 import sys
 import django
+from pathlib import Path
 
 # Configurar Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "omaum.settings")
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 django.setup()
+
+BASE_DIR = Path(__file__).resolve().parents[2]
 
 
 def test_fixes():
@@ -39,12 +42,12 @@ def test_fixes():
         print(f"✗ Importação de registro_presenca: FALHOU - {e}")
 
     # 3. Teste de estrutura do arquivo JS (verificar se existe)
-    js_file = "c:/projetos/omaum/static/js/presencas/presenca_manager.js"
-    if os.path.exists(js_file):
+    js_file = BASE_DIR / "static" / "js" / "presencas" / "presenca_manager.js"
+    if js_file.exists():
         print("✓ Arquivo presenca_manager.js: EXISTE")
 
         # Verificar se não há emojis problemáticos no JS
-        with open(js_file, "r", encoding="utf-8") as f:
+        with js_file.open("r", encoding="utf-8") as f:
             content = f.read()
 
         # Procurar por emojis que causaram problemas

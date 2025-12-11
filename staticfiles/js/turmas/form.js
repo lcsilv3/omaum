@@ -1,5 +1,7 @@
 // Inicialização dos módulos para o formulário de turmas
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== TURMAS FORM.JS CARREGADO ===');
+    
     // PARTE 1: Corrigir carregamento das datas
     function formatarDataParaInput(dataStr) {
         if (!dataStr) return '';
@@ -79,29 +81,71 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Adicione este código ao seu arquivo JavaScript para inicializar o Select2
+// Protegido para não quebrar o restante do script caso o select2 não esteja carregado
 $(document).ready(function() {
-    // Inicializar Select2 para o dropdown de cursos
+  if (window.jQuery && $.fn && $.fn.select2) {
     $('.curso-select').select2({
-        theme: 'bootstrap4',
-        width: '100%'
+      theme: 'bootstrap4',
+      width: '100%'
     });
+  } else {
+    console.warn('Select2 não encontrado; pulando inicialização para evitar quebra do formulário.');
+  }
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Máscara para horário (__:__ às __:__)
+  // Máscara para horário (__:__ às __:__) mantendo o esqueleto visível
   const horarioInput = document.querySelector('input[name="horario"]');
   if (horarioInput) {
-    horarioInput.addEventListener("input", function (e) {
-      let v = e.target.value.replace(/\D/g, "");
-      if (v.length > 4) v = v.slice(0, 8);
-      if (v.length >= 4) {
-        e.target.value = v.slice(0, 2) + ":" + v.slice(2, 4) + " às " + (v.slice(4, 6) || "") + (v.length > 6 ? ":" + v.slice(6, 8) : "");
-      } else if (v.length >= 2) {
-        e.target.value = v.slice(0, 2) + ":" + v.slice(2, 4);
-      } else {
-        e.target.value = v;
+    console.log('Campo horário encontrado, aplicando máscara...');
+
+    const template = '__:__ às __:__';
+    const slots = [0, 1, 3, 4, 9, 10, 12, 13]; // posições dos dígitos
+
+    const formatHorario = (raw) => {
+      const digits = (raw || '').replace(/\D/g, '').slice(0, 8).split('');
+      const chars = template.split('');
+      slots.forEach((slotIndex, i) => {
+        if (digits[i]) chars[slotIndex] = digits[i];
+      });
+      return chars.join('');
+    };
+
+    const applyFormat = (inputEl) => {
+      const formatted = formatHorario(inputEl.value);
+      inputEl.value = formatted;
+      const nextSlot = formatted.indexOf('_');
+      const cursorPos = nextSlot === -1 ? formatted.length : nextSlot;
+      inputEl.setSelectionRange(cursorPos, cursorPos);
+    };
+
+    // Sempre iniciar com o template visível
+    horarioInput.value = template;
+    horarioInput.placeholder = template;
+
+    horarioInput.addEventListener('focus', (e) => {
+      if (!e.target.value) {
+        e.target.value = template;
+      }
+      const nextSlot = e.target.value.indexOf('_');
+      const cursorPos = nextSlot === -1 ? e.target.value.length : nextSlot;
+      e.target.setSelectionRange(cursorPos, cursorPos);
+    });
+
+    horarioInput.addEventListener('input', (e) => {
+      applyFormat(e.target);
+    });
+
+    horarioInput.addEventListener('blur', (e) => {
+      // Se o usuário apagar tudo, restaura o template
+      const digits = (e.target.value || '').replace(/\D/g, '');
+      if (!digits) {
+        e.target.value = template;
       }
     });
+
+    // Formatar valor existente ao carregar (ou manter template)
+    applyFormat(horarioInput);
   }
 
   // Máscara para número do livro (apenas números)
@@ -112,7 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Atualizar data de término das atividades ao alterar início (padrão: +90 dias)
+  // Atualizar data de término das atividades ao alterar início (padrão: +24 meses)
   const inicioInput = document.querySelector('input[name="data_inicio_ativ"]');
   const terminoInput = document.querySelector('input[name="data_termino_atividades"]');
   if (inicioInput && terminoInput) {
@@ -121,7 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const inicio = new Date(inicioInput.value);
         if (!isNaN(inicio)) {
           const termino = new Date(inicio);
-          termino.setDate(termino.getDate() + 90);
+          termino.setMonth(termino.getMonth() + 24);
           terminoInput.value = termino.toISOString().split("T")[0];
         }
       }

@@ -223,22 +223,22 @@ class TurmasUITest(StaticLiveServerTestCase):
             print(f"  class={campo_num_livro.get_attribute('class')}")
             self.driver.execute_script("arguments[0].value = '1'", campo_num_livro)
             print("[DEBUG] Valor de 'num_livro' setado via JS.")
-        campo_perc = self.driver.find_element(By.NAME, "perc_carencia")
+        campo_perc = self.driver.find_element(By.NAME, "perc_presenca_minima")
         if campo_perc.is_displayed() and campo_perc.is_enabled():
             try:
                 campo_perc.clear()
                 campo_perc.send_keys("0")
             except Exception as e:
-                print(f"[DEBUG] Erro ao interagir com perc_carencia: {e}")
+                print(f"[DEBUG] Erro ao interagir com perc_presenca_minima: {e}")
         else:
-            print("[DEBUG] Campo 'perc_carencia' não está interagível. Atributos:")
+            print("[DEBUG] Campo 'perc_presenca_minima' não está interagível. Atributos:")
             print(f"  type={campo_perc.get_attribute('type')}")
             print(f"  disabled={campo_perc.get_attribute('disabled')}")
             print(f"  readonly={campo_perc.get_attribute('readonly')}")
             print(f"  style={campo_perc.get_attribute('style')}")
             print(f"  class={campo_perc.get_attribute('class')}")
             self.driver.execute_script("arguments[0].value = '0'", campo_perc)
-            print("[DEBUG] Valor de 'perc_carencia' setado via JS.")
+            print("[DEBUG] Valor de 'perc_presenca_minima' setado via JS.")
         # datas obrigatórias
         hoje = date.today().isoformat()
         for campo_data in ["data_iniciacao", "data_inicio_ativ", "data_prim_aula"]:

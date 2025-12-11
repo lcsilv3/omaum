@@ -1,0 +1,26 @@
+version: "3.9"
+services:
+  omaum-db:
+    ports:
+      - "5432:5432"
+    volumes:
+      - E:/docker/omaum/dev/db:/var/lib/postgresql/data
+  omaum-web:
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../:/app
+      - E:/docker/omaum/dev/static:/app/static
+      - E:/docker/omaum/dev/staticfiles:/app/staticfiles
+      - E:/docker/omaum/dev/media:/app/media
+      - E:/docker/omaum/dev/logs:/app/logs
+  omaum-redis:
+    ports:
+      - "6379:6379"
+    volumes:
+      - E:/docker/omaum/dev/redis:/data
+  omaum-celery:
+    volumes:
+      - ../:/app
+      - E:/docker/omaum/dev/media:/app/media
+      - E:/docker/omaum/dev/logs:/app/logs

@@ -10,7 +10,7 @@ class TurmaForm(forms.ModelForm):
             "nome",
             "descricao",
             "num_livro",
-            "perc_carencia",
+            "perc_presenca_minima",
             "data_iniciacao",
             "data_inicio_ativ",
             "data_termino_atividades",
@@ -34,11 +34,12 @@ class TurmaForm(forms.ModelForm):
             "data_iniciacao": "Data de Iniciação",
             "data_prim_aula": "Data da Primeira Aula",
             "num_livro": "Nº do Livro de Presenças",
-            "perc_carencia": "Percentual de Carência (%)",
+            "perc_presenca_minima": "Percentual de Presença Mínima (%)",
+            "dias_semana": "Dia da Semana",
         }
         help_texts = {
-            "perc_carencia": "Percentual mínimo de faltas permitido para a turma.",
-            "horario": "Exemplo: 13:30 às 15:30",
+            "perc_presenca_minima": "Percentual mínimo de presenças exigido para a turma.",
+            "horario": "Horário previsto de Aula",
         }
         widgets = {
             "data_inicio_ativ": forms.DateInput(attrs={"type": "date"}),
@@ -51,8 +52,9 @@ class TurmaForm(forms.ModelForm):
                     "placeholder": "Selecione o Curso desejado",
                 }
             ),
-            "horario": forms.TextInput(attrs={"placeholder": "13:30 às 15:30"}),
+            "horario": forms.TextInput(attrs={"placeholder": "__:__ às __:__"}),
             "num_livro": forms.NumberInput(attrs={"placeholder": "999"}),
+            "dias_semana": forms.Select(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -72,7 +74,7 @@ class TurmaForm(forms.ModelForm):
 
         # Torna os campos iniciáticos obrigatórios
         self.fields["num_livro"].required = True
-        self.fields["perc_carencia"].required = True
+        self.fields["perc_presenca_minima"].required = True
         self.fields["data_iniciacao"].required = True
         self.fields["data_inicio_ativ"].required = True
         self.fields["data_prim_aula"].required = True
@@ -80,8 +82,34 @@ class TurmaForm(forms.ModelForm):
             "data_termino_atividades"
         ].required = False  # Alterado para não ser obrigatório
 
+        # Configurar campo dias_semana como ChoiceField com as opções corretas
+        DIA_SEMANA_CHOICES = [
+            ("SEG", "Segunda-feira"),
+            ("TER", "Terça-feira"),
+            ("QUA", "Quarta-feira"),
+            ("QUI", "Quinta-feira"),
+            ("SEX", "Sexta-feira"),
+            ("SAB", "Sábado"),
+            ("DOM", "Domingo"),
+        ]
+        self.fields["dias_semana"] = forms.ChoiceField(
+            choices=[("", "Selecione o dia")] + DIA_SEMANA_CHOICES,
+            required=True,
+            label="Dia da Semana",
+            widget=forms.Select(attrs={"class": "form-select"}),
+        )
+
+        # Valor padrão para presença mínima: 70%
+        if not self.initial.get("perc_presenca_minima"):
+            if getattr(self.instance, "perc_presenca_minima", None):
+                self.fields["perc_presenca_minima"].initial = (
+                    self.instance.perc_presenca_minima
+                )
+            else:
+                self.fields["perc_presenca_minima"].initial = 70
+
         # Troca o texto do option vazio para "Selecione"
-        for field_name, field in self.fields.items():
+        for field in self.fields.values():
             if isinstance(field, forms.models.ModelChoiceField):
                 field.empty_label = "Selecione"
 
@@ -110,7 +138,7 @@ class TurmaForm(forms.ModelForm):
         # Validação extra para garantir que os campos obrigatórios não estejam vazios
         for field in [
             "num_livro",
-            "perc_carencia",
+            "perc_presenca_minima",
             "data_iniciacao",
             "data_inicio_ativ",
             "data_prim_aula",

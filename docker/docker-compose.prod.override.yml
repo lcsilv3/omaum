@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  omaum-db:
+    volumes:
+      - D:/docker/omaum/prod/db:/var/lib/postgresql/data
+  omaum-web:
+    volumes:
+      - ../:/app
+      - D:/docker/omaum/prod/static:/app/static
+      - D:/docker/omaum/prod/staticfiles:/app/staticfiles
+      - D:/docker/omaum/prod/media:/app/media
+      - D:/docker/omaum/prod/logs:/app/logs
+  omaum-redis:
+    volumes:
+      - D:/docker/omaum/prod/redis:/data
+  omaum-celery:
+    volumes:
+      - ../:/app
+      - D:/docker/omaum/prod/media:/app/media
+      - D:/docker/omaum/prod/logs:/app/logs

@@ -20,7 +20,7 @@
     if(d.length <= 5) return d.replace(/(\d{2})(\d+)/,'$1.$2'); // 3-5
     return d.replace(/(\d{2})(\d{3})(\d{0,3})/,'$1.$2-$3'); // 6-8
   } 
-  function maskPhone(v){const n=v.replace(/\D/g,'').substring(0,11);if(n.length<=10){return n.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3').replace(/-$/,'');}return n.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3').replace(/-$/,'');}
+  function maskPhone(v){const n=v.replace(/\D/g,'').substring(0,11);if(n.length===0) return '';if(n.length<=10){return n.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3').replace(/-$/,'');}return n.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3').replace(/-$/,'');}
   function cleanDigits(v){return v.replace(/\D/g,'');}
   function maskOrdemServico(v) {
     // Permite apenas números e barra, formato: 1234/2025
@@ -32,8 +32,34 @@
     return val;
   }
 
+  function applyPhoneMasks(){
+    const phoneIds=['celular_primeiro_contato','celular_segundo_contato','telefone','celular'];
+    phoneIds.forEach(id=>{const el=document.getElementById('id_'+id); if(el){el.value=maskPhone(el.value||'');}});
+    document.querySelectorAll('[data-mask-phone]').forEach(el=>{
+      el.value=maskPhone(el.value||'');
+    });
+  }
+
+  // Máscaras para exibição (spans) no modo de detalhe
+  function applyDisplayMasks(){
+    const formatText=(selector, formatter)=>{
+      document.querySelectorAll(selector).forEach(el=>{
+        const raw=(el.textContent||'').trim();
+        if(!raw) return;
+        const formatted=formatter(raw);
+        if(formatted) el.textContent=formatted;
+      });
+    };
+
+    formatText('.cpf-mask', maskCPF);
+    formatText('.cep-mask', maskCEP);
+    formatText('.celular-mask', maskPhone);
+    formatText('.telefone-mask', maskPhone);
+  }
+  window.applyDisplayMasks = applyDisplayMasks;
+
   function attach(){
-    const cpf=document.getElementById('id_cpf'); if(cpf){cpf.addEventListener('input',e=>e.target.value=maskCPF(e.target.value));}
+    const cpf=document.getElementById('id_cpf'); if(cpf){cpf.addEventListener('input',e=>e.target.value=maskCPF(e.target.value)); cpf.value=maskCPF(cpf.value||'');}
 
     // Máscara Ordem de Serviço (____/9999)
     function applyOrdemServicoMaskTo(el) {
@@ -77,6 +103,7 @@
     }
     const cep=document.getElementById('id_cep'); if(cep){
       cep.addEventListener('input',e=>e.target.value=maskCEP(e.target.value));
+      cep.value=maskCEP(cep.value||'');
       cep.addEventListener('blur',()=>{
         const raw=cleanDigits(cep.value);
         if(raw.length===8){
@@ -95,7 +122,19 @@
         }
       });
     }
-    ['celular_primeiro_contato','celular_segundo_contato'].forEach(id=>{const el=document.getElementById('id_'+id); if(el){el.addEventListener('input',e=>e.target.value=maskPhone(e.target.value));}});
+    ['celular_primeiro_contato','celular_segundo_contato','telefone','celular'].forEach(id=>{const el=document.getElementById('id_'+id); if(el){el.addEventListener('input',e=>e.target.value=maskPhone(e.target.value));}});
+
+    // Fallback genérico: qualquer campo com data-mask-phone recebe a máscara mesmo se o id mudar
+    document.querySelectorAll('[data-mask-phone]').forEach(el=>{
+      el.addEventListener('input',e=>{e.target.value=maskPhone(e.target.value);});
+    });
+
+    // Aplica máscaras iniciais após bind de eventos
+    applyPhoneMasks();
+
+    // Reaplica máscaras se inputs forem adicionados dinamicamente (formsets, etc.)
+    const observer = new MutationObserver(()=>applyPhoneMasks());
+    observer.observe(document.body,{childList:true,subtree:true});
 
     // Carregamento dinâmico de cidades baseado no estado (se houver endpoint disponível)
     const estadoField=document.getElementById('id_estado');
@@ -166,4 +205,6 @@
     }
   }
   document.addEventListener('DOMContentLoaded', attach);
+  document.addEventListener('DOMContentLoaded', applyDisplayMasks);
+  window.addEventListener('load', applyPhoneMasks);
 })();

@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 REM Script para atualizar o ambiente Docker do OMAUM
 REM Autor: GitHub Copilot
-REM Atualizado em: 04/12/2025
+REM Atualizado em: 10/12/2025
 
 echo ========================================
 echo   ATUALIZACAO DOCKER - OMAUM
@@ -14,22 +14,15 @@ echo   [P] Producao
 choice /C DP /M "Escolha uma opcao"
 if errorlevel 2 (
 	set TARGET_ENV=PRODUCAO
-	set COMPOSE_FILE=docker-compose.prod.yml
-	set ENV_FILE=.env.production
-	set PROJECT_NAME=omaum-prod
-	set WEB_CONTAINER=omaum-web-prod
+	set COMPOSE_ARGS=-p omaum-prod --env-file ..\.env.prod -f docker-compose.yml -f docker-compose.prod.override.yml
+	set WEB_SERVICE=omaum-web
 	set APP_URL=http://omaum.local
 ) else (
 	set TARGET_ENV=DESENVOLVIMENTO
-	set COMPOSE_FILE=docker-compose.yml
-	set ENV_FILE=
-	set PROJECT_NAME=omaum-dev
-	set WEB_CONTAINER=omaum-web
+	set COMPOSE_ARGS=-p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml
+	set WEB_SERVICE=omaum-web
 	set APP_URL=http://localhost:8000
 )
-
-set ENV_ARGS=
-if defined ENV_FILE set ENV_ARGS=--env-file %ENV_FILE%
 
 echo Ambiente selecionado: %TARGET_ENV%
 echo.
@@ -37,19 +30,19 @@ echo.
 pushd docker
 
 echo 1. Parando containers (%TARGET_ENV%)...
-docker-compose %ENV_ARGS% -p %PROJECT_NAME% -f %COMPOSE_FILE% down
+docker compose %COMPOSE_ARGS% down
 if errorlevel 1 goto :error
 echo    [OK] Containers parados
 echo.
 
 echo 2. Reconstruindo imagens (%TARGET_ENV%)...
-docker-compose %ENV_ARGS% -p %PROJECT_NAME% -f %COMPOSE_FILE% build --no-cache
+docker compose %COMPOSE_ARGS% build --no-cache
 if errorlevel 1 goto :error
 echo    [OK] Imagens reconstruidas
 echo.
 
 echo 3. Iniciando containers (%TARGET_ENV%)...
-docker-compose %ENV_ARGS% -p %PROJECT_NAME% -f %COMPOSE_FILE% up -d
+docker compose %COMPOSE_ARGS% up -d
 if errorlevel 1 goto :error
 echo    [OK] Containers iniciados
 echo.
@@ -59,13 +52,13 @@ timeout /t 30 /nobreak > nul
 echo.
 
 echo 5. Aplicando migracoes...
-docker exec %WEB_CONTAINER% python manage.py migrate --noinput
+docker compose %COMPOSE_ARGS% exec -T %WEB_SERVICE% python manage.py migrate --noinput
 if errorlevel 1 goto :error
 echo    [OK] Migracoes aplicadas
 echo.
 
 echo 6. Coletando arquivos estaticos...
-docker exec %WEB_CONTAINER% python manage.py collectstatic --noinput
+docker compose %COMPOSE_ARGS% exec -T %WEB_SERVICE% python manage.py collectstatic --noinput
 if errorlevel 1 goto :error
 echo    [OK] Estaticos coletados
 echo.

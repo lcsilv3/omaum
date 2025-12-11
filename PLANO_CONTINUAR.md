@@ -35,8 +35,8 @@ Plano de retomada (passos executáveis)
    - Com a venv ativada, executar:
 
 ```powershell
-C:/projetos/omaum/.venv/Scripts/python.exe -m ruff check atividades --select E,F
-C:/projetos/omaum/.venv/Scripts/python.exe -m pytest -q atividades
+E:/projetos/omaum/.venv/Scripts/python.exe -m ruff check atividades --select E,F
+E:/projetos/omaum/.venv/Scripts/python.exe -m pytest -q atividades
 ```
 
    - Objetivo: garantir que o ambiente e a codebase estejam consistentes.

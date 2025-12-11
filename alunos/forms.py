@@ -29,7 +29,7 @@ class AlunoForm(forms.ModelForm):
             }
         ),
         required=True,
-        help_text="Digite o CPF com ou sem máscara. Será salvo apenas os dígitos.",
+        help_text="Digite o CPF com ou sem máscara.",
     )
     cidade_ref = forms.ModelChoiceField(
         queryset=None,
@@ -72,6 +72,8 @@ class AlunoForm(forms.ModelForm):
             "nome",
             "cpf",
             "email",
+            "telefone",
+            "celular",
             "foto",
             "data_nascimento",
             "hora_nascimento",
@@ -82,7 +84,6 @@ class AlunoForm(forms.ModelForm):
             "nome_iniciatico",
             "grau_atual_automatico",
             "grau_atual",
-            "situacao_iniciatica",
             # Nacionalidade / Naturalidade
             "pais_nacionalidade",
             "cidade_naturalidade",
@@ -195,6 +196,8 @@ class AlunoForm(forms.ModelForm):
             "cpf": "___.___.___-__",
             # Novo formato de CEP com ponto após 2 dígitos: 00.000-000
             "cep": "__.___-___",
+            "telefone": "(99) 9999-9999",
+            "celular": "(99) 99999-9999",
             "celular_primeiro_contato": "(99) 99999-9999",
             "celular_segundo_contato": "(99) 99999-9999",
             "email": "usuario@exemplo.com",
@@ -207,6 +210,9 @@ class AlunoForm(forms.ModelForm):
                 field.widget.attrs["class"] = "form-control"
             if field_name in placeholders:
                 field.widget.attrs.setdefault("placeholder", placeholders[field_name])
+            if field_name in {"telefone", "celular", "celular_primeiro_contato", "celular_segundo_contato"}:
+                field.widget.attrs.setdefault("inputmode", "tel")
+                field.widget.attrs["data-mask-phone"] = "1"
         # CEP: permitir máscara com hífen (99999-999 -> 9 caracteres). O modelo armazena 8 dígitos limpos.
         if "cep" in self.fields:
             # Aumenta limite para incluir ponto e hífen (00.000-000 -> 10 chars visuais)
@@ -214,6 +220,14 @@ class AlunoForm(forms.ModelForm):
                 "cep"
             ].max_length = 10  # somente apresentação; modelo continua 8 dígitos
             self.fields["cep"].widget.attrs["maxlength"] = "10"
+        if "nome" in self.fields:
+            self.fields["nome"].help_text = "Digite o nome completo conforme documento oficial."
+        if "data_nascimento" in self.fields:
+            self.fields["data_nascimento"].help_text = "Informe a data de nascimento no formato dd/mm/aaaa."
+        if "foto" in self.fields:
+            self.fields["foto"].widget = forms.FileInput(
+                attrs={"class": "form-control", "accept": "image/*"}
+            )
         # Campos referência exibidos em modo avançado: usar css helper
         for ref_field in ["cidade_ref", "bairro_ref"]:
             if ref_field in self.fields:
@@ -229,6 +243,7 @@ class AlunoForm(forms.ModelForm):
             self.fields["email"].widget.attrs.setdefault(
                 "pattern", r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
             )
+            self.fields["email"].help_text = "Digite um e-mail válido (ex.: usuario@dominio.com)."
         # Selects adicionam 'Selecione'
         self._add_selecione_to_selects()
 
@@ -260,6 +275,14 @@ class AlunoForm(forms.ModelForm):
         v = self.cleaned_data.get("celular_segundo_contato") or ""
         return "".join(filter(str.isdigit, v))
 
+    def clean_celular(self):
+        v = self.cleaned_data.get("celular") or ""
+        return "".join(filter(str.isdigit, v))
+
+    def clean_telefone(self):
+        v = self.cleaned_data.get("telefone") or ""
+        return "".join(filter(str.isdigit, v))
+
     def clean_cep(self):
         v = self.cleaned_data.get("cep", "")
         if not v:
@@ -269,6 +292,8 @@ class AlunoForm(forms.ModelForm):
 
 # Manter formulário original para compatibilidade durante migração
 class RegistroHistoricoForm(forms.ModelForm):
+    """Formulário para registros históricos - mantido para compatibilidade."""
+
     def clean_ordem_servico(self):
         """Garante que o ano da ordem de serviço seja sempre salvo com 4 dígitos."""
         valor = self.cleaned_data.get("ordem_servico", "")
@@ -293,8 +318,6 @@ class RegistroHistoricoForm(forms.ModelForm):
         else:
             raise forms.ValidationError("Ano inválido na ordem de serviço.")
         return f"{prefixo}/{ano}"
-
-    """Formulário para registros históricos - mantido para compatibilidade."""
 
     # Campo auxiliar (não pertence ao modelo) para o usuário filtrar códigos por tipo.
     tipo_codigo = forms.ModelChoiceField(
@@ -323,7 +346,10 @@ class RegistroHistoricoForm(forms.ModelForm):
                     "class": "form-control codigo-select",
                 }
             ),
-            "data_os": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "data_os": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date", "class": "form-control"},
+            ),
             "ordem_servico": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "____/____"}
             ),
@@ -332,6 +358,10 @@ class RegistroHistoricoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Garante formatação ISO no input date para edição e aceita d/m/Y como fallback
+        self.fields["data_os"].input_formats = ["%Y-%m-%d", "%d/%m/%Y"]
+        if self.instance and getattr(self.instance, "data_os", None):
+            self.initial["data_os"] = self.instance.data_os.strftime("%Y-%m-%d")
         # Otimização: carrega apenas os campos necessários para o select
         self.fields["tipo_codigo"].queryset = TipoCodigo.objects.all()
         self.fields["codigo"].queryset = Codigo.objects.all()

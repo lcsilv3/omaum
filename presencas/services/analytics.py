@@ -1,4 +1,3 @@
-# c:/projetos/omaum/presencas/services/analytics.py
 """
 Serviços de Análise Preditiva e Machine Learning para Presenças
 Categoria 4 - Relatórios Preditivos

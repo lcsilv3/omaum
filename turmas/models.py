@@ -10,6 +10,16 @@ class Turma(models.Model):
     Modelo para representar uma turma no sistema OMAUM.
     """
 
+    DIA_SEMANA_CHOICES = [
+        ("SEG", "Segunda-feira"),
+        ("TER", "Terça-feira"),
+        ("QUA", "Quarta-feira"),
+        ("QUI", "Quinta-feira"),
+        ("SEX", "Sexta-feira"),
+        ("SAB", "Sábado"),
+        ("DOM", "Domingo"),
+    ]
+
     STATUS_CHOICES = [
         ("A", "Ativa"),
         ("I", "Inativa"),
@@ -36,6 +46,7 @@ class Turma(models.Model):
         decimal_places=2,
         blank=True,
         null=True,
+        default=70,
         verbose_name="Percentual Mínimo de Presença (%)",
         help_text="Percentual mínimo de presenças permitido para a turma",
     )
@@ -54,7 +65,11 @@ class Turma(models.Model):
 
     # Informações de agendamento
     dias_semana = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Dias da Semana"
+        max_length=20,
+        choices=DIA_SEMANA_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="Dia da Semana",
     )
     horario = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Horário"
