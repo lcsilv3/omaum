@@ -15,12 +15,22 @@ staticfiles/
 
 # Environments
 .env
+.env.*
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Backups e dumps
+backups/
+*.sql
+*.sql.zip
+*.tar.gz
+
+# Artefatos locais
+Cesar/
 
 # VS Code
 .vscode/*
