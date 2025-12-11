@@ -1,5 +1,8 @@
 # TODO - Análise do Projeto OmAum
 
+## Checklist operacional (novo)
+- [ ] Antes de rodar testes ou comandos Docker, confirmar stack existente com `docker ps` e `docker compose -f docker/docker-compose.yml ps` para evitar subir ambientes paralelos.
+
 ## Fase 1: Extração e análise inicial da estrutura do projeto
 - [x] Extrair arquivo ZIP
 - [x] Explorar estrutura de diretórios

@@ -4,6 +4,8 @@ Este arquivo contém informações importantes para agentes de IA e desenvolvedo
 
 ## Comandos Importantes
 
+> **Checklist pré-Docker**: antes de executar qualquer comando abaixo, confirmar se o stack já está ativo usando `docker ps` e `docker compose -f docker/docker-compose.yml ps` para evitar subir ambientes paralelos ou confusão entre dev/prod.
+
 ### Desenvolvimento (Docker obrigatório)
 
 ```bash
