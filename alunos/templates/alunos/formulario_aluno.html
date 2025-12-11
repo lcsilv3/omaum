@@ -343,12 +343,11 @@
                 <!-- Linha 3: Complemento + Bairro -->
                 <div class="row mb-2">
                     <div class="col-md-6">{% include 'includes/form_field.html' with field=form.complemento %}</div>
-                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.bairro %}</div>
+                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.bairro_ref %}</div>
                 </div>
-                <!-- Linha 4: Estado + Cidade (Estado antes de Cidade) -->
+                <!-- Linha 4: Cidade de referência (estado implícito pela cidade) -->
                 <div class="row mb-2">
-                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.estado %}</div>
-                    <div class="col-md-8">{% include 'includes/form_field.html' with field=form.cidade %}</div>
+                    <div class="col-md-12">{% include 'includes/form_field.html' with field=form.cidade_ref %}</div>
                 </div>
             </div>
         </div>
@@ -643,9 +642,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'rua': 'endereco',
         'numero_imovel': 'endereco',
         'complemento': 'endereco',
-        'bairro': 'endereco',
-        'estado': 'endereco',
-        'cidade': 'endereco',
+        'bairro_ref': 'endereco',
+        'cidade_ref': 'endereco',
         
         'nome_primeiro_contato': 'contatos',
         'celular_primeiro_contato': 'contatos',
