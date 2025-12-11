@@ -13,28 +13,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let debounceTimer = null;
 
+    function debounceFetch(callback, delay = 200) {
+        return (...args) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => callback(...args), delay);
+        };
+    }
+
+    const debouncedFetchTurmas = debounceFetch(fetchTurmas);
+
     form.addEventListener('submit', function(event) {
         event.preventDefault();
         fetchTurmas();
     });
 
+    // Dispara busca enquanto o usuário digita ou altera filtros, sem precisar do botão.
+    form.addEventListener('input', debouncedFetchTurmas);
+    form.addEventListener('change', debouncedFetchTurmas);
+
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => fetchTurmas(), 120);
-        });
+        searchInput.addEventListener('input', debouncedFetchTurmas);
     }
 
     if (cursoSelect) {
-        cursoSelect.addEventListener('change', function() {
-            fetchTurmas();
-        });
+        cursoSelect.addEventListener('change', debouncedFetchTurmas);
     }
 
     if (statusSelect) {
-        statusSelect.addEventListener('change', function() {
-            fetchTurmas();
-        });
+        statusSelect.addEventListener('change', debouncedFetchTurmas);
     }
 
     document.addEventListener('click', function(event) {
