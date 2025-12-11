@@ -13,15 +13,33 @@
             <a href="{% url 'turmas:criar_turma' %}" class="btn btn-success">
                 <i class="fas fa-plus"></i> Nova Turma
             </a>
-            <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-primary">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosTurmas">
                 <i class="fas fa-chart-bar"></i> Relatórios
-            </a>
+            </button>
             <a href="{% url 'turmas:exportar_turmas' %}" class="btn btn-outline-success">
                 <i class="fas fa-file-export"></i> Exportar CSV
             </a>
             <a href="{% url 'turmas:importar_turmas' %}" class="btn btn-outline-info">
                 <i class="fas fa-file-import"></i> Importar CSV
             </a>
+        </div>
+    </div>
+
+    <!-- Modal de Relatórios de Turmas -->
+    <div class="modal fade" id="modalRelatoriosTurmas" tabindex="-1" aria-labelledby="modalRelatoriosTurmasLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalRelatoriosTurmasLabel">Relatórios de Turmas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Acesse relatórios consolidados de cursos e turmas:</p>
+                    <a class="btn btn-primary" href="{% url 'atividades:relatorio_atividades' %}">
+                        <i class="fas fa-chart-bar"></i> Relatórios (Curso/Turma)
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -34,10 +52,10 @@
     <div class="card mb-4">
         <div class="card-header">
             <form method="get" class="row g-2 align-items-center">
-                <div class="col-lg-7 col-md-6">
+                <div class="col-lg-6 col-md-6">
                     <input type="text" name="q" class="form-control" placeholder="Buscar por nome..." value="{{ query }}">
                 </div>
-                <div class="col-lg-3 col-md-4">
+                <div class="col-lg-3 col-md-3">
                     <select name="curso" class="form-select">
                         <option value="">Todos os cursos</option>
                         {% for curso in cursos %}
@@ -47,7 +65,16 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-lg-2 col-md-2 d-grid">
+                <div class="col-lg-2 col-md-2">
+                    <select name="status" class="form-select">
+                        <option value="">Status</option>
+                        <option value="A" {% if status_selecionado == 'A' %}selected{% endif %}>Ativa</option>
+                        <option value="P" {% if status_selecionado == 'P' %}selected{% endif %}>Planejada</option>
+                        <option value="C" {% if status_selecionado == 'C' %}selected{% endif %}>Concluída</option>
+                        <option value="I" {% if status_selecionado == 'I' %}selected{% endif %}>Inativa</option>
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-1 d-grid">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-search"></i> Filtrar
                     </button>
