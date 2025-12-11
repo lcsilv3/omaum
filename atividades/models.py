@@ -114,6 +114,10 @@ class Atividade(models.Model):
     def tipo(self, value):
         self.tipo_atividade = value
 
+    def get_tipo_display(self):
+        """Compat: mantém a API antiga mapeando para o campo atual."""
+        return self.get_tipo_atividade_display()
+
 
 # Alias para compatibilidade após refatoramento
 AtividadeAcademica = Atividade

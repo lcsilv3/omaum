@@ -25,7 +25,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if atividade.turmas.exists() %}
+                        {% if atividade.turmas.exists %}
                             {% for turma in atividade.turmas.all %}
                                 <span class="badge bg-info">{{ turma.nome }}</span>
                             {% endfor %}

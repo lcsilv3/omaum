@@ -94,7 +94,7 @@ $(document).ready(function() {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Máscara para horário (__:__ às __:__) mantendo o esqueleto visível
+  // Máscara para horário (__:__ às __:__)
   const horarioInput = document.querySelector('input[name="horario"]');
   if (horarioInput) {
     console.log('Campo horário encontrado, aplicando máscara...');
@@ -102,50 +102,76 @@ document.addEventListener("DOMContentLoaded", function () {
     const template = '__:__ às __:__';
     const slots = [0, 1, 3, 4, 9, 10, 12, 13]; // posições dos dígitos
 
+    // Define o placeholder uma vez
+    horarioInput.placeholder = template;
+
     const formatHorario = (raw) => {
-      const digits = (raw || '').replace(/\D/g, '').slice(0, 8).split('');
+      const digits = (raw || '').replace(/\D/g, '').slice(0, 8);
+      if (!digits) return ''; // Retorna vazio se não houver dígitos
+      
       const chars = template.split('');
+      const digitArray = digits.split('');
+
       slots.forEach((slotIndex, i) => {
-        if (digits[i]) chars[slotIndex] = digits[i];
+        if (digitArray[i]) {
+          chars[slotIndex] = digitArray[i];
+        }
       });
       return chars.join('');
     };
 
     const applyFormat = (inputEl) => {
+      const selectionStart = inputEl.selectionStart;
+      const originalLength = inputEl.value.length;
+      
       const formatted = formatHorario(inputEl.value);
       inputEl.value = formatted;
-      const nextSlot = formatted.indexOf('_');
-      const cursorPos = nextSlot === -1 ? formatted.length : nextSlot;
-      inputEl.setSelectionRange(cursorPos, cursorPos);
-    };
 
-    // Sempre iniciar com o template visível
-    horarioInput.value = template;
-    horarioInput.placeholder = template;
-
-    horarioInput.addEventListener('focus', (e) => {
-      if (!e.target.value) {
-        e.target.value = template;
+      // Lógica para posicionar o cursor de forma inteligente
+      if (formatted.length > originalLength) {
+        // Se um caractere foi adicionado (geralmente um número), move o cursor
+        inputEl.setSelectionRange(selectionStart + 1, selectionStart + 1);
+      } else {
+        // Se um caractere foi removido, mantém a posição
+        inputEl.setSelectionRange(selectionStart, selectionStart);
       }
-      const nextSlot = e.target.value.indexOf('_');
-      const cursorPos = nextSlot === -1 ? e.target.value.length : nextSlot;
-      e.target.setSelectionRange(cursorPos, cursorPos);
-    });
+
+      // Se o cursor estiver no final, move para o próximo slot vazio
+      const nextSlot = formatted.indexOf('_');
+      if (selectionStart > nextSlot && nextSlot !== -1) {
+        inputEl.setSelectionRange(nextSlot, nextSlot);
+      }
+    };
 
     horarioInput.addEventListener('input', (e) => {
       applyFormat(e.target);
     });
 
+    horarioInput.addEventListener('focus', (e) => {
+        // Ao focar, move o cursor para a primeira posição editável
+        const firstSlot = e.target.value.indexOf('_');
+        const cursorPos = firstSlot === -1 ? e.target.value.length : firstSlot;
+        // Usar setTimeout para garantir que o cursor seja posicionado após a ação de foco padrão
+        setTimeout(() => {
+            e.target.setSelectionRange(cursorPos, cursorPos);
+        }, 0);
+    });
+
     horarioInput.addEventListener('blur', (e) => {
-      // Se o usuário apagar tudo, restaura o template
-      const digits = (e.target.value || '').replace(/\D/g, '');
-      if (!digits) {
-        e.target.value = template;
+      // Opcional: limpa se estiver parcialmente preenchido e inválido
+      const digits = (e.target.value.match(/\d/g) || []).length;
+      if (digits > 0 && digits < 8) {
+        // Comportamento pode ser definido aqui: limpar, alertar, etc.
+        // Por enquanto, vamos manter o valor parcial.
+      } else if (digits === 0) {
+        e.target.value = ''; // Limpa se não houver nenhum número
       }
     });
 
-    // Formatar valor existente ao carregar (ou manter template)
-    applyFormat(horarioInput);
+    // Formatar valor existente ao carregar a página
+    if (horarioInput.value) {
+        applyFormat(horarioInput);
+    }
   }
 
   // Máscara para número do livro (apenas números)

@@ -1,6 +1,9 @@
+import os
+
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from django.contrib.auth.models import User
 from alunos import services as aluno_service
 from turmas.models import Turma
@@ -8,15 +11,24 @@ from atividades.models import Atividade
 from django.utils import timezone
 
 
+CHROME_BINARY = "/usr/bin/chromium"
+if not os.path.exists(CHROME_BINARY):
+    CHROME_BINARY = "/usr/bin/chromium-browser"
+
+CHROMEDRIVER_BINARY = "/usr/bin/chromedriver"
+
+
 @pytest.fixture(scope="session")
 def browser():
     """Configuração do navegador para testes E2E."""
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Executar sem interface gráfica
+    chrome_options.add_argument("--headless=new")  # Executar sem interface gráfica
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.binary_location = CHROME_BINARY
 
-    browser = webdriver.Chrome(options=chrome_options)
+    service = Service(executable_path=CHROMEDRIVER_BINARY)
+    browser = webdriver.Chrome(service=service, options=chrome_options)
     browser.implicitly_wait(10)
 
     yield browser
@@ -27,10 +39,25 @@ def browser():
 @pytest.fixture
 def live_server_with_data(live_server):
     """Configura o servidor de teste com dados iniciais."""
-    # Criar um usuário para autenticação
-    User.objects.create_user(
-        username="testuser", password="testpassword", email="test@example.com"
-    )
+    # Criar usuários padrão usados nos testes
+    users = [
+        ("desenv", "desenv123", True),
+        ("testuser", "testpassword", False),
+        ("lcsilv3", "iG356900", False),
+    ]
+
+    for username, password, is_superuser in users:
+        if not User.objects.filter(username=username).exists():
+            if is_superuser:
+                User.objects.create_superuser(
+                    username=username,
+                    password=password,
+                    email="desenv@example.com",
+                )
+            else:
+                User.objects.create_user(
+                    username=username, password=password, email="test@example.com"
+                )
 
     # Criar alguns alunos usando o serviço
     aluno_data1 = {
