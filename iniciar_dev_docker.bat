@@ -22,13 +22,20 @@ if %ERRORLEVEL% NEQ 0 (
 echo    [OK] Docker disponivel
 echo.
 
-echo 2. Parando ambiente de desenvolvimento (se estiver rodando)...
-docker compose -p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml down 2>nul
-echo    [OK] Dev parado
+set "COMPOSE_ARGS=-p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml"
+
+echo 2. Verificando ambiente de desenvolvimento...
+set "DEV_RUNNING="
+for /f "delims=" %%i in ('docker compose %COMPOSE_ARGS% ps -q 2^>nul') do set "DEV_RUNNING=1"
+if defined DEV_RUNNING (
+    echo    [OK] Containers ja estao rodando; nao vou parar.
+) else (
+    echo    [OK] Nenhum container em execucao; pronto para subir.
+)
 echo.
 
 echo 3. Iniciando ambiente de DESENVOLVIMENTO (binds em E:)...
-docker compose -p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml up -d
+docker compose %COMPOSE_ARGS% up -d
 if %ERRORLEVEL% NEQ 0 (
     echo    [ERRO] Falha ao iniciar containers
     pause
