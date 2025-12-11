@@ -68,8 +68,24 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 echo.
 
 echo 8. Verificando versao do Django...
-docker exec %WEB_CONTAINER% python -c "import django; print('Django:', django.get_version())"
+docker compose %COMPOSE_ARGS% exec -T %WEB_SERVICE% python -c "import django; print('Django:', django.get_version())"
 if errorlevel 1 goto :error
+echo.
+
+echo 9. Abrir no navegador...
+set "BROWSER_CHOICE="
+set /p BROWSER_CHOICE="Escolha navegador [1=Edge, 2=Chrome, 3=Firefox] (padrao=Edge): "
+if "%BROWSER_CHOICE%"=="2" (
+	start "" chrome "%APP_URL%"
+	goto abrir_fim
+)
+if "%BROWSER_CHOICE%"=="3" (
+	start "" firefox "%APP_URL%"
+	goto abrir_fim
+)
+start "" msedge "%APP_URL%"
+:abrir_fim
+echo    [OK] Navegador acionado (fallback Edge se nao escolhido).
 echo.
 
 popd
