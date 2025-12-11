@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load relatorios_menu_atividades %}
 
 {% block title %}Atividades - OMAUM{% endblock %}
 
@@ -96,27 +97,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3">Escolha entre o painel executivo e o relatório analítico de atividades.</p>
-                    <div class="row row-cols-1 row-cols-md-2 g-4">
-                        <div class="col">
-                            <div class="card border-success h-100 shadow-sm">
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title">Painel de Atividades</h5>
-                                    <p class="card-text flex-grow-1">Visualize gráficos e indicadores sobre as atividades em andamento.</p>
-                                    <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-success mt-auto" aria-label="Acessar painel de atividades">Acessar</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="card border-warning h-100 shadow-sm">
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title">Relatório de Atividades</h5>
-                                    <p class="card-text flex-grow-1">Gere listagens detalhadas com filtros e exportações das atividades cadastradas.</p>
-                                    <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning mt-auto" aria-label="Acessar relatório de atividades">Acessar</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {% include 'atividades/cards_relatorios_atividades.html' %}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">

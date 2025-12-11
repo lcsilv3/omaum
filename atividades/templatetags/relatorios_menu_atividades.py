@@ -1,6 +1,8 @@
 from django import template
 from django.urls import reverse
 
+from atividades.reports import RELATORIOS
+
 register = template.Library()
 
 
@@ -27,3 +29,10 @@ def render_relatorios_menu_atividades():
 
     html = [f'<li><a class="dropdown-item" href="{url}">{label}</a></li>' for url, label in items]
     return "\n".join(html)
+
+
+@register.simple_tag
+def get_relatorios_atividades():
+    """Retorna a lista de relatórios de atividades para uso em templates."""
+
+    return RELATORIOS

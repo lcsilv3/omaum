@@ -1,233 +1,183 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load relatorios_menu_atividades %}
 
 {% block title %}Lista de Atividades{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Atividades</h1>
-        <div class="d-flex gap-2">
-            <!-- 1. Voltar ao Painel de Controle -->
-            <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Voltar ao Painel de Controle">
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Atividades</h1>
+        <div class="btn-group">
+            <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <!-- 2. Nova Atividade -->
-            <a href="{% url 'atividades:criar_atividade' %}" class="btn btn-success" data-bs-toggle="tooltip" title="Criar nova atividade">
+            <a href="{% url 'atividades:criar_atividade' %}" class="btn btn-success">
                 <i class="fas fa-plus"></i> Nova Atividade
             </a>
-            <!-- 3. Relatórios -->
-            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosAtividades" title="Relatórios">
-                <i class="fas fa-file-alt"></i> Relatórios
-            </button>
-            <!-- 4. Importar CSV -->
-            <a href="{% url 'atividades:importar_atividades_academicas' %}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Importar atividades via CSV">
-                <i class="fas fa-file-import"></i> Importar CSV
-            </a>
-            <!-- 5. Exportar -->
-            <div class="btn-group">
-                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Exportar atividades" data-bs-toggle="tooltip">
-                    <i class="fas fa-file-export"></i> Exportar
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="?exportar=csv">Exportar CSV</a></li>
-                    <li><a class="dropdown-item" href="?exportar=excel">Exportar Excel</a></li>
-                    <li><a class="dropdown-item" href="?exportar=pdf" target="_blank">Exportar PDF</a></li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filtros -->
-    <form method="get" class="row g-3 mb-4">
-        <div class="col-md-3">
-            <label for="id_q" class="form-label">Busca</label>
-            <input type="text" name="q" id="id_q" class="form-control" placeholder="Buscar por nome ou descrição" value="{{ query }}">
-        </div>
-        <div class="col-md-3">
-            <label for="id_curso" class="form-label">Curso</label>
-            <select name="curso" id="id_curso" class="form-select">
-                <option value="">Selecione</option>
-                {% for curso in cursos %}
-                    <option value="{{ curso.id }}"
-                        {% if curso.id|stringformat:"s" == curso_selecionado|stringformat:"s" %}selected{% endif %}>
-                        {{ curso.id }} - {{ curso.nome }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label for="id_turma" class="form-label">Turma</label>
-            <select name="turma" id="id_turma" class="form-select">
-                <option value="">Selecione</option>
-                {% for turma in turmas %}
-                    <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == turma_selecionada|stringformat:"s" %}selected{% endif %}>
-                        {{ turma.nome }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3 d-grid gap-2 d-md-flex justify-content-md-end align-items-end">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-search"></i> Filtrar
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosAtividades">
+                <i class="fas fa-chart-bar"></i> Relatórios
             </button>
         </div>
-    </form>
-
-    <!-- Tabela de atividades -->
-    <div class="table-responsive">
-        <table class="table align-middle table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>Nome</th>
-                    <th>Curso</th>
-                    <th>Turmas</th>
-                    <th>Tipo</th>
-                    <th>Status</th>
-                    <th>Data Início</th>
-                    <th>Data Fim</th> <!-- Adicionado -->
-                    <th>Convocação</th>
-                    <th class="text-start">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for atividade in atividades %}
-                <tr>
-                    <td>{{ atividade.nome }}</td>
-                    <td>{{ atividade.curso }}</td>
-                    <td>
-                        {% for turma in atividade.turmas.all %}
-                            <span class="badge bg-info">
-                                {{ turma.nome }}
-                            </span>
-                        {% empty %}
-                            <span class="text-muted">-</span>
-                        {% endfor %}
-                    </td>
-                    <td>{{ atividade.get_tipo_atividade_display }}</td>
-                    <td>
-                        {% if atividade.status == 'CANCELADA' %}
-                <span class="badge bg-danger">Cancelada</span>
-            {% else %}
-                <span class="badge bg-success">Ativa</span>
-            {% endif %}
-                    </td>
-                    <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
-                    <td>
-                        {% if atividade.data_fim %}
-                {{ atividade.data_fim|date:"d/m/Y" }}
-            {% else %}
-                <span class="text-muted">-</span>
-            {% endif %}
-                    </td>
-                    <td>
-                        {% if atividade.convocacao %}
-                <span class="badge bg-success">Sim</span>
-            {% else %}
-                <span class="badge bg-secondary">Não</span>
-            {% endif %}
-                    </td>
-                    <td class="text-start">
-                        <div class="btn-group btn-group-sm" role="group">
-                            <a href="{% url 'atividades:detalhar_atividade' atividade.id %}" class="btn btn-info" title="Detalhar atividade" data-bs-toggle="tooltip">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{% url 'atividades:editar_atividade' atividade.id %}" class="btn btn-warning" title="Editar atividade" data-bs-toggle="tooltip">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="{% url 'atividades:excluir_atividade' atividade.id %}" class="btn btn-danger" title="Excluir atividade" data-bs-toggle="tooltip">
-                                <i class="fas fa-trash"></i>
-                            </a>
-                            <a href="{% url 'atividades:copiar_atividade' atividade.id %}" class="btn btn-secondary" title="Copiar atividade" data-bs-toggle="tooltip">
-                                <i class="fas fa-copy"></i>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="9" class="text-center">Nenhuma atividade encontrada.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
 
-    <!-- Paginação -->
-    {% if page_obj.has_other_pages %}
-    <nav aria-label="Paginação">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">&laquo;</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
-            {% endif %}
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">{{ num }}</a></li>
-                {% endif %}
-            {% endfor %}
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">&raquo;</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-
-    <!-- Botão Voltar ao final da listagem -->
-    <div class="mt-3">
-        <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-    </div>
-
-    <!-- Modal de Relatórios e Painéis -->
-    <div class="modal fade" id="modalRelatoriosAtividades" tabindex="-1" aria-labelledby="modalRelatoriosAtividadesLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalRelatoriosAtividadesLabel">
-                    <i class="fas fa-chart-line text-primary me-2"></i> Relatórios e Painéis de Atividades
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted small mb-3">Escolha entre o painel executivo e o relatório analítico de atividades.</p>
-                <div class="row row-cols-1 row-cols-md-2 g-4">
-                    <div class="col">
-                        <div class="card border-success h-100 shadow-sm">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Painel de Atividades</h5>
-                                <p class="card-text flex-grow-1">Visualize gráficos e indicadores sobre as atividades em andamento.</p>
-                                <a href="{% url 'atividades:dashboard_atividades' %}" class="btn btn-success mt-auto" aria-label="Acessar painel de atividades">Acessar</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="card border-warning h-100 shadow-sm">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Relatório de Atividades</h5>
-                                <p class="card-text flex-grow-1">Gere listagens detalhadas com filtros e exportações das atividades cadastradas.</p>
-                                <a href="{% url 'atividades:relatorio_atividades' %}" class="btn btn-warning mt-auto" aria-label="Acessar relatório de atividades">Acessar</a>
-                            </div>
-                        </div>
-                    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-md-4 col-lg-4">
+                    <label for="id_q" class="form-label mb-1">Busca</label>
+                    <input type="text" name="q" id="id_q" class="form-control" placeholder="Buscar por nome ou descrição" value="{{ query }}">
                 </div>
+                <div class="col-md-3 col-lg-3">
+                    <label for="id_curso" class="form-label mb-1">Curso</label>
+                    <select name="curso" id="id_curso" class="form-select">
+                        <option value="">Selecione</option>
+                        {% for curso in cursos %}
+                            <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_selecionado|stringformat:"s" %}selected{% endif %}>
+                                {{ curso.id }} - {{ curso.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 col-lg-3">
+                    <label for="id_turma" class="form-label mb-1">Turma</label>
+                    <select name="turma" id="id_turma" class="form-select">
+                        <option value="">Selecione</option>
+                        {% for turma in turmas %}
+                            <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" == turma_selecionada|stringformat:"s" %}selected{% endif %}>
+                                {{ turma.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 col-lg-2 d-grid">
+                    <label class="form-label mb-1 invisible">Filtrar</label>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table align-middle table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nome</th>
+                            <th>Curso</th>
+                            <th>Turmas</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Data Início</th>
+                            <th>Data Fim</th>
+                            <th>Convocação</th>
+                            <th class="text-start">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for atividade in atividades %}
+                        <tr>
+                            <td>{{ atividade.nome }}</td>
+                            <td>{{ atividade.curso }}</td>
+                            <td>
+                                {% for turma in atividade.turmas.all %}
+                                    <span class="badge bg-info">{{ turma.nome }}</span>
+                                {% empty %}
+                                    <span class="text-muted">-</span>
+                                {% endfor %}
+                            </td>
+                            <td>{{ atividade.get_tipo_atividade_display }}</td>
+                            <td>
+                                {% if atividade.status == 'CANCELADA' %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                {% else %}
+                                    <span class="badge bg-success">Ativa</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ atividade.data_inicio|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if atividade.data_fim %}
+                                    {{ atividade.data_fim|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if atividade.convocacao %}
+                                    <span class="badge bg-success">Sim</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Não</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-start">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'atividades:detalhar_atividade' atividade.id %}" class="btn btn-info" title="Detalhar atividade" data-bs-toggle="tooltip">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'atividades:editar_atividade' atividade.id %}" class="btn btn-warning" title="Editar atividade" data-bs-toggle="tooltip">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'atividades:excluir_atividade' atividade.id %}" class="btn btn-danger" title="Excluir atividade" data-bs-toggle="tooltip">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    <a href="{% url 'atividades:copiar_atividade' atividade.id %}" class="btn btn-secondary" title="Copiar atividade" data-bs-toggle="tooltip">
+                                        <i class="fas fa-copy"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center">Nenhuma atividade encontrada.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            {% endblock %}
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times"></i> Fechar
-                </button>
+        </div>
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer">
+            <nav aria-label="Paginação">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">&laquo;</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if curso_selecionado %}&curso={{ curso_selecionado }}{% endif %}{% if turma_selecionada %}&turma={{ turma_selecionada }}{% endif %}">&raquo;</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="modal fade" id="modalRelatoriosAtividades" tabindex="-1" aria-labelledby="modalRelatoriosAtividadesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalRelatoriosAtividadesLabel">Relatórios e Painéis de Atividades</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    {% include 'atividades/cards_relatorios_atividades.html' %}
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}

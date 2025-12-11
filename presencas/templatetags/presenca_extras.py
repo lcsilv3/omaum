@@ -1,5 +1,7 @@
 from django import template
 
+from presencas.reports import RELATORIOS
+
 register = template.Library()
 
 
@@ -12,3 +14,10 @@ def get_item(dictionary, key):
     if isinstance(dictionary, dict):
         return dictionary.get(key, {})
     return {}
+
+
+@register.simple_tag
+def get_relatorios_presencas():
+    """Retorna a lista de relatórios disponíveis para presenças."""
+
+    return RELATORIOS

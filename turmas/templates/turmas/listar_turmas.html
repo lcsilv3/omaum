@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load turmas_extras %}
 
 {% block title %}Lista de Turmas{% endblock %}
 
@@ -28,10 +29,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-2">Acesse relatórios consolidados de cursos e turmas:</p>
-                    <a class="btn btn-primary" href="{% url 'atividades:relatorio_atividades' %}">
-                        <i class="fas fa-chart-bar"></i> Relatórios (Curso/Turma)
-                    </a>
+                    {% include 'turmas/cards_relatorios_turmas.html' %}
                 </div>
             </div>
         </div>

@@ -1,37 +1,30 @@
 {% extends 'base.html' %}
+{% load presenca_extras %}
 
 {% block title %}Listar Presenças Ritualísticas{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <!-- Padronizar cabeçalho com botões -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Presenças Ritualísticas</h1>
-        <div>
-            <a href="javascript:history.back()" class="btn btn-secondary me-2">
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Presenças Ritualísticas</h1>
+        <div class="btn-group">
+            <a href="javascript:history.back()" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <a href="{% url 'presencas:registrar_presenca_ritualistica' %}" class="btn btn-primary me-2">
+            <a href="{% url 'presencas:registrar_presenca_ritualistica' %}" class="btn btn-success">
                 <i class="fas fa-plus"></i> Registrar Presença
             </a>
-            <a href="{% url 'presencas:exportar_presencas_ritualisticas' %}" class="btn btn-success me-2">
-                <i class="fas fa-file-export"></i> Exportar CSV
-            </a>
-            <a href="{% url 'presencas:importar_presencas_ritualisticas' %}" class="btn btn-info">
-                <i class="fas fa-file-import"></i> Importar CSV
-            </a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosPresencas">
+                <i class="fas fa-chart-bar"></i> Relatórios
+            </button>
         </div>
     </div>
     
-    <!-- Filtros avançados -->
     <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Filtros</h5>
-        </div>
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="aluno" class="form-label">Aluno</label>
+        <div class="card-header">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-md-3 col-lg-3">
+                    <label for="aluno" class="form-label mb-1">Aluno</label>
                     <select name="aluno" id="aluno" class="form-select">
                         <option value="">Todos os alunos</option>
                         {% for aluno in alunos %}
@@ -41,9 +34,8 @@
                         {% endfor %}
                     </select>
                 </div>
-                
-                <div class="col-md-3">
-                    <label for="turma" class="form-label">Turma</label>
+                <div class="col-md-3 col-lg-3">
+                    <label for="turma" class="form-label mb-1">Turma</label>
                     <select name="turma" id="turma" class="form-select">
                         <option value="">Todas as turmas</option>
                         {% for turma in turmas %}
@@ -53,32 +45,28 @@
                         {% endfor %}
                     </select>
                 </div>
-                
-                <div class="col-md-2">
-                    <label for="data_inicio" class="form-label">Data Início</label>
+                <div class="col-md-2 col-lg-2">
+                    <label for="data_inicio" class="form-label mb-1">Data Início</label>
                     <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio }}">
                 </div>
-                
-                <div class="col-md-2">
-                    <label for="data_fim" class="form-label">Data Fim</label>
+                <div class="col-md-2 col-lg-2">
+                    <label for="data_fim" class="form-label mb-1">Data Fim</label>
                     <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ filtros.data_fim }}">
                 </div>
-                
-                <div class="col-md-2">
-                    <label for="presente" class="form-label">Status</label>
+                <div class="col-md-2 col-lg-2">
+                    <label for="presente" class="form-label mb-1">Status</label>
                     <select name="presente" id="presente" class="form-select">
                         <option value="">Todos</option>
                         <option value="true" {% if filtros.presente == 'true' %}selected{% endif %}>Presente</option>
                         <option value="false" {% if filtros.presente == 'false' %}selected{% endif %}>Ausente</option>
                     </select>
                 </div>
-                
-                <div class="col-12">
+                <div class="col-12 d-flex gap-2 justify-content-end">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter"></i> Filtrar
                     </button>
                     <a href="{% url 'presencas:listar_presencas_ritualisticas' %}" class="btn btn-secondary">
-                        <i class="fas fa-undo"></i> Limpar Filtros
+                        <i class="fas fa-undo"></i> Limpar
                     </a>
                 </div>
             </form>
@@ -89,8 +77,8 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
                         <tr>
                             <th>Aluno</th>
                             <th>Atividade</th>
@@ -201,6 +189,20 @@
                 </ul>
             </nav>
             {% endif %}
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalRelatoriosPresencas" tabindex="-1" aria-labelledby="modalRelatoriosPresencasLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalRelatoriosPresencasLabel">Relatórios de Presença</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    {% include 'presencas/cards_relatorios_presencas.html' %}
+                </div>
+            </div>
         </div>
     </div>
 </div>

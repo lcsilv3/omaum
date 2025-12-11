@@ -1,73 +1,32 @@
 {% extends 'base.html' %}
+{% load presenca_extras %}
 
 {% block title %}Presenças Acadêmicas{% endblock %}
 
 {% block content %}
-<style>
-    .collapse-toggle {
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .collapse-toggle:hover {
-        opacity: 0.8;
-    }
-    
-    .chevron {
-        display: inline-block;
-        transition: transform 0.3s ease;
-        margin-right: 10px;
-    }
-    
-    .collapsed .chevron {
-        transform: rotate(90deg);
-    }
-</style>
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 id="titulo-pagina">Presenças Acadêmicas</h1>
-        <div class="d-flex gap-2">
-            <!-- 1. Voltar -->
-            <a href="javascript:history.back()" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Voltar para página anterior">
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0" id="titulo-pagina">Presenças Acadêmicas</h1>
+        <div class="btn-group">
+            <a href="javascript:history.back()" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
-            <!-- 2. Nova Presença -->
-            <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-success" data-bs-toggle="tooltip" title="Registrar nova presença">
+            <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-success">
                 <i class="fas fa-plus"></i> Nova Presença
             </a>
-            <!-- 3. NOVA FUNCIONALIDADE: Edição em Lote -->
-            <a href="{% url 'presencas:editar_presencas_lote' %}" class="btn btn-warning" data-bs-toggle="tooltip" title="Editar presenças em lote">
+            <a href="{% url 'presencas:editar_presencas_lote' %}" class="btn btn-warning">
                 <i class="fas fa-edit"></i> Editar em Lote
             </a>
-            <!-- 4. Exportar -->
-            <div class="btn-group">
-                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-toggle="tooltip" title="Exportar presenças">
-                    <i class="fas fa-file-export"></i> Exportar
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{% url 'presencas:exportar_presencas_academicas' %}">Exportar CSV</a></li>
-                    <li><a class="dropdown-item" href="{% url 'presencas:importar_presencas_academicas' %}">Importar CSV</a></li>
-                </ul>
-            </div>
-            <!-- 5. Dashboard Executivo -->
-            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosPresencas" title="Abrir dashboard executivo de relatórios">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosPresencas">
                 <i class="fas fa-chart-bar"></i> Relatórios
             </button>
         </div>
     </div>
     <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">
-                <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#secao-filtros" role="button" aria-expanded="true" aria-controls="secao-filtros">
-                    <span class="chevron">&#9654;</span>
-                    Filtros <small class="text-light">(clique para expandir/recolher)</small>
-                </a>
-            </h5>
-        </div>
-        <div id="secao-filtros" class="collapse show card-body">
-            <form id="filtro-presencas" method="get" class="row g-3 mb-4" aria-label="Filtro de presenças acadêmicas">
-                <div class="col-md-3">
-                    <label for="id_curso" class="form-label">Curso</label>
+        <div class="card-header">
+            <form id="filtro-presencas" method="get" class="row g-2 align-items-center" aria-label="Filtro de presenças acadêmicas">
+                <div class="col-md-3 col-lg-3">
+                    <label for="id_curso" class="form-label mb-1">Curso</label>
                     <select id="id_curso" name="curso" class="form-select" aria-label="Filtrar por curso">
                         <option value="">Todos</option>
                         {% for curso in cursos %}
@@ -75,8 +34,8 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label for="id_turma" class="form-label">Turma</label>
+                <div class="col-md-3 col-lg-3">
+                    <label for="id_turma" class="form-label mb-1">Turma</label>
                     <select id="id_turma" name="turma" class="form-select" aria-label="Filtrar por turma">
                         <option value="">Todas</option>
                         {% for turma in turmas %}
@@ -84,8 +43,8 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label for="id_atividade" class="form-label">Atividade</label>
+                <div class="col-md-3 col-lg-3">
+                    <label for="id_atividade" class="form-label mb-1">Atividade</label>
                     <select id="id_atividade" name="atividade" class="form-select" aria-label="Filtrar por atividade">
                         <option value="">Todas</option>
                         {% for atividade in atividades %}
@@ -93,8 +52,8 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label for="id_aluno" class="form-label">Aluno</label>
+                <div class="col-md-3 col-lg-3">
+                    <label for="id_aluno" class="form-label mb-1">Aluno</label>
                     <select id="id_aluno" name="aluno" class="form-select" aria-label="Filtrar por aluno">
                         <option value="">Todos</option>
                         {% for aluno in alunos %}
@@ -102,16 +61,19 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label for="id_data_inicio" class="form-label">Data início</label>
+                <div class="col-md-3 col-lg-3">
+                    <label for="id_data_inicio" class="form-label mb-1">Data início</label>
                     <input type="date" id="id_data_inicio" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}" aria-label="Data de início">
                 </div>
-                <div class="col-md-3">
-                    <label for="id_data_fim" class="form-label">Data fim</label>
+                <div class="col-md-3 col-lg-3">
+                    <label for="id_data_fim" class="form-label mb-1">Data fim</label>
                     <input type="date" id="id_data_fim" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}" aria-label="Data de fim">
                 </div>
-                <div class="col-md-3 align-self-end">
-                    <button type="submit" class="btn btn-primary w-100" aria-label="Filtrar presenças acadêmicas">Filtrar</button>
+                <div class="col-md-2 col-lg-2 d-grid">
+                    <label class="form-label mb-1 invisible">Filtrar</label>
+                    <button type="submit" class="btn btn-primary" aria-label="Filtrar presenças acadêmicas">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
                 </div>
             </form>
         </div>
@@ -119,8 +81,8 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped table-hover" aria-labelledby="tabela-presencas">
-                    <thead>
+                <table class="table table-hover align-middle" aria-labelledby="tabela-presencas">
+                    <thead class="table-light">
                         <tr>
                             <th>Aluno</th>
                             <th>Atividade</th>
@@ -254,8 +216,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted small mb-3">Acesse rapidamente os relatórios e dashboards executivos do módulo.</p>
-                {% include 'relatorios_presenca/partials/_cards_relatorios_presenca.html' %}
+                {% include 'presencas/cards_relatorios_presencas.html' %}
             </div>
             <div class="modal-footer">
                 <a href="{% url 'presencas:listar_dashboard_presencas' %}" class="btn btn-outline-secondary">
@@ -273,13 +234,13 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Inicializar Select2 para melhorar a experiência de seleção
         if (typeof $.fn.select2 === 'function') {
-            $('#aluno').select2({
+            $('#id_aluno').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Selecione um aluno',
                 allowClear: true
             });
             
-            $('#turma').select2({
+            $('#id_turma').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Selecione uma turma',
                 allowClear: true

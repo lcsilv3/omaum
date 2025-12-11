@@ -6,4 +6,10 @@ RELATORIOS = [
         "url": "turmas:listar_turmas",
         "exportacoes": ["csv"],
     },
+    {
+        "nome": "Relatórios (Curso/Turma)",
+        "descricao": "Relatórios consolidados de cursos e turmas.",
+        "url": "atividades:relatorio_atividades",
+        "exportacoes": [],
+    },
 ]
