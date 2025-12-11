@@ -23,43 +23,78 @@ echo    [OK] Docker disponivel
 echo.
 
 set "COMPOSE_ARGS=-p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml"
+set "STARTED_NEW=0"
 
 echo 2. Verificando ambiente de desenvolvimento...
 set "DEV_RUNNING="
 for /f "delims=" %%i in ('docker compose %COMPOSE_ARGS% ps -q 2^>nul') do set "DEV_RUNNING=1"
 if defined DEV_RUNNING (
-    echo    [OK] Containers ja estao rodando; nao vou parar.
+    echo    [OK] Containers ja estao rodando.
+    set "RESTART_CHOICE="
+    set /p RESTART_CHOICE="Deseja reiniciar (down/up)? [S/N] (padrao=N): "
+    if /I "%RESTART_CHOICE%"=="S" (
+        echo    Reiniciando containers...
+        docker compose %COMPOSE_ARGS% down
+        if %ERRORLEVEL% NEQ 0 (
+            echo    [ERRO] Falha ao derrubar containers
+            pause
+            exit /b 1
+        )
+        docker compose %COMPOSE_ARGS% up -d
+        if %ERRORLEVEL% NEQ 0 (
+            echo    [ERRO] Falha ao iniciar containers
+            pause
+            exit /b 1
+        )
+        set "STARTED_NEW=1"
+        echo    [OK] Containers reiniciados
+    ) else (
+        echo    Mantendo containers atuais.
+    )
 ) else (
-    echo    [OK] Nenhum container em execucao; pronto para subir.
+    echo    [OK] Nenhum container em execucao; iniciando...
+    docker compose %COMPOSE_ARGS% up -d
+    if %ERRORLEVEL% NEQ 0 (
+        echo    [ERRO] Falha ao iniciar containers
+        pause
+        exit /b 1
+    )
+    set "STARTED_NEW=1"
+    echo    [OK] Containers iniciados
 )
 echo.
 
-echo 3. Iniciando ambiente de DESENVOLVIMENTO (binds em E:)...
-docker compose %COMPOSE_ARGS% up -d
-if %ERRORLEVEL% NEQ 0 (
-    echo    [ERRO] Falha ao iniciar containers
-    pause
-    exit /b 1
-)
-echo    [OK] Containers iniciados
-echo.
-
-echo 4. Aguardando servicos ficarem prontos (20s)...
+echo 3. Aguardando servicos ficarem prontos (20s)...
 timeout /t 20 /nobreak > nul
 echo.
 
-echo 5. Aplicando migracoes...
-docker compose -p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml exec -T omaum-web python manage.py migrate --noinput
-echo    [OK] Migracoes aplicadas
-echo.
+set "MIGRATE_DEFAULT=N"
+if "%STARTED_NEW%"=="1" set "MIGRATE_DEFAULT=S"
+set "MIGRATE_CHOICE="
+set /p MIGRATE_CHOICE="Aplicar migracoes agora? [S/N] (padrao=%MIGRATE_DEFAULT%): "
+if "%MIGRATE_CHOICE%"=="" set "MIGRATE_CHOICE=%MIGRATE_DEFAULT%"
+if /I "%MIGRATE_CHOICE%"=="S" (
+    echo 4. Aplicando migracoes...
+    docker compose %COMPOSE_ARGS% exec -T omaum-web python manage.py migrate --noinput
+    if %ERRORLEVEL% NEQ 0 (
+        echo    [ERRO] Falha ao aplicar migracoes
+        pause
+        exit /b 1
+    )
+    echo    [OK] Migracoes aplicadas
+    echo.
+) else (
+    echo 4. Migracoes ignoradas a pedido do usuario.
+    echo.
+)
 
-echo 6. Verificando status...
-docker compose -p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml ps
+echo 5. Verificando status...
+docker compose %COMPOSE_ARGS% ps
 echo.
 
 set "APP_URL=http://localhost:8000"
 
-echo 7. Abrir no navegador...
+echo 6. Abrir no navegador...
 set "BROWSER_CHOICE="
 set /p BROWSER_CHOICE="Escolha navegador [1=Edge, 2=Chrome, 3=Firefox] (padrao=Edge): "
 if "%BROWSER_CHOICE%"=="2" (
