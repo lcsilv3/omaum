@@ -57,12 +57,30 @@ echo 6. Verificando status...
 docker compose -p omaum-dev --env-file ..\.env.dev -f docker-compose.yml -f docker-compose.dev.override.yml ps
 echo.
 
+set "APP_URL=http://localhost:8000"
+
+echo 7. Abrir no navegador...
+set "BROWSER_CHOICE="
+set /p BROWSER_CHOICE="Escolha navegador [1=Edge, 2=Chrome, 3=Firefox] (padrao=Edge): "
+if "%BROWSER_CHOICE%"=="2" (
+    start "" chrome "%APP_URL%"
+    goto abrir_fim
+)
+if "%BROWSER_CHOICE%"=="3" (
+    start "" firefox "%APP_URL%"
+    goto abrir_fim
+)
+start "" msedge "%APP_URL%"
+:abrir_fim
+echo    [OK] Navegador acionado (fallback Edge se nao escolhido).
+echo.
+
 echo ========================================
 echo   AMBIENTE PRONTO!
 echo ========================================
 echo.
 echo O ambiente de DESENVOLVIMENTO esta rodando em:
-echo   http://localhost:8000
+echo   %APP_URL%
 echo.
 echo Caracteristicas:
 echo   - Debug ATIVO
