@@ -60,7 +60,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(form);
         const params = new URLSearchParams(formData);
 
-        if (extraParams) {
+        // Adiciona parâmetros extras se fornecidos (ex: paginação)
+        if (extraParams && extraParams instanceof URLSearchParams) {
             for (const [key, value] of extraParams.entries()) {
                 if (value && key !== 'csrfmiddlewaretoken') {
                     params.set(key, value);
