@@ -84,7 +84,7 @@
             <p>Os campos com formato específico (CPF, CEP, telefones) serão automaticamente ajustados ao salvar.</p>
         </div>
 
-        <!-- Seção: Dados Iniciais Básicos -->
+        <!-- Seção: Dados Pessoais -->
         <div class="card mb-4 border-primary">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
@@ -96,48 +96,323 @@
             <div id="dados-pessoais" class="card-body collapse show">
                 <div class="row g-3 align-items-start">
                     <div class="col-md-8">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                {% include 'includes/form_field.html' with field=form.cpf %}
-                                {% include 'includes/form_field.html' with field=form.nome %}
-                                {% include 'includes/form_field.html' with field=form.data_nascimento %}
-                                {% include 'includes/form_field.html' with field=form.hora_nascimento %}
-                                {% include 'includes/form_field.html' with field=form.situacao %}
+                        <!-- Seção: Identificação -->
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3 pb-2 border-bottom">
+                                <i class="fas fa-id-card me-2"></i>Identificação
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {% include 'includes/form_field.html' with field=form.cpf %}
+                                </div>
+                                <div class="col-md-6">
+                                    {% include 'includes/form_field.html' with field=form.situacao %}
+                                </div>
+                                <div class="col-12">
+                                    {% include 'includes/form_field.html' with field=form.nome %}
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                {% include 'includes/form_field.html' with field=form.email %}
-                                {% include 'includes/form_field.html' with field=form.celular %}
-                                {% include 'includes/form_field.html' with field=form.telefone %}
-                                {% include 'includes/form_field.html' with field=form.sexo %}
+                        </div>
+
+                        <!-- Seção: Dados Pessoais -->
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3 pb-2 border-bottom">
+                                <i class="fas fa-user me-2"></i>Informações Pessoais
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {% include 'includes/form_field.html' with field=form.data_nascimento %}
+                                </div>
+                                <div class="col-md-6">
+                                    {% include 'includes/form_field.html' with field=form.hora_nascimento %}
+                                </div>
+                                <div class="col-md-6">
+                                    {% include 'includes/form_field.html' with field=form.sexo %}
+                                </div>
+                                <div class="col-md-6">
+                                    {% include 'includes/form_field.html' with field=form.estado_civil %}
+                                </div>
+                                <div class="col-md-6">
+                                    {% include 'includes/form_field.html' with field=form.escolaridade %}
+                                </div>
+                                <div class="col-md-6">
+                                    {% include 'includes/form_field.html' with field=form.profissao %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção: Contato -->
+                        <div class="mb-0">
+                            <h6 class="text-primary mb-3 pb-2 border-bottom">
+                                <i class="fas fa-phone me-2"></i>Contato
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    {% include 'includes/form_field.html' with field=form.email %}
+                                </div>
+                                <div class="col-md-6">
+                                    {% include 'includes/form_field.html' with field=form.celular %}
+                                </div>
+                                <div class="col-md-6">
+                                    {% include 'includes/form_field.html' with field=form.telefone %}
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 d-flex flex-column align-items-center gap-2">
-                        <div id="foto-preview" class="border rounded p-3 text-center" style="border-style: dashed !important; border-color: #007bff !important; border-width: 2px !important; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                            {% if aluno and aluno.get_foto_url %}
-                                <img src="{{ aluno.get_foto_url }}" alt="Foto de {{ aluno.nome }}" style="max-width: 180px; max-height: 180px; width: auto; height: auto; object-fit: contain; display: block;">
-                            {% else %}
-                                <div class="text-muted">Sem foto</div>
-                            {% endif %}
+                    <div class="col-md-4 d-flex flex-column align-items-center gap-3">
+                        <!-- Área de Preview da Foto -->
+                        <div class="w-100 text-center">
+                            <h6 class="text-primary mb-3 pb-2 border-bottom">
+                                <i class="fas fa-camera me-2"></i>Fotografia
+                            </h6>
+                            <div id="foto-preview" class="border rounded p-3 mx-auto shadow-sm" style="border-style: dashed !important; border-color: #007bff !important; border-width: 3px !important; width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: #f8f9fa;">
+                                {% if aluno and aluno.get_foto_url %}
+                                    <img src="{{ aluno.get_foto_url }}" alt="Foto de {{ aluno.nome }}" style="max-width: 200px; max-height: 200px; width: auto; height: auto; object-fit: contain; display: block;">
+                                {% else %}
+                                    <div class="text-muted">
+                                        <i class="fas fa-user fa-3x mb-2 d-block"></i>
+                                        <small>Sem foto</small>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
+                        
+                        <!-- Campo de Upload -->
                         <div class="w-100 form-group mb-0">
-                            <label for="id_foto" class="form-label fw-semibold small">Foto</label>
+                            <label for="id_foto" class="form-label fw-semibold small">
+                                <i class="fas fa-upload me-1"></i>Selecionar Foto
+                            </label>
                             <div class="d-grid gap-2">
                                 {{ form.foto }}
                             </div>
                             <div class="small text-muted mt-2">
                                 {% if aluno and aluno.foto %}
-                                    Arquivo atual: {{ aluno.foto.name|default_if_none:'' }}
+                                    <i class="fas fa-file-image me-1"></i>Arquivo atual: {{ aluno.foto.name|default_if_none:'' }}
                                 {% endif %}
                                 {% if form.foto.help_text %}
-                                    <div>{{ form.foto.help_text }}</div>
+                                    <div><i class="fas fa-info-circle me-1"></i>{{ form.foto.help_text }}</div>
                                 {% endif %}
                             </div>
                             <div id="foto-info" class="small mt-2"></div>
                             {% for error in form.foto.errors %}
-                                <div class="alert alert-danger mt-2 mb-0">{{ error }}</div>
+                                <div class="alert alert-danger mt-2 mb-0"><i class="fas fa-exclamation-triangle me-1"></i>{{ error }}</div>
                             {% endfor %}
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Nacionalidade e Naturalidade -->
+        <div class="card mb-4 border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#nacionalidade" role="button" aria-expanded="false" aria-controls="nacionalidade">
+                        <span class="chevron">&#9654;</span> Nacionalidade e Naturalidade <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="nacionalidade" class="card-body collapse">
+                <!-- Seção: Nacionalidade -->
+                <div class="mb-4">
+                    <h6 class="text-secondary mb-3 pb-2 border-bottom">
+                        <i class="fas fa-flag me-2"></i>Nacionalidade
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">{% include 'includes/form_field.html' with field=form.pais_nacionalidade %}</div>
+                    </div>
+                </div>
+                
+                <hr class="my-3">
+                
+                <!-- Seção: Naturalidade -->
+                <div class="mb-0">
+                    <h6 class="text-secondary mb-3 pb-2 border-bottom">
+                        <i class="fas fa-map-marker-alt me-2"></i>Naturalidade
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">{% include 'includes/form_field.html' with field=form.estado_naturalidade %}</div>
+                        <div class="col-md-6">{% include 'includes/form_field.html' with field=form.cidade_naturalidade %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Endereço -->
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#endereco" role="button" aria-expanded="false" aria-controls="endereco">
+                        <span class="chevron">&#9654;</span> Endereço <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="endereco" class="card-body collapse">
+                <!-- Seção: Localização -->
+                <div class="mb-4">
+                    <h6 class="text-success mb-3 pb-2 border-bottom">
+                        <i class="fas fa-map-marked-alt me-2"></i>Localização
+                    </h6>
+                    <!-- Labels no topo -->
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-2">
+                            <label for="{{ form.cep.id_for_label }}" class="form-label">
+                                {{ form.cep.label }}
+                                {% if form.cep.field.required %}<span class="text-danger" title="Campo obrigatório">*</span>{% endif %}
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.estado_ref.id_for_label }}" class="form-label">
+                                {{ form.estado_ref.label }}
+                                {% if form.estado_ref.field.required %}<span class="text-danger" title="Campo obrigatório">*</span>{% endif %}
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.cidade_ref.id_for_label }}" class="form-label">
+                                {{ form.cidade_ref.label }}
+                                {% if form.cidade_ref.field.required %}<span class="text-danger" title="Campo obrigatório">*</span>{% endif %}
+                            </label>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="{{ form.bairro_ref.id_for_label }}" class="form-label">
+                                {{ form.bairro_ref.label }}
+                                {% if form.bairro_ref.field.required %}<span class="text-danger" title="Campo obrigatório">*</span>{% endif %}
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Inputs alinhados embaixo -->
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <div class="input-group">
+                                {{ form.cep }}
+                                <button type="button" class="btn btn-outline-secondary" id="btnBuscarCep" title="Buscar CEP">
+                                    <i class="fas fa-search" id="iconeBuscarCep"></i>
+                                </button>
+                            </div>
+                            {% if form.cep.errors %}
+                                <div class="invalid-feedback d-block">{% for error in form.cep.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                            <small class="form-text text-muted" id="feedbackCep"></small>
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.estado_ref }}
+                            {% if form.estado_ref.errors %}
+                                <div class="invalid-feedback d-block">{% for error in form.estado_ref.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.cidade_ref }}
+                            {% if form.cidade_ref.errors %}
+                                <div class="invalid-feedback d-block">{% for error in form.cidade_ref.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-2">
+                            <div class="d-flex gap-1">
+                                <div class="flex-grow-1">
+                                    {{ form.bairro_ref }}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-success" id="btnNovoBairro" title="Adicionar novo bairro" style="height: 38px;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            {% if form.bairro_ref.errors %}
+                                <div class="invalid-feedback d-block">{% for error in form.bairro_ref.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Selecione ou adicione novo</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção: Logradouro -->
+                <div class="mb-0">
+                    <h6 class="text-success mb-3 pb-2 border-bottom">
+                        <i class="fas fa-home me-2"></i>Logradouro
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            {% include 'includes/form_field.html' with field=form.rua %}
+                        </div>
+                        <div class="col-md-2">
+                            {% include 'includes/form_field.html' with field=form.numero_imovel %}
+                        </div>
+                        <div class="col-md-3">
+                            {% include 'includes/form_field.html' with field=form.complemento %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Contatos de Emergência -->
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#contatos" role="button" aria-expanded="false" aria-controls="contatos">
+                        <span class="chevron">&#9654;</span> Contatos de Emergência <small class="text-muted">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="contatos" class="card-body collapse">
+                <!-- Primeiro Contato -->
+                <div class="mb-4">
+                    <h6 class="text-warning mb-3 pb-2 border-bottom">
+                        <i class="fas fa-phone-alt me-2"></i>Primeiro Contato
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">{% include 'includes/form_field.html' with field=form.nome_primeiro_contato %}</div>
+                        <div class="col-md-4">{% include 'includes/form_field.html' with field=form.celular_primeiro_contato %}</div>
+                        <div class="col-md-4">{% include 'includes/form_field.html' with field=form.tipo_relacionamento_primeiro_contato %}</div>
+                    </div>
+                </div>
+                
+                <hr class="my-3">
+                
+                <!-- Segundo Contato -->
+                <div class="mb-0">
+                    <h6 class="text-warning mb-3 pb-2 border-bottom">
+                        <i class="fas fa-phone-alt me-2"></i>Segundo Contato
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">{% include 'includes/form_field.html' with field=form.nome_segundo_contato %}</div>
+                        <div class="col-md-4">{% include 'includes/form_field.html' with field=form.celular_segundo_contato %}</div>
+                        <div class="col-md-4">{% include 'includes/form_field.html' with field=form.tipo_relacionamento_segundo_contato %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Informações Médicas -->
+        <div class="card mb-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#medicas" role="button" aria-expanded="false" aria-controls="medicas">
+                        <span class="chevron">&#9654;</span> Informações Médicas <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="medicas" class="card-body collapse">
+                <!-- Seção: Tipo Sanguíneo e Convênios -->
+                <div class="mb-4">
+                    <h6 class="text-danger mb-3 pb-2 border-bottom">
+                        <i class="fas fa-tint me-2"></i>Tipo Sanguíneo e Convênios
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-3">{% include 'includes/form_field.html' with field=form.tipo_sanguineo %}</div>
+                        <div class="col-md-3">{% include 'includes/form_field.html' with field=form.convenio_medico %}</div>
+                        <div class="col-md-3">{% include 'includes/form_field.html' with field=form.hospital %}</div>
+                    </div>
+                </div>
+                
+                <hr class="my-3">
+                
+                <!-- Seção: Alergias e Condições Médicas -->
+                <div class="mb-0">
+                    <h6 class="text-danger mb-3 pb-2 border-bottom">
+                        <i class="fas fa-notes-medical me-2"></i>Alergias e Condições Médicas
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">{% include 'includes/form_field.html' with field=form.alergias %}</div>
+                        <div class="col-md-6">{% include 'includes/form_field.html' with field=form.condicoes_medicas_gerais %}</div>
                     </div>
                 </div>
             </div>
@@ -147,45 +422,60 @@
         <div class="card mb-4 border-warning">
             <div class="card-header bg-warning text-dark">
                 <h5 class="mb-0">
-                    <a class="collapse-toggle text-dark text-decoration-none" data-bs-toggle="collapse" href="#dados-iniciaticos-principais" role="button" aria-expanded="true" aria-controls="dados-iniciaticos-principais">
-                        <span class="chevron" style="transform: rotate(90deg)">▶</span> Dados Iniciáticos Principais <small class="text-muted">(clique para expandir/recolher)</small>
+                    <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos-principais" role="button" aria-expanded="false" aria-controls="dados-iniciaticos-principais">
+                        <span class="chevron">&#9654;</span> Dados Iniciáticos Principais <small class="text-muted">(clique para expandir/recolher)</small>
                     </a>
                 </h5>
             </div>
-            <div id="dados-iniciaticos-principais" class="card-body collapse show">
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.numero_iniciatico %}
-                    </div>
-                    <div class="col-md-8">
-                        {% include 'includes/form_field.html' with field=form.nome_iniciatico %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.grau_atual %}
-                        <div class="alert alert-info py-2 px-3 mt-2 mb-0" style="font-size: 0.875rem;">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>Informação:</strong> Este campo será preenchido automaticamente quando o aluno for matriculado em uma turma.
+            <div id="dados-iniciaticos-principais" class="card-body collapse">
+                <!-- Seção: Identificação Iniciática -->
+                <div class="mb-4">
+                    <h6 class="text-warning mb-3 pb-2 border-bottom">
+                        <i class="fas fa-id-badge me-2"></i>Identificação Iniciática
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            {% include 'includes/form_field.html' with field=form.numero_iniciatico %}
+                        </div>
+                        <div class="col-md-8">
+                            {% include 'includes/form_field.html' with field=form.nome_iniciatico %}
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.grau_atual_automatico %}
+                </div>
+                
+                <hr class="my-3">
+                
+                <!-- Seção: Grau Atual -->
+                <div class="mb-0">
+                    <h6 class="text-warning mb-3 pb-2 border-bottom">
+                        <i class="fas fa-graduation-cap me-2"></i>Grau Atual
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            {% include 'includes/form_field.html' with field=form.grau_atual %}
+                        </div>
+                        <div class="col-md-4">
+                            {% include 'includes/form_field.html' with field=form.grau_atual_automatico %}
+                        </div>
+                    </div>
+                    <div class="alert alert-info py-2 px-3 mt-3 mb-0" style="font-size: 0.875rem;">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Informação:</strong> Este campo será preenchido automaticamente quando o aluno for matriculado em uma turma.
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Seção: Dados Iniciáticos (Histórico) -->
+        <!-- Seção: Dados Iniciáticos (Cargos, Punições, etc.) -->
         <div class="card mb-4 border-info">
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0">
-                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="true" aria-controls="dados-iniciaticos">
-                        <span class="chevron" style="transform: rotate(90deg)">▶</span> Dados Iniciáticos (Cargos, Punições, etc.) <small class="text-light">(clique para expandir/recolher)</small>
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
+                        <span class="chevron">&#9654;</span> Dados Iniciáticos (Cargos, Punições, etc.) <small class="text-light">(clique para expandir/recolher)</small>
                     </a>
                 </h5>
             </div>
-            <div id="dados-iniciaticos" class="card-body collapse show">
+            <div id="dados-iniciaticos" class="card-body collapse">
                 <!-- Cabeçalho removido daqui, será inserido em cada .historico-form -->
                         <div id="historico-form-list">
                         {% for hform in historico_formset %}
@@ -220,16 +510,11 @@
                                         <div class="col-md-2 d-flex align-items-end justify-content-start gap-2 action-wrapper">
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold small">Ações</label><br>
-                                                {% if hform.instance.pk %}
-                                                    <div class="form-check">
-                                                        {{ hform.DELETE|default_if_none:'' }}
-                                                        <label class="form-check-label" for="{{ hform.DELETE.id_for_label|default_if_none:'' }}">Remover?</label>
-                                                    </div>
-                                                {% else %}
-                                                    <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
-                                                        <i class="fas fa-trash"></i> Remover
-                                                    </button>
-                                                {% endif %}
+                                                <!-- Checkbox DELETE oculto, manipulado via JavaScript -->
+                                                <div style="display: none;">{{ hform.DELETE }}</div>
+                                                <button type="button" class="btn btn-danger btn-sm remove-historico-form" aria-label="Remover registro de histórico">
+                                                    <i class="fas fa-trash"></i> Remover
+                                                </button>
                                             </div>
                                         </div>
                                 </div>
@@ -299,105 +584,6 @@
                 </div>
             </div>
         </div>
-        <!-- Seção: Nacionalidade e Naturalidade -->
-        <div class="card mb-4 border-secondary">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="mb-0">
-                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#nacionalidade" role="button" aria-expanded="false" aria-controls="nacionalidade">
-                        <span class="chevron">&#9654;</span> Nacionalidade e Naturalidade <small class="text-light">(clique para expandir/recolher)</small>
-                    </a>
-                </h5>
-            </div>
-            <div id="nacionalidade" class="card-body collapse">
-                <div class="row">
-                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.pais_nacionalidade %}</div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.estado_naturalidade %}</div>
-                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.cidade_naturalidade %}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Seção: Endereço -->
-        <div class="card mb-4 border-success">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">
-                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#endereco" role="button" aria-expanded="false" aria-controls="endereco">
-                        <span class="chevron">&#9654;</span> Endereço <small class="text-light">(clique para expandir/recolher)</small>
-                    </a>
-                </h5>
-            </div>
-            <div id="endereco" class="card-body collapse">
-                <!-- Ordem solicitada: CEP, Endereço, Número, Complemento, Bairro, Estado, Cidade -->
-                <!-- Linha 1: CEP (isolado para destaque) -->
-                <div class="row mb-2">
-                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.cep %}</div>
-                    <div class="col-md-8"></div>
-                </div>
-                <!-- Linha 2: Endereço + Número (mantém ordem Endereço depois Número na leitura esquerda->direita) -->
-                <div class="row mb-2">
-                    <div class="col-md-8">{% include 'includes/form_field.html' with field=form.rua %}</div>
-                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.numero_imovel %}</div>
-                </div>
-                <!-- Linha 3: Complemento + Bairro -->
-                <div class="row mb-2">
-                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.complemento %}</div>
-                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.bairro_ref %}</div>
-                </div>
-                <!-- Linha 4: Cidade de referência (estado implícito pela cidade) -->
-                <div class="row mb-2">
-                    <div class="col-md-12">{% include 'includes/form_field.html' with field=form.cidade_ref %}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Seção: Contatos de Emergência -->
-        <div class="card mb-4 border-warning">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0">
-                    <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#contatos" role="button" aria-expanded="false" aria-controls="contatos">
-                        <span class="chevron">&#9654;</span> Contatos de Emergência <small class="text-muted">(clique para expandir/recolher)</small>
-                    </a>
-                </h5>
-            </div>
-            <div id="contatos" class="card-body collapse">
-                <h6>Primeiro Contato</h6>
-                <div class="row">
-                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.nome_primeiro_contato %}</div>
-                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.celular_primeiro_contato %}</div>
-                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.tipo_relacionamento_primeiro_contato %}</div>
-                </div>
-                <h6 class="mt-3">Segundo Contato</h6>
-                <div class="row">
-                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.nome_segundo_contato %}</div>
-                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.celular_segundo_contato %}</div>
-                    <div class="col-md-4">{% include 'includes/form_field.html' with field=form.tipo_relacionamento_segundo_contato %}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Seção: Informações Médicas -->
-        <div class="card mb-4 border-danger">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0">
-                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#medicas" role="button" aria-expanded="false" aria-controls="medicas">
-                        <span class="chevron">&#9654;</span> Informações Médicas <small class="text-light">(clique para expandir/recolher)</small>
-                    </a>
-                </h5>
-            </div>
-            <div id="medicas" class="card-body collapse">
-                <div class="row">
-                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.tipo_sanguineo %}</div>
-                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.convenio_medico %}</div>
-                    <div class="col-md-3">{% include 'includes/form_field.html' with field=form.hospital %}</div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.alergias %}</div>
-                    <div class="col-md-6">{% include 'includes/form_field.html' with field=form.condicoes_medicas_gerais %}</div>
-                </div>
-            </div>
-        </div>
 
         <div class="d-flex justify-content-between mb-5">
             <a href="{% url 'alunos:listar_alunos' %}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
@@ -423,7 +609,397 @@
     document.body.dataset.cidadesPorEstadoApiUrl = '{% url "alunos:api_cidades_por_estado" estado_id=0 %}'.replace('/0/', '/{estadoId}/');
 </script>
 
-{# Script para filtro dinâmico Estado → Cidade #}
+{# Script para filtro dinâmico Estado → Cidade (Endereço) #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Endereço: Estado → Cidade → Bairro
+    const estadoRefSelect = document.getElementById('id_estado_ref');
+    const cidadeRefSelect = document.getElementById('id_cidade_ref');
+    const bairroRefSelect = document.getElementById('id_bairro_ref');
+    
+    if (estadoRefSelect && cidadeRefSelect) {
+        const cidadeOriginalValue = cidadeRefSelect.value;
+        
+        function carregarCidadesPorEstado(estadoId, manterSelecao = false) {
+            if (!estadoId) {
+                cidadeRefSelect.disabled = true;
+                cidadeRefSelect.innerHTML = '<option value="">Selecione o estado primeiro</option>';
+                if (bairroRefSelect) {
+                    bairroRefSelect.disabled = true;
+                    bairroRefSelect.innerHTML = '<option value="">Selecione a cidade primeiro</option>';
+                }
+                return;
+            }
+            
+            cidadeRefSelect.disabled = true;
+            cidadeRefSelect.innerHTML = '<option value="">Carregando cidades...</option>';
+            
+            const url = document.body.dataset.cidadesPorEstadoApiUrl.replace('{estadoId}', estadoId);
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erro ao carregar cidades');
+                return response.json();
+            })
+            .then(cidades => {
+                cidadeRefSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+                cidades.forEach(cidade => {
+                    const option = document.createElement('option');
+                    option.value = cidade.id;
+                    option.textContent = cidade.display;
+                    cidadeRefSelect.appendChild(option);
+                });
+                cidadeRefSelect.disabled = false;
+                if (manterSelecao && cidadeOriginalValue) {
+                    cidadeRefSelect.value = cidadeOriginalValue;
+                    if (bairroRefSelect && cidadeOriginalValue) {
+                        carregarBairrosPorCidade(cidadeOriginalValue, true);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar cidades:', error);
+                cidadeRefSelect.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+                cidadeRefSelect.disabled = true;
+            });
+        }
+        
+        function carregarBairrosPorCidade(cidadeId, manterSelecao = false) {
+            if (!bairroRefSelect) return;
+            
+            const bairroOriginalValue = bairroRefSelect.value;
+            
+            if (!cidadeId) {
+                bairroRefSelect.disabled = true;
+                bairroRefSelect.innerHTML = '<option value="">Selecione a cidade primeiro</option>';
+                return;
+            }
+            
+            bairroRefSelect.disabled = true;
+            bairroRefSelect.innerHTML = '<option value="">Carregando bairros...</option>';
+            
+            const url = `/alunos/api/localidade/cidades/${cidadeId}/bairros/`;
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erro ao carregar bairros');
+                return response.json();
+            })
+            .then(bairros => {
+                if (bairros.length === 0) {
+                    // Sem bairros cadastrados - deixa vazio e opcional
+                    bairroRefSelect.innerHTML = '<option value="">Sem bairros cadastrados (deixe vazio)</option>';
+                    bairroRefSelect.disabled = false;
+                } else {
+                    // Com bairros - preenche o select
+                    bairroRefSelect.innerHTML = '<option value="">Selecione o bairro (opcional)</option>';
+                    bairros.forEach(bairro => {
+                        const option = document.createElement('option');
+                        option.value = bairro.id;
+                        option.textContent = bairro.nome;
+                        bairroRefSelect.appendChild(option);
+                    });
+                    bairroRefSelect.disabled = false;
+                    
+                    if (manterSelecao && bairroOriginalValue) {
+                        bairroRefSelect.value = bairroOriginalValue;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar bairros:', error);
+                bairroRefSelect.innerHTML = '<option value="">Erro ao carregar (deixe vazio)</option>';
+                bairroRefSelect.disabled = false;
+            });
+        }
+        
+        estadoRefSelect.addEventListener('change', function() {
+            carregarCidadesPorEstado(this.value, false);
+        });
+        
+        cidadeRefSelect.addEventListener('change', function() {
+            carregarBairrosPorCidade(this.value, false);
+        });
+        
+        if (estadoRefSelect.value) {
+            carregarCidadesPorEstado(estadoRefSelect.value, true);
+        }
+    }
+});
+</script>
+
+{# Script para busca de CEP e criação de novo bairro #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cepInput = document.getElementById('id_cep');
+    const btnBuscarCep = document.getElementById('btnBuscarCep');
+    const iconeBuscarCep = document.getElementById('iconeBuscarCep');
+    const feedbackCep = document.getElementById('feedbackCep');
+    const estadoRefSelect = document.getElementById('id_estado_ref');
+    const cidadeRefSelect = document.getElementById('id_cidade_ref');
+    const bairroRefSelect = document.getElementById('id_bairro_ref');
+    const ruaInput = document.getElementById('id_rua');
+    const btnNovoBairro = document.getElementById('btnNovoBairro');
+    
+    let buscandoCep = false;
+    
+    // Função para formatar CEP (adiciona hífen)
+    function formatarCep(cep) {
+        const limpo = cep.replace(/\D/g, '');
+        if (limpo.length === 8) {
+            return limpo.substring(0, 5) + '-' + limpo.substring(5);
+        }
+        return limpo;
+    }
+    
+    // Função para buscar CEP
+    async function buscarCep() {
+        if (buscandoCep) return;
+        
+        const cep = cepInput.value.replace(/\D/g, '');
+        
+        if (cep.length !== 8) {
+            feedbackCep.textContent = 'CEP deve conter 8 dígitos';
+            feedbackCep.className = 'form-text text-danger';
+            return;
+        }
+        
+        buscandoCep = true;
+        btnBuscarCep.disabled = true;
+        iconeBuscarCep.className = 'fas fa-spinner fa-spin';
+        feedbackCep.textContent = 'Buscando CEP...';
+        feedbackCep.className = 'form-text text-info';
+        
+        try {
+            const response = await fetch(`/alunos/api/localidade/cep/${cep}/`);
+            const data = await response.json();
+            
+            if (data.success) {
+                // Preenche os campos
+                if (data.logradouro) {
+                    ruaInput.value = data.logradouro;
+                }
+                
+                // Seleciona o estado
+                if (data.estado_id) {
+                    estadoRefSelect.value = data.estado_id;
+                    
+                    // Aguarda carregar as cidades
+                    await carregarCidadesPorEstadoPromise(data.estado_id);
+                    
+                    // Seleciona a cidade
+                    if (data.cidade_id) {
+                        cidadeRefSelect.value = data.cidade_id;
+                        
+                        // Aguarda carregar os bairros
+                        await carregarBairrosPorCidadePromise(data.cidade_id);
+                        
+                        // Seleciona o bairro se existir
+                        if (data.bairro_id) {
+                            bairroRefSelect.value = data.bairro_id;
+                        }
+                    }
+                }
+                
+                let mensagem = '✓ CEP encontrado!';
+                if (data.bairro_criado) {
+                    mensagem += ' (Bairro criado automaticamente)';
+                }
+                feedbackCep.textContent = mensagem;
+                feedbackCep.className = 'form-text text-success';
+            } else {
+                feedbackCep.textContent = data.error || 'CEP não encontrado';
+                feedbackCep.className = 'form-text text-danger';
+            }
+        } catch (error) {
+            console.error('Erro ao buscar CEP:', error);
+            feedbackCep.textContent = 'Erro ao buscar CEP. Tente novamente.';
+            feedbackCep.className = 'form-text text-danger';
+        } finally {
+            buscandoCep = false;
+            btnBuscarCep.disabled = false;
+            iconeBuscarCep.className = 'fas fa-search';
+        }
+    }
+    
+    // Versão com Promise da função carregarCidadesPorEstado
+    function carregarCidadesPorEstadoPromise(estadoId) {
+        return new Promise((resolve, reject) => {
+            if (!estadoId) {
+                cidadeRefSelect.innerHTML = '<option value="">Selecione</option>';
+                cidadeRefSelect.disabled = true;
+                bairroRefSelect.innerHTML = '<option value="">Selecione</option>';
+                bairroRefSelect.disabled = true;
+                resolve();
+                return;
+            }
+            
+            fetch(`/alunos/api/localidade/estados/${estadoId}/cidades/`)
+                .then(response => response.json())
+                .then(cidades => {
+                    cidadeRefSelect.innerHTML = '<option value="">Selecione</option>';
+                    cidades.forEach(cidade => {
+                        const option = document.createElement('option');
+                        option.value = cidade.id;
+                        option.textContent = cidade.nome;
+                        cidadeRefSelect.appendChild(option);
+                    });
+                    cidadeRefSelect.disabled = false;
+                    resolve();
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar cidades:', error);
+                    reject(error);
+                });
+        });
+    }
+    
+    // Versão com Promise da função carregarBairrosPorCidade
+    function carregarBairrosPorCidadePromise(cidadeId) {
+        return new Promise((resolve, reject) => {
+            if (!cidadeId) {
+                bairroRefSelect.innerHTML = '<option value="">Selecione</option>';
+                bairroRefSelect.disabled = true;
+                resolve();
+                return;
+            }
+            
+            fetch(`/alunos/api/localidade/cidades/${cidadeId}/bairros/`)
+                .then(response => response.json())
+                .then(bairros => {
+                    bairroRefSelect.innerHTML = '<option value="">Selecione</option>';
+                    
+                    if (bairros.length === 0) {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'Nenhum bairro cadastrado (use o botão +)';
+                        bairroRefSelect.appendChild(option);
+                    } else {
+                        bairros.forEach(bairro => {
+                            const option = document.createElement('option');
+                            option.value = bairro.id;
+                            option.textContent = bairro.nome;
+                            bairroRefSelect.appendChild(option);
+                        });
+                    }
+                    bairroRefSelect.disabled = false;
+                    resolve();
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar bairros:', error);
+                    reject(error);
+                });
+        });
+    }
+    
+    // Evento de click no botão de buscar CEP
+    if (btnBuscarCep) {
+        btnBuscarCep.addEventListener('click', buscarCep);
+    }
+    
+    // Busca automática ao digitar CEP completo
+    if (cepInput) {
+        cepInput.addEventListener('input', function() {
+            // Formata o CEP enquanto digita
+            const cepLimpo = this.value.replace(/\D/g, '');
+            if (cepLimpo.length > 0) {
+                this.value = formatarCep(cepLimpo);
+            }
+            
+            // Busca automática quando completar 8 dígitos
+            if (cepLimpo.length === 8) {
+                buscarCep();
+            } else {
+                feedbackCep.textContent = '';
+            }
+        });
+        
+        // Busca ao teclar Enter
+        cepInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarCep();
+            }
+        });
+    }
+    
+    // Função para criar novo bairro
+    async function criarNovoBairro() {
+        const cidadeId = cidadeRefSelect.value;
+        
+        if (!cidadeId) {
+            alert('Selecione uma cidade primeiro!');
+            cidadeRefSelect.focus();
+            return;
+        }
+        
+        const nomeBairro = prompt('Digite o nome do novo bairro:');
+        
+        if (!nomeBairro || !nomeBairro.trim()) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/alunos/api/localidade/bairros/criar/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    nome: nomeBairro.trim(),
+                    cidade_id: cidadeId
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Recarrega a lista de bairros
+                await carregarBairrosPorCidadePromise(cidadeId);
+                
+                // Seleciona o bairro recém-criado
+                bairroRefSelect.value = data.bairro_id;
+                
+                let mensagem = data.message;
+                if (data.ja_existia) {
+                    alert(`${mensagem}\nO bairro "${data.nome}" foi selecionado.`);
+                } else {
+                    alert(`Bairro "${data.nome}" criado com sucesso!`);
+                }
+            } else {
+                alert('Erro ao criar bairro: ' + (data.error || 'Erro desconhecido'));
+            }
+        } catch (error) {
+            console.error('Erro ao criar bairro:', error);
+            alert('Erro ao criar bairro. Tente novamente.');
+        }
+    }
+    
+    // Função para obter CSRF token
+    function getCsrfToken() {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='));
+        return cookieValue ? cookieValue.split('=')[1] : '';
+    }
+    
+    // Evento de click no botão de novo bairro
+    if (btnNovoBairro) {
+        btnNovoBairro.addEventListener('click', criarNovoBairro);
+    }
+});
+</script>
+
+{# Script para filtro dinâmico Estado → Cidade (Naturalidade) #}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const estadoSelect = document.getElementById('id_estado_naturalidade');

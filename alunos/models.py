@@ -175,6 +175,30 @@ class Aluno(models.Model):
         ("e", "Excluído"),
     ]
 
+    ESTADO_CIVIL_CHOICES = [
+        ("solteiro", "Solteiro(a)"),
+        ("casado", "Casado(a)"),
+        ("divorciado", "Divorciado(a)"),
+        ("viuvo", "Viúvo(a)"),
+        ("separado", "Separado(a) judicialmente"),
+    ]
+
+    ESCOLARIDADE_CHOICES = [
+        ("sem_instrucao", "Sem instrução (ou Nenhuma)"),
+        ("fundamental_incompleto", "Fundamental - Incompleto"),
+        ("fundamental_completo", "Fundamental - Completo"),
+        ("medio_incompleto", "Médio - Incompleto"),
+        ("medio_completo", "Médio - Completo"),
+        ("superior_incompleto", "Superior - Incompleto"),
+        ("superior_completo", "Superior - Completo"),
+        ("pos_especializacao_incompleto", "Pós-graduação (Especialização/MBA) - Incompleto"),
+        ("pos_especializacao_completo", "Pós-graduação (Especialização/MBA) - Completo"),
+        ("mestrado_incompleto", "Mestrado - Incompleto"),
+        ("mestrado_completo", "Mestrado - Completo"),
+        ("doutorado_incompleto", "Doutorado - Incompleto"),
+        ("doutorado_completo", "Doutorado - Completo"),
+    ]
+
     celular_validator = RegexValidator(
         regex=r"^\d{10,11}$", message=_("Número de celular inválido")
     )
@@ -272,14 +296,23 @@ class Aluno(models.Model):
         null=True,
         help_text="Digite apenas números ou com máscara (00.000-000)",
     )
+    estado_ref = models.ForeignKey(
+        Estado,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="alunos_estado",
+        verbose_name=("Estado"),
+        help_text="Estado do endereço",
+    )
     cidade_ref = models.ForeignKey(
         Cidade,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="alunos_cidade",
-        verbose_name=("Cidade (Ref)"),
-        help_text="Referência normalizada da cidade (mantém campo texto para compatibilidade)",
+        verbose_name=("Cidade"),
+        help_text="Cidade do endereço",
     )
     bairro_ref = models.ForeignKey(
         Bairro,
@@ -287,8 +320,8 @@ class Aluno(models.Model):
         null=True,
         blank=True,
         related_name="alunos_bairro",
-        verbose_name=("Bairro (Ref)"),
-        help_text="Referência normalizada do bairro (mantém campo texto para compatibilidade)",
+        verbose_name=("Bairro"),
+        help_text="Bairro do endereço",
     )
 
     # Contatos
@@ -333,7 +366,18 @@ class Aluno(models.Model):
 
     # Outros dados pessoais
     estado_civil = models.CharField(
-        max_length=20, blank=True, null=True, verbose_name=_("Estado Civil")
+        max_length=20,
+        choices=ESTADO_CIVIL_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name=_("Estado Civil"),
+    )
+    escolaridade = models.CharField(
+        max_length=50,
+        choices=ESCOLARIDADE_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name=_("Escolaridade"),
     )
     profissao = models.CharField(
         max_length=100, blank=True, null=True, verbose_name=_("Profissão")
