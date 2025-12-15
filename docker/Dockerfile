@@ -39,7 +39,12 @@ RUN pip install --no-cache-dir -r requirements-production.txt
 
 COPY . /app/
 
-RUN mkdir -p /app/static /app/media /app/logs && \
+# Criar backup dos arquivos estáticos antes de serem sobrescritos pelo volume mount
+RUN mkdir -p /app/media /app/logs && \
+    if [ -d "/app/static" ] && [ "$(ls -A /app/static 2>/dev/null)" ]; then \
+        echo "Criando backup de arquivos estáticos..." && \
+        cp -r /app/static /app/.static_backup; \
+    fi && \
     chmod +x /app/docker/entrypoint.sh
 
 EXPOSE 8000

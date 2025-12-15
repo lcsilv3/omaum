@@ -27,6 +27,9 @@ django-ratelimit==4.1.0
 # API documentation
 drf-yasg==1.21.9
 
+# HTTP requests
+requests==2.32.5  # API calls (ViaCEP, etc)
+
 # Django REST framework
 djangorestframework==3.15.1  # API REST
 

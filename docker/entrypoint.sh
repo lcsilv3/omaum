@@ -12,6 +12,22 @@ done
 
 echo "Banco de dados conectado!"
 
+# Garantir que arquivos estáticos base existam
+# (necessário porque o volume mount pode sobrescrever o build)
+if [ ! -f "/app/static/img/logo.png" ]; then
+    echo "⚠️  Arquivos estáticos base não encontrados em /app/static/"
+    echo "Criando estrutura de diretórios..."
+    mkdir -p /app/static/img
+    
+    # Se existir um backup dos arquivos estáticos no build
+    if [ -d "/app/.static_backup" ]; then
+        echo "Restaurando arquivos estáticos do backup..."
+        cp -r /app/.static_backup/* /app/static/
+    else
+        echo "⚠️  Aviso: Arquivos estáticos base ausentes. Execute collectstatic manualmente."
+    fi
+fi
+
 # Executar migrações
 echo "Executando migrações..."
 python manage.py migrate --noinput
