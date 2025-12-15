@@ -1,3 +1,20 @@
+# ============================================================================
+# CONFIGURAÇÃO BASE - AMBIENTE DE DESENVOLVIMENTO
+# ============================================================================
+# Este arquivo define a configuração BASE para o ambiente de DESENVOLVIMENTO.
+#
+# ⚠️  IMPORTANTE:
+# - Dev usa porta EXTERNA 8001 (não conflita com prod na porta 8000)
+# - DJANGO_SETTINGS_MODULE=omaum.settings.development
+# - Badge: 🟡 Amarelo "Ambiente de Desenvolvimento"
+#
+# 📝 Para subir o ambiente de desenvolvimento:
+#    docker compose -p omaum-dev --env-file ../.env.dev -f docker-compose.yml up -d
+#
+# ❌ NÃO crie o arquivo "docker-compose.override.yml" (deve ser .example)
+#    Docker Compose lê esse arquivo automaticamente e pode causar conflitos!
+# ============================================================================
+
 services:
   omaum-db:
     image: postgres:15-alpine
@@ -46,7 +63,10 @@ services:
       - omaum_logs:/app/logs
       - "D:/Documentos Ordem/Ordem/CIIniciados/fotos:/fotos_externas:ro"
     ports:
-      - "8000:8000"
+      # ⚠️  PORTA 8001 (EXTERNA) -> 8000 (INTERNA)
+      # Dev usa porta 8001 para NÃO conflitar com produção (porta 8000)
+      # Acesso: http://localhost:8001
+      - "8001:8000"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\" || exit 1"]
       interval: 30s

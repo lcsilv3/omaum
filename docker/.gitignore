@@ -1,0 +1,12 @@
+# ⚠️  IMPORTANTE: Prevenção de Conflitos de Ambiente
+#
+# O arquivo docker-compose.override.yml é lido AUTOMATICAMENTE pelo Docker Compose
+# e pode causar conflitos entre ambientes de desenvolvimento e produção.
+#
+# Por isso, este arquivo deve permanecer como .example e nunca ser renomeado.
+
+# Ignorar docker-compose.override.yml se alguém criar por engano
+docker-compose.override.yml
+
+# Manter apenas o exemplo
+!docker-compose.override.yml.example

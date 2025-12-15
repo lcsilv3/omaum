@@ -1,3 +1,23 @@
+# ============================================================================
+# OVERRIDE DE PRODUÇÃO
+# ============================================================================
+# Este arquivo sobrescreve configurações do docker-compose.yml para PRODUÇÃO.
+#
+# ⚠️  IMPORTANTE:
+# - Prod usa portas 80 (Nginx) e 8000 (direto)
+# - DJANGO_SETTINGS_MODULE=omaum.settings.production
+# - Badge: 🔴 Vermelho "Ambiente de Produção"
+#
+# 📝 Para subir o ambiente de produção:
+#    docker compose --profile production -p omaum-prod \
+#      --env-file ../.env.production \
+#      -f docker-compose.yml \
+#      -f docker-compose.prod.override.yml up -d
+#
+# 🔐 Este arquivo DEVE ser explicitamente especificado (-f)
+#    NÃO renomeie para "docker-compose.override.yml" (seria lido automaticamente)
+# ============================================================================
+
 services:
   omaum-db:
     volumes:
@@ -17,6 +37,12 @@ services:
       - D:/docker/omaum/prod/staticfiles:/app/staticfiles
       - D:/docker/omaum/prod/media:/app/media
       - D:/docker/omaum/prod/logs:/app/logs
+    ports:
+      # ⚠️  PORTA 8000 (EXTERNA e INTERNA)
+      # Prod expõe 8000 para:
+      # 1. Nginx (proxy reverso na porta 80)
+      # 2. Acesso direto para debug: http://localhost:8000
+      - "8000:8000"
   omaum-redis:
     volumes:
       - D:/docker/omaum/prod/redis:/data
