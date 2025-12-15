@@ -151,6 +151,18 @@ urlpatterns = [
         localidade_api.get_bairros_por_cidade,
         name="api_bairros_por_cidade",
     ),
+    # API de busca de endereço por CEP
+    path(
+        "api/localidade/cep/<str:cep>/",
+        localidade_api.buscar_cep,
+        name="api_buscar_cep",
+    ),
+    # API para criar novo bairro
+    path(
+        "api/localidade/bairros/criar/",
+        localidade_api.criar_bairro,
+        name="api_criar_bairro",
+    ),
     # API de busca de foto por número iniciático
     path(
         "api/buscar-foto/<str:numero_iniciatico>/",
@@ -164,4 +176,6 @@ urlpatterns = [
         name="api_servir_foto_externa",
     ),
     path("", include(router.urls)),
+    # URLs de autocomplete para Select2
+    path("autocomplete/", include("alunos.urls_autocomplete")),
 ]

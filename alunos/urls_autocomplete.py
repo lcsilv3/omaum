@@ -3,6 +3,11 @@ from . import autocomplete
 
 urlpatterns = [
     path(
+        "estado-autocomplete/",
+        autocomplete.EstadoAutocomplete.as_view(),
+        name="estado-autocomplete",
+    ),
+    path(
         "cidade-autocomplete/",
         autocomplete.CidadeAutocomplete.as_view(),
         name="cidade-autocomplete",
