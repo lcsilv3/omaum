@@ -91,90 +91,202 @@ $(document).ready(function() {
   } else {
     console.warn('Select2 não encontrado; pulando inicialização para evitar quebra do formulário.');
   }
-});
 
-document.addEventListener("DOMContentLoaded", function () {
-  // Máscara para horário (__:__ às __:__)
+  // ============================================================================
+  // MÁSCARA DE HORÁRIO: __:__ às __:__
+  // ============================================================================
   const horarioInput = document.querySelector('input[name="horario"]');
+  
   if (horarioInput) {
-    console.log('Campo horário encontrado, aplicando máscara...');
 
-    const template = '__:__ às __:__';
-    const slots = [0, 1, 3, 4, 9, 10, 12, 13]; // posições dos dígitos
+    const TEMPLATE = '__:__ às __:__';
+    const DIGIT_POSITIONS = [0, 1, 3, 4, 9, 10, 12, 13];
+    const MAX_DIGITS = 8;
 
-    // Define o placeholder uma vez
-    horarioInput.placeholder = template;
+    // Estado para armazenar os dígitos digitados
+    let currentDigits = [];
 
-    const formatHorario = (raw) => {
-      const digits = (raw || '').replace(/\D/g, '').slice(0, 8);
-      if (!digits) return ''; // Retorna vazio se não houver dígitos
-      
-      const chars = template.split('');
-      const digitArray = digits.split('');
-
-      slots.forEach((slotIndex, i) => {
-        if (digitArray[i]) {
-          chars[slotIndex] = digitArray[i];
+    /**
+     * Aplica a máscara com os dígitos atuais
+     */
+    function applyMask() {
+      const chars = TEMPLATE.split('');
+      currentDigits.forEach((digit, i) => {
+        if (i < DIGIT_POSITIONS.length) {
+          chars[DIGIT_POSITIONS[i]] = digit;
         }
       });
       return chars.join('');
-    };
-
-    const applyFormat = (inputEl) => {
-      const selectionStart = inputEl.selectionStart;
-      const originalLength = inputEl.value.length;
-      
-      const formatted = formatHorario(inputEl.value);
-      inputEl.value = formatted;
-
-      // Lógica para posicionar o cursor de forma inteligente
-      if (formatted.length > originalLength) {
-        // Se um caractere foi adicionado (geralmente um número), move o cursor
-        inputEl.setSelectionRange(selectionStart + 1, selectionStart + 1);
-      } else {
-        // Se um caractere foi removido, mantém a posição
-        inputEl.setSelectionRange(selectionStart, selectionStart);
-      }
-
-      // Se o cursor estiver no final, move para o próximo slot vazio
-      const nextSlot = formatted.indexOf('_');
-      if (selectionStart > nextSlot && nextSlot !== -1) {
-        inputEl.setSelectionRange(nextSlot, nextSlot);
-      }
-    };
-
-    horarioInput.addEventListener('input', (e) => {
-      applyFormat(e.target);
-    });
-
-    horarioInput.addEventListener('focus', (e) => {
-        // Ao focar, move o cursor para a primeira posição editável
-        const firstSlot = e.target.value.indexOf('_');
-        const cursorPos = firstSlot === -1 ? e.target.value.length : firstSlot;
-        // Usar setTimeout para garantir que o cursor seja posicionado após a ação de foco padrão
-        setTimeout(() => {
-            e.target.setSelectionRange(cursorPos, cursorPos);
-        }, 0);
-    });
-
-    horarioInput.addEventListener('blur', (e) => {
-      // Opcional: limpa se estiver parcialmente preenchido e inválido
-      const digits = (e.target.value.match(/\d/g) || []).length;
-      if (digits > 0 && digits < 8) {
-        // Comportamento pode ser definido aqui: limpar, alertar, etc.
-        // Por enquanto, vamos manter o valor parcial.
-      } else if (digits === 0) {
-        e.target.value = ''; // Limpa se não houver nenhum número
-      }
-    });
-
-    // Formatar valor existente ao carregar a página
-    if (horarioInput.value) {
-        applyFormat(horarioInput);
     }
+
+    /**
+     * Atualiza o valor do input com a máscara aplicada
+     */
+    function updateValue() {
+      horarioInput.value = applyMask();
+    }
+
+    /**
+     * Valida se o horário está dentro dos limites
+     */
+    function validateTime() {
+      if (currentDigits.length < 4) return true;
+      
+      const h1 = parseInt(currentDigits[0] + currentDigits[1], 10);
+      const m1 = parseInt(currentDigits[2] + currentDigits[3], 10);
+      if (h1 > 23 || m1 > 59) return false;
+
+      if (currentDigits.length >= 8) {
+        const h2 = parseInt(currentDigits[4] + currentDigits[5], 10);
+        const m2 = parseInt(currentDigits[6] + currentDigits[7], 10);
+        if (h2 > 23 || m2 > 59) return false;
+      }
+
+      return true;
+    }
+
+    /**
+     * Posiciona o cursor na próxima posição editável
+     */
+    function setCursorPosition() {
+      const pos = currentDigits.length < DIGIT_POSITIONS.length 
+        ? DIGIT_POSITIONS[currentDigits.length] 
+        : TEMPLATE.length;
+      setTimeout(() => {
+        horarioInput.setSelectionRange(pos, pos);
+      }, 0);
+    }
+
+    /**
+     * Handler para keydown - captura teclas antes de modificar o input
+     */
+    function handleKeyDown(e) {
+      // Permitir navegação
+      if (['Tab', 'Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+        return;
+      }
+
+      // Bloquear setas (usuário não deve navegar manualmente)
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      // Backspace: remove último dígito
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (currentDigits.length > 0) {
+          currentDigits.pop();
+          updateValue();
+          setCursorPosition();
+        }
+        return;
+      }
+
+      // Delete: mesma ação que Backspace
+      if (e.key === 'Delete') {
+        e.preventDefault();
+        if (currentDigits.length > 0) {
+          currentDigits.pop();
+          updateValue();
+          setCursorPosition();
+        }
+        return;
+      }
+
+      // Apenas dígitos
+      if (!/^\d$/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      // Não permitir mais de 8 dígitos
+      if (currentDigits.length >= MAX_DIGITS) {
+        e.preventDefault();
+        return;
+      }
+
+      // Adicionar dígito temporariamente para validação
+      e.preventDefault();
+      const testDigits = [...currentDigits, e.key];
+      currentDigits = testDigits;
+
+      // Validar horário
+      if (!validateTime()) {
+        // Se inválido, não adiciona o dígito
+        currentDigits.pop();
+        return;
+      }
+
+      // Se válido, atualizar
+      updateValue();
+      setCursorPosition();
+    }
+
+    /**
+     * Handler para input - previne qualquer modificação direta
+     */
+    function handleInput(e) {
+      e.preventDefault();
+      // Sempre restaurar o valor com a máscara
+      updateValue();
+      setCursorPosition();
+    }
+
+    /**
+     * Handler para paste - previne colar
+     */
+    function handlePaste(e) {
+      e.preventDefault();
+    }
+
+    /**
+     * Handler para focus
+     */
+    function handleFocus() {
+      // Garantir que o template está visível
+      if (!horarioInput.value || horarioInput.value.length !== TEMPLATE.length) {
+        updateValue();
+      }
+      setCursorPosition();
+    }
+
+    /**
+     * Handler para blur
+     */
+    function handleBlur() {
+      if (currentDigits.length === 0) {
+        horarioInput.value = '';
+      }
+    }
+
+    /**
+     * Inicializa o campo
+     */
+    function initializeField() {
+      // Extrair dígitos do valor inicial (se existir)
+      const initialValue = horarioInput.value;
+      if (initialValue) {
+        const digits = initialValue.replace(/\D/g, '').slice(0, MAX_DIGITS).split('');
+        currentDigits = digits;
+      }
+      updateValue();
+    }
+
+    // Inicializar
+    initializeField();
+
+    // Registrar eventos
+    horarioInput.addEventListener('keydown', handleKeyDown);
+    horarioInput.addEventListener('input', handleInput);
+    horarioInput.addEventListener('paste', handlePaste);
+    horarioInput.addEventListener('focus', handleFocus);
+    horarioInput.addEventListener('blur', handleBlur);
   }
 
-  // Máscara para número do livro (apenas números)
+  // ============================================================================
+  // MÁSCARA PARA NÚMERO DO LIVRO (apenas números, máx 3 dígitos)
+  // ============================================================================
   const numLivroInput = document.querySelector('input[name="num_livro"]');
   if (numLivroInput) {
     numLivroInput.addEventListener("input", function (e) {
@@ -182,7 +294,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Atualizar data de término das atividades ao alterar início (padrão: +24 meses)
+  // ============================================================================
+  // AUTO-PREENCHIMENTO: Data de término (+24 meses da data de início)
+  // ============================================================================
   const inicioInput = document.querySelector('input[name="data_inicio_ativ"]');
   const terminoInput = document.querySelector('input[name="data_termino_atividades"]');
   if (inicioInput && terminoInput) {

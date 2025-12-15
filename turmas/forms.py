@@ -53,7 +53,7 @@ class TurmaForm(forms.ModelForm):
                 }
             ),
             "horario": forms.TextInput(attrs={"placeholder": "__:__ às __:__"}),
-            "num_livro": forms.NumberInput(attrs={"placeholder": "999"}),
+            "num_livro": forms.NumberInput(attrs={"placeholder": "___"}),
             "dias_semana": forms.Select(),
         }
 

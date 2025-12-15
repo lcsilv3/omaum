@@ -13,23 +13,661 @@
     return digits.substring(0,11).replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
   }
   
-  function maskCEP(v){
-    // Novo formato: 00.000-000 (10 caracteres visuais) armazenando só dígitos
-    const d = v.replace(/\D/g,'').substring(0,8); // max 8 dígitos
-    if(d.length <= 2) return d; // 0-2
-    if(d.length <= 5) return d.replace(/(\d{2})(\d+)/,'$1.$2'); // 3-5
-    return d.replace(/(\d{2})(\d{3})(\d{0,3})/,'$1.$2-$3'); // 6-8
-  } 
-  function maskPhone(v){const n=v.replace(/\D/g,'').substring(0,11);if(n.length===0) return '';if(n.length<=10){return n.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3').replace(/-$/,'');}return n.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3').replace(/-$/,'');}
-  function cleanDigits(v){return v.replace(/\D/g,'');}
-  function maskOrdemServico(v) {
-    // Permite apenas números e barra, formato: 1234/2025
-    let val = v.replace(/[^\d]/g, '');
-    if (val.length > 8) val = val.substring(0, 8);
-    if (val.length > 4) {
-      return val.substring(0, 4) + '/' + val.substring(4, 8);
+  // MÁSCARA ROBUSTA CEP: Suporta dois formatos via Shift
+  // Formato 1 (padrão): _____-___ (ex: 20250-450)
+  // Formato 2 (Shift): __.___-___ (ex: 20.250-450)
+  function createCEPMask(input) {
+    let useShortFormat = false; // false = _____-___, true = __.___-___
+    let currentDigits = [];
+    const MAX_DIGITS = 8;
+
+    function getTemplate() {
+      return useShortFormat ? '__.___-___' : '_____-___';
     }
-    return val;
+
+    function getDigitPositions() {
+      return useShortFormat ? [0, 1, 3, 4, 5, 7, 8, 9] : [0, 1, 2, 3, 4, 6, 7, 8];
+    }
+
+    function applyMask() {
+      const template = getTemplate();
+      const positions = getDigitPositions();
+      const chars = template.split('');
+      currentDigits.forEach((digit, i) => {
+        if (i < positions.length) {
+          chars[positions[i]] = digit;
+        }
+      });
+      return chars.join('');
+    }
+
+    function updateValue() {
+      input.value = applyMask();
+    }
+
+    function setCursorPosition() {
+      const positions = getDigitPositions();
+      const pos = currentDigits.length < positions.length 
+        ? positions[currentDigits.length] 
+        : getTemplate().length;
+      setTimeout(() => {
+        input.setSelectionRange(pos, pos);
+      }, 0);
+    }
+
+    function handleKeyDown(e) {
+      // Alternar formato com Shift+C
+      if (e.shiftKey && e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        useShortFormat = !useShortFormat;
+        updateValue();
+        setCursorPosition();
+        console.log('🔄 Formato CEP alternado para:', useShortFormat ? '__.___-___' : '_____-___');
+        return;
+      }
+
+      if (['Tab', 'Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+        return;
+      }
+
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (currentDigits.length > 0) {
+          currentDigits.pop();
+          updateValue();
+          setCursorPosition();
+        }
+        return;
+      }
+
+      if (e.key === 'Delete') {
+        e.preventDefault();
+        currentDigits = [];
+        updateValue();
+        setCursorPosition();
+        return;
+      }
+
+      if (!/^\d$/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (currentDigits.length >= MAX_DIGITS) {
+        e.preventDefault();
+        return;
+      }
+
+      e.preventDefault();
+      currentDigits.push(e.key);
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handleInput(e) {
+      e.preventDefault();
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handlePaste(e) {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      const digits = text.replace(/\D/g,'').substring(0, MAX_DIGITS);
+      currentDigits = digits.split('');
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handleFocus() {
+      if (!input.value || input.value.length !== getTemplate().length) {
+        updateValue();
+      }
+      setCursorPosition();
+    }
+
+    function handleBlur() {
+      if (currentDigits.length === 0) {
+        input.value = '';
+      }
+    }
+
+    function initialize() {
+      const existingValue = input.value.replace(/\D/g,'').substring(0, MAX_DIGITS);
+      if (existingValue) {
+        currentDigits = existingValue.split('');
+      }
+      updateValue();
+      
+      input.addEventListener('keydown', handleKeyDown);
+      input.addEventListener('input', handleInput);
+      input.addEventListener('paste', handlePaste);
+      input.addEventListener('focus', handleFocus);
+      input.addEventListener('blur', handleBlur);
+    }
+
+    initialize();
+  } 
+  // MÁSCARA ROBUSTA HORA: HH:MM
+  function createHoraMask(input) {
+    const TEMPLATE = 'HH:MM';
+    const DIGIT_POSITIONS = [0, 1, 3, 4];
+    const MAX_DIGITS = 4;
+    let currentDigits = [];
+
+    function applyMask() {
+      const chars = TEMPLATE.split('');
+      currentDigits.forEach((digit, i) => {
+        if (i < DIGIT_POSITIONS.length) {
+          chars[DIGIT_POSITIONS[i]] = digit;
+        }
+      });
+      return chars.join('');
+    }
+
+    function updateValue() {
+      input.value = applyMask();
+    }
+
+    function setCursorPosition() {
+      const pos = currentDigits.length < DIGIT_POSITIONS.length 
+        ? DIGIT_POSITIONS[currentDigits.length] 
+        : TEMPLATE.length;
+      setTimeout(() => {
+        input.setSelectionRange(pos, pos);
+      }, 0);
+    }
+
+    function handleKeyDown(e) {
+      if (['Tab', 'Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+        return;
+      }
+
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (currentDigits.length > 0) {
+          currentDigits.pop();
+          updateValue();
+          setCursorPosition();
+        }
+        return;
+      }
+
+      if (e.key === 'Delete') {
+        e.preventDefault();
+        currentDigits = [];
+        updateValue();
+        setCursorPosition();
+        return;
+      }
+
+      if (!/^\d$/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      // Validação de hora (HH <= 23, MM <= 59)
+      if (currentDigits.length === 0 && parseInt(e.key) > 2) {
+        e.preventDefault();
+        return;
+      }
+      if (currentDigits.length === 1 && parseInt(currentDigits[0]) === 2 && parseInt(e.key) > 3) {
+        e.preventDefault();
+        return;
+      }
+      if (currentDigits.length === 2 && parseInt(e.key) > 5) {
+        e.preventDefault();
+        return;
+      }
+
+      if (currentDigits.length >= MAX_DIGITS) {
+        e.preventDefault();
+        return;
+      }
+
+      e.preventDefault();
+      currentDigits.push(e.key);
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handleInput(e) {
+      e.preventDefault();
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handlePaste(e) {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      const digits = text.replace(/\D/g,'').substring(0, MAX_DIGITS);
+      currentDigits = digits.split('');
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handleFocus() {
+      if (!input.value || input.value.length !== TEMPLATE.length) {
+        updateValue();
+      }
+      setCursorPosition();
+    }
+
+    function handleBlur() {
+      if (currentDigits.length === 0) {
+        input.value = '';
+      }
+    }
+
+    function initialize() {
+      const existingValue = input.value.replace(/\D/g,'').substring(0, MAX_DIGITS);
+      if (existingValue) {
+        currentDigits = existingValue.split('');
+      }
+      updateValue();
+      
+      input.addEventListener('keydown', handleKeyDown);
+      input.addEventListener('input', handleInput);
+      input.addEventListener('paste', handlePaste);
+      input.addEventListener('focus', handleFocus);
+      input.addEventListener('blur', handleBlur);
+    }
+
+    initialize();
+  }
+
+  // MÁSCARA ROBUSTA CELULAR: (__) _____-____
+  function createCelularMask(input) {
+    const TEMPLATE = '(__) _____-____';
+    const DIGIT_POSITIONS = [1, 2, 5, 6, 7, 8, 9, 11, 12, 13, 14];
+    const MAX_DIGITS = 11;
+    let currentDigits = [];
+
+    function applyMask() {
+      const chars = TEMPLATE.split('');
+      currentDigits.forEach((digit, i) => {
+        if (i < DIGIT_POSITIONS.length) {
+          chars[DIGIT_POSITIONS[i]] = digit;
+        }
+      });
+      return chars.join('');
+    }
+
+    function updateValue() {
+      input.value = applyMask();
+    }
+
+    function setCursorPosition() {
+      const pos = currentDigits.length < DIGIT_POSITIONS.length 
+        ? DIGIT_POSITIONS[currentDigits.length] 
+        : TEMPLATE.length;
+      setTimeout(() => {
+        input.setSelectionRange(pos, pos);
+      }, 0);
+    }
+
+    function handleKeyDown(e) {
+      if (['Tab', 'Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+        return;
+      }
+
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (currentDigits.length > 0) {
+          currentDigits.pop();
+          updateValue();
+          setCursorPosition();
+        }
+        return;
+      }
+
+      if (e.key === 'Delete') {
+        e.preventDefault();
+        currentDigits = [];
+        updateValue();
+        setCursorPosition();
+        return;
+      }
+
+      if (!/^\d$/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (currentDigits.length >= MAX_DIGITS) {
+        e.preventDefault();
+        return;
+      }
+
+      e.preventDefault();
+      currentDigits.push(e.key);
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handleInput(e) {
+      e.preventDefault();
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handlePaste(e) {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      const digits = text.replace(/\D/g,'').substring(0, MAX_DIGITS);
+      currentDigits = digits.split('');
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handleFocus() {
+      if (!input.value || input.value.length !== TEMPLATE.length) {
+        updateValue();
+      }
+      setCursorPosition();
+    }
+
+    function handleBlur() {
+      if (currentDigits.length === 0) {
+        input.value = '';
+      }
+    }
+
+    function initialize() {
+      const existingValue = input.value.replace(/\D/g,'').substring(0, MAX_DIGITS);
+      if (existingValue) {
+        currentDigits = existingValue.split('');
+      }
+      updateValue();
+      
+      input.addEventListener('keydown', handleKeyDown);
+      input.addEventListener('input', handleInput);
+      input.addEventListener('paste', handlePaste);
+      input.addEventListener('focus', handleFocus);
+      input.addEventListener('blur', handleBlur);
+    }
+
+    initialize();
+  }
+
+  // MÁSCARA ROBUSTA TELEFONE: (__) ____-____
+  function createTelefoneMask(input) {
+    const TEMPLATE = '(__) ____-____';
+    const DIGIT_POSITIONS = [1, 2, 5, 6, 7, 8, 10, 11, 12, 13];
+    const MAX_DIGITS = 10;
+    let currentDigits = [];
+
+    function applyMask() {
+      const chars = TEMPLATE.split('');
+      currentDigits.forEach((digit, i) => {
+        if (i < DIGIT_POSITIONS.length) {
+          chars[DIGIT_POSITIONS[i]] = digit;
+        }
+      });
+      return chars.join('');
+    }
+
+    function updateValue() {
+      input.value = applyMask();
+    }
+
+    function setCursorPosition() {
+      const pos = currentDigits.length < DIGIT_POSITIONS.length 
+        ? DIGIT_POSITIONS[currentDigits.length] 
+        : TEMPLATE.length;
+      setTimeout(() => {
+        input.setSelectionRange(pos, pos);
+      }, 0);
+    }
+
+    function handleKeyDown(e) {
+      if (['Tab', 'Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+        return;
+      }
+
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (currentDigits.length > 0) {
+          currentDigits.pop();
+          updateValue();
+          setCursorPosition();
+        }
+        return;
+      }
+
+      if (e.key === 'Delete') {
+        e.preventDefault();
+        currentDigits = [];
+        updateValue();
+        setCursorPosition();
+        return;
+      }
+
+      if (!/^\d$/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (currentDigits.length >= MAX_DIGITS) {
+        e.preventDefault();
+        return;
+      }
+
+      e.preventDefault();
+      currentDigits.push(e.key);
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handleInput(e) {
+      e.preventDefault();
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handlePaste(e) {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      const digits = text.replace(/\D/g,'').substring(0, MAX_DIGITS);
+      currentDigits = digits.split('');
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handleFocus() {
+      if (!input.value || input.value.length !== TEMPLATE.length) {
+        updateValue();
+      }
+      setCursorPosition();
+    }
+
+    function handleBlur() {
+      if (currentDigits.length === 0) {
+        input.value = '';
+      }
+    }
+
+    function initialize() {
+      const existingValue = input.value.replace(/\D/g,'').substring(0, MAX_DIGITS);
+      if (existingValue) {
+        currentDigits = existingValue.split('');
+      }
+      updateValue();
+      
+      input.addEventListener('keydown', handleKeyDown);
+      input.addEventListener('input', handleInput);
+      input.addEventListener('paste', handlePaste);
+      input.addEventListener('focus', handleFocus);
+      input.addEventListener('blur', handleBlur);
+    }
+
+    initialize();
+  }
+  function cleanDigits(v){return v.replace(/\D/g,'');}
+  /**
+   * Máscara robusta para Ordem de Serviço: ____/____ (formato NNNN/AAAA)
+   * Mantém template visível e permite apenas 8 dígitos
+   */
+  function createOrdemServicoMask(input) {
+    const TEMPLATE = '____/____';
+    const DIGIT_POSITIONS = [0, 1, 2, 3, 5, 6, 7, 8];
+    const MAX_DIGITS = 8;
+    let currentDigits = [];
+
+    function applyMask() {
+      const chars = TEMPLATE.split('');
+      currentDigits.forEach((digit, i) => {
+        if (i < DIGIT_POSITIONS.length) {
+          chars[DIGIT_POSITIONS[i]] = digit;
+        }
+      });
+      return chars.join('');
+    }
+
+    function updateValue() {
+      input.value = applyMask();
+    }
+
+    function setCursorPosition() {
+      const pos = currentDigits.length < DIGIT_POSITIONS.length 
+        ? DIGIT_POSITIONS[currentDigits.length] 
+        : TEMPLATE.length;
+      setTimeout(() => {
+        input.setSelectionRange(pos, pos);
+      }, 0);
+    }
+
+    function handleKeyDown(e) {
+      console.log('🔑 keydown Ordem Serviço:', e.key, 'Dígitos atuais:', currentDigits.length);
+      
+      if (['Tab', 'Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+        return;
+      }
+
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (currentDigits.length > 0) {
+          currentDigits.pop();
+          updateValue();
+          setCursorPosition();
+          // Limpar validação visual ao editar
+          input.style.borderColor = '';
+          input.style.backgroundColor = '';
+        }
+        return;
+      }
+
+      if (e.key === 'Delete') {
+        e.preventDefault();
+        if (currentDigits.length > 0) {
+          currentDigits.pop();
+          updateValue();
+          setCursorPosition();
+          input.style.borderColor = '';
+          input.style.backgroundColor = '';
+        }
+        return;
+      }
+
+      if (!/^\d$/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (currentDigits.length >= MAX_DIGITS) {
+        e.preventDefault();
+        return;
+      }
+
+      e.preventDefault();
+      currentDigits.push(e.key);
+      updateValue();
+      setCursorPosition();
+      
+      // Validar ano quando completar 8 dígitos (NNNN/AAAA)
+      if (currentDigits.length === MAX_DIGITS) {
+        const ano = parseInt(currentDigits.slice(4, 8).join(''));
+        if (ano < 1900 || ano > 2099) {
+          input.style.borderColor = '#dc3545';
+          input.style.backgroundColor = '#fff5f5';
+          setTimeout(() => {
+            input.style.borderColor = '';
+            input.style.backgroundColor = '';
+          }, 2000);
+          console.warn('⚠️ Ano fora do intervalo válido (1900-2099):', ano);
+        } else {
+          input.style.borderColor = '#28a745';
+          setTimeout(() => {
+            input.style.borderColor = '';
+          }, 1000);
+        }
+      }
+    }
+
+    function handleInput(e) {
+      e.preventDefault();
+      updateValue();
+      setCursorPosition();
+    }
+
+    function handlePaste(e) {
+      e.preventDefault();
+    }
+
+    function handleFocus() {
+      if (!input.value || input.value.length !== TEMPLATE.length) {
+        updateValue();
+      }
+      setCursorPosition();
+    }
+
+    function handleBlur() {
+      if (currentDigits.length === 0) {
+        input.value = '';
+      }
+    }
+
+    function initialize() {
+      const initialValue = input.value || '';
+      if (initialValue) {
+        const digits = initialValue.replace(/\D/g, '').slice(0, MAX_DIGITS).split('');
+        currentDigits = digits;
+      }
+      updateValue();
+    }
+
+    initialize();
+
+    input.addEventListener('keydown', handleKeyDown);
+    input.addEventListener('input', handleInput);
+    input.addEventListener('paste', handlePaste);
+    input.addEventListener('focus', handleFocus);
+    input.addEventListener('blur', handleBlur);
   }
 
   function applyPhoneMasks(){
@@ -59,82 +697,209 @@
   window.applyDisplayMasks = applyDisplayMasks;
 
   function attach(){
+    // Máscara CPF (mantém legado por compatibilidade com forms.py)
     const cpf=document.getElementById('id_cpf'); if(cpf){cpf.addEventListener('input',e=>e.target.value=maskCPF(e.target.value)); cpf.value=maskCPF(cpf.value||'');}
 
-    // Máscara Ordem de Serviço (____/9999)
-    function applyOrdemServicoMaskTo(el) {
-      if (!el) return;
-      el.addEventListener('input', e => {
-        e.target.value = maskOrdemServico(e.target.value);
+    // Aplicar máscaras robustas nos campos principais
+    // CEP com integração ViaCEP
+    const cepEl = document.getElementById('id_cep');
+    if (cepEl && !cepEl.dataset.maskApplied) {
+      createCEPMask(cepEl);
+      cepEl.dataset.maskApplied = 'true';
+      
+      // Integração ViaCEP ao perder foco
+      cepEl.addEventListener('blur', () => {
+        const raw = cleanDigits(cepEl.value);
+        if (raw.length === 8) {
+          fetch('https://viacep.com.br/ws/' + raw + '/json/')
+            .then(r => r.json())
+            .then(d => {
+              if (!d.erro) {
+                const map = {rua: 'logradouro', bairro_ref: 'bairro', cidade_ref: 'localidade'};
+                Object.keys(map).forEach(k => {
+                  const el = document.getElementById('id_' + k);
+                  if (el && !el.value) el.value = d[map[k]] || '';
+                });
+              }
+            })
+            .catch(() => {});
+        }
       });
     }
-    // IDs e names possíveis
-    const ordemIds = [
-      'id_ordem_servico',
-      'ordem_servico',
-    ];
-    ordemIds.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) applyOrdemServicoMaskTo(el);
-    });
-    // Formsets dinâmicos (historico-__prefix__-ordem_servico)
-    function applyMaskToAllOrdemServico() {
-      const historicoInputs = document.querySelectorAll('input[id^="id_historico-"][id$="-ordem_servico"]');
-      historicoInputs.forEach(applyOrdemServicoMaskTo);
+
+    // Lógica CEP vazio: usar Estado/Cidade de Naturalidade para popular Cidade/Bairro de endereço
+    const estadoNatEl = document.getElementById('id_estado_naturalidade');
+    const cidadeNatEl = document.getElementById('id_cidade_naturalidade');
+    const cidadeRefEl = document.getElementById('id_cidade_ref');
+    const bairroRefEl = document.getElementById('id_bairro_ref');
+    
+    if (estadoNatEl && cidadeNatEl && cidadeRefEl) {
+      // Quando mudar Estado de Naturalidade, carregar cidades
+      estadoNatEl.addEventListener('change', () => {
+        const cepValue = cepEl ? cleanDigits(cepEl.value) : '';
+        if (cepValue.length === 8) return; // Se CEP preenchido, não interfere
+        
+        const estadoId = estadoNatEl.value;
+        if (!estadoId) return;
+        
+        // Buscar cidades do estado selecionado
+        fetch(`/alunos/api/cidades/estado/${estadoId}/`)
+          .then(r => r.ok ? r.json() : [])
+          .then(lista => {
+            if (Array.isArray(lista) && lista.length) {
+              // Popular cidade_naturalidade
+              if (cidadeNatEl.tagName !== 'SELECT') {
+                const select = document.createElement('select');
+                select.name = cidadeNatEl.name;
+                select.id = cidadeNatEl.id;
+                select.className = cidadeNatEl.className || 'form-select';
+                cidadeNatEl.replaceWith(select);
+                cidadeNatEl = document.getElementById('id_cidade_naturalidade');
+              }
+              cidadeNatEl.innerHTML = '<option value="">Selecione uma cidade</option>' + 
+                lista.map(c => `<option value="${c.id}" data-nome="${c.nome}">${c.nome}</option>`).join('');
+            }
+          })
+          .catch(() => {});
+      });
+      
+      // Quando selecionar Cidade de Naturalidade, copiar para cidade_ref e carregar bairros
+      cidadeNatEl.addEventListener('change', () => {
+        const cepValue = cepEl ? cleanDigits(cepEl.value) : '';
+        if (cepValue.length === 8) return; // Se CEP preenchido, não interfere
+        
+        const cidadeId = cidadeNatEl.value;
+        const selectedOption = cidadeNatEl.options[cidadeNatEl.selectedIndex];
+        const cidadeNome = selectedOption ? selectedOption.getAttribute('data-nome') || selectedOption.text : '';
+        
+        // Copiar nome da cidade para cidade_ref
+        if (cidadeRefEl && cidadeNome) {
+          cidadeRefEl.value = cidadeNome;
+        }
+        
+        // Carregar bairros da cidade selecionada
+        if (cidadeId && bairroRefEl) {
+          fetch(`/alunos/api/bairros/cidade/${cidadeId}/`)
+            .then(r => r.ok ? r.json() : [])
+            .then(lista => {
+              if (Array.isArray(lista) && lista.length) {
+                // Transformar bairro_ref em select se necessário
+                if (bairroRefEl.tagName !== 'SELECT') {
+                  const select = document.createElement('select');
+                  select.name = bairroRefEl.name;
+                  select.id = bairroRefEl.id;
+                  select.className = bairroRefEl.className || 'form-select';
+                  bairroRefEl.replaceWith(select);
+                  bairroRefEl = document.getElementById('id_bairro_ref');
+                }
+                bairroRefEl.innerHTML = '<option value="">Selecione um bairro</option>' + 
+                  lista.map(b => `<option value="${b.nome}">${b.nome}</option>`).join('');
+              }
+            })
+            .catch(() => {});
+        }
+      });
     }
+
+    const horaEl = document.getElementById('id_hora_nascimento');
+    if (horaEl && !horaEl.dataset.maskApplied) {
+      createHoraMask(horaEl);
+      horaEl.dataset.maskApplied = 'true';
+    }
+
+    // Celulares
+    ['celular', 'celular_primeiro_contato', 'celular_segundo_contato'].forEach(id => {
+      const el = document.getElementById('id_' + id);
+      if (el && !el.dataset.maskApplied) {
+        createCelularMask(el);
+        el.dataset.maskApplied = 'true';
+      }
+    });
+
+    // Telefone
+    const telefoneEl = document.getElementById('id_telefone');
+    if (telefoneEl && !telefoneEl.dataset.maskApplied) {
+      createTelefoneMask(telefoneEl);
+      telefoneEl.dataset.maskApplied = 'true';
+    }
+
+    // Máscara Ordem de Serviço (____/____)
+    function applyMaskToAllOrdemServico() {
+      // EXCLUIR template __prefix__ do querySelector
+      const historicoInputs = document.querySelectorAll('input[id^="id_historico-"][id$="-ordem_servico"]:not([id*="__prefix__"])');
+      console.log('🔍 Aplicando máscara Ordem de Serviço. Campos encontrados (exceto templates):', historicoInputs.length);
+      historicoInputs.forEach(input => {
+        if (input && !input.dataset.maskApplied) {
+          console.log('✅ Aplicando máscara em:', input.id);
+          createOrdemServicoMask(input);
+          input.dataset.maskApplied = 'true';
+        } else if (input) {
+          console.log('⚠️ Máscara já aplicada em:', input.id);
+        }
+      });
+      
+      // Também aplicar em campos individuais (fora do formset)
+      const ordemIds = ['id_ordem_servico', 'ordem_servico'];
+      ordemIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.dataset.maskApplied) {
+          console.log('✅ Aplicando máscara em campo individual:', id);
+          createOrdemServicoMask(el);
+          el.dataset.maskApplied = 'true';
+        }
+      });
+    }
+    
+    // Executar imediatamente
     applyMaskToAllOrdemServico();
+    
+    // Re-executar periodicamente para pegar campos adicionados dinamicamente
+    setInterval(applyMaskToAllOrdemServico, 500);
 
     // MutationObserver para campos adicionados dinamicamente
     const historicoFormList = document.getElementById('historico-form-list');
     if (historicoFormList && window.MutationObserver) {
+      console.log('🔎 MutationObserver ativo em historico-form-list');
       const observer = new MutationObserver((mutationsList) => {
+        console.log('🔄 MutationObserver detectou', mutationsList.length, 'mutações');
         for (const mutation of mutationsList) {
           if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            console.log('  📦 childList com', mutation.addedNodes.length, 'nós adicionados');
             mutation.addedNodes.forEach(node => {
               if (node.nodeType === 1) {
-                const input = node.querySelector('input[id^="id_historico-"][id$="-ordem_servico"]');
-                if (input) applyOrdemServicoMaskTo(input);
+                console.log('  🆕 Nó element:', node.tagName, node.id || node.className);
+                // Excluir __prefix__ do querySelector
+                const input = node.querySelector('input[id^="id_historico-"][id$="-ordem_servico"]:not([id*="__prefix__"])');
+                if (input && !input.dataset.maskApplied) {
+                  console.log('  ✅ Aplicando máscara via MutationObserver em:', input.id);
+                  createOrdemServicoMask(input);
+                  input.dataset.maskApplied = 'true';
+                } else if (input) {
+                  console.log('  ⚠️ Máscara já aplicada em:', input.id);
+                }
               }
             });
           }
         }
       });
       observer.observe(historicoFormList, { childList: true, subtree: true });
+    } else {
+      console.warn('⚠️ historico-form-list não encontrado ou MutationObserver não disponível');
     }
-    const cep=document.getElementById('id_cep'); if(cep){
-      cep.addEventListener('input',e=>e.target.value=maskCEP(e.target.value));
-      cep.value=maskCEP(cep.value||'');
-      cep.addEventListener('blur',()=>{
-        const raw=cleanDigits(cep.value);
-        if(raw.length===8){
-          fetch('https://viacep.com.br/ws/'+raw+'/json/')
-            .then(r=>r.json())
-            .then(d=>{
-              if(!d.erro){
-                const map={rua:'logradouro',bairro:'bairro',cidade:'localidade',estado:'uf'};
-                ['rua','bairro','cidade','estado'].forEach(k=>{
-                  const el=document.getElementById('id_'+k);
-                  if(el && !el.value) el.value=d[map[k]]||'';
-                });
-              }
-            })
-            .catch(()=>{});
-        }
-      });
-    }
-    ['celular_primeiro_contato','celular_segundo_contato','telefone','celular'].forEach(id=>{const el=document.getElementById('id_'+id); if(el){el.addEventListener('input',e=>e.target.value=maskPhone(e.target.value));}});
 
     // Fallback genérico: qualquer campo com data-mask-phone recebe a máscara mesmo se o id mudar
     document.querySelectorAll('[data-mask-phone]').forEach(el=>{
-      el.addEventListener('input',e=>{e.target.value=maskPhone(e.target.value);});
+      if (!el.dataset.maskApplied) {
+        // Se for celular (11 dígitos), usar createCelularMask, senão createTelefoneMask
+        const digits = el.value.replace(/\D/g,'');
+        if (digits.length > 10 || el.id.includes('celular')) {
+          createCelularMask(el);
+        } else {
+          createTelefoneMask(el);
+        }
+        el.dataset.maskApplied = 'true';
+      }
     });
-
-    // Aplica máscaras iniciais após bind de eventos
-    applyPhoneMasks();
-
-    // Reaplica máscaras se inputs forem adicionados dinamicamente (formsets, etc.)
-    const observer = new MutationObserver(()=>applyPhoneMasks());
-    observer.observe(document.body,{childList:true,subtree:true});
 
     // Carregamento dinâmico de cidades baseado no estado (se houver endpoint disponível)
     const estadoField=document.getElementById('id_estado');
