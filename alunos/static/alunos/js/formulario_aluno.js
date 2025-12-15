@@ -213,12 +213,37 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
         const codigoSelect = container.querySelector('select.codigo-select');
         if (!tipoSelect || !codigoSelect) return;
 
-        const initialTipo = tipoSelect.dataset.initial || tipoSelect.value;
-        const initialCodigo = codigoSelect.dataset.initial || codigoSelect.value;
+        // Captura valores ANTES de qualquer manipulação
+        // Primeiro tenta pegar o valor selecionado, depois dataset.initial
+        let initialTipo = tipoSelect.value;
+        let initialCodigo = codigoSelect.value;
+        
+        // Se não tem valor mas tem option selecionada, pegar dela
+        if (!initialTipo) {
+            const selectedTipoOption = tipoSelect.querySelector('option[selected]');
+            if (selectedTipoOption) {
+                initialTipo = selectedTipoOption.value;
+            }
+        }
+        
+        if (!initialCodigo) {
+            const selectedCodigoOption = codigoSelect.querySelector('option[selected]');
+            if (selectedCodigoOption) {
+                initialCodigo = selectedCodigoOption.value;
+            }
+        }
+        
+        // Se o select está vazio (não é edição), popular normalmente
+        const isEmptyForm = tipoSelect.dataset.empty === '1';
 
         fetchTipos().then(tipos => {
-            populateSelect(tipoSelect, tipos, '-- selecione o tipo --', initialTipo);
+            // Se não tem options ou está marcado como vazio, popular tudo
+            if (tipoSelect.options.length <= 1 || isEmptyForm) {
+                populateSelect(tipoSelect, tipos, '-- selecione o tipo --', initialTipo);
+            }
+            
             if (initialTipo) {
+                // SEMPRE carregar códigos quando tem tipo, para garantir consistência
                 codigoSelect.disabled = true;
                 codigoSelect.innerHTML = '<option value="">Carregando...</option>';
                 fetchCodigos(initialTipo).then(codigos => {
@@ -252,3 +277,95 @@ function initializeDynamicSelects(urlTipos, urlCodigosPorTipo) {
         setupLine(e.target);
     });
 }
+
+// ========================================================================
+// SEÇÃO: CONFIGURAÇÃO DE IDIOMA PARA SELECT2
+// ========================================================================
+
+// Configura mensagens customizadas em português para Select2
+jQuery.fn.select2.amd.define('select2/i18n/pt-BR', [], function () {
+    return {
+        errorLoading: function () {
+            return 'Os resultados não puderam ser carregados.';
+        },
+        inputTooLong: function (args) {
+            var overChars = args.input.length - args.maximum;
+            var message = 'Apague ' + overChars + ' caracter';
+            if (overChars != 1) {
+                message += 'es';
+            }
+            return message;
+        },
+        inputTooShort: function (args) {
+            var remainingChars = args.minimum - args.input.length;
+            return 'Por favor digite ' + remainingChars + ' ou mais caracteres';
+        },
+        loadingMore: function () {
+            return 'Carregando mais resultados…';
+        },
+        maximumSelected: function (args) {
+            var message = 'Você só pode selecionar ' + args.maximum + ' ite';
+            if (args.maximum == 1) {
+                message += 'm';
+            } else {
+                message += 'ns';
+            }
+            return message;
+        },
+        noResults: function () {
+            return 'Nenhum resultado encontrado';
+        },
+        searching: function () {
+            return 'Buscando…';
+        },
+        removeAllItems: function () {
+            return 'Remover todos os itens';
+        }
+    };
+});
+
+// Configura idioma português para todos os selects Select2
+document.addEventListener('DOMContentLoaded', function() {
+    // Aguarda um pouco para garantir que Select2 foi inicializado
+    setTimeout(function() {
+        // Aplica configuração de idioma para cidade_ref e bairro_ref
+        jQuery('#id_cidade_ref, #id_bairro_ref').each(function() {
+            const $select = jQuery(this);
+            if ($select.data('select2')) {
+                // Reconfigura com idioma português
+                const currentData = $select.select2('data');
+                const currentValue = $select.val();
+                $select.select2('destroy');
+                $select.select2({
+                    language: 'pt-BR',
+                    placeholder: $select.attr('data-placeholder') || 'Selecione...',
+                    minimumInputLength: 2,
+                    allowClear: true,
+                    ajax: $select.data('ajax-url') ? {
+                        url: $select.data('ajax-url'),
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return {
+                                q: params.term,
+                                page: params.page || 1
+                            };
+                        },
+                        processResults: function (data) {
+                            return {
+                                results: data.results,
+                                pagination: {
+                                    more: data.more
+                                }
+                            };
+                        }
+                    } : undefined
+                });
+                // Restaura valor se existia
+                if (currentValue) {
+                    $select.val(currentValue).trigger('change');
+                }
+            }
+        });
+    }, 500);
+});

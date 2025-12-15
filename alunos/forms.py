@@ -1,5 +1,5 @@
 from django import forms
-from alunos.models import Aluno, RegistroHistorico, Codigo, TipoCodigo, Estado
+from alunos.models import Aluno, RegistroHistorico, Codigo, TipoCodigo, Estado, Cidade, Bairro
 from django_select2.forms import ModelSelect2Widget
 from .utils import clean_cpf
 
@@ -31,25 +31,23 @@ class AlunoForm(forms.ModelForm):
         required=True,
         help_text="Digite o CPF com ou sem máscara.",
     )
-    cidade_ref = forms.ModelChoiceField(
-        queryset=None,
+    estado_ref = forms.ModelChoiceField(
+        queryset=Estado.objects.all(),
         required=False,
-        widget=ModelSelect2Widget(
-            model=Aluno._meta.get_field("cidade_ref").related_model,
-            search_fields=["nome__icontains"],
-            attrs={"data-placeholder": "Busque a cidade..."},
-        ),
-        label="Cidade (Ref)",
+        widget=forms.Select(attrs={"class": "form-control"}),
+        label="Estado",
+    )
+    cidade_ref = forms.ModelChoiceField(
+        queryset=Cidade.objects.none(),  # Vazio inicialmente, será populado via AJAX
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+        label="Cidade",
     )
     bairro_ref = forms.ModelChoiceField(
-        queryset=None,
+        queryset=Bairro.objects.none(),  # Vazio inicialmente, será populado via AJAX
         required=False,
-        widget=ModelSelect2Widget(
-            model=Aluno._meta.get_field("bairro_ref").related_model,
-            search_fields=["nome__icontains"],
-            attrs={"data-placeholder": "Busque o bairro..."},
-        ),
-        label="Bairro (Ref)",
+        widget=forms.Select(attrs={"class": "form-control"}),
+        label="Bairro",
     )
     grau_atual_automatico = forms.CharField(
         label="Grau Atual (automático)",
@@ -92,6 +90,7 @@ class AlunoForm(forms.ModelForm):
             "numero_imovel",
             "complemento",
             "cep",
+            "estado_ref",
             "cidade_ref",
             "bairro_ref",
             # Contatos
@@ -103,6 +102,7 @@ class AlunoForm(forms.ModelForm):
             "tipo_relacionamento_segundo_contato",
             # Outros pessoais
             "estado_civil",
+            "escolaridade",
             "profissao",
             "ativo",
             # Médicos
@@ -164,15 +164,28 @@ class AlunoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Ajusta queryset dos widgets AJAX
+        
+        # Configurar querysets para endereço (estado → cidade → bairro)
+        if "estado_ref" in self.fields:
+            self.fields["estado_ref"].queryset = Estado.objects.all()
+        
         if "cidade_ref" in self.fields:
-            self.fields["cidade_ref"].queryset = self.fields[
-                "cidade_ref"
-            ].widget.model.objects.all()
+            # Se estiver editando e houver cidade selecionada, incluir no queryset
+            if self.instance and self.instance.pk and self.instance.cidade_ref:
+                self.fields["cidade_ref"].queryset = Cidade.objects.filter(
+                    id=self.instance.cidade_ref.id
+                )
+            else:
+                self.fields["cidade_ref"].queryset = Cidade.objects.none()
+        
         if "bairro_ref" in self.fields:
-            self.fields["bairro_ref"].queryset = self.fields[
-                "bairro_ref"
-            ].widget.model.objects.all()
+            # Se estiver editando e houver bairro selecionado, incluir no queryset
+            if self.instance and self.instance.pk and self.instance.bairro_ref:
+                self.fields["bairro_ref"].queryset = Bairro.objects.filter(
+                    id=self.instance.bairro_ref.id
+                )
+            else:
+                self.fields["bairro_ref"].queryset = Bairro.objects.none()
 
         # Popular estado_naturalidade se já houver cidade selecionada
         if self.instance and self.instance.pk and self.instance.cidade_naturalidade:
@@ -196,10 +209,10 @@ class AlunoForm(forms.ModelForm):
             "cpf": "___.___.___-__",
             # Novo formato de CEP com ponto após 2 dígitos: 00.000-000
             "cep": "__.___-___",
-            "telefone": "(99) 9999-9999",
-            "celular": "(99) 99999-9999",
-            "celular_primeiro_contato": "(99) 99999-9999",
-            "celular_segundo_contato": "(99) 99999-9999",
+            "telefone": "(__) ____-____",
+            "celular": "(__) _____-____",
+            "celular_primeiro_contato": "(__) _____-____",
+            "celular_segundo_contato": "(__) _____-____",
             "email": "usuario@exemplo.com",
         }
         for (
@@ -357,25 +370,41 @@ class RegistroHistoricoForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # CRÍTICO: Configurar queryset ANTES do super().__init__() para que o Django
+        # possa vincular corretamente o valor da instância ao campo
+        instance = kwargs.get('instance')
+        codigo_obj = None
+        if instance and getattr(instance, "codigo_id", None):
+            codigo_obj = instance.codigo
+            # Pré-configurar queryset com apenas o código atual para edição
+            # Será substituído pelo JavaScript quando o usuário mudar o tipo
+            self._meta.widgets['codigo'] = forms.Select(
+                attrs={"class": "form-control codigo-select"},
+                choices=[(codigo_obj.id, str(codigo_obj))]
+            )
+        
         super().__init__(*args, **kwargs)
+        
         # Garante formatação ISO no input date para edição e aceita d/m/Y como fallback
         self.fields["data_os"].input_formats = ["%Y-%m-%d", "%d/%m/%Y"]
         if self.instance and getattr(self.instance, "data_os", None):
             self.initial["data_os"] = self.instance.data_os.strftime("%Y-%m-%d")
-        # Otimização: carrega apenas os campos necessários para o select
+        
+        # Configurar querysets
         self.fields["tipo_codigo"].queryset = TipoCodigo.objects.all()
-        self.fields["codigo"].queryset = Codigo.objects.all()
-        # Widget simples, populado via JS customizado
-        self.fields["codigo"].widget = forms.Select(
-            attrs={"class": "form-control codigo-select"}
-        )
-
-        # Se já houver um código selecionado (edição), preencher o tipo inicial
-        codigo_obj = (
-            self.instance.codigo if getattr(self.instance, "codigo_id", None) else None
-        )
-        if codigo_obj and codigo_obj.tipo_codigo_id:
+        
+        if codigo_obj:
+            # Manter o código atual no queryset + todos do mesmo tipo
+            self.fields["codigo"].queryset = Codigo.objects.filter(
+                tipo_codigo_id=codigo_obj.tipo_codigo_id
+            )
             self.fields["tipo_codigo"].initial = codigo_obj.tipo_codigo_id
+        else:
+            # Para novo registro, deixar vazio (será populado via JS)
+            self.fields["codigo"].queryset = Codigo.objects.none()
+            self.fields["codigo"].widget = forms.Select(
+                attrs={"class": "form-control codigo-select"}
+            )
 
         # Ordem dos campos no form (inserir tipo antes de código)
         desired = [
@@ -393,7 +422,7 @@ RegistroHistoricoFormSet = forms.inlineformset_factory(
     Aluno,
     RegistroHistorico,
     form=RegistroHistoricoForm,
-    extra=1,
+    extra=0,  # Não criar linha vazia automática, usuário adiciona via botão
     can_delete=True,
     edit_only=False,
     min_num=0,
