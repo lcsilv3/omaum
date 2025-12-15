@@ -32,6 +32,81 @@
 - Linting: `python scripts/lint.py`, `black .`, `isort .`.
 - Monitoramento automático de formatação: use a tarefa "Monitoramento automático Ruff" no VS Code.
 
+## Arquivos Estáticos (CRÍTICO) ⚠️
+
+### Quando aplicar este procedimento:
+Sempre que modificar **QUALQUER** arquivo em:
+- `static/js/` (JavaScript)
+- `static/css/` (Estilos)
+- `static/img/` (Imagens)
+- Qualquer subdiretório de `static/` em módulos (`alunos/static/`, `turmas/static/`, etc.)
+
+### ✅ Checklist Obrigatório:
+
+#### 1️⃣ Coletar arquivos estáticos
+Execute no container Docker apropriado:
+
+**Desenvolvimento (porta 8000):**
+```powershell
+cd E:\projetos\omaum\docker
+docker compose -p omaum-dev --env-file ..\.env.dev -f docker-compose.yml exec -T omaum-web python manage.py collectstatic --noinput --clear
+```
+
+**Produção (porta 80):**
+```powershell
+cd E:\projetos\omaum\docker
+docker compose --profile production -p omaum-prod --env-file ..\.env.production -f docker-compose.yml -f docker-compose.prod.override.yml exec -T omaum-web python manage.py collectstatic --noinput --clear
+```
+
+#### 2️⃣ Limpar cache do navegador
+**Avisar o usuário para fazer UM destes procedimentos:**
+
+**Opção A - Hard Refresh (mais rápido):**
+- Windows/Linux: `Ctrl + Shift + R` ou `Ctrl + F5`
+- Mac: `Cmd + Shift + R`
+
+**Opção B - DevTools (mais confiável):**
+1. Abrir DevTools: `F12`
+2. Ir na aba **Network**
+3. Marcar **"Disable cache"**
+4. Recarregar a página (`F5`)
+
+#### 3️⃣ Verificar mudanças
+- Inspecionar elemento no navegador (F12 → Sources)
+- Verificar se o arquivo JavaScript/CSS foi atualizado
+- Conferir timestamp do arquivo em `/app/staticfiles/`
+
+### 🔍 Por que isso é necessário?
+
+**Ambiente Docker:**
+```
+┌─────────────────────────────────────┐
+│  static/js/turmas/form.js           │  ← Arquivo fonte (você edita aqui)
+│  (não servido diretamente)          │
+└────────────┬────────────────────────┘
+             │
+             │ collectstatic copia
+             ↓
+┌─────────────────────────────────────┐
+│  /app/staticfiles/js/turmas/form.js │  ← Django serve daqui!
+│  (servido via WhiteNoise/Nginx)     │
+└─────────────────────────────────────┘
+```
+
+- Django em produção **NÃO** serve arquivos de `static/` diretamente
+- O comando `collectstatic` copia tudo para `/app/staticfiles/`
+- Sem executá-lo, o navegador continua vendo a **versão antiga**
+- Cache do navegador agrava o problema
+
+### ⚠️ Erros comuns:
+- **"Mudei o JS mas não funcionou"** → Esqueceu collectstatic
+- **"Rodei collectstatic mas não mudou"** → Cache do navegador
+- **"Funcionava antes mas parou"** → DOMContentLoaded duplicado ou conflito de event listeners
+- **"Funciona no dev mas não no prod"** → Esqueceu collectstatic em produção
+
+### 📝 Nota para IA:
+**SEMPRE** mencionar estes passos **PROATIVAMENTE** após editar arquivos estáticos. Não espere o usuário perguntar!
+
 ## Integração e APIs
 - APIs REST documentadas (Swagger/ReDoc), autenticação por token, versionamento e rate limiting.
 - Integrações externas devem ser feitas via services dedicados.

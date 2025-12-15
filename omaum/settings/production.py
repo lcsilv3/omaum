@@ -55,3 +55,4 @@ LOGGING = {
 ENVIRONMENT_LABEL = "Ambiente de Produção"
 ENVIRONMENT_BADGE_CLASSES = "bg-danger text-white"
 ENVIRONMENT_HINT = "Use credenciais oficiais."
+ENVIRONMENT_SHOW_BANNER = True

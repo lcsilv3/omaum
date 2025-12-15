@@ -1,9 +1,16 @@
-version: "3.9"
 services:
   omaum-db:
     volumes:
       - D:/docker/omaum/prod/db:/var/lib/postgresql/data
   omaum-web:
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=False
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DJANGO_SETTINGS_MODULE=omaum.settings.production
+      - POSTGRES_DB=omaum_dev
+      - POSTGRES_USER=omaum_user
+      - POSTGRES_PASSWORD=omaum_password
     volumes:
       - ../:/app
       - D:/docker/omaum/prod/static:/app/static
@@ -14,6 +21,14 @@ services:
     volumes:
       - D:/docker/omaum/prod/redis:/data
   omaum-celery:
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=False
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DJANGO_SETTINGS_MODULE=omaum.settings.production
+      - POSTGRES_DB=omaum_dev
+      - POSTGRES_USER=omaum_user
+      - POSTGRES_PASSWORD=omaum_password
     volumes:
       - ../:/app
       - D:/docker/omaum/prod/media:/app/media
