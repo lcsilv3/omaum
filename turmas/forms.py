@@ -38,23 +38,57 @@ class TurmaForm(forms.ModelForm):
             "dias_semana": "Dia da Semana",
         }
         help_texts = {
-            "perc_presenca_minima": "Percentual mínimo de presenças exigido para a turma.",
-            "horario": "Horário previsto de Aula",
+            "perc_presenca_minima": "Percentual mínimo de presenças exigido para a turma (ex: 70%).",
+            "horario": "Horário previsto de Aula (ex: 19:00 às 22:00)",
+            "num_livro": "Número do livro de presenças usado na turma.",
+            "data_iniciacao": "Data da cerimônia de iniciação dos alunos.",
+            "data_inicio_ativ": "Data de início das atividades acadêmicas da turma.",
+            "data_prim_aula": "Data da primeira aula ministrada.",
+            "vagas": "Número máximo de alunos que podem ser matriculados.",
+            "local": "Local onde as aulas serão ministradas.",
         }
         widgets = {
-            "data_inicio_ativ": forms.DateInput(attrs={"type": "date"}),
-            "data_termino_atividades": forms.DateInput(attrs={"type": "date"}),
-            "data_iniciacao": forms.DateInput(attrs={"type": "date"}),
-            "data_prim_aula": forms.DateInput(attrs={"type": "date"}),
+            "data_inicio_ativ": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "data_termino_atividades": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "data_iniciacao": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "data_prim_aula": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
             "curso": forms.Select(
                 attrs={
-                    "class": "form-select curso-select",
+                    "class": "form-select",
                     "placeholder": "Selecione o Curso desejado",
                 }
             ),
-            "horario": forms.TextInput(attrs={"placeholder": "__:__ às __:__"}),
-            "num_livro": forms.NumberInput(attrs={"placeholder": "___"}),
-            "dias_semana": forms.Select(),
+            "nome": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Ex: Turma A - 2024"}
+            ),
+            "horario": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "__:__ às __:__", "id": "id_horario"}
+            ),
+            "num_livro": forms.NumberInput(
+                attrs={"class": "form-control", "placeholder": "___", "min": "1"}
+            ),
+            "perc_presenca_minima": forms.NumberInput(
+                attrs={"class": "form-control", "placeholder": "70", "min": "0", "max": "100"}
+            ),
+            "vagas": forms.NumberInput(
+                attrs={"class": "form-control", "placeholder": "30", "min": "1"}
+            ),
+            "local": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Ex: Sala 101"}
+            ),
+            "descricao": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3, "placeholder": "Descrição detalhada da turma (opcional)"}
+            ),
+            "status": forms.Select(attrs={"class": "form-select"}),
+            "dias_semana": forms.Select(attrs={"class": "form-select"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -149,11 +183,30 @@ class TurmaForm(forms.ModelForm):
         # Validar que a data de término das atividades não seja anterior à de início
         data_inicio_ativ = cleaned_data.get("data_inicio_ativ")
         data_termino_atividades = cleaned_data.get("data_termino_atividades")
+        data_iniciacao = cleaned_data.get("data_iniciacao")
+        data_prim_aula = cleaned_data.get("data_prim_aula")
+        
         if data_inicio_ativ and data_termino_atividades:
             if data_termino_atividades < data_inicio_ativ:
                 self.add_error(
                     "data_termino_atividades",
                     "A data de término das atividades não pode ser anterior à data de início das atividades.",
+                )
+        
+        # Validar que a data da primeira aula não seja anterior à data de início das atividades
+        if data_inicio_ativ and data_prim_aula:
+            if data_prim_aula < data_inicio_ativ:
+                self.add_error(
+                    "data_prim_aula",
+                    "A data da primeira aula não pode ser anterior à data de início das atividades.",
+                )
+        
+        # Validar que a data de iniciação seja coerente
+        if data_iniciacao and data_inicio_ativ:
+            if data_iniciacao > data_inicio_ativ:
+                self.add_error(
+                    "data_iniciacao",
+                    "A data de iniciação geralmente ocorre antes ou no início das atividades.",
                 )
 
         # NOVA VALIDAÇÃO: Impedir instrutor em múltiplas turmas ativas simultaneamente

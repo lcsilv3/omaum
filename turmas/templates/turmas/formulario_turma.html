@@ -1,9 +1,301 @@
-<!-- Padronizar botões no formulário -->
-<div class="d-flex justify-content-between mb-5">
-    <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
-        <i class="fas fa-times"></i> Cancelar
-    </a>
-    <button type="submit" class="btn btn-primary">
-        <i class="fas fa-save"></i> {% if turma.id %}Atualizar{% else %}Criar{% endif %} Turma
-    </button>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if turma and turma.id %}Editar Turma: {{ turma.nome }}{% else %}Nova Turma{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Ocultar os selects originais */
+    #id_instrutor, #id_instrutor_auxiliar, #id_auxiliar_instrucao {
+        display: none;
+    }
+    
+    /* Estilos para cards com erro */
+    .card.border-danger {
+        box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+        animation: pulseError 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulseError {
+        0%, 100% { box-shadow: 0 0 10px rgba(220, 53, 69, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(220, 53, 69, 0.5); }
+    }
+    
+    .badge-error {
+        animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    /* Destaque em campos com erro */
+    .is-invalid, [aria-invalid="true"] {
+        border-color: #dc3545 !important;
+        border-width: 2px !important;
+        background-color: #fff5f5 !important;
+    }
+    
+    .is-invalid:focus, [aria-invalid="true"]:focus {
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+    
+    .list-group-item-action {
+        cursor: pointer;
+    }
+    
+    .selected-instrutor {
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    
+    .collapse-toggle {
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.2s;
+    }
+    
+    .collapse-toggle:hover {
+        color: #0d6efd;
+        text-decoration: underline;
+    }
+    
+    .chevron {
+        transition: transform 0.3s;
+        margin-right: 6px;
+    }
+    
+    .collapsed .chevron {
+        transform: rotate(0deg);
+    }
+    
+    .chevron {
+        transform: rotate(90deg);
+    }
+
+    #id_curso:focus {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: #ced4da !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% if turma and turma.id %}Editar Turma: {{ turma.nome }}{% else %}Nova Turma{% endif %}</h1>
+        <div>
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar para a lista
+            </a>
+            {% if turma and turma.id %}
+            <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-success ms-2">
+                <i class="fas fa-user-plus"></i> Matricular Alunos
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <form method="post" id="form-turma" novalidate>
+        {% csrf_token %}
+        {% include 'includes/form_errors.html' %}
+        
+        <div class="alert alert-info">
+            <p><strong><i class="fas fa-info-circle"></i> Atenção:</strong> Preencha todos os campos obrigatórios marcados com asterisco (*).</p>
+            <p class="mb-0">Os campos de data seguem o formato DD/MM/AAAA. O horário deve ser preenchido no formato HH:MM às HH:MM.</p>
+        </div>
+        
+        <!-- Seção: Informações Básicas -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#info-basicas" role="button" aria-expanded="true" aria-controls="info-basicas">
+                        <span class="chevron">▶</span> Informações Básicas <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="info-basicas" class="collapse show card-body">
+                <!-- Curso e Nome -->
+                <div class="mb-4">
+                    <h6 class="text-primary mb-3 pb-2 border-bottom">
+                        <i class="fas fa-graduation-cap me-2"></i>Identificação
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {% include 'includes/form_field.html' with field=form.curso %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include 'includes/form_field.html' with field=form.nome %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vagas, Status e Dias -->
+                <div class="mb-4">
+                    <h6 class="text-primary mb-3 pb-2 border-bottom">
+                        <i class="fas fa-cog me-2"></i>Configurações
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            {% include 'includes/form_field.html' with field=form.vagas %}
+                        </div>
+                        <div class="col-md-4">
+                            {% include 'includes/form_field.html' with field=form.status %}
+                        </div>
+                        <div class="col-md-4">
+                            {% include 'includes/form_field.html' with field=form.dias_semana %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Datas -->
+                <div class="mb-4">
+                    <h6 class="text-primary mb-3 pb-2 border-bottom">
+                        <i class="fas fa-calendar me-2"></i>Datas
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {% include 'includes/form_field.html' with field=form.data_inicio_ativ %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include 'includes/form_field.html' with field=form.data_termino_atividades %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include 'includes/form_field.html' with field=form.data_iniciacao %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include 'includes/form_field.html' with field=form.data_prim_aula %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Local e Horário -->
+                <div class="mb-4">
+                    <h6 class="text-primary mb-3 pb-2 border-bottom">
+                        <i class="fas fa-map-marker-alt me-2"></i>Local e Horário
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {% include 'includes/form_field.html' with field=form.local %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include 'includes/form_field.html' with field=form.horario %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Descrição -->
+                <div class="mb-0">
+                    <h6 class="text-primary mb-3 pb-2 border-bottom">
+                        <i class="fas fa-align-left me-2"></i>Descrição
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            {% include 'includes/form_field.html' with field=form.descricao %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Dados Iniciáticos -->
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
+                        <span class="chevron">▶</span> Dados Iniciáticos <small class="text-muted">(clique para expandir)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="dados-iniciaticos" class="collapse card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.num_livro %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.perc_presenca_minima %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção: Instrutores -->
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#instrutores" role="button" aria-expanded="false" aria-controls="instrutores">
+                        <span class="chevron">▶</span> Instrutores <small class="text-light">(clique para expandir)</small>
+                    </a>
+                </h5>
+            </div>
+            <div id="instrutores" class="collapse card-body">
+                <div class="row g-3">
+                    <!-- Instrutor Principal -->
+                    <div class="col-md-4">
+                        <label for="search-instrutor" class="form-label">Instrutor Principal</label>
+                        <input type="text" id="search-instrutor" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-instrutor" class="list-group mt-2" style="display: none"></div>
+                        <div id="selected-instrutor-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-instrutor-info">
+                                Nenhum instrutor selecionado
+                            </div>
+                        </div>
+                        <div id="instrutor-error" class="alert alert-warning mt-2 d-none"></div>
+                        {{ form.instrutor }}
+                    </div>
+                    
+                    <!-- Instrutor Auxiliar -->
+                    <div class="col-md-4">
+                        <label for="search-instrutor-auxiliar" class="form-label">Instrutor Auxiliar <small class="text-muted">(opcional)</small></label>
+                        <input type="text" id="search-instrutor-auxiliar" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-instrutor-auxiliar" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-instrutor-auxiliar-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-instrutor-auxiliar-info">
+                                Nenhum instrutor auxiliar selecionado
+                            </div>
+                        </div>
+                        <div id="instrutor-auxiliar-error" class="alert alert-warning mt-2 d-none"></div>
+                        {{ form.instrutor_auxiliar }}
+                    </div>
+                    
+                    <!-- Auxiliar de Instrução -->
+                    <div class="col-md-4">
+                        <label for="search-auxiliar-instrucao" class="form-label">Auxiliar de Instrução <small class="text-muted">(opcional)</small></label>
+                        <input type="text" id="search-auxiliar-instrucao" class="form-control" placeholder="Digite parte do CPF, nome ou número iniciático..." autocomplete="off">
+                        <div id="search-results-auxiliar-instrucao" class="list-group mt-2" style="display: none;"></div>
+                        <div id="selected-auxiliar-instrucao-container" class="p-3 border rounded mt-2 d-none">
+                            <div id="selected-auxiliar-instrucao-info">
+                                Nenhum auxiliar de instrução selecionado
+                            </div>
+                        </div>
+                        <div id="auxiliar-instrucao-error" class="alert alert-warning mt-2 d-none"></div>
+                        {{ form.auxiliar_instrucao }}
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="fas fa-info-circle"></i> O sistema verificará automaticamente se o aluno selecionado já atua como instrutor em outra turma ativa.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Botões de Ação -->
+        <div class="d-flex justify-content-between mb-5">
+            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> {% if turma and turma.id %}Atualizar{% else %}Criar{% endif %} Turma
+            </button>
+        </div>
+    </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/instrutor_search.js' %}"></script>
+<script src="{% static 'turmas/js/formulario_turma.js' %}"></script>
+{% endblock %}

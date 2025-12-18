@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Detalhes da Turma{% endblock %}
+{% block title %}Detalhes da Turma: {{ turma.nome }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -23,6 +24,13 @@
     .chevron {
         transform: rotate(90deg);
     }
+    
+    /* Progress bar de vagas */
+    .vagas-progress {
+        height: 25px;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
 </style>
 {% endblock %}
 
@@ -31,161 +39,363 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Detalhes da Turma</h1>
         <div>
-            <a href="{% url 'turmas:listar_turmas' %}" class="btn btn-secondary">Voltar para a lista</a>
-            <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-success ms-2">Matricular Alunos</a>
+            <a href="javascript:history.back()" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{% url 'turmas:editar_turma' turma.id %}" class="btn btn-warning me-2">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}" class="btn btn-success me-2">
+                <i class="fas fa-user-plus"></i> Matricular Alunos
+            </a>
+            <a href="{% url 'turmas:excluir_turma' turma.id %}" class="btn btn-danger">
+                <i class="fas fa-trash-alt"></i> Excluir
+            </a>
         </div>
     </div>
+    
+    {% if turma.alerta_mensagem %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> {{ turma.alerta_mensagem }}
+    </div>
+    {% endif %}
 
     <!-- Seção: Dados Básicos (recolhível, aberta por padrão) -->
-    <div class="card mb-4">
+    <div class="card mb-4 border-primary">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">
-                <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#info-basicas" role="button" aria-expanded="true" aria-controls="info-basicas">
-                    <span class="chevron">&#9654;</span>
-                    Informações Básicas <small class="text-light">(clique para expandir/recolher)</small>
-                </a>
-            </h5>
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#info-basicas" role="button" aria-expanded="true" aria-controls="info-basicas">
+                        <span class="chevron" style="transform: rotate(90deg)">▶</span> Informações Básicas <small class="text-light">(clique para expandir/recolher)</small>
+                    </a>
+                </h5>
+                <div class="btn-group btn-group-sm ms-sm-auto flex-wrap" role="group" aria-label="Controles das seções">
+                    <button
+                        type="button"
+                        class="btn btn-outline-light flex-fill flex-sm-grow-0"
+                        id="btn-expandir-secoes"
+                        aria-pressed="false"
+                    >
+                        <i class="fas fa-angle-double-down"></i>
+                        <span class="ms-1">Expandir tudo</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-outline-light flex-fill flex-sm-grow-0"
+                        id="btn-recolher-secoes"
+                        aria-pressed="false"
+                    >
+                        <i class="fas fa-angle-double-up"></i>
+                        <span class="ms-1">Recolher tudo</span>
+                    </button>
+                </div>
+            </div>
         </div>
         <div id="info-basicas" class="collapse show card-body">
-            <div class="row mb-2">
+            <!-- Identificação -->
+            <h6 class="text-primary mb-3">
+                <i class="fas fa-graduation-cap me-2"></i>Identificação
+            </h6>
+            <div class="row mb-3">
                 <div class="col-md-6">
-                    <p><strong>Curso:</strong> {{ turma.curso.nome }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Nome:</strong> {{ turma.nome }}</p>
-                </div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-4">
-                    <p><strong>Status:</strong> {{ turma.get_status_display }}</p>
-                </div>
-                <div class="col-md-4">
-                    <p><strong>Data de Início:</strong> {{ turma.data_inicio|date:"d/m/Y" }}</p>
-                </div>
-                <div class="col-md-4">
-                    <p><strong>Data de Fim:</strong> {{ turma.data_fim|date:"d/m/Y" }}</p>
-                </div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-4">
-                    <p><strong>Vagas:</strong> {{ turma.vagas }}</p>
-                </div>
-                <div class="col-md-4">
-                    <p><strong>Dias da Semana:</strong> {{ turma.dias_semana }}</p>
-                </div>
-                <div class="col-md-4">
-                    <p><strong>Horário:</strong> {{ turma.horario }}</p>
-                </div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-6">
-                    <p><strong>Local:</strong> {{ turma.local }}</p>
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Curso:</strong>
+                        <span>{{ turma.curso.nome }}</span>
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Descrição:</strong> {{ turma.descricao }}</p>
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Nome:</strong>
+                        <span>{{ turma.nome }}</span>
+                    </div>
                 </div>
             </div>
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Status:</strong>
+                        {% if turma.status == 'A' %}
+                            <span class="badge bg-success fs-6 px-3 py-2">{{ turma.get_status_display }}</span>
+                        {% elif turma.status == 'I' %}
+                            <span class="badge bg-secondary fs-6 px-3 py-2">{{ turma.get_status_display }}</span>
+                        {% elif turma.status == 'E' %}
+                            <span class="badge bg-info fs-6 px-3 py-2">{{ turma.get_status_display }}</span>
+                        {% elif turma.status == 'C' %}
+                            <span class="badge bg-danger fs-6 px-3 py-2">{{ turma.get_status_display }}</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark fs-6 px-3 py-2">{{ turma.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <hr class="my-3">
+            
+            <!-- Vagas -->
+            <h6 class="text-primary mb-3">
+                <i class="fas fa-users me-2"></i>Ocupação
+            </h6>
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <p class="mb-2"><strong>Vagas:</strong> {{ alunos_matriculados_count }} / {{ turma.vagas }} ocupadas</p>
+                    <div class="progress vagas-progress">
+                        {% widthratio alunos_matriculados_count turma.vagas 100 as percentual %}
+                        <div class="progress-bar {% if percentual >= 90 %}bg-danger{% elif percentual >= 70 %}bg-warning{% else %}bg-success{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ percentual }}%;" 
+                             aria-valuenow="{{ alunos_matriculados_count }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="{{ turma.vagas }}">
+                            {{ percentual }}%
+                        </div>
+                    </div>
+                    <small class="text-muted">Vagas disponíveis: {{ vagas_disponiveis }}</small>
+                </div>
+            </div>
+            
+            <hr class="my-3">
+            
+            <!-- Datas -->
+            <h6 class="text-primary mb-3">
+                <i class="fas fa-calendar me-2"></i>Datas
+            </h6>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Data de Início das Atividades:</strong>
+                        <span>{{ turma.data_inicio_ativ|date:"d/m/Y"|default:"Não informado" }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Data de Término:</strong>
+                        <span>{{ turma.data_termino_atividades|date:"d/m/Y"|default:"Não informado" }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Data de Iniciação:</strong>
+                        <span>{{ turma.data_iniciacao|date:"d/m/Y"|default:"Não informado" }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Data da Primeira Aula:</strong>
+                        <span>{{ turma.data_prim_aula|date:"d/m/Y"|default:"Não informado" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <hr class="my-3">
+            
+            <!-- Local e Horário -->
+            <h6 class="text-primary mb-3">
+                <i class="fas fa-map-marker-alt me-2"></i>Local e Horário
+            </h6>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Dias da Semana:</strong>
+                        <span>{{ turma.get_dias_semana_display }}</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Horário:</strong>
+                        <span>{{ turma.horario }}</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Local:</strong>
+                        <span>{{ turma.local }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            {% if turma.descricao %}
+            <hr class="my-3">
+            <h6 class="text-primary mb-3">
+                <i class="fas fa-align-left me-2"></i>Descrição
+            </h6>
+            <div class="row mb-2">
+                <div class="col-12">
+                    <p>{{ turma.descricao }}</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Seção Dados Iniciáticos (recolhível) -->
-    <div class="card mb-4">
+    <!-- Seção: Dados Iniciáticos (recolhível) -->
+    <div class="card mb-4 border-warning">
         <div class="card-header bg-warning text-dark">
             <h5 class="mb-0">
                 <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#dados-iniciaticos" role="button" aria-expanded="false" aria-controls="dados-iniciaticos">
-                    <span class="chevron">&#9654;</span>
-                    Dados Iniciáticos <small class="text-muted">(clique para expandir)</small>
+                    <span class="chevron">▶</span> Dados Iniciáticos <small class="text-muted">(clique para expandir)</small>
                 </a>
             </h5>
         </div>
         <div id="dados-iniciaticos" class="collapse card-body">
-            <div class="row mb-2">
-                <div class="col-md-4">
-                    <p><strong>Número do Livro:</strong> {{ turma.num_livro }}</p>
-                </div>
-                <div class="col-md-4">
-                    <p><strong>Percentual de Presença Mínima:</strong> {{ turma.perc_presenca_minima }}%</p>
-                </div>
-                <div class="col-md-4">
-                    <p><strong>Data de Iniciação:</strong> {{ turma.data_iniciacao|date:"d/m/Y" }}</p>
-                </div>
-            </div>
-            <div class="row mb-2">
+            <div class="row mb-3">
                 <div class="col-md-6">
-                    <p><strong>Data de Início das Atividades:</strong> {{ turma.data_inicio_ativ|date:"d/m/Y" }}</p>
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Número do Livro:</strong>
+                        <span>{{ turma.num_livro }}</span>
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Data da Primeira Aula:</strong> {{ turma.data_prim_aula|date:"d/m/Y" }}</p>
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Percentual de Presença Mínima:</strong>
+                        <span class="badge bg-info fs-6 px-3 py-2">{{ turma.perc_presenca_minima }}%</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Seção Alunos (recolhível) -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-dark">
+    <!-- Seção: Alunos -->
+    <div class="card mb-4 border-info">
+        <div class="card-header bg-info text-white">
             <h5 class="mb-0">
-                <a class="collapse-toggle text-dark text-decoration-none collapsed" data-bs-toggle="collapse" href="#alunos-turma" role="button" aria-expanded="false" aria-controls="alunos-turma">
-                    <span class="chevron">&#9654;</span>
-                    Alunos da Turma <small class="text-muted">(clique para expandir)</small>
+                <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#alunos-turma" role="button" aria-expanded="false" aria-controls="alunos-turma">
+                    <span class="chevron">▶</span> Alunos Matriculados ({{ alunos_matriculados_count }}) <small class="text-light">(clique para expandir)</small>
                 </a>
             </h5>
         </div>
         <div id="alunos-turma" class="collapse card-body">
-            <ul class="mb-0">
-                {% for matricula in matriculas %}
-                    <li>{{ matricula.aluno.nome }}</li>
-                {% empty %}
-                    <li>Nenhum aluno matriculado.</li>
-                {% endfor %}
-            </ul>
+            {% if matriculas %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>CPF</th>
+                                <th>Data de Matrícula</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for matricula in matriculas %}
+                            <tr>
+                                <td>{{ matricula.aluno.nome }}</td>
+                                <td>{{ matricula.aluno.cpf }}</td>
+                                <td>{{ matricula.data_matricula|date:"d/m/Y" }}</td>
+                                <td>
+                                    <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i> Ver Detalhes
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">
+                    <i class="fas fa-info-circle"></i> Nenhum aluno matriculado nesta turma.
+                    <a href="{% url 'matriculas:realizar_matricula' %}?turma={{ turma.id }}">Clique aqui para matricular alunos.</a>
+                </p>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Seção Atividades Relacionadas (recolhível) -->
-    <div class="card mb-4">
+    <!-- Seção: Atividades Relacionadas -->
+    <div class="card mb-4 border-success">
         <div class="card-header bg-success text-white">
             <h5 class="mb-0">
                 <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#atividades-relacionadas" role="button" aria-expanded="false" aria-controls="atividades-relacionadas">
-                    <span class="chevron">&#9654;</span>
-                    Atividades Relacionadas <small class="text-light">(clique para expandir)</small>
+                    <span class="chevron">▶</span> Atividades Relacionadas <small class="text-light">(clique para expandir)</small>
                 </a>
             </h5>
         </div>
         <div id="atividades-relacionadas" class="collapse card-body">
-            <ul class="mb-0">
-                {% for atividade in turma.atividades_academicas.all %}
-                    <li>
-                        {{ atividade.nome }} - {{ atividade.get_tipo_atividade_display }} ({{ atividade.data_inicio|date:"d/m/Y H:i" }})
-                        <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">Detalhes</a>
-                    </li>
-                {% empty %}
-                    <li>Nenhuma atividade relacionada.</li>
-                {% endfor %}
-            </ul>
+            {% if turma.atividades_academicas.all %}
+                <div class="list-group">
+                    {% for atividade in turma.atividades_academicas.all %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ atividade.nome }}</h6>
+                            <p class="mb-1 text-muted">
+                                <i class="fas fa-tag"></i> {{ atividade.get_tipo_atividade_display }}
+                                <i class="fas fa-calendar ms-3"></i> {{ atividade.data_inicio|date:"d/m/Y H:i" }}
+                            </p>
+                        </div>
+                        <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">
+                            <i class="fas fa-eye"></i> Detalhes
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">
+                    <i class="fas fa-info-circle"></i> Nenhuma atividade relacionada a esta turma.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Seção: Instrutores -->
+    <div class="card mb-4 border-secondary">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">
+                <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#instrutores-turma" role="button" aria-expanded="false" aria-controls="instrutores-turma">
+                    <span class="chevron">▶</span> Instrutores <small class="text-light">(clique para expandir)</small>
+                </a>
+            </h5>
+        </div>
+        <div id="instrutores-turma" class="collapse card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <h6 class="text-secondary">Instrutor Principal</h6>
+                    {% if turma.instrutor %}
+                        <p class="mb-0">
+                            <i class="fas fa-user"></i> {{ turma.instrutor.nome }}<br>
+                            <small class="text-muted">CPF: {{ turma.instrutor.cpf }}</small>
+                        </p>
+                        <a href="{% url 'alunos:detalhar_aluno' turma.instrutor.id %}" class="btn btn-sm btn-outline-primary mt-2">
+                            <i class="fas fa-eye"></i> Ver Perfil
+                        </a>
+                    {% else %}
+                        <p class="text-muted">Não definido</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h6 class="text-secondary">Instrutor Auxiliar</h6>
+                    {% if turma.instrutor_auxiliar %}
+                        <p class="mb-0">
+                            <i class="fas fa-user"></i> {{ turma.instrutor_auxiliar.nome }}<br>
+                            <small class="text-muted">CPF: {{ turma.instrutor_auxiliar.cpf }}</small>
+                        </p>
+                        <a href="{% url 'alunos:detalhar_aluno' turma.instrutor_auxiliar.id %}" class="btn btn-sm btn-outline-primary mt-2">
+                            <i class="fas fa-eye"></i> Ver Perfil
+                        </a>
+                    {% else %}
+                        <p class="text-muted">Não definido</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h6 class="text-secondary">Auxiliar de Instrução</h6>
+                    {% if turma.auxiliar_instrucao %}
+                        <p class="mb-0">
+                            <i class="fas fa-user"></i> {{ turma.auxiliar_instrucao.nome }}<br>
+                            <small class="text-muted">CPF: {{ turma.auxiliar_instrucao.cpf }}</small>
+                        </p>
+                        <a href="{% url 'alunos:detalhar_aluno' turma.auxiliar_instrucao.id %}" class="btn btn-sm btn-outline-primary mt-2">
+                            <i class="fas fa-eye"></i> Ver Perfil
+                        </a>
+                    {% else %}
+                        <p class="text-muted">Não definido</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    // Rotaciona o chevron ao expandir/recolher
-    document.querySelectorAll('.collapse-toggle').forEach(function(toggle) {
-        toggle.addEventListener('click', function() {
-            setTimeout(() => {
-                document.querySelectorAll('.collapse-toggle').forEach(function(t) {
-                    const chevron = t.querySelector('.chevron');
-                    const targetId = t.getAttribute('href');
-                    const target = document.querySelector(targetId);
-                    if (target && target.classList.contains('show')) {
-                        chevron.style.transform = 'rotate(90deg)';
-                    } else {
-                        chevron.style.transform = 'rotate(0deg)';
-                    }
-                });
-            }, 350);
-        });
-    });
-</script>
+<script src="{% static 'turmas/js/detalhar_turma.js' %}"></script>
 {% endblock %}

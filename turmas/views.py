@@ -8,7 +8,7 @@ Padrão de Nomenclatura:
   mas nas views e URLs usamos nomes mais descritivos.
 """
 
-from django.db import DatabaseError, IntegrityError
+from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.http import JsonResponse, HttpResponse
@@ -19,6 +19,9 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.paginator import Paginator
 from importlib import import_module
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Importar a função utilitária centralizada
 from core.utils import get_model_dynamically
@@ -237,9 +240,31 @@ def criar_turma(request):
     if request.method == "POST":
         form = TurmaForm(request.POST)
         if form.is_valid():
-            turma = form.save()
-            messages.success(request, "Turma criada com sucesso!")
-            return redirect("turmas:detalhar_turma", turma_id=turma.id)
+            try:
+                with transaction.atomic():
+                    turma = form.save()
+                    logger.info(
+                        f"Turma '{turma.nome}' (ID: {turma.id}) criada com sucesso por {request.user.username}"
+                    )
+                messages.success(
+                    request,
+                    f"Turma '{turma.nome}' criada com sucesso! "
+                    f"Você pode agora matricular alunos."
+                )
+                return redirect("turmas:detalhar_turma", turma_id=turma.id)
+            except Exception as exc:
+                logger.error(f"Erro ao criar turma: {exc}", exc_info=True)
+                messages.error(
+                    request,
+                    f"Ocorreu um erro ao salvar a turma: {str(exc)}. "
+                    "Por favor, tente novamente."
+                )
+        else:
+            logger.warning(f"Formulário de turma inválido: {form.errors}")
+            messages.error(
+                request,
+                "Por favor, corrija os erros abaixo antes de salvar."
+            )
     else:
         form = TurmaForm()
 
@@ -259,11 +284,12 @@ def criar_turma(request):
 
     return render(
         request,
-        "turmas/criar_turma.html",
+        "turmas/formulario_turma.html",
         {
             "form": form,
             "alunos": alunos,
             "cursos": cursos,
+            "turma": None,
         },
     )
 
@@ -315,14 +341,37 @@ def editar_turma(request, turma_id):
 
     Turma = get_turma_model()
     turma = get_object_or_404(Turma, id=turma_id)
+    
     if request.method == "POST":
         form = TurmaForm(request.POST, instance=turma)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Turma atualizada com sucesso!")
-            return redirect("turmas:detalhar_turma", turma_id=turma.id)
+            try:
+                with transaction.atomic():
+                    turma_atualizada = form.save()
+                    logger.info(
+                        f"Turma '{turma_atualizada.nome}' (ID: {turma_atualizada.id}) "
+                        f"atualizada com sucesso por {request.user.username}"
+                    )
+                messages.success(
+                    request,
+                    f"Turma '{turma_atualizada.nome}' atualizada com sucesso!"
+                )
+                return redirect("turmas:detalhar_turma", turma_id=turma_atualizada.id)
+            except Exception as exc:
+                logger.error(f"Erro ao atualizar turma {turma_id}: {exc}", exc_info=True)
+                messages.error(
+                    request,
+                    f"Ocorreu um erro ao atualizar a turma: {str(exc)}. "
+                    "Por favor, tente novamente."
+                )
         else:
-            messages.error(request, "Corrija os erros no formulário.")
+            logger.warning(
+                f"Formulário de edição de turma {turma_id} inválido: {form.errors}"
+            )
+            messages.error(
+                request,
+                "Por favor, corrija os erros abaixo antes de salvar."
+            )
     else:
         form = TurmaForm(instance=turma)
     # Obter todos os alunos ativos para o formulário
@@ -333,11 +382,11 @@ def editar_turma(request, turma_id):
         alunos = []
     return render(
         request,
-        "turmas/editar_turma.html",
+        "turmas/formulario_turma.html",
         {
             "form": form,
             "turma": turma,
-            "alunos": alunos,  # Passar todos os alunos ativos para o template
+            "alunos": alunos,
         },
     )
 

@@ -41,6 +41,12 @@ test: ## Executa os testes
 check: ## Executa as verificações do Django (manage.py check)
 	docker compose -f $(COMPOSE_FILE) run --rm omaum-web python manage.py check
 
+lint-security-bandit: ## Executa o bandit para análise de segurança estática
+	docker compose -f $(COMPOSE_FILE) run --rm omaum-web bandit -r .
+
+lint-security-safety: ## Executa o safety para verificar vulnerabilidades nas dependências
+	docker compose -f $(COMPOSE_FILE) run --rm omaum-web safety check
+
 migrate: ## Executa migrações
 	docker compose -f $(COMPOSE_FILE) exec omaum-web python manage.py migrate
 
