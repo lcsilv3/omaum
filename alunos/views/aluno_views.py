@@ -237,7 +237,7 @@ def detalhar_aluno(request, cpf):
             # Importar o modelo Turma dinamicamente
             turmas_module = import_module("turmas.models")
             Turma = getattr(turmas_module, "Turma")
-            # Buscar turmas ativas onde o aluno é instrutor
+            # Buscar turmas ativas onde o aluno é instrutor (usar objeto, não CPF)
             turmas_como_instrutor = Turma.objects.filter(
                 instrutor=aluno, status="A"
             ).select_related("curso")

@@ -84,12 +84,24 @@ document.addEventListener('DOMContentLoaded', function() {
 // Protegido para não quebrar o restante do script caso o select2 não esteja carregado
 $(document).ready(function() {
   if (window.jQuery && $.fn && $.fn.select2) {
-    $('.curso-select').select2({
-      theme: 'bootstrap4',
-      width: '100%'
-    });
+    // Adicionar classe form-select antes de inicializar o Select2
+    const cursoSelect = $('#id_curso');
+    if (cursoSelect.length) {
+      cursoSelect.addClass('form-select');
+      cursoSelect.select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'Selecione',
+        allowClear: false
+      });
+    }
   } else {
     console.warn('Select2 não encontrado; pulando inicialização para evitar quebra do formulário.');
+    // Se Select2 não estiver disponível, pelo menos adicionar a classe form-select
+    const cursoSelect = document.getElementById('id_curso');
+    if (cursoSelect) {
+      cursoSelect.classList.add('form-select');
+    }
   }
 
   // ============================================================================
@@ -291,24 +303,6 @@ $(document).ready(function() {
   if (numLivroInput) {
     numLivroInput.addEventListener("input", function (e) {
       e.target.value = e.target.value.replace(/\D/g, "").slice(0, 3);
-    });
-  }
-
-  // ============================================================================
-  // AUTO-PREENCHIMENTO: Data de término (+24 meses da data de início)
-  // ============================================================================
-  const inicioInput = document.querySelector('input[name="data_inicio_ativ"]');
-  const terminoInput = document.querySelector('input[name="data_termino_atividades"]');
-  if (inicioInput && terminoInput) {
-    inicioInput.addEventListener("change", function () {
-      if (!terminoInput.value) {
-        const inicio = new Date(inicioInput.value);
-        if (!isNaN(inicio)) {
-          const termino = new Date(inicio);
-          termino.setMonth(termino.getMonth() + 24);
-          terminoInput.value = termino.toISOString().split("T")[0];
-        }
-      }
     });
   }
 });

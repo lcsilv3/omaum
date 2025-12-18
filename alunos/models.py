@@ -686,7 +686,66 @@ class Aluno(models.Model):
 
     def save(self, *args, **kwargs):
         """Override do save para lógicas automáticas."""
+        # Detectar mudança de situacao de ativo para inativo
+        if self.pk:
+            try:
+                original = Aluno.objects.get(pk=self.pk)
+                # Se mudou de ativo ("a") para qualquer outra situacao
+                if original.situacao == "a" and self.situacao != "a":
+                    # Auto-remover de turmas ativas como instrutor
+                    self._remover_de_turmas_como_instrutor(nova_situacao=self.situacao)  # noqa: F841
+            except Aluno.DoesNotExist:
+                pass  # Aluno novo, não há o que remover
+        
         super().save(*args, **kwargs)
+    
+    def _remover_de_turmas_como_instrutor(self, nova_situacao):  # noqa: ARG002
+        """Remove o aluno de todas as turmas ativas onde atua como instrutor.
+
+        Args:
+            nova_situacao (str): Nova situação do aluno (d/f/e). Não utilizado atualmente.
+
+        Returns:
+            list: Lista de turmas das quais foi removido.
+        """
+        from importlib import import_module
+
+        try:
+            turmas_module = import_module("turmas.models")
+            Turma = getattr(turmas_module, "Turma")
+
+            # Buscar turmas ativas onde é instrutor
+            from django.db.models import Q
+            turmas_ativas = Turma.objects.filter(
+                Q(instrutor=self) |
+                Q(instrutor_auxiliar=self) |
+                Q(auxiliar_instrucao=self)
+            ).filter(status="A")
+            
+            turmas_removidas = []
+            for turma in turmas_ativas:
+                papel = None
+                if turma.instrutor == self:
+                    turma.instrutor = None
+                    papel = "Instrutor Principal"
+                if turma.instrutor_auxiliar == self:
+                    turma.instrutor_auxiliar = None
+                    papel = "Instrutor Auxiliar" if not papel else f"{papel} e Instrutor Auxiliar"
+                if turma.auxiliar_instrucao == self:
+                    turma.auxiliar_instrucao = None
+                    papel = "Auxiliar de Instrução" if not papel else f"{papel} e Auxiliar de Instrução"
+                
+                turma.save()
+                turmas_removidas.append({
+                    'nome': turma.nome,
+                    'papel': papel
+                })
+            
+            return turmas_removidas
+        
+        except (ImportError, AttributeError):
+            # Se módulo turmas não disponível, apenas continuar
+            return []
 
 
 class TipoCodigo(models.Model):

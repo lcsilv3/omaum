@@ -189,6 +189,69 @@ class Turma(models.Model):
                         "A data de término das atividades não pode ser anterior à data de início das atividades."
                     )
                 )
+        
+        # NOVA VALIDAÇÃO: Impedir instrutor em múltiplas turmas ativas simultaneamente
+        from django.db.models import Q
+        
+        campos_instrutor = [
+            (self.instrutor, 'instrutor', 'Instrutor Principal'),
+            (self.instrutor_auxiliar, 'instrutor_auxiliar', 'Instrutor Auxiliar'),
+            (self.auxiliar_instrucao, 'auxiliar_instrucao', 'Auxiliar de Instrução')
+        ]
+
+        for instrutor, campo_nome, _ in campos_instrutor:  # _ ignora o label não utilizado
+            if instrutor:
+                # Buscar turmas ativas onde este aluno já é instrutor
+                turmas_ativas = Turma.objects.filter(
+                    Q(instrutor=instrutor) |
+                    Q(instrutor_auxiliar=instrutor) |
+                    Q(auxiliar_instrucao=instrutor)
+                ).filter(status="A")
+
+                # Excluir a própria turma se estiver editando
+                if self.pk:
+                    turmas_ativas = turmas_ativas.exclude(pk=self.pk)
+
+                # Se encontrou turmas ativas, lançar erro
+                if turmas_ativas.exists():
+                    turma_existente = turmas_ativas.first()
+                    papel_atual = "Instrutor Principal" if turma_existente.instrutor == instrutor else (
+                        "Instrutor Auxiliar" if turma_existente.instrutor_auxiliar == instrutor else
+                        "Auxiliar de Instrução"
+                    )
+                    raise ValidationError({
+                        campo_nome: (
+                            f"ATENÇÃO: {instrutor.nome} já está atuando como {papel_atual} "
+                            f"na turma '{turma_existente.nome}' (Status: Ativa). "
+                            f"Um aluno não pode ser instrutor em múltiplas turmas ativas simultaneamente."
+                        )
+                    })
+        
+        # NOVA VALIDAÇÃO: Status só pode mudar se data_termino_atividades estiver preenchida
+        if self.pk:  # Turma já existe (não é criação)
+            try:
+                original = Turma.objects.get(pk=self.pk)
+                if original.status != self.status:  # Status está mudando
+                    if not self.data_termino_atividades:
+                        raise ValidationError({
+                            'status': 'Não é possível alterar o status da turma sem definir '
+                                      'a Data de Término das Atividades.',
+                            'data_termino_atividades': 'Preencha este campo para alterar o status.'
+                        })
+            except Turma.DoesNotExist:
+                pass  # Turma não existe ainda, ignore
+        
+        # NOVA VALIDAÇÃO: Warning se turma ativa tem data de término no passado
+        if self.status == "A" and self.data_termino_atividades:
+            hoje = timezone.now().date()
+            if self.data_termino_atividades < hoje:
+                from django.core.exceptions import NON_FIELD_ERRORS
+                raise ValidationError({
+                    NON_FIELD_ERRORS: [
+                        f'ATENÇÃO: A data de término ({self.data_termino_atividades.strftime("%d/%m/%Y")}) '
+                        f'já passou. Considere alterar o status da turma para "Finalizada" ou "Inativa".'
+                    ]
+                })
 
     @classmethod
     def get_by_codigo(cls, codigo_turma):

@@ -98,6 +98,14 @@
                 </div>
                 <div class="row">
                     <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_iniciacao %}
+                    </div>
+                    <div class="col-md-6">
+                        {% include 'includes/form_field.html' with field=form.data_prim_aula %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.local %}
                     </div>
                     <div class="col-md-6">
@@ -124,27 +132,11 @@
             </div>
             <div id="dados-iniciaticos" class="collapse card-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.num_livro %}
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         {% include 'includes/form_field.html' with field=form.perc_presenca_minima %}
-                    </div>
-                    <div class="col-md-4">
-                        {% include 'includes/form_field.html' with field=form.data_iniciacao %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_inicio_ativ %}
-                    </div>
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_prim_aula %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        {% include 'includes/form_field.html' with field=form.data_termino_atividades %}
                     </div>
                 </div>
             </div>

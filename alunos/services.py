@@ -534,7 +534,7 @@ class InstrutorService:
                 Q(instrutor=aluno)
                 | Q(instrutor_auxiliar=aluno)
                 | Q(auxiliar_instrucao=aluno)
-            ).filter(alerta_instrutor=True)
+            ).filter(alerta_instrutor=True, status="A")  # BUG FIX: apenas turmas ativas
             if turmas_com_alerta.exists():
                 pendencias.append("Aluno possui alertas ativos em turmas.")
         except ModuleNotFoundError:

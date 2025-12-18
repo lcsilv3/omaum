@@ -48,7 +48,7 @@ class TurmaForm(forms.ModelForm):
             "data_prim_aula": forms.DateInput(attrs={"type": "date"}),
             "curso": forms.Select(
                 attrs={
-                    "class": "curso-select",
+                    "class": "form-select curso-select",
                     "placeholder": "Selecione o Curso desejado",
                 }
             ),
@@ -155,5 +155,43 @@ class TurmaForm(forms.ModelForm):
                     "data_termino_atividades",
                     "A data de término das atividades não pode ser anterior à data de início das atividades.",
                 )
+
+        # NOVA VALIDAÇÃO: Impedir instrutor em múltiplas turmas ativas simultaneamente
+        from turmas.models import Turma
+        from django.db.models import Q
+        
+        campos_instrutor = [
+            ('instrutor', 'Instrutor Principal'),
+            ('instrutor_auxiliar', 'Instrutor Auxiliar'),
+            ('auxiliar_instrucao', 'Auxiliar de Instrução')
+        ]
+
+        for campo_nome, _ in campos_instrutor:  # _ ignora o label não utilizado
+            instrutor = cleaned_data.get(campo_nome)
+            if instrutor:
+                # Buscar turmas ativas onde este aluno já é instrutor
+                turmas_ativas = Turma.objects.filter(
+                    Q(instrutor=instrutor) |
+                    Q(instrutor_auxiliar=instrutor) |
+                    Q(auxiliar_instrucao=instrutor)
+                ).filter(status="A")
+
+                # Excluir a própria turma se estiver editando
+                if self.instance.pk:
+                    turmas_ativas = turmas_ativas.exclude(pk=self.instance.pk)
+
+                # Se encontrou turmas ativas, adicionar erro
+                if turmas_ativas.exists():
+                    turma_existente = turmas_ativas.first()
+                    papel_atual = "Instrutor Principal" if turma_existente.instrutor == instrutor else (
+                        "Instrutor Auxiliar" if turma_existente.instrutor_auxiliar == instrutor else
+                        "Auxiliar de Instrução"
+                    )
+                    mensagem = (
+                        f"ATENÇÃO: {instrutor.nome} já está atuando como {papel_atual} "
+                        f"na turma '{turma_existente.nome}' (Status: Ativa). "
+                        f"Um aluno não pode ser instrutor em múltiplas turmas ativas simultaneamente."
+                    )
+                    self.add_error(campo_nome, mensagem)
 
         return cleaned_data
