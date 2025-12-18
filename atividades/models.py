@@ -53,6 +53,7 @@ class Atividade(models.Model):
 
     TIPO_CHOICES = [
         ("AULA", "Aula"),
+        ("PLENILUNIO", "Plenilúnio"),
         ("PALESTRA", "Palestra"),
         ("WORKSHOP", "Workshop"),
         ("SEMINARIO", "Seminário"),
