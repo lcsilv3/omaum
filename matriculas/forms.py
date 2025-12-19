@@ -79,10 +79,10 @@ class MatriculaForm(forms.ModelForm):
 
     class Meta:
         model = Matricula
-        fields = ["aluno", "turma", "data_matricula", "status"]
+        fields = ["turma", "aluno", "data_matricula", "status"]  # Turma primeiro
         widgets = {
-            "aluno": forms.Select(attrs={"class": "form-select"}),
             "turma": forms.Select(attrs={"class": "form-select"}),
+            "aluno": forms.Select(attrs={"class": "form-select"}),
             "data_matricula": forms.DateInput(
                 attrs={"type": "date", "class": "form-control"}
             ),
@@ -108,9 +108,32 @@ class MatriculaForm(forms.ModelForm):
                     "Este aluno já possui uma matrícula ativa nesta turma."
                 )
 
-            # Verificar se a turma está ativa
-            if not turma.ativo:
-                raise ValidationError("Não é possível matricular em uma turma inativa.")
+            # Verificar se a turma está ativa (via campo status)
+            if turma.status != "A":
+                status_display = dict(turma.STATUS_CHOICES).get(turma.status, "inativa")
+                raise ValidationError({
+                    "turma": f"Não é possível matricular em uma turma {status_display.lower()}. "
+                             f"Apenas turmas ativas podem receber matrículas."
+                })
+
+            # M2: Verificar se aluno já está em OUTRA turma ativa
+            outras_matriculas_ativas = Matricula.objects.filter(
+                aluno=aluno,
+                status="A",
+                turma__status="A"  # Turma também deve estar ativa
+            ).exclude(
+                pk=self.instance.pk if self.instance.pk else None
+            ).exclude(
+                turma=turma  # Excluir a própria turma sendo editada
+            )
+
+            if outras_matriculas_ativas.exists():
+                turma_conflito = outras_matriculas_ativas.first().turma
+                raise ValidationError({
+                    "aluno": f"Este aluno já está matriculado na turma ativa: "
+                             f"'{turma_conflito.nome}'. Cancele a matrícula anterior "
+                             f"antes de criar uma nova matrícula ativa."
+                })
 
         return cleaned_data
 

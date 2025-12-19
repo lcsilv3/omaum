@@ -58,8 +58,8 @@ def listar_matriculas(request):
     if Turma:
         turmas = Turma.objects.all().order_by("nome")
 
-    # Choices para status
-    status_choices = Matricula.STATUS_CHOICES
+    # Choices para status (corrigido: era STATUS_CHOICES, correto é OPCOES_STATUS)
+    status_choices = Matricula.OPCOES_STATUS
 
     context = {
         "page_obj": page_obj,
@@ -77,6 +77,9 @@ def listar_matriculas(request):
 @login_required
 def criar_matricula(request):
     """Cria uma nova matrícula."""
+    # M10: Pré-selecionar turma se vier via GET parameter
+    turma_id = request.GET.get('turma', None)
+    
     if request.method == "POST":
         form = MatriculaForm(request.POST)
         if form.is_valid():
@@ -91,14 +94,19 @@ def criar_matricula(request):
         else:
             messages.error(request, "Erro ao criar matrícula. Verifique os dados.")
     else:
-        form = MatriculaForm()
+        # Pré-selecionar turma se vier do botão "Matricular Alunos"
+        initial_data = {}
+        if turma_id:
+            initial_data['turma'] = turma_id
+        form = MatriculaForm(initial=initial_data)
 
     context = {
         "form": form,
         "titulo": "Nova Matrícula",
+        "turma_id": turma_id,  # Passar para o template
     }
 
-    return render(request, "matriculas/realizar_matricula.html", context)
+    return render(request, "matriculas/formulario_matricula.html", context)
 
 
 @login_required
@@ -141,7 +149,7 @@ def editar_matricula(request, matricula_id):
         "titulo": f"Editar Matrícula #{matricula.id}",
     }
 
-    return render(request, "matriculas/realizar_matricula.html", context)
+    return render(request, "matriculas/formulario_matricula.html", context)
 
 
 @login_required
@@ -274,6 +282,82 @@ def importar_matriculas(request):
     }
 
     return render(request, "matriculas/importar_matriculas.html", context)
+
+
+# M7: Endpoint para info da turma em tempo real
+@login_required
+def turma_info(request, turma_id):
+    """Retorna informações da turma em JSON para exibição dinâmica."""
+    try:
+        Turma = import_module("turmas.models").Turma
+        turma = get_object_or_404(Turma, id=turma_id)
+        
+        # Calcular vagas disponíveis
+        matriculas_ativas = turma.matriculas.filter(status="A").count()
+        vagas_disponiveis = turma.vagas - matriculas_ativas
+        percentual_ocupacao = int((matriculas_ativas / turma.vagas * 100)) if turma.vagas > 0 else 0
+        
+        # Informações do instrutor
+        instrutor_nome = turma.instrutor.nome if turma.instrutor else "Não definido"
+        
+        data = {
+            "id": turma.id,
+            "nome": turma.nome,
+            "status": turma.status,
+            "status_display": turma.get_status_display(),
+            "vagas_total": turma.vagas,
+            "vagas_ocupadas": matriculas_ativas,
+            "vagas_disponiveis": vagas_disponiveis,
+            "percentual_ocupacao": percentual_ocupacao,
+            "horario": turma.horario or "Não definido",
+            "dia_semana": turma.get_dias_semana_display() if turma.dias_semana else "Não definido",
+            "instrutor": instrutor_nome,
+            "curso": turma.curso.nome if turma.curso else "Não definido",
+            "local": turma.local or "Não definido",
+        }
+        
+        return JsonResponse(data)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+# M8: Endpoint para info do aluno em tempo real
+@login_required
+def aluno_info(request, aluno_id):
+    """Retorna informações do aluno em JSON para exibição dinâmica."""
+    try:
+        Aluno = import_module("alunos.models").Aluno
+        aluno = get_object_or_404(Aluno, id=aluno_id)
+        
+        # Buscar turmas ativas do aluno
+        matriculas_ativas = Matricula.objects.filter(
+            aluno=aluno,
+            status="A",
+            turma__status="A"
+        ).select_related("turma")
+        
+        turmas_ativas_lista = [
+            {
+                "id": m.turma.id,
+                "nome": m.turma.nome,
+                "data_matricula": m.data_matricula.strftime("%d/%m/%Y")
+            }
+            for m in matriculas_ativas
+        ]
+        
+        data = {
+            "id": aluno.id,
+            "nome": aluno.nome,
+            "cpf": aluno.cpf or "Não informado",
+            "grau_atual": aluno.grau_atual or "Não definido",
+            "status": "Ativo" if aluno.ativo else "Inativo",
+            "turmas_ativas": turmas_ativas_lista,
+            "tem_turmas_ativas": len(turmas_ativas_lista) > 0,
+        }
+        
+        return JsonResponse(data)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 # Aliases para compatibilidade

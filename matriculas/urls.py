@@ -38,6 +38,8 @@ urlpatterns = [
     # Views AJAX
     path("ajax/buscar-turmas/", views_tradicionais.buscar_turmas, name="buscar_turmas"),
     path("ajax/buscar-alunos/", views_tradicionais.buscar_alunos, name="buscar_alunos"),
+    path("ajax/turma-info/<int:turma_id>/", views_tradicionais.turma_info, name="turma_info"),
+    path("ajax/aluno-info/<int:aluno_id>/", views_tradicionais.aluno_info, name="aluno_info"),
     # Views de exportação/importação (placeholders)
     path(
         "exportar/", views_tradicionais.exportar_matriculas, name="exportar_matriculas"

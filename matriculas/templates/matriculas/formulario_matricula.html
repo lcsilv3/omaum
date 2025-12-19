@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if matricula and matricula.id %}Editar Matrícula #{{ matricula.id }}{% else %}Nova Matrícula{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* M9: Animações e feedback visual */
+    /* Estilos para cards com erro */
+    .card.border-danger {
+        box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+        animation: pulseError 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulseError {
+        0%, 100% { box-shadow: 0 0 10px rgba(220, 53, 69, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(220, 53, 69, 0.5); }
+    }
+    
+    .badge-error {
+        animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    /* Destaque em campos com erro */
+    .is-invalid, [aria-invalid="true"] {
+        border-color: #dc3545 !important;
+        border-width: 2px !important;
+        background-color: #fff5f5 !important;
+    }
+    
+    .is-invalid:focus, [aria-invalid="true"]:focus {
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+    
+    /* Melhoria na mensagem de erro global */
+    .alert-error ul, .alert-danger ul {
+        padding-left: 1.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .alert-error li, .alert-danger li {
+        margin-bottom: 0.25rem;
+    }
+
+    /* M5: Cards recolhíveis */
+    .collapse-toggle {
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.2s;
+    }
+    
+    .collapse-toggle:hover {
+        color: #0d6efd;
+        text-decoration: underline;
+    }
+    
+    .chevron {
+        transition: transform 0.3s;
+        margin-right: 6px;
+        display: inline-block;
+    }
+    
+    .collapsed .chevron {
+        transform: rotate(0deg);
+    }
+    
+    .chevron {
+        transform: rotate(90deg);
+    }
+
+    /* M12: Help text mais visíveis */
+    .form-text {
+        font-size: 0.9rem;
+        line-height: 1.3;
+        margin-top: 0.25rem;
+    }
+
+    /* Campos obrigatórios */
+    label.required::after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    /* Botões de ação */
+    .btn-group-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% if matricula and matricula.id %}Editar Matrícula #{{ matricula.id }}{% else %}Nova Matrícula{% endif %}</h1>
+        <div class="btn-group-actions">
+            <a href="{% url 'matriculas:listar_matriculas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar para a lista
+            </a>
+        </div>
+    </div>
+
+    <form method="post" id="form-matricula" novalidate>
+        {% csrf_token %}
+        
+        <!-- Exibir erros globais -->
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Atenção!</strong>
+            <ul class="mb-0">
+                {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        <!-- Alerta informativo -->
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Importante:</strong> Preencha todos os campos obrigatórios (marcados com *). 
+            A turma selecionada deve estar ativa e o aluno não pode estar matriculado em outra turma ativa.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- M5: Card 1 - Seleção da Turma -->
+        <div class="card mb-4 {% if form.turma.errors %}border-danger{% else %}border-primary{% endif %}">
+            <div class="card-header {% if form.turma.errors %}bg-danger{% else %}bg-primary{% endif %} text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none" data-bs-toggle="collapse" href="#selecao-turma" role="button" aria-expanded="true" aria-controls="selecao-turma">
+                        <span class="chevron">▶</span> 1. Seleção da Turma 
+                        <small class="text-light">(clique para expandir/recolher)</small>
+                        {% if form.turma.errors %}<span class="badge bg-light text-danger ms-2 badge-error">Erro</span>{% endif %}
+                    </a>
+                </h5>
+            </div>
+            <div id="selecao-turma" class="card-body collapse show">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label for="{{ form.turma.id_for_label }}" class="form-label required">{{ form.turma.label }}</label>
+                        {{ form.turma }}
+                        {% if form.turma.help_text %}
+                        <div class="form-text">{{ form.turma.help_text }}</div>
+                        {% endif %}
+                        {% if form.turma.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.turma.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <!-- Container para info da turma será adicionado via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- M5: Card 2 - Seleção do Aluno -->
+        <div class="card mb-4 {% if form.aluno.errors %}border-danger{% else %}border-success{% endif %}">
+            <div class="card-header {% if form.aluno.errors %}bg-danger{% else %}bg-success{% endif %} text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#selecao-aluno" role="button" aria-expanded="false" aria-controls="selecao-aluno">
+                        <span class="chevron">▶</span> 2. Seleção do Aluno 
+                        <small class="text-light">(clique para expandir/recolher)</small>
+                        {% if form.aluno.errors %}<span class="badge bg-light text-danger ms-2 badge-error">Erro</span>{% endif %}
+                    </a>
+                </h5>
+            </div>
+            <div id="selecao-aluno" class="card-body collapse">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.aluno.id_for_label }}" class="form-label required">{{ form.aluno.label }}</label>
+                        {{ form.aluno }}
+                        {% if form.aluno.help_text %}
+                        <div class="form-text">{{ form.aluno.help_text }}</div>
+                        {% endif %}
+                        {% if form.aluno.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.aluno.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <!-- Container para info do aluno será adicionado via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- M5: Card 3 - Detalhes da Matrícula -->
+        <div class="card mb-4 {% if form.data_matricula.errors or form.status.errors %}border-danger{% else %}border-info{% endif %}">
+            <div class="card-header {% if form.data_matricula.errors or form.status.errors %}bg-danger{% else %}bg-info{% endif %} text-white">
+                <h5 class="mb-0">
+                    <a class="collapse-toggle text-white text-decoration-none collapsed" data-bs-toggle="collapse" href="#detalhes-matricula" role="button" aria-expanded="false" aria-controls="detalhes-matricula">
+                        <span class="chevron">▶</span> 3. Detalhes da Matrícula 
+                        <small class="text-light">(clique para expandir/recolher)</small>
+                        {% if form.data_matricula.errors or form.status.errors %}<span class="badge bg-light text-danger ms-2 badge-error">Erro</span>{% endif %}
+                    </a>
+                </h5>
+            </div>
+            <div id="detalhes-matricula" class="card-body collapse">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.data_matricula.id_for_label }}" class="form-label required">{{ form.data_matricula.label }}</label>
+                        {{ form.data_matricula }}
+                        {% if form.data_matricula.help_text %}
+                        <div class="form-text">{{ form.data_matricula.help_text }}</div>
+                        {% endif %}
+                        {% if form.data_matricula.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.data_matricula.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                        {{ form.status }}
+                        {% if form.status.help_text %}
+                        <div class="form-text">{{ form.status.help_text }}</div>
+                        {% endif %}
+                        {% if form.status.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.status.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões de ação -->
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <button type="button" class="btn btn-outline-secondary" id="btn-expandir-tudo">
+                        <i class="fas fa-expand-alt"></i> Expandir Tudo
+                    </button>
+                    <div class="btn-group-actions">
+                        <a href="{% url 'matriculas:listar_matriculas' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {% if matricula and matricula.id %}Atualizar{% else %}Salvar{% endif %} Matrícula
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'matriculas/js/formulario_matricula.js' %}?v=20251218"></script>
+<script>
+    // Botão Expandir/Recolher Tudo
+    document.getElementById('btn-expandir-tudo').addEventListener('click', function() {
+        const collapses = document.querySelectorAll('.card-body.collapse');
+        const isExpandAll = this.innerHTML.includes('Expandir');
+        
+        collapses.forEach(collapse => {
+            if (isExpandAll) {
+                bootstrap.Collapse.getOrCreateInstance(collapse).show();
+            } else {
+                bootstrap.Collapse.getOrCreateInstance(collapse).hide();
+            }
+        });
+        
+        if (isExpandAll) {
+            this.innerHTML = '<i class="fas fa-compress-alt"></i> Recolher Tudo';
+        } else {
+            this.innerHTML = '<i class="fas fa-expand-alt"></i> Expandir Tudo';
+        }
+    });
+
+    // Auto-expandir card com erro
+    document.addEventListener('DOMContentLoaded', function() {
+        const cardsComErro = document.querySelectorAll('.card.border-danger .collapse');
+        cardsComErro.forEach(card => {
+            bootstrap.Collapse.getOrCreateInstance(card).show();
+        });
+    });
+</script>
+{% endblock %}

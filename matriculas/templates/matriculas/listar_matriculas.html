@@ -1,4 +1,11 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Matrículas{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'matriculas/js/listar_matriculas.js' %}?v=20251218"></script>
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
