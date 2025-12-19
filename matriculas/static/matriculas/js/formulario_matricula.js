@@ -8,6 +8,19 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar Select2 para campos com busca
+    if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+        jQuery('.select2-enable').each(function() {
+            jQuery(this).select2({
+                theme: 'bootstrap-5',
+                language: 'pt-BR',
+                placeholder: jQuery(this).data('placeholder') || 'Selecione...',
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    }
+    
     const turmaSelect = document.getElementById('id_turma');
     const alunoSelect = document.getElementById('id_aluno');
     const submitButton = document.querySelector('button[type="submit"]');
