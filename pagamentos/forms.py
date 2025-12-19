@@ -25,7 +25,7 @@ class PagamentoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         Aluno = get_aluno_model()
-        self.fields["aluno"].queryset = Aluno.objects.filter(situacao="ATIVO")
+        self.fields["aluno"].queryset = Aluno.objects.filter(situacao="a")
 
     def clean(self):
         cleaned_data = super().clean()

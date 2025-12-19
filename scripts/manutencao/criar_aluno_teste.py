@@ -29,7 +29,7 @@ def criar_aluno_teste():
             email="joao@example.com",
             data_nascimento=date(1990, 1, 1),
             sexo="M",
-            situacao="ATIVO",
+            situacao="a",
             ativo=True,
             numero_iniciatico="123456",
             nome_iniciatico="João dos Santos",

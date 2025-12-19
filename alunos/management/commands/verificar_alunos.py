@@ -26,7 +26,7 @@ class Command(BaseCommand):
             self.stdout.write(f"  - {situacao}: {count}")
 
         # Verificar alunos ativos
-        alunos_ativos = Aluno.objects.filter(situacao="ATIVO")
+        alunos_ativos = Aluno.objects.filter(situacao="a")
         self.stdout.write(f"Total de alunos ativos: {alunos_ativos.count()}")
 
         # Verificar matrículas em cursos pré-iniciáticos

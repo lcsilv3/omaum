@@ -96,7 +96,7 @@ class TurmaForm(forms.ModelForm):
 
         # Filtrar apenas alunos ativos para os campos de instrutor
         Aluno = get_model_dynamically("alunos", "Aluno")
-        alunos_ativos = Aluno.objects.filter(situacao="ATIVO")
+        alunos_ativos = Aluno.objects.filter(situacao="a")
 
         self.fields["instrutor"].queryset = alunos_ativos
         self.fields["instrutor_auxiliar"].queryset = alunos_ativos

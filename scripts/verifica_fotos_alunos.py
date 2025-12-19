@@ -1,7 +1,7 @@
 from alunos.models import Aluno
 
 print("Alunos com campo de foto preenchido:")
-for aluno in Aluno.objects.filter(ativo=True).exclude(foto=""):
+for aluno in Aluno.objects.filter(situacao="a").exclude(foto=""):
     print(f"ID: {aluno.id} | Nome: {aluno.nome} | Foto: {aluno.foto}")
     # Verifica se o arquivo existe fisicamente
     import os

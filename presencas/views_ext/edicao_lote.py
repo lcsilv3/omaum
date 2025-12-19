@@ -486,7 +486,7 @@ def editar_lote_dias_atividades(request):
     # Obter alunos através das matrículas ativas
     alunos = (
         Aluno.objects.filter(
-            matricula__turma=turma, matricula__ativa=True, situacao="ATIVO"
+            matricula__turma=turma, matricula__ativa=True, situacao="a"
         )
         .distinct()
         .order_by("nome")

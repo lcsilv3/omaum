@@ -142,7 +142,7 @@ class RegistroRapidoView:
         try:
             logger.info(f"Buscando alunos da turma ID: {turma_id}")
             alunos = (
-                Aluno.objects.filter(matricula__turma_id=turma_id, situacao="ATIVO")
+                Aluno.objects.filter(matricula__turma_id=turma_id, situacao="a")
                 .distinct()
                 .order_by("nome")
             )

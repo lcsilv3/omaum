@@ -68,7 +68,7 @@ def search_instrutores(request):
     try:
         query = request.GET.get("q", "").strip()
         AlunoModel = get_aluno_model()
-        alunos = AlunoModel.objects.filter(situacao="ATIVO")
+        alunos = AlunoModel.objects.filter(situacao="a")
 
         if query and len(query) >= 2:
             alunos = alunos.filter(Q(nome__icontains=query) | Q(cpf__icontains=query))

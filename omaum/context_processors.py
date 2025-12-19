@@ -19,7 +19,7 @@ def pagamentos_context(request):
     Pagamento = get_pagamento_model()  # noqa: E1101
 
     if request.user.is_authenticated:
-        pagamentos_atrasados_qs = Pagamento.objects.filter(status="ATRASADO")
+        pagamentos_atrasados_qs = Pagamento.objects.filter(status="ATRASADO").select_related('aluno')
         pagamentos_atrasados = list(pagamentos_atrasados_qs)
         pagamentos_atrasados_count = pagamentos_atrasados_qs.count()
     else:

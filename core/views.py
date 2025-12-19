@@ -40,7 +40,7 @@ def pagina_inicial(request):
         # Obter estatísticas para o dashboard
         Aluno = get_models()
         total_alunos = Aluno.objects.count() if Aluno else 0
-        alunos_ativos = Aluno.objects.filter(situacao="ATIVO").count() if Aluno else 0
+        alunos_ativos = Aluno.objects.filter(situacao="a").count() if Aluno else 0
         try:
             Curso = import_module("cursos.models").Curso
             total_cursos = Curso.objects.count()
@@ -97,7 +97,7 @@ def painel_controle(request):
         # Obter estatísticas para o painel de controle
         Aluno = get_models()
         total_alunos = Aluno.objects.count() if Aluno else 0
-        alunos_ativos = Aluno.objects.filter(situacao="ATIVO").count() if Aluno else 0
+        alunos_ativos = Aluno.objects.filter(situacao="a").count() if Aluno else 0
 
         # Tentar importar outros modelos para estatísticas
         try:
@@ -196,7 +196,7 @@ def dashboard(request):
         # Obter estatísticas para o dashboard
         Aluno = get_models()
         total_alunos = Aluno.objects.count() if Aluno else 0
-        alunos_ativos = Aluno.objects.filter(situacao="ATIVO").count() if Aluno else 0
+        alunos_ativos = Aluno.objects.filter(situacao="a").count() if Aluno else 0
 
         # Tentar importar outros modelos para estatísticas
         try:

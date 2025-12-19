@@ -19,7 +19,7 @@ try:
     print(f"✅ Turma encontrada: {turma.nome}")
 
     # Buscar alunos ativos da turma
-    alunos = Aluno.objects.filter(matricula__turma=turma, situacao="ATIVO").distinct()
+    alunos = Aluno.objects.filter(matricula__turma=turma, situacao="a").distinct()
 
     print(f"📊 Total de alunos ativos: {alunos.count()}")
 

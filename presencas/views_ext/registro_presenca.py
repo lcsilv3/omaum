@@ -489,7 +489,7 @@ def registrar_presenca_alunos(request):
 
     from presencas.models import ConvocacaoPresenca
 
-    alunos = Aluno.objects.filter(matricula__turma=turma, situacao="ATIVO").distinct()
+    alunos = Aluno.objects.filter(matricula__turma=turma, situacao="a").distinct()
 
     # Busca as atividades para o resumo
     from atividades.models import AtividadeAcademica
@@ -644,7 +644,7 @@ def processar_modo_lote(request, turma):
 
     # Recupera lista de alunos convocados da sessão (por atividade, se necessário)
     convocados_dict = request.session.get("presenca_convocados", {})
-    alunos = Aluno.objects.filter(matricula__turma=turma, situacao="ATIVO").distinct()
+    alunos = Aluno.objects.filter(matricula__turma=turma, situacao="a").distinct()
 
     # Se houver convocação, filtra apenas os convocados
     if convocados_dict:
@@ -1405,7 +1405,7 @@ def registrar_presenca_convocados(request):
     Atividade = get_model_class("Atividade")
     atividades = Atividade.objects.filter(turmas__id=turma.id) if turma else []
     alunos = (
-        Aluno.objects.filter(matricula__turma=turma, situacao="ATIVO").distinct()
+        Aluno.objects.filter(matricula__turma=turma, situacao="a").distinct()
         if turma
         else []
     )

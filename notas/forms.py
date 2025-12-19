@@ -55,7 +55,7 @@ class NotaForm(forms.ModelForm):
         self.fields["peso"].initial = 1.0
 
         # Filtrar apenas alunos ativos
-        self.fields["aluno"].queryset = Aluno.objects.filter(situacao="ATIVO")
+        self.fields["aluno"].queryset = Aluno.objects.filter(situacao="a")
 
         # Filtrar apenas cursos ativos
         self.fields["curso"].queryset = Curso.objects.all()

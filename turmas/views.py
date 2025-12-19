@@ -271,7 +271,7 @@ def criar_turma(request):
     # Obter todos os alunos ativos para o contexto
     try:
         Aluno = get_aluno_model()
-        alunos = Aluno.objects.filter(situacao="ATIVO")
+        alunos = Aluno.objects.filter(situacao="a")
     except (ImportError, AttributeError):
         alunos = []
 
@@ -377,7 +377,7 @@ def editar_turma(request, turma_id):
     # Obter todos os alunos ativos para o formulário
     try:
         Aluno = get_aluno_model()
-        alunos = Aluno.objects.filter(situacao="ATIVO")
+        alunos = Aluno.objects.filter(situacao="a")
     except (ImportError, AttributeError):
         alunos = []
     return render(
@@ -525,7 +525,7 @@ def matricular_aluno(request, turma_id):
         return redirect("turmas:detalhar_turma", turma_id=turma_id)
 
     # Para requisições GET, exibir formulário de matrícula
-    alunos = Aluno.objects.filter(situacao="ATIVO")
+    alunos = Aluno.objects.filter(situacao="a")
     return render(
         request, "turmas/matricular_aluno.html", {"turma": turma, "alunos": alunos}
     )
@@ -600,7 +600,7 @@ def atualizar_instrutores(request, turma_id):
 
     # Obter alunos elegíveis para serem instrutores
     try:
-        alunos_elegiveis = Aluno.objects.filter(situacao="ATIVO")
+        alunos_elegiveis = Aluno.objects.filter(situacao="a")
     except (ImportError, AttributeError):
         alunos_elegiveis = []
 

@@ -91,7 +91,7 @@ def diagnostico_instrutores(request):
     Aluno = alunos_module.Aluno
 
     # Obter todos os alunos ativos
-    alunos_ativos = Aluno.objects.filter(situacao="ATIVO")
+    alunos_ativos = Aluno.objects.filter(situacao="a")
 
     # Verificar elegibilidade de cada aluno
     alunos_diagnostico = []

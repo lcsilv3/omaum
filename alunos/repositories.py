@@ -71,7 +71,7 @@ class AlunoRepository:
         """Busca alunos que podem ser instrutores."""
         try:
             Aluno = AlunoRepository.get_model()
-            return Aluno.objects.filter(situacao="ATIVO").select_related()
+            return Aluno.objects.filter(situacao="a").select_related()
         except Exception as e:
             logger.error(f"Erro ao buscar instrutores ativos: {e}")
             return Aluno.objects.none()
@@ -82,9 +82,13 @@ class AlunoRepository:
         try:
             Aluno = AlunoRepository.get_model()
             # Converte parâmetro 'ativo' para filtro por 'situacao'
-            situacao_filter = "a" if ativo else "~Q(situacao='a')"
+            if ativo:
+                queryset = Aluno.objects.filter(situacao="a", cpf__isnull=False)
+            else:
+                queryset = Aluno.objects.exclude(situacao="a").filter(cpf__isnull=False)
+            
             queryset = (
-                Aluno.objects.filter(situacao="a" if ativo else Q(~Q(situacao="a")), cpf__isnull=False)
+                queryset
                 .exclude(cpf__exact="")
                 .select_related()
                 .prefetch_related("matricula_set__turma__curso")
