@@ -29,22 +29,43 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Aguardar um pouco e inicializar TODOS os campos
     setTimeout(function() {
-        // Adicionar classe aos selects de turma e aluno se não tiver
+        console.log('[MATRICULAS] Inicializando Select2...');
+        
+        // Buscar elementos
         const turmaSelect = document.getElementById('id_turma');
         const alunoSelect = document.getElementById('id_aluno');
         
-        if (turmaSelect && !turmaSelect.classList.contains('select2-enable')) {
-            turmaSelect.classList.add('select2-enable');
-        }
-        if (alunoSelect && !alunoSelect.classList.contains('select2-enable')) {
-            alunoSelect.classList.add('select2-enable');
+        console.log('[MATRICULAS] Turma:', turmaSelect);
+        console.log('[MATRICULAS] Aluno:', alunoSelect);
+        console.log('[MATRICULAS] jQuery:', typeof jQuery !== 'undefined');
+        console.log('[MATRICULAS] Select2:', typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined');
+        
+        // Inicializar turma
+        if (turmaSelect) {
+            console.log('[MATRICULAS] Inicializando Select2 em TURMA');
+            jQuery(turmaSelect).select2({
+                theme: 'bootstrap-5',
+                language: 'pt-BR',
+                placeholder: 'Selecione uma turma...',
+                allowClear: true,
+                width: '100%'
+            });
         }
         
-        // Inicializar Select2 em TODOS os .select2-enable
-        jQuery('.select2-enable').each(function() {
-            initializeSelect2(this);
-        });
-    }, 100);
+        // Inicializar aluno
+        if (alunoSelect) {
+            console.log('[MATRICULAS] Inicializando Select2 em ALUNO');
+            jQuery(alunoSelect).select2({
+                theme: 'bootstrap-5',
+                language: 'pt-BR',
+                placeholder: 'Selecione um aluno...',
+                allowClear: true,
+                width: '100%'
+            });
+        }
+        
+        console.log('[MATRICULAS] Select2 inicializado!');
+    }, 500);
     
     // Também reinicializar quando collapse for mostrado (caso esteja fechado inicialmente)
     document.querySelectorAll('.collapse').forEach(function(collapseEl) {
