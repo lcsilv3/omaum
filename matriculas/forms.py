@@ -30,8 +30,8 @@ class MatriculaForm(forms.ModelForm):
         Aluno = get_aluno_model()
         Turma = get_turma_model()
 
-        # Configurar queryset para alunos ativos
-        self.fields["aluno"].queryset = Aluno.objects.filter(ativo=True).order_by(
+        # Configurar queryset para alunos ativos (usando situacao='a')
+        self.fields["aluno"].queryset = Aluno.objects.filter(situacao="a").order_by(
             "nome"
         )
         self.fields["aluno"].widget.attrs.update(
