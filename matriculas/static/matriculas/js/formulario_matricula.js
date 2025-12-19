@@ -27,8 +27,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Aguardar um pouco e inicializar TODOS os campos, inclusive dentro de collapses
+    // Aguardar um pouco e inicializar TODOS os campos
     setTimeout(function() {
+        // Adicionar classe aos selects de turma e aluno se não tiver
+        const turmaSelect = document.getElementById('id_turma');
+        const alunoSelect = document.getElementById('id_aluno');
+        
+        if (turmaSelect && !turmaSelect.classList.contains('select2-enable')) {
+            turmaSelect.classList.add('select2-enable');
+        }
+        if (alunoSelect && !alunoSelect.classList.contains('select2-enable')) {
+            alunoSelect.classList.add('select2-enable');
+        }
+        
+        // Inicializar Select2 em TODOS os .select2-enable
         jQuery('.select2-enable').each(function() {
             initializeSelect2(this);
         });
