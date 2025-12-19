@@ -104,7 +104,7 @@ class AlunoForm(forms.ModelForm):
             "estado_civil",
             "escolaridade",
             "profissao",
-            "ativo",
+            # Campo 'ativo' removido - agora é property baseada em 'situacao'
             # Médicos
             "tipo_sanguineo",
             "alergias",

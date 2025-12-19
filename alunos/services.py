@@ -199,9 +199,9 @@ def listar_alunos(
     )
 
     if apenas_ativos is True:
-        alunos = alunos.filter(ativo=True)
+        alunos = alunos.filter(situacao="a")
     elif apenas_ativos is False:
-        alunos = alunos.filter(ativo=False)
+        alunos = alunos.filter(~Q(situacao="a"))
 
     if query:
         termo = query.strip()
@@ -260,7 +260,7 @@ def listar_historico_aluno(
 
     registros = RegistroHistorico.objects.filter(aluno=aluno)
     if not incluir_inativos:
-        registros = registros.filter(ativo=True)
+        registros = registros.filter(ativo=True)  # RegistroHistorico TEM campo ativo
 
     return registros.select_related("codigo", "codigo__tipo_codigo").order_by(
         "-data_os", "-created_at"
@@ -372,7 +372,7 @@ def _coletar_eventos_registro(aluno: Aluno) -> list[dict[str, Any]]:
     """Transforma registros estruturados em eventos JSON serializáveis."""
 
     registros = (
-        RegistroHistorico.objects.filter(aluno=aluno, ativo=True)
+        RegistroHistorico.objects.filter(aluno=aluno, ativo=True)  # RegistroHistorico TEM campo ativo
         .select_related("codigo", "codigo__tipo_codigo")
         .order_by("-data_os", "-created_at")
     )

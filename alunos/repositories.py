@@ -81,8 +81,10 @@ class AlunoRepository:
         """Lista alunos com filtros otimizados."""
         try:
             Aluno = AlunoRepository.get_model()
+            # Converte parâmetro 'ativo' para filtro por 'situacao'
+            situacao_filter = "a" if ativo else "~Q(situacao='a')"
             queryset = (
-                Aluno.objects.filter(ativo=ativo, cpf__isnull=False)
+                Aluno.objects.filter(situacao="a" if ativo else Q(~Q(situacao="a")), cpf__isnull=False)
                 .exclude(cpf__exact="")
                 .select_related()
                 .prefetch_related("matricula_set__turma__curso")

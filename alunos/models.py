@@ -382,7 +382,8 @@ class Aluno(models.Model):
     profissao = models.CharField(
         max_length=100, blank=True, null=True, verbose_name=_("Profissão")
     )
-    ativo = models.BooleanField(default=True, verbose_name=_("Ativo"))
+    # Campo 'ativo' foi convertido em property (veja esta_ativo)
+    # O status real é controlado pelo campo 'situacao'
 
     # Dados médicos
     tipo_sanguineo = models.CharField(
@@ -449,7 +450,7 @@ class Aluno(models.Model):
             models.Index(fields=["email"]),
             models.Index(fields=["numero_iniciatico"]),
             models.Index(fields=["situacao"]),
-            models.Index(fields=["ativo"]),
+            # Índice 'ativo' removido - campo convertido em property
             models.Index(fields=["pais_nacionalidade"]),
             models.Index(fields=["cidade_naturalidade"]),
             models.Index(fields=["nome"]),
@@ -478,9 +479,27 @@ class Aluno(models.Model):
         return historico[0] if historico else None
 
     @property
-    def esta_ativo(self):
-        """Verifica se o aluno está ativo."""
+    def ativo(self):
+        """
+        Property que retorna True se o aluno está ativo.
+        
+        IMPORTANTE: Este campo foi convertido de BooleanField para property.
+        Use 'situacao' para filtros no banco de dados.
+        
+        Returns:
+            bool: True se situacao == 'a', False caso contrário
+        """
         return self.situacao == "a"
+
+    @property
+    def esta_ativo(self):
+        """
+        Alias para ativo (mantido para compatibilidade).
+        
+        Returns:
+            bool: True se situacao == 'a', False caso contrário
+        """
+        return self.ativo
 
     @property
     def pode_ser_instrutor(self):
