@@ -12,24 +12,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeSelect2(element) {
         if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
             const $element = jQuery(element);
-            if (!$element.data('select2')) {
-                $element.select2({
-                    theme: 'bootstrap-5',
-                    language: 'pt-BR',
-                    placeholder: $element.data('placeholder') || 'Selecione...',
-                    allowClear: true,
-                    width: '100%'
-                });
+            // Destruir instância existente se houver
+            if ($element.data('select2')) {
+                $element.select2('destroy');
             }
+            // Inicializar Select2
+            $element.select2({
+                theme: 'bootstrap-5',
+                language: 'pt-BR',
+                placeholder: $element.data('placeholder') || 'Selecione...',
+                allowClear: true,
+                width: '100%'
+            });
         }
     }
     
-    // Inicializar Select2 para campos visíveis
-    jQuery('.select2-enable').each(function() {
-        initializeSelect2(this);
-    });
+    // Aguardar um pouco e inicializar TODOS os campos, inclusive dentro de collapses
+    setTimeout(function() {
+        jQuery('.select2-enable').each(function() {
+            initializeSelect2(this);
+        });
+    }, 100);
     
-    // Reinicializar Select2 quando collapse for mostrado
+    // Também reinicializar quando collapse for mostrado (caso esteja fechado inicialmente)
     document.querySelectorAll('.collapse').forEach(function(collapseEl) {
         collapseEl.addEventListener('shown.bs.collapse', function() {
             jQuery(this).find('.select2-enable').each(function() {
