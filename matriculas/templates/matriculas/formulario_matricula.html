@@ -120,7 +120,14 @@
         border: none !important;
     }
 </style>
-{{ form.media }}
+{% endblock %}
+
+{% block form_media_css %}
+{{ form.media.css }}
+{% endblock %}
+
+{% block form_media_js %}
+{{ form.media.js }}
 {% endblock %}
 
 {% block content %}
