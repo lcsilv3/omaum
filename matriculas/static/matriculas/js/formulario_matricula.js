@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // M7: Exibir informações da turma
                 const vagasDisponiveisClass = data.vagas_disponiveis > 0 ? 'success' : 'danger';
-                const vagasDisponiveis Text = data.vagas_disponiveis > 0 
+                const vagasDisponiveisText = data.vagas_disponiveis > 0 
                     ? `${data.vagas_disponiveis} vaga(s) disponível(is)` 
                     : 'Turma lotada';
                 
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                                 <div class="col-md-6">
                                     <strong>Vagas:</strong> ${data.vagas_ocupadas}/${data.vagas_total} 
-                                    <span class="badge bg-${vagasDisponiveisClass}">${vagasDisponiveis Text}</span>
+                                    <span class="badge bg-${vagasDisponiveisClass}">${vagasDisponiveisText}</span>
                                 </div>
                                 <div class="col-12">
                                     <div class="progress" style="height: 20px;">
