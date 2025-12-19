@@ -251,35 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Inicializar Select2 para turma e aluno
-     */
-    if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
-        // Configurar Select2 para turma
-        if (turmaSelect) {
-            jQuery(turmaSelect).select2({
-                theme: 'bootstrap-5',
-                language: 'pt-BR',
-                placeholder: 'Digite para buscar turma...',
-                allowClear: true,
-                width: '100%',
-                minimumInputLength: 0
-            });
-        }
-        
-        // Configurar Select2 para aluno
-        if (alunoSelect) {
-            jQuery(alunoSelect).select2({
-                theme: 'bootstrap-5',
-                language: 'pt-BR',
-                placeholder: 'Digite para buscar aluno...',
-                allowClear: true,
-                width: '100%',
-                minimumInputLength: 0
-            });
-        }
-    }
-    
-    /**
      * Validação adicional no submit
      */
     const form = document.querySelector('form');

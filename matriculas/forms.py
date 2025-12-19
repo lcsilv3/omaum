@@ -6,6 +6,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from importlib import import_module
+from django_select2 import forms as s2forms
 from .models import Matricula
 
 
@@ -81,8 +82,14 @@ class MatriculaForm(forms.ModelForm):
         model = Matricula
         fields = ["turma", "aluno", "data_matricula", "status"]  # Turma primeiro
         widgets = {
-            "turma": forms.Select(attrs={"class": "form-select"}),
-            "aluno": forms.Select(attrs={"class": "form-select"}),
+            "turma": s2forms.ModelSelect2Widget(
+                attrs={"class": "form-select", "data-minimum-input-length": 0},
+                search_fields=["nome__icontains", "codigo__icontains"],
+            ),
+            "aluno": s2forms.ModelSelect2Widget(
+                attrs={"class": "form-select", "data-minimum-input-length": 0},
+                search_fields=["nome__icontains", "cpf__icontains"],
+            ),
             "data_matricula": forms.DateInput(
                 attrs={"type": "date", "class": "form-control"}
             ),
