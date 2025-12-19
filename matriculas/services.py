@@ -97,7 +97,7 @@ def criar_matricula(dados_matricula):
                     "data_matricula", timezone.now().date()
                 ),
                 status=dados_matricula.get("status", "A"),
-                ativa=True,
+                status='A',
             )
 
             logger.info(f"Matrícula criada: {matricula}")
@@ -163,8 +163,7 @@ def cancelar_matricula(matricula_id, motivo=None):
     try:
         with transaction.atomic():
             matricula = Matricula.objects.get(id=matricula_id)
-            matricula.status = "C"
-            matricula.ativa = False
+            matricula.status = "C"  # Define status como Cancelada (ativa vira False automaticamente via property)
             matricula.save()
 
             logger.info(f"Matrícula cancelada: {matricula}. Motivo: {motivo}")
@@ -180,7 +179,7 @@ def cancelar_matricula(matricula_id, motivo=None):
 def obter_matriculas_ativas_por_aluno(aluno_cpf):
     """Obtém todas as matrículas ativas de um aluno."""
     return Matricula.objects.filter(
-        aluno__cpf=aluno_cpf, status="A", ativa=True
+        aluno__cpf=aluno_cpf, status="A"
     ).select_related("turma__curso")
 
 

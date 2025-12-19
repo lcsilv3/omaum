@@ -37,7 +37,7 @@ class MatriculaRepository:
         matriculas = Matricula.objects.filter(aluno__cpf=aluno_cpf)
 
         if apenas_ativas:
-            matriculas = matriculas.filter(status="A", ativa=True)
+            matriculas = matriculas.filter(status="A")
 
         return matriculas.select_related("turma", "turma__curso").order_by(
             "-data_matricula"
@@ -49,7 +49,7 @@ class MatriculaRepository:
         matriculas = Matricula.objects.filter(turma_id=turma_id)
 
         if apenas_ativas:
-            matriculas = matriculas.filter(status="A", ativa=True)
+            matriculas = matriculas.filter(status="A")
 
         return matriculas.select_related("aluno").order_by("aluno__nome")
 
@@ -125,7 +125,7 @@ class MatriculaRepository:
     @staticmethod
     def matriculas_ativas():
         """Retorna apenas matrículas ativas."""
-        return Matricula.objects.filter(status="A", ativa=True).select_related(
+        return Matricula.objects.filter(status="A").select_related(
             "aluno", "turma", "turma__curso"
         )
 

@@ -81,7 +81,7 @@ class MatriculaSignalsTestCase(TestCase):
             aluno=self.aluno,
             turma=self.turma1,
             data_matricula=timezone.now().date(),
-            ativa=True,
+            status='A',
             status="A",
         )
 
@@ -98,7 +98,7 @@ class MatriculaSignalsTestCase(TestCase):
             aluno=self.aluno,
             turma=self.turma1,
             data_matricula=timezone.now().date(),
-            ativa=True,
+            status='A',
             status="A",
         )
 
@@ -112,7 +112,7 @@ class MatriculaSignalsTestCase(TestCase):
             aluno=self.aluno,
             turma=self.turma2,
             data_matricula=timezone.now().date() + timedelta(days=1),
-            ativa=True,
+            status='A',
             status="A",
         )
 
@@ -128,7 +128,7 @@ class MatriculaSignalsTestCase(TestCase):
             aluno=self.aluno,
             turma=self.turma1,
             data_matricula=timezone.now().date(),
-            ativa=True,
+            status='A',
             status="A",
         )
 
@@ -150,7 +150,7 @@ class MatriculaSignalsTestCase(TestCase):
             aluno=self.aluno,
             turma=self.turma1,
             data_matricula=timezone.now().date(),
-            ativa=False,  # Inativa
+            status='C',  # Inativa
             status="C",  # Cancelada
         )
 
@@ -168,7 +168,7 @@ class MatriculaSignalsTestCase(TestCase):
             aluno=self.aluno,
             turma=self.turma1,
             data_matricula=timezone.now().date(),
-            ativa=True,
+            status='A',
             status="A",
         )
 
@@ -176,7 +176,7 @@ class MatriculaSignalsTestCase(TestCase):
             aluno=self.aluno,
             turma=self.turma2,
             data_matricula=timezone.now().date() + timedelta(days=1),
-            ativa=True,
+            status='A',
             status="A",
         )
 

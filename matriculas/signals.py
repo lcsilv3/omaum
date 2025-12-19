@@ -24,8 +24,8 @@ def atualizar_grau_atual_aluno(sender, instance, created, **kwargs):
         created: Boolean indicando se é uma nova matrícula
         **kwargs: Argumentos adicionais
     """
-    # Só atualiza se a matrícula está ativa
-    if instance.ativa and instance.status == "A":
+    # Só atualiza se a matrícula está ativa (status == 'A')
+    if instance.status == "A":
         try:
             aluno = instance.aluno
             turma = instance.turma
@@ -66,7 +66,7 @@ def atualizar_grau_apos_exclusao(sender, instance, **kwargs):
 
         # Busca a matrícula ativa mais recente do aluno
         matricula_mais_recente = (
-            Matricula.objects.filter(aluno=aluno, ativa=True, status="A")
+            Matricula.objects.filter(aluno=aluno, status="A")
             .order_by("-data_matricula")
             .first()
         )

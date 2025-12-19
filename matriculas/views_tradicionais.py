@@ -187,9 +187,8 @@ def cancelar_matricula(request, matricula_id):
 
     if request.method == "POST":
         try:
-            matricula.status = "C"
-            matricula.ativa = False
-            matricula.save(update_fields=["status", "ativa"])
+            matricula.status = "C"  # ativa vira False automaticamente via property
+            matricula.save(update_fields=["status"])
             messages.success(request, "Matrícula cancelada com sucesso!")
         except Exception as e:
             messages.error(request, f"Erro ao cancelar matrícula: {str(e)}")

@@ -33,7 +33,8 @@ class Matricula(models.Model):
         related_name="matriculas",
     )
     data_matricula = models.DateField(verbose_name="Data da Matrícula")
-    ativa = models.BooleanField(default=True, verbose_name="Matrícula Ativa")
+    # Campo 'ativa' foi convertido em property (veja abaixo)
+    # O status real é controlado pelo campo 'status'
     status = models.CharField(
         "Status", max_length=1, choices=OPCOES_STATUS, default="A"
     )
@@ -46,6 +47,19 @@ class Matricula(models.Model):
 
     def __str__(self):
         return f"{self.aluno.nome} - {self.turma.nome}"
+
+    @property
+    def ativa(self):
+        """
+        Property que retorna True se a matrícula está ativa.
+        
+        IMPORTANTE: Este campo foi convertido de BooleanField para property.
+        Use 'status' para filtros no banco de dados.
+        
+        Returns:
+            bool: True se status == 'A', False caso contrário
+        """
+        return self.status == "A"
 
     def clean(self):
         # Check if class is active
