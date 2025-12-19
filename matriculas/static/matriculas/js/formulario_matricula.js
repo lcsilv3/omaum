@@ -8,18 +8,35 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar Select2 para campos com busca
-    if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
-        jQuery('.select2-enable').each(function() {
-            jQuery(this).select2({
-                theme: 'bootstrap-5',
-                language: 'pt-BR',
-                placeholder: jQuery(this).data('placeholder') || 'Selecione...',
-                allowClear: true,
-                width: '100%'
+    // Função para inicializar Select2
+    function initializeSelect2(element) {
+        if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+            const $element = jQuery(element);
+            if (!$element.data('select2')) {
+                $element.select2({
+                    theme: 'bootstrap-5',
+                    language: 'pt-BR',
+                    placeholder: $element.data('placeholder') || 'Selecione...',
+                    allowClear: true,
+                    width: '100%'
+                });
+            }
+        }
+    }
+    
+    // Inicializar Select2 para campos visíveis
+    jQuery('.select2-enable').each(function() {
+        initializeSelect2(this);
+    });
+    
+    // Reinicializar Select2 quando collapse for mostrado
+    document.querySelectorAll('.collapse').forEach(function(collapseEl) {
+        collapseEl.addEventListener('shown.bs.collapse', function() {
+            jQuery(this).find('.select2-enable').each(function() {
+                initializeSelect2(this);
             });
         });
-    }
+    });
     
     const turmaSelect = document.getElementById('id_turma');
     const alunoSelect = document.getElementById('id_aluno');
