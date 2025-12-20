@@ -439,9 +439,9 @@
             </h5>
         </div>
         <div id="atividades-relacionadas" class="collapse card-body">
-            {% if turma.atividades_academicas.all %}
+            {% if turma.atividades.all %}
                 <div class="list-group">
-                    {% for atividade in turma.atividades_academicas.all %}
+                    {% for atividade in turma.atividades.all %}
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">{{ atividade.nome }}</h6>
