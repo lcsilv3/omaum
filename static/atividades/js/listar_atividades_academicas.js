@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => fetchAtividades(), 120);
+            debounceTimer = setTimeout(() => fetchAtividades(), 500);
         });
     }
 
