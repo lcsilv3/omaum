@@ -179,3 +179,4 @@ urlpatterns = [
         name="importar_atividades_academicas",
     ),
 ]
+# Reload: 2025-12-20 12:50:28

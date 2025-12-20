@@ -1,9 +1,25 @@
+"""
+⚠️ ATENÇÃO: Este arquivo está sendo DESCONTINUADO!
+
+As views principais de atividades foram movidas para views_ext/:
+- views_ext/academicas.py: CRUD de atividades acadêmicas
+- views_ext/relatorios.py: Relatórios de atividades
+- views_ext/dashboard.py: Dashboard de atividades
+- views_ext/calendario.py: Calendário de atividades
+
+Antes de editar uma view, SEMPRE verifique atividades/urls.py 
+para confirmar de onde a view é realmente importada!
+"""
+
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.core.paginator import Paginator
-from .utils import get_models, get_cursos
+from .views_ext.utils import get_models, get_cursos
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def relatorio_atividades(request):
@@ -35,10 +51,18 @@ def relatorio_atividades(request):
 
 @login_required
 def listar_atividades_academicas(request):
+    import sys
+    print("=" * 80, flush=True)
+    print("🚀🚀🚀 VIEW ATIVIDADES EXECUTANDO!", flush=True)
+    print("=" * 80, flush=True)
+    sys.stdout.flush()
+    sys.stderr.write("🔥 VIEW EXECUTANDO VIA STDERR\n")
+    sys.stderr.flush()
     """
     Lista atividades acadêmicas com filtros dinâmicos por curso e turma.
     Suporta AJAX para atualização parcial da tabela e dos selects.
     """
+    print("🚀 VIEW ATIVIDADES EXECUTANDO - TIMESTAMP:", __import__('datetime').datetime.now(), flush=True)
     query = request.GET.get("q", "")
     curso_id = request.GET.get("curso", "")
     turma_id = request.GET.get("turma", "")
@@ -79,12 +103,12 @@ def listar_atividades_academicas(request):
         "turma_selecionada": turma_id,
     }
     
-    # Debug: verificar headers
-    import logging
-    logger = logging.getLogger(__name__)
+    # Debug: verificar headers recebidos
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
-    logger.info(f"[ATIVIDADES] Headers: {dict(request.headers)}")
-    logger.info(f"[ATIVIDADES] Is AJAX: {is_ajax}")
+    logger.info(f"🔍 [ATIVIDADES] Method: {request.method}, Path: {request.path}")
+    logger.info(f"🔍 [ATIVIDADES] Headers recebidos: {dict(request.headers)}")
+    logger.info(f"🔍 [ATIVIDADES] X-Requested-With value: '{request.headers.get('x-requested-with')}'")
+    logger.info(f"🔍 [ATIVIDADES] is_ajax={is_ajax}")
     
     if is_ajax:
         tabela_html = render_to_string(
@@ -151,3 +175,5 @@ def ajax_atividades_filtradas(request):
         "atividades/partials/atividades_tabela_body.html",
         {"atividades": atividades},
     )
+
+# Reload trigger: 2025-12-20 12:16:29

@@ -26,6 +26,12 @@ def listar_atividades_academicas(request):
     query = request.GET.get("q", "")
     curso_id = request.GET.get("curso", "")
     turma_id = request.GET.get("turma", "")
+    logger.info(
+        "[Atividades] Filtros recebidos: curso_id=%s turma_id=%s query='%s'",
+        curso_id,
+        turma_id,
+        query,
+    )
 
     # Auto-correção de atividades sem curso (executa uma vez por carregamento da página)
     if not request.GET.get("corrected"):
@@ -61,12 +67,21 @@ def listar_atividades_academicas(request):
     turmas = get_turmas()
 
     if curso_id:
-        atividades = atividades.filter(curso_id=curso_id)
-        turmas = turmas.filter(curso_id=curso_id)
+        try:
+            atividades = atividades.filter(curso_id=int(curso_id))
+            turmas = turmas.filter(curso_id=int(curso_id))
+        except ValueError:
+            atividades = atividades.filter(curso_id=curso_id)
+            turmas = turmas.filter(curso_id=curso_id)
     if turma_id:
-        atividades = atividades.filter(turmas__id=turma_id)
+        try:
+            atividades = atividades.filter(turmas__id=int(turma_id))
+        except ValueError:
+            atividades = atividades.filter(turmas__id=turma_id)
     if query:
         atividades = atividades.filter(nome__icontains=query)
+
+    logger.info("[Atividades] Qtde após filtros: %s", atividades.distinct().count())
 
     # Adicionando paginação
     paginator = Paginator(atividades.distinct(), 15)  # 15 por página
@@ -89,9 +104,43 @@ def listar_atividades_academicas(request):
     }
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        return render(
-            request, "atividades/academicas/partials/atividades_tabela.html", context
+        from django.template.loader import render_to_string
+
+        tabela_html = render_to_string(
+            "atividades/academicas/partials/atividades_tabela.html",
+            context,
+            request=request,
         )
+
+        cursos_html = render_to_string(
+            "atividades/academicas/partials/cursos_options.html",
+            context,
+            request=request,
+        )
+
+        turmas_html = render_to_string(
+            "atividades/academicas/partials/turmas_options.html",
+            context,
+            request=request,
+        )
+
+        rodape_html = render_to_string(
+            "atividades/academicas/partials/rodape_atividades.html",
+            context,
+            request=request,
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "tabela_html": tabela_html,
+                "cursos_html": cursos_html,
+                "turmas_html": turmas_html,
+                "rodape_html": rodape_html,
+                "total_atividades": paginator.count,
+            }
+        )
+    
     return render(
         request, "atividades/academicas/listar_atividades_academicas.html", context
     )

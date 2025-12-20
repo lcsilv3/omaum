@@ -1,0 +1,73 @@
+{% load consolidado_tags %}
+<div class="consolidado-container" id="consolidado-container">
+    <table class="consolidado-table">
+        <thead>
+            <tr>
+                <th rowspan="2" class="aluno-nome">Aluno</th>
+                <th rowspan="2" class="turma-nome">Turma</th>
+                {% for atividade in atividades_paginadas %}
+                <th colspan="6" class="atividade-header">{{ atividade.nome }}</th>
+                {% endfor %}
+                <th colspan="5" class="totais-header">Totais</th>
+            </tr>
+            <tr>
+                {% for atividade in atividades_paginadas %}
+                <th class="atividade-subheader">C</th>
+                <th class="atividade-subheader">P</th>
+                <th class="atividade-subheader">F</th>
+                <th class="atividade-subheader">V1</th>
+                <th class="atividade-subheader">V2</th>
+                <th class="atividade-subheader">%</th>
+                {% endfor %}
+                <th class="totais-header">Conv.</th>
+                <th class="totais-header">Pres.</th>
+                <th class="totais-header">Faltas</th>
+                <th class="totais-header">Vol.</th>
+                <th class="totais-header">% Médio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aluno_id, dados_aluno in dados_consolidados.items %}
+            <tr data-aluno-id="{{ aluno_id }}">
+                <td class="aluno-nome">{{ dados_aluno.aluno.nome }}</td>
+                <td class="turma-nome">{{ dados_aluno.turma.nome }}</td>
+                {% for atividade in atividades_paginadas %}
+                {% with dados_atividade=dados_aluno.atividades|get_item:atividade.id %}
+                {% if dados_atividade %}
+                <td class="celula-editavel" data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" data-campo="convocacoes">
+                    <input type="number" value="{{ dados_atividade.C }}" min="0" max="999" onchange="salvarCelula(this)" onblur="salvarCelula(this)">
+                </td>
+                <td class="celula-editavel" data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" data-campo="presencas">
+                    <input type="number" value="{{ dados_atividade.P }}" min="0" max="999" onchange="salvarCelula(this)" onblur="salvarCelula(this)">
+                </td>
+                <td class="celula-editavel" data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" data-campo="faltas">
+                    <input type="number" value="{{ dados_atividade.F }}" min="0" max="999" onchange="salvarCelula(this)" onblur="salvarCelula(this)">
+                </td>
+                <td class="celula-editavel" data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" data-campo="voluntario_extra">
+                    <input type="number" value="{{ dados_atividade.V1 }}" min="0" max="999" onchange="salvarCelula(this)" onblur="salvarCelula(this)">
+                </td>
+                <td class="celula-editavel" data-presenca-id="{{ dados_atividade.presenca_detalhada.id }}" data-campo="voluntario_simples">
+                    <input type="number" value="{{ dados_atividade.V2 }}" min="0" max="999" onchange="salvarCelula(this)" onblur="salvarCelula(this)">
+                </td>
+                <td class="percentual-cell {% if dados_atividade.percentual < 50 %}percentual-baixo{% elif dados_atividade.percentual < 75 %}percentual-medio{% else %}percentual-alto{% endif %}">{{ dados_atividade.percentual|floatformat:1 }}%</td>
+                {% else %}
+                <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+                {% endif %}
+                {% endwith %}
+                {% endfor %}
+                <td class="totais-header">{{ dados_aluno.totais.convocacoes }}</td>
+                <td class="totais-header">{{ dados_aluno.totais.presencas }}</td>
+                <td class="totais-header">{{ dados_aluno.totais.faltas }}</td>
+                <td class="totais-header">{{ dados_aluno.totais.voluntarios }}</td>
+                <td class="totais-header {% if dados_aluno.totais.percentual_medio < 50 %}percentual-baixo{% elif dados_aluno.totais.percentual_medio < 75 %}percentual-medio{% else %}percentual-alto{% endif %}">{{ dados_aluno.totais.percentual_medio|floatformat:1 }}%</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="100%" class="text-center">
+                    <div class="alert alert-info">Nenhum registro encontrado com os filtros selecionados.</div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

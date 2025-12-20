@@ -151,6 +151,11 @@ LOGGING = {
             "level": "INFO",
             "propagate": True,
         },
+        "atividades.views": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": True,
+        },
         "core.middleware": {
             "handlers": ["console", "file"],
             "level": "INFO",

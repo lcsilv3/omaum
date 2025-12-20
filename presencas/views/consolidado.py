@@ -10,6 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views.generic import View
 from django.db import transaction
@@ -94,6 +95,34 @@ class ConsolidadoPresencasView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         """Exibe página consolidada."""
         try:
+            # Suporte a AJAX (carregamento dinâmico de filtros via GET)
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                acao = request.GET.get("acao")
+                if acao == "carregar_filtros":
+                    return self.carregar_filtros_ajax(request)
+                if acao == "atualizar_tabela":
+                    # Recalcula contexto com filtros atuais e retorna HTML parcial da tabela
+                    context = self.get_context_data(**kwargs)
+                    tabela_html = render_to_string(
+                        "presencas/consolidado/partials/table.html",
+                        context,
+                        request=request,
+                    )
+                    pagination_html = render_to_string(
+                        "presencas/consolidado/partials/pagination.html",
+                        {"page_obj": context.get("atividades_paginadas")},
+                        request=request,
+                    )
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "tabela_html": tabela_html,
+                            "pagination_html": pagination_html,
+                        }
+                    )
+                # Poderemos expandir outras ações GET no futuro (e.g., atualizar tabela)
+                return JsonResponse({"success": False, "error": "Ação GET não reconhecida"}, status=400)
+
             context = self.get_context_data(**kwargs)
             return render(request, self.template_name, context)
         except Exception as e:

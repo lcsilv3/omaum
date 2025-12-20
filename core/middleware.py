@@ -109,7 +109,16 @@ def ajax_authentication_middleware(get_response):
                     status=401,
                 )
 
+        import logging
+        logger = logging.getLogger(__name__)
+        if request.path == "/atividades/" and request.headers.get("x-requested-with") == "XMLHttpRequest":
+            logger.info(f"🔥 [MIDDLEWARE] ANTES de chamar get_response() para {request.path}")
+        
         response = get_response(request)
+        
+        if request.path == "/atividades/" and request.headers.get("x-requested-with") == "XMLHttpRequest":
+            logger.info(f"🔥 [MIDDLEWARE] DEPOIS de chamar get_response() - Status: {response.status_code}, Content-Type: {response.get('Content-Type', 'N/A')}")
+        
         return response
 
     return middleware

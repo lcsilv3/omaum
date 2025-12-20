@@ -50,9 +50,24 @@ def dashboard_atividades(request):
         "total_cursos": total_cursos,
     }
 
-    # AJAX: retorna apenas o conteúdo do dashboard para atualização dinâmica
+    # AJAX: retorna apenas o conteúdo do dashboard para atualização dinâmica (JSON + HTML parcial)
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        return render(request, "atividades/_dashboard_conteudo.html", context)
+        from django.template.loader import render_to_string
+
+        conteudo_html = render_to_string(
+            "atividades/_dashboard_conteudo.html", context, request=request
+        )
+        return JsonResponse(
+            {
+                "success": True,
+                "conteudo_html": conteudo_html,
+                "totais": {
+                    "atividades": total_atividades,
+                    "turmas": total_turmas,
+                    "cursos": total_cursos,
+                },
+            }
+        )
 
     return render(request, "atividades/dashboard.html", context)
 

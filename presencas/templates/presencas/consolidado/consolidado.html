@@ -352,7 +352,7 @@
             
             <!-- Paginação de Atividades -->
             {% if atividades_paginadas.has_other_pages %}
-            <div class="pagination-atividades">
+            <div class="pagination-atividades" id="pagination-top">
                 {% if atividades_paginadas.has_previous %}
                 <a href="?{% for key, value in request.GET.items %}{% if key != 'pagina_atividade' %}{{ key }}={{ value }}&{% endif %}{% endfor %}pagina_atividade={{ atividades_paginadas.previous_page_number }}" 
                    class="btn btn-outline-primary">
@@ -375,7 +375,7 @@
             {% endif %}
             
             <!-- Tabela Consolidada -->
-            <div class="consolidado-container">
+            <div class="consolidado-container" id="consolidado-container">
                 <table class="consolidado-table">
                     <thead>
                         <tr>
@@ -474,7 +474,7 @@
             
             <!-- Paginação de Atividades (repetida) -->
             {% if atividades_paginadas.has_other_pages %}
-            <div class="pagination-atividades">
+            <div class="pagination-atividades" id="pagination-bottom">
                 {% if atividades_paginadas.has_previous %}
                 <a href="?{% for key, value in request.GET.items %}{% if key != 'pagina_atividade' %}{{ key }}={{ value }}&{% endif %}{% endfor %}pagina_atividade={{ atividades_paginadas.previous_page_number }}" 
                    class="btn btn-outline-primary">
@@ -693,7 +693,54 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    // Submit AJAX dos filtros para atualizar a tabela sem recarregar
+    const filtrosForm = document.getElementById('filtros-form');
+    if (filtrosForm) {
+        filtrosForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            atualizarTabelaAjax();
+        });
+    }
 });
+
+function atualizarTabelaAjax() {
+    showLoading();
+    const params = new URLSearchParams(new FormData(document.getElementById('filtros-form')));
+    params.append('acao', 'atualizar_tabela');
+    fetch(`{% url "presencas:consolidado" %}?${params.toString()}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(resp => resp.json())
+    .then(data => {
+        if (data.success) {
+            const container = document.getElementById('consolidado-container');
+            if (container) {
+                // Substitui somente o conteúdo interno do container
+                const temp = document.createElement('div');
+                temp.innerHTML = data.tabela_html;
+                const inner = temp.querySelector('#consolidado-container');
+                container.replaceWith(inner);
+            }
+            // Atualiza paginação (topo e base) quando disponível
+            if (data.pagination_html) {
+                const paginationTop = document.getElementById('pagination-top');
+                const paginationBottom = document.getElementById('pagination-bottom');
+                const tempPag = document.createElement('div');
+                tempPag.innerHTML = data.pagination_html;
+                const newPag = tempPag.querySelector('.pagination-atividades');
+                if (paginationTop && newPag) paginationTop.replaceWith(newPag.cloneNode(true));
+                if (paginationBottom && newPag) paginationBottom.replaceWith(newPag.cloneNode(true));
+            }
+        } else {
+            alert('Erro ao atualizar tabela: ' + (data.error || 'desconhecido'));
+        }
+    })
+    .catch(err => {
+        console.error('Erro AJAX tabela:', err);
+        alert('Erro de conexão ao atualizar tabela.');
+    })
+    .finally(hideLoading);
+}
 
 // Validação de formulário
 document.getElementById('filtros-form').addEventListener('submit', function(e) {
