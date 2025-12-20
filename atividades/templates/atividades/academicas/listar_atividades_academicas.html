@@ -26,7 +26,7 @@
             <form id="filtro-atividades-form" method="get" class="row g-2 align-items-center">
                 <div class="col-md-4 col-lg-4">
                     <label for="id_q" class="form-label mb-1">Busca</label>
-                    <input type="text" name="q" id="id_q" class="form-control" placeholder="Buscar por nome ou descrição" value="{{ query }}">
+                    <input type="text" name="q" id="id_q" class="form-control" placeholder="Buscar por nome ou descrição" value="{{ query }}" autocomplete="off">
                 </div>
                 <div class="col-md-3 col-lg-3">
                     <label for="id_curso" class="form-label mb-1">Curso</label>
@@ -80,5 +80,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'atividades/js/listar_atividades_academicas.js' %}?v=20251211"></script>
+<script src="{% static 'atividades/js/listar_atividades_academicas.js' %}?v=20251220"></script>
 {% endblock %}
