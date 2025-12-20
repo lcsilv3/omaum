@@ -14,7 +14,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const badgeContador = document.getElementById('badge-contador-selecionados');
     const tbodyAlunos = document.getElementById('tbody-alunos-elegiveis');
     const loadingAlunos = document.getElementById('loading-alunos');
-    const turmaId = document.getElementById('turma-id').value;
+    const turmaIdElement = document.getElementById('turma-id');
+    
+    // Verificar se os elementos essenciais existem
+    if (!turmaIdElement || !tbodyAlunos) {
+        console.warn('Elementos essenciais para matrícula em lote não encontrados.');
+        return;
+    }
+    
+    const turmaId = turmaIdElement.value;
 
     // Estado
     let alunosSelecionados = new Set();
@@ -270,4 +278,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Inicializar listeners dos checkboxes existentes
     attachCheckboxListeners();
+    
+    // Atualizar contador inicial
+    atualizarContador();
+    
+    // Buscar alunos elegíveis ao carregar (para popular com filtros padrão)
+    if (tbodyAlunos && turmaId) {
+        buscarAlunosElegiveis();
+    }
 });
