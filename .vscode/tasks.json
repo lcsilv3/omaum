@@ -195,5 +195,58 @@
 			"isBackground": false,
 			"group": "test"
 		}
+		,
+		{
+			"type": "shell",
+			"label": "Watch Dev Ops (restart + collectstatic)",
+			"command": "pwsh",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/scripts/watch_dev_ops.ps1"
+			],
+			"group": "build",
+			"isBackground": true,
+			"runOptions": {
+				"runOn": "folderOpen"
+			},
+			"presentation": {
+				"reveal": "never",
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false
+			}
+		}
+			,
+			{
+				"type": "shell",
+				"label": "Prod: Deploy (up + migrate + collectstatic)",
+				"command": "pwsh",
+				"args": [
+					"-NoLogo",
+					"-NoProfile",
+					"-File",
+					"${workspaceFolder}/scripts/deploy_prod.ps1"
+				],
+				"isBackground": false,
+				"group": "build",
+				"presentation": { "reveal": "always", "panel": "dedicated" }
+			}
+			,
+			{
+				"type": "shell",
+				"label": "Prod: Reiniciar omaum-web",
+				"command": "pwsh",
+				"args": [
+					"-NoLogo",
+					"-NoProfile",
+					"-File",
+					"${workspaceFolder}/scripts/restart_prod.ps1"
+				],
+				"isBackground": false,
+				"group": "build",
+				"presentation": { "reveal": "always", "panel": "shared" }
+			}
 	]
 }

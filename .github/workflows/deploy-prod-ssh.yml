@@ -1,0 +1,98 @@
+name: Deploy em Produção (Self-hosted)
+
+# Dispara manualmente ou após o build bem-sucedido
+on:
+  workflow_dispatch:
+    inputs:
+      skip_migrate:
+        description: 'Pular migrations?'
+        required: false
+        default: 'false'
+      skip_collectstatic:
+        description: 'Pular collectstatic?'
+        required: false
+        default: 'false'
+      pull:
+        description: 'Executar pull antes de up?'
+        required: false
+        default: 'true'
+      recreate:
+        description: 'Forçar recriação de containers?'
+        required: false
+        default: 'false'
+
+jobs:
+  deploy-prod:
+    runs-on: [self-hosted]
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy (execute locally)
+        shell: pwsh
+        run: |
+          $deployCmd = "pwsh -NoLogo -NoProfile -File scripts/deploy_prod.ps1"
+          
+          if ("${{ github.event.inputs.pull }}" -eq "true") { $deployCmd += " -Pull" }
+          if ("${{ github.event.inputs.recreate }}" -eq "true") { $deployCmd += " -Recreate" }
+          if ("${{ github.event.inputs.skip_migrate }}" -eq "true") { $deployCmd += " -SkipMigrate" }
+          if ("${{ github.event.inputs.skip_collectstatic }}" -eq "true") { $deployCmd += " -SkipCollectstatic" }
+          
+          Write-Host "=== Deploy em Produção ===" -ForegroundColor Cyan
+          Write-Host "Executando: $deployCmd" -ForegroundColor Yellow
+          Invoke-Expression $deployCmd
+
+      - name: Verify deployment
+        shell: pwsh
+        run: |
+          Write-Host "=== Status dos containers ===" -ForegroundColor Cyan
+          Push-Location docker
+          
+          docker compose --profile production -p omaum-prod ps
+          
+          Write-Host "`n=== Últimas 20 linhas de log ===" -ForegroundColor Cyan
+          docker compose --profile production -p omaum-prod logs --tail=20 omaum-web
+          
+          Pop-Location
+
+      - name: Notify Slack (success)
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "✅ Deploy em Produção: SUCCESS",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*✅ Deploy em Produção: SUCCESS*\n${{ github.actor }} disparou o deploy\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Ver workflow>"
+                  }
+                }
+              ]
+            }
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+
+      - name: Notify Slack (failure)
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "⚠️ Deploy em Produção: FAILED",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*⚠️ Deploy em Produção: FAILED*\n${{ github.actor }} disparou o deploy\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Ver logs>"
+                  }
+                }
+              ]
+            }
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}

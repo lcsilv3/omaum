@@ -774,7 +774,12 @@ def processar_modo_individual(request, turma):
 @login_required
 def turmas_por_curso_ajax(request):
     curso_id = request.GET.get("curso_id")
-    turmas = Turma.objects.filter(curso_id=curso_id).values("id", "nome")
+    if curso_id:
+        turmas = Turma.objects.filter(curso_id=curso_id)
+    else:
+        turmas = Turma.objects.all()
+
+    turmas = turmas.values("id", "nome").order_by("nome")
     return JsonResponse(list(turmas), safe=False)
 
 

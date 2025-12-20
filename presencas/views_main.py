@@ -20,6 +20,7 @@ from alunos.services import (
     buscar_aluno_por_cpf as buscar_aluno_por_cpf_service,
 )
 from turmas.models import Turma
+from cursos.models import Curso
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,12 @@ def listar_presencas_academicas(request):
     # Carregamento otimizado de listas de referência com cache
     turmas_cache_key = "turmas_listagem"
     atividades_cache_key = "atividades_listagem"
+    cursos_cache_key = "cursos_listagem"
+
+    cursos = cache.get(cursos_cache_key)
+    if not cursos:
+        cursos = list(Curso.objects.only("id", "nome").order_by("nome"))
+        cache.set(cursos_cache_key, cursos, 600)  # 10 minutos
 
     turmas = cache.get(turmas_cache_key)
     if not turmas:
@@ -106,6 +113,7 @@ def listar_presencas_academicas(request):
         "presencas": page_obj.object_list,
         "total_count": total_count,
         "alunos": alunos,
+        "cursos": cursos,
         "turmas": turmas,
         "atividades": atividades,
         "filtros": {

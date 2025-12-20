@@ -1,11 +1,15 @@
 {# Card de atividade e calendário #}
 <div class="card atividade-card mb-3">
-    <div class="card-header atividade-card-header bg-info text-white">
-        <h5 class="mb-0">{{ atividade.nome }}</h5>
-        <p class="mb-0 mt-2"><small>Selecione os dias e marque as presenças diretamente no calendário. Clique em cada dia para marcar presenças.</small></p>
-        <div class="alert alert-info mt-2 mb-0" style="font-size: 0.85rem;"></div>
+    <div class="card-header atividade-card-header">
+        <div class="d-flex flex-column flex-lg-row align-items-lg-center w-100 gap-1 justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-calendar-day text-primary"></i>
+                <h5 class="mb-0">{{ atividade.nome }}</h5>
+            </div>
+            <span class="text-muted small">Selecione os dias e clique para marcar presenças</span>
+        </div>
     </div>
-    <div id="secao-dias-atividade-{{ atividade.id }}" class="collapse show card-body">
+    <div id="secao-dias-atividade-{{ atividade.id }}" class="collapse show card-body atividade-card-body">
         {% include "presencas/includes/form_presenca.html" with atividade=atividade %}
     </div>
 </div>

@@ -1,6 +1,7 @@
 from django.urls import path, include
 
 from . import views_main
+from .views_ext import registro_presenca as views_registro_presenca
 
 app_name = "presencas"
 
@@ -77,6 +78,17 @@ urlpatterns = [
         "registrar-presenca/convocados/ajax/",
         views_main.registrar_presenca_convocados_ajax,
         name="registrar_presenca_convocados_ajax",
+    ),
+    # Endpoints AJAX auxiliares
+    path(
+        "registrar-presenca/turmas-por-curso/",
+        views_registro_presenca.turmas_por_curso_ajax,
+        name="turmas_por_curso_ajax",
+    ),
+    path(
+        "registrar-presenca/atividades-por-turma/",
+        views_registro_presenca.atividades_por_turma_ajax,
+        name="atividades_por_turma_ajax",
     ),
     path(
         "ajax/toggle-convocacao/",
