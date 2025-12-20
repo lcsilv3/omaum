@@ -534,7 +534,7 @@ class Aluno(models.Model):
             Matricula = matriculas_module.Matricula
 
             ultima_matricula = (
-                Matricula.objects.filter(aluno=self, ativa=True)
+                Matricula.objects.filter(aluno=self, status='A')
                 .order_by("-data_matricula")
                 .first()
             )
