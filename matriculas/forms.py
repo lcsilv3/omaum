@@ -35,7 +35,7 @@ class MatriculaForm(forms.ModelForm):
             "nome"
         )
         self.fields["aluno"].widget.attrs.update(
-            {"class": "form-select", "placeholder": "Selecione um aluno"}
+            {"class": "form-select select2-enable", "placeholder": "Selecione um aluno"}
         )
 
         # Configurar queryset para turmas ativas
@@ -43,7 +43,7 @@ class MatriculaForm(forms.ModelForm):
             "nome"
         )
         self.fields["turma"].widget.attrs.update(
-            {"class": "form-select", "placeholder": "Selecione uma turma"}
+            {"class": "form-select select2-enable", "placeholder": "Selecione uma turma"}
         )
 
         # Configurar campo de data (padrão hoje)
