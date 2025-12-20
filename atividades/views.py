@@ -78,7 +78,15 @@ def listar_atividades_academicas(request):
         "curso_selecionado": curso_id,
         "turma_selecionada": turma_id,
     }
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+    
+    # Debug: verificar headers
+    import logging
+    logger = logging.getLogger(__name__)
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+    logger.info(f"[ATIVIDADES] Headers: {dict(request.headers)}")
+    logger.info(f"[ATIVIDADES] Is AJAX: {is_ajax}")
+    
+    if is_ajax:
         tabela_html = render_to_string(
             "atividades/academicas/partials/atividades_tabela.html",
             context,

@@ -77,6 +77,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
             .then(async response => {
+                console.log('[Atividades] Response status:', response.status);
+                console.log('[Atividades] Content-Type:', response.headers.get('content-type'));
+                
                 if (response.status === 401 || response.redirected) {
                     tabelaContainer.innerHTML = '<p class="text-danger">Sua sessão expirou. Faça login novamente para continuar.</p>';
                     spinner.style.display = 'none';
@@ -86,6 +89,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!response.ok) {
                     throw new Error('Erro na requisição');
                 }
+                
+                // Verificar se é JSON antes de tentar parsear
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('[Atividades] Resposta não é JSON:', text.substring(0, 200));
+                    throw new Error('Servidor retornou HTML em vez de JSON');
+                }
+                
                 return response.json();
             })
             .then(data => {
