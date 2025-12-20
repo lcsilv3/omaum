@@ -279,3 +279,169 @@ def excluir_matricula(matricula_id):
     except Exception as e:
         logger.error(f"Erro ao excluir matrícula: {str(e)}")
         raise ValidationError(f"Erro ao excluir matrícula: {str(e)}")
+
+
+def obter_alunos_sem_matricula_ativa(filtros=None):
+    """
+    Retorna alunos que NÃO possuem matrícula ativa em nenhuma turma.
+    
+    Args:
+        filtros (dict, optional): Dicionário com filtros opcionais:
+            - nome (str): Busca parcial no nome
+            - cpf (str): Busca no CPF
+            - numero_iniciatico (str): Busca no número iniciático
+            - situacao (str): Situação do aluno ('a' para ativo)
+            - grau (int): ID do grau iniciático
+    
+    Returns:
+        QuerySet: Alunos elegíveis para matrícula
+    """
+    Aluno = get_aluno_model()
+    
+    # Buscar alunos sem matrícula ativa
+    alunos = Aluno.objects.exclude(
+        matricula__status='A'
+    ).filter(
+        situacao='a'  # Apenas alunos ativos
+    ).distinct()
+    
+    # Aplicar filtros se fornecidos
+    if filtros:
+        if filtros.get('nome'):
+            alunos = alunos.filter(nome__icontains=filtros['nome'])
+        
+        if filtros.get('cpf'):
+            cpf_limpo = filtros['cpf'].replace('.', '').replace('-', '')
+            alunos = alunos.filter(cpf__icontains=cpf_limpo)
+        
+        if filtros.get('numero_iniciatico'):
+            alunos = alunos.filter(numero_iniciatico__icontains=filtros['numero_iniciatico'])
+        
+        if filtros.get('situacao'):
+            alunos = alunos.filter(situacao=filtros['situacao'])
+        
+        if filtros.get('grau'):
+            alunos = alunos.filter(grau_atual_id=filtros['grau'])
+    
+    return alunos.select_related('grau_atual').order_by('nome')
+
+
+def criar_matriculas_em_lote(turma_id, alunos_ids, data_matricula=None):
+    """
+    Cria múltiplas matrículas de uma vez.
+    
+    Args:
+        turma_id (int): ID da turma
+        alunos_ids (list): Lista de IDs dos alunos
+        data_matricula (date, optional): Data da matrícula. Se None, usa data atual.
+    
+    Returns:
+        dict: Resultado com sucesso, matriculados, falhas
+            {
+                'success': bool,
+                'matriculados': int,
+                'falhas': list,
+                'mensagem': str
+            }
+    """
+    from django.utils import timezone
+    
+    Aluno = get_aluno_model()
+    Turma = get_turma_model()
+    
+    if data_matricula is None:
+        data_matricula = timezone.now().date()
+    
+    resultado = {
+        'success': True,
+        'matriculados': 0,
+        'falhas': [],
+        'mensagem': ''
+    }
+    
+    try:
+        turma = Turma.objects.get(id=turma_id)
+    except Turma.DoesNotExist:
+        resultado['success'] = False
+        resultado['mensagem'] = 'Turma não encontrada.'
+        return resultado
+    
+    for aluno_id in alunos_ids:
+        try:
+            with transaction.atomic():
+                aluno = Aluno.objects.get(id=aluno_id)
+                
+                # Verificar se aluno já possui matrícula ativa
+                matricula_existente = Matricula.objects.filter(
+                    aluno=aluno,
+                    status='A'
+                ).exists()
+                
+                if matricula_existente:
+                    resultado['falhas'].append({
+                        'aluno_id': aluno_id,
+                        'aluno_nome': aluno.nome,
+                        'erro': 'Aluno já possui matrícula ativa em outra turma'
+                    })
+                    continue
+                
+                # Verificar se aluno está ativo
+                if aluno.situacao != 'a':
+                    resultado['falhas'].append({
+                        'aluno_id': aluno_id,
+                        'aluno_nome': aluno.nome,
+                        'erro': 'Aluno não está ativo'
+                    })
+                    continue
+                
+                # Verificar se já existe matrícula nesta turma
+                matricula_na_turma = Matricula.objects.filter(
+                    aluno=aluno,
+                    turma=turma
+                ).exists()
+                
+                if matricula_na_turma:
+                    resultado['falhas'].append({
+                        'aluno_id': aluno_id,
+                        'aluno_nome': aluno.nome,
+                        'erro': 'Aluno já está matriculado nesta turma'
+                    })
+                    continue
+                
+                # Criar matrícula
+                Matricula.objects.create(
+                    aluno=aluno,
+                    turma=turma,
+                    data_matricula=data_matricula,
+                    status='A'
+                )
+                
+                resultado['matriculados'] += 1
+                logger.info(f"Matrícula criada em lote: {aluno.nome} na turma {turma.nome}")
+                
+        except Aluno.DoesNotExist:
+            resultado['falhas'].append({
+                'aluno_id': aluno_id,
+                'aluno_nome': 'Desconhecido',
+                'erro': 'Aluno não encontrado'
+            })
+        except Exception as e:
+            resultado['falhas'].append({
+                'aluno_id': aluno_id,
+                'aluno_nome': 'Erro',
+                'erro': str(e)
+            })
+            logger.error(f"Erro ao criar matrícula para aluno {aluno_id}: {str(e)}")
+    
+    # Montar mensagem final
+    total_processados = resultado['matriculados'] + len(resultado['falhas'])
+    
+    if resultado['matriculados'] == 0:
+        resultado['success'] = False
+        resultado['mensagem'] = 'Nenhum aluno foi matriculado.'
+    elif len(resultado['falhas']) == 0:
+        resultado['mensagem'] = f'{resultado["matriculados"]} alunos matriculados com sucesso!'
+    else:
+        resultado['mensagem'] = f'{resultado["matriculados"]} de {total_processados} alunos matriculados. {len(resultado["falhas"])} falha(s).'
+    
+    return resultado

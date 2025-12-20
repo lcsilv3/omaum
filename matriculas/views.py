@@ -39,7 +39,6 @@ class MatriculaViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save(
             data_matricula=timezone.now().date(),
-            status='A',
             status="A",
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)

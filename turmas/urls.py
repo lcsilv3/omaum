@@ -79,4 +79,15 @@ urlpatterns = [
     path("dashboard/", views.dashboard_turmas, name="dashboard_turmas"),
     # API endpoints
     path("api/turmas-por-curso/", views.turmas_por_curso, name="turmas_por_curso"),
+    # Matrícula em lote
+    path(
+        "<int:turma_id>/api/alunos-elegiveis/",
+        views.api_alunos_elegiveis,
+        name="api_alunos_elegiveis",
+    ),
+    path(
+        "<int:turma_id>/matricular-em-lote/",
+        views.matricular_alunos_em_lote,
+        name="matricular_alunos_em_lote",
+    ),
 ]

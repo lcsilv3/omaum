@@ -297,14 +297,18 @@ def criar_turma(request):
 @login_required
 def detalhar_turma(request, turma_id):
     """Exibe os detalhes de uma turma."""
+    from matriculas.services import obter_alunos_sem_matricula_ativa
+    
     Turma = get_turma_model()
     turma = get_object_or_404(Turma, id=turma_id)
+    
     # Verificar pendências na instrutoria
     tem_pendencia_instrutoria = (
         not turma.instrutor
         or not turma.instrutor_auxiliar
         or not turma.auxiliar_instrucao
     )
+    
     # Calcular informações de matrículas
     alunos_matriculados_count = (
         turma.matriculas.filter(status="A").count()
@@ -312,16 +316,31 @@ def detalhar_turma(request, turma_id):
         else 0
     )
     vagas_disponiveis = turma.vagas - alunos_matriculados_count
+    
     # Obter matrículas ativas
     matriculas = (
         turma.matriculas.filter(status="A") if hasattr(turma, "matriculas") else []
     )
+    
+    # Obter alunos elegíveis para matrícula em lote
+    alunos_elegiveis = obter_alunos_sem_matricula_ativa()
+    
+    # Obter graus para filtro
+    try:
+        Grau = get_model_dynamically("iniciaticos", "Grau")
+        graus = Grau.objects.all().order_by('ordem')
+    except Exception:
+        graus = []
+    
     context = {
         "turma": turma,
         "matriculas": matriculas,
         "alunos_matriculados_count": alunos_matriculados_count,
         "vagas_disponiveis": vagas_disponiveis,
         "tem_pendencia_instrutoria": tem_pendencia_instrutoria,
+        "alunos_elegiveis": alunos_elegiveis[:20],  # Primeiros 20 para exibição inicial
+        "total_alunos_elegiveis": alunos_elegiveis.count(),
+        "graus": graus,
     }
     return render(request, "turmas/detalhar_turma.html", context)
 
@@ -1213,3 +1232,113 @@ def turmas_por_curso(request):
         turmas_qs = Turma.objects.filter(curso_id=codigo_curso)
         turmas = [{"id": t.id, "nome": t.nome} for t in turmas_qs]
     return JsonResponse({"turmas": turmas})
+
+
+@login_required
+def api_alunos_elegiveis(request, turma_id):
+    """
+    API para retornar alunos elegíveis para matrícula em lote.
+    Retorna apenas alunos sem matrícula ativa e aplica filtros.
+    """
+    from matriculas.services import obter_alunos_sem_matricula_ativa
+    
+    # Obter filtros da query string
+    filtros = {
+        'nome': request.GET.get('nome', ''),
+        'cpf': request.GET.get('cpf', ''),
+        'numero_iniciatico': request.GET.get('numero_iniciatico', ''),
+        'situacao': request.GET.get('situacao', ''),
+        'grau': request.GET.get('grau', ''),
+    }
+    
+    # Remover filtros vazios
+    filtros = {k: v for k, v in filtros.items() if v}
+    
+    try:
+        alunos = obter_alunos_sem_matricula_ativa(filtros)
+        
+        # Serializar dados
+        alunos_data = [{
+            'id': aluno.id,
+            'nome': aluno.nome,
+            'cpf': aluno.cpf,
+            'numero_iniciatico': aluno.numero_iniciatico or 'N/A',
+            'situacao': aluno.get_situacao_display(),
+            'grau': aluno.grau_atual.nome if aluno.grau_atual else 'N/A',
+        } for aluno in alunos]
+        
+        return JsonResponse({
+            'success': True,
+            'alunos': alunos_data,
+            'total': len(alunos_data)
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar alunos elegíveis: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+def matricular_alunos_em_lote(request, turma_id):
+    """
+    View para matricular múltiplos alunos em uma turma de uma vez.
+    """
+    from matriculas.services import criar_matriculas_em_lote
+    import json
+    
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'mensagem': 'Método não permitido'
+        }, status=405)
+    
+    try:
+        # Obter dados do POST
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            alunos_ids = data.get('alunos_ids', [])
+        else:
+            alunos_ids = request.POST.getlist('alunos_ids[]')
+        
+        # Validar
+        if not alunos_ids:
+            return JsonResponse({
+                'success': False,
+                'mensagem': 'Nenhum aluno selecionado'
+            })
+        
+        # Converter para inteiros
+        alunos_ids = [int(id) for id in alunos_ids]
+        
+        # Validar limite
+        if len(alunos_ids) > 100:
+            return JsonResponse({
+                'success': False,
+                'mensagem': 'Limite de 100 alunos por vez excedido'
+            })
+        
+        # Processar matrículas
+        resultado = criar_matriculas_em_lote(turma_id, alunos_ids)
+        
+        # Log
+        if resultado['success']:
+            messages.success(request, resultado['mensagem'])
+        else:
+            messages.warning(request, resultado['mensagem'])
+        
+        return JsonResponse(resultado)
+        
+    except ValueError:
+        return JsonResponse({
+            'success': False,
+            'mensagem': 'IDs de alunos inválidos'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Erro ao matricular alunos em lote: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'mensagem': f'Erro ao processar matrículas: {str(e)}'
+        }, status=500)
