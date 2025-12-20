@@ -97,7 +97,6 @@ def criar_matricula(dados_matricula):
                     "data_matricula", timezone.now().date()
                 ),
                 status=dados_matricula.get("status", "A"),
-                status='A',
             )
 
             logger.info(f"Matrícula criada: {matricula}")
