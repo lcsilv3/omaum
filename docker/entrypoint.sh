@@ -36,6 +36,11 @@ python manage.py migrate --noinput
 echo "Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput --clear
 
-# Executar Gunicorn
-echo "Iniciando Gunicorn..."
-exec gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 120 omaum.wsgi:application
+# Executar servidor
+if [ "$DJANGO_SETTINGS_MODULE" = "omaum.settings.development" ]; then
+    echo "Iniciando servidor de desenvolvimento (runserver com hot-reload)..."
+    exec python manage.py runserver 0.0.0.0:8000
+else
+    echo "Iniciando Gunicorn..."
+    exec gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 120 omaum.wsgi:application
+fi
