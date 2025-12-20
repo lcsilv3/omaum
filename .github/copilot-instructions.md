@@ -36,7 +36,7 @@
 - **Views:** Sempre prefira function-based views.
 - **Filtros Dinâmicos:** Filtros de relatórios e listagens são interdependentes e atualizados via AJAX, sem recarregar a página.
 - **Validações:** Multi-camadas (JS, Django Forms, Models, Services).
-- **Docstrings:** Funções e métodos devem ser documentados conforme exemplos em `AGENT.md`.
+- **Docstrings:** Funções e métodos devem ser documentados conforme exemplos em `docs/development/AGENT.md`.
 - **Admin:** Cada módulo deve ter seu próprio admin, sem dependências cruzadas.
 
 ## Workflows de Desenvolvimento
@@ -215,11 +215,11 @@ docker compose -p omaum-dev ps omaum-web
 - Nunca altere funcionalidades/layouts sem solicitação explícita.
 - Sempre explique e aguarde aprovação antes de modificar blocos de código relevantes.
 - Mantenha histórico de alterações e verifique consistência com as premissas do projeto.
-- Siga as convenções de commit e branch descritas em `README.md` e `AGENT.md`.
+- Siga as convenções de commit e branch descritas em `README.md` e `docs/development/AGENT.md`.
 
 ## Referências Rápidas
 - Configuração: `omaum/settings.py`, `omaum/base.html`, `omaum/home.html`.
-- Documentação detalhada: `docs/`, `README.md`, `AGENT.md`, `relatorios_presenca/README.md`.
+- Documentação detalhada: `docs/`, `README.md`, `docs/development/AGENT.md`, `relatorios_presenca/README.md`.
 - Suporte: suporte@omaum.edu.br
 
 ---

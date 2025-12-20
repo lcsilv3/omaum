@@ -137,7 +137,7 @@ docker cp "E:\projetos\omaum\static\img\logo.png" omaum-prod-omaum-web-1:/app/st
 
 - [AMBIENTE_CONFIG.md](AMBIENTE_CONFIG.md) - Documentação detalhada
 - [README_STATIC_FILES.md](README_STATIC_FILES.md) - Gestão de arquivos estáticos
-- [../DOCKER_AMBIENTES.md](../DOCKER_AMBIENTES.md) - Arquitetura de ambientes
+- [../docs/architecture/DOCKER_AMBIENTES.md](../docs/architecture/DOCKER_AMBIENTES.md) - Arquitetura de ambientes
 
 ---
-**Última atualização:** 15 de dezembro de 2025
+**Última atualização:** 20 de dezembro de 2025

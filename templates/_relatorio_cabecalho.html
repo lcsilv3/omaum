@@ -2,14 +2,7 @@
 <div class="row mb-4">
   <div class="col-12 text-center">
     <h1 class="fw-bold">Instituição OmAum</h1>
-    <p class="mb-0">
-      Relatório gerado em
-      {% if data_geracao %}
-        {{ data_geracao|date:'d/m/Y H:i' }}
-      {% else %}
-        {% now 'd/m/Y H:i' %}
-      {% endif %}
-    </p>
+    <p class="mb-0">Relatório gerado em {{ data_geracao|default:today|date:'d/m/Y H:i' }}</p>
     <hr>
   </div>
 </div>

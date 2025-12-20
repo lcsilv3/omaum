@@ -72,22 +72,22 @@ docker compose --profile production -p omaum-prod `
   down
 ```
 
-Ou use o script: `parar_docker.bat`
+Ou use o script: `../scripts/docker/parar_docker.bat`
 
 ---
 
 ## ⚙️ Scripts Auxiliares
 
-### `iniciar_dev_docker.bat`
+### `../scripts/docker/iniciar_dev_docker.bat`
 Inicia apenas o ambiente de **desenvolvimento** (porta 8001).
 
-### `iniciar_prod_docker.bat`
+### `../scripts/docker/iniciar_prod_docker.bat`
 Inicia apenas o ambiente de **produção** (porta 8000 + Nginx na 80).
 
-### `parar_docker.bat`
+### `../scripts/docker/parar_docker.bat`
 Para **AMBOS** os ambientes (dev e prod).
 
-### `atualizar_docker.bat`
+### `../scripts/docker/atualizar_docker.bat`
 Para, reconstrói imagens e reinicia **desenvolvimento**.
 
 ---
