@@ -322,7 +322,7 @@ def obter_alunos_sem_matricula_ativa(filtros=None):
         if filtros.get('grau'):
             alunos = alunos.filter(grau_atual_id=filtros['grau'])
     
-    return alunos.select_related('grau_atual').order_by('nome')
+    return alunos.order_by('nome')
 
 
 def criar_matriculas_em_lote(turma_id, alunos_ids, data_matricula=None):

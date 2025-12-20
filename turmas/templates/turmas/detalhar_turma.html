@@ -349,7 +349,7 @@
                                 <td>{{ aluno.cpf }}</td>
                                 <td>{{ aluno.numero_iniciatico|default:"N/A" }}</td>
                                 <td>{{ aluno.get_situacao_display }}</td>
-                                <td>{{ aluno.grau_atual.nome|default:"N/A" }}</td>
+                                <td>{{ aluno.grau_atual|default:"N/A" }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
