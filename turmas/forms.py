@@ -102,6 +102,21 @@ class TurmaForm(forms.ModelForm):
         self.fields["instrutor_auxiliar"].queryset = alunos_ativos
         self.fields["auxiliar_instrucao"].queryset = alunos_ativos
 
+        # CORREÇÃO: Formatar datas no formato ISO (YYYY-MM-DD) para inputs type="date"
+        # Necessário porque Django renderiza com localização (DD/MM/YYYY)
+        date_fields = [
+            "data_inicio_ativ",
+            "data_termino_atividades",
+            "data_iniciacao",
+            "data_prim_aula",
+        ]
+        for field_name in date_fields:
+            if self.instance and self.instance.pk:
+                value = getattr(self.instance, field_name, None)
+                if value:
+                    # Formata no padrão ISO esperado pelo input type="date"
+                    self.initial[field_name] = value.strftime("%Y-%m-%d")
+
         # Tornar os campos de instrutor auxiliar e auxiliar de instrução opcionais
         self.fields["instrutor_auxiliar"].required = False
         self.fields["auxiliar_instrucao"].required = False

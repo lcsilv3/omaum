@@ -171,8 +171,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // DESTAQUE DE CAMPOS COM ERRO AO CARREGAR A PÁGINA
     // ========================================================================
     
-    // Adiciona classe is-invalid aos campos com erro
-    document.querySelectorAll('.text-danger, .errorlist').forEach(errorElement => {
+    // Adiciona classe is-invalid APENAS aos campos que têm mensagens de erro reais
+    // (não considera asteriscos de campos obrigatórios como erro)
+    document.querySelectorAll('.errorlist').forEach(errorElement => {
         const field = errorElement.closest('.mb-3, .col-md-6, .col-md-4, .col-12')?.querySelector('input, select, textarea');
         if (field) {
             field.classList.add('is-invalid');
@@ -180,9 +181,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Marca o card com borda vermelha se houver erros nele
+    // Procura por mensagens de erro específicas do Django (invalid-feedback)
+    document.querySelectorAll('.invalid-feedback:not(:empty)').forEach(errorElement => {
+        const field = errorElement.previousElementSibling;
+        if (field && (field.tagName === 'INPUT' || field.tagName === 'SELECT' || field.tagName === 'TEXTAREA')) {
+            field.classList.add('is-invalid');
+            field.setAttribute('aria-invalid', 'true');
+        }
+    });
+    
+    // Marca o card com borda vermelha se houver erros REAIS nele
     document.querySelectorAll('.card').forEach(card => {
-        if (card.querySelector('.is-invalid')) {
+        if (card.querySelector('.is-invalid, .errorlist')) {
             card.classList.add('border-danger');
             
             // Adiciona badge de erro no header

@@ -3,59 +3,77 @@
 # ============================================================================
 # Este arquivo sobrescreve configurações do docker-compose.yml para PRODUÇÃO.
 #
-# ⚠️  IMPORTANTE:
-# - Prod usa portas 80 (Nginx) e 8000 (direto)
+# ⚠️  COMPATÍVEL COM EXECUÇÃO SIMULTÂNEA:
+# - Web: porta 8000 (não conflita com dev na 8001)
+# - Nginx: porta 80 (exclusivo de produção)
+# - PostgreSQL: porta 5433 (dev usa 5432)
+# - Redis: porta 6380 (dev usa 6379)
 # - DJANGO_SETTINGS_MODULE=omaum.settings.production
 # - Badge: 🔴 Vermelho "Ambiente de Produção"
 #
-# 📝 Para subir o ambiente de produção:
+# 📝 Para subir SIMULTÂNEO com desenvolvimento:
 #    docker compose --profile production -p omaum-prod \
 #      --env-file ../.env.production \
 #      -f docker-compose.yml \
 #      -f docker-compose.prod.override.yml up -d
 #
-# 🔐 Este arquivo DEVE ser explicitamente especificado (-f)
-#    NÃO renomeie para "docker-compose.override.yml" (seria lido automaticamente)
+# ✅ Pode rodar junto com omaum-dev sem conflitos!
 # ============================================================================
 
 services:
   omaum-db:
+    ports:
+      # Porta 5433 (EXTERNA) → 5432 (INTERNA)
+      # Não conflita com dev (5432)
+      - "5433:5432"
     volumes:
       - D:/docker/omaum/prod/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: omaum_prod
+      POSTGRES_USER: omaum_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-omaum_password}
+  
   omaum-web:
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - DEBUG=False
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
       - DJANGO_SETTINGS_MODULE=omaum.settings.production
-      - POSTGRES_DB=omaum_dev
-      - POSTGRES_USER=omaum_user
-      - POSTGRES_PASSWORD=omaum_password
+      - DATABASE_URL=postgresql://omaum_user:${POSTGRES_PASSWORD:-omaum_password}@omaum-db:5432/omaum_prod
+      - REDIS_URL=redis://omaum-redis:6379/1
     volumes:
-      - ../:/app
+      # ❌ NÃO montar código fonte em produção!
+      # Código já está copiado na imagem Docker (via Dockerfile)
       - D:/docker/omaum/prod/static:/app/static
       - D:/docker/omaum/prod/staticfiles:/app/staticfiles
       - D:/docker/omaum/prod/media:/app/media
       - D:/docker/omaum/prod/logs:/app/logs
+      - "D:/Documentos Ordem/Ordem/CIIniciados/fotos:/fotos_externas:ro"
     ports:
-      # ⚠️  PORTA 8000 (EXTERNA e INTERNA)
-      # Prod expõe 8000 para:
+      # ⚠️  PORTA 8000 (EXTERNA e INTERNA) - Mesma do base mas em projeto diferente
+      # Prod usa omaum-prod (não conflita com omaum-dev na porta 8001)
       # 1. Nginx (proxy reverso na porta 80)
-      # 2. Acesso direto para debug: http://localhost:8000
+      # 2. Acesso direto: http://localhost:8000
       - "8000:8000"
+    command: gunicorn omaum.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+  
   omaum-redis:
+    ports:
+      # Porta 6380 (EXTERNA) → 6379 (INTERNA)
+      # Não conflita com dev (6379)
+      - "6380:6379"
     volumes:
       - D:/docker/omaum/prod/redis:/data
+  
   omaum-celery:
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - DEBUG=False
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
       - DJANGO_SETTINGS_MODULE=omaum.settings.production
-      - POSTGRES_DB=omaum_dev
-      - POSTGRES_USER=omaum_user
-      - POSTGRES_PASSWORD=omaum_password
+      - DATABASE_URL=postgresql://omaum_user:${POSTGRES_PASSWORD:-omaum_password}@omaum-db:5432/omaum_prod
+      - REDIS_URL=redis://omaum-redis:6379/1
     volumes:
-      - ../:/app
+      # ❌ NÃO montar código fonte em produção!
       - D:/docker/omaum/prod/media:/app/media
       - D:/docker/omaum/prod/logs:/app/logs

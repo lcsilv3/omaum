@@ -71,7 +71,15 @@ def search_instrutores(request):
         alunos = AlunoModel.objects.filter(situacao="a")
 
         if query and len(query) >= 2:
-            alunos = alunos.filter(Q(nome__icontains=query) | Q(cpf__icontains=query))
+            # Busca por nome, CPF ou número iniciático
+            alunos = alunos.filter(
+                Q(nome__icontains=query) 
+                | Q(cpf__icontains=query)
+                | Q(numero_iniciatico__icontains=query)
+            )
+        else:
+            # Se não houver query, retorna lista vazia (evita carregar todos)
+            return JsonResponse([], safe=False)
 
         alunos = alunos[:10]
 
@@ -81,6 +89,7 @@ def search_instrutores(request):
                 {
                     "cpf": aluno.cpf,
                     "nome": aluno.nome,
+                    "numero_iniciatico": getattr(aluno, "numero_iniciatico", "N/A"),  # CORREÇÃO: Adicionado número iniciático
                     "foto": aluno.foto.url if getattr(aluno, "foto", None) else None,
                     "situacao": aluno.get_situacao_display()
                     if hasattr(aluno, "get_situacao_display")
@@ -98,8 +107,14 @@ def search_instrutores(request):
         )
         return JsonResponse(resultados, safe=False)
     except Exception as exc:  # pragma: no cover - proteção adicional
-        logger.error("Erro em search_instrutores: %s", exc)
-        return JsonResponse({"error": str(exc)}, status=500)
+        logger.error("Erro em search_instrutores: %s", exc, exc_info=True)
+        return JsonResponse(
+            {
+                "error": "Erro ao buscar instrutores. Tente novamente.",
+                "detail": str(exc)
+            }, 
+            status=500
+        )
 
 
 @login_required

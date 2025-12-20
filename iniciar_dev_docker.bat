@@ -307,6 +307,8 @@ echo   - Hot Reload ATIVO (codigo atualiza automaticamente)
 echo   - PostgreSQL: localhost:5432 (usuario: omaum_user, senha: omaum_password)
 echo   - Redis: localhost:6379
 echo.
+echo [OK] Pode rodar junto com omaum-prod (porta 8000)!
+echo.
 echo Comandos uteis:
 echo   Ver logs:        docker-compose logs -f
 echo   Parar:           docker-compose down

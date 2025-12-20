@@ -81,8 +81,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Fazer a requisição para a API
-            fetch(`/alunos/api/search-instrutores/?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
+            fetch(`/alunos/api/instrutores/?q=${encodeURIComponent(query)}`, {
+                credentials: 'same-origin',  // CRÍTICO: Envia cookies de sessão
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'  // Identifica como AJAX
+                }
+            })
+                .then(response => {
+                    // Detecta redirect para login (não autenticado)
+                    if (response.redirected && response.url.includes('/entrar/')) {
+                        throw new Error('UNAUTHORIZED: Sessão expirada. Faça login novamente.');
+                    }
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     resultsContainer.innerHTML = '';
                     
@@ -101,13 +115,36 @@ document.addEventListener('DOMContentLoaded', function() {
                         item.dataset.numeroIniciativo = aluno.numero_iniciatico;
                         item.dataset.situacao = aluno.situacao;
                         
+                        // Gera iniciais do nome para avatar placeholder
+                        const iniciais = aluno.nome.split(' ')
+                            .filter(parte => parte.length > 0)
+                            .slice(0, 2)
+                            .map(parte => parte.charAt(0).toUpperCase())
+                            .join('');
+                        
                         let avatarHtml = '';
                         if (aluno.foto) {
-                            avatarHtml = `<img src="${aluno.foto}" width="32" height="32" class="rounded-circle">`;
+                            // Avatar com fallback: se a imagem falhar, mostra iniciais
+                            avatarHtml = `
+                                <img src="${aluno.foto}" 
+                                     width="32" 
+                                     height="32" 
+                                     class="rounded-circle"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                     style="object-fit: cover;">
+                                <div class="rounded-circle bg-secondary text-white align-items-center justify-content-center" 
+                                     style="width: 32px; height: 32px; font-size: 14px; display: none;">
+                                    ${iniciais}
+                                </div>
+                            `;
                         } else {
-                            avatarHtml = `<div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 14px;">
-                                            ${aluno.nome.charAt(0).toUpperCase()} 
-                                         </div>`;
+                            // Sem foto: mostra iniciais diretamente
+                            avatarHtml = `
+                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" 
+                                     style="width: 32px; height: 32px; font-size: 14px;">
+                                    ${iniciais}
+                                </div>
+                            `;
                         }
                         
                         item.innerHTML = `
@@ -134,7 +171,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     console.error('Erro ao buscar instrutores:', error);
-                    resultsContainer.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar instrutores</div>';
+                    let errorMessage = 'Erro ao buscar instrutores. ';
+                    
+                    if (error.message.includes('UNAUTHORIZED')) {
+                        errorMessage = '<strong>Sessão expirada!</strong> Recarregue a página e faça login novamente.';
+                        // Opcional: Redirecionar automaticamente após 3 segundos
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                    } else if (error.message.includes('404')) {
+                        errorMessage += 'Endpoint não encontrado. Contate o administrador.';
+                    } else if (error.message.includes('500')) {
+                        errorMessage += 'Erro no servidor. Tente novamente.';
+                    } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                        errorMessage += 'Erro de conexão. Verifique sua internet.';
+                    } else {
+                        errorMessage += error.message || 'Erro desconhecido.';
+                    }
+                    
+                    resultsContainer.innerHTML = `<div class="list-group-item text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>${errorMessage}
+                    </div>`;
                     resultsContainer.style.display = 'block';
                 });
         }, 300));

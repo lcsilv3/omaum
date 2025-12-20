@@ -2,6 +2,21 @@
 
 > **Idioma:** Sempre utilize português brasileiro.
 
+## ⚡ LEMBRETES CRÍTICOS PARA IA
+
+### 🔴 Modificou código Python?
+**→ Reinicie IMEDIATAMENTE o container:** `docker compose -p omaum-dev restart omaum-web`
+**→ AVISE o usuário explicitamente sobre o reinício**
+
+### 🔴 Modificou arquivos estáticos (JS/CSS)?
+**→ Execute collectstatic IMEDIATAMENTE**
+**→ AVISE o usuário para dar Hard Refresh (Ctrl+Shift+R)**
+
+### 🔴 NUNCA tente importar Django com `python -c`
+**→ SEMPRE use `python manage.py shell` para testar imports**
+
+---
+
 ## Visão Geral e Arquitetura
 - Projeto Django modular para gestão acadêmica, com foco em controle de presenças, frequência, relatórios e integrações.
 - Módulos principais: `presencas` (núcleo), `alunos`, `turmas`, `atividades`, `cursos`, `core`, `relatorios_presenca`.
@@ -31,6 +46,49 @@
 - Execute testes: `python manage.py test` ou `python manage.py test <app>`.
 - Linting: `python scripts/lint.py`, `black .`, `isort .`.
 - Monitoramento automático de formatação: use a tarefa "Monitoramento automático Ruff" no VS Code.
+
+## 🐳 Ambiente Docker (OBRIGATÓRIO) ⚠️
+
+### ⛔ NUNCA FAÇA:
+- **NUNCA** execute `python -c "from app.module import X"` no container Docker
+  - Causa erro `AppRegistryNotReady: Apps aren't loaded yet`
+  - É SEMPRE um desperdício de recursos
+  - Para testar imports, use o servidor Django ou `docker exec omaum-web python manage.py shell`
+
+### ✅ SEMPRE FAÇA:
+
+#### Após modificar código Python (views, forms, models, services):
+```powershell
+# OBRIGATÓRIO: Reiniciar o container para carregar alterações
+docker compose -p omaum-dev restart omaum-web
+```
+
+**Arquivos que exigem reinício:**
+- `*.py` (views, forms, models, services, utils, etc.)
+- `settings.py` e configurações
+- `urls.py`
+- Qualquer código Python importado pelo Django
+
+#### Para verificar status do servidor:
+```powershell
+# Verificar se está rodando e healthy
+docker compose -p omaum-dev ps omaum-web
+
+# Ver logs (últimas 20 linhas)
+docker compose -p omaum-dev logs --tail=20 omaum-web
+```
+
+#### Para comandos Django:
+```powershell
+# Shell interativo Python com Django configurado
+docker compose -p omaum-dev exec omaum-web python manage.py shell
+
+# Outros comandos
+docker compose -p omaum-dev exec omaum-web python manage.py <comando>
+```
+
+### 📋 Regra de Ouro:
+**Modificou Python? → Reinicie o container IMEDIATAMENTE e AVISE o usuário**
 
 ## Arquivos Estáticos (CRÍTICO) ⚠️
 
@@ -106,6 +164,43 @@ docker compose --profile production -p omaum-prod --env-file ..\.env.production 
 
 ### 📝 Nota para IA:
 **SEMPRE** mencionar estes passos **PROATIVAMENTE** após editar arquivos estáticos. Não espere o usuário perguntar!
+
+---
+
+## ⚠️ COMANDOS PROIBIDOS NO DOCKER
+
+### 🚫 NUNCA execute estes comandos:
+
+```powershell
+# ❌ PROIBIDO - Causa AppRegistryNotReady
+docker exec omaum-web python -c "from app.module import X"
+docker compose exec omaum-web python -c "..."
+
+# ❌ PROIBIDO - Import direto sem contexto Django
+docker exec omaum-web python -c "from turmas.forms import TurmaForm"
+```
+
+**Por quê?**
+- Django precisa que apps estejam carregadas (`DJANGO_SETUP`)
+- Esses comandos SEMPRE falham com `AppRegistryNotReady`
+- É desperdício de recursos e tempo
+
+### ✅ Use em vez disso:
+
+```powershell
+# ✅ CORRETO - Shell Django com contexto completo
+docker compose -p omaum-dev exec omaum-web python manage.py shell
+>>> from turmas.forms import TurmaForm
+>>> # Agora funciona!
+
+# ✅ CORRETO - Comando Django management
+docker compose -p omaum-dev exec omaum-web python manage.py check
+
+# ✅ CORRETO - Verificar se servidor está healthy
+docker compose -p omaum-dev ps omaum-web
+```
+
+---
 
 ## Integração e APIs
 - APIs REST documentadas (Swagger/ReDoc), autenticação por token, versionamento e rate limiting.
