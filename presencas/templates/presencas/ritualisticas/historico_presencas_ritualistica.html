@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Histórico de Presenças</h1>
         <div>
-            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-secondary me-2">
+            <a href="{% url 'alunos:detalhar_aluno' aluno.id %}" class="btn btn-secondary me-2">
                 <i class="fas fa-user"></i> Perfil do Aluno
             </a>
             <a href="{% url 'presencas:exportar_historico' aluno.cpf %}" class="btn btn-success">

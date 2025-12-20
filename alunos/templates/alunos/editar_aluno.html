@@ -181,7 +181,7 @@
         <div class="mt-4">
             <button type="submit" class="btn btn-primary">Salvar Alterações</button>
             <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
-            <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-info">Cancelar (CPF: {{ aluno.cpf|mask_cpf }})</a>
+            <a href="{% url 'alunos:detalhar_aluno' aluno.id %}" class="btn btn-info">Cancelar (CPF: {{ aluno.cpf|mask_cpf }})</a>
         </div>
     </form>
 </div>

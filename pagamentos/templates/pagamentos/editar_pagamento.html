@@ -66,7 +66,7 @@
                                         <br>
                                         <small>CPF: {{ pagamento.aluno.cpf }}</small>
                                     </div>
-                                    <a href="{% url 'alunos:detalhar_aluno' pagamento.aluno.cpf %}" class="btn btn-sm btn-outline-primary ms-auto">
+                                    <a href="{% url 'alunos:detalhar_aluno' pagamento.aluno.id %}" class="btn btn-sm btn-outline-primary ms-auto">
                                         <i class="fas fa-user"></i> Ver Perfil
                                     </a>
                                 </div>

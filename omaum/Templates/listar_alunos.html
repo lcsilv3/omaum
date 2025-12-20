@@ -77,7 +77,7 @@
                                 <td>{{ aluno.email }}</td>
                                 <td>
                                     {% if aluno.cpf %}
-                                        <a href="{% url 'alunos:detalhar_aluno' aluno.cpf %}" class="btn btn-sm btn-info">Detalhes</a>
+                                        <a href="{% url 'alunos:detalhar_aluno' aluno.id %}" class="btn btn-sm btn-info">Detalhes</a>
                                         <a href="{% url 'alunos:editar_aluno' aluno.cpf %}" class="btn btn-sm btn-warning">Editar</a>
                                         <a href="{% url 'alunos:excluir_aluno' aluno.cpf %}" class="btn btn-sm btn-danger">Excluir</a>
                                     {% else %}

@@ -79,7 +79,7 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.cpf %}" class="btn btn-sm btn-info">Detalhes</a>
+                                        <a href="{% url 'alunos:detalhar_aluno' matricula.aluno.id %}" class="btn btn-sm btn-info">Detalhes</a>
                                         <a href="{% url 'turmas:remover_aluno_turma' turma.id matricula.aluno.cpf %}" class="btn btn-sm btn-danger">Remover</a>
                                     </td>
                                 </tr>

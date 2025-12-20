@@ -84,7 +84,7 @@
                     </div>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <a href="{% url 'alunos:detalhar_aluno' carencia.aluno.cpf %}" class="btn btn-outline-primary">
+                    <a href="{% url 'alunos:detalhar_aluno' carencia.aluno.id %}" class="btn btn-outline-primary">
                         <i class="fas fa-user"></i> Ver Perfil Completo
                     </a>
                     <a href="{% url 'frequencias:historico_frequencia' carencia.aluno.cpf %}" class="btn btn-outline-info">
@@ -265,7 +265,7 @@
                     <i class="fas fa-history"></i> Ver Histórico de Frequência
                 </a>
                 
-                <a href="{% url 'alunos:detalhar_aluno' carencia.aluno.cpf %}" class="btn btn-primary">
+                <a href="{% url 'alunos:detalhar_aluno' carencia.aluno.id %}" class="btn btn-primary">
                     <i class="fas fa-user"></i> Ver Perfil do Aluno
                 </a>
             </div>
