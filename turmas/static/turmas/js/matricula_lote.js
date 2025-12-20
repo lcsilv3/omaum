@@ -43,25 +43,42 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(formFiltros);
         const params = new URLSearchParams(formData);
         
-        // Mostrar loading
-        loadingAlunos.style.display = 'flex';
-        tbodyAlunos.innerHTML = '';
+        // Mostrar loading apenas se não houver dados na tabela
+        const temDados = tbodyAlunos.querySelector('tr') !== null;
+        if (!temDados) {
+            loadingAlunos.style.display = 'flex';
+        }
 
-        fetch(`/turmas/${turmaId}/api/alunos-elegiveis/?${params.toString()}`)
-            .then(response => response.json())
+        fetch(`/turmas/${turmaId}/api/alunos-elegiveis/?${params.toString()}`, {
+            signal: AbortSignal.timeout(10000) // 10 segundos timeout
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 loadingAlunos.style.display = 'none';
                 
                 if (data.success) {
                     renderizarTabela(data.alunos);
                 } else {
+                    console.error('API retornou erro:', data.error);
                     mostrarErro('Erro ao carregar alunos: ' + data.error);
                 }
             })
             .catch(error => {
                 loadingAlunos.style.display = 'none';
-                console.error('Erro:', error);
-                mostrarErro('Erro ao carregar alunos. Tente novamente.');
+                console.error('Erro ao buscar alunos:', error);
+                
+                if (error.name === 'TimeoutError') {
+                    mostrarErro('Tempo esgotado ao carregar alunos. Tente novamente.');
+                } else if (error.name === 'AbortError') {
+                    mostrarErro('Requisição cancelada.');
+                } else {
+                    mostrarErro('Erro ao carregar alunos. Verifique o console para detalhes.');
+                }
             });
     }
 
@@ -276,14 +293,12 @@ document.addEventListener('DOMContentLoaded', function() {
         btnMatricularSelecionados.addEventListener('click', matricularSelecionados);
     }
 
-    // Inicializar listeners dos checkboxes existentes
+    // Inicializar listeners dos checkboxes existentes (tabela já renderizada pelo Django)
     attachCheckboxListeners();
     
     // Atualizar contador inicial
     atualizarContador();
     
-    // Buscar alunos elegíveis ao carregar (para popular com filtros padrão)
-    if (tbodyAlunos && turmaId) {
-        buscarAlunosElegiveis();
-    }
+    // NÃO buscar alunos automaticamente - a tabela já vem do Django
+    // Apenas buscar quando o usuário aplicar filtros via formFiltros.submit
 });
