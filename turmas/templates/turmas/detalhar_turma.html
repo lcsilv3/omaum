@@ -272,17 +272,20 @@
                     <div class="col-md-12">
                         <div class="card bg-light">
                             <div class="card-body">
-                                <h6 class="mb-3"><i class="fas fa-filter"></i> Filtros de Busca</h6>
+                                <h6 class="mb-3">
+                                    <i class="fas fa-filter"></i> Filtros de Busca
+                                    <small class="text-muted">(atualização automática)</small>
+                                </h6>
                                 <form id="form-filtros-matricula">
                                     <div class="row g-2">
                                         <div class="col-md-3">
-                                            <input type="text" class="form-control" id="filtro-nome" name="nome" placeholder="Nome do aluno">
+                                            <input type="text" class="form-control" id="filtro-nome" name="nome" placeholder="Nome do aluno" autocomplete="off">
                                         </div>
                                         <div class="col-md-2">
-                                            <input type="text" class="form-control" id="filtro-cpf" name="cpf" placeholder="CPF">
+                                            <input type="text" class="form-control" id="filtro-cpf" name="cpf" placeholder="CPF" autocomplete="off">
                                         </div>
                                         <div class="col-md-2">
-                                            <input type="text" class="form-control" id="filtro-numero-iniciatico" name="numero_iniciatico" placeholder="Nº Iniciático">
+                                            <input type="text" class="form-control" id="filtro-numero-iniciatico" name="numero_iniciatico" placeholder="Nº Iniciático" autocomplete="off">
                                         </div>
                                         <div class="col-md-2">
                                             <select class="form-select" id="filtro-situacao" name="situacao">
@@ -299,16 +302,9 @@
                                                 {% endfor %}
                                             </select>
                                         </div>
-                                        <div class="col-md-1">
-                                            <button type="submit" class="btn btn-primary w-100">
-                                                <i class="fas fa-search"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-12">
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-limpar-filtros">
-                                                <i class="fas fa-eraser"></i> Limpar Filtros
+                                        <div class="col-md-1 d-flex align-items-start">
+                                            <button type="button" class="btn btn-sm btn-secondary w-100" id="btn-limpar-filtros" title="Limpar todos os filtros">
+                                                <i class="fas fa-eraser"></i>
                                             </button>
                                         </div>
                                     </div>

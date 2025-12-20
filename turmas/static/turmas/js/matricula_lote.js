@@ -26,6 +26,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Estado
     let alunosSelecionados = new Set();
+    let debounceTimer = null;
+
+    /**
+     * Debounce para filtros de texto (evita requisições excessivas)
+     */
+    function debounce(func, delay = 500) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(func, delay);
+    }
 
     /**
      * Atualiza o contador de alunos selecionados
@@ -43,11 +52,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(formFiltros);
         const params = new URLSearchParams(formData);
         
-        // Mostrar loading apenas se não houver dados na tabela
-        const temDados = tbodyAlunos.querySelector('tr') !== null;
-        if (!temDados) {
-            loadingAlunos.style.display = 'flex';
-        }
+        // Mostrar loading
+        loadingAlunos.style.display = 'flex';
+        tbodyAlunos.style.opacity = '0.5';
 
         fetch(`/turmas/${turmaId}/api/alunos-elegiveis/?${params.toString()}`, {
             signal: AbortSignal.timeout(10000) // 10 segundos timeout
@@ -60,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 loadingAlunos.style.display = 'none';
+                tbodyAlunos.style.opacity = '1';
                 
                 if (data.success) {
                     renderizarTabela(data.alunos);
@@ -70,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 loadingAlunos.style.display = 'none';
+                tbodyAlunos.style.opacity = '1';
                 console.error('Erro ao buscar alunos:', error);
                 
                 if (error.name === 'TimeoutError') {
@@ -243,6 +252,47 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Event Listeners
+    
+    // Filtros de texto com debounce (nome, CPF, número iniciático)
+    const filtroNome = document.getElementById('filtro-nome');
+    const filtroCpf = document.getElementById('filtro-cpf');
+    const filtroNumeroIniciatico = document.getElementById('filtro-numero-iniciatico');
+    
+    if (filtroNome) {
+        filtroNome.addEventListener('input', function() {
+            debounce(() => buscarAlunosElegiveis());
+        });
+    }
+    
+    if (filtroCpf) {
+        filtroCpf.addEventListener('input', function() {
+            debounce(() => buscarAlunosElegiveis());
+        });
+    }
+    
+    if (filtroNumeroIniciatico) {
+        filtroNumeroIniciatico.addEventListener('input', function() {
+            debounce(() => buscarAlunosElegiveis());
+        });
+    }
+    
+    // Filtros de seleção sem debounce (situação, grau)
+    const filtroSituacao = document.getElementById('filtro-situacao');
+    const filtroGrau = document.getElementById('filtro-grau');
+    
+    if (filtroSituacao) {
+        filtroSituacao.addEventListener('change', function() {
+            buscarAlunosElegiveis();
+        });
+    }
+    
+    if (filtroGrau) {
+        filtroGrau.addEventListener('change', function() {
+            buscarAlunosElegiveis();
+        });
+    }
+    
+    // Manter submit do formulário para compatibilidade
     if (formFiltros) {
         formFiltros.addEventListener('submit', function(e) {
             e.preventDefault();
