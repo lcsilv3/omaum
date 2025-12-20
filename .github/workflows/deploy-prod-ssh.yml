@@ -58,10 +58,12 @@ jobs:
           Pop-Location
 
       - name: Notify Slack (success)
-        if: ${{ success() && secrets.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ success() && env.SLACK_WEBHOOK_URL != '' }}
         uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-url: ${{ env.SLACK_WEBHOOK_URL }}
           payload: |
             {
               "text": "✅ Deploy em Produção: SUCCESS",
@@ -77,10 +79,12 @@ jobs:
             }
 
       - name: Notify Slack (failure)
-        if: ${{ failure() && secrets.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ failure() && env.SLACK_WEBHOOK_URL != '' }}
         uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-url: ${{ env.SLACK_WEBHOOK_URL }}
           payload: |
             {
               "text": "⚠️ Deploy em Produção: FAILED",
