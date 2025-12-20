@@ -183,6 +183,10 @@ class AtividadeForm(forms.ModelForm):
 
     def clean(self):
         """Validação customizada do formulário."""
+        from atividades.services.validacao_duplicatas import (
+            ValidacaoDuplicatasAtividades,
+        )
+
         cleaned_data = super().clean()
         curso = cleaned_data.get("curso")
         turmas = cleaned_data.get("turmas")
@@ -208,6 +212,27 @@ class AtividadeForm(forms.ModelForm):
                         "curso",
                         "O curso selecionado deve ser o mesmo das turmas escolhidas.",
                     )
+
+            # Validar duplicatas por turma
+            nome = cleaned_data.get("nome")
+            tipo_atividade = cleaned_data.get("tipo_atividade")
+
+            if nome and tipo_atividade and self.instance:
+                for turma in turmas:
+                    resultado = ValidacaoDuplicatasAtividades.verificar_duplicatas_na_turma(
+                        self.instance, turma.id
+                    )
+                    if resultado["tem_bloqueio"]:
+                        self.add_error(
+                            "turmas",
+                            f"Turma '{turma.nome}': {resultado['mensagem']}",
+                        )
+                    elif resultado["tem_warning"]:
+                        # Log apenas, não bloqueia
+                        logger.warning(
+                            f"[Validação] {resultado['mensagem']} "
+                            f"(atividade={self.instance.id}, turma={turma.id})"
+                        )
 
         return cleaned_data
 
