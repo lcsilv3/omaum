@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[Atividades] Script carregado - versão 20251220');
-    
     const form = document.getElementById('filtro-atividades-form');
     const tabelaContainer = document.getElementById('tabela-atividades-container');
     const spinner = document.getElementById('atividades-spinner');
@@ -10,11 +8,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('id_q');
 
     if (!form || !tabelaContainer || !spinner) {
-        console.error('[Atividades] Elementos não encontrados:', { form, tabelaContainer, spinner });
         return;
     }
-    
-    console.log('[Atividades] Elementos encontrados, inicializando...');
 
     let debounceTimer = null;
 
@@ -53,7 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function fetchAtividades(extraParams) {
-        console.log('[Atividades] Iniciando fetch...', { extraParams });
         spinner.style.display = 'block';
         tabelaContainer.style.display = 'none';
 
@@ -69,7 +63,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const url = `${window.location.pathname}?${params.toString()}`;
-        console.log('[Atividades] URL da requisição:', url);
 
         fetch(url, {
             headers: {
@@ -92,8 +85,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!data) {
                     return;
                 }
-                
-                console.log('[Atividades] Dados recebidos:', Object.keys(data));
 
                 if (data.tabela_html) {
                     tabelaContainer.innerHTML = data.tabela_html;
@@ -117,8 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             })
-            .catch((error) => {
-                console.error('[Atividades] Erro na requisição:', error);
+            .catch(() => {
                 tabelaContainer.innerHTML = '<p class="text-danger">Erro ao carregar os dados. Verifique sua conexão ou tente novamente mais tarde.</p>';
             })
             .finally(() => {
