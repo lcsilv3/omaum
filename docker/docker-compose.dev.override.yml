@@ -5,8 +5,7 @@ services:
     volumes:
       - E:/docker/omaum/dev/db:/var/lib/postgresql/data
   omaum-web:
-    ports:
-      - "8000:8000"
+    # Porta já definida no base: 8001:8000 (não conflita com prod)
     volumes:
       - ../:/app
       - E:/docker/omaum/dev/static:/app/static
