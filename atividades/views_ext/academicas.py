@@ -288,17 +288,14 @@ def excluir_atividade_academica(request, id):
         AtividadeAcademica = models["AtividadeAcademica"]
         atividade = get_object_or_404(AtividadeAcademica, id=id)
 
-        # Buscar dependências
-        from presencas.models import Presenca, ObservacaoPresenca
+        # Buscar dependências (registros de presença)
+        from presencas.models import RegistroPresenca
 
-        presencas = list(Presenca.objects.filter(atividade=atividade))
-        observacoes = list(
-            ObservacaoPresenca.objects.filter(atividade_academica=atividade)
-        )
+        registros_presenca = list(RegistroPresenca.objects.filter(atividade=atividade))
+        
         # Se houver outros vínculos relevantes, adicionar aqui
         dependencias = {
-            "presencas": presencas,
-            "observacoes": observacoes,
+            "registros_presenca": registros_presenca,
         }
 
         if request.method == "POST":
@@ -306,8 +303,7 @@ def excluir_atividade_academica(request, id):
                 messages.error(
                     request,
                     "Não é possível excluir a atividade pois existem registros "
-                    "vinculados (presenças, observações, etc.). Remova as "
-                    "dependências antes de tentar novamente.",
+                    "de presença vinculados. Remova as dependências antes de tentar novamente.",
                     extra_tags="safe",
                 )
                 return redirect(
