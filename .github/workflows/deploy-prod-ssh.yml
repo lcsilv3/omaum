@@ -33,7 +33,7 @@ jobs:
       - name: Deploy (execute locally)
         shell: powershell
         run: |
-          $deployCmd = "pwsh -NoLogo -NoProfile -File scripts/deploy_prod.ps1"
+          $deployCmd = "powershell -NoLogo -NoProfile -File scripts/deploy_prod.ps1"
           
           if ("${{ github.event.inputs.pull }}" -eq "true") { $deployCmd += " -Pull" }
           if ("${{ github.event.inputs.recreate }}" -eq "true") { $deployCmd += " -Recreate" }
