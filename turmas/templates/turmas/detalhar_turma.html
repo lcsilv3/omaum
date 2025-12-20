@@ -447,7 +447,7 @@
                             <h6 class="mb-1">{{ atividade.nome }}</h6>
                             <p class="mb-1 text-muted">
                                 <i class="fas fa-tag"></i> {{ atividade.get_tipo_atividade_display }}
-                                <i class="fas fa-calendar ms-3"></i> {{ atividade.data_inicio|date:"d/m/Y H:i" }}
+                                <i class="fas fa-calendar ms-3"></i> {{ atividade.data_inicio|date:"d/m/Y" }} {{ atividade.hora_inicio|time:"H:i" }}
                             </p>
                         </div>
                         <a href="{% url 'atividades:detalhar_atividade_academica' atividade.id %}" class="btn btn-sm btn-info">
