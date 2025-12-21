@@ -31,31 +31,26 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy (execute locally)
-        shell: powershell
+        shell: cmd
         run: |
-          $deployCmd = "powershell -NoLogo -NoProfile -File scripts/deploy_prod.ps1"
-          
-          if ("${{ github.event.inputs.pull }}" -eq "true") { $deployCmd += " -Pull" }
-          if ("${{ github.event.inputs.recreate }}" -eq "true") { $deployCmd += " -Recreate" }
-          if ("${{ github.event.inputs.skip_migrate }}" -eq "true") { $deployCmd += " -SkipMigrate" }
-          if ("${{ github.event.inputs.skip_collectstatic }}" -eq "true") { $deployCmd += " -SkipCollectstatic" }
-          
-          Write-Host "=== Deploy em Produção ===" -ForegroundColor Cyan
-          Write-Host "Executando: $deployCmd" -ForegroundColor Yellow
-          Invoke-Expression $deployCmd
+          set CMD=powershell -ExecutionPolicy Bypass -NoLogo -NoProfile -File scripts/deploy_prod.ps1
+          if "${{ github.event.inputs.pull }}" == "true" set CMD=%CMD% -Pull
+          if "${{ github.event.inputs.recreate }}" == "true" set CMD=%CMD% -Recreate
+          if "${{ github.event.inputs.skip_migrate }}" == "true" set CMD=%CMD% -SkipMigrate
+          if "${{ github.event.inputs.skip_collectstatic }}" == "true" set CMD=%CMD% -SkipCollectstatic
+          echo === Deploy em Produção ===
+          echo Executando: %CMD%
+          %CMD%
 
       - name: Verify deployment
-        shell: powershell
+        shell: cmd
         run: |
-          Write-Host "=== Status dos containers ===" -ForegroundColor Cyan
-          Push-Location docker
-          
-          docker compose --profile production -p omaum-prod ps
-          
-          Write-Host "`n=== Últimas 20 linhas de log ===" -ForegroundColor Cyan
-          docker compose --profile production -p omaum-prod logs --tail=20 omaum-web
-          
-          Pop-Location
+          echo === Status dos containers ===
+          cd docker
+          powershell -ExecutionPolicy Bypass -NoLogo -NoProfile -Command "docker compose --profile production -p omaum-prod ps"
+          echo.
+          echo === Últimas 20 linhas de log ===
+          powershell -ExecutionPolicy Bypass -NoLogo -NoProfile -Command "docker compose --profile production -p omaum-prod logs --tail=20 omaum-web"
 
       - name: Notify Slack (success)
         if: ${{ success() && env.SLACK_WEBHOOK_URL != '' }}
