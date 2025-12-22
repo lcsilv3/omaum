@@ -12,17 +12,17 @@ if __name__ == "__main__":
     django.setup()
 
     import logging
-    from presencas.models import Presenca, PresencaAcademica
+    from presencas.models import RegistroPresenca
     from django.db import transaction
 
     logger = logging.getLogger(__name__)
 
     print("🔍 Iniciando auto-correção do módulo Presenças...")
 
-    # 1. Verificar presenças sem turma definida quando há atividade
+    # 1. Verificar registros de presença sem turma definida quando há atividade
     with transaction.atomic():
-        print("\n📋 Verificando presenças sem turma quando há atividade...")
-        presencas_sem_turma = Presenca.objects.filter(
+        print("\n📋 Verificando registros de presença sem turma quando há atividade...")
+        presencas_sem_turma = RegistroPresenca.objects.filter(
             turma__isnull=True, atividade__isnull=False
         ).select_related("atividade")
 
@@ -40,14 +40,14 @@ if __name__ == "__main__":
                     f"  ✓ Presença ID {presenca.id} - turma definida: {primeira_turma.nome}"
                 )
 
-        print(f"📊 {corrigidas_turma} presenças tiveram turmas corrigidas")
+        print(f"📊 {corrigidas_turma} registros de presença tiveram turmas corrigidas")
 
-    # 2. Verificar PresencaAcademica sem relacionamentos consistentes
+    # 2. Verificar registros de presença sem relacionamentos consistentes
     with transaction.atomic():
         print(
-            "\n📋 Verificando presenças acadêmicas com relacionamentos inconsistentes..."
+            "\n📋 Verificando registros de presença com relacionamentos inconsistentes..."
         )
-        presencas_academicas = PresencaAcademica.objects.select_related(
+        presencas_academicas = RegistroPresenca.objects.select_related(
             "aluno", "atividade", "turma"
         ).all()
 
@@ -90,29 +90,27 @@ if __name__ == "__main__":
 
     # 3. Verificar dados órfãos (sem aluno ou sem referência válida)
     print("\n📋 Verificando dados órfãos...")
-    presencas_orfas = Presenca.objects.filter(aluno__isnull=True)
+    presencas_orfas = RegistroPresenca.objects.filter(aluno__isnull=True)
     if presencas_orfas.exists():
-        print(f"⚠️  Encontradas {presencas_orfas.count()} presenças órfãs (sem aluno)")
+        print(f"⚠️  Encontrados {presencas_orfas.count()} registros órfãos (sem aluno)")
         print("   Recomenda-se revisão manual destes registros")
 
     # 4. Verificar inconsistências de datas
     print("\n📋 Verificando inconsistências de datas...")
     from datetime import date
 
-    presencas_futuras = Presenca.objects.filter(data__gt=date.today())
+    presencas_futuras = RegistroPresenca.objects.filter(data__gt=date.today())
     if presencas_futuras.exists():
-        print(f"⚠️  Encontradas {presencas_futuras.count()} presenças com datas futuras")
+        print(f"⚠️  Encontrados {presencas_futuras.count()} registros com datas futuras")
         print("   Verifique se estas datas estão corretas")
 
     # 5. Relatório final
-    total_presencas = Presenca.objects.count()
-    total_academicas = PresencaAcademica.objects.count()
+    total_presencas = RegistroPresenca.objects.count()
 
     print("\n✅ Auto-correção concluída!")
     print("📊 Estatísticas finais:")
-    print(f"   • Total de presenças: {total_presencas}")
-    print(f"   • Total de presenças acadêmicas: {total_academicas}")
-    print(f"   • Presenças corrigidas (turmas): {corrigidas_turma}")
-    print(f"   • Presenças acadêmicas corrigidas: {corrigidas_academicas}")
+    print(f"   • Total de registros de presença: {total_presencas}")
+    print(f"   • Registros corrigidos (turmas): {corrigidas_turma}")
+    print(f"   • Registros corrigidos (relacionamentos): {corrigidas_academicas}")
 
-    print("\n🎯 Módulo Presenças otimizado com sucesso!")
+    print("\n🎯 Módulo Presenças (RegistroPresenca) otimizado com sucesso!")

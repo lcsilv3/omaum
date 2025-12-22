@@ -15,7 +15,7 @@ django.setup()
 import json
 from datetime import date
 from django.utils import timezone
-from presencas.models import PresencaAcademica
+from presencas.models import RegistroPresenca
 from alunos.models import Aluno
 from turmas.models import Turma
 from django.apps import apps
@@ -73,21 +73,22 @@ def simular_envio_dados():
                                 )
 
                                 # Simula exatamente o que o view faz
+                                # Converte presente=True/False para status="P"/"F"
+                                status = "P" if presenca_info.get("presente", True) else "F"
                                 presenca_obj, created = (
-                                    PresencaAcademica.objects.update_or_create(
+                                    RegistroPresenca.objects.update_or_create(
                                         aluno=aluno,
                                         turma=turma,
                                         data=data_presenca,
                                         atividade=atividade,
                                         defaults={
-                                            "presente": presenca_info.get(
-                                                "presente", True
-                                            ),
+                                            "status": status,
                                             "justificativa": presenca_info.get(
                                                 "justificativa", ""
                                             )
-                                            if not presenca_info.get("presente", True)
+                                            if status == "F"
                                             else None,
+                                            "convocado": presenca_info.get("convocado", False),
                                             "registrado_por": "TESTE_SCRIPT",
                                             "data_registro": timezone.now(),
                                         },
@@ -115,18 +116,18 @@ def simular_envio_dados():
         else:
             print("❌ FALHA - Nenhuma presença foi processada")
 
-        # Verificar se as presenças foram realmente salvas
+        # Verificar se os registros foram realmente salvos
         print("\n🔍 VERIFICAÇÃO FINAL:")
-        total_presencas = PresencaAcademica.objects.filter(
+        total_presencas = RegistroPresenca.objects.filter(
             registrado_por="TESTE_SCRIPT"
         ).count()
-        print(f"📊 Total de presenças criadas pelo script: {total_presencas}")
+        print(f"📊 Total de registros criados pelo script: {total_presencas}")
 
         if total_presencas > 0:
-            print("📋 PRESENÇAS CRIADAS:")
-            for p in PresencaAcademica.objects.filter(registrado_por="TESTE_SCRIPT"):
+            print("📋 REGISTROS DE PRESENÇA CRIADOS:")
+            for p in RegistroPresenca.objects.filter(registrado_por="TESTE_SCRIPT"):
                 print(
-                    f"   ID: {p.id} | Aluno: {p.aluno.nome} | Atividade: {p.atividade.nome}"
+                    f"   ID: {p.id} | Aluno: {p.aluno.nome} | Atividade: {p.atividade.nome} | Status: {p.status}"
                 )
                 print(
                     f"      Data: {p.data} | Presente: {p.presente} | Criado: {p.data_registro}"

@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 django.setup()
 
 from datetime import date
-from presencas.models import PresencaAcademica
+from presencas.models import RegistroPresenca
 from alunos.models import Aluno
 from turmas.models import Turma
 from atividades.models import Atividade
@@ -22,7 +22,7 @@ from atividades.models import Atividade
 def teste_unique_together():
     """
     Testa se o unique_together está funcionando corretamente
-    com os campos: aluno, turma, data, atividade
+    em RegistroPresenca com os campos: aluno, turma, data, atividade
     """
     print("🔍 TESTE DO UNIQUE_TOGETHER CORRIGIDO")
     print("=" * 50)
@@ -46,68 +46,68 @@ def teste_unique_together():
         print(f"   Data: {data_teste}")
         print()
 
-        # Teste 1: Criar primeira presença
-        print("🧪 Teste 1: Criar primeira presença")
-        presenca1, created1 = PresencaAcademica.objects.update_or_create(
+        # Teste 1: Criar primeiro registro de presença
+        print("🧪 Teste 1: Criar primeiro registro de presença")
+        presenca1, created1 = RegistroPresenca.objects.update_or_create(
             aluno=aluno,
             turma=turma,
             data=data_teste,
             atividade=atividade,
             defaults={
-                "presente": True,
+                "status": "P",
                 "registrado_por": "TESTE",
             },
         )
         print(
-            f"   ✅ Primeira presença: {'criada' if created1 else 'atualizada'} - ID: {presenca1.id}"
+            f"   ✅ Primeiro registro: {'criado' if created1 else 'atualizado'} - ID: {presenca1.id}"
         )
 
         # Teste 2: Tentar criar novamente (deve atualizar)
         print("🧪 Teste 2: Tentar criar novamente (deve atualizar)")
-        presenca2, created2 = PresencaAcademica.objects.update_or_create(
+        presenca2, created2 = RegistroPresenca.objects.update_or_create(
             aluno=aluno,
             turma=turma,
             data=data_teste,
             atividade=atividade,
             defaults={
-                "presente": False,
+                "status": "F",
                 "justificativa": "Teste de atualização",
                 "registrado_por": "TESTE_UPDATE",
             },
         )
         print(
-            f"   ✅ Segunda presença: {'criada' if created2 else 'atualizada'} - ID: {presenca2.id}"
+            f"   ✅ Segundo registro: {'criado' if created2 else 'atualizado'} - ID: {presenca2.id}"
         )
 
         # Verificar se são o mesmo objeto
         if presenca1.id == presenca2.id:
             print(
-                "   ✅ Sucesso! As presenças são o mesmo objeto (unique_together funcionando)"
+                "   ✅ Sucesso! São o mesmo registro de presença (unique_together funcionando)"
             )
         else:
-            print("   ❌ Erro! Foram criados objetos diferentes")
+            print("   ❌ Erro! Foram criados registros diferentes")
 
-        # Teste 3: Verificar quantas presenças existem
-        print("🧪 Teste 3: Verificar quantidade de presenças")
-        total_presencas = PresencaAcademica.objects.filter(
+        # Teste 3: Verificar quantos registros existem
+        print("🧪 Teste 3: Verificar quantidade de registros")
+        total_presencas = RegistroPresenca.objects.filter(
             aluno=aluno, turma=turma, data=data_teste, atividade=atividade
         ).count()
         print(
-            f"   📊 Total de presenças para este aluno/turma/data/atividade: {total_presencas}"
+            f"   📊 Total de registros para este aluno/turma/data/atividade: {total_presencas}"
         )
 
         if total_presencas == 1:
             print(
-                "   ✅ Perfeito! Apenas uma presença existe (unique_together funcionando)"
+                "   ✅ Perfeito! Apenas um registro existe (unique_together funcionando)"
             )
         else:
             print(
-                f"   ❌ Problema! Existem {total_presencas} presenças (deveria ser 1)"
+                f"   ❌ Problema! Existem {total_presencas} registros (deveria ser 1)"
             )
 
         # Limpeza
         print("🧪 Limpeza: Removendo dados de teste")
-        PresencaAcademica.objects.filter(
+        RegistroPresenca.objects.filter(
             aluno=aluno,
             turma=turma,
             data=data_teste,
