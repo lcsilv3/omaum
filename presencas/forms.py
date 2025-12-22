@@ -395,19 +395,19 @@ class EditarPresencaIndividualForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         # Importação dinâmica para evitar circular import
-        from presencas.models import Presenca
+        from presencas.models import RegistroPresenca
 
-        self._meta.model = Presenca
+        self._meta.model = RegistroPresenca
         super().__init__(*args, **kwargs)
 
         # Tornar justificativa obrigatória apenas se ausente
         if (
             self.instance
-            and hasattr(self.instance, "presente")
+            and hasattr(self.instance, "status")
             and hasattr(self.instance, "pk")
             and self.instance.pk
         ):
-            if not self.instance.presente and "justificativa" in self.fields:
+            if self.instance.status != "P" and "justificativa" in self.fields:
                 self.fields["justificativa"].required = True
 
     def clean(self):

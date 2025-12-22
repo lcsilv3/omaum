@@ -20,7 +20,7 @@ from presencas.forms import (
 )
 from django.apps import apps
 from turmas.models import Turma
-from presencas.models import TotalAtividadeMes, ObservacaoPresenca
+from presencas.models import RegistroPresenca
 from alunos.models import Aluno
 
 
@@ -177,9 +177,26 @@ def registrar_presenca_totais_atividades(request):
 
     totais_registrados = []
     if turma and ano and mes:
-        totais_registrados = TotalAtividadeMes.objects.filter(
-            turma=turma, ano=ano, mes=mes
-        ).select_related("atividade")
+        # Derivar totais da sessão, sem persistência em modelo
+        totais_atividades = request.session.get("presenca_totais_atividades", {})
+        if totais_atividades:
+            Atividade = get_model_class("Atividade")
+            atividades_ids = []
+            for key, value in totais_atividades.items():
+                aid = key.replace("qtd_ativ_", "") if key.startswith("qtd_ativ_") else key
+                try:
+                    if int(value) > 0:
+                        atividades_ids.append(int(aid))
+                except (ValueError, TypeError):
+                    continue
+            atividades = Atividade.objects.filter(id__in=atividades_ids)
+            for a in atividades:
+                key = f"qtd_ativ_{a.id}"
+                try:
+                    qtd = int(totais_atividades.get(key, 0))
+                except (ValueError, TypeError):
+                    qtd = 0
+                totais_registrados.append(SimpleNamespace(atividade=a, qtd_ativ_mes=qtd))
 
     logger.debug(
         "IDs das atividades passadas para o formulário: %s", [a.id for a in atividades]
@@ -331,17 +348,21 @@ def registrar_presenca_dias_atividades(request):
         presencas = {}
         presencas_obs = {}
         if turma and ano and mes and atividades:
-            observacoes = ObservacaoPresenca.objects.filter(
-                turma=turma,
-                data__year=ano,
-                data__month=mes,
-                atividade__in=[a.id for a in atividades],
+            registros_obs = (
+                RegistroPresenca.objects.filter(
+                    turma=turma,
+                    data__year=ano,
+                    data__month=mes,
+                    atividade_id__in=[a.id for a in atividades],
+                )
+                .exclude(justificativa__isnull=True)
+                .exclude(justificativa__exact="")
             )
-            for obs in observacoes:
-                aid = obs.atividade_id
-                dia = obs.data.day
+            for reg in registros_obs:
+                aid = reg.atividade_id
+                dia = reg.data.day
                 presencas.setdefault(aid, []).append(dia)
-                presencas_obs.setdefault(aid, {})[dia] = obs.texto
+                presencas_obs.setdefault(aid, {})[dia] = reg.justificativa or ""
 
         context = {
             "atividades": atividades,
@@ -370,7 +391,8 @@ def registrar_presenca_dias_atividades(request):
 
     try:
         with transaction.atomic():
-            # Processa observações dos dias (funcionalidade original)
+            # Coletar observações por dia/atividade para usar como fallback
+            obs_por_dia_atividade = {}
             for key in request.POST:
                 if key.startswith("obs_"):
                     # Formato: obs_atividade_id_dia
@@ -378,26 +400,9 @@ def registrar_presenca_dias_atividades(request):
                     if len(parts) >= 3:
                         atividade_id = parts[1]
                         dia = parts[2]
-                        obs = request.POST.get(key, "")
-
-                        if obs.strip():  # Só salva se há observação
-                            try:
-                                Atividade = get_model_class("Atividade")
-                                atividade = Atividade.objects.get(id=atividade_id)
-                                data = date(int(ano), int(mes), int(dia))
-
-                                ObservacaoPresenca.objects.update_or_create(
-                                    aluno=None,
-                                    turma=turma,
-                                    data=data,
-                                    atividade=atividade,
-                                    defaults={
-                                        "texto": obs,
-                                        "registrado_por": request.user.username,
-                                    },
-                                )
-                            except (Atividade.DoesNotExist, ValueError, TypeError):
-                                continue
+                        obs = (request.POST.get(key, "") or "").strip()
+                        if obs:
+                            obs_por_dia_atividade[(str(atividade_id), str(dia))] = obs
 
             # Processa presenças individuais por aluno/atividade/dia
             presencas_processadas = 0
@@ -412,7 +417,7 @@ def registrar_presenca_dias_atividades(request):
                         presente = request.POST.get(key) == "1"
                         justificativa = request.POST.get(
                             f"justificativa_{atividade_id}_{dia}_{cpf_aluno}", ""
-                        )
+                        ) or obs_por_dia_atividade.get((str(atividade_id), str(dia)), "")
                         try:
                             aluno = Aluno.objects.get(cpf=cpf_aluno)
                             Atividade = get_model_class("Atividade")
@@ -420,16 +425,14 @@ def registrar_presenca_dias_atividades(request):
                             data_presenca = date(int(ano), int(mes), int(dia))
                             # Sempre registra a presença, independentemente da convocação
                             # A distinção entre presença obrigatória e voluntária será feita no cálculo de frequência
-                            Presenca.objects.update_or_create(
+                            RegistroPresenca.objects.update_or_create(
                                 aluno=aluno,
                                 turma=turma,
                                 data=data_presenca,
                                 atividade=atividade,
                                 defaults={
-                                    "presente": presente,
-                                    "justificativa": justificativa
-                                    if not presente
-                                    else None,
+                                    "status": "P" if presente else "F",
+                                    "justificativa": justificativa if not presente else "",
                                     "registrado_por": request.user.username,
                                     "data_registro": timezone.now(),
                                 },
@@ -487,8 +490,6 @@ def registrar_presenca_alunos(request):
 
     turma = Turma.objects.get(id=turma_id)
 
-    from presencas.models import ConvocacaoPresenca
-
     alunos = Aluno.objects.filter(matricula__turma=turma, situacao="a").distinct()
 
     # Busca as atividades para o resumo
@@ -511,7 +512,9 @@ def registrar_presenca_alunos(request):
     convocacoes = {}
     for atividade in atividades:
         for aluno in alunos:
-            convoc = ConvocacaoPresenca.objects.filter(
+            # Verificar se há registro de presença para este aluno/atividade
+            # Se não houver, assumir padrão de convocado=True
+            regs_no_mes = RegistroPresenca.objects.filter(
                 aluno=aluno,
                 turma=turma,
                 atividade=atividade,
@@ -520,9 +523,7 @@ def registrar_presenca_alunos(request):
             ).first()
             # Aluno usa cpf como primary_key, então use aluno.pk
             key = f"{aluno.pk}_{atividade.id}"
-            convocacoes[key] = (
-                convoc.convocado if convoc else True
-            )  # Default: convocado
+            convocacoes[key] = regs_no_mes.convocado if regs_no_mes else True  # Default: convocado
 
     # Prepara resumo das atividades
     resumo_atividades = []
@@ -732,16 +733,16 @@ def processar_modo_individual(request, turma):
                     continue
 
                 # Criar registros de presença para cada dia
-                from presencas.models import Presenca
+                from presencas.models import RegistroPresenca
 
                 for dia in dias:
                     data = date(int(ano), int(mes), dia)
-                    Presenca.objects.create(
+                    RegistroPresenca.objects.create(
                         aluno=aluno,
                         turma=turma,
                         atividade=atividade,
                         data=data,
-                        presente=presente,
+                        status="P" if presente else "F",
                         registrado_por=request.user.username,
                         data_registro=timezone.now(),
                         justificativa=justificativa if not presente else "",
@@ -932,19 +933,19 @@ def registrar_presenca_confirmar_ajax(request):
                 continue
 
             # Criar registros de presença para cada dia
-            from presencas.models import Presenca
-
             for dia in dias:
                 data = date(int(ano), int(mes), dia)
-                Presenca.objects.create(
+                RegistroPresenca.objects.update_or_create(
                     aluno=aluno,
                     turma=turma,
                     atividade=atividade,
                     data=data,
-                    presente=presente,
-                    registrado_por=request.user.username,
-                    data_registro=timezone.now(),
-                    justificativa=justificativa if not presente else "",
+                    defaults={
+                        "status": "P" if presente else "F",
+                        "justificativa": justificativa if not presente else "",
+                        "registrado_por": request.user.username,
+                        "data_registro": timezone.now(),
+                    },
                 )
 
     # Limpar sessão
@@ -1075,25 +1076,21 @@ def registrar_presenca_dias_atividades_ajax(request):
                                         f"[SUCCESS] Criando presenca: Aluno={aluno.nome}, Atividade={atividade.nome}, Data={data_presenca}"
                                     )
 
-                                    # Registra a presença - TESTE ESPECÍFICO COM MAIS LOGS
+                                    # Registra a presença - modelo unificado
                                     try:
                                         presenca_obj, created = (
-                                            Presenca.objects.update_or_create(
+                                            RegistroPresenca.objects.update_or_create(
                                                 aluno=aluno,
                                                 turma=turma,
                                                 data=data_presenca,
                                                 atividade=atividade,
                                                 defaults={
-                                                    "presente": presenca_info.get(
-                                                        "presente", True
-                                                    ),
-                                                    "justificativa": presenca_info.get(
-                                                        "justificativa", ""
-                                                    )
-                                                    if not presenca_info.get(
-                                                        "presente", True
-                                                    )
-                                                    else None,
+                                                    "status": "P"
+                                                    if presenca_info.get("presente", True)
+                                                    else "F",
+                                                    "justificativa": presenca_info.get("justificativa", "")
+                                                    if not presenca_info.get("presente", True)
+                                                    else "",
                                                     "registrado_por": request.user.username,
                                                     "data_registro": timezone.now(),
                                                 },
@@ -1158,16 +1155,20 @@ def registrar_presenca_dias_atividades_ajax(request):
                                 atividade = Atividade.objects.get(id=atividade_id)
                                 data = date(int(ano), int(mes), int(dia))
 
-                                ObservacaoPresenca.objects.update_or_create(
+                                registro, created = RegistroPresenca.objects.get_or_create(
                                     aluno=None,
                                     turma=turma,
                                     data=data,
                                     atividade=atividade,
                                     defaults={
-                                        "texto": obs,
+                                        "status": "P",
+                                        "justificativa": obs,
                                         "registrado_por": request.user.username,
                                     },
                                 )
+                                if not created:
+                                    registro.justificativa = obs
+                                    registro.save()
                             except (Atividade.DoesNotExist, ValueError, TypeError):
                                 continue
 
@@ -1359,10 +1360,10 @@ def detalhar_presenca_totais_atividades(request, pk):
 
 @login_required
 def detalhar_presenca_dias_atividades(request, pk):
-    from presencas.models import Presenca
+    from presencas.models import RegistroPresenca
     from presencas.permissions import PresencaPermissionEngine
 
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
     # Verificar permissões
     pode_editar, motivo_edicao = PresencaPermissionEngine.pode_alterar_presenca(

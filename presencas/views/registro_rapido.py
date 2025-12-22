@@ -14,7 +14,7 @@ from django.views.decorators.http import require_POST, require_GET
 from django.db import transaction
 
 from atividades.models import Atividade
-from presencas.models import Presenca, ObservacaoPresenca
+from presencas.models import RegistroPresenca
 from turmas.models import Turma
 from alunos.models import Aluno
 
@@ -40,7 +40,6 @@ class RegistroRapidoView:
                 [turma_id, atividade_id, data_str, aluno_cpf, convocado is not None]
             ):
                 return JsonResponse({"error": "Dados incompletos"}, status=400)
-            from presencas.models import ConvocacaoPresenca
             from datetime import datetime
 
             try:
@@ -51,8 +50,8 @@ class RegistroRapidoView:
                 aluno = Aluno.objects.get(cpf=aluno_cpf)
             except Aluno.DoesNotExist:
                 return JsonResponse({"error": "Aluno não encontrado"}, status=404)
-            # Atualizar ou criar registro de convocação
-            obj, created = ConvocacaoPresenca.objects.update_or_create(
+            # Atualizar ou criar registro de presença com convocação
+            obj, created = RegistroPresenca.objects.update_or_create(
                 turma_id=turma_id,
                 atividade_id=atividade_id,
                 data=data_obj,
@@ -154,7 +153,6 @@ class RegistroRapidoView:
             # Buscar status de convocação se atividade_id e data forem fornecidos
             convoc_status = {}
             if atividade_id and data_str:
-                from presencas.models import ConvocacaoPresenca
                 from datetime import datetime
 
                 try:
@@ -162,11 +160,11 @@ class RegistroRapidoView:
                 except Exception:
                     data_obj = None
                 if data_obj:
-                    convocacoes = ConvocacaoPresenca.objects.filter(
+                    presencas_no_dia = RegistroPresenca.objects.filter(
                         turma_id=turma_id, atividade_id=atividade_id, data=data_obj
                     )
-                    for convoc in convocacoes:
-                        convoc_status[str(convoc.aluno.cpf)] = convoc.convocado
+                    for presenca in presencas_no_dia:
+                        convoc_status[str(presenca.aluno.cpf)] = presenca.convocado
 
             alunos_data = []
             for aluno in alunos:
@@ -243,38 +241,29 @@ class RegistroRapidoView:
                         aluno = Aluno.objects.get(id=aluno_id)
 
                         # Criar ou atualizar presença
-                        presenca_obj, created = Presenca.objects.get_or_create(
+                        presenca_obj, created = RegistroPresenca.objects.get_or_create(
                             aluno=aluno,
                             turma=turma,
                             atividade=atividade,
                             data=data_obj,
                             defaults={
-                                "presente": presente,
+                                "status": "P" if presente else "F",
+                                "justificativa": observacao or "",
                                 "registrado_por": request.user.username,
                                 "data_registro": timezone.now(),
                             },
                         )
 
                         if not created:
-                            presenca_obj.presente = presente
+                            presenca_obj.status = "P" if presente else "F"
+                            if observacao:
+                                presenca_obj.justificativa = observacao
                             presenca_obj.registrado_por = request.user.username
                             presenca_obj.data_registro = timezone.now()
                             presenca_obj.save()
                             atualizadas += 1
                         else:
                             registradas += 1
-
-                        # Criar observação se fornecida
-                        if observacao.strip():
-                            ObservacaoPresenca.objects.create(
-                                aluno=aluno,
-                                turma=turma,
-                                data=data_obj,
-                                atividade=atividade,
-                                texto=observacao,
-                                registrado_por=request.user.username,
-                                data_registro=timezone.now(),
-                            )
 
                     except Aluno.DoesNotExist:
                         erros.append(f"Aluno ID {aluno_id} não encontrado")
@@ -313,7 +302,7 @@ class RegistroRapidoView:
             data_obj = datetime.strptime(data_presenca, "%Y-%m-%d").date()
             aluno = Aluno.objects.get(id=aluno_id)
 
-            presenca_existente = Presenca.objects.filter(
+            presenca_existente = RegistroPresenca.objects.filter(
                 aluno=aluno, turma_id=turma_id, atividade_id=atividade_id, data=data_obj
             ).first()
 
@@ -321,7 +310,7 @@ class RegistroRapidoView:
                 return JsonResponse(
                     {
                         "existe": True,
-                        "presente": presenca_existente.presente,
+                        "presente": presenca_existente.status == "P",
                         "registrado_por": presenca_existente.registrado_por,
                         "data_registro": presenca_existente.data_registro.strftime(
                             "%d/%m/%Y %H:%M"

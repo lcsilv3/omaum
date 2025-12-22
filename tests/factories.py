@@ -16,7 +16,8 @@ try:
     from alunos.models import Aluno
     from matriculas.models import Matricula
     from turmas.models import Turma
-    from presencas.models import Presenca
+    from presencas.models import RegistroPresenca
+    from atividades.models import Atividade
 
     FACTORY_BOY_AVAILABLE = True
 
@@ -122,14 +123,34 @@ if FACTORY_BOY_AVAILABLE:
         data_matricula = factory.Faker("date_this_year")
         ativa = True
 
+    class AtividadeFactory(DjangoModelFactory):
+        class Meta:
+            model = Atividade
+
+        nome = factory.Sequence(lambda n: f"Atividade {n}")
+        tipo_atividade = "curso"
+        data_inicio = factory.Faker("date_this_year")
+        data_fim = factory.LazyAttribute(
+            lambda obj: obj.data_inicio + timedelta(days=30)
+        )
+        hora_inicio = "09:00"
+        hora_fim = "17:00"
+        status = "ativa"
+        ativo = True
+        convocacao = True
+        curso = factory.SubFactory(CursoFactory)
+
     class PresencaFactory(DjangoModelFactory):
         class Meta:
-            model = Presenca
+            model = RegistroPresenca
 
         aluno = factory.SubFactory(AlunoFactory)
         turma = factory.SubFactory(TurmaFactory)
+        atividade = factory.SubFactory(AtividadeFactory)
         data = factory.Faker("date_this_year")
-        presente = True
+        status = "P"  # Presente por padrão
+        convocado = False
+        registrado_por = "sistema"
 
 else:
     # Classes mock para quando factory_boy não estiver disponível
@@ -206,16 +227,44 @@ else:
         def __call__(self, **kwargs):
             return self.create(**kwargs)
 
+    class AtividadeFactory:
+        @classmethod
+        def create(cls, **kwargs):
+            from atividades.models import Atividade
+            from datetime import date, timedelta
+
+            data_inicio = kwargs.get("data_inicio", date.today())
+            return Atividade.objects.create(
+                nome=kwargs.get("nome", "Atividade Teste"),
+                tipo_atividade=kwargs.get("tipo_atividade", "curso"),
+                data_inicio=data_inicio,
+                data_fim=kwargs.get("data_fim", data_inicio + timedelta(days=30)),
+                hora_inicio=kwargs.get("hora_inicio", "09:00"),
+                hora_fim=kwargs.get("hora_fim", "17:00"),
+                status=kwargs.get("status", "ativa"),
+                ativo=kwargs.get("ativo", True),
+                convocacao=kwargs.get("convocacao", True),
+                curso=kwargs.get("curso", CursoFactory.create()),
+            )
+
+        def __call__(self, **kwargs):
+            return self.create(**kwargs)
+
     class PresencaFactory:
         @classmethod
         def create(cls, **kwargs):
-            from presencas.models import Presenca
+            from presencas.models import RegistroPresenca
+            from django.utils import timezone
 
-            return Presenca.objects.create(
+            return RegistroPresenca.objects.create(
                 aluno=kwargs.get("aluno", AlunoFactory.create()),
                 turma=kwargs.get("turma", TurmaFactory.create()),
+                atividade=kwargs.get("atividade", AtividadeFactory.create()),
                 data=kwargs.get("data", "2024-01-01"),
-                presente=kwargs.get("presente", True),
+                status=kwargs.get("status", "P"),  # P=Presente por padrão
+                convocado=kwargs.get("convocado", False),
+                registrado_por=kwargs.get("registrado_por", "sistema"),
+                data_registro=kwargs.get("data_registro", timezone.now()),
             )
 
         def __call__(self, **kwargs):

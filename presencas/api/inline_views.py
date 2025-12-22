@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from presencas.models import Presenca
+from presencas.models import RegistroPresenca
 from presencas.services.inline_edit import InlinePresencaService
 from presencas.domain.rules import PresencaChange
 
@@ -18,7 +18,7 @@ from presencas.domain.rules import PresencaChange
 @csrf_exempt
 @require_http_methods(["PATCH"])
 def presenca_patch(request, pk: int):
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
     try:
         payload = json.loads(request.body or "{}")
     except json.JSONDecodeError:
@@ -45,7 +45,7 @@ def presenca_patch(request, pk: int):
 @csrf_exempt
 @require_http_methods(["DELETE"])
 def presenca_delete(request, pk: int):
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
     try:
         dia, vazio = InlinePresencaService.excluir(presenca, request.user)
         return JsonResponse(

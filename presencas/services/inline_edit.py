@@ -6,7 +6,7 @@ from typing import Tuple
 from django.db import transaction
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
-from presencas.models import Presenca, ConvocacaoPresenca
+from presencas.models import RegistroPresenca
 from presencas.permissions import PresencaPermissionEngine
 from presencas.domain.rules import (
     PresencaChange,
@@ -19,8 +19,8 @@ from presencas.repositories.presenca_repo import invalidate_period_cache
 class InlinePresencaService:
     @staticmethod
     def atualizar(
-        presenca: Presenca, change: PresencaChange, user: User
-    ) -> Tuple[Presenca, dict]:
+        presenca: RegistroPresenca, change: PresencaChange, user: User
+    ) -> Tuple[RegistroPresenca, dict]:
         pode_alterar, motivo = PresencaPermissionEngine.pode_alterar_presenca(
             presenca, user
         )
@@ -43,20 +43,13 @@ class InlinePresencaService:
         presenca.registrado_por = (
             f"{presenca.registrado_por} (edit inline {user.username})"
         )
-        presenca.save(update_fields=["presente", "justificativa", "registrado_por"])
+        presenca.save(update_fields=["status", "justificativa", "registrado_por"])
 
-        # Convocação opcional
+        # Atualizar flag de convocação se fornecida
         if change.convocado is not None:
-            ConvocacaoPresenca.objects.update_or_create(
-                aluno=presenca.aluno,
-                turma=presenca.turma,
-                atividade=presenca.atividade,
-                data=presenca.data,
-                defaults={
-                    "convocado": change.convocado,
-                    "registrado_por": user.username,
-                },
-            )
+            presenca.convocado = change.convocado
+            presenca.save(update_fields=["convocado"])
+        
         # Invalidar cache do período
         invalidate_period_cache(
             presenca.turma_id, presenca.data.year, presenca.data.month
@@ -64,7 +57,7 @@ class InlinePresencaService:
         return presenca, diff
 
     @staticmethod
-    def excluir(presenca: Presenca, user: User) -> Tuple[int, bool]:
+    def excluir(presenca: RegistroPresenca, user: User) -> Tuple[int, bool]:
         pode_alterar, motivo = PresencaPermissionEngine.pode_alterar_presenca(
             presenca, user
         )
@@ -76,14 +69,8 @@ class InlinePresencaService:
         turma_id = presenca.turma_id
         with transaction.atomic():
             presenca.delete()
-            ConvocacaoPresenca.objects.filter(
-                aluno=presenca.aluno,
-                turma_id=turma_id,
-                atividade_id=atividade_id,
-                data=presenca.data,
-            ).delete()
             # Verificar se restam presenças no mesmo dia/atividade
-            vazio = not Presenca.objects.filter(
+            vazio = not RegistroPresenca.objects.filter(
                 turma_id=turma_id,
                 atividade_id=atividade_id,
                 data=presenca.data,

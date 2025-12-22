@@ -13,7 +13,8 @@ class TestEdicaoLoteAjaxSmoke:
     def test_redireciona_sem_autenticacao(self, client):
         url = reverse(self.endpoint_name)
         response = client.get(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
-        assert response.status_code == 302
+        # AJAX deve retornar 401 JSON, não redirecionamento 302
+        assert response.status_code == 401
 
     def test_responde_json_para_usuario_logado(self, client, django_user_model):
         usuario = django_user_model.objects.create_user(

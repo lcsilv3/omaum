@@ -10,7 +10,7 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from .models import Presenca, ObservacaoPresenca
+from .models import RegistroPresenca
 from alunos.models import Aluno
 from turmas.models import Turma
 from atividades.models import Atividade
@@ -85,7 +85,7 @@ class BulkPresencaOperations:
             existing_keys.add(key)
 
         existing_presencas = set(
-            Presenca.objects.filter(
+            RegistroPresenca.objects.filter(
                 aluno_id__in=aluno_ids,
                 turma_id__in=turma_ids,
                 atividade_id__in=atividade_ids,
@@ -96,7 +96,6 @@ class BulkPresencaOperations:
         # Preparar objetos para inserção
         presencas_para_criar = []
         presencas_para_atualizar = []
-        observacoes_para_criar = []
 
         for dados in dados_presencas:
             key = (
@@ -106,12 +105,16 @@ class BulkPresencaOperations:
                 dados["data"],
             )
 
-            presenca_obj = Presenca(
+            # Mapear booleano 'presente' para status
+            status = "P" if dados["presente"] else "F"
+
+            presenca_obj = RegistroPresenca(
                 aluno_id=dados["aluno_id"],
                 turma_id=dados["turma_id"],
                 atividade_id=dados["atividade_id"],
                 data=dados["data"],
-                presente=dados["presente"],
+                status=status,
+                justificativa=(dados.get("observacao") or "") if status != "P" else "",
                 registrado_por=registrado_por,
                 data_registro=timezone.now(),
             )
@@ -123,18 +126,7 @@ class BulkPresencaOperations:
                 # Criar nova presença
                 presencas_para_criar.append(presenca_obj)
 
-            # Preparar observação se fornecida
-            if dados.get("observacao"):
-                observacao = ObservacaoPresenca(
-                    aluno_id=dados["aluno_id"],
-                    turma_id=dados["turma_id"],
-                    atividade_id=dados["atividade_id"],
-                    data=dados["data"],
-                    texto=dados["observacao"],
-                    registrado_por=registrado_por,
-                    data_registro=timezone.now(),
-                )
-                observacoes_para_criar.append(observacao)
+            # Observação agora é armazenada em 'justificativa' do próprio registro
 
         # Executar operações em lote
         stats = {"criadas": 0, "atualizadas": 0, "observacoes": 0, "erros": 0}
@@ -142,7 +134,7 @@ class BulkPresencaOperations:
         try:
             # Bulk create para novas presenças
             if presencas_para_criar:
-                created_presencas = Presenca.objects.bulk_create(
+                created_presencas = RegistroPresenca.objects.bulk_create(
                     presencas_para_criar, batch_size=1000, ignore_conflicts=True
                 )
                 stats["criadas"] = len(created_presencas)
@@ -151,24 +143,25 @@ class BulkPresencaOperations:
             if presencas_para_atualizar:
                 # Para versões anteriores do Django, usar update individual ou raw SQL
                 for presenca in presencas_para_atualizar:
-                    Presenca.objects.filter(
+                    RegistroPresenca.objects.filter(
                         aluno_id=presenca.aluno_id,
                         turma_id=presenca.turma_id,
                         atividade_id=presenca.atividade_id,
                         data=presenca.data,
                     ).update(
-                        presente=presenca.presente,
+                        status=presenca.status,
+                        justificativa=presenca.justificativa,
                         registrado_por=presenca.registrado_por,
                         data_registro=presenca.data_registro,
                     )
                 stats["atualizadas"] = len(presencas_para_atualizar)
 
-            # Bulk create para observações
-            if observacoes_para_criar:
-                ObservacaoPresenca.objects.bulk_create(
-                    observacoes_para_criar, batch_size=1000, ignore_conflicts=True
-                )
-                stats["observacoes"] = len(observacoes_para_criar)
+            # Observações incorporadas em 'justificativa' dos registros
+            stats["observacoes"] = sum(
+                1
+                for p in presencas_para_criar + presencas_para_atualizar
+                if (p.justificativa or "").strip()
+            )
 
             logger.info(f"Bulk operation concluída: {stats}")
             return stats
@@ -192,15 +185,8 @@ class BulkPresencaOperations:
         """
         logger.info(f"Excluindo {len(presenca_ids)} presenças em lote")
 
-        # Excluir observações relacionadas primeiro
-        ObservacaoPresenca.objects.filter(
-            aluno__in=Presenca.objects.filter(id__in=presenca_ids).values("aluno"),
-            turma__in=Presenca.objects.filter(id__in=presenca_ids).values("turma"),
-            data__in=Presenca.objects.filter(id__in=presenca_ids).values("data"),
-        ).delete()
-
         # Excluir as presenças
-        deleted_count, _ = Presenca.objects.filter(id__in=presenca_ids).delete()
+        deleted_count, _ = RegistroPresenca.objects.filter(id__in=presenca_ids).delete()
 
         logger.info(f"Excluídas {deleted_count} presenças")
         return deleted_count
@@ -223,7 +209,7 @@ class BulkPresencaOperations:
         logger.info("Calculando estatísticas com queries otimizadas")
 
         # Query base otimizada
-        queryset = Presenca.objects.select_related("aluno", "turma", "atividade")
+        queryset = RegistroPresenca.objects.select_related("aluno", "turma", "atividade")
 
         if turma_id:
             queryset = queryset.filter(turma_id=turma_id)
@@ -233,22 +219,22 @@ class BulkPresencaOperations:
             queryset = queryset.filter(data__lte=periodo_fim)
 
         # Usar aggregation para cálculos em uma única query
-        from django.db.models import Count, Case, When, IntegerField, Avg
+        from django.db.models import Count, Case, When, IntegerField, Avg, Q
 
         stats = queryset.aggregate(
             total_registros=Count("id"),
             total_presentes=Count(
-                Case(When(presente=True, then=1), output_field=IntegerField())
+                Case(When(status="P", then=1), output_field=IntegerField())
             ),
             total_ausentes=Count(
-                Case(When(presente=False, then=1), output_field=IntegerField())
+                Case(When(status="F", then=1), output_field=IntegerField())
             ),
             total_alunos=Count("aluno", distinct=True),
             total_turmas=Count("turma", distinct=True),
             total_atividades=Count("atividade", distinct=True),
             percentual_presenca=Avg(
                 Case(
-                    When(presente=True, then=100),
+                    When(status="P", then=100),
                     default=0,
                     output_field=IntegerField(),
                 )
@@ -261,10 +247,10 @@ class BulkPresencaOperations:
             .annotate(
                 total=Count("id"),
                 presentes=Count(
-                    Case(When(presente=True, then=1), output_field=IntegerField())
+                    Case(When(status="P", then=1), output_field=IntegerField())
                 ),
                 ausentes=Count(
-                    Case(When(presente=False, then=1), output_field=IntegerField())
+                    Case(When(status="F", then=1), output_field=IntegerField())
                 ),
             )
             .order_by("aluno__nome")

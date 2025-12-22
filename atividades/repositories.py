@@ -116,10 +116,10 @@ class PresencaRepository:
 
     @staticmethod
     def get_presentes(atividade_id: int) -> QuerySet[Presenca]:
-        """Retorna apenas presenças marcadas como presente."""
-        return Presenca.objects.filter(atividade_id=atividade_id, presente=True)
+        """Retorna apenas presenças marcadas como presente (status='P')."""
+        return Presenca.objects.filter(atividade_id=atividade_id, status="P")
 
     @staticmethod
     def get_ausentes(atividade_id: int) -> QuerySet[Presenca]:
-        """Retorna apenas presenças marcadas como ausente."""
-        return Presenca.objects.filter(atividade_id=atividade_id, presente=False)
+        """Retorna apenas presenças marcadas como ausente (status='F')."""
+        return Presenca.objects.filter(atividade_id=atividade_id, status="F")

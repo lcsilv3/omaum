@@ -22,11 +22,11 @@ from turmas.models import Turma
 from matriculas.models import Matricula
 from atividades.models import AtividadeAcademica
 
-from .models import Presenca, TotalAtividadeMes, ObservacaoPresenca
+from .models import RegistroPresenca
 from .serializers import (
     PresencaSerializer,
-    TotalAtividadeMesSerializer,
-    ObservacaoPresencaSerializer,
+    PresencaDetalhadaSerializer,
+    ConfiguracaoPresencaSerializer,
 )
 from .services import listar_presencas
 
@@ -60,7 +60,7 @@ class PresencaViewSet(ModelViewSet):
 
     # FASE 3B: Queryset otimizado com cache estratégico
     queryset = (
-        Presenca.objects.select_related("aluno", "turma__curso", "atividade")
+        RegistroPresenca.objects.select_related("aluno", "turma__curso", "atividade")
         .prefetch_related(
             Prefetch("aluno", queryset=Aluno.objects.only("id", "nome", "cpf")),
             Prefetch(
@@ -98,6 +98,7 @@ class PresencaViewSet(ModelViewSet):
             data_inicio = filter_params.get("data_inicio")
             data_fim = filter_params.get("data_fim")
             presente = filter_params.get("presente")
+            status_param = filter_params.get("status")
 
             # Construir filtros de forma eficiente
             filters = Q()
@@ -118,7 +119,10 @@ class PresencaViewSet(ModelViewSet):
                 filters &= Q(data__lte=data_fim)
 
             if presente is not None:
-                filters &= Q(presente=presente.lower() == "true")
+                filters &= Q(status=("P" if presente.lower() == "true" else "F"))
+
+            if status_param:
+                filters &= Q(status=status_param)
 
             queryset = queryset.filter(filters) if filters else queryset
 
@@ -153,20 +157,7 @@ class PresencaViewSet(ModelViewSet):
             )
 
 
-class TotalAtividadeMesViewSet(ModelViewSet):
-    """ViewSet para gerenciar totais de atividade por mês."""
-
-    queryset = TotalAtividadeMes.objects.select_related("atividade", "turma").all()
-    serializer_class = TotalAtividadeMesSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class ObservacaoPresencaViewSet(ModelViewSet):
-    """ViewSet para gerenciar observações de presença."""
-
-    queryset = ObservacaoPresenca.objects.select_related("aluno", "turma").all()
-    serializer_class = ObservacaoPresencaSerializer
-    permission_classes = [IsAuthenticated]
+    
 
 
 # Mantendo as funções existentes para compatibilidade

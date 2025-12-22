@@ -32,29 +32,61 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-function Info($m){ Write-Host ("[deploy-prod] " + $m) -ForegroundColor Cyan }
-function Ok($m){ Write-Host ("[deploy-prod] " + $m) -ForegroundColor Green }
-function Warn($m){ Write-Host ("[deploy-prod] " + $m) -ForegroundColor Yellow }
-function Err($m){ Write-Host ("[deploy-prod] " + $m) -ForegroundColor Red }
+$scriptPath = $PSCommandPath
+# Caminhos absolutos (self-hosted runner Windows)
+$RepoRoot   = 'E:\projetos\omaum'
+$DockerDir  = 'E:\projetos\omaum\docker'
 
-$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$DockerDir = Join-Path $RepoRoot "docker"
+Write-Host "[deploy-prod] scriptPath=$scriptPath" -ForegroundColor Cyan
+Write-Host "[deploy-prod] PSScriptRoot=$PSScriptRoot" -ForegroundColor Cyan
+Write-Host "[deploy-prod] RepoRoot=$RepoRoot" -ForegroundColor Cyan
+Write-Host "[deploy-prod] DockerDir=$DockerDir" -ForegroundColor Cyan
 
-if (-not (Test-Path $DockerDir)) { Err "Diretório docker não encontrado: $DockerDir"; exit 1 }
+if (-not (Test-Path $DockerDir)) { Write-Error "Diretório docker não encontrado: $DockerDir"; exit 1 }
+
+<#
+  Detecta automaticamente o caminho do arquivo .env.production.
+  Prioridades:
+  1) Repo raiz:    $RepoRoot/.env.production
+  2) Pasta docker: $DockerDir/.env.production
+  3) Caminhos absolutos conhecidos (E:\projetos\omaum)
+  Se não encontrado, prossegue sem --env-file e emite aviso.
+#>
+
+$envFileCandidates = @()
+if ($RepoRoot)   { $envFileCandidates += (Join-Path $RepoRoot ".env.production") }
+if ($DockerDir)  { $envFileCandidates += (Join-Path $DockerDir ".env.production") }
+$envFileCandidates += @("E:\projetos\omaum\.env.production", "E:\projetos\omaum\docker\.env.production")
+
+$envFilePath = $null
+foreach ($candidate in $envFileCandidates) {
+  if (Test-Path $candidate) { $envFilePath = (Resolve-Path $candidate).Path; break }
+}
+
+if ($envFilePath) {
+  Write-Host "[deploy-prod] Usando env-file: $envFilePath" -ForegroundColor Cyan
+  $envFileArg = @('--env-file', $envFilePath)
+} else {
+  Write-Warning '[deploy-prod] Arquivo .env.production não encontrado; prosseguindo sem --env-file (variáveis devem estar no ambiente).'
+  $envFileArg = @()
+}
 
 $compose = @(
   'compose',
   '--profile','production',
-  '-p','omaum-prod',
-  '--env-file','..\\.env.production',
-  '-f','docker-compose.yml',
-  '-f','docker-compose.prod.override.yml'
+  '-p','omaum-prod'
+) + $envFileArg + @(
+  '-f', 'E:\projetos\omaum\docker\docker-compose.prod.yml'
 )
 
-Push-Location $DockerDir
+Write-Host "[deploy-prod] DockerDir (debug) = '$DockerDir'" -ForegroundColor Yellow
+Write-Host "[deploy-prod] compose args (debug) = " -ForegroundColor Yellow
+Write-Host ($compose -join ' ') -ForegroundColor Yellow
+
+Push-Location 'E:\projetos\omaum\docker'
 try {
   if ($Pull) {
-    Info 'Executando docker compose pull (produção)...'
+    Write-Host '[deploy-prod] Executando docker compose pull (produção)...' -ForegroundColor Cyan
     docker @compose pull | Out-Host
   }
 
@@ -62,29 +94,29 @@ try {
   if ($Recreate) { $upArgs += '--force-recreate' }
   if ($Build)    { $upArgs += '--build' }
 
-  Info ('Subindo serviços: docker ' + ($compose + $upArgs -join ' '))
+  Write-Host ('[deploy-prod] Subindo serviços: docker ' + ($compose + $upArgs -join ' ')) -ForegroundColor Cyan
   docker @compose @upArgs | Out-Host
 
-  Info 'checando configurações de deploy (Django check --deploy)'
+  Write-Host '[deploy-prod] checando configurações de deploy (Django check --deploy)' -ForegroundColor Cyan
   docker @compose exec -T omaum-web python manage.py check --deploy | Out-Host
 
   if (-not $SkipMigrate) {
-    Info 'Aplicando migrations (manage.py migrate --noinput)'
+    Write-Host '[deploy-prod] Aplicando migrations (manage.py migrate --noinput)' -ForegroundColor Cyan
     docker @compose exec -T omaum-web python manage.py migrate --noinput | Out-Host
-  } else { Warn 'Pulando migrations por parâmetro' }
+  } else { Write-Warning '[deploy-prod] Pulando migrations por parâmetro' }
 
   if (-not $SkipCollectstatic) {
-    Info 'Coletando arquivos estáticos (manage.py collectstatic --noinput --clear)'
+    Write-Host '[deploy-prod] Coletando arquivos estáticos (manage.py collectstatic --noinput --clear)' -ForegroundColor Cyan
     docker @compose exec -T omaum-web python manage.py collectstatic --noinput --clear | Out-Host
-    Ok 'collectstatic concluído. Lembre-se de invalidar cache de CDN se houver.'
-  } else { Warn 'Pulando collectstatic por parâmetro' }
+    Write-Host '[deploy-prod] collectstatic concluído. Lembre-se de invalidar cache de CDN se houver.' -ForegroundColor Green
+  } else { Write-Warning '[deploy-prod] Pulando collectstatic por parâmetro' }
 
-  Info 'Status dos serviços:'
+  Write-Host '[deploy-prod] Status dos serviços:' -ForegroundColor Cyan
   docker @compose ps | Out-Host
 
-  Info 'Últimas 50 linhas de log do omaum-web:'
+  Write-Host '[deploy-prod] Últimas 50 linhas de log do omaum-web:' -ForegroundColor Cyan
   docker @compose logs --tail=50 omaum-web | Out-Host
 
-  Ok 'Deploy de produção finalizado.'
+  Write-Host '[deploy-prod] Deploy de produção finalizado.' -ForegroundColor Green
 }
 finally { Pop-Location }

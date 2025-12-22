@@ -27,60 +27,33 @@ def get_turma_model():
 
 
 def get_atividade_model():
-    """Obtém o modelo AtividadeAcademica dinamicamente."""
+    """Obtém o modelo Atividade dinamicamente (novo modelo unificado)."""
     atividades_module = import_module("atividades.models")
-    return getattr(atividades_module, "AtividadeAcademica")
+    # Compatível com arquitetura atual: "Atividade"
+    return getattr(atividades_module, "Atividade")
 
 
 def get_presenca_models():
-    """Obtém os modelos de presença dinamicamente."""
-    from .models import Presenca, TotalAtividadeMes, ObservacaoPresenca
+    """Obtém os modelos de presença dinamicamente, alinhados ao modelo unificado.
 
-    # Tentar obter modelos específicos de atividades
-    try:
-        atividades_module = import_module("atividades.models")
-        PresencaAcademica = getattr(atividades_module, "PresencaAcademica", None)
-        PresencaRitualistica = getattr(atividades_module, "PresencaRitualistica", None)
-    except (ImportError, AttributeError):
-        PresencaAcademica = None
-        PresencaRitualistica = None
+    Retorna somente os modelos atuais necessários para os serviços.
+    """
+    from .models import RegistroPresenca, PresencaDetalhada
 
     return {
-        "Presenca": Presenca,
-        "TotalAtividadeMes": TotalAtividadeMes,
-        "ObservacaoPresenca": ObservacaoPresenca,
-        "PresencaAcademica": PresencaAcademica,
-        "PresencaRitualistica": PresencaRitualistica,
+        "RegistroPresenca": RegistroPresenca,
+        "PresencaDetalhada": PresencaDetalhada,
     }
 
 
-def listar_presencas(tipo_presenca="academica"):
-    """
-    Lista presenças de acordo com o tipo.
-
-    Args:
-        tipo_presenca (str): 'academica', 'ritualistica' ou 'todas'
-    """
+def listar_presencas():
+    """Lista registros de presença (modelo unificado)."""
     modelos = get_presenca_models()
-
-    if tipo_presenca == "academica" and modelos["PresencaAcademica"]:
-        return (
-            modelos["PresencaAcademica"]
-            .objects.select_related("aluno", "turma", "atividade")
-            .order_by("-data")
-        )
-    elif tipo_presenca == "ritualistica" and modelos["PresencaRitualistica"]:
-        return (
-            modelos["PresencaRitualistica"]
-            .objects.select_related("aluno", "atividade")
-            .order_by("-data")
-        )
-    else:
-        return (
-            modelos["Presenca"]
-            .objects.select_related("aluno", "turma", "atividade")
-            .order_by("-data")
-        )
+    return (
+        modelos["RegistroPresenca"]
+        .objects.select_related("aluno", "turma", "atividade")
+        .order_by("-data")
+    )
 
 
 def buscar_presencas_por_filtros(filtros):
@@ -92,7 +65,9 @@ def buscar_presencas_por_filtros(filtros):
     """
     modelos = get_presenca_models()
     presencas = (
-        modelos["Presenca"].objects.select_related("aluno", "turma", "atividade").all()
+        modelos["RegistroPresenca"]
+        .objects.select_related("aluno", "turma", "atividade")
+        .all()
     )
 
     if filtros.get("aluno_cpf"):
@@ -110,8 +85,13 @@ def buscar_presencas_por_filtros(filtros):
     if filtros.get("data_fim"):
         presencas = presencas.filter(data__lte=filtros["data_fim"])
 
+    # Compatibilidade: mapear "presente" bool para status
     if filtros.get("presente") is not None:
-        presencas = presencas.filter(presente=filtros["presente"])
+        presencas = presencas.filter(status=("P" if filtros["presente"] else "F"))
+
+    # Novo filtro direto por status (quando fornecido)
+    if filtros.get("status"):
+        presencas = presencas.filter(status=filtros["status"])
 
     return presencas.order_by("-data")
 
@@ -155,8 +135,8 @@ def registrar_presenca(dados_presenca):
 
             # Verificar se já existe presença para essa data
             presenca_existente = (
-                modelos["Presenca"]
-                .objects.filter(aluno=aluno, turma=turma, data=data_presenca)
+                modelos["RegistroPresenca"]
+                .objects.filter(aluno=aluno, turma=turma, atividade=atividade, data=data_presenca)
                 .exists()
             )
 
@@ -166,12 +146,16 @@ def registrar_presenca(dados_presenca):
                 )
 
             # Criar presença
-            presenca = modelos["Presenca"].objects.create(
+            # Mapear campo legado "presente" para "status"
+            presente_flag = dados_presenca.get("presente", True)
+            status = dados_presenca.get("status") or ("P" if presente_flag else "F")
+
+            presenca = modelos["RegistroPresenca"].objects.create(
                 aluno=aluno,
                 turma=turma,
                 atividade=atividade,
                 data=data_presenca,
-                presente=dados_presenca.get("presente", True),
+                status=status,
                 justificativa=dados_presenca.get("justificativa", ""),
                 registrado_por=dados_presenca.get("registrado_por", "Sistema"),
             )
@@ -223,10 +207,10 @@ def atualizar_presenca(presenca_id, dados_atualizacao):
     try:
         with transaction.atomic():
             modelos = get_presenca_models()
-            presenca = modelos["Presenca"].objects.get(id=presenca_id)
+            presenca = modelos["RegistroPresenca"].objects.get(id=presenca_id)
 
             # Campos permitidos para atualização
-            campos_permitidos = ["presente", "justificativa", "data", "registrado_por"]
+            campos_permitidos = ["status", "justificativa", "data", "registrado_por"]
 
             for campo in campos_permitidos:
                 if campo in dados_atualizacao:
@@ -252,7 +236,7 @@ def atualizar_presenca(presenca_id, dados_atualizacao):
             logger.info(f"Presença atualizada: {presenca}")
             return presenca
 
-    except modelos["Presenca"].DoesNotExist:
+    except modelos["RegistroPresenca"].DoesNotExist:
         raise ValidationError("Presença não encontrada.")
     except Exception as e:
         logger.error(f"Erro ao atualizar presença: {str(e)}")
@@ -269,13 +253,13 @@ def excluir_presenca(presenca_id):
     try:
         with transaction.atomic():
             modelos = get_presenca_models()
-            presenca = modelos["Presenca"].objects.get(id=presenca_id)
+            presenca = modelos["RegistroPresenca"].objects.get(id=presenca_id)
             presenca.delete()
 
             logger.info(f"Presença excluída: ID {presenca_id}")
             return True
 
-    except modelos["Presenca"].DoesNotExist:
+    except modelos["RegistroPresenca"].DoesNotExist:
         raise ValidationError("Presença não encontrada.")
     except Exception as e:
         logger.error(f"Erro ao excluir presença: {str(e)}")
@@ -286,7 +270,7 @@ def obter_presencas_por_aluno(aluno_cpf, data_inicio=None, data_fim=None):
     """Obtém presenças de um aluno específico."""
     modelos = get_presenca_models()
     presencas = (
-        modelos["Presenca"]
+        modelos["RegistroPresenca"]
         .objects.filter(aluno__cpf=aluno_cpf)
         .select_related("turma", "atividade")
     )
@@ -304,7 +288,7 @@ def obter_presencas_por_turma(turma_id, data_inicio=None, data_fim=None):
     """Obtém presenças de uma turma específica."""
     modelos = get_presenca_models()
     presencas = (
-        modelos["Presenca"]
+        modelos["RegistroPresenca"]
         .objects.filter(turma_id=turma_id)
         .select_related("aluno", "atividade")
     )
@@ -336,7 +320,7 @@ def calcular_frequencia_aluno(
     modelos = get_presenca_models()
 
     # Filtrar presenças
-    presencas = modelos["Presenca"].objects.filter(aluno__cpf=aluno_cpf)
+    presencas = modelos["RegistroPresenca"].objects.filter(aluno__cpf=aluno_cpf)
 
     if turma_id:
         presencas = presencas.filter(turma_id=turma_id)
@@ -348,8 +332,8 @@ def calcular_frequencia_aluno(
         presencas = presencas.filter(data__lte=periodo_fim)
 
     total_registros = presencas.count()
-    total_presencas = presencas.filter(presente=True).count()
-    total_faltas = presencas.filter(presente=False).count()
+    total_presencas = presencas.filter(status="P").count()
+    total_faltas = presencas.filter(status="F").count()
 
     percentual_presenca = (
         (total_presencas / total_registros * 100) if total_registros > 0 else 0
@@ -383,59 +367,74 @@ def criar_observacao_presenca(dados_observacao):
 
             turma = Turma.objects.get(id=dados_observacao["turma_id"])
 
-            # Criar observação
-            observacao = modelos["ObservacaoPresenca"].objects.create(
+            # Criar/atualizar observação via RegistroPresenca.justificativa
+            data_obs = dados_observacao.get("data", date.today())
+            atividade = None
+            if dados_observacao.get("atividade_id"):
+                Atividade = get_atividade_model()
+                atividade = Atividade.objects.get(id=dados_observacao["atividade_id"])
+
+            status = dados_observacao.get("status") or "P"
+
+            registro, created = modelos["RegistroPresenca"].objects.get_or_create(
                 aluno=aluno,
                 turma=turma,
-                data=dados_observacao.get("data", date.today()),
-                texto=dados_observacao.get("texto", ""),
-                registrado_por=dados_observacao.get("registrado_por", "Sistema"),
+                atividade=atividade,
+                data=data_obs,
+                defaults={
+                    "status": status,
+                    "justificativa": dados_observacao.get("texto", ""),
+                    "registrado_por": dados_observacao.get("registrado_por", "Sistema"),
+                },
             )
 
-            logger.info(f"Observação de presença criada: {observacao}")
-            return observacao
+            if not created:
+                registro.justificativa = dados_observacao.get("texto", "")
+                # Opcionalmente ajustar status se fornecido
+                if dados_observacao.get("status"):
+                    registro.status = dados_observacao["status"]
+                registro.save()
+
+            logger.info(f"Observação registrada em RegistroPresenca: {registro}")
+            return registro
 
     except Exception as e:
         logger.error(f"Erro ao criar observação: {str(e)}")
         raise ValidationError(f"Erro ao criar observação: {str(e)}")
 
 
-def registrar_total_atividade_mes(turma_id, atividade_id, ano, mes, quantidade):
-    """
-    Registra o total de atividades em um mês.
+def calcular_total_atividade_mes(turma_id, atividade_id, ano, mes):
+    """Calcula o total de registros de atividade por mês via agregação.
 
-    Args:
-        turma_id (int): ID da turma
-        atividade_id (int): ID da atividade
-        ano (int): Ano
-        mes (int): Mês
-        quantidade (int): Quantidade de atividades
+    Retorna um dicionário com a quantidade, sem persistir tabela de totais.
     """
     try:
-        with transaction.atomic():
-            Turma = get_turma_model()
-            Atividade = get_atividade_model()
-            modelos = get_presenca_models()
+        modelos = get_presenca_models()
+        Turma = get_turma_model()
+        Atividade = get_atividade_model()
 
-            turma = Turma.objects.get(id=turma_id)
-            atividade = Atividade.objects.get(id=atividade_id)
+        turma = Turma.objects.get(id=turma_id)
+        atividade = Atividade.objects.get(id=atividade_id)
 
-            # Criar ou atualizar total
-            total, created = modelos["TotalAtividadeMes"].objects.get_or_create(
-                atividade=atividade,
-                turma=turma,
-                ano=ano,
-                mes=mes,
-                defaults={"qtd_ativ_mes": quantidade, "registrado_por": "Sistema"},
-            )
+        # Filtrar por ano/mes usando campo data
+        qs = modelos["RegistroPresenca"].objects.filter(
+            turma=turma,
+            atividade=atividade,
+            data__year=ano,
+            data__month=mes,
+        )
 
-            if not created:
-                total.qtd_ativ_mes = quantidade
-                total.save()
+        quantidade = qs.count()
+        result = {
+            "turma_id": turma_id,
+            "atividade_id": atividade_id,
+            "ano": ano,
+            "mes": mes,
+            "qtd_ativ_mes": quantidade,
+        }
 
-            logger.info(f"Total atividade mês registrado: {total}")
-            return total
-
+        logger.info(f"Total calculado (sem persistência): {result}")
+        return result
     except Exception as e:
-        logger.error(f"Erro ao registrar total atividade: {str(e)}")
-        raise ValidationError(f"Erro ao registrar total atividade: {str(e)}")
+        logger.error(f"Erro ao calcular total atividade mês: {str(e)}")
+        raise ValidationError(f"Erro ao calcular total atividade mês: {str(e)}")

@@ -10,7 +10,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
 from atividades.models import Atividade
-from presencas.models import ObservacaoPresenca, Presenca
+from presencas.models import RegistroPresenca
 from alunos.services import (
     listar_alunos as listar_alunos_service,
     buscar_aluno_por_cpf as buscar_aluno_por_cpf_service,
@@ -29,7 +29,7 @@ def listar_presencas_academicas(request):
     data_fim = request.GET.get("data_fim", "")
 
     # Query otimizada com relacionamentos
-    presencas = Presenca.objects.select_related(
+    presencas = RegistroPresenca.objects.select_related(
         "aluno", "turma__curso", "atividade"
     ).all()
 
@@ -93,32 +93,28 @@ def registrar_presenca_academica(request):
                 messages.error(request, f"Aluno com CPF {aluno_id} não encontrado.")
                 return redirect("presencas:listar_presencas_academicas")
 
-            presenca, created = Presenca.objects.get_or_create(
+            # Mapear presente->status
+            status = "P" if presente else "F"
+
+            presenca, created = RegistroPresenca.objects.get_or_create(
                 aluno=aluno,
                 turma=turma,
                 atividade=atividade,
                 data=data,
                 defaults={
-                    "presente": presente,
+                    "status": status,
+                    "justificativa": observacao or "",
                     "registrado_por": request.user.username,
                     "data_registro": timezone.now(),
                 },
             )
             if not created:
-                presenca.presente = presente
+                presenca.status = status
+                if observacao:
+                    presenca.justificativa = observacao
                 presenca.registrado_por = request.user.username
                 presenca.data_registro = timezone.now()
             presenca.save()
-            if observacao:
-                ObservacaoPresenca.objects.create(
-                    aluno=aluno,
-                    turma=turma,
-                    data=data,
-                    atividade=atividade,
-                    texto=observacao,
-                    registrado_por=request.user.username,
-                    data_registro=timezone.now(),
-                )
             messages.success(request, "Presença registrada com sucesso!")
             return redirect("presencas:listar_presencas_academicas")
         except Exception as e:
@@ -149,14 +145,14 @@ def registrar_presenca_academica(request):
 
 @login_required
 def editar_presenca_academica(request, pk):
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
     if request.method == "POST":
         # Lógica de edição
         presente = request.POST.get("presente") == "on"
         request.POST.get("observacao", "")
 
-        presenca.presente = presente
+        presenca.status = "P" if presente else "F"
         presenca.save()
 
         messages.success(request, "Presença atualizada com sucesso!")
@@ -173,7 +169,7 @@ def excluir_presenca_academica(request, pk):
     from presencas.permissions import PresencaPermissionEngine
     from django.contrib import messages
 
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
     # Verificar permissões de exclusão
     pode_excluir, motivo_exclusao = PresencaPermissionEngine.pode_excluir_presenca(
@@ -228,7 +224,7 @@ def excluir_presenca_academica(request, pk):
 
 @login_required
 def detalhar_presenca_academica(request, pk):
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
     context = {"presenca": presenca}
     return render(
         request, "presencas/academicas/detalhar_presenca_academica.html", context
@@ -247,7 +243,12 @@ def importar_presencas_academicas(request):
 
 @login_required
 def listar_observacoes_presenca(request):
-    observacoes = ObservacaoPresenca.objects.all().order_by("-data_registro")
+    # Observações agora são a justificativa dos registros de presença
+    observacoes = (
+        RegistroPresenca.objects.exclude(justificativa__isnull=True)
+        .exclude(justificativa__exact="")
+        .order_by("-data_registro")
+    )
     context = {"observacoes": observacoes}
     return render(request, "presencas/listar_observacoes_presenca.html", context)
 

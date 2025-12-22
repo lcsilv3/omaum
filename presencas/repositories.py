@@ -5,7 +5,7 @@ Camada de acesso a dados.
 
 from django.db.models import Q, Count
 from datetime import date, timedelta
-from .models import Presenca, TotalAtividadeMes, ObservacaoPresenca
+from .models import RegistroPresenca
 
 
 class PresencaRepository:
@@ -14,22 +14,22 @@ class PresencaRepository:
     @staticmethod
     def listar_todas():
         """Lista todas as presenças com relacionamentos."""
-        return Presenca.objects.select_related("aluno", "turma", "atividade").all()
+        return RegistroPresenca.objects.select_related("aluno", "turma", "atividade").all()
 
     @staticmethod
     def buscar_por_id(presenca_id):
         """Busca presença por ID."""
         try:
-            return Presenca.objects.select_related("aluno", "turma", "atividade").get(
+            return RegistroPresenca.objects.select_related("aluno", "turma", "atividade").get(
                 id=presenca_id
             )
-        except Presenca.DoesNotExist:
+        except RegistroPresenca.DoesNotExist:
             return None
 
     @staticmethod
     def buscar_por_aluno(aluno_cpf, data_inicio=None, data_fim=None):
         """Busca presenças de um aluno."""
-        presencas = Presenca.objects.filter(aluno__cpf=aluno_cpf).select_related(
+        presencas = RegistroPresenca.objects.filter(aluno__cpf=aluno_cpf).select_related(
             "turma", "atividade"
         )
 
@@ -44,7 +44,7 @@ class PresencaRepository:
     @staticmethod
     def buscar_por_turma(turma_id, data_inicio=None, data_fim=None):
         """Busca presenças de uma turma."""
-        presencas = Presenca.objects.filter(turma_id=turma_id).select_related(
+        presencas = RegistroPresenca.objects.filter(turma_id=turma_id).select_related(
             "aluno", "atividade"
         )
 
@@ -59,7 +59,7 @@ class PresencaRepository:
     @staticmethod
     def buscar_por_atividade(atividade_id, data_inicio=None, data_fim=None):
         """Busca presenças de uma atividade."""
-        presencas = Presenca.objects.filter(atividade_id=atividade_id).select_related(
+        presencas = RegistroPresenca.objects.filter(atividade_id=atividade_id).select_related(
             "aluno", "turma"
         )
 
@@ -79,7 +79,7 @@ class PresencaRepository:
         Args:
             filtros (dict): Dicionário com filtros
         """
-        presencas = Presenca.objects.select_related("aluno", "turma", "atividade").all()
+        presencas = RegistroPresenca.objects.select_related("aluno", "turma", "atividade").all()
 
         if filtros.get("aluno_cpf"):
             presencas = presencas.filter(aluno__cpf=filtros["aluno_cpf"])
@@ -97,7 +97,9 @@ class PresencaRepository:
             presencas = presencas.filter(data__lte=filtros["data_fim"])
 
         if filtros.get("presente") is not None:
-            presencas = presencas.filter(presente=filtros["presente"])
+            presencas = presencas.filter(status=("P" if filtros["presente"] else "F"))
+        if filtros.get("status"):
+            presencas = presencas.filter(status=filtros["status"])
 
         if filtros.get("search"):
             search_term = filtros["search"]
@@ -113,15 +115,15 @@ class PresencaRepository:
     @staticmethod
     def obter_presentes_por_data(data_presenca):
         """Obtém todas as presenças de uma data específica."""
-        return Presenca.objects.filter(
-            data=data_presenca, presente=True
+        return RegistroPresenca.objects.filter(
+            data=data_presenca, status="P"
         ).select_related("aluno", "turma", "atividade")
 
     @staticmethod
     def obter_ausentes_por_data(data_presenca):
         """Obtém todas as ausências de uma data específica."""
-        return Presenca.objects.filter(
-            data=data_presenca, presente=False
+        return RegistroPresenca.objects.filter(
+            data=data_presenca, status="F"
         ).select_related("aluno", "turma", "atividade")
 
     @staticmethod
@@ -129,7 +131,7 @@ class PresencaRepository:
         aluno_cpf, turma_id=None, periodo_inicio=None, periodo_fim=None
     ):
         """Calcula estatísticas de frequência de um aluno."""
-        presencas = Presenca.objects.filter(aluno__cpf=aluno_cpf)
+        presencas = RegistroPresenca.objects.filter(aluno__cpf=aluno_cpf)
 
         if turma_id:
             presencas = presencas.filter(turma_id=turma_id)
@@ -141,8 +143,8 @@ class PresencaRepository:
             presencas = presencas.filter(data__lte=periodo_fim)
 
         total_registros = presencas.count()
-        total_presencas = presencas.filter(presente=True).count()
-        total_faltas = presencas.filter(presente=False).count()
+        total_presencas = presencas.filter(status="P").count()
+        total_faltas = presencas.filter(status="F").count()
 
         percentual_presenca = (
             (total_presencas / total_registros * 100) if total_registros > 0 else 0
@@ -158,7 +160,7 @@ class PresencaRepository:
     @staticmethod
     def calcular_frequencia_turma(turma_id, periodo_inicio=None, periodo_fim=None):
         """Calcula estatísticas de frequência de uma turma."""
-        presencas = Presenca.objects.filter(turma_id=turma_id)
+        presencas = RegistroPresenca.objects.filter(turma_id=turma_id)
 
         if periodo_inicio:
             presencas = presencas.filter(data__gte=periodo_inicio)
@@ -168,8 +170,8 @@ class PresencaRepository:
 
         # Estatísticas gerais
         total_registros = presencas.count()
-        total_presencas = presencas.filter(presente=True).count()
-        total_faltas = presencas.filter(presente=False).count()
+        total_presencas = presencas.filter(status="P").count()
+        total_faltas = presencas.filter(status="F").count()
 
         percentual_presenca = (
             (total_presencas / total_registros * 100) if total_registros > 0 else 0
@@ -180,8 +182,8 @@ class PresencaRepository:
             presencas.values("aluno__cpf", "aluno__nome")
             .annotate(
                 total_registros=Count("id"),
-                total_presencas=Count("id", filter=Q(presente=True)),
-                total_faltas=Count("id", filter=Q(presente=False)),
+                total_presencas=Count("id", filter=Q(status="P")),
+                total_faltas=Count("id", filter=Q(status="F")),
             )
             .order_by("aluno__nome")
         )
@@ -199,7 +201,7 @@ class PresencaRepository:
     @staticmethod
     def obter_frequencia_por_periodo(periodo_inicio, periodo_fim):
         """Obtém estatísticas de frequência por período."""
-        presencas = Presenca.objects.filter(
+        presencas = RegistroPresenca.objects.filter(
             data__gte=periodo_inicio, data__lte=periodo_fim
         )
 
@@ -208,8 +210,8 @@ class PresencaRepository:
             presencas.values("data")
             .annotate(
                 total_registros=Count("id"),
-                total_presencas=Count("id", filter=Q(presente=True)),
-                total_faltas=Count("id", filter=Q(presente=False)),
+                total_presencas=Count("id", filter=Q(status="P")),
+                total_faltas=Count("id", filter=Q(status="F")),
             )
             .order_by("data")
         )
@@ -219,8 +221,8 @@ class PresencaRepository:
             presencas.values("turma__id", "turma__nome")
             .annotate(
                 total_registros=Count("id"),
-                total_presencas=Count("id", filter=Q(presente=True)),
-                total_faltas=Count("id", filter=Q(presente=False)),
+                total_presencas=Count("id", filter=Q(status="P")),
+                total_faltas=Count("id", filter=Q(status="F")),
             )
             .order_by("turma__nome")
         )
@@ -233,7 +235,7 @@ class PresencaRepository:
         data_limite = date.today() - timedelta(days=periodo_dias)
 
         return (
-            Presenca.objects.filter(data__gte=data_limite, presente=False)
+            RegistroPresenca.objects.filter(data__gte=data_limite, status="F")
             .values("aluno__cpf", "aluno__nome")
             .annotate(total_faltas=Count("id"))
             .filter(total_faltas__gte=limite_faltas)
@@ -243,27 +245,27 @@ class PresencaRepository:
     @staticmethod
     def verificar_presenca_existente(aluno_cpf, turma_id, data_presenca):
         """Verifica se já existe presença para aluno/turma/data."""
-        return Presenca.objects.filter(
+        return RegistroPresenca.objects.filter(
             aluno__cpf=aluno_cpf, turma_id=turma_id, data=data_presenca
         ).exists()
 
     @staticmethod
     def obter_estatisticas_gerais():
         """Obtém estatísticas gerais das presenças."""
-        total = Presenca.objects.count()
-        presentes = Presenca.objects.filter(presente=True).count()
-        ausentes = Presenca.objects.filter(presente=False).count()
+        total = RegistroPresenca.objects.count()
+        presentes = RegistroPresenca.objects.filter(status="P").count()
+        ausentes = RegistroPresenca.objects.filter(status="F").count()
 
         # Presenças dos últimos 30 dias
         data_limite = date.today() - timedelta(days=30)
-        recentes = Presenca.objects.filter(data__gte=data_limite)
+        recentes = RegistroPresenca.objects.filter(data__gte=data_limite)
         total_recentes = recentes.count()
         presentes_recentes = recentes.filter(presente=True).count()
 
         # Por mês (últimos 6 meses)
         seis_meses_atras = date.today() - timedelta(days=180)
         por_mes = (
-            Presenca.objects.filter(data__gte=seis_meses_atras)
+            RegistroPresenca.objects.filter(data__gte=seis_meses_atras)
             .extra(
                 select={
                     "mes": "EXTRACT(month FROM data)",
@@ -271,7 +273,7 @@ class PresencaRepository:
                 }
             )
             .values("ano", "mes")
-            .annotate(total=Count("id"), presentes=Count("id", filter=Q(presente=True)))
+            .annotate(total=Count("id"), presentes=Count("id", filter=Q(status="P")))
             .order_by("ano", "mes")
         )
 
@@ -292,34 +294,49 @@ class PresencaRepository:
 
 
 class TotalAtividadeMesRepository:
-    """Repositório para TotalAtividadeMes."""
+    """Repositório compatível: calcula totais via RegistroPresenca (sem persistir)."""
 
     @staticmethod
     def obter_por_turma_e_periodo(turma_id, ano, mes):
-        """Obtém totais de atividade por turma e período."""
-        return TotalAtividadeMes.objects.filter(
-            turma_id=turma_id, ano=ano, mes=mes
-        ).select_related("atividade")
+        from django.db.models import Count
+
+        qs = (
+            RegistroPresenca.objects.filter(
+                turma_id=turma_id, data__year=ano, data__month=mes
+            )
+            .values("atividade_id")
+            .annotate(qtd_ativ_mes=Count("id"))
+            .order_by("atividade_id")
+        )
+        return list(qs)
 
     @staticmethod
     def obter_por_atividade(atividade_id):
-        """Obtém totais de uma atividade em todos os meses."""
-        return (
-            TotalAtividadeMes.objects.filter(atividade_id=atividade_id)
-            .select_related("turma")
+        from django.db.models import Count
+
+        qs = (
+            RegistroPresenca.objects.filter(atividade_id=atividade_id)
+            .extra(
+                select={
+                    "mes": "EXTRACT(month FROM data)",
+                    "ano": "EXTRACT(year FROM data)",
+                }
+            )
+            .values("ano", "mes", "turma_id")
+            .annotate(total=Count("id"))
             .order_by("-ano", "-mes")
         )
+        return list(qs)
 
 
 class ObservacaoPresencaRepository:
-    """Repositório para ObservacaoPresenca."""
+    """Repositório compatível: observações via justificativa do RegistroPresenca."""
 
     @staticmethod
     def listar_por_turma(turma_id, data_inicio=None, data_fim=None):
-        """Lista observações de uma turma."""
-        observacoes = ObservacaoPresenca.objects.filter(
-            turma_id=turma_id
-        ).select_related("aluno")
+        observacoes = RegistroPresenca.objects.filter(turma_id=turma_id).exclude(
+            justificativa__isnull=True
+        ).exclude(justificativa__exact="")
 
         if data_inicio:
             observacoes = observacoes.filter(data__gte=data_inicio)
@@ -331,10 +348,9 @@ class ObservacaoPresencaRepository:
 
     @staticmethod
     def listar_por_aluno(aluno_cpf, data_inicio=None, data_fim=None):
-        """Lista observações de um aluno."""
-        observacoes = ObservacaoPresenca.objects.filter(
-            aluno__cpf=aluno_cpf
-        ).select_related("turma")
+        observacoes = RegistroPresenca.objects.filter(aluno__cpf=aluno_cpf).exclude(
+            justificativa__isnull=True
+        ).exclude(justificativa__exact="")
 
         if data_inicio:
             observacoes = observacoes.filter(data__gte=data_inicio)

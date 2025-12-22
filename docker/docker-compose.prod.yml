@@ -3,7 +3,7 @@
     image: postgres:15-alpine
     container_name: omaum-db-prod
     env_file:
-      - ./.env.production
+      - ../.env.production
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -23,7 +23,7 @@
     image: redis:7-alpine
     container_name: omaum-redis-prod
     env_file:
-      - ./.env.production
+      - ../.env.production
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - omaum_redis_data_prod:/data
@@ -42,7 +42,7 @@
       dockerfile: docker/Dockerfile
     container_name: omaum-web-prod
     env_file:
-      - ./.env.production
+      - ../.env.production
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -67,6 +67,8 @@
     networks:
       - omaum-network
       - reverse-proxy
+    ports:
+      - "8000:8000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
@@ -86,7 +88,7 @@
       dockerfile: docker/Dockerfile
     container_name: omaum-celery-prod
     env_file:
-      - ./.env.production
+      - ../.env.production
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -121,7 +123,7 @@
       dockerfile: docker/Dockerfile
     container_name: omaum-celery-beat-prod
     env_file:
-      - ./.env.production
+      - ../.env.production
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}

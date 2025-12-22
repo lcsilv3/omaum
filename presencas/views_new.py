@@ -12,7 +12,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
 from atividades.models import Atividade
-from presencas.models import ObservacaoPresenca, TotalAtividadeMes, Presenca
+from presencas.models import RegistroPresenca
 from alunos.services import (
     listar_alunos as listar_alunos_service,
     buscar_aluno_por_cpf as buscar_aluno_por_cpf_service,
@@ -31,7 +31,7 @@ def listar_presencas_academicas(request):
     data_inicio = request.GET.get("data_inicio", "")
     data_fim = request.GET.get("data_fim", "")
 
-    presencas = Presenca.objects.all().select_related("aluno", "turma", "atividade")
+    presencas = RegistroPresenca.objects.all().select_related("aluno", "turma", "atividade")
     if aluno_id:
         presencas = presencas.filter(aluno__cpf=aluno_id)
     if turma_id:
@@ -82,32 +82,26 @@ def registrar_presenca_academica(request):
                 messages.error(request, f"Aluno com CPF {aluno_id} não encontrado.")
                 return redirect("presencas:listar_presencas_academicas")
 
-            presenca, created = Presenca.objects.get_or_create(
+            status = "P" if presente else "F"
+            presenca, created = RegistroPresenca.objects.get_or_create(
                 aluno=aluno,
                 turma=turma,
                 atividade=atividade,
                 data=data,
                 defaults={
-                    "presente": presente,
+                    "status": status,
+                    "justificativa": observacao or "",
                     "registrado_por": request.user.username,
                     "data_registro": timezone.now(),
                 },
             )
             if not created:
-                presenca.presente = presente
+                presenca.status = status
+                if observacao:
+                    presenca.justificativa = observacao
                 presenca.registrado_por = request.user.username
                 presenca.data_registro = timezone.now()
             presenca.save()
-            if observacao:
-                ObservacaoPresenca.objects.create(
-                    aluno=aluno,
-                    turma=turma,
-                    data=data,
-                    atividade=atividade,
-                    texto=observacao,
-                    registrado_por=request.user.username,
-                    data_registro=timezone.now(),
-                )
             messages.success(request, "Presença registrada com sucesso!")
             return redirect("presencas:listar_presencas_academicas")
         except Exception as e:
@@ -131,14 +125,14 @@ def registrar_presenca_academica(request):
 
 @login_required
 def editar_presenca_academica(request, pk):
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
     if request.method == "POST":
         # Lógica de edição
         presente = request.POST.get("presente") == "on"
         request.POST.get("observacao", "")
 
-        presenca.presente = presente
+        presenca.status = "P" if presente else "F"
         presenca.save()
 
         messages.success(request, "Presença atualizada com sucesso!")
@@ -152,7 +146,7 @@ def editar_presenca_academica(request, pk):
 
 @login_required
 def excluir_presenca_academica(request, pk):
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
 
     if request.method == "POST":
         presenca.delete()
@@ -167,7 +161,7 @@ def excluir_presenca_academica(request, pk):
 
 @login_required
 def detalhar_presenca_academica(request, pk):
-    presenca = get_object_or_404(Presenca, pk=pk)
+    presenca = get_object_or_404(RegistroPresenca, pk=pk)
     context = {"presenca": presenca}
     return render(
         request, "presencas/academicas/detalhar_presenca_academica.html", context
@@ -186,7 +180,11 @@ def importar_presencas_academicas(request):
 
 @login_required
 def listar_observacoes_presenca(request):
-    observacoes = ObservacaoPresenca.objects.all().order_by("-data_registro")
+    observacoes = (
+        RegistroPresenca.objects.exclude(justificativa__isnull=True)
+        .exclude(justificativa__exact="")
+        .order_by("-data_registro")
+    )
     context = {"observacoes": observacoes}
     return render(request, "presencas/listar_observacoes_presenca.html", context)
 
@@ -265,24 +263,16 @@ def registrar_presenca_totais_atividades(request):
     if request.method == "POST":
         form = TotaisAtividadesPresencaForm(request.POST)
         if form.is_valid():
-            # Salvar totais de atividades
+            # Salvar totais de atividades (não persiste mais em modelo; guarda na sessão)
+            totais_valores = {}
             for atividade in atividades:
                 total_field = f"total_{atividade.id}"
                 total_value = form.cleaned_data.get(total_field, 0)
-                TotalAtividadeMes.objects.update_or_create(
-                    atividade=atividade,
-                    turma=turma,
-                    ano=int(ano),
-                    mes=int(mes),
-                    defaults={
-                        "qtd_ativ_mes": total_value,
-                        "registrado_por": request.user.username,
-                        "data_registro": timezone.now(),
-                    },
-                )
+                totais_valores[str(atividade.id)] = int(total_value or 0)
 
             # Salvar dados na sessão
             request.session["presenca_atividades_totais"] = True
+            request.session["presenca_totais_valores"] = totais_valores
             messages.success(request, "Totais de atividades registrados com sucesso!")
             return redirect("presencas:registrar_presenca_dias_atividades")
 

@@ -48,6 +48,17 @@ class RegistroPresenca(models.Model):
     def __str__(self):
         return f"{self.aluno.nome} - {self.data} - {self.get_status_display()}"
 
+    # Propriedades de compatibilidade com código legado que usa booleano "presente"
+    @property
+    def presente(self) -> bool:
+        """Retorna True se status é 'P' (Presente), False caso contrário."""
+        return self.status == "P"
+
+    @presente.setter
+    def presente(self, value: bool):
+        """Define status para 'P' se True, 'F' se False."""
+        self.status = "P" if value else "F"
+
 
 class PresencaDetalhada(models.Model):
     """Representa a visão agregada utilizada pelos relatórios legados."""

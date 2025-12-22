@@ -1,34 +1,9 @@
 from rest_framework import serializers
 from .models import (
-    Presenca,
+    RegistroPresenca,
     PresencaDetalhada,
     ConfiguracaoPresenca,
-    TotalAtividadeMes,
-    ObservacaoPresenca,
 )
-
-
-# Serializer para ObservacaoPresenca
-class ObservacaoPresencaSerializer(serializers.ModelSerializer):
-    aluno_nome = serializers.CharField(source="aluno.nome", read_only=True)
-    turma_nome = serializers.CharField(source="turma.nome", read_only=True)
-    atividade_nome = serializers.CharField(source="atividade.nome", read_only=True)
-
-    class Meta:
-        model = ObservacaoPresenca
-        fields = [
-            "id",
-            "aluno",
-            "aluno_nome",
-            "turma",
-            "turma_nome",
-            "atividade",
-            "atividade_nome",
-            "data",
-            "texto",
-            "registrado_por",
-            "data_registro",
-        ]
 
 
 class PresencaSerializer(serializers.ModelSerializer):
@@ -39,7 +14,7 @@ class PresencaSerializer(serializers.ModelSerializer):
     atividade_nome = serializers.CharField(source="atividade.nome", read_only=True)
 
     class Meta:
-        model = Presenca
+        model = RegistroPresenca
         fields = "__all__"
 
 
@@ -176,22 +151,4 @@ class BuscaAlunoSerializer(serializers.Serializer):
         return value.strip()
 
 
-# Serializer para TotalAtividadeMes
-class TotalAtividadeMesSerializer(serializers.ModelSerializer):
-    atividade_nome = serializers.CharField(source="atividade.nome", read_only=True)
-    turma_nome = serializers.CharField(source="turma.nome", read_only=True)
-
-    class Meta:
-        model = TotalAtividadeMes
-        fields = [
-            "id",
-            "atividade",
-            "atividade_nome",
-            "turma",
-            "turma_nome",
-            "ano",
-            "mes",
-            "qtd_ativ_mes",
-            "registrado_por",
-            "data_registro",
-        ]
+    

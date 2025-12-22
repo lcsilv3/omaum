@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 def get_model_dynamically(app_name, model_name):
     """
     Importa dinamicamente um modelo para evitar importações circulares.
+    Mapeia nomes legados para novos modelos unificados.
 
     Args:
         app_name (str): Nome do aplicativo Django
@@ -21,6 +22,16 @@ def get_model_dynamically(app_name, model_name):
         ImportError: Se o módulo não puder ser importado
         AttributeError: Se o modelo não existir no módulo
     """
+    # Mapeamento de compatibilidade: alias legados para modelos unificados
+    legacy_mapping = {
+        ("presencas", "Presenca"): ("presencas", "RegistroPresenca"),
+    }
+    
+    # Se encontra um alias legado, mapear para o novo
+    if (app_name, model_name) in legacy_mapping:
+        app_name, model_name = legacy_mapping[(app_name, model_name)]
+        logger.info(f"Mapeamento legado aplicado: {app_name}.{model_name}")
+    
     try:
         module = import_module(f"{app_name}.models")
         return getattr(module, model_name)
