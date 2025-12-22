@@ -43,15 +43,15 @@ Refactoring completo de modelos de presença para unificar em um modelo único `
 - ✅ Django system check: 0 issues
 - ⚠️ Scripts de debug/manutencao legados: **PENDENTES** (referências em scripts/manutencao/, scripts/testes_manuais/)
 
-## 🚨 Pendências Conhecidas
+## ✅ Pendências Resolvidas
 
-### Scripts que Ainda Usam Modelos Legados (não crítico — são scripts debug/testes manuais):
-- `scripts/manutencao/corrigir_presencas_autocorrecao.py` — usa `Presenca`, `PresencaAcademica`
-- `scripts/testes_manuais/test_presenca_detalhada.py` — usa `PresencaAcademica`, `PresencaRitualistica`
-- `scripts/testes_manuais/teste_unique_together.py` — usa `PresencaAcademica`
-- `scripts/testes_manuais/teste_envio_dados.py` — usa `PresencaAcademica`
+### Scripts Atualizados (anteriormente legados):
+- ✅ `scripts/manutencao/corrigir_presencas_autocorrecao.py` — Atualizado para `RegistroPresenca`
+- ✅ `scripts/testes_manuais/test_presenca_detalhada.py` — Atualizado para `RegistroPresenca`
+- ✅ `scripts/testes_manuais/teste_unique_together.py` — Atualizado para `RegistroPresenca`
+- ✅ `scripts/testes_manuais/teste_envio_dados.py` — Atualizado para `RegistroPresenca`
 
-**Ação:** Estes scripts são para debug manual. Se precisar rodar, atualizar imports. Não afetam sistema em produção.
+**Status:** Todos os scripts de debug/manutenção agora usam modelos unificados. Totalmente compatível.
 
 ## 🔄 Fluxos Testados
 1. **AJAX Edição Lote**: ✅ Autenticação + JSON responses funcionando
