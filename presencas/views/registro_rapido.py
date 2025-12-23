@@ -4,6 +4,7 @@ Views otimizadas para registro rápido de presenças.
 
 import logging
 from datetime import datetime
+from importlib import import_module
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import JsonResponse
@@ -13,10 +14,18 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 from django.db import transaction
 
-from atividades.models import Atividade
 from presencas.models import RegistroPresenca
-from turmas.models import Turma
-from alunos.models import Aluno
+
+
+def _get_model(app_name: str, model_name: str):
+    """Importa modelo dinamicamente para evitar circularidade."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+
+Atividade = _get_model("atividades", "Atividade")
+Turma = _get_model("turmas", "Turma")
+Aluno = _get_model("alunos", "Aluno")
 
 logger = logging.getLogger(__name__)
 

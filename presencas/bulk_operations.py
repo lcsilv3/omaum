@@ -6,14 +6,23 @@ Implementa bulk operations para melhor performance.
 import logging
 from datetime import date
 from typing import List, Dict, Any
+from importlib import import_module
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from .models import RegistroPresenca
-from alunos.models import Aluno
-from turmas.models import Turma
-from atividades.models import Atividade
+
+
+def _get_model(app_name: str, model_name: str):
+    """Importa modelo dinamicamente para evitar circularidade."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+
+Aluno = _get_model("alunos", "Aluno")
+Turma = _get_model("turmas", "Turma")
+Atividade = _get_model("atividades", "Atividade")
 
 logger = logging.getLogger(__name__)
 

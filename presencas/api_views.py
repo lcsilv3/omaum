@@ -17,10 +17,7 @@ from django.db import transaction
 from django.db.models import Q, Prefetch
 import json
 import logging
-from alunos.models import Aluno
-from turmas.models import Turma
-from matriculas.models import Matricula
-from atividades.models import AtividadeAcademica
+from importlib import import_module
 
 from .models import RegistroPresenca
 from .serializers import (
@@ -29,6 +26,18 @@ from .serializers import (
     ConfiguracaoPresencaSerializer,
 )
 from .services import listar_presencas
+
+
+def _get_model(app_name: str, model_name: str):
+    """Importa modelo dinamicamente para evitar circularidade."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+
+Aluno = _get_model("alunos", "Aluno")
+Turma = _get_model("turmas", "Turma")
+Matricula = _get_model("matriculas", "Matricula")
+AtividadeAcademica = _get_model("atividades", "AtividadeAcademica")
 
 logger = logging.getLogger(__name__)
 

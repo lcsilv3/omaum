@@ -4,6 +4,7 @@ Views para estatísticas de presença usando o CalculadoraEstatisticas.
 
 import logging
 from datetime import datetime
+from importlib import import_module
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
@@ -14,9 +15,17 @@ from django.utils import timezone
 
 from .services.calculadora_estatisticas import CalculadoraEstatisticas
 from .models import PresencaDetalhada, ConfiguracaoPresenca
-from alunos.models import Aluno
-from turmas.models import Turma
-from atividades.models import Atividade
+
+
+def _get_model(app_name: str, model_name: str):
+    """Importa modelo dinamicamente para evitar circularidade."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+
+Aluno = _get_model("alunos", "Aluno")
+Turma = _get_model("turmas", "Turma")
+Atividade = _get_model("atividades", "Atividade")
 
 logger = logging.getLogger(__name__)
 

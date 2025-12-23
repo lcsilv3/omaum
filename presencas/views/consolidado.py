@@ -5,6 +5,8 @@ Implementa funcionalidade estilo Excel para visualização e edição de presen�
 
 import logging
 from datetime import datetime
+from importlib import import_module
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -18,9 +20,17 @@ from django.db import transaction
 from ..models import PresencaDetalhada
 
 # from presencas.services import CalculadoraEstatisticas  # Temporariamente comentado
-from cursos.models import Curso
-from turmas.models import Turma
-from atividades.models import AtividadeAcademica
+
+
+def _get_model(app_name: str, model_name: str):
+    """Importa modelo dinamicamente para evitar circularidade."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+
+Curso = _get_model("cursos", "Curso")
+Turma = _get_model("turmas", "Turma")
+AtividadeAcademica = _get_model("atividades", "AtividadeAcademica")
 
 try:
     # Assumir que CalculadoraEstatisticas será criado pelo Agente 4

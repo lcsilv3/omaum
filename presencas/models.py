@@ -118,7 +118,24 @@ class PresencaDetalhada(models.Model):
 
 
 class ConfiguracaoPresenca(models.Model):
-    """Placeholder legado para compatibilidade com cálculos estatísticos."""
+    """
+    Placeholder legado para compatibilidade com cálculos estatísticos.
+    
+    IMPORTANTE: Este modelo é um placeholder (managed=False) mantido apenas
+    para compatibilidade retroativa com código legado que pode referenciar
+    configurações de presença.
+    
+    Não possui tabela no banco de dados e não deve ser usado em novos desenvolvimentos.
+    As configurações de presença foram migradas para o modelo RegistroPresenca
+    e lógica de negócio em services/calculadora_estatisticas.py.
+    
+    Histórico:
+    - Originalmente usado para configurar limites de carência por atividade/turma
+    - Substituído pela nova arquitetura unificada em 2024
+    - Mantido apenas para evitar quebrar imports em código legado
+    
+    Status: DEPRECADO - Não adicionar novos recursos a este modelo.
+    """
 
     class Meta:
         managed = False

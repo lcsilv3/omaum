@@ -2,6 +2,7 @@ import logging
 from datetime import date
 from calendar import monthrange
 from types import SimpleNamespace
+from importlib import import_module
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -19,9 +20,18 @@ from presencas.forms import (
     AlunosPresencaForm,
 )
 from django.apps import apps
-from turmas.models import Turma
 from presencas.models import RegistroPresenca
-from alunos.models import Aluno
+
+
+def _get_model(app_name: str, model_name: str):
+    """Importa modelo dinamicamente para evitar circularidade."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+
+Turma = _get_model("turmas", "Turma")
+Aluno = _get_model("alunos", "Aluno")
+AtividadeAcademica = _get_model("atividades", "AtividadeAcademica")
 
 
 # ---
@@ -39,9 +49,6 @@ def toggle_convocacao_ajax(request):
         turma_id = request.session.get("presenca_turma_id")
         ano = request.session.get("presenca_ano")
         mes = request.session.get("presenca_mes")
-        from alunos.models import Aluno
-        from atividades.models import AtividadeAcademica
-        from turmas.models import Turma
 
         aluno = Aluno.objects.get(id=aluno_id)
         atividade = AtividadeAcademica.objects.get(id=atividade_id)
@@ -493,8 +500,6 @@ def registrar_presenca_alunos(request):
     alunos = Aluno.objects.filter(matricula__turma=turma, situacao="a").distinct()
 
     # Busca as atividades para o resumo
-    from atividades.models import AtividadeAcademica
-
     atividades_ids = []
     for key in totais_atividades.keys():
         if key.startswith("qtd_ativ_"):
@@ -804,8 +809,6 @@ def registrar_presenca_confirmar(request):
     alunos = Aluno.objects.filter(cpf__in=alunos_status.keys()) if alunos_status else []
 
     # Buscar informações das atividades
-    from atividades.models import AtividadeAcademica
-
     atividades_ids = []
     for key in totais_atividades.keys():
         if key.startswith("qtd_ativ_"):

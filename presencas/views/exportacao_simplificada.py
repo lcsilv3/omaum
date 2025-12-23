@@ -8,6 +8,7 @@ import io
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any
+from importlib import import_module
 
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -17,8 +18,16 @@ from django.utils import timezone
 from django.db.models import Sum, Count
 
 from ..models import PresencaDetalhada
-from turmas.models import Turma
 from .consolidado import ConsolidadoPresencasView
+
+
+def _get_model(app_name: str, model_name: str):
+    """Importa modelo dinamicamente para evitar circularidade."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+
+Turma = _get_model("turmas", "Turma")
 
 logger = logging.getLogger(__name__)
 

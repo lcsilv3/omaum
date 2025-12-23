@@ -1,10 +1,19 @@
 # ...código existente...
+from importlib import import_module
 from django.shortcuts import render
-from cursos.models import Curso
-from turmas.models import Turma
-from atividades.models import AtividadeAcademica
-from alunos.models import Aluno
 from presencas.models import RegistroPresenca
+
+
+def _get_model(app_name: str, model_name: str):
+    """Importa modelo dinamicamente para evitar circularidade."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+
+Curso = _get_model("cursos", "Curso")
+Turma = _get_model("turmas", "Turma")
+AtividadeAcademica = _get_model("atividades", "AtividadeAcademica")
+Aluno = _get_model("alunos", "Aluno")
 
 
 def listar_presencas_academicas(request):

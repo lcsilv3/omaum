@@ -6,6 +6,7 @@ Endpoints AJAX para interface interativa Excel-like.
 import json
 import logging
 from datetime import datetime, date
+from importlib import import_module
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -23,9 +24,17 @@ from rest_framework import status
 
 from ..models import PresencaDetalhada, ConfiguracaoPresenca
 from ..serializers import PresencaSerializer
-from atividades.models import Atividade
-from turmas.models import Turma
-from alunos.models import Aluno
+
+
+def _get_model(app_name: str, model_name: str):
+    """Importa modelo dinamicamente para evitar circularidade."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+
+Atividade = _get_model("atividades", "Atividade")
+Turma = _get_model("turmas", "Turma")
+Aluno = _get_model("alunos", "Aluno")
 
 logger = logging.getLogger(__name__)
 

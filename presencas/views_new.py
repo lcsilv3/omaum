@@ -5,20 +5,29 @@ Views do aplicativo Presenças.
 import logging
 from datetime import date
 from calendar import monthrange
+from importlib import import_module
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
-from atividades.models import Atividade
 from presencas.models import RegistroPresenca
 from alunos.services import (
     listar_alunos as listar_alunos_service,
     buscar_aluno_por_cpf as buscar_aluno_por_cpf_service,
 )
-from turmas.models import Turma
 from presencas.forms import TotaisAtividadesPresencaForm
+
+
+def _get_model(app_name: str, model_name: str):
+    """Importa modelo dinamicamente para evitar circularidade."""
+    module = import_module(f"{app_name}.models")
+    return getattr(module, model_name)
+
+
+Atividade = _get_model("atividades", "Atividade")
+Turma = _get_model("turmas", "Turma")
 
 logger = logging.getLogger(__name__)
 

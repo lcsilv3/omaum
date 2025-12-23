@@ -1,200 +1,39 @@
-from django.urls import path, include
+"""
+URL routing principal para o aplicativo presencas.
 
-from . import views_main
-from .views_ext import registro_presenca as views_registro_presenca
+Estrutura modular para melhor manutenibilidade:
+- urls_listagem.py: Endpoints de listagem
+- urls_registro.py: Fluxo wizard de registro
+- urls_edicao.py: Edição lote e individual
+- urls_detalhar.py: Visualização detalhada
+- urls_operacoes.py: CRUD e operações auxiliares
+- urls_reports.py: Relatórios
+- api/urls.py: API REST
+"""
+
+from django.urls import path, include
 
 app_name = "presencas"
 
 urlpatterns = [
-    # Listagens principais
-    path("", views_main.listar_presencas_academicas, name="listar_presencas"),
-    path(
-        "listar/",
-        views_main.listar_presencas_academicas,
-        name="listar_presencas_academicas",
-    ),
-    # Fluxo guiado de registro de presenças
-    path(
-        "registrar/",
-        views_main.registrar_presenca_academica,
-        name="registrar_presenca_academica",
-    ),
-    path(
-        "registrar-presenca/dados-basicos/",
-        views_main.registrar_presenca_dados_basicos,
-        name="registrar_presenca_dados_basicos",
-    ),
-    path(
-        "registrar-presenca/dados-basicos/ajax/",
-        views_main.registrar_presenca_dados_basicos_ajax,
-        name="registrar_presenca_dados_basicos_ajax",
-    ),
-    path(
-        "registrar-presenca/totais-atividades/",
-        views_main.registrar_presenca_totais_atividades,
-        name="registrar_presenca_totais_atividades",
-    ),
-    path(
-        "registrar-presenca/totais-atividades/ajax/",
-        views_main.registrar_presenca_totais_atividades_ajax,
-        name="registrar_presenca_totais_atividades_ajax",
-    ),
-    path(
-        "registrar-presenca/dias-atividades/",
-        views_main.registrar_presenca_dias_atividades,
-        name="registrar_presenca_dias_atividades",
-    ),
-    path(
-        "registrar-presenca/dias-atividades/ajax/",
-        views_main.registrar_presenca_dias_atividades_ajax,
-        name="registrar_presenca_dias_atividades_ajax",
-    ),
-    path(
-        "registrar-presenca/alunos/",
-        views_main.registrar_presenca_alunos,
-        name="registrar_presenca_alunos",
-    ),
-    path(
-        "registrar-presenca/alunos/ajax/",
-        views_main.registrar_presenca_alunos_ajax,
-        name="registrar_presenca_alunos_ajax",
-    ),
-    path(
-        "registrar-presenca/confirmar/",
-        views_main.registrar_presenca_confirmar,
-        name="registrar_presenca_confirmar",
-    ),
-    path(
-        "registrar-presenca/confirmar/ajax/",
-        views_main.registrar_presenca_confirmar_ajax,
-        name="registrar_presenca_confirmar_ajax",
-    ),
-    path(
-        "registrar-presenca/convocados/",
-        views_main.registrar_presenca_convocados,
-        name="registrar_presenca_convocados",
-    ),
-    path(
-        "registrar-presenca/convocados/ajax/",
-        views_main.registrar_presenca_convocados_ajax,
-        name="registrar_presenca_convocados_ajax",
-    ),
-    # Endpoints AJAX auxiliares
-    path(
-        "registrar-presenca/turmas-por-curso/",
-        views_registro_presenca.turmas_por_curso_ajax,
-        name="turmas_por_curso_ajax",
-    ),
-    path(
-        "registrar-presenca/atividades-por-turma/",
-        views_registro_presenca.atividades_por_turma_ajax,
-        name="atividades_por_turma_ajax",
-    ),
-    path(
-        "ajax/toggle-convocacao/",
-        views_main.toggle_convocacao_ajax,
-        name="toggle_convocacao_ajax",
-    ),
-    # Fluxo de edição em lote
-    path(
-        "editar-presencas-lote/",
-        views_main.editar_presencas_lote,
-        name="editar_presencas_lote",
-    ),
-    path(
-        "editar-presencas-lote/dados-basicos/",
-        views_main.editar_lote_dados_basicos,
-        name="editar_lote_dados_basicos",
-    ),
-    path(
-        "editar-presencas-lote/totais-atividades/",
-        views_main.editar_lote_totais_atividades,
-        name="editar_lote_totais_atividades",
-    ),
-    path(
-        "editar-presencas-lote/dias-atividades/",
-        views_main.editar_lote_dias_atividades,
-        name="editar_lote_dias_atividades",
-    ),
-    path(
-        "editar-presencas-lote/dias-atividades/ajax/",
-        views_main.editar_lote_dias_atividades_ajax,
-        name="editar_lote_dias_atividades_ajax",
-    ),
-    # Edição individual guiada
-    path(
-        "editar/<int:pk>/dados-basicos/",
-        views_main.editar_presenca_dados_basicos,
-        name="editar_presenca_dados_basicos",
-    ),
-    path(
-        "editar/<int:pk>/totais-atividades/",
-        views_main.editar_presenca_totais_atividades,
-        name="editar_presenca_totais_atividades",
-    ),
-    path(
-        "editar/<int:pk>/dias-atividades/",
-        views_main.editar_presenca_dias_atividades,
-        name="editar_presenca_dias_atividades",
-    ),
-    path(
-        "editar/<int:pk>/alunos/",
-        views_main.editar_presenca_alunos,
-        name="editar_presenca_alunos",
-    ),
-    # Detalhamento de presenças
-    path(
-        "detalhar/<int:pk>/dados-basicos/",
-        views_main.detalhar_presenca_dados_basicos,
-        name="detalhar_presenca_dados_basicos",
-    ),
-    path(
-        "detalhar/<int:pk>/totais-atividades/",
-        views_main.detalhar_presenca_totais_atividades,
-        name="detalhar_presenca_totais_atividades",
-    ),
-    path(
-        "detalhar/<int:pk>/dias-atividades/",
-        views_main.detalhar_presenca_dias_atividades,
-        name="detalhar_presenca_dias_atividades",
-    ),
-    path(
-        "detalhar/<int:pk>/alunos/",
-        views_main.detalhar_presenca_alunos,
-        name="detalhar_presenca_alunos",
-    ),
-    # Operações acadêmicas legado
-    path(
-        "detalhar/<int:pk>/",
-        views_main.detalhar_presenca_academica,
-        name="detalhar_presenca",
-    ),
-    path(
-        "editar/<int:pk>/",
-        views_main.editar_presenca_academica,
-        name="editar_presenca",
-    ),
-    path(
-        "excluir/<int:pk>/",
-        views_main.excluir_presenca_academica,
-        name="excluir_presenca_academica",
-    ),
-    # Recursos auxiliares existentes
-    path(
-        "exportar/",
-        views_main.exportar_presencas_academicas,
-        name="exportar_presencas_academicas",
-    ),
-    path(
-        "importar/",
-        views_main.importar_presencas_academicas,
-        name="importar_presencas_academicas",
-    ),
-    path(
-        "observacoes/",
-        views_main.listar_observacoes_presenca,
-        name="listar_observacoes_presenca",
-    ),
-    path("relatorios/", views_main.relatorios_presenca, name="relatorios_presenca"),
-    path("reports/", include("presencas.urls_reports")),
+    # Listagem de presenças
+    path("", include("presencas.urls_listagem")),
+    
+    # Fluxo wizard de registro
+    path("registrar/", include("presencas.urls_registro")),
+    
+    # Edição (lote e individual)
+    path("editar/", include("presencas.urls_edicao")),
+    
+    # Detalhamento/visualização
+    path("detalhar/", include("presencas.urls_detalhar")),
+    
+    # Operações CRUD e auxiliares
+    path("", include("presencas.urls_operacoes")),
+    
+    # API REST
+    path("api/", include("presencas.api.urls")),
+    
+    # Relatórios
+    path("relatorios/", include("presencas.urls_reports")),
 ]
