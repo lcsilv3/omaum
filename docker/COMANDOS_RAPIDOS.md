@@ -1,5 +1,22 @@
 # 🚀 Guia Rápido - Comandos Docker OMAUM
 
+## ✅ Launcher Único (recomendado)
+
+```powershell
+# Abrir menu (Dev/Prod + ações)
+powershell -ExecutionPolicy Bypass -NoLogo -File E:\projetos\omaum\scripts\docker\launcher.ps1
+
+# Ação direta (abre navegador automaticamente após subir)
+# Desenvolvimento
+powershell -ExecutionPolicy Bypass -NoLogo -File E:\projetos\omaum\scripts\docker\launcher.ps1 -Environment dev -Action up
+# Produção
+powershell -ExecutionPolicy Bypass -NoLogo -File E:\projetos\omaum\scripts\docker\launcher.ps1 -Environment prod -Action up
+
+# Outras ações
+powershell -ExecutionPolicy Bypass -NoLogo -File E:\projetos\omaum\scripts\docker\launcher.ps1 -Environment dev -Action status
+powershell -ExecutionPolicy Bypass -NoLogo -File E:\projetos\omaum\scripts\docker\launcher.ps1 -Environment prod -Action logs
+```
+
 ## ✅ Comandos Validados (Use estes!)
 
 ### Desenvolvimento (Porta 8001)

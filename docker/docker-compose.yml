@@ -62,11 +62,7 @@ services:
       - omaum_media:/app/media
       - omaum_logs:/app/logs
       - "D:/Documentos Ordem/Ordem/CIIniciados/fotos:/fotos_externas:ro"
-    ports:
-      # ⚠️  PORTA 8001 (EXTERNA) -> 8000 (INTERNA)
-      # Dev usa porta 8001 para NÃO conflitar com produção (porta 8000)
-      # Acesso: http://localhost:8001
-      - "8001:8000"
+    # Portas definidas por override específico de ambiente
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\" || exit 1"]
       interval: 30s

@@ -31,7 +31,7 @@ services:
     environment:
       POSTGRES_DB: omaum_prod
       POSTGRES_USER: omaum_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-omaum_password}
+      POSTGRES_PASSWORD: ${OMAUM_POSTGRES_PASSWORD:-omaum_password}
   
   omaum-web:
     environment:
@@ -39,8 +39,12 @@ services:
       - DEBUG=False
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
       - DJANGO_SETTINGS_MODULE=omaum.settings.production
-      - DATABASE_URL=postgresql://omaum_user:${POSTGRES_PASSWORD:-omaum_password}@omaum-db:5432/omaum_prod
+      - DATABASE_URL=postgresql://omaum_user:${OMAUM_POSTGRES_PASSWORD:-omaum_password}@omaum-db:5432/omaum_prod
       - REDIS_URL=redis://omaum-redis:6379/1
+      - POSTGRES_DB=omaum_prod
+      - POSTGRES_USER=omaum_user
+      - POSTGRES_PASSWORD=${OMAUM_POSTGRES_PASSWORD:-omaum_password}
+      - POSTGRES_HOST=omaum-db
     volumes:
       # ❌ NÃO montar código fonte em produção!
       # Código já está copiado na imagem Docker (via Dockerfile)
