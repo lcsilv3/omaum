@@ -48,7 +48,8 @@ services:
     volumes:
       # ❌ NÃO montar código fonte em produção!
       # Código já está copiado na imagem Docker (via Dockerfile)
-      - D:/docker/omaum/prod/static:/app/static
+      # ✅ /app/static vem da imagem (COPY . /app/ no Dockerfile)
+      # ✅ /app/staticfiles é onde collectstatic coleta tudo
       - D:/docker/omaum/prod/staticfiles:/app/staticfiles
       - D:/docker/omaum/prod/media:/app/media
       - D:/docker/omaum/prod/logs:/app/logs

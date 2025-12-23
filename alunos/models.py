@@ -231,8 +231,17 @@ class Aluno(models.Model):
         verbose_name=_("Celular"),
         help_text="Digite apenas números ou com máscara (99) 99999-9999",
     )
+
+    def _upload_foto_path(instance, filename):
+        """Normaliza o caminho de upload da foto para usar barras normais."""
+        # Remove qualquer barra invertida do nome do arquivo
+        filename_clean = filename.replace('\\', '/')
+        # Garante que usa apenas a última parte (nome do arquivo)
+        filename_clean = filename_clean.split('/')[-1]
+        return f"alunos/fotos/{filename_clean}"
+
     foto = models.ImageField(
-        upload_to="alunos/fotos/",
+        upload_to=_upload_foto_path,
         null=True,
         blank=True,
         verbose_name=_("Foto"),

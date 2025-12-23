@@ -29,10 +29,10 @@ CACHES = {
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-# Em produção, não usamos STATICFILES_DIRS - todos estáticos vêm dos apps
-STATICFILES_DIRS = []
+# Em produção, também precisamos de STATICFILES_DIRS para arquivos do projeto (logo, etc)
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
-STATIC_ROOT = "/app/static"
+STATIC_ROOT = "/app/staticfiles"
 STATIC_URL = "/static/"
 
 MEDIA_ROOT = "/app/media"

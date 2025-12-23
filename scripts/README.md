@@ -100,6 +100,67 @@ RELATÓRIO FINAL
 
 ---
 
+## 🔧 Corrigir Caminhos de Fotos
+
+**Arquivo:** `corrigir_caminhos_fotos.py`
+
+Corrige caminhos de fotos que usam barras invertidas (`\`) do Windows, convertendo para barras normais (`/`) compatíveis com Linux/Docker.
+
+### Quando Usar
+
+- Após migração de dados do Windows para Linux
+- Se fotos não estão aparecendo na listagem/detalhes
+- Após importação de dados legados
+
+### Uso
+
+```bash
+# Execução direta
+python scripts/corrigir_caminhos_fotos.py
+
+# Dentro do Docker
+docker compose -p omaum-dev exec omaum-web python scripts/corrigir_caminhos_fotos.py
+```
+
+### O que faz
+
+✅ Busca todos os alunos com foto no banco  
+✅ Identifica caminhos com barras invertidas (`\`)  
+✅ Converte para barras normais (`/`)  
+✅ Atualiza apenas o campo `foto` (rápido)  
+✅ Relatório detalhado de correções
+
+### Exemplo de Saída
+
+```
+======================================================================
+SCRIPT: Corrigir Caminhos de Fotos
+======================================================================
+
+📊 Total de alunos com foto: 55
+
+🔍 Verificando caminhos...
+
+----------------------------------------------------------------------
+[1/55] Alice Fernandes
+    Antes: fotos_alunos\aluno_13.jpg
+    Depois: fotos_alunos/aluno_13.jpg
+    ✅ Corrigido!
+...
+
+======================================================================
+RELATÓRIO FINAL
+======================================================================
+✅ Caminhos corrigidos: 53
+✓  Já estavam corretos: 2
+📊 Total processado:    55
+======================================================================
+
+⚠️  ATENÇÃO: Recarregue a página no navegador (Ctrl+Shift+R)
+```
+
+---
+
 ## 🔧 Outros Scripts
 
 ### `format_code.py`
@@ -139,7 +200,8 @@ python scripts/watch_tests.py
 2. **Conectividade:** Requer acesso à internet para baixar fotos
 3. **Situação do aluno:** Apenas alunos com `situacao='a'` (ativo) são processados
 4. **Unicidade:** Cada foto tem nome único para evitar conflitos
+5. **Caminhos normalizados:** Desde a versão com migration `0014_update_foto_upload_path`, todos os caminhos de foto são automaticamente normalizados para usar `/` (barras normais), garantindo compatibilidade entre Windows e Linux/Docker
 
 ---
 
-**Última atualização:** 20 de dezembro de 2025
+**Última atualização:** 22 de dezembro de 2025

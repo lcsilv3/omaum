@@ -116,8 +116,10 @@ def preencher_fotos(force=False, dry_run=False):
                 except Exception:
                     pass  # Ignora erros ao deletar foto antiga
 
-            # Cria um nome de arquivo único
+            # Cria um nome de arquivo único (sempre com barras normais)
             nome_arquivo = f"aluno_{aluno.id}_{random.randint(10000, 99999)}.jpg"
+            # Remove qualquer barra invertida que possa existir
+            nome_arquivo = nome_arquivo.replace('\\', '/')
 
             # Salva o arquivo usando o sistema de arquivos do Django
             aluno.foto.save(nome_arquivo, ContentFile(response.content), save=True)

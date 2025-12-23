@@ -67,11 +67,33 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('[MATRICULAS] Select2 inicializado!');
     }, 500);
     
-    // Também reinicializar quando collapse for mostrado (caso esteja fechado inicialmente)
+    // CRÍTICO: Reinicializar Select2 quando collapse é aberto
+    // Select2 tem bug conhecido com elementos ocultos (display:none)
+    // Solução: destruir e recriar quando o elemento fica visível
     document.querySelectorAll('.collapse').forEach(function(collapseEl) {
         collapseEl.addEventListener('shown.bs.collapse', function() {
-            jQuery(this).find('.select2-enable').each(function() {
-                initializeSelect2(this);
+            console.log('[MATRICULAS] Collapse aberto, reinicializando Select2...');
+            
+            // Encontrar todos os selects dentro deste collapse
+            jQuery(this).find('select.select2-enable').each(function() {
+                const $select = jQuery(this);
+                
+                // Destruir Select2 existente
+                if ($select.data('select2')) {
+                    $select.select2('destroy');
+                    console.log('[MATRICULAS] Select2 destruído:', this.id);
+                }
+                
+                // Recriar Select2
+                $select.select2({
+                    theme: 'bootstrap-5',
+                    language: 'pt-BR',
+                    placeholder: $select.data('placeholder') || 'Selecione...',
+                    allowClear: true,
+                    width: '100%'
+                });
+                console.log('[MATRICULAS] Select2 recriado:', this.id);
+                console.log('[MATRICULAS] Total de options:', this.options.length);
             });
         });
     });

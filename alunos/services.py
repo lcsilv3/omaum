@@ -349,7 +349,8 @@ def _atribuir_foto_remota(aluno: Aluno, foto_url: str) -> None:
         logger.warning("Não foi possível baixar a foto do aluno em %s", foto_url)
         return
 
-    nome_arquivo = f"{aluno.cpf}_foto.jpg"
+    # Nome do arquivo sempre com barras normais (remove barras invertidas)
+    nome_arquivo = f"{aluno.cpf}_foto.jpg".replace('\\', '/')
     aluno.foto.save(nome_arquivo, ContentFile(resposta.content), save=True)
 
 
