@@ -63,6 +63,10 @@ services:
       - omaum_logs:/app/logs
       - "D:/Documentos Ordem/Ordem/CIIniciados/fotos:/fotos_externas:ro"
     # Portas definidas por override específico de ambiente
+    # DEV: Porta 8001 (docker-compose.dev.override.yml)
+    #      → http://localhost:8001/ (DEBUG=True serve arquivos estáticos)
+    # PROD: NGINX porta 80 (docker-compose.prod.override.yml)
+    #      → http://localhost/ (NGINX serve arquivos estáticos)
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\" || exit 1"]
       interval: 30s

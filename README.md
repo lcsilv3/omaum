@@ -68,7 +68,12 @@ docker compose -f docker\docker-compose.yml exec omaum-web \
 docker compose -f docker\docker-compose.yml exec omaum-web python manage.py migrate
 ```
 
-Acesse: **[http://localhost:8000](http://localhost:8000)** (carregado pelo próprio script). Nunca execute `python manage.py runserver` fora do Docker.
+**Acesso:**
+- **Desenvolvimento:** [http://localhost:8001](http://localhost:8001) ← `DEBUG=True`, Django serve arquivos estáticos
+- **Produção:** [http://localhost](http://localhost) ← `DEBUG=False`, NGINX serve arquivos estáticos (porta 80)
+
+> ⚠️ **NUNCA** acesse `localhost:8000` em produção! Django com `DEBUG=False` não serve arquivos estáticos.  
+> 📖 Documentação completa: [`docs/deployment/PORTAS_ACESSO.md`](docs/deployment/PORTAS_ACESSO.md)
 
 ### Dependências extras no Windows (WeasyPrint / Smoke tests)
 

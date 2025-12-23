@@ -4,6 +4,11 @@
 
 ## ⚡ LEMBRETES CRÍTICOS PARA IA
 
+### 🔴 Ao mencionar URLs de produção
+**→ SEMPRE use:** `http://localhost/` (NGINX na porta 80)
+**→ NUNCA use:** `http://localhost:8000/` (Django direto - arquivos estáticos não funcionam!)
+**→ Ver:** `docs/deployment/PORTAS_ACESSO.md`
+
 ### 🔴 Modificou código Python?
 **→ Reinicie IMEDIATAMENTE o container:** `docker compose -p omaum-dev restart omaum-web`
 **→ AVISE o usuário explicitamente sobre o reinício**
@@ -48,6 +53,23 @@
 - Monitoramento automático de formatação: use a tarefa "Monitoramento automático Ruff" no VS Code.
 
 ## 🐳 Ambiente Docker (OBRIGATÓRIO) ⚠️
+
+### 🌐 Portas de Acesso Corretas
+
+**DESENVOLVIMENTO (omaum-dev):**
+- ✅ **URL:** `http://localhost:8001/`
+- ✅ Django serve arquivos estáticos (DEBUG=True)
+- ✅ Acesso direto ao Django runserver
+
+**PRODUÇÃO (omaum-prod):**
+- ✅ **URL:** `http://localhost/` ← **SEM PORTA! NGINX na porta 80**
+- ✅ NGINX serve arquivos estáticos de `/var/www/static/`
+- ❌ **NUNCA use:** `http://localhost:8000/` (Django direto)
+- ❌ **Motivo:** Django com DEBUG=False NÃO serve arquivos estáticos
+
+> 📖 **Documentação completa:** [`docs/deployment/PORTAS_ACESSO.md`](../docs/deployment/PORTAS_ACESSO.md)
+
+---
 
 ### ⛔ NUNCA FAÇA:
 - **NUNCA** execute `python -c "from app.module import X"` no container Docker

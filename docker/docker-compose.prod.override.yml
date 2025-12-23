@@ -55,10 +55,19 @@ services:
       - D:/docker/omaum/prod/logs:/app/logs
       - "D:/Documentos Ordem/Ordem/CIIniciados/fotos:/fotos_externas:ro"
     ports:
-      # ⚠️  PORTA 8000 (EXTERNA e INTERNA) - Mesma do base mas em projeto diferente
-      # Prod usa omaum-prod (não conflita com omaum-dev na porta 8001)
-      # 1. Nginx (proxy reverso na porta 80)
-      # 2. Acesso direto: http://localhost:8000
+      # ⚠️  PORTA 8000 (INTERNA) - Exposta apenas para debugging
+      # 🚨 IMPORTANTE: NÃO ACESSE DIRETAMENTE A PORTA 8000 EM PRODUÇÃO!
+      #
+      # ✅ ACESSO CORRETO EM PRODUÇÃO:
+      #    http://localhost/           (NGINX na porta 80)
+      #    http://localhost/static/    (Arquivos estáticos servidos por NGINX)
+      #
+      # ❌ ACESSO INCORRETO (NÃO USAR):
+      #    http://localhost:8000/      (Django/Gunicorn direto - sem arquivos estáticos!)
+      #
+      # MOTIVO: Django com DEBUG=False NÃO serve arquivos estáticos.
+      # Arquivos estáticos (logo, CSS, JS) devem ser servidos pelo NGINX.
+      # A porta 8000 só deve ser usada para debugging de problemas do Django.
       - "8000:8000"
     command: gunicorn omaum.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
   
@@ -69,6 +78,12 @@ services:
       - "6380:6379"
     volumes:
       - D:/docker/omaum/prod/redis:/data
+  
+  omaum-nginx:
+    volumes:
+      # ✅ NGINX precisa acessar os mesmos arquivos estáticos que o Django coleta
+      - D:/docker/omaum/prod/staticfiles:/var/www/static:ro
+      - D:/docker/omaum/prod/media:/var/www/media:ro
   
   omaum-celery:
     environment:
