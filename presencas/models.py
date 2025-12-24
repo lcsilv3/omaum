@@ -44,6 +44,13 @@ class RegistroPresenca(models.Model):
         verbose_name = "Registro de Presença"
         verbose_name_plural = "Registros de Presença"
         ordering = ["-data", "aluno__nome"]
+        indexes = [
+            models.Index(fields=["data"], name="rp_data_idx"),
+            models.Index(fields=["status", "data"], name="rp_status_data_idx"),
+            models.Index(fields=["turma", "data"], name="rp_turma_data_idx"),
+            models.Index(fields=["atividade", "data"], name="rp_atividade_data_idx"),
+            models.Index(fields=["aluno", "data"], name="rp_aluno_data_idx"),
+        ]
 
     def __str__(self):
         return f"{self.aluno.nome} - {self.data} - {self.get_status_display()}"
