@@ -1,0 +1,14 @@
+<div class="btn-group">
+    <a href="javascript:history.back()" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+    <a href="{% url 'presencas:registrar_presenca_dados_basicos' %}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Nova Presença
+    </a>
+    <a href="{% url 'presencas:editar_presencas_lote' %}" class="btn btn-warning">
+        <i class="fas fa-edit"></i> Editar em Lote
+    </a>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRelatoriosPresencas">
+        <i class="fas fa-chart-bar"></i> Relatórios
+    </button>
+</div>

@@ -1,0 +1,85 @@
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" aria-labelledby="tabela-presencas">
+                <thead class="table-light">
+                    <tr>
+                        <th>Aluno</th>
+                        <th>Atividade</th>
+                        <th>Turma</th>
+                        <th>Data</th>
+                        <th>Status</th>
+                        <th>Justificativa</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for presenca in presencas %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if presenca.aluno.foto %}
+                                <img src="{{ presenca.aluno.foto.url }}" alt="{{ presenca.aluno.nome }}" 
+                                     class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
+                                {% else %}
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                     style="width: 40px; height: 40px; color: white;">
+                                    {{ presenca.aluno.nome|first|upper }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <div>{{ presenca.aluno.nome }}</div>
+                                    <small class="text-muted">{{ presenca.aluno.cpf }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ presenca.atividade.nome }}</td>
+                        <td>
+                            {% if presenca.turma %}
+                                {% if presenca.turma.curso %}{{ presenca.turma.curso.nome }} - {% endif %}{{ presenca.turma.nome }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ presenca.data|date:"d/m/Y" }}</td>
+                        <td>
+                            {% if presenca.presente %}
+                            <span class="badge bg-success">Presente</span>
+                            {% else %}
+                            <span class="badge bg-danger">Ausente</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ presenca.justificativa|truncatechars:30|default:"-" }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <a href="{% url 'presencas:detalhar_presenca_dados_basicos' presenca.id %}" class="btn btn-sm btn-info" title="Ver detalhes da presença" aria-label="Ver detalhes da presença">
+                                    <i class="fas fa-eye"></i> Detalhes
+                                </a>
+                                <a href="{% url 'presencas:editar_presenca_dados_basicos' presenca.id %}" class="btn btn-sm btn-warning" title="Editar presença" aria-label="Editar presença">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <a href="#" onclick="confirmarExclusao({{ presenca.id }}, '{{ presenca.aluno.nome }}')" class="btn btn-sm btn-danger" title="Excluir presença" aria-label="Excluir presença">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-3">
+                            <p class="mb-0">Nenhum registro de presença encontrado com os filtros selecionados.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+        <div>
+            <p class="mb-0">Exibindo {{ presencas|length }} de {{ page_obj.paginator.count }} registros</p>
+        </div>
+        
+        {% include 'presencas/academicas/partials/_paginacao.html' %}
+    </div>
+</div>

@@ -1,0 +1,56 @@
+<div class="card mb-4">
+    <div class="card-header">
+        <form id="filtro-presencas" method="get" class="row g-2 align-items-center" aria-label="Filtro de presenças acadêmicas">
+            <div class="col-md-3 col-lg-3">
+                <label for="id_curso" class="form-label mb-1">Curso</label>
+                <select id="id_curso" name="curso" class="form-select" aria-label="Filtrar por curso">
+                    <option value="">Todos</option>
+                    {% for curso in cursos %}
+                        <option value="{{ curso.id }}" {% if request.GET.curso == curso.id|stringformat:"s" %}selected{% endif %}>{{ curso.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 col-lg-3">
+                <label for="id_turma" class="form-label mb-1">Turma</label>
+                <select id="id_turma" name="turma" class="form-select" aria-label="Filtrar por turma">
+                    <option value="">Todas</option>
+                    {% for turma in turmas %}
+                        <option value="{{ turma.id }}" {% if request.GET.turma == turma.id|stringformat:"s" %}selected{% endif %}>{{ turma.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 col-lg-3">
+                <label for="id_atividade" class="form-label mb-1">Atividade</label>
+                <select id="id_atividade" name="atividade" class="form-select" aria-label="Filtrar por atividade">
+                    <option value="">Todas</option>
+                    {% for atividade in atividades %}
+                        <option value="{{ atividade.id }}" {% if request.GET.atividade == atividade.id|stringformat:"s" %}selected{% endif %}>{{ atividade.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 col-lg-3">
+                <label for="id_aluno" class="form-label mb-1">Aluno</label>
+                <select id="id_aluno" name="aluno" class="form-select" aria-label="Filtrar por aluno">
+                    <option value="">Todos</option>
+                    {% for aluno in alunos %}
+                        <option value="{{ aluno.id }}" {% if request.GET.aluno == aluno.id|stringformat:"s" %}selected{% endif %}>{{ aluno.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 col-lg-3">
+                <label for="id_data_inicio" class="form-label mb-1">Data início</label>
+                <input type="date" id="id_data_inicio" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}" aria-label="Data de início">
+            </div>
+            <div class="col-md-3 col-lg-3">
+                <label for="id_data_fim" class="form-label mb-1">Data fim</label>
+                <input type="date" id="id_data_fim" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}" aria-label="Data de fim">
+            </div>
+            <div class="col-md-2 col-lg-2 d-grid">
+                <label class="form-label mb-1 invisible">Filtrar</label>
+                <button type="submit" class="btn btn-primary" aria-label="Filtrar presenças acadêmicas">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
