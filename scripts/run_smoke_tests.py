@@ -49,13 +49,10 @@ def main() -> int:
         # Passa os argumentos como estão para o pytest após os padrões
         pytest_cmd.extend(sys.argv[1:])
     else:
-        pytest_cmd.extend(
-            [
-                "presencas/tests/test_edicao_lote_ajax_smoke.py",
-                "--no-cov",
-                "--cov-fail-under=0",
-            ]
-        )
+        # Executa o teste de fumaça padrão sem flags específicas de cobertura
+        pytest_cmd.extend([
+            "presencas/tests/test_edicao_lote_ajax_smoke.py",
+        ])
 
     print("PYTEST_START", flush=True)
     code = subprocess.call(pytest_cmd)
