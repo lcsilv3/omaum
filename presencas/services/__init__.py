@@ -59,5 +59,19 @@ Contém a lógica de negócios complexa separada das views.
 """
 
 
-# Este arquivo é mantido vazio para evitar imports circulares
-# Importe os módulos diretamente quando necessário
+# Exportar serviços refatorados (Fase 3)
+from .calculadora_estatisticas import CalculadoraEstatisticas
+from .consolidado_aluno import ConsolidadoAluno
+from .consolidado_turma import ConsolidadoTurma
+from .carencias import CalculadoraCarencias
+from .tabela_consolidada import TabelaConsolidada
+
+__all__ = [
+    "CalculadoraEstatisticas",
+    "ConsolidadoAluno",
+    "ConsolidadoTurma",
+    "CalculadoraCarencias",
+    "TabelaConsolidada",
+]
+
+# Nota: Outras funções stub mantidas para retrocompatibilidade com testes legados
