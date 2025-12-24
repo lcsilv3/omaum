@@ -194,8 +194,7 @@
 			],
 			"isBackground": false,
 			"group": "test"
-		}
-		,
+		},
 		{
 			"type": "shell",
 			"label": "Watch Dev Ops (restart + collectstatic)",
@@ -217,36 +216,63 @@
 				"showReuseMessage": false,
 				"clear": false
 			}
+		},
+		{
+			"type": "shell",
+			"label": "Prod: Deploy (up + migrate + collectstatic)",
+			"command": "pwsh",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/scripts/deploy_prod.ps1"
+			],
+			"isBackground": false,
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"type": "shell",
+			"label": "Prod: Reiniciar omaum-web",
+			"command": "pwsh",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/scripts/restart_prod.ps1"
+			],
+			"isBackground": false,
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Testes presenças (rápido, sem cobertura)",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"-p",
+				"omaum-dev",
+				"-f",
+				"${workspaceFolder}/docker/docker-compose.yml",
+				"exec",
+				"omaum-web",
+				"python",
+				"-m",
+				"pytest",
+				"-q",
+				"presencas/tests",
+				"-k",
+				"presencas or edicao_lote or ajax"
+			],
+			"isBackground": false,
+			"group": "test"
 		}
-			,
-			{
-				"type": "shell",
-				"label": "Prod: Deploy (up + migrate + collectstatic)",
-				"command": "pwsh",
-				"args": [
-					"-NoLogo",
-					"-NoProfile",
-					"-File",
-					"${workspaceFolder}/scripts/deploy_prod.ps1"
-				],
-				"isBackground": false,
-				"group": "build",
-				"presentation": { "reveal": "always", "panel": "dedicated" }
-			}
-			,
-			{
-				"type": "shell",
-				"label": "Prod: Reiniciar omaum-web",
-				"command": "pwsh",
-				"args": [
-					"-NoLogo",
-					"-NoProfile",
-					"-File",
-					"${workspaceFolder}/scripts/restart_prod.ps1"
-				],
-				"isBackground": false,
-				"group": "build",
-				"presentation": { "reveal": "always", "panel": "shared" }
-			}
 	]
 }
