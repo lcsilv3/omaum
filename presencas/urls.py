@@ -31,6 +31,9 @@ urlpatterns = [
     # Operações CRUD e auxiliares
     path("", include("presencas.urls_operacoes")),
     
+    # Estatísticas e dashboards
+    path("", include("presencas.urls_estatisticas")),
+    
     # API REST
     path("api/", include("presencas.api.urls")),
     

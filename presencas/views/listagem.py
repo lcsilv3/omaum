@@ -20,6 +20,7 @@ from alunos.services import (
     listar_alunos as listar_alunos_service,
     buscar_aluno_por_cpf as buscar_aluno_por_cpf_service,
 )
+from presencas.api.decorators import api_login_required
 
 
 def _get_model(app_name: str, model_name: str):
@@ -390,7 +391,7 @@ def editar_lote_dias_atividades(request):
     return editar_presencas_lote(request)
 
 
-@login_required
+@api_login_required
 def editar_lote_dias_atividades_ajax(request):
     """Placeholder AJAX: dias lote (Em desenvolvimento)."""
     return _json_fluxo_indisponivel()

@@ -109,7 +109,7 @@ def registrar_presenca_dados_basicos_ajax(request):
         return JsonResponse(
             {
                 "success": True,
-                "redirect_url": "/presencas/registrar-presenca/totais-atividades/",
+                "redirect_url": "/presencas/registrar/totais-atividades/",
             }
         )
     else:
@@ -287,7 +287,7 @@ def registrar_presenca_totais_atividades_ajax(request):
         return JsonResponse(
             {
                 "success": True,
-                "redirect_url": "/presencas/registrar-presenca/dias-atividades/",
+                "redirect_url": "/presencas/registrar/dias-atividades/",
             }
         )
     else:
@@ -300,7 +300,18 @@ def registrar_presenca_dias_atividades(request):
         turma_id = request.session.get("presenca_turma_id")
         ano = request.session.get("presenca_ano")
         mes = request.session.get("presenca_mes")
+        
+        # Validação: se algum dado está faltando, redireciona para o primeiro passo
+        if not all([turma_id, ano, mes]):
+            messages.warning(request, "Sessão expirada ou incompleta. Por favor, comece novamente.")
+            return redirect("presencas:registrar_presenca_academica")
+        
         turma = Turma.objects.get(id=turma_id) if turma_id else None
+        
+        # Validação adicional: turma deve existir
+        if not turma:
+            messages.error(request, "Turma não encontrada. Por favor, comece novamente.")
+            return redirect("presencas:registrar_presenca_academica")
 
         totais_atividades = request.session.get("presenca_totais_atividades", {})
         atividades = []
@@ -674,7 +685,7 @@ def processar_modo_lote(request, turma):
     logger.debug(f"Dados salvos na sessão: {resultado}")
 
     return JsonResponse(
-        {"success": True, "redirect_url": "/presencas/registrar-presenca/confirmar/"}
+        {"success": True, "redirect_url": "/presencas/registrar/confirmar/"}
     )
 
 
