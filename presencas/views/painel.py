@@ -11,6 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from django.contrib import messages
 
@@ -258,7 +259,7 @@ class PainelEstatisticasView(LoginRequiredMixin, TemplateView):
     ) -> Dict[str, Any]:
         """Prepara dados para gráfico de evolução temporal (linha)."""
         try:
-            # Filtrar presenças
+            # Filtrar e agregar por mês diretamente no banco
             presencas_qs = PresencaDetalhada.objects.all()
 
             if filtros.get("turma_id"):
@@ -268,69 +269,46 @@ class PainelEstatisticasView(LoginRequiredMixin, TemplateView):
                 presencas_qs = presencas_qs.filter(atividade_id=filtros["atividade_id"])
 
             if filtros.get("periodo_inicio"):
-                presencas_qs = presencas_qs.filter(
-                    periodo__gte=filtros["periodo_inicio"]
-                )
+                presencas_qs = presencas_qs.filter(periodo__gte=filtros["periodo_inicio"])
 
             if filtros.get("periodo_fim"):
                 presencas_qs = presencas_qs.filter(periodo__lte=filtros["periodo_fim"])
 
-            # Agrupar por mês
-            dados_mensais = {}
-            for presenca in presencas_qs.order_by("periodo"):
-                mes_ano = presenca.periodo.strftime("%Y-%m")
+            agregados = (
+                presencas_qs
+                .annotate(mes=TruncMonth("periodo"))
+                .values("mes")
+                .order_by("mes")
+                .annotate(
+                    convocacoes=Sum("convocacoes"),
+                    presencas=Sum("presencas"),
+                    faltas=Sum("faltas"),
+                )
+            )
 
-                if mes_ano not in dados_mensais:
-                    dados_mensais[mes_ano] = {
-                        "convocacoes": 0,
-                        "presencas": 0,
-                        "faltas": 0,
-                    }
-
-                dados_mensais[mes_ano]["convocacoes"] += presenca.convocacoes
-                dados_mensais[mes_ano]["presencas"] += presenca.presencas
-                dados_mensais[mes_ano]["faltas"] += presenca.faltas
-
-            # Calcular percentuais
             labels = []
             percentuais_presenca = []
             percentuais_faltas = []
 
-            for mes_ano in sorted(dados_mensais.keys()):
-                dados = dados_mensais[mes_ano]
-
-                # Formatar label
-                ano, mes = mes_ano.split("-")
+            for item in agregados:
+                mes_dt = item["mes"]
+                ano = mes_dt.strftime("%Y")
+                mes = int(mes_dt.strftime("%m"))
                 mes_nome = [
-                    "Jan",
-                    "Fev",
-                    "Mar",
-                    "Abr",
-                    "Mai",
-                    "Jun",
-                    "Jul",
-                    "Ago",
-                    "Set",
-                    "Out",
-                    "Nov",
-                    "Dez",
-                ][int(mes) - 1]
+                    "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+                    "Jul", "Ago", "Set", "Out", "Nov", "Dez",
+                ][mes - 1]
                 labels.append(f"{mes_nome}/{ano}")
 
-                # Calcular percentuais
-                if dados["convocacoes"] > 0:
-                    perc_presenca = round(
-                        (dados["presencas"] / dados["convocacoes"]) * 100, 2
-                    )
-                    perc_faltas = round(
-                        (dados["faltas"] / dados["convocacoes"]) * 100, 2
-                    )
+                conv = item["convocacoes"] or 0
+                pres = item["presencas"] or 0
+                falt = item["faltas"] or 0
+                if conv > 0:
+                    percentuais_presenca.append(round((pres / conv) * 100, 2))
+                    percentuais_faltas.append(round((falt / conv) * 100, 2))
                 else:
-                    perc_presenca = 0.0
-                    perc_faltas = 0.0
-
-                percentuais_presenca.append(perc_presenca)
-                percentuais_faltas.append(perc_faltas)
+                    percentuais_presenca.append(0.0)
+                    percentuais_faltas.append(0.0)
 
             return {
                 "tipo": "line",
@@ -414,61 +392,40 @@ class PainelEstatisticasView(LoginRequiredMixin, TemplateView):
     def _dados_grafico_carencias_turma(self, filtros: Dict[str, Any]) -> Dict[str, Any]:
         """Prepara dados para gráfico de carências por turma (barras)."""
         try:
-            get_turma_model()
-
-            # Filtrar presenças
+            # Filtrar base
             presencas_qs = PresencaDetalhada.objects.all()
 
             if filtros.get("atividade_id"):
                 presencas_qs = presencas_qs.filter(atividade_id=filtros["atividade_id"])
 
             if filtros.get("periodo_inicio"):
-                presencas_qs = presencas_qs.filter(
-                    periodo__gte=filtros["periodo_inicio"]
-                )
+                presencas_qs = presencas_qs.filter(periodo__gte=filtros["periodo_inicio"])
 
             if filtros.get("periodo_fim"):
                 presencas_qs = presencas_qs.filter(periodo__lte=filtros["periodo_fim"])
 
-            # Se filtro de turma específica, mostrar carências por aluno dessa turma
+            # Se filtro de turma específica, mostrar carências por aluno dessa turma (top 10)
             if filtros.get("turma_id"):
-                presencas_qs = presencas_qs.filter(turma_id=filtros["turma_id"])
-
-                # Agrupar por aluno
-                carencias_por_aluno = {}
-                for presenca in presencas_qs:
-                    aluno_nome = presenca.aluno.nome
-                    if aluno_nome not in carencias_por_aluno:
-                        carencias_por_aluno[aluno_nome] = 0
-                    carencias_por_aluno[aluno_nome] += presenca.carencias
-
-                # Ordenar por carências (decrescente) e pegar top 10
-                top_carencias = sorted(
-                    carencias_por_aluno.items(), key=lambda x: x[1], reverse=True
-                )[:10]
-
-                labels = [
-                    item[0][:20] + "..." if len(item[0]) > 20 else item[0]
-                    for item in top_carencias
-                ]
-                dados = [item[1] for item in top_carencias]
-
-            else:
-                # Agrupar por turma
-                carencias_por_turma = {}
-                for presenca in presencas_qs:
-                    turma_nome = presenca.turma.nome if presenca.turma else "Sem turma"
-                    if turma_nome not in carencias_por_turma:
-                        carencias_por_turma[turma_nome] = 0
-                    carencias_por_turma[turma_nome] += presenca.carencias
-
-                # Ordenar por carências (decrescente)
-                top_carencias = sorted(
-                    carencias_por_turma.items(), key=lambda x: x[1], reverse=True
+                agreg = (
+                    presencas_qs.filter(turma_id=filtros["turma_id"])\
+                    .values("aluno__nome")\
+                    .annotate(total_carencias=Sum("carencias"))\
+                    .order_by("-total_carencias")[:10]
                 )
-
-                labels = [item[0] for item in top_carencias]
-                dados = [item[1] for item in top_carencias]
+                labels = [
+                    (item["aluno__nome"][:20] + "..." if len(item["aluno__nome"]) > 20 else item["aluno__nome"])  # noqa: E501
+                    for item in agreg
+                ]
+                dados = [item["total_carencias"] or 0 for item in agreg]
+            else:
+                agreg = (
+                    presencas_qs
+                    .values("turma__nome")
+                    .annotate(total_carencias=Sum("carencias"))
+                    .order_by("-total_carencias")
+                )
+                labels = [item["turma__nome"] or "Sem turma" for item in agreg]
+                dados = [item["total_carencias"] or 0 for item in agreg]
 
             return {
                 "tipo": "bar",
@@ -486,51 +443,37 @@ class PainelEstatisticasView(LoginRequiredMixin, TemplateView):
     ) -> Dict[str, Any]:
         """Prepara dados para gráfico de performance por atividades (radar)."""
         try:
-            get_atividade_model()
-
-            # Filtrar presenças
+            # Filtrar base
             presencas_qs = PresencaDetalhada.objects.all()
 
             if filtros.get("turma_id"):
                 presencas_qs = presencas_qs.filter(turma_id=filtros["turma_id"])
 
             if filtros.get("periodo_inicio"):
-                presencas_qs = presencas_qs.filter(
-                    periodo__gte=filtros["periodo_inicio"]
-                )
+                presencas_qs = presencas_qs.filter(periodo__gte=filtros["periodo_inicio"])
 
             if filtros.get("periodo_fim"):
                 presencas_qs = presencas_qs.filter(periodo__lte=filtros["periodo_fim"])
 
-            # Agrupar por atividade
-            performance_atividades = {}
-            for presenca in presencas_qs:
-                atividade_nome = presenca.atividade.nome
-
-                if atividade_nome not in performance_atividades:
-                    performance_atividades[atividade_nome] = {
-                        "convocacoes": 0,
-                        "presencas": 0,
-                    }
-
-                performance_atividades[atividade_nome]["convocacoes"] += (
-                    presenca.convocacoes
+            agreg = (
+                presencas_qs
+                .values("atividade__nome")
+                .annotate(
+                    convocacoes=Sum("convocacoes"),
+                    presencas=Sum("presencas"),
                 )
-                performance_atividades[atividade_nome]["presencas"] += (
-                    presenca.presencas
-                )
+                .order_by("atividade__nome")
+            )
 
-            # Calcular percentuais
             labels = []
             percentuais = []
 
-            for atividade, dados in performance_atividades.items():
-                if dados["convocacoes"] > 0:
-                    percentual = round(
-                        (dados["presencas"] / dados["convocacoes"]) * 100, 2
-                    )
-                    labels.append(atividade)
-                    percentuais.append(percentual)
+            for item in agreg:
+                conv = item["convocacoes"] or 0
+                pres = item["presencas"] or 0
+                if conv > 0:
+                    labels.append(item["atividade__nome"])
+                    percentuais.append(round((pres / conv) * 100, 2))
 
             return {"tipo": "radar", "labels": labels, "dados": percentuais}
 
