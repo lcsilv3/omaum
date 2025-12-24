@@ -3,7 +3,7 @@ RELATORIOS = [
     {
         "nome": "Painel de Presenças",
         "descricao": "Indicadores executivos e visão geral das presenças.",
-        "url": "presencas:listar_dashboard_presencas",
+        "url": "presencas:dashboard",
         "exportacoes": [],
     },
     {
